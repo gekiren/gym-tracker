@@ -5,10 +5,10 @@ let db: SQLite.SQLiteDatabase | null = null;
 
 export const initDB = async () => {
   if (db) return db;
-  db = await SQLite.openDatabaseAsync('gymtracker.db');
+  const _db = await SQLite.openDatabaseAsync('gymtracker.db');
 
   // Create tables if they don't exist
-  await db.execAsync(`
+  await _db.execAsync(`
     PRAGMA journal_mode = WAL;
     PRAGMA foreign_keys = ON;
 
@@ -73,133 +73,132 @@ export const initDB = async () => {
     );
   `);
 
-  // Continuously seed any missing default exercises
-  // Fetch existing count
-  const countResult = await db.getFirstAsync<{ count: number }>('SELECT count(*) as count FROM exercises');
-  if (countResult) {
-    const exercises = [
-      // Chest
-      { name: 'ベンチプレス', group: '胸', equip: 'バーベル' },
-      { name: 'インクラインベンチプレス', group: '胸', equip: 'バーベル' },
-      { name: 'デクラインベンチプレス', group: '胸', equip: 'バーベル' },
-      { name: 'ダンベルプレス', group: '胸', equip: 'ダンベル' },
-      { name: 'インクラインダンベルプレス', group: '胸', equip: 'ダンベル' },
-      { name: 'デクラインダンベルプレス', group: '胸', equip: 'ダンベル' },
-      { name: 'ダンベルフライ', group: '胸', equip: 'ダンベル' },
-      { name: 'インクラインダンベルフライ', group: '胸', equip: 'ダンベル' },
-      { name: 'ケーブルクロスオーバー', group: '胸', equip: 'ケーブル' },
-      { name: 'ペックデックフライ', group: '胸', equip: 'マシン' },
-      { name: 'チェストプレス', group: '胸', equip: 'マシン' },
-      { name: 'スミスマシン ベンチプレス', group: '胸', equip: 'スミスマシン' },
-      { name: 'スミスマシン インクラインプレス', group: '胸', equip: 'スミスマシン' },
-      { name: 'プッシュアップ (腕立て伏せ)', group: '胸', equip: '自重' },
-      { name: '加重プッシュアップ', group: '胸', equip: 'ウエイト' },
-      { name: 'ディップス', group: '胸', equip: '自重' },
-      { name: '加重ディップス', group: '胸', equip: 'ウエイト' },
-      
-      // Back
-      { name: 'デッドリフト', group: '背中', equip: 'バーベル' },
-      { name: 'ルーマニアンデッドリフト', group: '背中', equip: 'バーベル' },
-      { name: 'ハーフデッドリフト', group: '背中', equip: 'バーベル' },
-      { name: '懸垂 (チンニング)', group: '背中', equip: '自重' },
-      { name: '加重懸垂', group: '背中', equip: 'ウエイト' },
-      { name: 'ラットプルダウン', group: '背中', equip: 'ケーブル' },
-      { name: 'リバースグリップ ラットプルダウン', group: '背中', equip: 'ケーブル' },
-      { name: 'ベントオーバーロウ', group: '背中', equip: 'バーベル' },
-      { name: 'ペンレイロウ', group: '背中', equip: 'バーベル' },
-      { name: 'ワンアームダンベルロウ', group: '背中', equip: 'ダンベル' },
-      { name: 'シーテッドロウ', group: '背中', equip: 'ケーブル' },
-      { name: 'Tバーロウ', group: '背中', equip: 'マシン' },
-      { name: 'シュラッグ', group: '背中', equip: 'バーベル' },
-      { name: 'ダンベルシュラッグ', group: '背中', equip: 'ダンベル' },
-      { name: 'プルオーバー', group: '背中', equip: 'ダンベル' },
-      { name: 'ストレートアームプルダウン', group: '背中', equip: 'ケーブル' },
-      { name: 'バックエクステンション', group: '背中', equip: '自重' },
-      
-      // Shoulders
-      { name: 'オーバーヘッドプレス (ミリタリープレス)', group: '肩', equip: 'バーベル' },
-      { name: 'ダンベルショルダープレス', group: '肩', equip: 'ダンベル' },
-      { name: 'アーノルドプレス', group: '肩', equip: 'ダンベル' },
-      { name: 'スミスマシン ショルダープレス', group: '肩', equip: 'スミスマシン' },
-      { name: 'マシンショルダープレス', group: '肩', equip: 'マシン' },
-      { name: 'サイドレイズ', group: '肩', equip: 'ダンベル' },
-      { name: 'ケーブルサイドレイズ', group: '肩', equip: 'ケーブル' },
-      { name: 'フロントレイズ', group: '肩', equip: 'ダンベル' },
-      { name: 'ケーブルフロントレイズ', group: '肩', equip: 'ケーブル' },
-      { name: 'リアデルトフライ', group: '肩', equip: 'マシン' },
-      { name: 'ダンベルリアレイズ', group: '肩', equip: 'ダンベル' },
-      { name: 'フェイスプル', group: '肩', equip: 'ケーブル' },
-      { name: 'アップライトロウ', group: '肩', equip: 'バーベル' },
-      { name: 'ケーブルアップライトロウ', group: '肩', equip: 'ケーブル' },
-
-      // Arms (Biceps/Triceps/Forearms)
-      { name: 'バーベルカール', group: '腕', equip: 'バーベル' },
-      { name: 'EZバーカール', group: '腕', equip: 'EZバー' },
-      { name: 'ダンベルカール', group: '腕', equip: 'ダンベル' },
-      { name: 'インクラインダンベルカール', group: '腕', equip: 'ダンベル' },
-      { name: 'ハンマーカール', group: '腕', equip: 'ダンベル' },
-      { name: 'プリーチャーカール', group: '腕', equip: 'EZバー' },
-      { name: 'ケーブルカール', group: '腕', equip: 'ケーブル' },
-      { name: 'コンセントレーションカール', group: '腕', equip: 'ダンベル' },
-      { name: 'リバースカール', group: '腕', equip: 'EZバー' },
-      { name: 'ナローグリップ ベンチプレス', group: '腕', equip: 'バーベル' },
-      { name: 'トライセップスエクステンション', group: '腕', equip: 'EZバー' },
-      { name: 'ダンベル トライセップスエクステンション', group: '腕', equip: 'ダンベル' },
-      { name: 'ケーブルプッシュダウン', group: '腕', equip: 'ケーブル' },
-      { name: 'スカルクラッシャー', group: '腕', equip: 'EZバー' },
-      { name: 'キックバック', group: '腕', equip: 'ダンベル' },
-      { name: 'リストカール', group: '腕', equip: 'ダンベル' },
-
-      // Legs
-      { name: 'スクワット', group: '脚', equip: 'バーベル' },
-      { name: 'フロントスクワット', group: '脚', equip: 'バーベル' },
-      { name: 'ゴブレットスクワット', group: '脚', equip: 'ダンベル' },
-      { name: 'スミスマシン スクワット', group: '脚', equip: 'スミスマシン' },
-      { name: 'レッグプレス', group: '脚', equip: 'マシン' },
-      { name: 'ハックスクワット', group: '脚', equip: 'マシン' },
-      { name: 'ブルガリアンスプリットスクワット', group: '脚', equip: 'ダンベル' },
-      { name: 'ランジ', group: '脚', equip: 'ダンベル' },
-      { name: 'ウォーキングランジ', group: '脚', equip: 'ダンベル' },
-      { name: 'レッグエクステンション', group: '脚', equip: 'マシン' },
-      { name: 'レッグカール', group: '脚', equip: 'マシン' },
-      { name: 'シーテッドレッグカール', group: '脚', equip: 'マシン' },
-      { name: 'スタンディングカーフレイズ', group: '脚', equip: 'マシン' },
-      { name: 'シーテッドカーフレイズ', group: '脚', equip: 'マシン' },
-      { name: 'ヒップスラスト', group: '脚', equip: 'バーベル' },
-      { name: 'マシンアブダクター (外転)', group: '脚', equip: 'マシン' },
-      { name: 'マシンアダクター (内転)', group: '脚', equip: 'マシン' },
-      { name: 'グッドモーニング', group: '脚', equip: 'バーベル' },
-
-      // Core & Others
-      { name: 'クランチ', group: '腹筋', equip: '自重' },
-      { name: 'シットアップ', group: '腹筋', equip: '自重' },
-      { name: 'プランク', group: '腹筋', equip: '自重' },
-      { name: 'レッグレイズ', group: '腹筋', equip: '自重' },
-      { name: 'ハンギングレッグレイズ', group: '腹筋', equip: '自重' },
-      { name: 'アブローラー', group: '腹筋', equip: 'その他' },
-      { name: 'ケーブルクランチ', group: '腹筋', equip: 'ケーブル' },
-      { name: 'ロシアンツイスト', group: '腹筋', equip: 'ウエイト' },
-      { name: 'マウンテンクライマー', group: '腹筋', equip: '自重' },
-      { name: 'アブドミナルマシン', group: '腹筋', equip: 'マシン' }
-    ];
+  // Seed exercises if missing
+  const exercises = [
+    // Chest
+    { name: 'ベンチプレス', group: '胸', equip: 'バーベル' },
+    { name: 'インクラインベンチプレス', group: '胸', equip: 'バーベル' },
+    { name: 'デクラインベンチプレス', group: '胸', equip: 'バーベル' },
+    { name: 'ダンベルプレス', group: '胸', equip: 'ダンベル' },
+    { name: 'インクラインダンベルプレス', group: '胸', equip: 'ダンベル' },
+    { name: 'デクラインダンベルプレス', group: '胸', equip: 'ダンベル' },
+    { name: 'ダンベルフライ', group: '胸', equip: 'ダンベル' },
+    { name: 'インクラインダンベルフライ', group: '胸', equip: 'ダンベル' },
+    { name: 'ケーブルクロスオーバー', group: '胸', equip: 'ケーブル' },
+    { name: 'ペックデックフライ', group: '胸', equip: 'マシン' },
+    { name: 'チェストプレス', group: '胸', equip: 'マシン' },
+    { name: 'スミスマシン ベンチプレス', group: '胸', equip: 'スミスマシン' },
+    { name: 'スミスマシン インクラインプレス', group: '胸', equip: 'スミスマシン' },
+    { name: 'プッシュアップ (腕立て伏せ)', group: '胸', equip: '自重' },
+    { name: '加重プッシュアップ', group: '胸', equip: 'ウエイト' },
+    { name: 'ディップス', group: '胸', equip: '自重' },
+    { name: '加重ディップス', group: '胸', equip: 'ウエイト' },
     
-    // Insert only those not already in the db
-    const existing = await db.getAllAsync<{ name: string }>('SELECT name FROM exercises');
-    const existingNames = new Set(existing.map(e => e.name));
+    // Back
+    { name: 'デッドリフト', group: '背中', equip: 'バーベル' },
+    { name: 'ルーマニアンデッドリフト', group: '背中', equip: 'バーベル' },
+    { name: 'ハーフデッドリフト', group: '背中', equip: 'バーベル' },
+    { name: '懸垂 (チンニング)', group: '背中', equip: '自重' },
+    { name: '加重懸垂', group: '背中', equip: 'ウエイト' },
+    { name: 'ラットプルダウン', group: '背中', equip: 'ケーブル' },
+    { name: 'リバースグリップ ラットプルダウン', group: '背中', equip: 'ケーブル' },
+    { name: 'ベントオーバーロウ', group: '背中', equip: 'バーベル' },
+    { name: 'ペンレイロウ', group: '背中', equip: 'バーベル' },
+    { name: 'ワンアームダンベルロウ', group: '背中', equip: 'ダンベル' },
+    { name: 'シーテッドロウ', group: '背中', equip: 'ケーブル' },
+    { name: 'Tバーロウ', group: '背中', equip: 'マシン' },
+    { name: 'シュラッグ', group: '背中', equip: 'バーベル' },
+    { name: 'ダンベルシュラッグ', group: '背中', equip: 'ダンベル' },
+    { name: 'プルオーバー', group: '背中', equip: 'ダンベル' },
+    { name: 'ストレートアームプルダウン', group: '背中', equip: 'ケーブル' },
+    { name: 'バックエクステンション', group: '背中', equip: '自重' },
+    
+    // Shoulders
+    { name: 'オーバーヘッドプレス (ミリタリープレス)', group: '肩', equip: 'バーベル' },
+    { name: 'ダンベルショルダープレス', group: '肩', equip: 'ダンベル' },
+    { name: 'アーノルドプレス', group: '肩', equip: 'ダンベル' },
+    { name: 'スミスマシン ショルダープレス', group: '肩', equip: 'スミスマシン' },
+    { name: 'マシンショルダープレス', group: '肩', equip: 'マシン' },
+    { name: 'サイドレイズ', group: '肩', equip: 'ダンベル' },
+    { name: 'ケーブルサイドレイズ', group: '肩', equip: 'ケーブル' },
+    { name: 'フロントレイズ', group: '肩', equip: 'ダンベル' },
+    { name: 'ケーブルフロントレイズ', group: '肩', equip: 'ケーブル' },
+    { name: 'リアデルトフライ', group: '肩', equip: 'マシン' },
+    { name: 'ダンベルリアレイズ', group: '肩', equip: 'ダンベル' },
+    { name: 'フェイスプル', group: '肩', equip: 'ケーブル' },
+    { name: 'アップライトロウ', group: '肩', equip: 'バーベル' },
+    { name: 'ケーブルアップライトロウ', group: '肩', equip: 'ケーブル' },
 
-    for (const ex of exercises) {
-      if (!existingNames.has(ex.name)) {
-        await db.runAsync(
-          'INSERT INTO exercises (name, muscle_group, equipment) VALUES (?, ?, ?)',
-          [ex.name, ex.group, ex.equip]
-        );
+    // Arms
+    { name: 'バーベルカール', group: '腕', equip: 'バーベル' },
+    { name: 'EZバーカール', group: '腕', equip: 'EZバー' },
+    { name: 'ダンベルカール', group: '腕', equip: 'ダンベル' },
+    { name: 'インクラインダンベルカール', group: '腕', equip: 'ダンベル' },
+    { name: 'ハンマーカール', group: '腕', equip: 'ダンベル' },
+    { name: 'プリーチャーカール', group: '腕', equip: 'EZバー' },
+    { name: 'ケーブルカール', group: '腕', equip: 'ケーブル' },
+    { name: 'コンセントレーションカール', group: '腕', equip: 'ダンベル' },
+    { name: 'リバースカール', group: '腕', equip: 'EZバー' },
+    { name: 'ナローグリップ ベンチプレス', group: '腕', equip: 'バーベル' },
+    { name: 'トライセップスエクステンション', group: '腕', equip: 'EZバー' },
+    { name: 'ダンベル トライセップスエクステンション', group: '腕', equip: 'ダンベル' },
+    { name: 'ケーブルプッシュダウン', group: '腕', equip: 'ケーブル' },
+    { name: 'スカルクラッシャー', group: '腕', equip: 'EZバー' },
+    { name: 'キックバック', group: '腕', equip: 'ダンベル' },
+    { name: 'リストカール', group: '腕', equip: 'ダンベル' },
+
+    // Legs
+    { name: 'スクワット', group: '脚', equip: 'バーベル' },
+    { name: 'フロントスクワット', group: '脚', equip: 'バーベル' },
+    { name: 'ゴブレットスクワット', group: '脚', equip: 'ダンベル' },
+    { name: 'スミスマシン スクワット', group: '脚', equip: 'スミスマシン' },
+    { name: 'レッグプレス', group: '脚', equip: 'マシン' },
+    { name: 'ハックスクワット', group: '脚', equip: 'マシン' },
+    { name: 'ブルガリアンスプリットスクワット', group: '脚', equip: 'ダンベル' },
+    { name: 'ランジ', group: '脚', equip: 'ダンベル' },
+    { name: 'ウォーキングランジ', group: '脚', equip: 'ダンベル' },
+    { name: 'レッグエクステンション', group: '脚', equip: 'マシン' },
+    { name: 'レッグカール', group: '脚', equip: 'マシン' },
+    { name: 'シーテッドレッグカール', group: '脚', equip: 'マシン' },
+    { name: 'スタンディングカーフレイズ', group: '脚', equip: 'マシン' },
+    { name: 'シーテッドカーフレイズ', group: '脚', equip: 'マシン' },
+    { name: 'ヒップスラスト', group: '脚', equip: 'バーベル' },
+    { name: 'マシンアブダクター (外転)', group: '脚', equip: 'マシン' },
+    { name: 'マシンアダクター (内転)', group: '脚', equip: 'マシン' },
+    { name: 'グッドモーニング', group: '脚', equip: 'バーベル' },
+
+    // Core
+    { name: 'クランチ', group: '腹筋', equip: '自重' },
+    { name: 'シットアップ', group: '腹筋', equip: '自重' },
+    { name: 'プランク', group: '腹筋', equip: '自重' },
+    { name: 'レッグレイズ', group: '腹筋', equip: '自重' },
+    { name: 'ハンギングレッグレイズ', group: '腹筋', equip: '自重' },
+    { name: 'アブローラー', group: '腹筋', equip: 'その他' },
+    { name: 'ケーブルクランチ', group: '腹筋', equip: 'ケーブル' },
+    { name: 'ロシアンツイスト', group: '腹筋', equip: 'ウエイト' },
+    { name: 'マウンテンクライマー', group: '腹筋', equip: '自重' },
+    { name: 'アブドミナルマシン', group: '腹筋', equip: 'マシン' }
+  ];
+
+  const existing = await _db.getAllAsync<{ name: string }>('SELECT name FROM exercises');
+  const existingNames = new Set(existing.map(e => e.name));
+
+  if (existingNames.size < exercises.length) {
+    await _db.withTransactionAsync(async () => {
+      for (const ex of exercises) {
+        if (!existingNames.has(ex.name)) {
+          await _db.runAsync(
+            'INSERT INTO exercises (name, muscle_group, equipment) VALUES (?, ?, ?)',
+            [ex.name, ex.group, ex.equip]
+          );
+        }
       }
-    }
+    });
   }
 
   // Seed default routines
-  const routineCount = await db.getFirstAsync<{count: number}>('SELECT count(*) as count FROM routines');
-  if (routineCount && routineCount.count === 0) {
+  const routineCountRow = await _db.getFirstAsync<{count: number}>('SELECT count(*) as count FROM routines');
+  if (routineCountRow && routineCountRow.count === 0) {
     const defaultRoutines = [
       {
         title: 'Push Day (押す日)',
@@ -213,30 +212,31 @@ export const initDB = async () => {
       }
     ];
 
-    for (const r of defaultRoutines) {
-      const res = await db.runAsync('INSERT INTO routines (title, description) VALUES (?, ?)', [r.title, r.description]);
-      const rid = res.lastInsertRowId;
-      
-      let order = 0;
-      for (const ename of r.exerciseNames) {
-        const row = await db.getFirstAsync<{id: number}>('SELECT id FROM exercises WHERE name = ?', [ename]);
-        if (row) {
-          await db.runAsync('INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)', [rid, row.id, order++]);
+    await _db.withTransactionAsync(async () => {
+      for (const r of defaultRoutines) {
+        const res = await _db.runAsync('INSERT INTO routines (title, description) VALUES (?, ?)', [r.title, r.description]);
+        const rid = res.lastInsertRowId;
+        let order = 0;
+        for (const ename of r.exerciseNames) {
+          const row = await _db.getFirstAsync<{id: number}>('SELECT id FROM exercises WHERE name = ?', [ename]);
+          if (row) {
+            await _db.runAsync('INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)', [rid, row.id, order++]);
+          }
         }
       }
-    }
+    });
   }
 
   // Seed default settings
-  const settingsCount = await db.getFirstAsync<{count: number}>('SELECT count(*) as count FROM settings');
-  if (settingsCount && settingsCount.count === 0) {
-    await db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['default_rest_timer', '90']);
-    await db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['auto_rest_timer', '1']);
+  const settingsCountRow = await _db.getFirstAsync<{count: number}>('SELECT count(*) as count FROM settings');
+  if (settingsCountRow && settingsCountRow.count === 0) {
+    await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['default_rest_timer', '90']);
+    await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['auto_rest_timer', '1']);
   }
 
+  db = _db;
   return db;
 };
-
 export const getDB = () => {
   if (!db) throw new Error('Database not initialized! Call initDB() first.');
   return db;
