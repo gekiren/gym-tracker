@@ -1,34 +1,96 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import { useEffect, useState } from 'react';
 import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { Theme } from '../src/theme';
 import { saveWorkout } from '../src/db/database';
+import { scheduleRestTimer, cancelRestTimer } from '../src/utils/timer';
 
 export default function ActiveWorkoutScreen() {
-  const { title, startTime, exercises, endWorkout, addExercise, addSet, toggleSetComplete } = useWorkoutStore();
+  const { title, startTime, exercises, endWorkout, addExercise, addSet, toggleSetComplete, updateSet, restTimer, stopRestTimer, adjustRestTimer, tickRestTimer } = useWorkoutStore();
+  const [elapsed, setElapsed] = useState(0);
 
-  const handleFinish = async () => {
-    try {
-      const et = new Date().toISOString();
-      await saveWorkout(title || 'Empty Workout', startTime || et, et, null, exercises);
-    } catch (e) {
-      console.error(e);
-    }
-    endWorkout();
-    router.dismiss();
+  useEffect(() => {
+    if (!startTime) return;
+    const startOffset = new Date(startTime).getTime();
+    const iv = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startOffset) / 1000));
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [startTime]);
+
+  const formatTime = (secs: number) => {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const handleAddMockExercise = () => {
-    // In the future: open an exercise selection modal
-    addExercise({ id: 1, name: 'ベンチプレス (Barbell)' });
+  // Rest Timer Interval
+  useEffect(() => {
+    if (!restTimer.isActive) return;
+    const iv = setInterval(() => {
+      tickRestTimer();
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [restTimer.isActive, tickRestTimer]);
+
+  // Sync Push Notifications when rest timer starts/adjusts
+  // Sync Push Notifications when rest timer starts/adjusts
+  useEffect(() => {
+    // If you add push notifications back, schedule them here.
+  }, [restTimer.isActive, restTimer.remaining]);
+
+  const handleAdjustRest = (secs: number) => {
+    adjustRestTimer(secs);
+  };
+  
+  const handleManualTimer = () => {
+    const { settings, startRestTimer } = useWorkoutStore.getState();
+    startRestTimer(settings.defaultRest);
+  };
+
+  const calculateRM = (weight: number | null, reps: number | null) => {
+    if (!weight || !reps || reps < 1) return null;
+    if (reps === 1) return weight;
+    return Math.round(weight * (1 + (reps / 30)));
+  };
+
+  const handleFinish = () => {
+    Alert.alert(
+      'ワークアウトの終了',
+      '現在の記録を保存して終了しますか？',
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: '保存して終了',
+          style: 'default',
+          onPress: async () => {
+            try {
+              const et = new Date().toISOString();
+              await saveWorkout(title || 'Empty Workout', startTime || et, et, null, exercises);
+            } catch (e) {
+              console.error(e);
+            }
+            endWorkout();
+            router.replace('/(tabs)/history');
+          }
+        }
+      ]
+    );
+  };
+
+  const handleAddExercise = () => {
+    router.push('/select-exercise');
   };
 
   return (
     <View style={styles.container}>
       <Stack.Screen 
         options={{ 
-          title: title || 'Workout',
+          title: title || 'ワークアウト',
           headerStyle: { backgroundColor: Theme.colors.background },
           headerTintColor: Theme.colors.text,
           headerLeft: () => (
@@ -37,62 +99,125 @@ export default function ActiveWorkoutScreen() {
             </TouchableOpacity>
           ),
           headerRight: () => (
-            <TouchableOpacity onPress={handleFinish} style={{ marginRight: 8, backgroundColor: Theme.colors.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4 }}>
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Finish</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {!restTimer.isActive && (
+                <TouchableOpacity onPress={handleManualTimer} style={{ marginRight: 16 }}>
+                  <Ionicons name="timer-outline" size={26} color={Theme.colors.primary} />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={handleFinish} style={{ marginRight: 8, backgroundColor: Theme.colors.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4 }}>
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>完了</Text>
+              </TouchableOpacity>
+            </View>
           )
         }} 
       />
 
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.timeText}>00:00</Text>
+        <Text style={styles.timeText}>{formatTime(elapsed)}</Text>
 
         {exercises.map((ex) => (
           <View key={ex.id} style={styles.card}>
             <Text style={styles.exerciseTitle}>{ex.name}</Text>
             <View style={styles.tableHeader}>
-              <Text style={[styles.th, { width: 40 }]}>Set</Text>
+              <Text style={[styles.th, { width: 40 }]}>セット</Text>
               <Text style={[styles.th, { flex: 1 }]}>kg</Text>
-              <Text style={[styles.th, { flex: 1 }]}>Reps</Text>
+              <Text style={[styles.th, { flex: 1 }]}>回数</Text>
               <Text style={[styles.th, { width: 50 }]}></Text>
             </View>
 
-            {ex.sets.map((set, idx) => (
-              <View key={set.id} style={[styles.row, set.is_completed && styles.rowCompleted]}>
-                <Text style={styles.tdSet}>{set.set_number}</Text>
-                <TextInput 
-                  style={styles.input} 
-                  keyboardType="numeric" 
-                  placeholder="-" 
-                  placeholderTextColor={Theme.colors.textMuted}
-                  defaultValue={set.weight ? String(set.weight) : ''}
-                />
-                <TextInput 
-                  style={styles.input} 
-                  keyboardType="numeric" 
-                  placeholder="-" 
-                  placeholderTextColor={Theme.colors.textMuted}
-                  defaultValue={set.reps ? String(set.reps) : ''}
-                />
-                <TouchableOpacity 
-                  style={[styles.checkBtn, set.is_completed && styles.checkBtnActive]}
-                  onPress={() => toggleSetComplete(ex.id, set.id)}
-                >
-                  <Ionicons name="checkmark" size={20} color={set.is_completed ? '#fff' : Theme.colors.textMuted} />
-                </TouchableOpacity>
-              </View>
-            ))}
+            {ex.sets.map((set, idx) => {
+              const currentRM = calculateRM(set.weight, set.reps);
+              
+              let timeTakenStr = '';
+              if (set.is_completed && set.completedAt && startTime) {
+                const prevTime = idx === 0 
+                  ? new Date(startTime).getTime() 
+                  : ex.sets[idx - 1].completedAt || new Date(startTime).getTime();
+                const diffSecs = Math.floor((set.completedAt - prevTime) / 1000);
+                if (diffSecs > 0) {
+                  const m = Math.floor(diffSecs / 60);
+                  const s = diffSecs % 60;
+                  timeTakenStr = m > 0 ? `${m}m${s}s` : `${s}s`;
+                }
+              }
+
+              return (
+                <View key={set.id}>
+                  <View style={[styles.row, set.is_completed && styles.rowCompleted]}>
+                    <Text style={styles.tdSet}>{set.set_number}</Text>
+                    <TextInput 
+                      style={styles.input} 
+                      keyboardType="numeric" 
+                      placeholder={set.prev_weight ? String(set.prev_weight) : "-"} 
+                      placeholderTextColor="rgba(255,255,255,0.2)"
+                      value={set.weight ? String(set.weight) : ''}
+                      onChangeText={(val) => updateSet(ex.id, set.id, { weight: val ? parseFloat(val) : null })}
+                    />
+                    <TextInput 
+                      style={styles.input} 
+                      keyboardType="numeric" 
+                      placeholder={set.prev_reps ? String(set.prev_reps) : "-"} 
+                      placeholderTextColor="rgba(255,255,255,0.2)"
+                      value={set.reps ? String(set.reps) : ''}
+                      onChangeText={(val) => updateSet(ex.id, set.id, { reps: val ? parseInt(val, 10) : null })}
+                    />
+                    
+                    {/* Check Button & RM Display */}
+                    <View style={{ width: 50, alignItems: 'center' }}>
+                      <TouchableOpacity 
+                        style={[styles.checkBtn, set.is_completed && styles.checkBtnActive]}
+                        onPress={() => toggleSetComplete(ex.id, set.id)}
+                      >
+                        <Ionicons name="checkmark" size={20} color={set.is_completed ? '#fff' : Theme.colors.textMuted} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  
+                  {/* Meta Row (RM & Time) */}
+                  {(currentRM != null || timeTakenStr) && (
+                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingRight: 8, marginBottom: 8, marginTop: -4 }}>
+                       {currentRM != null && <Text style={{ color: Theme.colors.primary, fontSize: 11, marginRight: 12 }}>1RM {currentRM}</Text>}
+                       {timeTakenStr ? <Text style={{ color: Theme.colors.success, fontSize: 11 }}>{timeTakenStr}</Text> : null}
+                    </View>
+                  )}
+                </View>
+              );
+            })}
 
             <TouchableOpacity style={styles.addSetBtn} onPress={() => addSet(ex.id)}>
-              <Text style={styles.addSetBtnText}>+ Add Set</Text>
+              <Text style={styles.addSetBtnText}>+ セット追加</Text>
             </TouchableOpacity>
           </View>
         ))}
 
-        <TouchableOpacity style={styles.addExerciseBtn} onPress={handleAddMockExercise}>
-          <Text style={styles.addExerciseBtnText}>+ Add Exercise</Text>
+        <TouchableOpacity style={styles.addExerciseBtn} onPress={handleAddExercise}>
+          <Text style={styles.addExerciseBtnText}>+ 種目を追加</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Floating Rest Timer UI */}
+      {restTimer.isActive && (
+        <View style={styles.timerOverlay}>
+          <View style={styles.timerContent}>
+            <View>
+              <Text style={styles.timerLabel}>休憩中</Text>
+              <Text style={styles.timerDigits}>{formatTime(restTimer.remaining)}</Text>
+            </View>
+            <View style={styles.timerActions}>
+              <TouchableOpacity style={styles.timerBtn} onPress={() => handleAdjustRest(-30)}>
+                <Text style={styles.timerBtnText}>-30s</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.timerBtn, { backgroundColor: Theme.colors.card }]} onPress={stopRestTimer}>
+                <Text style={styles.timerBtnText}>スキップ</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.timerBtn} onPress={() => handleAdjustRest(30)}>
+                <Text style={styles.timerBtnText}>+30s</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -114,5 +239,12 @@ const styles = StyleSheet.create({
   addSetBtn: { marginTop: 8, paddingVertical: 10, alignItems: 'center' },
   addSetBtnText: { color: Theme.colors.primary, fontSize: 16, fontWeight: '600' },
   addExerciseBtn: { backgroundColor: 'rgba(79, 172, 254, 0.1)', paddingVertical: 16, borderRadius: Theme.borderRadius.md, alignItems: 'center', marginVertical: Theme.spacing.xl, borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.3)' },
-  addExerciseBtnText: { color: Theme.colors.primary, fontSize: 18, fontWeight: 'bold' }
+  addExerciseBtnText: { color: Theme.colors.primary, fontSize: 18, fontWeight: 'bold' },
+  timerOverlay: { position: 'absolute', bottom: 24, left: 16, right: 16, zIndex: 100, backgroundColor: Theme.colors.primary, borderRadius: 12, padding: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 8 },
+  timerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  timerLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: 'bold' },
+  timerDigits: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
+  timerActions: { flexDirection: 'row', gap: 8 },
+  timerBtn: { backgroundColor: 'rgba(0,0,0,0.2)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6 },
+  timerBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' }
 });

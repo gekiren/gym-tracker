@@ -27,32 +27,32 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          headerTitle: 'Dashboard',
-          title: 'Workout',
+          headerTitle: 'ホーム',
+          title: 'ワークアウト',
           tabBarIcon: ({ color }) => <Ionicons name="barbell" size={26} color={color} />,
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
-          headerTitle: 'History',
-          title: 'History',
+          headerTitle: '履歴',
+          title: '履歴',
           tabBarIcon: ({ color }) => <Ionicons name="time" size={26} color={color} />,
         }}
       />
       <Tabs.Screen
         name="exercises"
         options={{
-          headerTitle: 'Exercises',
-          title: 'Exercises',
+          headerTitle: '種目',
+          title: '種目',
           tabBarIcon: ({ color }) => <Ionicons name="list" size={26} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          headerTitle: 'Profile',
-          title: 'Profile',
+          headerTitle: 'プロフィール',
+          title: 'プロフィール',
           tabBarIcon: ({ color }) => <Ionicons name="person" size={26} color={color} />,
         }}
       />

@@ -5,10 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { Dimensions } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { getDB } from '../../src/db/database';
+import { getDB, loadFullWorkoutData, deleteWorkout } from '../../src/db/database';
 import { Theme } from '../../src/theme';
 import { formatWorkoutToMarkdown } from '../../src/utils/markdownExport';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, router } from 'expo-router';
 
 export default function HistoryScreen() {
   const [workouts, setWorkouts] = useState<any[]>([]);
@@ -35,28 +35,22 @@ export default function HistoryScreen() {
     }
   };
 
-  const loadFullWorkoutData = async (workoutId: number) => {
-    const db = getDB();
-    const workoutRow = await db.getFirstAsync('SELECT * FROM workouts WHERE id = ?', [workoutId]) as any;
-    if (!workoutRow) return null;
-
-    const exercisesRows = await db.getAllAsync('SELECT we.id as workout_exercise_id, e.name as exercise_name FROM workout_exercises we JOIN exercises e ON we.exercise_id = e.id WHERE we.workout_id = ? ORDER BY we.sort_order', [workoutId]) as any[];
-    
-    const exercisesData = [];
-    for (const ex of exercisesRows) {
-      const sets = await db.getAllAsync('SELECT set_number, weight, reps, rpe FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number', [ex.workout_exercise_id]) as any[];
-      exercisesData.push({
-        exercise_name: ex.exercise_name,
-        sets: sets
-      });
-    }
-
-    return {
-      title: workoutRow.title,
-      start_time: workoutRow.start_time,
-      notes: workoutRow.notes,
-      exercises: exercisesData
-    };
+  const handleDelete = (id: number, title: string) => {
+    Alert.alert(
+      '履歴の削除',
+      `「${title}」の記録を削除してもよろしいですか？`,
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        { 
+          text: '削除する', 
+          style: 'destructive',
+          onPress: async () => {
+            await deleteWorkout(id);
+            fetchWorkouts();
+          }
+        }
+      ]
+    );
   };
 
   const handleExportMarkdown = async (workoutId: number) => {
@@ -87,12 +81,12 @@ export default function HistoryScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>History</Text>
-      <Text style={styles.subtitle}>Your past workouts and Markdown Export</Text>
+      <Text style={styles.title}>履歴</Text>
+      <Text style={styles.subtitle}>過去のワークアウト記録とMarkdown出力</Text>
       
       {chartData && (
         <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>Recent Volume (kg)</Text>
+          <Text style={styles.chartTitle}>最近の総ボリューム (kg)</Text>
           <LineChart
             data={chartData}
             width={Dimensions.get('window').width - Theme.spacing.md * 2}
@@ -118,27 +112,41 @@ export default function HistoryScreen() {
 
       {workouts.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>No workouts recorded yet.</Text>
+          <Text style={styles.emptyStateText}>まだ記録がありません。</Text>
         </View>
       ) : (
         workouts.map(w => (
           <View key={w.id} style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>{w.title}</Text>
-              <TouchableOpacity onPress={() => handleExportMarkdown(w.id)} style={styles.exportIcon}>
-                <Ionicons name="share-social" size={24} color={Theme.colors.primary} />
-                <Text style={styles.exportText}>MD</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <TouchableOpacity onPress={() => router.push({ pathname: '/edit-workout/[id]', params: { id: w.id } } as any)} style={[styles.exportIcon, { backgroundColor: 'rgba(255,255,255,0.1)', marginRight: 8 }]}>
+                  <Ionicons name="pencil" size={18} color={Theme.colors.text} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleExportMarkdown(w.id)} style={[styles.exportIcon, { marginRight: 8 }]}>
+                  <Ionicons name="share-social" size={18} color={Theme.colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleDelete(w.id, w.title)} style={[styles.exportIcon, { backgroundColor: 'rgba(255,50,50,0.1)' }]}>
+                  <Ionicons name="trash" size={18} color={Theme.colors.danger} />
+                </TouchableOpacity>
+              </View>
             </View>
-            <Text style={styles.dateText}>{format(new Date(w.start_time), 'yyyy-MM-dd HH:mm')}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+              <Text style={styles.dateText}>{format(new Date(w.start_time), 'yyyy-MM-dd HH:mm')}</Text>
+              {w.end_time && (
+                <Text style={styles.durationText}>
+                  ・所要時間: {Math.max(1, Math.round((new Date(w.end_time).getTime() - new Date(w.start_time).getTime()) / 60000))}分
+                </Text>
+              )}
+            </View>
             
             <View style={styles.statsRow}>
               <View style={styles.statBlock}>
-                <Text style={styles.statLabel}>Exercises</Text>
+                <Text style={styles.statLabel}>種目数</Text>
                 <Text style={styles.statValue}>{w.exercise_count}</Text>
               </View>
               <View style={styles.statBlock}>
-                <Text style={styles.statLabel}>Volume</Text>
+                <Text style={styles.statLabel}>ボリューム</Text>
                 <Text style={styles.statValue}>{w.volume ? w.volume + ' kg' : '-'}</Text>
               </View>
             </View>
@@ -159,9 +167,10 @@ const styles = StyleSheet.create({
   card: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, marginBottom: Theme.spacing.md, borderWidth: 1, borderColor: Theme.colors.border },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   cardTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
-  exportIcon: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a3a4a', paddingHorizontal: 12, paddingVertical: 6, borderRadius: Theme.borderRadius.md },
+  exportIcon: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a3a4a', paddingHorizontal: 10, paddingVertical: 6, borderRadius: Theme.borderRadius.md },
   exportText: { color: Theme.colors.primary, marginLeft: 4, fontWeight: 'bold' },
-  dateText: { color: Theme.colors.textMuted, marginBottom: 16 },
+  dateText: { color: Theme.colors.textMuted },
+  durationText: { color: Theme.colors.textMuted, marginLeft: 4 },
   statsRow: { flexDirection: 'row' },
   statBlock: { marginRight: 24 },
   statLabel: { color: Theme.colors.textMuted, fontSize: 12, marginBottom: 2 },

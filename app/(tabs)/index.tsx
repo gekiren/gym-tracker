@@ -1,46 +1,106 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { getRoutines, getPreviousWorkoutSets } from '../../src/db/database';
 
 export default function WorkoutScreen() {
-  const startWorkout = useWorkoutStore((s) => s.startWorkout);
+  const { startWorkout, addExercise } = useWorkoutStore();
+  const [routines, setRoutines] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchRoutines();
+    }, [])
+  );
+
+  const fetchRoutines = async () => {
+    try {
+      const data = await getRoutines();
+      setRoutines(data);
+    } catch (e) {
+      console.error('Failed to fetch routines', e);
+    }
+  };
 
   const handleStartEmpty = () => {
-    startWorkout('Empty Workout');
+    startWorkout('フリーワークアウト');
     router.push('/active-workout');
+  };
+
+  const handleStartRoutine = async (routine: any) => {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      startWorkout(routine.title);
+      for (const ex of routine.exercises) {
+        const prevSets = await getPreviousWorkoutSets(ex.id);
+        addExercise({ id: ex.id, name: ex.name, previousSets: prevSets });
+      }
+      router.push('/active-workout');
+    } catch (e) {
+      console.error('Failed to start routine', e);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.title}>Ready to lift?</Text>
-        <Text style={styles.subtitle}>Start a new workout or pick a routine.</Text>
+        <Text style={styles.title}>トレーニングを開始</Text>
+        <Text style={styles.subtitle}>新しいワークアウトを始めるか、ルーティンを選んでください。</Text>
       </View>
 
       <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8} onPress={handleStartEmpty}>
         <Ionicons name="add-circle-outline" size={24} color="#fff" style={{ marginRight: 8 }} />
-        <Text style={styles.primaryButtonText}>Start Empty Workout</Text>
+        <Text style={styles.primaryButtonText}>フリーワークアウトを開始</Text>
       </TouchableOpacity>
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>My Routines</Text>
-          <TouchableOpacity>
-            <Text style={styles.linkText}>View All</Text>
+          <Text style={styles.sectionTitle}>マイ ルーティン</Text>
+          <TouchableOpacity onPress={() => router.push('/routines')}>
+            <Text style={styles.linkText}>すべて見る</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.routineCard}>
-          <Text style={styles.routineTitle}>Push Day</Text>
-          <Text style={styles.routineDesc}>Bench Press, Overhead Press, Triceps...</Text>
-        </View>
-        <View style={styles.routineCard}>
-          <Text style={styles.routineTitle}>Pull Day</Text>
-          <Text style={styles.routineDesc}>Pull Ups, Barbell Rows, Biceps...</Text>
-        </View>
+        {routines.map(r => (
+          <TouchableOpacity 
+            key={r.id} 
+            style={styles.routineCard} 
+            activeOpacity={0.7} 
+            onPress={() => handleStartRoutine(r)}
+            disabled={isLoading}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.routineTitle}>{r.title}</Text>
+                <Text style={styles.routineDesc} numberOfLines={2}>
+                  {r.exercises?.map((e: any) => e.name).join(', ') || '種目なし'}
+                </Text>
+              </View>
+              <Ionicons name="play-circle" size={32} color={Theme.colors.primary} style={{ marginLeft: 16 }} />
+            </View>
+          </TouchableOpacity>
+        ))}
+
+        {routines.length === 0 && (
+          <View style={{ padding: 24, alignItems: 'center' }}>
+            <Text style={{ color: Theme.colors.textMuted }}>ルーティンがありません。</Text>
+          </View>
+        )}
       </View>
+
+      {/* Loading Overlay */}
+      {isLoading && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={Theme.colors.primary} />
+        </View>
+      )}
     </ScrollView>
   );
 }
