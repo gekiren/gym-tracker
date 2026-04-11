@@ -69,6 +69,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   isActive: false,
   startTime: null,
   title: null,
+  workoutNotes: '',
   exercises: [],
   restTimer: { isActive: false, remaining: 0, endTime: null },
 
