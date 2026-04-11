@@ -27,7 +27,10 @@
       "header_kg": "kg",
       "header_reps": "回数",
       "header_rpe": "RPE",
-      "header_set": "セット"
+      "header_set": "セット",
+      "workout_notes": "ワークアウトのメモ",
+      "workout_notes_placeholder": "今日の調子や感想を入力...",
+      "exercise_notes_placeholder": "この種目のメモを入力..."
     },
     "exercise_select": {
       "search_placeholder": "種目を検索...",

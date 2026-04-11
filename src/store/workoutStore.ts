@@ -18,14 +18,18 @@ export type ActiveExercise = {
   exercise_id: number; // DB ID
   name: string;
   sets: SetRecord[];
+  notes: string;
 };
 
 interface WorkoutState {
   isActive: boolean;
   startTime: string | null;
   title: string | null;
+  workoutNotes: string;
   exercises: ActiveExercise[];
   startWorkout: (title: string) => void;
+  updateWorkoutNotes: (notes: string) => void;
+  updateExerciseNotes: (exerciseId: string, notes: string) => void;
   endWorkout: () => void;
   addExercise: (exercise: { id: number, name: string, previousSets?: any[] }) => void;
   addSet: (exerciseId: string) => void;
@@ -83,9 +87,18 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     isActive: true,
     startTime: new Date().toISOString(),
     title,
+    workoutNotes: '',
     exercises: [],
     restTimer: { isActive: false, remaining: 0, endTime: null }
   }),
+
+  updateWorkoutNotes: (notes) => set({ workoutNotes: notes }),
+
+  updateExerciseNotes: (exerciseId, notes) => set((state) => ({
+    exercises: state.exercises.map(ex => 
+      ex.id === exerciseId ? { ...ex, notes } : ex
+    )
+  })),
 
   endWorkout: () => {
     cancelRestTimer();
@@ -93,6 +106,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       isActive: false,
       startTime: null,
       title: null,
+      workoutNotes: '',
       exercises: [],
       restTimer: { isActive: false, remaining: 0, endTime: null }
     });
@@ -131,7 +145,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           id: Math.random().toString(36).substring(7),
           exercise_id: exercise.id,
           name: exercise.name,
-          sets: initialSets
+          sets: initialSets,
+          notes: ''
         }
       ]
     };

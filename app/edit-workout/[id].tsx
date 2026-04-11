@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
-import { loadFullWorkoutData, updateWorkoutTitle, updateWorkoutSet, deleteWorkoutSet } from '../../src/db/database';
+import { loadFullWorkoutData, updateWorkoutTitle, updateWorkoutSet, deleteWorkoutSet, updateWorkoutOverallNotes, updateWorkoutExerciseNotes } from '../../src/db/database';
 
 export default function EditWorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -42,7 +42,9 @@ export default function EditWorkoutScreen() {
   const handleSave = async () => {
     try {
       await updateWorkoutTitle(data.id, data.title);
+      await updateWorkoutOverallNotes(data.id, data.notes);
       for (const ex of data.exercises) {
+        await updateWorkoutExerciseNotes(ex.workout_exercise_id, ex.notes);
         for (const s of ex.sets) {
           if (s._deleted) {
             await deleteWorkoutSet(s.id);
@@ -109,9 +111,30 @@ export default function EditWorkoutScreen() {
           placeholder="ワークアウト名"
         />
 
+        <Text style={styles.label}>メモ</Text>
+        <TextInput
+          style={[styles.inputHero, styles.notesInput]}
+          value={data.notes || ''}
+          onChangeText={(text) => setData((prev: any) => ({ ...prev, notes: text }))}
+          placeholder="ワークアウトの感想やメモを入力..."
+          multiline
+        />
+
         {data.exercises.map((ex: any, exIdx: number) => (
           <View key={ex.workout_exercise_id} style={styles.card}>
             <Text style={styles.exerciseTitle}>{ex.exercise_name}</Text>
+            
+            <TextInput
+              style={styles.exerciseNotesInput}
+              value={ex.notes || ''}
+              onChangeText={(text) => setData((prev: any) => {
+                const next = { ...prev };
+                next.exercises[exIdx].notes = text;
+                return next;
+              })}
+              placeholder="種目メモを入力..."
+              multiline
+            />
             
             <View style={styles.tableHeader}>
               <Text style={[styles.th, { width: 40 }]}>Set</Text>
@@ -169,5 +192,22 @@ const styles = StyleSheet.create({
   th: { color: Theme.colors.textMuted, fontSize: 14, fontWeight: '600', textAlign: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, paddingHorizontal: 4 },
   tdSet: { color: Theme.colors.text, width: 40, textAlign: 'center', fontSize: 16, fontWeight: '500' },
-  input: { backgroundColor: '#2a2a2a', color: Theme.colors.text, flex: 1, marginHorizontal: 4, borderRadius: 4, paddingVertical: 6, textAlign: 'center', fontSize: 16 }
+  input: { backgroundColor: '#2a2a2a', color: Theme.colors.text, flex: 1, marginHorizontal: 4, borderRadius: 4, paddingVertical: 6, textAlign: 'center', fontSize: 16 },
+  notesInput: {
+    fontSize: 14,
+    fontWeight: 'normal',
+    color: Theme.colors.text,
+    minHeight: 80,
+    textAlignVertical: 'top'
+  },
+  exerciseNotesInput: {
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    color: Theme.colors.text,
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 12,
+    fontSize: 13,
+    minHeight: 40,
+    textAlignVertical: 'top'
+  }
 });

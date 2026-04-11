@@ -27,7 +27,10 @@
       "header_kg": "kg",
       "header_reps": "Reps",
       "header_rpe": "RPE",
-      "header_set": "Set"
+      "header_set": "Set",
+      "workout_notes": "Workout Notes",
+      "workout_notes_placeholder": "How was your workout today?",
+      "exercise_notes_placeholder": "Add a note for this exercise..."
     },
     "exercise_select": {
       "search_placeholder": "Search exercises...",

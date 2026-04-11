@@ -73,6 +73,16 @@ export const initDB = async () => {
     );
   `);
 
+  // Migration: Add notes to workout_exercises if missing
+  try {
+    const tableInfo = await _db.getAllAsync<{ name: string }>(`PRAGMA table_info(workout_exercises)`);
+    if (!tableInfo.find(c => c.name === 'notes')) {
+      await _db.execAsync(`ALTER TABLE workout_exercises ADD COLUMN notes TEXT`);
+    }
+  } catch (e) {
+    console.warn('Migration: Failed to add notes column', e);
+  }
+
   // Seed exercises if missing
   const exercises = [
     // Chest
@@ -261,8 +271,8 @@ export const saveWorkout = async (title: string, startTime: string, endTime: str
   for (const ex of exercises) {
     // Save mapping
     const waResult = await conn.runAsync(
-      'INSERT INTO workout_exercises (workout_id, exercise_id, sort_order) VALUES (?, ?, ?)',
-      [workoutId, ex.exercise_id, order++]
+      'INSERT INTO workout_exercises (workout_id, exercise_id, sort_order, notes) VALUES (?, ?, ?, ?)',
+      [workoutId, ex.exercise_id, order++, ex.notes || null]
     );
     const weId = waResult.lastInsertRowId;
 
@@ -421,7 +431,7 @@ export const loadFullWorkoutData = async (workoutId: number) => {
   const workoutRow = await db.getFirstAsync('SELECT * FROM workouts WHERE id = ?', [workoutId]) as any;
   if (!workoutRow) return null;
 
-  const exercisesRows = await db.getAllAsync('SELECT we.id as workout_exercise_id, e.name as exercise_name FROM workout_exercises we JOIN exercises e ON we.exercise_id = e.id WHERE we.workout_id = ? ORDER BY we.sort_order', [workoutId]) as any[];
+  const exercisesRows = await db.getAllAsync('SELECT we.id as workout_exercise_id, e.name as exercise_name, we.notes FROM workout_exercises we JOIN exercises e ON we.exercise_id = e.id WHERE we.workout_id = ? ORDER BY we.sort_order', [workoutId]) as any[];
   
   const exercisesData = [];
   for (const ex of exercisesRows) {
@@ -429,6 +439,7 @@ export const loadFullWorkoutData = async (workoutId: number) => {
     exercisesData.push({
       workout_exercise_id: ex.workout_exercise_id,
       exercise_name: ex.exercise_name,
+      notes: ex.notes,
       sets: sets
     });
   }
@@ -456,6 +467,16 @@ export const deleteWorkoutSet = async (setId: number) => {
 export const updateWorkoutTitle = async (workoutId: number, title: string) => {
   const conn = getDB();
   await conn.runAsync('UPDATE workouts SET title = ? WHERE id = ?', [title, workoutId]);
+};
+
+export const updateWorkoutOverallNotes = async (workoutId: number, notes: string | null) => {
+  const conn = getDB();
+  await conn.runAsync('UPDATE workouts SET notes = ? WHERE id = ?', [notes, workoutId]);
+};
+
+export const updateWorkoutExerciseNotes = async (weId: number, notes: string | null) => {
+  const conn = getDB();
+  await conn.runAsync('UPDATE workout_exercises SET notes = ? WHERE id = ?', [notes, weId]);
 };
 
 export const getFavoriteIds = async (): Promise<Set<number>> => {

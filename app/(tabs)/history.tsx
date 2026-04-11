@@ -140,6 +140,13 @@ export default function HistoryScreen() {
               )}
             </View>
             
+            {w.notes && (
+              <View style={styles.notesPreview}>
+                <Ionicons name="document-text-outline" size={14} color={Theme.colors.textMuted} style={{ marginRight: 4 }} />
+                <Text style={styles.notesPreviewText} numberOfLines={2}>{w.notes}</Text>
+              </View>
+            )}
+            
             <View style={styles.statsRow}>
               <View style={styles.statBlock}>
                 <Text style={styles.statLabel}>種目数</Text>
@@ -175,6 +182,20 @@ const styles = StyleSheet.create({
   statBlock: { marginRight: 24 },
   statLabel: { color: Theme.colors.textMuted, fontSize: 12, marginBottom: 2 },
   statValue: { color: Theme.colors.text, fontSize: 16, fontWeight: '600' },
+  notesPreview: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    padding: 8,
+    borderRadius: 6,
+    marginBottom: 12
+  },
+  notesPreviewText: {
+    color: Theme.colors.textMuted,
+    fontSize: 13,
+    flex: 1,
+    lineHeight: 18
+  },
   chartContainer: { marginBottom: Theme.spacing.xl },
   chartTitle: { color: Theme.colors.text, fontSize: 16, fontWeight: 'bold', marginBottom: Theme.spacing.md },
   chart: { borderRadius: Theme.borderRadius.md, marginLeft: -16 }

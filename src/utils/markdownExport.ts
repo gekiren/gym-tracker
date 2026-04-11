@@ -9,6 +9,7 @@ type SetData = {
 
 type WorkoutExerciseData = {
   exercise_name: string;
+  notes?: string;
   sets: SetData[];
 };
 
@@ -34,6 +35,9 @@ export const formatWorkoutToMarkdown = (workout: WorkoutData): string => {
   md += `## トレーニング内容\n`;
   workout.exercises.forEach((ex) => {
     md += `### ${ex.exercise_name}\n`;
+    if (ex.notes) {
+      md += `メモ: ${ex.notes}\n\n`;
+    }
     md += `| Set | Weight | Reps | RPE |\n`;
     md += `|---|---|---|---|\n`;
     ex.sets.forEach((set) => {

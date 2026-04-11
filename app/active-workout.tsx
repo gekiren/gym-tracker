@@ -5,10 +5,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { Theme } from '../src/theme';
 import { saveWorkout } from '../src/db/database';
+import { useTranslation } from 'react-i18next';
 
 export default function ActiveWorkoutScreen() {
-  const { title, startTime, exercises, endWorkout, addExercise, addSet, toggleSetComplete, updateSet, restTimer, stopRestTimer, adjustRestTimer, tickRestTimer } = useWorkoutStore();
+  const { t } = useTranslation();
+  const { 
+    title, startTime, workoutNotes, exercises, endWorkout, 
+    updateWorkoutNotes, updateExerciseNotes,
+    addExercise, addSet, toggleSetComplete, updateSet, 
+    restTimer, stopRestTimer, adjustRestTimer, tickRestTimer 
+  } = useWorkoutStore();
+  
   const [elapsed, setElapsed] = useState(0);
+  const [showWorkoutNotes, setShowWorkoutNotes] = useState(false);
+  const [expandedExerciseNotes, setExpandedExerciseNotes] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!startTime) return;
@@ -76,7 +86,7 @@ export default function ActiveWorkoutScreen() {
           onPress: async () => {
             try {
               const et = new Date().toISOString();
-              await saveWorkout(title || 'Empty Workout', startTime || et, et, null, exercises);
+              await saveWorkout(title || 'Empty Workout', startTime || et, et, workoutNotes, exercises);
             } catch (e) {
               console.error(e);
             }
@@ -112,7 +122,7 @@ export default function ActiveWorkoutScreen() {
                 </TouchableOpacity>
               )}
               <TouchableOpacity onPress={handleFinish} style={{ marginRight: 8, backgroundColor: Theme.colors.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4 }}>
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>完了</Text>
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>{t('ui.active_workout.finish')}</Text>
               </TouchableOpacity>
             </View>
           )
@@ -122,9 +132,54 @@ export default function ActiveWorkoutScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.timeText}>{formatTime(elapsed)}</Text>
 
+        {/* Workout Notes Section */}
+        <View style={{ marginBottom: 16 }}>
+          <TouchableOpacity 
+            onPress={() => setShowWorkoutNotes(!showWorkoutNotes)}
+            style={{ flexDirection: 'row', alignItems: 'center', opacity: workoutNotes ? 1 : 0.6 }}
+          >
+            <Ionicons name="document-text-outline" size={18} color={Theme.colors.primary} style={{ marginRight: 6 }} />
+            <Text style={{ color: Theme.colors.primary, fontSize: 14, fontWeight: '600' }}>
+              {t('ui.active_workout.workout_notes')}
+            </Text>
+            {workoutNotes ? <Ionicons name="checkmark-circle" size={12} color={Theme.colors.success} style={{ marginLeft: 4 }} /> : null}
+          </TouchableOpacity>
+          
+          {(showWorkoutNotes || workoutNotes) && (
+            <TextInput
+              style={[styles.workoutNotesInput, !showWorkoutNotes && { height: 0, paddingVertical: 0, opacity: 0 }]}
+              placeholder={t('ui.active_workout.workout_notes_placeholder')}
+              placeholderTextColor={Theme.colors.textMuted}
+              multiline
+              value={workoutNotes}
+              onChangeText={updateWorkoutNotes}
+            />
+          )}
+        </View>
+
         {exercises.map((ex) => (
           <View key={ex.id} style={styles.card}>
-            <Text style={styles.exerciseTitle}>{ex.name}</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.md }}>
+              <Text style={styles.exerciseTitle}>{ex.name}</Text>
+              <TouchableOpacity onPress={() => setExpandedExerciseNotes(prev => ({ ...prev, [ex.id]: !prev[ex.id] }))}>
+                <Ionicons 
+                  name={ex.notes ? "chatbubble-ellipses" : "chatbubble-outline"} 
+                  size={20} 
+                  color={ex.notes ? Theme.colors.primary : Theme.colors.textMuted} 
+                />
+              </TouchableOpacity>
+            </View>
+
+            {expandedExerciseNotes[ex.id] && (
+              <TextInput
+                style={styles.exerciseNotesInput}
+                placeholder={t('ui.active_workout.exercise_notes_placeholder')}
+                placeholderTextColor={Theme.colors.textMuted}
+                multiline
+                value={ex.notes}
+                onChangeText={(val) => updateExerciseNotes(ex.id, val)}
+              />
+            )}
             <View style={styles.tableHeader}>
               <Text style={[styles.th, { width: 40 }]}>セット</Text>
               <Text style={[styles.th, { flex: 1 }]}>kg</Text>
@@ -261,5 +316,27 @@ const styles = StyleSheet.create({
   timerDigits: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
   timerActions: { flexDirection: 'row', gap: 8 },
   timerBtn: { backgroundColor: 'rgba(0,0,0,0.2)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6 },
-  timerBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' }
+  timerBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  workoutNotesInput: {
+    backgroundColor: '#1a1a1a',
+    color: Theme.colors.text,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+    fontSize: 14,
+    minHeight: 60,
+    textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: '#333'
+  },
+  exerciseNotesInput: {
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    color: Theme.colors.text,
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 12,
+    fontSize: 13,
+    minHeight: 40,
+    textAlignVertical: 'top'
+  }
 });
