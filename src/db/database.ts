@@ -180,58 +180,64 @@ export const initDB = async () => {
     { name: 'アブドミナルマシン', group: '腹筋', equip: 'マシン' }
   ];
 
-  const existing = await _db.getAllAsync<{ name: string }>('SELECT name FROM exercises');
-  const existingNames = new Set(existing.map(e => e.name));
+  const seedFlag = await _db.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "initial_seeding_done"');
 
-  if (existingNames.size < exercises.length) {
-    await _db.withTransactionAsync(async () => {
-      for (const ex of exercises) {
-        if (!existingNames.has(ex.name)) {
-          await _db.runAsync(
-            'INSERT INTO exercises (name, muscle_group, equipment) VALUES (?, ?, ?)',
-            [ex.name, ex.group, ex.equip]
-          );
-        }
-      }
-    });
-  }
+  if (!seedFlag) {
+    const existing = await _db.getAllAsync<{ name: string }>('SELECT name FROM exercises');
+    const existingNames = new Set(existing.map(e => e.name));
 
-  // Seed default routines
-  const routineCountRow = await _db.getFirstAsync<{count: number}>('SELECT count(*) as count FROM routines');
-  if (routineCountRow && routineCountRow.count === 0) {
-    const defaultRoutines = [
-      {
-        title: 'Push Day (押す日)',
-        description: 'ベンチプレス, オーバーヘッドプレス, トライセップス...',
-        exerciseNames: ['ベンチプレス', 'オーバーヘッドプレス (ミリタリープレス)', 'プッシュアップ (腕立て伏せ)', 'トライセップスエクステンション']
-      },
-      {
-        title: 'Pull Day (引く日)',
-        description: '懸垂, バーベルロウ, バイセップス...',
-        exerciseNames: ['デッドリフト', '懸垂 (チンニング)', 'ラットプルダウン', 'バーベルカール']
-      }
-    ];
-
-    await _db.withTransactionAsync(async () => {
-      for (const r of defaultRoutines) {
-        const res = await _db.runAsync('INSERT INTO routines (title, description) VALUES (?, ?)', [r.title, r.description]);
-        const rid = res.lastInsertRowId;
-        let order = 0;
-        for (const ename of r.exerciseNames) {
-          const row = await _db.getFirstAsync<{id: number}>('SELECT id FROM exercises WHERE name = ?', [ename]);
-          if (row) {
-            await _db.runAsync('INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)', [rid, row.id, order++]);
+    if (existingNames.size < exercises.length) {
+      await _db.withTransactionAsync(async () => {
+        for (const ex of exercises) {
+          if (!existingNames.has(ex.name)) {
+            await _db.runAsync(
+              'INSERT INTO exercises (name, muscle_group, equipment) VALUES (?, ?, ?)',
+              [ex.name, ex.group, ex.equip]
+            );
           }
         }
-      }
-    });
-  }
+      });
+    }
 
-  // Seed default settings
-  const settingsCountRow = await _db.getFirstAsync<{count: number}>('SELECT count(*) as count FROM settings');
-  if (settingsCountRow && settingsCountRow.count === 0) {
-    await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['default_rest_timer', '90']);
-    await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['auto_rest_timer', '1']);
+    // Seed default routines
+    const routineCountRow = await _db.getFirstAsync<{count: number}>('SELECT count(*) as count FROM routines');
+    if (routineCountRow && routineCountRow.count === 0) {
+      const defaultRoutines = [
+        {
+          title: 'Push Day (押す日)',
+          description: 'ベンチプレス, オーバーヘッドプレス, トライセップス...',
+          exerciseNames: ['ベンチプレス', 'オーバーヘッドプレス (ミリタリープレス)', 'プッシュアップ (腕立て伏せ)', 'トライセップスエクステンション']
+        },
+        {
+          title: 'Pull Day (引く日)',
+          description: '懸垂, バーベルロウ, バイセップス...',
+          exerciseNames: ['デッドリフト', '懸垂 (チンニング)', 'ラットプルダウン', 'バーベルカール']
+        }
+      ];
+
+      await _db.withTransactionAsync(async () => {
+        for (const r of defaultRoutines) {
+          const res = await _db.runAsync('INSERT INTO routines (title, description) VALUES (?, ?)', [r.title, r.description]);
+          const rid = res.lastInsertRowId;
+          let order = 0;
+          for (const ename of r.exerciseNames) {
+            const row = await _db.getFirstAsync<{id: number}>('SELECT id FROM exercises WHERE name = ?', [ename]);
+            if (row) {
+              await _db.runAsync('INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)', [rid, row.id, order++]);
+            }
+          }
+        }
+      });
+    }
+
+    // Seed default settings
+    const settingsCountRow = await _db.getFirstAsync<{count: number}>('SELECT count(*) as count FROM settings');
+    if (settingsCountRow && settingsCountRow.count === 0) {
+      await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['default_rest_timer', '90']);
+      await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['auto_rest_timer', '1']);
+    }
+
+    await _db.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['initial_seeding_done', 'true']);
   }
 
   db = _db;
@@ -465,4 +471,9 @@ export const toggleFavorite = async (exerciseId: number, isFav: boolean): Promis
   } else {
     await conn.runAsync('INSERT OR IGNORE INTO favorite_exercises (exercise_id) VALUES (?)', [exerciseId]);
   }
+};
+
+export const deleteExercise = async (id: number) => {
+  const conn = getDB();
+  await conn.runAsync('DELETE FROM exercises WHERE id = ?', [id]);
 };

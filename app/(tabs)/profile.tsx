@@ -1,17 +1,21 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Linking } from 'react-native';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { saveSetting } from '../../src/db/database';
+import { useTranslation } from 'react-i18next';
+import { changeLanguage, getCurrentLanguage } from '../../src/i18n';
 
 const REST_OPTIONS = [30, 60, 90, 120, 150, 180, 240, 300]; // in seconds
 
 export default function ProfileScreen() {
+  const { t } = useTranslation();
   const { settings, loadSettings } = useWorkoutStore();
   const [defaultRest, setDefaultRest] = useState(settings.defaultRest);
   const [autoRest, setAutoRest] = useState(settings.autoRest);
+  const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
 
   useEffect(() => {
     setDefaultRest(settings.defaultRest);
@@ -30,24 +34,30 @@ export default function ProfileScreen() {
     await saveSetting('auto_rest_timer', val ? '1' : '0');
   };
 
+  const handleChangeLanguage = async (lang: 'ja' | 'en') => {
+    changeLanguage(lang);
+    setCurrentLang(lang);
+    await saveSetting('language', lang);
+  };
+
   const formatTime = (secs: number) => {
-    if (secs < 60) return `${secs}秒`;
+    if (secs < 60) return `${secs}${t('ui.common.secs_unit')}`;
     const m = Math.floor(secs / 60);
     const s = secs % 60;
-    return s > 0 ? `${m}分${s}秒` : `${m}分`;
+    return s > 0 ? `${m}${t('ui.common.min_unit')}${s}${t('ui.common.secs_unit')}` : `${m}${t('ui.common.min_unit')}`;
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.title}>設定・ツール</Text>
+        <Text style={styles.title}>{t('ui.profile.title')}</Text>
       </View>
 
       {/* Tools Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Ionicons name="construct-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>ツール</Text>
+          <Text style={styles.sectionTitle}>{t('ui.profile.section_tools')}</Text>
         </View>
         
         <View style={styles.settingCard}>
@@ -55,8 +65,8 @@ export default function ProfileScreen() {
              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                <Ionicons name="calculator" size={22} color={Theme.colors.text} style={{ marginRight: 12 }} />
                <View>
-                 <Text style={styles.settingLabel}>RM計算機</Text>
-                 <Text style={[styles.settingDesc, { paddingRight: 0 }]}>重量と回数から最大挙上重量を推算</Text>
+                 <Text style={styles.settingLabel}>{t('ui.profile.rm_calculator')}</Text>
+                 <Text style={[styles.settingDesc, { paddingRight: 0 }]}>{t('ui.profile.rm_calculator_desc')}</Text>
                </View>
              </View>
              <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
@@ -68,14 +78,14 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Ionicons name="timer-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>タイマー設定</Text>
+          <Text style={styles.sectionTitle}>{t('ui.profile.section_timer')}</Text>
         </View>
 
         <View style={styles.settingCard}>
           <View style={styles.settingRow}>
             <View style={{ flex: 1, paddingRight: 16 }}>
-              <Text style={styles.settingLabel}>インターバルタイマーの自動開始</Text>
-              <Text style={styles.settingDesc}>ワークアウトでセットを完了した時に、自動的にタイマーを開始します。</Text>
+              <Text style={styles.settingLabel}>{t('ui.profile.auto_rest')}</Text>
+              <Text style={styles.settingDesc}>{t('ui.profile.auto_rest_desc')}</Text>
             </View>
             <Switch
               value={autoRest}
@@ -86,8 +96,8 @@ export default function ProfileScreen() {
           </View>
 
           <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'flex-start' }]}>
-            <Text style={styles.settingLabel}>デフォルトのインターバル時間</Text>
-            <Text style={styles.settingDesc}>タイマー開始時にセットされる基準の休憩時間です。</Text>
+            <Text style={styles.settingLabel}>{t('ui.profile.default_rest')}</Text>
+            <Text style={styles.settingDesc}>{t('ui.profile.default_rest_desc')}</Text>
             
             <View style={styles.chipContainer}>
               {REST_OPTIONS.map((secs) => (
@@ -107,16 +117,59 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* Language Section */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="language-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+          <Text style={styles.sectionTitle}>{t('ui.profile.section_language')}</Text>
+        </View>
+
+        <View style={styles.settingCard}>
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'flex-start' }]}>
+            <Text style={styles.settingLabel}>{t('ui.profile.language_label')}</Text>
+            <View style={[styles.chipContainer, { marginTop: 12 }]}>
+              <TouchableOpacity
+                style={[styles.langChip, currentLang === 'ja' && styles.chipActive]}
+                onPress={() => handleChangeLanguage('ja')}
+              >
+                <Text style={[styles.chipText, currentLang === 'ja' && styles.chipTextActive]}>🇯🇵 日本語</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.langChip, currentLang === 'en' && styles.chipActive]}
+                onPress={() => handleChangeLanguage('en')}
+              >
+                <Text style={[styles.chipText, currentLang === 'en' && styles.chipTextActive]}>🇺🇸 English</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* App Info Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Ionicons name="information-circle-outline" size={24} color={Theme.colors.textMuted} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>アプリ情報</Text>
+          <Text style={styles.sectionTitle}>{t('ui.profile.section_info')}</Text>
         </View>
         <View style={styles.settingCard}>
-          <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
-            <Text style={styles.settingLabel}>バージョン</Text>
+          <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>{t('ui.profile.version')}</Text>
             <Text style={{ color: Theme.colors.textMuted }}>1.0.0</Text>
           </View>
+          <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/privacy-policy' as any)}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="shield-checkmark-outline" size={20} color={Theme.colors.text} style={{ marginRight: 10 }} />
+              <Text style={styles.settingLabel}>{t('ui.profile.privacy_policy')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.settingRow, { borderBottomWidth: 0 }]} onPress={() => Linking.openURL('mailto:t2549480@gmail.com')}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="mail-outline" size={20} color={Theme.colors.text} style={{ marginRight: 10 }} />
+              <Text style={styles.settingLabel}>{t('ui.profile.contact')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
+          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>
@@ -137,6 +190,7 @@ const styles = StyleSheet.create({
   settingDesc: { color: Theme.colors.textMuted, fontSize: 13, paddingRight: 40, lineHeight: 18 },
   chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
   chip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#222', borderWidth: 1, borderColor: Theme.colors.border },
+  langChip: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 20, backgroundColor: '#222', borderWidth: 1, borderColor: Theme.colors.border },
   chipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: Theme.colors.primary },
   chipText: { color: Theme.colors.textMuted, fontSize: 14, fontWeight: '600' },
   chipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' }

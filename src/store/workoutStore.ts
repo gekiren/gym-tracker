@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { scheduleRestTimer, cancelRestTimer } from '../utils/timer';
 
 export type SetRecord = {
   id: string; // temp id for UI
@@ -35,6 +36,7 @@ interface WorkoutState {
   restTimer: {
     isActive: boolean;
     remaining: number;
+    endTime: number | null;
   };
   startRestTimer: (seconds: number) => void;
   stopRestTimer: () => void;
@@ -64,7 +66,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   startTime: null,
   title: null,
   exercises: [],
-  restTimer: { isActive: false, remaining: 0 },
+  restTimer: { isActive: false, remaining: 0, endTime: null },
 
   settings: {
     defaultRest: 90,
@@ -82,16 +84,19 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     startTime: new Date().toISOString(),
     title,
     exercises: [],
-    restTimer: { isActive: false, remaining: 0 }
+    restTimer: { isActive: false, remaining: 0, endTime: null }
   }),
 
-  endWorkout: () => set({
-    isActive: false,
-    startTime: null,
-    title: null,
-    exercises: [],
-    restTimer: { isActive: false, remaining: 0 }
-  }),
+  endWorkout: () => {
+    cancelRestTimer();
+    set({
+      isActive: false,
+      startTime: null,
+      title: null,
+      exercises: [],
+      restTimer: { isActive: false, remaining: 0, endTime: null }
+    });
+  },
 
   addExercise: (exercise) => set((state) => {
     // Scaffold initial sets. If we have previous sets, create empty sets matching their count with prev data.
@@ -193,25 +198,47 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     }
   },
 
-  startRestTimer: (seconds) => set({
-    restTimer: { isActive: true, remaining: seconds }
-  }),
-  stopRestTimer: () => set({
-    restTimer: { isActive: false, remaining: 0 }
-  }),
-  adjustRestTimer: (seconds) => set((state) => ({
-    restTimer: { 
-      isActive: state.restTimer.isActive, 
-      remaining: Math.max(0, state.restTimer.remaining + seconds) 
+  startRestTimer: (seconds) => {
+    const endTime = Date.now() + seconds * 1000;
+    scheduleRestTimer(seconds);
+    set({
+      restTimer: { isActive: true, remaining: seconds, endTime }
+    });
+  },
+  stopRestTimer: () => {
+    cancelRestTimer();
+    set({
+      restTimer: { isActive: false, remaining: 0, endTime: null }
+    });
+  },
+  adjustRestTimer: (seconds) => set((state) => {
+    if (!state.restTimer.isActive || !state.restTimer.endTime) return state;
+    const newEndTime = state.restTimer.endTime + (seconds * 1000);
+    const newRemaining = Math.max(0, Math.ceil((newEndTime - Date.now()) / 1000));
+    
+    // Reschedule notification
+    cancelRestTimer();
+    if (newRemaining > 0) {
+      scheduleRestTimer(newRemaining);
     }
-  })),
+
+    return {
+      restTimer: { 
+        isActive: newRemaining > 0, 
+        remaining: newRemaining,
+        endTime: newRemaining > 0 ? newEndTime : null
+      }
+    };
+  }),
   tickRestTimer: () => set((state) => {
-    if (!state.restTimer.isActive) return state;
-    const nextRemaining = state.restTimer.remaining - 1;
+    if (!state.restTimer.isActive || !state.restTimer.endTime) return state;
+    const now = Date.now();
+    const nextRemaining = Math.ceil((state.restTimer.endTime - now) / 1000);
+    
     if (nextRemaining <= 0) {
-      return { restTimer: { isActive: false, remaining: 0 } };
+      return { restTimer: { isActive: false, remaining: 0, endTime: null } };
     }
-    return { restTimer: { isActive: true, remaining: nextRemaining } };
+    return { restTimer: { isActive: true, remaining: nextRemaining, endTime: state.restTimer.endTime } };
   }),
 
   // Draft routine actions

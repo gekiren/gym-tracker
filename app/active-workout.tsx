@@ -1,11 +1,10 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, AppState } from 'react-native';
 import { useEffect, useState } from 'react';
 import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { Theme } from '../src/theme';
 import { saveWorkout } from '../src/db/database';
-import { scheduleRestTimer, cancelRestTimer } from '../src/utils/timer';
 
 export default function ActiveWorkoutScreen() {
   const { title, startTime, exercises, endWorkout, addExercise, addSet, toggleSetComplete, updateSet, restTimer, stopRestTimer, adjustRestTimer, tickRestTimer } = useWorkoutStore();
@@ -37,11 +36,18 @@ export default function ActiveWorkoutScreen() {
     return () => clearInterval(iv);
   }, [restTimer.isActive, tickRestTimer]);
 
-  // Sync Push Notifications when rest timer starts/adjusts
-  // Sync Push Notifications when rest timer starts/adjusts
+  // Sync Push Notifications & State on Background/Foreground
   useEffect(() => {
-    // If you add push notifications back, schedule them here.
-  }, [restTimer.isActive, restTimer.remaining]);
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (nextAppState === 'active') {
+        tickRestTimer();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [tickRestTimer]);
 
   const handleAdjustRest = (secs: number) => {
     adjustRestTimer(secs);
