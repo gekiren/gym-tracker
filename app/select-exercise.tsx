@@ -1,10 +1,14 @@
 import { View, Text, StyleSheet, SectionList, TouchableOpacity, TextInput, Modal, Alert, ScrollView } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 import { useEffect, useState, useCallback } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getDB, addCustomExercise, getPreviousWorkoutSets, getFavoriteIds, toggleFavorite } from '../src/db/database';
+import { getDB, addCustomExercise, getPreviousWorkoutSets, getFavoriteIds, toggleFavorite, deleteExercise } from '../src/db/database';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
+import { useTranslation } from 'react-i18next';
+import { translateExercise, translateMuscleGroup, translateEquipment } from '../src/i18n';
 
 type Exercise = {
   id: number;
@@ -14,6 +18,7 @@ type Exercise = {
 };
 
 export default function SelectExerciseScreen() {
+  const { t } = useTranslation();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState('');
@@ -107,29 +112,82 @@ export default function SelectExerciseScreen() {
   if (favItems.length > 0) sections.push({ title: 'お気に入り', data: favItems });
   if (otherItems.length > 0) sections.push({ title: favItems.length > 0 ? 'その他の種目' : '種目', data: otherItems });
 
+  const handleDelete = async (ex: Exercise) => {
+    Alert.alert(
+      t('ui.exercise_select.delete_title'),
+      t('ui.exercise_select.delete_message', { name: translateExercise(ex.name) }),
+      [
+        { text: t('ui.common.cancel'), style: 'cancel' },
+        { 
+          text: t('ui.common.delete'), 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteExercise(ex.id);
+              await fetchAll();
+            } catch (e) {
+              Alert.alert(t('ui.common.error'), t('ui.exercise_select.delete_error'));
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const renderRightActions = (progress: SharedValue<number>, drag: SharedValue<number>, item: Exercise) => {
+    const styleAnimation = useAnimatedStyle(() => {
+      return {
+        transform: [{ translateX: drag.value + 80 }],
+      };
+    });
+
+    return (
+      <View style={{ width: 80, flexDirection: 'row' }}>
+        <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
+          <TouchableOpacity 
+            style={styles.deleteAction}
+            onPress={() => handleDelete(item)}
+          >
+            <Ionicons name="trash-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+        </Reanimated.View>
+      </View>
+    );
+  };
+
   const renderItem = ({ item }: { item: Exercise }) => {
     const isFav = favoriteIds.has(item.id);
     return (
-      <TouchableOpacity style={styles.item} onPress={() => handleSelect(item)}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.name}>{item.name}</Text>
-          <Text style={styles.meta}>{item.muscle_group} • {item.equipment}</Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => handleToggleFavorite(item)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={styles.starBtn}
+      <Swipeable
+        renderRightActions={(prog, drag) => renderRightActions(prog, drag, item)}
+        friction={2}
+        rightThreshold={40}
+      >
+        <TouchableOpacity 
+          style={styles.item} 
+          onPress={() => handleSelect(item)}
+          activeOpacity={0.7}
         >
-          <Ionicons
-            name={isFav ? 'star' : 'star-outline'}
-            size={22}
-            color={isFav ? '#f5a623' : Theme.colors.textMuted}
-          />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.name}>{translateExercise(item.name)}</Text>
+            <Text style={styles.meta}>{translateMuscleGroup(item.muscle_group)} • {translateEquipment(item.equipment)}</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => handleToggleFavorite(item)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={styles.starBtn}
+          >
+            <Ionicons
+              name={isFav ? 'star' : 'star-outline'}
+              size={22}
+              color={isFav ? '#f5a623' : Theme.colors.textMuted}
+            />
+          </TouchableOpacity>
+          <View style={{ paddingLeft: 8 }}>
+            <Ionicons name="add-circle" size={24} color={Theme.colors.primary} />
+          </View>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleSelect(item)} style={{ paddingLeft: 8 }}>
-          <Ionicons name="add-circle" size={24} color={Theme.colors.primary} />
-        </TouchableOpacity>
-      </TouchableOpacity>
+      </Swipeable>
     );
   };
 
@@ -261,5 +319,12 @@ const styles = StyleSheet.create({
   cancelBtn: { padding: 12, marginRight: 8 },
   cancelBtnText: { color: Theme.colors.textMuted, fontSize: 16 },
   saveBtn: { backgroundColor: Theme.colors.primary, paddingVertical: 12, paddingHorizontal: 20, borderRadius: Theme.borderRadius.md },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  deleteAction: {
+    backgroundColor: '#ff4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    height: '100%',
+  }
 });

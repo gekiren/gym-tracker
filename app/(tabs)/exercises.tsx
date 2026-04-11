@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, router } from 'expo-router';
 import { Theme } from '../../src/theme';
 import { getExercises, addCustomExercise } from '../../src/db/database';
+import { useTranslation } from 'react-i18next';
+import { translateExercise, translateMuscleGroup, translateEquipment } from '../../src/i18n';
 
 type Exercise = {
   id: number;
@@ -13,6 +15,7 @@ type Exercise = {
 };
 
 export default function ExercisesScreen() {
+  const { t } = useTranslation();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [search, setSearch] = useState('');
   const [isModalVisible, setModalVisible] = useState(false);
@@ -122,8 +125,8 @@ export default function ExercisesScreen() {
             onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: item.id } } as any)}
           >
             <View>
-              <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.meta}>{item.muscle_group} • {item.equipment}</Text>
+              <Text style={styles.name}>{translateExercise(item.name)}</Text>
+              <Text style={styles.meta}>{translateMuscleGroup(item.muscle_group)} • {translateEquipment(item.equipment)}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
           </TouchableOpacity>
