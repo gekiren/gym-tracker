@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,7 +31,25 @@ export default function ExerciseDetailScreen() {
 
   const formatDate = (isoString: string) => {
     const d = new Date(isoString);
-    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+    return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+  };
+
+  const handleExportMarkdown = async () => {
+    if (history.length === 0) return;
+
+    let md = `## ${exercise.name} 記録履歴\n\n`;
+    md += "| 日付 | セット | 重量 | 回数 | RPE |\n";
+    md += "| :--- | :--- | :--- | :--- | :--- |\n";
+
+    history.forEach(item => {
+      const dateStr = formatDate(item.start_time);
+      item.sets.forEach((s: any) => {
+        md += `| ${dateStr} | ${s.set_number} | ${s.weight ? s.weight + 'kg' : '-'} | ${s.reps ? s.reps + '回' : '-'} | ${s.rpe || '-'} |\n`;
+      });
+    });
+
+    await Clipboard.setStringAsync(md);
+    Alert.alert('コピー完了', '履歴をMarkdown形式でクリップボードにコピーしました。');
   };
 
   if (isLoading) {
@@ -70,6 +89,12 @@ export default function ExerciseDetailScreen() {
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>過去の履歴</Text>
+        {history.length > 0 && (
+          <TouchableOpacity onPress={handleExportMarkdown} style={styles.exportBtn}>
+            <Ionicons name="copy-outline" size={14} color={Theme.colors.primary} style={{ marginRight: 4 }} />
+            <Text style={styles.exportBtnText}>MD形式でコピー</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {history.length === 0 ? (
@@ -101,6 +126,7 @@ export default function ExerciseDetailScreen() {
                   <Text style={styles.tdVal}>
                     {s.weight ? `${s.weight} kg` : '-'}  ×  {s.reps ? `${s.reps} 回` : '-'}
                   </Text>
+                  {s.rpe && <Text style={styles.tdRpe}>@RPE {s.rpe}</Text>}
                 </View>
               ))}
             </View>
@@ -132,5 +158,8 @@ const styles = StyleSheet.create({
   thVal: { flex: 1, color: Theme.colors.textMuted, fontSize: 13, fontWeight: '600' },
   setRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
   tdSet: { width: 50, color: Theme.colors.text, fontSize: 16, fontWeight: '500' },
-  tdVal: { flex: 1, color: Theme.colors.text, fontSize: 16 }
+  tdVal: { flex: 1, color: Theme.colors.text, fontSize: 16 },
+  tdRpe: { color: Theme.colors.textMuted, fontSize: 13, fontStyle: 'italic' },
+  exportBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(79, 172, 254, 0.1)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.2)' },
+  exportBtnText: { color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold' }
 });

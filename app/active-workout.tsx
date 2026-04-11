@@ -123,7 +123,8 @@ export default function ActiveWorkoutScreen() {
               <Text style={[styles.th, { width: 40 }]}>セット</Text>
               <Text style={[styles.th, { flex: 1 }]}>kg</Text>
               <Text style={[styles.th, { flex: 1 }]}>回数</Text>
-              <Text style={[styles.th, { width: 50 }]}></Text>
+              <Text style={[styles.th, { width: 45 }]}>RPE</Text>
+              <Text style={[styles.th, { width: 40 }]}></Text>
             </View>
 
             {ex.sets.map((set, idx) => {
@@ -162,14 +163,22 @@ export default function ActiveWorkoutScreen() {
                       value={set.reps ? String(set.reps) : ''}
                       onChangeText={(val) => updateSet(ex.id, set.id, { reps: val ? parseInt(val, 10) : null })}
                     />
+                    <TextInput 
+                      style={[styles.input, { width: 45, flex: 0 }]} 
+                      keyboardType="numeric" 
+                      placeholder="-" 
+                      placeholderTextColor="rgba(255,255,255,0.2)"
+                      value={set.rpe ? String(set.rpe) : ''}
+                      onChangeText={(val) => updateSet(ex.id, set.id, { rpe: val ? parseFloat(val) : null })}
+                    />
                     
                     {/* Check Button & RM Display */}
-                    <View style={{ width: 50, alignItems: 'center' }}>
+                    <View style={{ width: 40, alignItems: 'center' }}>
                       <TouchableOpacity 
                         style={[styles.checkBtn, set.is_completed && styles.checkBtnActive]}
                         onPress={() => toggleSetComplete(ex.id, set.id)}
                       >
-                        <Ionicons name="checkmark" size={20} color={set.is_completed ? '#fff' : Theme.colors.textMuted} />
+                        <Ionicons name="checkmark" size={18} color={set.is_completed ? '#fff' : Theme.colors.textMuted} />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -233,8 +242,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, paddingHorizontal: 4 },
   rowCompleted: { opacity: 0.7 },
   tdSet: { color: Theme.colors.text, width: 40, textAlign: 'center', fontSize: 16, fontWeight: '500' },
-  input: { backgroundColor: '#2a2a2a', color: Theme.colors.text, flex: 1, marginHorizontal: 4, borderRadius: 4, paddingVertical: 6, textAlign: 'center', fontSize: 16 },
-  checkBtn: { width: 50, height: 36, backgroundColor: '#333', borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
+  input: { backgroundColor: '#2a2a2a', color: Theme.colors.text, flex: 1, marginHorizontal: 3, borderRadius: 4, paddingVertical: 6, textAlign: 'center', fontSize: 16 },
+  checkBtn: { width: 36, height: 36, backgroundColor: '#333', borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
   checkBtnActive: { backgroundColor: Theme.colors.success },
   addSetBtn: { marginTop: 8, paddingVertical: 10, alignItems: 'center' },
   addSetBtnText: { color: Theme.colors.primary, fontSize: 16, fontWeight: '600' },

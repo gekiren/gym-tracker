@@ -31,7 +31,7 @@ export default function EditWorkoutScreen() {
     setData((prev: any) => ({ ...prev, title: text }));
   };
 
-  const handleChangeSet = (exIndex: number, setIndex: number, field: 'weight' | 'reps', value: string) => {
+  const handleChangeSet = (exIndex: number, setIndex: number, field: 'weight' | 'reps' | 'rpe', value: string) => {
     setData((prev: any) => {
       const copy = { ...prev };
       copy.exercises[exIndex].sets[setIndex][field] = value ? parseFloat(value) : null;
@@ -47,7 +47,7 @@ export default function EditWorkoutScreen() {
           if (s._deleted) {
             await deleteWorkoutSet(s.id);
           } else {
-            await updateWorkoutSet(s.id, s.weight, s.reps);
+            await updateWorkoutSet(s.id, s.weight, s.reps, s.rpe);
           }
         }
       }
@@ -117,7 +117,8 @@ export default function EditWorkoutScreen() {
               <Text style={[styles.th, { width: 40 }]}>Set</Text>
               <Text style={[styles.th, { flex: 1 }]}>Weight (kg)</Text>
               <Text style={[styles.th, { flex: 1 }]}>Reps</Text>
-              <Text style={[styles.th, { width: 40 }]}></Text>
+              <Text style={[styles.th, { width: 45 }]}>RPE</Text>
+              <Text style={[styles.th, { width: 36 }]}></Text>
             </View>
 
             {ex.sets.map((s: any, sIdx: number) => {
@@ -138,7 +139,13 @@ export default function EditWorkoutScreen() {
                     value={s.reps !== null ? String(s.reps) : ''}
                     onChangeText={(val) => handleChangeSet(exIdx, sIdx, 'reps', val)}
                   />
-                  <TouchableOpacity onPress={() => handleRemoveSet(exIdx, sIdx)} style={{ width: 40, alignItems: 'center' }}>
+                  <TextInput 
+                    style={[styles.input, { width: 45, flex: 0 }]} 
+                    keyboardType="numeric" 
+                    value={s.rpe !== null ? String(s.rpe) : ''}
+                    onChangeText={(val) => handleChangeSet(exIdx, sIdx, 'rpe', val)}
+                  />
+                  <TouchableOpacity onPress={() => handleRemoveSet(exIdx, sIdx)} style={{ width: 36, alignItems: 'center' }}>
                     <Ionicons name="trash-outline" size={20} color={Theme.colors.danger} />
                   </TouchableOpacity>
                 </View>

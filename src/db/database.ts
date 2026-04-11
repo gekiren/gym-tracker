@@ -437,9 +437,9 @@ export const loadFullWorkoutData = async (workoutId: number) => {
   };
 };
 
-export const updateWorkoutSet = async (setId: number, weight: number | null, reps: number | null) => {
+export const updateWorkoutSet = async (setId: number, weight: number | null, reps: number | null, rpe: number | null) => {
   const conn = getDB();
-  await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ? WHERE id = ?', [weight, reps, setId]);
+  await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ?, rpe = ? WHERE id = ?', [weight, reps, rpe, setId]);
 };
 
 export const deleteWorkoutSet = async (setId: number) => {
