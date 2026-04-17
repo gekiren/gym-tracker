@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, AppState } from 'react-native';
-import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, AppState, BackHandler, Modal } from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
 import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useWorkoutStore } from '../src/store/workoutStore';
@@ -19,6 +19,14 @@ export default function ActiveWorkoutScreen() {
   const [elapsed, setElapsed] = useState(0);
   const [showWorkoutNotes, setShowWorkoutNotes] = useState(false);
   const [expandedExerciseNotes, setExpandedExerciseNotes] = useState<Record<string, boolean>>({});
+
+  // プレート計算機用State
+  const [plateCalcVisible, setPlateCalcVisible] = useState(false);
+  const [plateCalcBar, setPlateCalcBar] = useState(20);
+  const [platesOnOneSide, setPlatesOnOneSide] = useState<number[]>([]);
+  const [activeSetForCalc, setActiveSetForCalc] = useState<{exId: number, setId: number} | null>(null);
+
+  const totalPlateWeight = plateCalcBar + (platesOnOneSide.reduce((a, b) => a + b, 0) * 2);
 
   useEffect(() => {
     if (!startTime) return;
@@ -58,6 +66,40 @@ export default function ActiveWorkoutScreen() {
       subscription.remove();
     };
   }, [tickRestTimer]);
+
+  const handleBack = useCallback(() => {
+    Alert.alert(
+      'ワークアウトの中断',
+      'ワークアウトを中止して終了しますか？\n中止せずに離れる場合はバックグラウンドで継続します。',
+      [
+        {
+          text: 'キャンセル',
+          style: 'cancel',
+        },
+        {
+          text: '中止せずに離れる',
+          style: 'default',
+          onPress: () => {
+            router.dismiss();
+          }
+        },
+        {
+          text: '中止して終了する',
+          style: 'destructive',
+          onPress: () => {
+            endWorkout();
+            router.dismiss();
+          }
+        }
+      ]
+    );
+    return true;
+  }, [endWorkout]);
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBack);
+    return () => backHandler.remove();
+  }, [handleBack]);
 
   const handleAdjustRest = (secs: number) => {
     adjustRestTimer(secs);
@@ -110,12 +152,15 @@ export default function ActiveWorkoutScreen() {
           headerStyle: { backgroundColor: Theme.colors.background },
           headerTintColor: Theme.colors.text,
           headerLeft: () => (
-            <TouchableOpacity onPress={() => router.dismiss()} style={{ marginLeft: 8 }}>
+            <TouchableOpacity onPress={handleBack} style={{ marginLeft: 8 }}>
               <Ionicons name="chevron-down" size={28} color={Theme.colors.primary} />
             </TouchableOpacity>
           ),
           headerRight: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity onPress={() => setPlateCalcVisible(true)} style={{ marginRight: 16 }}>
+                <Ionicons name="barbell-outline" size={26} color={Theme.colors.primary} />
+              </TouchableOpacity>
               {!restTimer.isActive && (
                 <TouchableOpacity onPress={handleManualTimer} style={{ marginRight: 16 }}>
                   <Ionicons name="timer-outline" size={26} color={Theme.colors.primary} />
@@ -160,7 +205,9 @@ export default function ActiveWorkoutScreen() {
         {exercises.map((ex) => (
           <View key={ex.id} style={styles.card}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.md }}>
-              <Text style={styles.exerciseTitle}>{ex.name}</Text>
+              <TouchableOpacity onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: ex.exercise_id || ex.id } } as any)}>
+                <Text style={styles.exerciseTitle}>{ex.name}</Text>
+              </TouchableOpacity>
               <TouchableOpacity onPress={() => setExpandedExerciseNotes(prev => ({ ...prev, [ex.id]: !prev[ex.id] }))}>
                 <Ionicons 
                   name={ex.notes ? "chatbubble-ellipses" : "chatbubble-outline"} 
@@ -215,6 +262,7 @@ export default function ActiveWorkoutScreen() {
                       placeholderTextColor="rgba(255,255,255,0.2)"
                       value={set.weight ? String(set.weight) : ''}
                       onChangeText={(val) => updateSet(ex.id, set.id, { weight: val ? parseFloat(val) : null })}
+                      onFocus={() => setActiveSetForCalc({ exId: ex.id, setId: set.id })}
                     />
                     <TextInput 
                       style={styles.input} 
@@ -288,6 +336,85 @@ export default function ActiveWorkoutScreen() {
           </View>
         </View>
       )}
+      {/* プレート計算機モーダル */}
+      <Modal visible={plateCalcVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.md }}>
+              <Text style={styles.modalTitle}>バーとプレート計算</Text>
+              <TouchableOpacity onPress={() => setPlateCalcVisible(false)}>
+                <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.calcResultContainer}>
+              <Text style={styles.calcResultText}>{totalPlateWeight} kg</Text>
+              <Text style={styles.calcFormulaText}>
+                バー {plateCalcBar}kg + 片側 {platesOnOneSide.reduce((a,b)=>a+b, 0)}kg × 2
+              </Text>
+            </View>
+
+            {/* バーの選択 */}
+            <Text style={styles.sectionTitle}>バーの重さ</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
+              {[20, 15, 10].map(w => (
+                <TouchableOpacity
+                  key={w}
+                  style={[styles.barBtn, plateCalcBar === w && styles.barBtnActive]}
+                  onPress={() => setPlateCalcBar(w)}
+                >
+                  <Text style={[styles.barBtnText, plateCalcBar === w && styles.barBtnTextActive]}>{w} kg</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={{ height: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: Theme.spacing.md, backgroundColor: '#000', borderRadius: 8, overflow: 'hidden' }}>
+              <View style={{ width: 10, height: '100%', backgroundColor: '#666' }} />
+              {/* 真ん中のバー部分 */}
+              <View style={{ flex: 1, height: 16, backgroundColor: '#888', flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center' }}>
+                {/* プレートの描画 (内側から外側へ) */}
+                {platesOnOneSide.map((p, i) => (
+                  <View key={i} style={[styles.plateVisual, { height: p >= 15 ? 46 : p >= 5 ? 30 : 20, width: p >= 15 ? 12 : 8, backgroundColor: Theme.colors.primary }]} />
+                ))}
+              </View>
+            </View>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <Text style={styles.sectionTitle}>追加するプレート (片側)</Text>
+              <TouchableOpacity onPress={() => setPlatesOnOneSide(prev => prev.slice(0, -1))} disabled={platesOnOneSide.length === 0}>
+                 <Text style={{ color: platesOnOneSide.length > 0 ? Theme.colors.danger : Theme.colors.textMuted }}>元に戻す</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: Theme.spacing.lg }}>
+              {[25, 20, 15, 10, 5, 2.5, 1.25].map(w => (
+                <TouchableOpacity
+                  key={w}
+                  style={styles.plateBtn}
+                  onPress={() => setPlatesOnOneSide(prev => [...prev, w])}
+                >
+                  <Text style={styles.plateBtnText}>+ {w}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={styles.applyBtn}
+              onPress={() => {
+                if (activeSetForCalc) {
+                  updateSet(activeSetForCalc.exId, activeSetForCalc.setId, { weight: totalPlateWeight });
+                  Alert.alert('反映完了', `${totalPlateWeight}kgをセットに入力しました。`);
+                } else {
+                  Alert.alert('エラー', '反映先のセットを選択(タップ)してからお試しください。');
+                }
+                setPlateCalcVisible(false);
+              }}
+            >
+              <Text style={styles.applyBtnText}>入力中のセットに反映する</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -338,5 +465,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     minHeight: 40,
     textAlignVertical: 'top'
-  }
+  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { width: '90%', backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.lg, maxHeight: '90%' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
+  calcResultContainer: { alignItems: 'center', backgroundColor: '#1a1a1a', padding: 16, borderRadius: Theme.borderRadius.md, marginBottom: Theme.spacing.md },
+  calcResultText: { fontSize: 36, fontWeight: 'bold', color: Theme.colors.primary, marginBottom: 4 },
+  calcFormulaText: { fontSize: 14, color: Theme.colors.textMuted },
+  sectionTitle: { fontSize: 14, color: Theme.colors.textMuted, marginBottom: 8, fontWeight: 'bold' },
+  barBtn: { flex: 1, marginHorizontal: 4, paddingVertical: 12, backgroundColor: '#111', borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#333' },
+  barBtnActive: { borderColor: Theme.colors.primary, backgroundColor: 'rgba(79, 172, 254, 0.1)' },
+  barBtnText: { color: Theme.colors.textMuted, fontSize: 14, fontWeight: 'bold' },
+  barBtnTextActive: { color: Theme.colors.primary },
+  plateVisual: { marginHorizontal: 1, borderRadius: 2 },
+  plateBtn: { paddingVertical: 12, paddingHorizontal: 16, backgroundColor: '#222', borderRadius: 8, minWidth: '22%', alignItems: 'center' },
+  plateBtnText: { color: Theme.colors.text, fontWeight: 'bold', fontSize: 14 },
+  applyBtn: { backgroundColor: Theme.colors.primary, paddingVertical: 14, borderRadius: Theme.borderRadius.md, alignItems: 'center', marginTop: 8 },
+  applyBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
 });

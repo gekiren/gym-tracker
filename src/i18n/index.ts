@@ -37,8 +37,7 @@ export const getCurrentLanguage = () => i18n.language;
  */
 export const translateExercise = (name: string): string => {
   const key = `exercises.${name}`;
-  const translated = i18n.t(key);
-  // i18next は未知のキーでキーそのものを返すのでそのまま利用できる
+  const translated = i18n.t(key, { defaultValue: name });
   return translated;
 };
 

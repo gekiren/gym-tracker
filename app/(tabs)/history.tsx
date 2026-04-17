@@ -116,13 +116,15 @@ export default function HistoryScreen() {
         </View>
       ) : (
         workouts.map(w => (
-          <View key={w.id} style={styles.card}>
+          <TouchableOpacity 
+            key={w.id} 
+            style={styles.card}
+            activeOpacity={0.7}
+            onPress={() => router.push({ pathname: '/workout-details/[id]', params: { id: w.id } } as any)}
+          >
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>{w.title}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <TouchableOpacity onPress={() => router.push({ pathname: '/edit-workout/[id]', params: { id: w.id } } as any)} style={[styles.exportIcon, { backgroundColor: 'rgba(255,255,255,0.1)', marginRight: 8 }]}>
-                  <Ionicons name="pencil" size={18} color={Theme.colors.text} />
-                </TouchableOpacity>
                 <TouchableOpacity onPress={() => handleExportMarkdown(w.id)} style={[styles.exportIcon, { marginRight: 8 }]}>
                   <Ionicons name="share-social" size={18} color={Theme.colors.primary} />
                 </TouchableOpacity>

@@ -23,6 +23,7 @@ export default function SelectExerciseScreen() {
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('すべて');
+  const [selectedEquipment, setSelectedEquipment] = useState<string>('すべて');
   const [isModalVisible, setModalVisible] = useState(false);
   const [newName, setNewName] = useState('');
   const [newGroup, setNewGroup] = useState('胸');
@@ -97,12 +98,15 @@ export default function SelectExerciseScreen() {
   const allCategories = Array.from(new Set(['胸', '背中', '肩', '腕', '脚', '腹筋', ...dynamicCategories])).filter(c => c !== 'その他');
   const filterCategories = ['すべて', ...allCategories, 'その他'];
   const allEquipments = Array.from(new Set(['バーベル', 'ダンベル', 'マシン', 'ケーブル', 'スミスマシン', 'EZバー', '自重', 'ウエイト', ...exercises.map(e => e.equipment).filter(Boolean)])).filter(e => e !== 'その他');
+  const filterEquipments = ['すべて', ...allEquipments, 'その他'];
 
   const filtered = exercises.filter(e => {
     const matchSearch = e.name.toLowerCase().includes(search.toLowerCase()) || e.muscle_group?.includes(search);
     const matchCategory = selectedCategory === 'すべて' ||
       (selectedCategory === 'その他' ? !allCategories.includes(e.muscle_group) : e.muscle_group === selectedCategory);
-    return matchSearch && matchCategory;
+    const matchEquipment = selectedEquipment === 'すべて' ||
+      (selectedEquipment === 'その他' ? !allEquipments.includes(e.equipment) : e.equipment === selectedEquipment);
+    return matchSearch && matchCategory && matchEquipment;
   });
 
   const favItems = filtered.filter(e => favoriteIds.has(e.id));
@@ -210,7 +214,7 @@ export default function SelectExerciseScreen() {
       </View>
 
       {/* Category Filter Chips */}
-      <View style={{ height: 40, marginBottom: Theme.spacing.md }}>
+      <View style={{ height: 40, marginBottom: 8 }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipContainer}>
           {filterCategories.map(cat => (
             <TouchableOpacity
@@ -218,7 +222,22 @@ export default function SelectExerciseScreen() {
               style={[styles.chip, selectedCategory === cat && styles.chipActive]}
               onPress={() => setSelectedCategory(cat)}
             >
-              <Text style={[styles.chipText, selectedCategory === cat && styles.chipTextActive]}>{cat}</Text>
+              <Text style={[styles.chipText, selectedCategory === cat && styles.chipTextActive]}>{translateMuscleGroup(cat)}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Equipment Filter Chips */}
+      <View style={{ height: 40, marginBottom: Theme.spacing.md }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipContainer}>
+          {filterEquipments.map(equip => (
+            <TouchableOpacity
+              key={equip}
+              style={[styles.chip, selectedEquipment === equip && { backgroundColor: 'rgba(79, 172, 254, 0.1)', borderColor: 'rgba(79, 172, 254, 0.5)' }]}
+              onPress={() => setSelectedEquipment(equip)}
+            >
+              <Text style={[styles.chipText, selectedEquipment === equip && styles.chipTextActive]}>{equip === 'すべて' || equip === 'その他' ? equip : translateEquipment(equip)}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
