@@ -7,10 +7,12 @@ import { loadFullWorkoutData } from '../../src/db/database';
 import { Theme } from '../../src/theme';
 import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../../src/i18n';
+import { useWorkoutStore } from '../../src/store/workoutStore';
 
 export default function WorkoutDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
+  const { settings } = useWorkoutStore();
   const [workout, setWorkout] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -109,7 +111,7 @@ export default function WorkoutDetailsScreen() {
 
             <View style={styles.tableHeader}>
               <Text style={[styles.th, { width: 40 }]}>Set</Text>
-              <Text style={[styles.th, { flex: 1 }]}>kg</Text>
+              <Text style={[styles.th, { flex: 1 }]}>{settings.weightUnit}</Text>
               <Text style={[styles.th, { flex: 1 }]}>Reps</Text>
               <Text style={[styles.th, { width: 45 }]}>RPE</Text>
               <Text style={[styles.th, { flex: 1 }]}>1RM</Text>

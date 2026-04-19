@@ -3,8 +3,12 @@ import { useState } from 'react';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../src/theme';
+import { useTranslation } from 'react-i18next';
+import { useWorkoutStore } from '../src/store/workoutStore';
 
 export default function RMCalculatorScreen() {
+  const { t } = useTranslation();
+  const { settings } = useWorkoutStore();
   const [weight, setWeight] = useState('60');
   const [reps, setReps] = useState('10');
 
@@ -52,7 +56,7 @@ export default function RMCalculatorScreen() {
             
             <View style={styles.inputRow}>
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>重量 (kg)</Text>
+                    <Text style={styles.label}>{t('ui.rm_calc.weight')} ({settings.weightUnit})</Text>
                     <TextInput 
                         style={styles.input}
                         keyboardType="numeric"
@@ -78,7 +82,7 @@ export default function RMCalculatorScreen() {
                     <Text style={styles.resultLabel}>推定 1 RM</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
                         <Text style={styles.resultValue}>{Math.round(estimated1RM)}</Text>
-                        <Text style={styles.resultUnit}>kg</Text>
+                        <Text style={styles.resultUnit}>{settings.weightUnit}</Text>
                     </View>
                 </View>
             )}
@@ -100,7 +104,7 @@ export default function RMCalculatorScreen() {
                     {rmList.map((item) => (
                         <View key={item.rep} style={[styles.tableRow, item.rep === rNum && styles.highlightRow]}>
                             <Text style={styles.tdRep}>{item.rep}</Text>
-                            <Text style={styles.tdWeight}>{item.weight} kg</Text>
+                            <Text style={styles.tdWeight}>{item.weight} {settings.weightUnit}</Text>
                             <Text style={styles.tdPercent}>{item.percent}%</Text>
                         </View>
                     ))}

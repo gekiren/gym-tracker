@@ -9,8 +9,10 @@ import { getDB, loadFullWorkoutData, deleteWorkout } from '../../src/db/database
 import { Theme } from '../../src/theme';
 import { formatWorkoutToMarkdown } from '../../src/utils/markdownExport';
 import { useFocusEffect, router } from 'expo-router';
+import { useWorkoutStore } from '../../src/store/workoutStore';
 
 export default function HistoryScreen() {
+  const { settings } = useWorkoutStore();
   const [workouts, setWorkouts] = useState<any[]>([]);
 
   useFocusEffect(
@@ -86,7 +88,7 @@ export default function HistoryScreen() {
       
       {chartData && (
         <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>最近の総ボリューム (kg)</Text>
+          <Text style={styles.chartTitle}>最近の総ボリューム ({settings.weightUnit})</Text>
           <LineChart
             data={chartData}
             width={Dimensions.get('window').width - Theme.spacing.md * 2}
@@ -156,10 +158,10 @@ export default function HistoryScreen() {
               </View>
               <View style={styles.statBlock}>
                 <Text style={styles.statLabel}>ボリューム</Text>
-                <Text style={styles.statValue}>{w.volume ? w.volume + ' kg' : '-'}</Text>
+                <Text style={styles.statValue}>{w.volume ? `${w.volume} ${settings.weightUnit}` : '-'}</Text>
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
         ))
       )}
     </ScrollView>

@@ -15,23 +15,31 @@ export default function ProfileScreen() {
   const { settings, loadSettings } = useWorkoutStore();
   const [defaultRest, setDefaultRest] = useState(settings.defaultRest);
   const [autoRest, setAutoRest] = useState(settings.autoRest);
+  const [weightUnit, setWeightUnit] = useState(settings.weightUnit);
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
 
   useEffect(() => {
     setDefaultRest(settings.defaultRest);
     setAutoRest(settings.autoRest);
+    setWeightUnit(settings.weightUnit);
   }, [settings]);
 
   const handleUpdateRest = async (secs: number) => {
     setDefaultRest(secs);
-    loadSettings(secs, autoRest);
+    loadSettings(secs, autoRest, weightUnit);
     await saveSetting('default_rest_timer', secs.toString());
   };
 
   const handleUpdateAuto = async (val: boolean) => {
     setAutoRest(val);
-    loadSettings(defaultRest, val);
+    loadSettings(defaultRest, val, weightUnit);
     await saveSetting('auto_rest_timer', val ? '1' : '0');
+  };
+
+  const handleUpdateUnit = async (unit: 'kg' | 'lbs') => {
+    setWeightUnit(unit);
+    loadSettings(defaultRest, autoRest, unit);
+    await saveSetting('weight_unit', unit);
   };
 
   const handleChangeLanguage = async (lang: 'ja' | 'en') => {
@@ -117,14 +125,31 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Language Section */}
+      {/* Preference Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Ionicons name="language-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>{t('ui.profile.section_language')}</Text>
+          <Ionicons name="settings-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+          <Text style={styles.sectionTitle}>環境設定</Text>
         </View>
 
         <View style={styles.settingCard}>
+          <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>重量の単位</Text>
+            <View style={[styles.chipContainer, { marginTop: 0, gap: 4 }]}>
+              <TouchableOpacity
+                style={[styles.langChip, { paddingVertical: 8, paddingHorizontal: 16 }, weightUnit === 'kg' && styles.chipActive]}
+                onPress={() => handleUpdateUnit('kg')}
+              >
+                <Text style={[styles.chipText, weightUnit === 'kg' && styles.chipTextActive]}>kg</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.langChip, { paddingVertical: 8, paddingHorizontal: 16 }, weightUnit === 'lbs' && styles.chipActive]}
+                onPress={() => handleUpdateUnit('lbs')}
+              >
+                <Text style={[styles.chipText, weightUnit === 'lbs' && styles.chipTextActive]}>lbs</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
           <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'flex-start' }]}>
             <Text style={styles.settingLabel}>{t('ui.profile.language_label')}</Text>
             <View style={[styles.chipContainer, { marginTop: 12 }]}>

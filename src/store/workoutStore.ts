@@ -51,8 +51,10 @@ interface WorkoutState {
   settings: {
     defaultRest: number;
     autoRest: boolean;
+    weightUnit: 'kg' | 'lbs';
+    needsUnitSelection: boolean;
   };
-  loadSettings: (defaultRest: number, autoRest: boolean) => void;
+  loadSettings: (defaultRest: number, autoRest: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean) => void;
 
   // Routine Draft Mode
   draftRoutine: {
@@ -75,11 +77,13 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
   settings: {
     defaultRest: 90,
-    autoRest: true
+    autoRest: true,
+    weightUnit: 'kg',
+    needsUnitSelection: false
   },
 
-  loadSettings: (defaultRest: number, autoRest: boolean) => set({
-    settings: { defaultRest, autoRest }
+  loadSettings: (defaultRest: number, autoRest: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false) => set({
+    settings: { defaultRest, autoRest, weightUnit, needsUnitSelection }
   }),
 
   draftRoutine: { title: '', exercises: [] },

@@ -4,11 +4,13 @@ import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
 import { loadFullWorkoutData, updateWorkoutTitle, updateWorkoutSet, deleteWorkoutSet, updateWorkoutOverallNotes, updateWorkoutExerciseNotes } from '../../src/db/database';
+import { useWorkoutStore } from '../../src/store/workoutStore';
 
 export default function EditWorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { settings } = useWorkoutStore();
 
   useEffect(() => {
     if (id) {
@@ -138,7 +140,7 @@ export default function EditWorkoutScreen() {
             
             <View style={styles.tableHeader}>
               <Text style={[styles.th, { width: 40 }]}>Set</Text>
-              <Text style={[styles.th, { flex: 1 }]}>Weight (kg)</Text>
+              <Text style={[styles.th, { flex: 1 }]}>{settings.weightUnit}</Text>
               <Text style={[styles.th, { flex: 1 }]}>Reps</Text>
               <Text style={[styles.th, { width: 45 }]}>RPE</Text>
               <Text style={[styles.th, { width: 36 }]}></Text>

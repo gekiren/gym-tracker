@@ -28,6 +28,9 @@ export default function RootLayout() {
       const storedSettings = await getSettings();
       const defaultRest = storedSettings['default_rest_timer'] ? parseInt(storedSettings['default_rest_timer'], 10) : 90;
       const autoRest = storedSettings['auto_rest_timer'] ? storedSettings['auto_rest_timer'] === '1' : true;
+      
+      const needsUnitSelection = !storedSettings['weight_unit'];
+      const weightUnit = (storedSettings['weight_unit'] === 'lbs' ? 'lbs' : 'kg') as 'kg' | 'lbs';
 
       // 言語設定：保存済みならそれを使用、なければ端末言語を初回のみ検知して保存
       if (storedSettings['language']) {
@@ -41,7 +44,7 @@ export default function RootLayout() {
         await saveSetting('language', initialLang);
       }
       
-      useWorkoutStore.getState().loadSettings(defaultRest, autoRest);
+      useWorkoutStore.getState().loadSettings(defaultRest, autoRest, weightUnit, needsUnitSelection);
       console.log('Database initialized successfully with settings', storedSettings);
       setDbReady(true);
     } catch (e: any) {

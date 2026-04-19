@@ -5,12 +5,14 @@ import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { getExerciseById, getExerciseHistory } from '../../src/db/database';
 import { Theme } from '../../src/theme';
+import { useWorkoutStore } from '../../src/store/workoutStore';
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [exercise, setExercise] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { settings } = useWorkoutStore();
 
   useEffect(() => {
     if (!id) return;
@@ -44,7 +46,7 @@ export default function ExerciseDetailScreen() {
     history.forEach(item => {
       const dateStr = formatDate(item.start_time);
       item.sets.forEach((s: any) => {
-        md += `| ${dateStr} | ${s.set_number} | ${s.weight ? s.weight + 'kg' : '-'} | ${s.reps ? s.reps + '回' : '-'} | ${s.rpe || '-'} |\n`;
+        md += `| ${dateStr} | ${s.set_number} | ${s.weight ? s.weight + settings.weightUnit : '-'} | ${s.reps ? s.reps + '回' : '-'} | ${s.rpe || '-'} |\n`;
       });
     });
 
@@ -124,7 +126,7 @@ export default function ExerciseDetailScreen() {
                 <View key={idx} style={styles.setRow}>
                   <Text style={styles.tdSet}>{s.set_number}</Text>
                   <Text style={styles.tdVal}>
-                    {s.weight ? `${s.weight} kg` : '-'}  ×  {s.reps ? `${s.reps} 回` : '-'}
+                    {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps} 回` : '-'}
                   </Text>
                   {s.rpe && <Text style={styles.tdRpe}>@RPE {s.rpe}</Text>}
                 </View>

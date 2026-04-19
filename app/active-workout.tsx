@@ -13,7 +13,7 @@ export default function ActiveWorkoutScreen() {
     title, startTime, workoutNotes, exercises, endWorkout, 
     updateWorkoutNotes, updateExerciseNotes,
     addExercise, addSet, toggleSetComplete, updateSet, 
-    restTimer, stopRestTimer, adjustRestTimer, tickRestTimer 
+    restTimer, stopRestTimer, adjustRestTimer, tickRestTimer, settings
   } = useWorkoutStore();
   
   const [elapsed, setElapsed] = useState(0);
@@ -25,6 +25,11 @@ export default function ActiveWorkoutScreen() {
   const [plateCalcBar, setPlateCalcBar] = useState(20);
   const [platesOnOneSide, setPlatesOnOneSide] = useState<number[]>([]);
   const [activeSetForCalc, setActiveSetForCalc] = useState<{exId: number, setId: number} | null>(null);
+
+  useEffect(() => {
+    setPlateCalcBar(settings.weightUnit === 'lbs' ? 45 : 20);
+    setPlatesOnOneSide([]);
+  }, [settings.weightUnit]);
 
   const totalPlateWeight = plateCalcBar + (platesOnOneSide.reduce((a, b) => a + b, 0) * 2);
 
@@ -227,13 +232,13 @@ export default function ActiveWorkoutScreen() {
                 onChangeText={(val) => updateExerciseNotes(ex.id, val)}
               />
             )}
-            <View style={styles.tableHeader}>
-              <Text style={[styles.th, { width: 40 }]}>セット</Text>
-              <Text style={[styles.th, { flex: 1 }]}>kg</Text>
-              <Text style={[styles.th, { flex: 1 }]}>回数</Text>
-              <Text style={[styles.th, { width: 45 }]}>RPE</Text>
-              <Text style={[styles.th, { width: 40 }]}></Text>
-            </View>
+              <View style={styles.tableHeader}>
+                <Text style={[styles.th, { width: 40 }]}>Set</Text>
+                <Text style={[styles.th, { flex: 1 }]}>{settings.weightUnit}</Text>
+                <Text style={[styles.th, { flex: 1 }]}>Reps</Text>
+                <Text style={[styles.th, { width: 45 }]}>RPE</Text>
+                <Text style={[styles.th, { width: 36 }]}></Text>
+              </View>
 
             {ex.sets.map((set, idx) => {
               const currentRM = calculateRM(set.weight, set.reps);
@@ -348,22 +353,22 @@ export default function ActiveWorkoutScreen() {
             </View>
 
             <View style={styles.calcResultContainer}>
-              <Text style={styles.calcResultText}>{totalPlateWeight} kg</Text>
+              <Text style={styles.calcResultText}>{totalPlateWeight} {settings.weightUnit}</Text>
               <Text style={styles.calcFormulaText}>
-                バー {plateCalcBar}kg + 片側 {platesOnOneSide.reduce((a,b)=>a+b, 0)}kg × 2
+                バー {plateCalcBar}{settings.weightUnit} + 片側 {platesOnOneSide.reduce((a,b)=>a+b, 0)}{settings.weightUnit} × 2
               </Text>
             </View>
 
             {/* バーの選択 */}
             <Text style={styles.sectionTitle}>バーの重さ</Text>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
-              {[20, 15, 10].map(w => (
+              {(settings.weightUnit === 'lbs' ? [45, 35] : [20, 15, 10]).map(w => (
                 <TouchableOpacity
                   key={w}
                   style={[styles.barBtn, plateCalcBar === w && styles.barBtnActive]}
                   onPress={() => setPlateCalcBar(w)}
                 >
-                  <Text style={[styles.barBtnText, plateCalcBar === w && styles.barBtnTextActive]}>{w} kg</Text>
+                  <Text style={[styles.barBtnText, plateCalcBar === w && styles.barBtnTextActive]}>{w} {settings.weightUnit}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -373,9 +378,39 @@ export default function ActiveWorkoutScreen() {
               {/* 真ん中のバー部分 */}
               <View style={{ flex: 1, height: 16, backgroundColor: '#888', flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center' }}>
                 {/* プレートの描画 (内側から外側へ) */}
-                {platesOnOneSide.map((p, i) => (
-                  <View key={i} style={[styles.plateVisual, { height: p >= 15 ? 46 : p >= 5 ? 30 : 20, width: p >= 15 ? 12 : 8, backgroundColor: Theme.colors.primary }]} />
-                ))}
+                {platesOnOneSide.map((p, i) => {
+                  let h = 20, w = 8, color = Theme.colors.primary;
+                  if (settings.weightUnit === 'lbs') {
+                    switch (p) {
+                      case 45: h = 56; w = 30; color = '#e53935'; break; // 赤
+                      case 35: h = 56; w = 30; color = '#1e88e5'; break; // 青
+                      case 25: h = 48; w = 30; color = '#43a047'; break; // 緑
+                      case 10: h = 40; w = 30; color = '#eeeeee'; break; // 白
+                      case 5: h = 30; w = 30; color = '#424242'; break; // 黒に近いグレー
+                      case 2.5: h = 24; w = 30; color = '#ff9800'; break; // オレンジ系に変更
+                    }
+                  } else {
+                    switch (p) {
+                      case 25: h = 56; w = 30; color = '#e53935'; break; // 赤
+                      case 20: h = 56; w = 30; color = '#1e88e5'; break; // 青
+                      case 15: h = 48; w = 30; color = '#fbc02d'; break; // 黄
+                      case 10: h = 40; w = 30; color = '#43a047'; break; // 緑
+                      case 5: h = 30; w = 30; color = '#eeeeee'; break; // 白
+                      case 2.5: h = 24; w = 30; color = '#424242'; break; // 黒に近いグレー
+                      case 1.25: h = 18; w = 30; color = '#ff9800'; break; // オレンジ系に変更
+                    }
+                  }
+                  const slopY = Math.max(0, (56 - h) / 2);
+                  return (
+                    <TouchableOpacity 
+                      key={i} 
+                      onPress={() => setPlatesOnOneSide(prev => prev.filter((_, index) => index !== i))}
+                      activeOpacity={0.7}
+                      hitSlop={{ top: slopY, bottom: slopY, left: 4, right: 4 }}
+                      style={[styles.plateVisual, { height: h, width: w, backgroundColor: color }]} 
+                    />
+                  );
+                })}
               </View>
             </View>
 
@@ -387,7 +422,7 @@ export default function ActiveWorkoutScreen() {
             </View>
 
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: Theme.spacing.lg }}>
-              {[25, 20, 15, 10, 5, 2.5, 1.25].map(w => (
+              {(settings.weightUnit === 'lbs' ? [45, 35, 25, 10, 5, 2.5] : [25, 20, 15, 10, 5, 2.5, 1.25]).map(w => (
                 <TouchableOpacity
                   key={w}
                   style={styles.plateBtn}
@@ -403,7 +438,7 @@ export default function ActiveWorkoutScreen() {
               onPress={() => {
                 if (activeSetForCalc) {
                   updateSet(activeSetForCalc.exId, activeSetForCalc.setId, { weight: totalPlateWeight });
-                  Alert.alert('反映完了', `${totalPlateWeight}kgをセットに入力しました。`);
+                  Alert.alert('反映完了', `${totalPlateWeight}${settings.weightUnit}をセットに入力しました。`);
                 } else {
                   Alert.alert('エラー', '反映先のセットを選択(タップ)してからお試しください。');
                 }
