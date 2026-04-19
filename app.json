@@ -20,6 +20,7 @@
       "supportsTablet": true
     },
     "android": {
+      "softwareKeyboardLayoutMode": "resize",
       "package": "com.gekirennomad.trenote",
       "adaptiveIcon": {
         "backgroundColor": "#000000",
