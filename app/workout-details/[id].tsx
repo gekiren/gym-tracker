@@ -98,9 +98,13 @@ export default function WorkoutDetailsScreen() {
 
         {workout.exercises.map((ex: any) => (
           <View key={ex.workout_exercise_id} style={styles.card}>
-            <View style={styles.exerciseHeader}>
+            <TouchableOpacity 
+              style={styles.exerciseHeader}
+              onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: ex.exercise_id } } as any)}
+            >
               <Text style={styles.exerciseTitle}>{translateExercise(ex.exercise_name)}</Text>
-            </View>
+              <Ionicons name="chevron-forward" size={16} color={Theme.colors.primary} />
+            </TouchableOpacity>
 
             {ex.notes ? (
               <View style={styles.exerciseNotes}>
@@ -119,13 +123,29 @@ export default function WorkoutDetailsScreen() {
 
             {ex.sets.map((set: any, idx: number) => {
               const currentRM = calculateRM(set.weight, set.reps);
+              let timeStr = '';
+              const fmtTime = (secs: number) => {
+                const m = Math.floor(secs / 60);
+                const s = secs % 60;
+                return m > 0 ? `${m}m${s.toString().padStart(2, '0')}s` : `${s}s`;
+              };
+              if (set.work_seconds != null) timeStr += `⏱️ ${fmtTime(set.work_seconds)} `;
+              if (set.rest_seconds != null) timeStr += `☕ ${fmtTime(set.rest_seconds)}`;
+              timeStr = timeStr.trim();
               return (
-                <View key={set.id} style={styles.row}>
-                  <Text style={styles.tdSet}>{set.set_number}</Text>
-                  <Text style={styles.tdValue}>{set.weight ?? '-'}</Text>
-                  <Text style={styles.tdValue}>{set.reps ?? '-'}</Text>
-                  <Text style={[styles.tdValue, { width: 45, flex: 0 }]}>{set.rpe ?? '-'}</Text>
-                  <Text style={[styles.tdValue, { color: Theme.colors.primary }]}>{currentRM ?? '-'}</Text>
+                <View key={set.id} style={{ borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', paddingVertical: 8 }}>
+                  <View style={[styles.row, { borderBottomWidth: 0, paddingVertical: 0 }]}>
+                    <Text style={styles.tdSet}>{set.set_number}</Text>
+                    <Text style={styles.tdValue}>{set.weight ?? '-'}</Text>
+                    <Text style={styles.tdValue}>{set.reps ?? '-'}</Text>
+                    <Text style={[styles.tdValue, { width: 45, flex: 0 }]}>{set.rpe ?? '-'}</Text>
+                    <Text style={[styles.tdValue, { color: Theme.colors.primary }]}>{currentRM ?? '-'}</Text>
+                  </View>
+                  {timeStr ? (
+                    <Text style={{ textAlign: 'right', fontSize: 11, color: Theme.colors.textMuted, marginRight: 12, marginTop: 4 }}>
+                      {timeStr}
+                    </Text>
+                  ) : null}
                 </View>
               );
             })}

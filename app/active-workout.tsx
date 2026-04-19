@@ -12,7 +12,7 @@ export default function ActiveWorkoutScreen() {
   const { 
     title, startTime, workoutNotes, exercises, endWorkout, 
     updateWorkoutNotes, updateExerciseNotes,
-    addExercise, addSet, toggleSetComplete, updateSet, 
+    addExercise, addSet, removeSet, toggleSetComplete, updateSet, 
     restTimer, stopRestTimer, adjustRestTimer, tickRestTimer, settings
   } = useWorkoutStore();
   
@@ -24,7 +24,7 @@ export default function ActiveWorkoutScreen() {
   const [plateCalcVisible, setPlateCalcVisible] = useState(false);
   const [plateCalcBar, setPlateCalcBar] = useState(20);
   const [platesOnOneSide, setPlatesOnOneSide] = useState<number[]>([]);
-  const [activeSetForCalc, setActiveSetForCalc] = useState<{exId: number, setId: number} | null>(null);
+  const [activeSetForCalc, setActiveSetForCalc] = useState<{exId: string, setId: string} | null>(null);
 
   useEffect(() => {
     setPlateCalcBar(settings.weightUnit === 'lbs' ? 45 : 20);
@@ -240,73 +240,20 @@ export default function ActiveWorkoutScreen() {
                 <Text style={[styles.th, { width: 36 }]}></Text>
               </View>
 
-            {ex.sets.map((set, idx) => {
-              const currentRM = calculateRM(set.weight, set.reps);
-              
-              let timeTakenStr = '';
-              if (set.is_completed && set.completedAt && startTime) {
-                const prevTime = idx === 0 
-                  ? new Date(startTime).getTime() 
-                  : ex.sets[idx - 1].completedAt || new Date(startTime).getTime();
-                const diffSecs = Math.floor((set.completedAt - prevTime) / 1000);
-                if (diffSecs > 0) {
-                  const m = Math.floor(diffSecs / 60);
-                  const s = diffSecs % 60;
-                  timeTakenStr = m > 0 ? `${m}m${s}s` : `${s}s`;
-                }
-              }
-
-              return (
-                <View key={set.id}>
-                  <View style={[styles.row, set.is_completed && styles.rowCompleted]}>
-                    <Text style={styles.tdSet}>{set.set_number}</Text>
-                    <TextInput 
-                      style={styles.input} 
-                      keyboardType="numeric" 
-                      placeholder={set.prev_weight ? String(set.prev_weight) : "-"} 
-                      placeholderTextColor="rgba(255,255,255,0.2)"
-                      value={set.weight ? String(set.weight) : ''}
-                      onChangeText={(val) => updateSet(ex.id, set.id, { weight: val ? parseFloat(val) : null })}
-                      onFocus={() => setActiveSetForCalc({ exId: ex.id, setId: set.id })}
-                    />
-                    <TextInput 
-                      style={styles.input} 
-                      keyboardType="numeric" 
-                      placeholder={set.prev_reps ? String(set.prev_reps) : "-"} 
-                      placeholderTextColor="rgba(255,255,255,0.2)"
-                      value={set.reps ? String(set.reps) : ''}
-                      onChangeText={(val) => updateSet(ex.id, set.id, { reps: val ? parseInt(val, 10) : null })}
-                    />
-                    <TextInput 
-                      style={[styles.input, { width: 45, flex: 0 }]} 
-                      keyboardType="numeric" 
-                      placeholder="-" 
-                      placeholderTextColor="rgba(255,255,255,0.2)"
-                      value={set.rpe ? String(set.rpe) : ''}
-                      onChangeText={(val) => updateSet(ex.id, set.id, { rpe: val ? parseFloat(val) : null })}
-                    />
-                    
-                    {/* Check Button & RM Display */}
-                    <View style={{ width: 40, alignItems: 'center' }}>
-                      <TouchableOpacity 
-                        style={[styles.checkBtn, set.is_completed && styles.checkBtnActive]}
-                        onPress={() => toggleSetComplete(ex.id, set.id)}
-                      >
-                        <Ionicons name="checkmark" size={18} color={set.is_completed ? '#fff' : Theme.colors.textMuted} />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                  
-                  {/* Meta Row (RM & Time) */}
-                  {(currentRM != null || timeTakenStr) && (
-                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingRight: 8, marginBottom: 8, marginTop: -4 }}>
-                       {currentRM != null && <Text style={{ color: Theme.colors.primary, fontSize: 11, marginRight: 12 }}>1RM {currentRM}</Text>}
-                       {timeTakenStr ? <Text style={{ color: Theme.colors.success, fontSize: 11 }}>{timeTakenStr}</Text> : null}
-                    </View>
-                  )}
-                </View>
-              );
-            })}
+            {ex.sets.map((set, idx) => (
+              <SetInputRow
+                key={set.id}
+                ex={ex}
+                set={set}
+                idx={idx}
+                updateSet={updateSet}
+                toggleSetComplete={toggleSetComplete}
+                removeSet={removeSet}
+                setActiveSetForCalc={setActiveSetForCalc}
+                calculateRM={calculateRM}
+                startTime={startTime}
+              />
+            ))}
 
             <TouchableOpacity style={styles.addSetBtn} onPress={() => addSet(ex.id)}>
               <Text style={styles.addSetBtnText}>+ セット追加</Text>
@@ -450,6 +397,158 @@ export default function ActiveWorkoutScreen() {
           </View>
         </View>
       </Modal>
+    </View>
+  );
+}
+
+function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, setActiveSetForCalc, calculateRM, startTime }: any) {
+  const [localWeight, setLocalWeight] = useState(set.weight != null ? String(set.weight) : '');
+  const [localReps, setLocalReps] = useState(set.reps != null ? String(set.reps) : '');
+  const [localRpe, setLocalRpe] = useState(set.rpe != null ? String(set.rpe) : '');
+
+  // 外部からの更新（プレート計算アプリなどでストアから値が変わった場合）を検知して同期
+  useEffect(() => {
+    if (set.weight != null) {
+      if (parseFloat(localWeight) !== set.weight) setLocalWeight(String(set.weight));
+    } else {
+      setLocalWeight('');
+    }
+  }, [set.weight]);
+
+  useEffect(() => {
+    if (set.reps != null) {
+      if (parseInt(localReps, 10) !== set.reps) setLocalReps(String(set.reps));
+    } else {
+      setLocalReps('');
+    }
+  }, [set.reps]);
+
+  useEffect(() => {
+    if (set.rpe != null) {
+      if (parseFloat(localRpe) !== set.rpe) setLocalRpe(String(set.rpe));
+    } else {
+      setLocalRpe('');
+    }
+  }, [set.rpe]);
+
+  const handleWeightChange = (val: string) => {
+    if (val === '' || /^\d{0,3}(\.\d{0,1})?$/.test(val)) {
+      setLocalWeight(val);
+      updateSet(ex.id, set.id, { weight: val !== '' && val !== '.' ? parseFloat(val) : null });
+    }
+  };
+
+  const handleRepsChange = (val: string) => {
+    if (val === '' || /^\d{0,2}$/.test(val)) {
+      setLocalReps(val);
+      updateSet(ex.id, set.id, { reps: val !== '' ? parseInt(val, 10) : null });
+    }
+  };
+
+  const currentRM = calculateRM(set.weight, set.reps);
+  const isPR = !!(set.weight && set.reps && set.weight > 0 && 
+                (!ex.personalRecords || !ex.personalRecords[set.reps] || set.weight > ex.personalRecords[set.reps]));
+  
+  let timeTakenStr = '';
+  let restTimeStr = '';
+  
+  if (set.is_completed && set.completedAt) {
+    if (set.rest_seconds != null) {
+      const m = Math.floor(set.rest_seconds / 60);
+      const s = set.rest_seconds % 60;
+      restTimeStr = `☕ ${m > 0 ? `${m}m` : ''}${s}s`;
+    }
+    
+    let wSecs = set.work_seconds;
+    if (wSecs == null) {
+        const prevTime = idx === 0 ? (startTime ? new Date(startTime).getTime() : Date.now()) : (ex.sets[idx - 1].completedAt || (startTime ? new Date(startTime).getTime() : Date.now()));
+        wSecs = Math.floor((set.completedAt - prevTime) / 1000);
+    }
+    
+    if (wSecs != null && wSecs >= 0) {
+      const m = Math.floor(wSecs / 60);
+      const s = wSecs % 60;
+      if (set.rest_seconds != null) {
+        timeTakenStr = `🏋️ ${m > 0 ? `${m}m` : ''}${s}s`;
+      } else {
+        timeTakenStr = `⏱️ ${m > 0 ? `${m}m` : ''}${s}s`;
+      }
+    }
+  }
+
+  const handleLongPress = () => {
+    if (set.is_completed) {
+      Alert.alert('削除不可', 'チェックが入っているセットは削除できません。まずチェックを外してください。');
+      return;
+    }
+    Alert.alert(
+      'セットの削除',
+      `セット ${set.set_number} を削除しますか？`,
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        { text: '削除する', style: 'destructive', onPress: () => removeSet(ex.id, set.id) }
+      ]
+    );
+  };
+
+  return (
+    <View>
+      <TouchableOpacity 
+        style={[styles.row, set.is_completed && styles.rowCompleted]}
+        activeOpacity={0.8}
+        onLongPress={handleLongPress}
+        delayLongPress={500}
+      >
+        <Text style={styles.tdSet}>{set.set_number}</Text>
+        <TextInput 
+          style={styles.input} 
+          keyboardType="numeric" 
+          placeholder={set.prev_weight ? String(set.prev_weight) : "-"} 
+          placeholderTextColor="rgba(255,255,255,0.2)"
+          value={localWeight}
+          onChangeText={handleWeightChange}
+          onFocus={() => setActiveSetForCalc({ exId: ex.id, setId: set.id })}
+        />
+        <TextInput 
+          style={styles.input} 
+          keyboardType="numeric" 
+          placeholder={set.prev_reps ? String(set.prev_reps) : "-"} 
+          placeholderTextColor="rgba(255,255,255,0.2)"
+          value={localReps}
+          onChangeText={handleRepsChange}
+        />
+        <TextInput 
+          style={[styles.input, { width: 45, flex: 0 }]} 
+          keyboardType="numeric" 
+          placeholder="-" 
+          placeholderTextColor="rgba(255,255,255,0.2)"
+          value={localRpe}
+          onChangeText={(val) => {
+            setLocalRpe(val);
+            updateSet(ex.id, set.id, { rpe: val ? parseFloat(val) : null });
+          }}
+        />
+        
+        {/* Check Button & RM Display */}
+        <View style={{ width: 40, alignItems: 'center' }}>
+          <TouchableOpacity 
+            style={[styles.checkBtn, set.is_completed && styles.checkBtnActive]}
+            onPress={() => toggleSetComplete(ex.id, set.id)}
+          >
+            <Ionicons name="checkmark" size={18} color={set.is_completed ? '#fff' : Theme.colors.textMuted} />
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+      
+      {/* Meta Row (RM & Time & PR) */}
+      {(currentRM != null || timeTakenStr || restTimeStr || isPR) && (
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingRight: 8, marginBottom: 8, marginTop: -4 }}>
+           {isPR && <Text style={{ color: '#f5a623', fontSize: 11, fontWeight: 'bold', marginRight: 12 }}>🏆最高記録!</Text>}
+           {currentRM != null && <Text style={{ color: Theme.colors.primary, fontSize: 11, marginRight: 12 }}>1RM {currentRM}</Text>}
+           {restTimeStr ? <Text style={{ color: Theme.colors.textMuted, fontSize: 11, marginRight: 8 }}>{restTimeStr}</Text> : null}
+           {timeTakenStr ? <Text style={{ color: Theme.colors.success, fontSize: 11 }}>{timeTakenStr}</Text> : null}
+        </View>
+      )}
     </View>
   );
 }

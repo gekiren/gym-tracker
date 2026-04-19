@@ -83,6 +83,19 @@ export const initDB = async () => {
     console.warn('Migration: Failed to add notes column', e);
   }
 
+  // Migration: Add rest_seconds and work_seconds to workout_sets if missing
+  try {
+    const tableInfoSets = await _db.getAllAsync<{ name: string }>(`PRAGMA table_info(workout_sets)`);
+    if (!tableInfoSets.find(c => c.name === 'rest_seconds')) {
+      await _db.execAsync(`
+        ALTER TABLE workout_sets ADD COLUMN rest_seconds INTEGER;
+        ALTER TABLE workout_sets ADD COLUMN work_seconds INTEGER;
+      `);
+    }
+  } catch (e) {
+    console.warn('Migration: Failed to add time columns to workout_sets', e);
+  }
+
   // Seed exercises if missing
   const exercises = [
     // Chest
@@ -280,8 +293,8 @@ export const saveWorkout = async (title: string, startTime: string, endTime: str
     for (const set of ex.sets) {
       if (set.weight != null || set.reps != null) { // only save valid sets
         await conn.runAsync(
-          'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed) VALUES (?, ?, ?, ?, ?, ?)',
-          [weId, set.set_number, set.reps, set.weight, set.rpe, set.is_completed ? 1 : 0]
+          'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [weId, set.set_number, set.reps, set.weight, set.rpe, set.is_completed ? 1 : 0, set.rest_seconds || null, set.work_seconds || null]
         );
       }
     }
@@ -307,8 +320,10 @@ export const getExerciseHistory = async (exerciseId: number) => {
     reps: number | null;
     weight: number | null;
     rpe: number | null;
+    rest_seconds: number | null;
+    work_seconds: number | null;
   }>(`
-    SELECT w.id as workout_id, w.start_time, ws.set_number, ws.reps, ws.weight, ws.rpe
+    SELECT w.id as workout_id, w.start_time, ws.set_number, ws.reps, ws.weight, ws.rpe, ws.rest_seconds, ws.work_seconds
     FROM workout_sets ws
     JOIN workout_exercises we ON ws.workout_exercise_id = we.id
     JOIN workouts w ON we.workout_id = w.id
@@ -331,7 +346,9 @@ export const getExerciseHistory = async (exerciseId: number) => {
       set_number: row.set_number,
       reps: row.reps,
       weight: row.weight,
-      rpe: row.rpe
+      rpe: row.rpe,
+      rest_seconds: row.rest_seconds,
+      work_seconds: row.work_seconds
     });
   }
 
@@ -363,13 +380,33 @@ export const getPreviousWorkoutSets = async (exerciseId: number) => {
 
   // Fetch the sets for that specific execution
   const sets = await conn.getAllAsync(`
-    SELECT set_number, weight, reps, rpe 
+    SELECT set_number, weight, reps, rpe, rest_seconds, work_seconds
     FROM workout_sets 
     WHERE workout_exercise_id = ?
     ORDER BY set_number ASC
   `, [recentEx.id]);
 
   return sets as any[];
+};
+
+export const getPersonalRecords = async (exerciseId: number) => {
+  const conn = getDB();
+  const rows = await conn.getAllAsync<{ reps: number, max_weight: number }>(`
+    SELECT ws.reps, MAX(ws.weight) as max_weight
+    FROM workout_sets ws
+    JOIN workout_exercises we ON ws.workout_exercise_id = we.id
+    WHERE we.exercise_id = ? AND ws.is_completed = 1 AND ws.reps IS NOT NULL AND ws.weight IS NOT NULL
+    GROUP BY ws.reps
+    ORDER BY ws.reps ASC
+  `, [exerciseId]);
+  
+  const prMap: Record<number, number> = {};
+  for (const row of rows) {
+    if (row.reps > 0) {
+      prMap[row.reps] = row.max_weight;
+    }
+  }
+  return prMap;
 };
 
 export const getRoutines = async () => {
@@ -431,13 +468,14 @@ export const loadFullWorkoutData = async (workoutId: number) => {
   const workoutRow = await db.getFirstAsync('SELECT * FROM workouts WHERE id = ?', [workoutId]) as any;
   if (!workoutRow) return null;
 
-  const exercisesRows = await db.getAllAsync('SELECT we.id as workout_exercise_id, e.name as exercise_name, we.notes FROM workout_exercises we JOIN exercises e ON we.exercise_id = e.id WHERE we.workout_id = ? ORDER BY we.sort_order', [workoutId]) as any[];
+  const exercisesRows = await db.getAllAsync('SELECT we.id as workout_exercise_id, e.id as exercise_id, e.name as exercise_name, we.notes FROM workout_exercises we JOIN exercises e ON we.exercise_id = e.id WHERE we.workout_id = ? ORDER BY we.sort_order', [workoutId]) as any[];
   
   const exercisesData = [];
   for (const ex of exercisesRows) {
-    const sets = await db.getAllAsync('SELECT id, set_number, weight, reps, rpe FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number', [ex.workout_exercise_id]) as any[];
+    const sets = await db.getAllAsync('SELECT id, set_number, weight, reps, rpe, rest_seconds, work_seconds FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number', [ex.workout_exercise_id]) as any[];
     exercisesData.push({
       workout_exercise_id: ex.workout_exercise_id,
+      exercise_id: ex.exercise_id,
       exercise_name: ex.exercise_name,
       notes: ex.notes,
       sets: sets

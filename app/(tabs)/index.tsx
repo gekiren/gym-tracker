@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
-import { getRoutines, getPreviousWorkoutSets, saveSetting } from '../../src/db/database';
+import { getRoutines, getPreviousWorkoutSets, getPersonalRecords, saveSetting } from '../../src/db/database';
 
 export default function WorkoutScreen() {
   const { startWorkout, addExercise, isActive, title, settings, loadSettings } = useWorkoutStore();
@@ -38,7 +38,8 @@ export default function WorkoutScreen() {
       startWorkout(routine.title);
       for (const ex of routine.exercises) {
         const prevSets = await getPreviousWorkoutSets(ex.id);
-        addExercise({ id: ex.id, name: ex.name, previousSets: prevSets });
+        const personalRecords = await getPersonalRecords(ex.id);
+        addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords });
       }
       router.push('/active-workout');
     } catch (e) {
@@ -110,6 +111,7 @@ export default function WorkoutScreen() {
           </View>
         )}
       </View>
+      </ScrollView>
 
       {/* Loading Overlay */}
       {isLoading && (

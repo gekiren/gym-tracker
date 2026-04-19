@@ -11,6 +11,8 @@ export type SetRecord = {
   prev_reps?: number | null;
   completedAt?: number;
   is_completed: boolean;
+  rest_seconds?: number | null;
+  work_seconds?: number | null;
 };
 
 export type ActiveExercise = {
@@ -19,6 +21,7 @@ export type ActiveExercise = {
   name: string;
   sets: SetRecord[];
   notes: string;
+  personalRecords?: Record<number, number>;
 };
 
 interface WorkoutState {
@@ -31,12 +34,14 @@ interface WorkoutState {
   updateWorkoutNotes: (notes: string) => void;
   updateExerciseNotes: (exerciseId: string, notes: string) => void;
   endWorkout: () => void;
-  addExercise: (exercise: { id: number, name: string, previousSets?: any[] }) => void;
+  addExercise: (exercise: { id: number, name: string, previousSets?: any[], personalRecords?: Record<number, number> }) => void;
   addSet: (exerciseId: string) => void;
+  removeSet: (exerciseId: string, setId: string) => void;
   updateSet: (exerciseId: string, setId: string, changes: Partial<SetRecord>) => void;
   toggleSetComplete: (exerciseId: string, setId: string) => void;
 
   // Rest Timer
+  lastRestFinishedAt: number | null;
   restTimer: {
     isActive: boolean;
     remaining: number;
@@ -73,6 +78,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   title: null,
   workoutNotes: '',
   exercises: [],
+  lastRestFinishedAt: null,
   restTimer: { isActive: false, remaining: 0, endTime: null },
 
   settings: {
@@ -94,6 +100,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     title,
     workoutNotes: '',
     exercises: [],
+    lastRestFinishedAt: null,
     restTimer: { isActive: false, remaining: 0, endTime: null }
   }),
 
@@ -113,6 +120,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       title: null,
       workoutNotes: '',
       exercises: [],
+      lastRestFinishedAt: null,
       restTimer: { isActive: false, remaining: 0, endTime: null }
     });
   },
@@ -139,7 +147,9 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         weight: null, 
         reps: null, 
         rpe: null, 
-        is_completed: false 
+        is_completed: false,
+        rest_seconds: null,
+        work_seconds: null
       }];
     }
 
@@ -151,7 +161,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           exercise_id: exercise.id,
           name: exercise.name,
           sets: initialSets,
-          notes: ''
+          notes: '',
+          personalRecords: exercise.personalRecords || {}
         }
       ]
     };
@@ -170,8 +181,24 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
             weight: lastSet ? lastSet.weight : null, // copy previous set weight optionally
             reps: lastSet ? lastSet.reps : null,
             rpe: null,
-            is_completed: false
+            is_completed: false,
+            rest_seconds: null,
+            work_seconds: null
           }]
+        };
+      }
+      return ex;
+    })
+  })),
+
+  removeSet: (exerciseId, setId) => set((state) => ({
+    exercises: state.exercises.map(ex => {
+      if (ex.id === exerciseId) {
+        return {
+          ...ex,
+          sets: ex.sets
+            .filter(s => s.id !== setId)
+            .map((s, index) => ({ ...s, set_number: index + 1 }))
         };
       }
       return ex;
@@ -196,6 +223,34 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     const sRecord = ex?.sets.find((s: any) => s.id === setId);
     const willBeCompleted = sRecord ? !sRecord.is_completed : false;
 
+    let restSeconds: number | null = null;
+    let workSeconds: number | null = null;
+    const now = Date.now();
+
+    if (willBeCompleted) {
+      const allCompletedSets = state.exercises
+        .flatMap(e => e.sets)
+        .filter(s => s.is_completed && s.completedAt)
+        .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
+      
+      const prevSet = allCompletedSets[allCompletedSets.length - 1];
+      const prevTime = prevSet ? prevSet.completedAt : (state.startTime ? new Date(state.startTime).getTime(): null);
+      const restFinishedTime = state.lastRestFinishedAt;
+
+      if (prevTime) {
+        if (restFinishedTime && restFinishedTime >= prevTime && restFinishedTime <= now) {
+          restSeconds = Math.floor((restFinishedTime - prevTime) / 1000);
+          workSeconds = Math.floor((now - restFinishedTime) / 1000);
+        } else {
+          restSeconds = null;
+          workSeconds = Math.floor((now - prevTime) / 1000);
+        }
+      } else {
+        const startTimeMs = state.startTime ? new Date(state.startTime).getTime() : now;
+        workSeconds = Math.floor((now - startTimeMs) / 1000);
+      }
+    }
+
     set((state) => ({
       exercises: state.exercises.map(ex => {
         if (ex.id === exerciseId) {
@@ -203,7 +258,13 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
             ...ex,
             sets: ex.sets.map(s => {
               if (s.id === setId) {
-                return { ...s, is_completed: willBeCompleted, completedAt: willBeCompleted ? Date.now() : undefined };
+                return { 
+                  ...s, 
+                  is_completed: willBeCompleted, 
+                  completedAt: willBeCompleted ? now : undefined,
+                  rest_seconds: willBeCompleted ? restSeconds : null,
+                  work_seconds: willBeCompleted ? workSeconds : null
+                };
               }
               return s;
             })
@@ -228,6 +289,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   stopRestTimer: () => {
     cancelRestTimer();
     set({
+      lastRestFinishedAt: Date.now(),
       restTimer: { isActive: false, remaining: 0, endTime: null }
     });
   },
@@ -256,7 +318,10 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     const nextRemaining = Math.ceil((state.restTimer.endTime - now) / 1000);
     
     if (nextRemaining <= 0) {
-      return { restTimer: { isActive: false, remaining: 0, endTime: null } };
+      return { 
+        lastRestFinishedAt: Date.now(),
+        restTimer: { isActive: false, remaining: 0, endTime: null } 
+      };
     }
     return { restTimer: { isActive: true, remaining: nextRemaining, endTime: state.restTimer.endTime } };
   }),

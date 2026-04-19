@@ -4,7 +4,7 @@ import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimat
 import { useEffect, useState, useCallback } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getDB, addCustomExercise, getPreviousWorkoutSets, getFavoriteIds, toggleFavorite, deleteExercise } from '../src/db/database';
+import { getDB, addCustomExercise, getPreviousWorkoutSets, getPersonalRecords, getFavoriteIds, toggleFavorite, deleteExercise } from '../src/db/database';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useTranslation } from 'react-i18next';
@@ -67,7 +67,8 @@ export default function SelectExerciseScreen() {
     }
     try {
       const prevSets = await getPreviousWorkoutSets(ex.id);
-      addExercise({ id: ex.id, name: ex.name, previousSets: prevSets });
+      const personalRecords = await getPersonalRecords(ex.id);
+      addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords });
     } catch (e) {
       addExercise({ id: ex.id, name: ex.name });
     }

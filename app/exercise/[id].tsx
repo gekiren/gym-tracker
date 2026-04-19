@@ -3,7 +3,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { getExerciseById, getExerciseHistory } from '../../src/db/database';
+import { getExerciseById, getExerciseHistory, getPersonalRecords } from '../../src/db/database';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 
@@ -11,6 +11,7 @@ export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [exercise, setExercise] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
+  const [personalRecords, setPersonalRecords] = useState<Record<number, number>>({});
   const [isLoading, setIsLoading] = useState(true);
   const { settings } = useWorkoutStore();
 
@@ -22,6 +23,8 @@ export default function ExerciseDetailScreen() {
         setExercise(exItem);
         const histData = await getExerciseHistory(parseInt(id, 10));
         setHistory(histData);
+        const prData = await getPersonalRecords(parseInt(id, 10));
+        setPersonalRecords(prData);
       } catch (e) {
         console.error(e);
       } finally {
@@ -40,13 +43,22 @@ export default function ExerciseDetailScreen() {
     if (history.length === 0) return;
 
     let md = `## ${exercise.name} 記録履歴\n\n`;
-    md += "| 日付 | セット | 重量 | 回数 | RPE |\n";
-    md += "| :--- | :--- | :--- | :--- | :--- |\n";
+    md += "| 日付 | セット | 重量 | 回数 | RPE | Time/Rest |\n";
+    md += "| :--- | :--- | :--- | :--- | :--- | :--- |\n";
 
     history.forEach(item => {
       const dateStr = formatDate(item.start_time);
       item.sets.forEach((s: any) => {
-        md += `| ${dateStr} | ${s.set_number} | ${s.weight ? s.weight + settings.weightUnit : '-'} | ${s.reps ? s.reps + '回' : '-'} | ${s.rpe || '-'} |\n`;
+        let timeStr = '';
+        const fmtTime = (secs: number) => {
+          const m = Math.floor(secs / 60);
+          const s = secs % 60;
+          return m > 0 ? `${m}m${s.toString().padStart(2, '0')}s` : `${s}s`;
+        };
+        if (s.work_seconds != null) timeStr += `${fmtTime(s.work_seconds)}`;
+        if (s.rest_seconds != null) timeStr += `${timeStr?' / ':''}rest ${fmtTime(s.rest_seconds)}`;
+        if (!timeStr) timeStr = '-';
+        md += `| ${dateStr} | ${s.set_number} | ${s.weight ? s.weight + settings.weightUnit : '-'} | ${s.reps ? s.reps + '回' : '-'} | ${s.rpe || '-'} | ${timeStr} |\n`;
       });
     });
 
@@ -89,6 +101,22 @@ export default function ExerciseDetailScreen() {
         </View>
       </View>
 
+      {Object.keys(personalRecords).length > 0 && (
+        <View style={styles.prSection}>
+          <Text style={[styles.sectionTitle, { paddingHorizontal: Theme.spacing.lg, marginBottom: 8 }]}>自己ベスト (PR)</Text>
+          <View style={styles.prList}>
+            {Object.keys(personalRecords)
+              .sort((a, b) => parseInt(a) - parseInt(b))
+              .map(reps => (
+              <View key={reps} style={styles.prItem}>
+                <Text style={styles.prReps}>{reps} 回</Text>
+                <Text style={styles.prWeight}>{personalRecords[parseInt(reps)]} {settings.weightUnit}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>過去の履歴</Text>
         {history.length > 0 && (
@@ -122,15 +150,31 @@ export default function ExerciseDetailScreen() {
                 <Text style={styles.thVal}>記録</Text>
               </View>
               
-              {item.sets.map((s: any, idx: number) => (
-                <View key={idx} style={styles.setRow}>
-                  <Text style={styles.tdSet}>{s.set_number}</Text>
-                  <Text style={styles.tdVal}>
-                    {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps} 回` : '-'}
-                  </Text>
-                  {s.rpe && <Text style={styles.tdRpe}>@RPE {s.rpe}</Text>}
-                </View>
-              ))}
+              {item.sets.map((s: any, idx: number) => {
+                let timeStr = '';
+                const fmtTime = (secs: number) => {
+                  const m = Math.floor(secs / 60);
+                  const s = secs % 60;
+                  return m > 0 ? `${m}m${s.toString().padStart(2, '0')}s` : `${s}s`;
+                };
+                if (s.work_seconds != null) timeStr += `⏱️ ${fmtTime(s.work_seconds)} `;
+                if (s.rest_seconds != null) timeStr += `☕ ${fmtTime(s.rest_seconds)}`;
+                timeStr = timeStr.trim();
+                return (
+                  <View key={idx} style={{ paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
+                    <View style={[styles.setRow, { paddingVertical: 0 }]}>
+                      <Text style={styles.tdSet}>{s.set_number}</Text>
+                      <Text style={styles.tdVal}>
+                        {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps} 回` : '-'}
+                      </Text>
+                      {s.rpe && <Text style={styles.tdRpe}>@RPE {s.rpe}</Text>}
+                    </View>
+                    {timeStr ? (
+                      <Text style={{ textAlign: 'right', fontSize: 11, color: Theme.colors.textMuted, marginTop: 4, marginRight: 8 }}>{timeStr}</Text>
+                    ) : null}
+                  </View>
+                );
+              })}
             </View>
           )}
         />
@@ -163,5 +207,10 @@ const styles = StyleSheet.create({
   tdVal: { flex: 1, color: Theme.colors.text, fontSize: 16 },
   tdRpe: { color: Theme.colors.textMuted, fontSize: 13, fontStyle: 'italic' },
   exportBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(79, 172, 254, 0.1)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.2)' },
-  exportBtnText: { color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold' }
+  exportBtnText: { color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold' },
+  prSection: { borderBottomWidth: 1, borderBottomColor: Theme.colors.border, paddingBottom: Theme.spacing.md, paddingTop: Theme.spacing.md },
+  prList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: Theme.spacing.lg },
+  prItem: { backgroundColor: '#1a1a1a', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#333', minWidth: 70 },
+  prReps: { color: Theme.colors.textMuted, fontSize: 12, fontWeight: 'bold', marginBottom: 2 },
+  prWeight: { color: Theme.colors.primary, fontSize: 16, fontWeight: 'bold' }
 });

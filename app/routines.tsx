@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { Theme } from '../src/theme';
-import { getRoutines, deleteRoutine, getPreviousWorkoutSets } from '../src/db/database';
+import { getRoutines, deleteRoutine, getPreviousWorkoutSets, getPersonalRecords } from '../src/db/database';
 import { useWorkoutStore } from '../src/store/workoutStore';
 
 export default function RoutinesScreen() {
@@ -48,7 +48,8 @@ export default function RoutinesScreen() {
       startWorkout(routine.title);
       for (const ex of routine.exercises) {
         const prevSets = await getPreviousWorkoutSets(ex.id);
-        addExercise({ id: ex.id, name: ex.name, previousSets: prevSets });
+        const personalRecords = await getPersonalRecords(ex.id);
+        addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords });
       }
       router.push('/active-workout');
     } catch (e) {
