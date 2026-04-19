@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SectionList, TouchableOpacity, TextInput, Modal, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, SectionList, TouchableOpacity, TextInput, Modal, Alert, ScrollView, Switch } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 import { useEffect, useState, useCallback } from 'react';
@@ -15,6 +15,7 @@ type Exercise = {
   name: string;
   muscle_group: string;
   equipment: string;
+  is_unilateral?: number;
 };
 
 export default function SelectExerciseScreen() {
@@ -28,6 +29,7 @@ export default function SelectExerciseScreen() {
   const [newName, setNewName] = useState('');
   const [newGroup, setNewGroup] = useState('胸');
   const [newEquip, setNewEquip] = useState('ダンベル');
+  const [isUnilateral, setIsUnilateral] = useState(false);
 
   const { addExercise, addDraftExercise } = useWorkoutStore();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
@@ -39,10 +41,12 @@ export default function SelectExerciseScreen() {
   const fetchAll = async () => {
     try {
       const db = getDB();
-      const rows = await db.getAllAsync('SELECT * FROM exercises ORDER BY name') as Exercise[];
-      setExercises(rows);
-      const favs = await getFavoriteIds();
+      const [rows, favs] = await Promise.all([
+        db.getAllAsync('SELECT * FROM exercises ORDER BY name'),
+        getFavoriteIds()
+      ]);
       setFavoriteIds(favs);
+      setExercises(rows as Exercise[]);
     } catch (e: any) {
       Alert.alert('エラー詳細', `取得失敗: ${e?.message || String(e)}`);
     }
@@ -68,9 +72,9 @@ export default function SelectExerciseScreen() {
     try {
       const prevSets = await getPreviousWorkoutSets(ex.id);
       const personalRecords = await getPersonalRecords(ex.id);
-      addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords });
+      addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords, is_unilateral: ex.is_unilateral });
     } catch (e) {
-      addExercise({ id: ex.id, name: ex.name });
+      addExercise({ id: ex.id, name: ex.name, is_unilateral: ex.is_unilateral });
     }
     router.back();
   };
@@ -84,12 +88,13 @@ export default function SelectExerciseScreen() {
       const newId = await addCustomExercise(
         newName.trim(),
         newGroup.trim() || 'その他',
-        newEquip.trim() || 'その他'
+        newEquip.trim() || 'その他',
+        isUnilateral
       );
       setModalVisible(false);
       setSearch('');
       await fetchAll();
-      handleSelect({ id: newId, name: newName.trim(), muscle_group: newGroup, equipment: newEquip });
+      handleSelect({ id: newId, name: newName.trim(), muscle_group: newGroup, equipment: newEquip, is_unilateral: isUnilateral ? 1 : 0 });
     } catch (e) {
       Alert.alert('エラー', '追加に失敗しました');
     }
@@ -291,6 +296,11 @@ export default function SelectExerciseScreen() {
               ))}
             </View>
             <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder="リストにない場合は入力..." placeholderTextColor={Theme.colors.textMuted} value={newEquip} onChangeText={setNewEquip} />
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+              <Text style={styles.label}>片側ずつ行う種目 (Left / Right)</Text>
+              <Switch value={isUnilateral} onValueChange={setIsUnilateral} trackColor={{ true: Theme.colors.primary }} />
+            </View>
 
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>

@@ -16,7 +16,8 @@ export const initDB = async () => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       muscle_group TEXT,
-      equipment TEXT
+      equipment TEXT,
+      is_unilateral INTEGER DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS workouts (
@@ -44,6 +45,9 @@ export const initDB = async () => {
       weight REAL,
       rpe REAL,
       is_completed INTEGER DEFAULT 0,
+      rest_seconds INTEGER,
+      work_seconds INTEGER,
+      side TEXT,
       FOREIGN KEY(workout_exercise_id) REFERENCES workout_exercises(id) ON DELETE CASCADE
     );
 
@@ -92,8 +96,21 @@ export const initDB = async () => {
         ALTER TABLE workout_sets ADD COLUMN work_seconds INTEGER;
       `);
     }
+    if (!tableInfoSets.find(c => c.name === 'side')) {
+      await _db.execAsync(`ALTER TABLE workout_sets ADD COLUMN side TEXT;`);
+    }
   } catch (e) {
     console.warn('Migration: Failed to add time columns to workout_sets', e);
+  }
+
+  // Migration: Add is_unilateral to exercises if missing
+  try {
+    const tableInfoEx = await _db.getAllAsync<{ name: string }>(`PRAGMA table_info(exercises)`);
+    if (!tableInfoEx.find(c => c.name === 'is_unilateral')) {
+      await _db.execAsync(`ALTER TABLE exercises ADD COLUMN is_unilateral INTEGER DEFAULT 0;`);
+    }
+  } catch (e) {
+    console.warn('Migration: Failed to add is_unilateral to exercises', e);
   }
 
   // Seed exercises if missing
@@ -293,8 +310,8 @@ export const saveWorkout = async (title: string, startTime: string, endTime: str
     for (const set of ex.sets) {
       if (set.weight != null || set.reps != null) { // only save valid sets
         await conn.runAsync(
-          'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [weId, set.set_number, set.reps, set.weight, set.rpe, set.is_completed ? 1 : 0, set.rest_seconds || null, set.work_seconds || null]
+          'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds, side) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [weId, set.set_number, set.reps, set.weight, set.rpe, set.is_completed ? 1 : 0, set.rest_seconds || null, set.work_seconds || null, set.side || null]
         );
       }
     }
@@ -322,8 +339,9 @@ export const getExerciseHistory = async (exerciseId: number) => {
     rpe: number | null;
     rest_seconds: number | null;
     work_seconds: number | null;
+    side: string | null;
   }>(`
-    SELECT w.id as workout_id, w.start_time, ws.set_number, ws.reps, ws.weight, ws.rpe, ws.rest_seconds, ws.work_seconds
+    SELECT w.id as workout_id, w.start_time, ws.set_number, ws.reps, ws.weight, ws.rpe, ws.rest_seconds, ws.work_seconds, ws.side
     FROM workout_sets ws
     JOIN workout_exercises we ON ws.workout_exercise_id = we.id
     JOIN workouts w ON we.workout_id = w.id
@@ -348,18 +366,19 @@ export const getExerciseHistory = async (exerciseId: number) => {
       weight: row.weight,
       rpe: row.rpe,
       rest_seconds: row.rest_seconds,
-      work_seconds: row.work_seconds
+      work_seconds: row.work_seconds,
+      side: row.side
     });
   }
 
   return Array.from(historyMap.values());
 };
 
-export const addCustomExercise = async (name: string, group: string, equip: string) => {
+export const addCustomExercise = async (name: string, group: string, equip: string, isUnilateral: boolean = false) => {
   const conn = getDB();
   const res = await conn.runAsync(
-    'INSERT INTO exercises (name, muscle_group, equipment) VALUES (?, ?, ?)',
-    [name, group, equip]
+    'INSERT INTO exercises (name, muscle_group, equipment, is_unilateral) VALUES (?, ?, ?, ?)',
+    [name, group, equip, isUnilateral ? 1 : 0]
   );
   return res.lastInsertRowId;
 };
@@ -380,10 +399,10 @@ export const getPreviousWorkoutSets = async (exerciseId: number) => {
 
   // Fetch the sets for that specific execution
   const sets = await conn.getAllAsync(`
-    SELECT set_number, weight, reps, rpe, rest_seconds, work_seconds
+    SELECT set_number, weight, reps, rpe, rest_seconds, work_seconds, side
     FROM workout_sets 
     WHERE workout_exercise_id = ?
-    ORDER BY set_number ASC
+    ORDER BY set_number ASC, id ASC
   `, [recentEx.id]);
 
   return sets as any[];
@@ -472,7 +491,7 @@ export const loadFullWorkoutData = async (workoutId: number) => {
   
   const exercisesData = [];
   for (const ex of exercisesRows) {
-    const sets = await db.getAllAsync('SELECT id, set_number, weight, reps, rpe, rest_seconds, work_seconds FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number', [ex.workout_exercise_id]) as any[];
+    const sets = await db.getAllAsync('SELECT id, set_number, weight, reps, rpe, rest_seconds, work_seconds, side FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number ASC, id ASC', [ex.workout_exercise_id]) as any[];
     exercisesData.push({
       workout_exercise_id: ex.workout_exercise_id,
       exercise_id: ex.exercise_id,

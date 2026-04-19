@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, AppState, BackHandler, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, AppState, BackHandler, Modal, Platform } from 'react-native';
 import { useEffect, useState, useCallback } from 'react';
-import { Stack, router } from 'expo-router';
+import { Stack, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { Theme } from '../src/theme';
@@ -101,10 +101,12 @@ export default function ActiveWorkoutScreen() {
     return true;
   }, [endWorkout]);
 
-  useEffect(() => {
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBack);
-    return () => backHandler.remove();
-  }, [handleBack]);
+  useFocusEffect(
+    useCallback(() => {
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBack);
+      return () => backHandler.remove();
+    }, [handleBack])
+  );
 
   const handleAdjustRest = (secs: number) => {
     adjustRestTimer(secs);
@@ -179,8 +181,12 @@ export default function ActiveWorkoutScreen() {
         }} 
       />
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.timeText}>{formatTime(elapsed)}</Text>
+      <ScrollView 
+        contentContainerStyle={styles.content} 
+        keyboardShouldPersistTaps="handled" 
+        automaticallyAdjustKeyboardInsets={true}
+      >
+          <Text style={styles.timeText}>{formatTime(elapsed)}</Text>
 
         {/* Workout Notes Section */}
         <View style={{ marginBottom: 16 }}>
@@ -264,6 +270,7 @@ export default function ActiveWorkoutScreen() {
         <TouchableOpacity style={styles.addExerciseBtn} onPress={handleAddExercise}>
           <Text style={styles.addExerciseBtnText}>+ 種目を追加</Text>
         </TouchableOpacity>
+        <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* Floating Rest Timer UI */}
@@ -499,35 +506,55 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
         onLongPress={handleLongPress}
         delayLongPress={500}
       >
-        <Text style={styles.tdSet}>{set.set_number}</Text>
-        <TextInput 
-          style={styles.input} 
-          keyboardType="numeric" 
-          placeholder={set.prev_weight ? String(set.prev_weight) : "-"} 
-          placeholderTextColor="rgba(255,255,255,0.2)"
-          value={localWeight}
-          onChangeText={handleWeightChange}
-          onFocus={() => setActiveSetForCalc({ exId: ex.id, setId: set.id })}
-        />
-        <TextInput 
-          style={styles.input} 
-          keyboardType="numeric" 
-          placeholder={set.prev_reps ? String(set.prev_reps) : "-"} 
-          placeholderTextColor="rgba(255,255,255,0.2)"
-          value={localReps}
-          onChangeText={handleRepsChange}
-        />
-        <TextInput 
-          style={[styles.input, { width: 45, flex: 0 }]} 
-          keyboardType="numeric" 
-          placeholder="-" 
-          placeholderTextColor="rgba(255,255,255,0.2)"
-          value={localRpe}
-          onChangeText={(val) => {
-            setLocalRpe(val);
-            updateSet(ex.id, set.id, { rpe: val ? parseFloat(val) : null });
-          }}
-        />
+        <Text style={styles.tdSet}>{set.set_number}{set.side ? `(${set.side})` : ''}</Text>
+        {set.is_completed ? (
+          <View style={[styles.input, styles.inputReadOnly]}>
+            <Text style={styles.inputReadOnlyText}>{localWeight || (set.prev_weight ? String(set.prev_weight) : '-')}</Text>
+          </View>
+        ) : (
+          <TextInput 
+            style={styles.input} 
+            keyboardType="numeric" 
+            placeholder={set.prev_weight ? String(set.prev_weight) : "-"} 
+            placeholderTextColor="rgba(255,255,255,0.2)"
+            value={localWeight}
+            onChangeText={handleWeightChange}
+            onFocus={() => setActiveSetForCalc({ exId: ex.id, setId: set.id })}
+          />
+        )}
+
+        {set.is_completed ? (
+          <View style={[styles.input, styles.inputReadOnly]}>
+            <Text style={styles.inputReadOnlyText}>{localReps || (set.prev_reps ? String(set.prev_reps) : '-')}</Text>
+          </View>
+        ) : (
+          <TextInput 
+            style={styles.input} 
+            keyboardType="numeric" 
+            placeholder={set.prev_reps ? String(set.prev_reps) : "-"} 
+            placeholderTextColor="rgba(255,255,255,0.2)"
+            value={localReps}
+            onChangeText={handleRepsChange}
+          />
+        )}
+
+        {set.is_completed ? (
+          <View style={[styles.input, { width: 45, flex: 0 }, styles.inputReadOnly]}>
+            <Text style={styles.inputReadOnlyText}>{localRpe || '-'}</Text>
+          </View>
+        ) : (
+          <TextInput 
+            style={[styles.input, { width: 45, flex: 0 }]} 
+            keyboardType="numeric" 
+            placeholder="-" 
+            placeholderTextColor="rgba(255,255,255,0.2)"
+            value={localRpe}
+            onChangeText={(val) => {
+              setLocalRpe(val);
+              updateSet(ex.id, set.id, { rpe: val ? parseFloat(val) : null });
+            }}
+          />
+        )}
         
         {/* Check Button & RM Display */}
         <View style={{ width: 40, alignItems: 'center' }}>
@@ -565,6 +592,8 @@ const styles = StyleSheet.create({
   rowCompleted: { opacity: 0.7 },
   tdSet: { color: Theme.colors.text, width: 40, textAlign: 'center', fontSize: 16, fontWeight: '500' },
   input: { backgroundColor: '#2a2a2a', color: Theme.colors.text, flex: 1, marginHorizontal: 3, borderRadius: 4, paddingVertical: 6, textAlign: 'center', fontSize: 16 },
+  inputReadOnly: { opacity: 0.7, justifyContent: 'center', alignItems: 'center' },
+  inputReadOnlyText: { color: Theme.colors.text, fontSize: 16 },
   checkBtn: { width: 36, height: 36, backgroundColor: '#333', borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
   checkBtnActive: { backgroundColor: Theme.colors.success },
   addSetBtn: { marginTop: 8, paddingVertical: 10, alignItems: 'center' },

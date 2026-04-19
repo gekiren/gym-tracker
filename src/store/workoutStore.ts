@@ -13,12 +13,14 @@ export type SetRecord = {
   is_completed: boolean;
   rest_seconds?: number | null;
   work_seconds?: number | null;
+  side?: 'L' | 'R' | null;
 };
 
 export type ActiveExercise = {
   id: string; // temp id string for active session
   exercise_id: number; // DB ID
   name: string;
+  is_unilateral?: number;
   sets: SetRecord[];
   notes: string;
   personalRecords?: Record<number, number>;
@@ -34,7 +36,7 @@ interface WorkoutState {
   updateWorkoutNotes: (notes: string) => void;
   updateExerciseNotes: (exerciseId: string, notes: string) => void;
   endWorkout: () => void;
-  addExercise: (exercise: { id: number, name: string, previousSets?: any[], personalRecords?: Record<number, number> }) => void;
+  addExercise: (exercise: { id: number, name: string, previousSets?: any[], personalRecords?: Record<number, number>, is_unilateral?: number }) => void;
   addSet: (exerciseId: string) => void;
   removeSet: (exerciseId: string, setId: string) => void;
   updateSet: (exerciseId: string, setId: string, changes: Partial<SetRecord>) => void;
@@ -137,20 +139,28 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         reps: null,
         prev_weight: prev.weight,
         prev_reps: prev.reps,
-        rpe: null,
-        is_completed: false
+        rpe: prev.rpe,
+        is_completed: false,
+        side: prev.side || null
       }));
     } else {
-      initialSets = [{ 
-        id: Math.random().toString(36).substring(7), 
-        set_number: 1, 
-        weight: null, 
-        reps: null, 
-        rpe: null, 
-        is_completed: false,
-        rest_seconds: null,
-        work_seconds: null
-      }];
+      if (exercise.is_unilateral) {
+        initialSets = [
+          { id: Math.random().toString(36).substring(7), set_number: 1, weight: null, reps: null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'L' },
+          { id: Math.random().toString(36).substring(7), set_number: 1, weight: null, reps: null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'R' }
+        ];
+      } else {
+        initialSets = [{ 
+          id: Math.random().toString(36).substring(7), 
+          set_number: 1, 
+          weight: null, 
+          reps: null, 
+          rpe: null, 
+          is_completed: false,
+          rest_seconds: null,
+          work_seconds: null
+        }];
+      }
     }
 
     return {
@@ -160,6 +170,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           id: Math.random().toString(36).substring(7),
           exercise_id: exercise.id,
           name: exercise.name,
+          is_unilateral: exercise.is_unilateral,
           sets: initialSets,
           notes: '',
           personalRecords: exercise.personalRecords || {}
@@ -173,19 +184,31 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       if (ex.id === exerciseId) {
         const lastSet = ex.sets[ex.sets.length - 1];
         const newSetNum = lastSet ? lastSet.set_number + 1 : 1;
-        return {
-          ...ex,
-          sets: [...ex.sets, {
-            id: Math.random().toString(36).substring(7),
-            set_number: newSetNum,
-            weight: lastSet ? lastSet.weight : null, // copy previous set weight optionally
-            reps: lastSet ? lastSet.reps : null,
-            rpe: null,
-            is_completed: false,
-            rest_seconds: null,
-            work_seconds: null
-          }]
-        };
+        
+        if (ex.is_unilateral) {
+          return {
+            ...ex,
+            sets: [
+              ...ex.sets,
+              { id: Math.random().toString(36).substring(7), set_number: newSetNum, weight: lastSet ? lastSet.weight : null, reps: lastSet ? lastSet.reps : null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'L' },
+              { id: Math.random().toString(36).substring(7), set_number: newSetNum, weight: lastSet ? lastSet.weight : null, reps: lastSet ? lastSet.reps : null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'R' }
+            ]
+          };
+        } else {
+          return {
+            ...ex,
+            sets: [...ex.sets, {
+              id: Math.random().toString(36).substring(7),
+              set_number: newSetNum,
+              weight: lastSet ? lastSet.weight : null, // copy previous set weight optionally
+              reps: lastSet ? lastSet.reps : null,
+              rpe: null,
+              is_completed: false,
+              rest_seconds: null,
+              work_seconds: null
+            }]
+          };
+        }
       }
       return ex;
     })
@@ -194,12 +217,25 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   removeSet: (exerciseId, setId) => set((state) => ({
     exercises: state.exercises.map(ex => {
       if (ex.id === exerciseId) {
-        return {
-          ...ex,
-          sets: ex.sets
-            .filter(s => s.id !== setId)
-            .map((s, index) => ({ ...s, set_number: index + 1 }))
-        };
+        const targetSet = ex.sets.find(s => s.id === setId);
+        if (!targetSet) return ex;
+        const targetNumber = targetSet.set_number;
+        const remainingSets = ex.sets.filter(s => s.set_number !== targetNumber);
+        
+        let currentNum = 1;
+        let lastSeenNum = -1;
+        const newSets = remainingSets.map(s => {
+          if (s.set_number !== lastSeenNum) {
+            lastSeenNum = s.set_number;
+            const newNum = currentNum;
+            currentNum++;
+            return { ...s, set_number: newNum };
+          } else {
+            return { ...s, set_number: currentNum - 1 };
+          }
+        });
+
+        return { ...ex, sets: newSets };
       }
       return ex;
     })
@@ -319,7 +355,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     
     if (nextRemaining <= 0) {
       return { 
-        lastRestFinishedAt: Date.now(),
+        lastRestFinishedAt: state.restTimer.endTime || now,
         restTimer: { isActive: false, remaining: 0, endTime: null } 
       };
     }
