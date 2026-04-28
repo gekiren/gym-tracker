@@ -98,13 +98,21 @@ export default function WorkoutDetailsScreen() {
 
         {workout.exercises.map((ex: any) => (
           <View key={ex.workout_exercise_id} style={styles.card}>
-            <TouchableOpacity 
-              style={styles.exerciseHeader}
-              onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: ex.exercise_id } } as any)}
-            >
-              <Text style={styles.exerciseTitle}>{translateExercise(ex.exercise_name)}</Text>
-              <Ionicons name="chevron-forward" size={16} color={Theme.colors.primary} />
-            </TouchableOpacity>
+            <View style={styles.exerciseHeader}>
+              <TouchableOpacity 
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: ex.exercise_id } } as any)}
+              >
+                <Text style={styles.exerciseTitle}>{translateExercise(ex.name || ex.exercise_name)}</Text>
+                <Ionicons name="chevron-forward" size={16} color={Theme.colors.primary} />
+              </TouchableOpacity>
+              <View style={styles.exerciseVolumeBadge}>
+                <Text style={styles.exerciseVolumeLabel}>{t('ui.history.volume_label')}: </Text>
+                <Text style={styles.exerciseVolumeValue}>
+                  {ex.sets.reduce((sum: number, s: any) => sum + (s.weight || 0) * (s.reps || 0), 0)} {settings.weightUnit}
+                </Text>
+              </View>
+            </View>
 
             {ex.notes ? (
               <View style={styles.exerciseNotes}>
@@ -114,10 +122,10 @@ export default function WorkoutDetailsScreen() {
             ) : null}
 
             <View style={styles.tableHeader}>
-              <Text style={[styles.th, { width: 40 }]}>Set</Text>
+              <Text style={[styles.th, { width: 40 }]}>{t('ui.active_workout.header_set')}</Text>
               <Text style={[styles.th, { flex: 1 }]}>{settings.weightUnit}</Text>
-              <Text style={[styles.th, { flex: 1 }]}>Reps</Text>
-              <Text style={[styles.th, { width: 45 }]}>RPE</Text>
+              <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_reps')}</Text>
+              <Text style={[styles.th, { width: 45 }]}>{t('ui.active_workout.header_rpe')}</Text>
               <Text style={[styles.th, { flex: 1 }]}>1RM</Text>
             </View>
 
@@ -166,6 +174,9 @@ const styles = StyleSheet.create({
   card: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, marginBottom: Theme.spacing.lg, borderWidth: 1, borderColor: Theme.colors.border },
   exerciseHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.sm },
   exerciseTitle: { color: Theme.colors.primary, fontSize: 18, fontWeight: 'bold' },
+  exerciseVolumeBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  exerciseVolumeLabel: { fontSize: 12, color: Theme.colors.textMuted },
+  exerciseVolumeValue: { fontSize: 12, color: Theme.colors.text, fontWeight: 'bold' },
   exerciseNotes: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', padding: 8, borderRadius: 6, marginBottom: 12 },
   exerciseNotesText: { color: Theme.colors.textMuted, fontSize: 13, flex: 1 },
   tableHeader: { flexDirection: 'row', marginBottom: 8, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: Theme.colors.border, paddingBottom: 8 },

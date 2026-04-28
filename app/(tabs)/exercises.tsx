@@ -5,7 +5,7 @@ import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, router } from 'expo-router';
 import { Theme } from '../../src/theme';
-import { getExercises, addCustomExercise, deleteExercise } from '../../src/db/database';
+import { getExercises, addCustomExercise, deleteExercise, getFavoriteIds, toggleFavorite } from '../../src/db/database';
 import { useTranslation } from 'react-i18next';
 import { translateExercise, translateMuscleGroup, translateEquipment } from '../../src/i18n';
 
@@ -19,6 +19,7 @@ type Exercise = {
 export default function ExercisesScreen() {
   const { t } = useTranslation();
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState('');
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('すべて');
@@ -35,11 +36,26 @@ export default function ExercisesScreen() {
 
   const fetchData = async () => {
     try {
-      const data = await getExercises();
+      const [data, favs] = await Promise.all([
+        getExercises(),
+        getFavoriteIds()
+      ]);
       setExercises(data as Exercise[]);
+      setFavoriteIds(favs);
     } catch (e) {
       console.warn(e);
     }
+  };
+
+  const handleToggleFavorite = async (ex: Exercise) => {
+    const isFav = favoriteIds.has(ex.id);
+    await toggleFavorite(ex.id, isFav);
+    setFavoriteIds(prev => {
+      const next = new Set(prev);
+      if (isFav) next.delete(ex.id);
+      else next.add(ex.id);
+      return next;
+    });
   };
 
   const handleCreate = async () => {
@@ -192,10 +208,21 @@ export default function ExercisesScreen() {
               activeOpacity={0.7}
               onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: item.id } } as any)}
             >
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.name}>{translateExercise(item.name)}</Text>
                 <Text style={styles.meta}>{translateMuscleGroup(item.muscle_group)} • {translateEquipment(item.equipment)}</Text>
               </View>
+              <TouchableOpacity
+                onPress={() => handleToggleFavorite(item)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={styles.starBtn}
+              >
+                <Ionicons
+                  name={favoriteIds.has(item.id) ? 'star' : 'star-outline'}
+                  size={22}
+                  color={favoriteIds.has(item.id) ? '#f5a623' : Theme.colors.textMuted}
+                />
+              </TouchableOpacity>
               <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
             </TouchableOpacity>
           </Swipeable>
@@ -262,6 +289,7 @@ const styles = StyleSheet.create({
   item: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Theme.spacing.md, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
   name: { fontSize: 16, color: Theme.colors.text, fontWeight: 'bold', marginBottom: 4 },
   meta: { fontSize: 13, color: Theme.colors.textMuted },
+  starBtn: { paddingHorizontal: 12 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { width: '90%', backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.lg },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: Theme.colors.text, marginBottom: Theme.spacing.md },

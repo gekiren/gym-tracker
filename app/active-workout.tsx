@@ -247,6 +247,12 @@ export default function ActiveWorkoutScreen() {
                   </Text>
                   <Ionicons name="chevron-down" size={12} color={Theme.colors.primary} />
                 </TouchableOpacity>
+                <View style={styles.exerciseVolumeContainer}>
+                  <Text style={styles.exerciseVolumeLabel}>{t('ui.history.volume_label')}: </Text>
+                  <Text style={styles.exerciseVolumeValue}>
+                    {ex.sets.reduce((sum, s) => s.is_completed ? sum + (s.weight || 0) * (s.reps || 0) : sum, 0)} {settings.weightUnit}
+                  </Text>
+                </View>
               </View>
               <TouchableOpacity onPress={() => setExpandedExerciseNotes(prev => ({ ...prev, [ex.id]: !prev[ex.id] }))}>
                 <Ionicons 
