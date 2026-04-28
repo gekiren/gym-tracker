@@ -10,10 +10,12 @@ import { Theme } from '../../src/theme';
 import { formatWorkoutToMarkdown } from '../../src/utils/markdownExport';
 import { useFocusEffect, router } from 'expo-router';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useTranslation } from 'react-i18next';
 
 export default function HistoryScreen() {
   const { settings } = useWorkoutStore();
   const [workouts, setWorkouts] = useState<any[]>([]);
+  const { t } = useTranslation();
 
   useFocusEffect(
     useCallback(() => {
@@ -39,12 +41,12 @@ export default function HistoryScreen() {
 
   const handleDelete = (id: number, title: string) => {
     Alert.alert(
-      '履歴の削除',
-      `「${title}」の記録を削除してもよろしいですか？`,
+      t('ui.history.delete_alert_title'),
+      t('ui.history.delete_alert_message', { title }),
       [
-        { text: 'キャンセル', style: 'cancel' },
+        { text: t('ui.common.cancel'), style: 'cancel' },
         { 
-          text: '削除する', 
+          text: t('ui.history.delete_confirm'), 
           style: 'destructive',
           onPress: async () => {
             await deleteWorkout(id);
@@ -60,7 +62,7 @@ export default function HistoryScreen() {
     if (data) {
       const md = formatWorkoutToMarkdown(data);
       await Clipboard.setStringAsync(md);
-      Alert.alert("Markdown Copied!", "ワークアウトの記録をMarkdown形式でクリップボードにコピーしました😎");
+      Alert.alert(t('ui.history.copy_success_title'), t('ui.history.copy_success_message'));
     }
   };
 
@@ -83,12 +85,12 @@ export default function HistoryScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>履歴</Text>
-      <Text style={styles.subtitle}>過去のワークアウト記録とMarkdown出力</Text>
+      <Text style={styles.title}>{t('ui.history.title')}</Text>
+      <Text style={styles.subtitle}>{t('ui.history.subtitle')}</Text>
       
       {chartData && (
         <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>最近の総ボリューム ({settings.weightUnit})</Text>
+          <Text style={styles.chartTitle}>{t('ui.history.chart_title', { unit: settings.weightUnit })}</Text>
           <LineChart
             data={chartData}
             width={Dimensions.get('window').width - Theme.spacing.md * 2}
@@ -114,7 +116,7 @@ export default function HistoryScreen() {
 
       {workouts.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>まだ記録がありません。</Text>
+          <Text style={styles.emptyStateText}>{t('ui.history.empty_state')}</Text>
         </View>
       ) : (
         workouts.map(w => (
@@ -139,7 +141,7 @@ export default function HistoryScreen() {
               <Text style={styles.dateText}>{format(new Date(w.start_time), 'yyyy-MM-dd HH:mm')}</Text>
               {w.end_time && (
                 <Text style={styles.durationText}>
-                  ・所要時間: {Math.max(1, Math.round((new Date(w.end_time).getTime() - new Date(w.start_time).getTime()) / 60000))}分
+                  ・{t('ui.history.duration_label')}: {Math.max(1, Math.round((new Date(w.end_time).getTime() - new Date(w.start_time).getTime()) / 60000))}{t('ui.common.min_unit')}
                 </Text>
               )}
             </View>
@@ -153,11 +155,11 @@ export default function HistoryScreen() {
             
             <View style={styles.statsRow}>
               <View style={styles.statBlock}>
-                <Text style={styles.statLabel}>種目数</Text>
+                <Text style={styles.statLabel}>{t('ui.history.exercises_count')}</Text>
                 <Text style={styles.statValue}>{w.exercise_count}</Text>
               </View>
               <View style={styles.statBlock}>
-                <Text style={styles.statLabel}>ボリューム</Text>
+                <Text style={styles.statLabel}>{t('ui.history.volume_label')}</Text>
                 <Text style={styles.statValue}>{w.volume ? `${w.volume} ${settings.weightUnit}` : '-'}</Text>
               </View>
             </View>

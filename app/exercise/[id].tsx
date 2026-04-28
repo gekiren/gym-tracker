@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { getExerciseById, getExerciseHistory, getPersonalRecords } from '../../src/db/database';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useTranslation } from 'react-i18next';
+import { translateExercise, translateMuscleGroup, translateEquipment, translateStance } from '../../src/i18n';
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -14,6 +16,7 @@ export default function ExerciseDetailScreen() {
   const [personalRecords, setPersonalRecords] = useState<Record<string, Record<number, number>>>({});
   const [isLoading, setIsLoading] = useState(true);
   const { settings } = useWorkoutStore();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!id) return;
@@ -42,9 +45,8 @@ export default function ExerciseDetailScreen() {
   const handleExportMarkdown = async () => {
     if (history.length === 0) return;
 
-    let md = `## ${exercise.name} 記録履歴\n\n`;
-    md += "| 日付 | セット | 重量 | 回数 | RPE | Time/Rest |\n";
-    md += "| :--- | :--- | :--- | :--- | :--- | :--- |\n";
+    let md = t('ui.exercise_detail.export_md_header', { name: translateExercise(exercise.name) });
+    md += t('ui.exercise_detail.export_md_table_header');
 
     history.forEach(item => {
       const dateStr = formatDate(item.start_time);
@@ -58,13 +60,13 @@ export default function ExerciseDetailScreen() {
         if (s.work_seconds != null) timeStr += `${fmtTime(s.work_seconds)}`;
         if (s.rest_seconds != null) timeStr += `${timeStr?' / ':''}rest ${fmtTime(s.rest_seconds)}`;
         if (!timeStr) timeStr = '-';
-        const varStr = s.variation ? ` (${s.variation})` : '';
-        md += `| ${dateStr} | ${s.set_number}${varStr} | ${s.weight ? s.weight + settings.weightUnit : '-'} | ${s.reps ? s.reps + '回' : '-'} | ${s.rpe || '-'} | ${timeStr} |\n`;
+        const varStr = s.variation ? ` (${translateStance(s.variation)})` : '';
+        md += `| ${dateStr} | ${s.set_number}${varStr} | ${s.weight ? s.weight + settings.weightUnit : '-'} | ${s.reps ? s.reps + t('ui.common.reps_unit') : '-'} | ${s.rpe || '-'} | ${timeStr} |\n`;
       });
     });
 
     await Clipboard.setStringAsync(md);
-    Alert.alert('コピー完了', '履歴をMarkdown形式でクリップボードにコピーしました。');
+    Alert.alert(t('ui.exercise_detail.copy_success_title'), t('ui.exercise_detail.copy_success_message'));
   };
 
   if (isLoading) {
@@ -78,7 +80,7 @@ export default function ExerciseDetailScreen() {
   if (!exercise) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: Theme.colors.textMuted }}>種目が見つかりません。</Text>
+        <Text style={{ color: Theme.colors.textMuted }}>{t('ui.exercise_detail.not_found')}</Text>
       </View>
     );
   }
@@ -87,7 +89,7 @@ export default function ExerciseDetailScreen() {
     <View style={styles.container}>
       <Stack.Screen 
         options={{ 
-          title: '詳細',
+          title: t('ui.exercise_detail.title'),
           headerStyle: { backgroundColor: Theme.colors.background },
           headerTintColor: Theme.colors.primary,
         }} 
@@ -95,27 +97,27 @@ export default function ExerciseDetailScreen() {
       
       {/* Exercise Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>{exercise.name}</Text>
+        <Text style={styles.title}>{translateExercise(exercise.name)}</Text>
         <View style={styles.badges}>
-          <View style={styles.badge}><Text style={styles.badgeText}>{exercise.muscle_group}</Text></View>
-          <View style={styles.badge}><Text style={styles.badgeText}>{exercise.equipment}</Text></View>
+          <View style={styles.badge}><Text style={styles.badgeText}>{translateMuscleGroup(exercise.muscle_group)}</Text></View>
+          <View style={styles.badge}><Text style={styles.badgeText}>{translateEquipment(exercise.equipment)}</Text></View>
         </View>
       </View>
 
       {Object.keys(personalRecords).length > 0 && (
         <View style={styles.prSection}>
-          <Text style={[styles.sectionTitle, { paddingHorizontal: Theme.spacing.lg, marginBottom: 8 }]}>自己ベスト (PR)</Text>
+          <Text style={[styles.sectionTitle, { paddingHorizontal: Theme.spacing.lg, marginBottom: 8 }]}>{t('ui.exercise_detail.section_pr')}</Text>
           {Object.entries(personalRecords).map(([variation, prMap]) => (
             <View key={variation} style={{ marginBottom: 12 }}>
               {variation !== 'default' && (
-                <Text style={styles.prVariationTitle}>スタンス: {variation}</Text>
+                <Text style={styles.prVariationTitle}>{t('ui.active_workout.stance_label')}: {translateStance(variation)}</Text>
               )}
               <View style={styles.prList}>
                 {Object.keys(prMap)
                   .sort((a, b) => parseInt(a) - parseInt(b))
                   .map(reps => (
                   <View key={reps} style={styles.prItem}>
-                    <Text style={styles.prReps}>{reps} 回</Text>
+                    <Text style={styles.prReps}>{reps} {t('ui.common.reps_unit')}</Text>
                     <Text style={styles.prWeight}>{prMap[parseInt(reps)]} {settings.weightUnit}</Text>
                   </View>
                 ))}
@@ -126,11 +128,11 @@ export default function ExerciseDetailScreen() {
       )}
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>過去の履歴</Text>
+        <Text style={styles.sectionTitle}>{t('ui.exercise_detail.section_history')}</Text>
         {history.length > 0 && (
           <TouchableOpacity onPress={handleExportMarkdown} style={styles.exportBtn}>
             <Ionicons name="copy-outline" size={14} color={Theme.colors.primary} style={{ marginRight: 4 }} />
-            <Text style={styles.exportBtnText}>MD形式でコピー</Text>
+            <Text style={styles.exportBtnText}>{t('ui.exercise_detail.copy_md_btn')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -138,8 +140,8 @@ export default function ExerciseDetailScreen() {
       {history.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="barbell-outline" size={48} color={Theme.colors.border} />
-          <Text style={styles.emptyText}>まだ完了済みの記録がありません。</Text>
-          <Text style={styles.emptySubtext}>ワークアウトで記録をつけるとここに履歴が並びます。</Text>
+          <Text style={styles.emptyText}>{t('ui.exercise_detail.empty_history')}</Text>
+          <Text style={styles.emptySubtext}>{t('ui.exercise_detail.empty_history_sub')}</Text>
         </View>
       ) : (
         <FlatList
@@ -154,8 +156,8 @@ export default function ExerciseDetailScreen() {
               </View>
               
               <View style={styles.tableHeader}>
-                <Text style={styles.thSet}>セット</Text>
-                <Text style={styles.thVal}>記録</Text>
+                <Text style={styles.thSet}>{t('ui.exercise_detail.table_header_set')}</Text>
+                <Text style={styles.thVal}>{t('ui.exercise_detail.table_header_record')}</Text>
               </View>
               
               {item.sets.map((s: any, idx: number) => {
@@ -174,9 +176,9 @@ export default function ExerciseDetailScreen() {
                       <Text style={styles.tdSet}>{s.set_number}</Text>
                       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
                         <Text style={styles.tdVal}>
-                          {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps} 回` : '-'}
+                          {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps} ${t('ui.common.reps_unit')}` : '-'}
                         </Text>
-                        {s.variation && <View style={styles.historyVariationBadge}><Text style={styles.historyVariationText}>{s.variation}</Text></View>}
+                        {s.variation && <View style={styles.historyVariationBadge}><Text style={styles.historyVariationText}>{translateStance(s.variation)}</Text></View>}
                       </View>
                       {s.rpe && <Text style={styles.tdRpe}>@RPE {s.rpe}</Text>}
                     </View>

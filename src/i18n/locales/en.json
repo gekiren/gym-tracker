@@ -12,7 +12,20 @@
       "continue_workout": "Continue Workout",
       "no_workout": "No workout in progress",
       "routines": "Routines",
-      "start_routine": "Start Routine"
+      "start_routine": "Start Routine",
+      "free_workout_title": "Free Workout",
+      "home_header_title": "Start Training",
+      "home_header_subtitle": "Start a new workout or choose a routine.",
+      "return_to_active": "Return to ongoing workout",
+      "start_free_workout": "Start Free Workout",
+      "my_routines": "My Routines",
+      "view_all": "View All",
+      "no_exercises": "No exercises",
+      "no_routines": "No routines.",
+      "onboarding_unit_title": "Select Weight Unit",
+      "onboarding_unit_desc": "Choose the weight unit you normally use. This can be changed later in settings.",
+      "unit_kg_desc": "kg (Kilograms)",
+      "unit_lbs_desc": "lbs (Pounds)"
     },
     "active_workout": {
       "finish": "Finish",
@@ -43,7 +56,33 @@
       "stance_exercise_hint": "Changing this will automatically apply the stance to subsequent sets.",
       "stance_label": "Stance",
       "stance_add_link": "Stance: Add",
-      "pr_label": "🏆 New PR!"
+      "stance_standard": "Standard",
+      "pr_label": "🏆 New PR!",
+      "alert_pause_title": "Pause Workout",
+      "alert_pause_message": "Discard workout and exit?\nYou can leave without discarding to continue in the background.",
+      "alert_pause_cancel": "Cancel",
+      "alert_pause_leave": "Leave without discarding",
+      "alert_pause_discard": "Discard & Exit",
+      "alert_finish_title": "Finish Workout",
+      "alert_finish_message": "Save progress and finish?",
+      "alert_finish_save": "Save & Finish",
+      "add_set_label": "+ Add Set",
+      "add_exercise_label": "+ Add Exercise",
+      "rest_label_resting": "Resting",
+      "skip_label": "Skip",
+      "plate_calc_title": "Bar & Plate Calculator",
+      "plate_calc_bar_weight": "Bar Weight",
+      "plate_calc_add_plates": "Add Plates (One Side)",
+      "plate_calc_undo": "Undo",
+      "plate_calc_apply_btn": "Apply to Selected Set",
+      "plate_calc_success_title": "Applied",
+      "plate_calc_success_message": "{{weight}}{{unit}} applied to the set.",
+      "plate_calc_error_no_set": "Please select a set before applying.",
+      "alert_delete_set_error_title": "Cannot Delete",
+      "alert_delete_set_error_message": "Completed sets cannot be deleted. Uncheck first.",
+      "alert_delete_set_title": "Delete Set",
+      "alert_delete_set_message": "Delete set {{number}}?",
+      "alert_delete_set_confirm": "Delete"
     },
     "exercise_select": {
       "search_placeholder": "Search exercises...",
@@ -73,7 +112,9 @@
       "empty": "No workouts recorded yet",
       "delete_title": "Delete Workout",
       "delete_message": "Are you sure you want to delete this workout?",
-      "sets": "sets"
+      "sets": "sets",
+      "not_found": "Workout not found.",
+      "back": "Back"
     },
     "exercise_detail": {
       "title": "Exercise Detail",
@@ -86,10 +127,88 @@
       "header_weight": "Weight",
       "rpe_label": "@RPE"
     },
+    "edit_workout": {
+      "title": "Edit History",
+      "save_success_title": "Saved",
+      "save_success_message": "Workout history has been updated.",
+      "save_error_title": "Error",
+      "save_error_message": "Failed to save changes.",
+      "delete_set_title": "Delete Set",
+      "delete_set_message": "Delete this set record?",
+      "workout_name_label": "Workout Name",
+      "workout_notes_label": "Overall Notes",
+      "workout_notes_placeholder": "Enter notes for this workout...",
+      "exercise_notes_placeholder": "Enter exercise notes..."
+    },
+    "exercise_detail": {
+      "title": "Exercise Details",
+      "export_md_header": "## {{name}} Records\n\n",
+      "export_md_table_header": "| Date | Set | Weight | Reps | RPE | Time/Rest |\n| :--- | :--- | :--- | :--- | :--- | :--- |\n",
+      "copy_success_title": "Copied",
+      "copy_success_message": "History copied to clipboard in Markdown format.",
+      "not_found": "Exercise not found.",
+      "section_pr": "Personal Records (PR)",
+      "section_history": "History",
+      "copy_md_btn": "Copy as MD",
+      "empty_history": "No records yet.",
+      "empty_history_sub": "Your workout history for this exercise will appear here.",
+      "table_header_set": "Set",
+      "table_header_record": "Record"
+    },
+    "build_routine": {
+      "title": "Create Routine",
+      "error_no_title": "Please enter a routine name.",
+      "error_no_exercises": "Please add at least one exercise.",
+      "error_save_failed": "Failed to save the routine.",
+      "routine_name_label": "Routine Name *",
+      "routine_name_placeholder": "e.g. Chest Day (Heavy)",
+      "exercises_count_label": "Exercises ({{count}})",
+      "add_exercise_btn": "+ Add Exercise"
+    },
+    "history": {
+      "title": "History",
+      "subtitle": "Past workouts and Markdown export",
+      "chart_title": "Recent Total Volume ({{unit}})",
+      "empty_state": "No records yet.",
+      "delete_alert_title": "Delete History",
+      "delete_alert_message": "Are you sure you want to delete \"{{title}}\"?",
+      "delete_confirm": "Delete",
+      "copy_success_title": "Markdown Copied!",
+      "copy_success_message": "Workout history copied to clipboard in Markdown format😎",
+      "duration_label": "Duration",
+      "exercises_count": "Exercises",
+      "volume_label": "Volume"
+    },
+    "exercise_library": {
+      "title": "Exercise Library",
+      "subtitle": "Manage your exercise database",
+      "search_placeholder": "Search exercises...",
+      "create_custom_title": "Create Custom Exercise",
+      "exercise_name_label": "Exercise Name *",
+      "exercise_name_placeholder": "e.g. Dumbbell Press",
+      "target_muscle_label": "Target Muscle Group",
+      "equipment_label": "Equipment",
+      "manual_input_placeholder": "Or enter manually...",
+      "save_and_add_btn": "Save & Add",
+      "error_no_name": "Please enter an exercise name.",
+      "error_add_failed": "Failed to add exercise."
+    },
+    "tabs": {
+      "home": "Home",
+      "workout": "Workout",
+      "history": "History",
+      "exercises": "Exercises",
+      "profile": "Profile"
+    },
+    "notifications": {
+      "rest_finished_title": "Rest Finished!",
+      "rest_finished_body": "Time to start the next set! 🔥"
+    },
     "profile": {
       "title": "Settings & Tools",
       "section_tools": "Tools",
       "section_timer": "Timer Settings",
+      "section_preferences": "Preferences",
       "section_language": "Language",
       "section_info": "App Info",
       "rm_calculator": "1RM Calculator",
@@ -98,10 +217,15 @@
       "auto_rest_desc": "Automatically start the rest timer when you complete a set.",
       "default_rest": "Default Rest Interval",
       "default_rest_desc": "The default rest time when the timer starts.",
+      "weight_unit_label": "Weight Unit",
       "language_label": "App Language",
       "version": "Version",
       "privacy_policy": "Privacy Policy",
-      "contact": "Contact Us"
+      "contact": "Contact Us",
+      "db_error_title": "Database Error",
+      "db_error_text": "Failed to initialize. Please restart the app or tap the button below to retry.",
+      "retry": "Retry",
+      "screen_title_select_exercise": "Select Exercise"
     },
     "edit_workout": {
       "title": "Edit Workout",
@@ -118,12 +242,24 @@
       "title": "Routines",
       "empty": "No routines yet",
       "create": "Create Routine",
-      "delete_title": "Delete",
-      "delete_message": "Delete this routine?"
+      "delete_title": "Delete Routine",
+      "delete_message": "Delete this routine?",
+      "delete_message_with_title": "Are you sure you want to delete \"{{title}}\"?",
+      "all_routines": "All Routines"
     },
     "timer": {
       "rest_end_title": "Rest Over!",
       "rest_end_body": "Time to crush the next set 🔥"
+    },
+    "rm_calc": {
+      "title": "1RM Calculator",
+      "subtitle": "Estimate your 1RM and appropriate weights for each rep count from weight and reps.",
+      "weight": "Weight",
+      "reps": "Reps",
+      "estimated_1rm": "Estimated 1RM",
+      "estimated_weight": "Estimated Weight",
+      "ratio_1rm": "1RM Ratio",
+      "invalid_input": "Please enter valid weight and reps."
     },
     "common": {
       "cancel": "Cancel",
@@ -132,7 +268,16 @@
       "error": "Error",
       "ok": "OK",
       "secs_unit": "s",
-      "min_unit": "m"
+      "min_unit": "m",
+      "weight_unit": "kg"
+    },
+    "markdown": {
+      "date_label": "Date",
+      "content_title": "Training Summary",
+      "exercise_note": "Note",
+      "history_title": "History of {{name}}",
+      "max_weight": "Max Weight",
+      "volume": "Volume"
     }
   },
   "exercises": {
@@ -149,14 +294,14 @@
     "チェストプレス": "Chest Press Machine",
     "スミスマシン ベンチプレス": "Smith Machine Bench Press",
     "スミスマシン インクラインプレス": "Smith Machine Incline Press",
-    "プッシュアップ (腕立て伏せ)": "Push-Up",
+    "プッシュアップ": "Push-Up",
     "加重プッシュアップ": "Weighted Push-Up",
     "ディップス": "Dips",
     "加重ディップス": "Weighted Dips",
     "デッドリフト": "Deadlift",
     "ルーマニアンデッドリフト": "Romanian Deadlift",
     "ハーフデッドリフト": "Rack Pull",
-    "懸垂 (チンニング)": "Pull-Up / Chin-Up",
+    "懸垂": "Pull-Up / Chin-Up",
     "加重懸垂": "Weighted Pull-Up",
     "ラットプルダウン": "Lat Pulldown",
     "リバースグリップ ラットプルダウン": "Reverse Grip Lat Pulldown",
@@ -170,7 +315,7 @@
     "プルオーバー": "Pullover",
     "ストレートアームプルダウン": "Straight-Arm Pulldown",
     "バックエクステンション": "Back Extension",
-    "オーバーヘッドプレス (ミリタリープレス)": "Overhead Press (Military Press)",
+    "オーバーヘッドプレス": "Overhead Press",
     "ダンベルショルダープレス": "Dumbbell Shoulder Press",
     "アーノルドプレス": "Arnold Press",
     "スミスマシン ショルダープレス": "Smith Machine Shoulder Press",
@@ -215,8 +360,8 @@
     "スタンディングカーフレイズ": "Standing Calf Raise",
     "シーテッドカーフレイズ": "Seated Calf Raise",
     "ヒップスラスト": "Hip Thrust",
-    "マシンアブダクター (外転)": "Machine Hip Abduction",
-    "マシンアダクター (内転)": "Machine Hip Adduction",
+    "マシンアブダクター": "Machine Hip Abduction",
+    "マシンアダクター": "Machine Hip Adduction",
     "グッドモーニング": "Good Morning",
     "クランチ": "Crunch",
     "シットアップ": "Sit-Up",
@@ -236,7 +381,8 @@
     "腕": "Arms",
     "脚": "Legs",
     "腹筋": "Core",
-    "その他": "Other"
+    "その他": "Other",
+    "すべて": "All"
   },
   "equipment": {
     "バーベル": "Barbell",
@@ -247,6 +393,22 @@
     "EZバー": "EZ Bar",
     "自重": "Bodyweight",
     "ウエイト": "Weighted",
-    "その他": "Other"
+    "その他": "Other",
+    "すべて": "All"
+  },
+  "stances": {
+    "ナロー": "Narrow",
+    "ワイド": "Wide",
+    "スモウ": "Sumo",
+    "コンベンショナル": "Conventional",
+    "ハイバー": "High Bar",
+    "ローバー": "Low Bar",
+    "リバースグリップ": "Reverse Grip",
+    "ニュートラルグリップ": "Neutral Grip",
+    "オルタネイトグリップ": "Alternate Grip",
+    "サムレスグリップ": "Thumbless Grip",
+    "フックグリップ": "Hook Grip",
+    "ポーズ": "Paused",
+    "デッドストップ": "Dead Stop"
   }
 }

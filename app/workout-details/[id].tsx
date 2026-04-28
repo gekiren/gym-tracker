@@ -49,9 +49,9 @@ export default function WorkoutDetailsScreen() {
   if (!workout) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: Theme.colors.textMuted }}>ワークアウトが見つかりませんでした。</Text>
+        <Text style={{ color: Theme.colors.textMuted }}>{t('ui.history.not_found')}</Text>
         <TouchableOpacity style={{ marginTop: 16 }} onPress={() => router.back()}>
-          <Text style={{ color: Theme.colors.primary }}>戻る</Text>
+          <Text style={{ color: Theme.colors.primary }}>{t('ui.history.back')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -79,12 +79,12 @@ export default function WorkoutDetailsScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.metaHeader}>
           <Ionicons name="calendar-outline" size={16} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
-          <Text style={styles.dateText}>{format(new Date(workout.start_time), 'yyyy年MM月dd日 HH:mm')}</Text>
+          <Text style={styles.dateText}>{format(new Date(workout.start_time), 'yyyy-MM-dd HH:mm')}</Text>
           {durationMin && (
             <>
               <Text style={{ color: Theme.colors.textMuted, marginHorizontal: 8 }}>•</Text>
               <Ionicons name="time-outline" size={16} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
-              <Text style={styles.dateText}>{durationMin} 分</Text>
+              <Text style={styles.dateText}>{durationMin} {t('ui.common.min_unit')}</Text>
             </>
           )}
         </View>

@@ -6,6 +6,7 @@ import { useWorkoutStore } from '../src/store/workoutStore';
 import { Theme } from '../src/theme';
 import { saveWorkout, saveSetting } from '../src/db/database';
 import { useTranslation } from 'react-i18next';
+import { translateExercise, translateStance } from '../src/i18n';
 
 export default function ActiveWorkoutScreen() {
   const { t } = useTranslation();
@@ -87,22 +88,22 @@ export default function ActiveWorkoutScreen() {
 
   const handleBack = useCallback(() => {
     Alert.alert(
-      'ワークアウトの中断',
-      'ワークアウトを中止して終了しますか？\n中止せずに離れる場合はバックグラウンドで継続します。',
+      t('ui.active_workout.alert_pause_title'),
+      t('ui.active_workout.alert_pause_message'),
       [
         {
-          text: 'キャンセル',
+          text: t('ui.active_workout.alert_pause_cancel'),
           style: 'cancel',
         },
         {
-          text: '中止せずに離れる',
+          text: t('ui.active_workout.alert_pause_leave'),
           style: 'default',
           onPress: () => {
             router.dismiss();
           }
         },
         {
-          text: '中止して終了する',
+          text: t('ui.active_workout.alert_pause_discard'),
           style: 'destructive',
           onPress: () => {
             endWorkout();
@@ -138,17 +139,17 @@ export default function ActiveWorkoutScreen() {
 
   const handleFinish = () => {
     Alert.alert(
-      'ワークアウトの終了',
-      '現在の記録を保存して終了しますか？',
+      t('ui.active_workout.alert_finish_title'),
+      t('ui.active_workout.alert_finish_message'),
       [
-        { text: 'キャンセル', style: 'cancel' },
+        { text: t('ui.active_workout.cancel'), style: 'cancel' },
         {
-          text: '保存して終了',
+          text: t('ui.active_workout.alert_finish_save'),
           style: 'default',
           onPress: async () => {
             try {
               const et = new Date().toISOString();
-              await saveWorkout(title || 'Empty Workout', startTime || et, et, workoutNotes, exercises);
+              await saveWorkout(title || t('ui.home.free_workout_title'), startTime || et, et, workoutNotes, exercises);
             } catch (e) {
               console.error(e);
             }
@@ -168,7 +169,7 @@ export default function ActiveWorkoutScreen() {
     <View style={styles.container}>
       <Stack.Screen 
         options={{ 
-          title: title || 'ワークアウト',
+          title: title || t('ui.home.free_workout_title'),
           headerStyle: { backgroundColor: Theme.colors.background },
           headerTintColor: Theme.colors.text,
           headerLeft: () => (
@@ -231,7 +232,7 @@ export default function ActiveWorkoutScreen() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.md }}>
               <View style={{ flex: 1 }}>
                 <TouchableOpacity onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: ex.exercise_id || ex.id } } as any)}>
-                  <Text style={styles.exerciseTitle}>{ex.name}</Text>
+                  <Text style={styles.exerciseTitle}>{translateExercise(ex.name)}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.exerciseVariationBtn}
@@ -242,7 +243,7 @@ export default function ActiveWorkoutScreen() {
                   }}
                 >
                   <Text style={styles.exerciseVariationText}>
-                    スタンス: {ex.default_variation || '標準 (変更)'}
+                    {t('ui.active_workout.stance_label')}: {ex.default_variation ? translateStance(ex.default_variation) : `${t('ui.active_workout.stance_standard')} (${t('ui.common.save')})`}
                   </Text>
                   <Ionicons name="chevron-down" size={12} color={Theme.colors.primary} />
                 </TouchableOpacity>
@@ -293,13 +294,13 @@ export default function ActiveWorkoutScreen() {
             ))}
 
             <TouchableOpacity style={styles.addSetBtn} onPress={() => addSet(ex.id)}>
-              <Text style={styles.addSetBtnText}>+ セット追加</Text>
+              <Text style={styles.addSetBtnText}>{t('ui.active_workout.add_set_label')}</Text>
             </TouchableOpacity>
           </View>
         ))}
 
         <TouchableOpacity style={styles.addExerciseBtn} onPress={handleAddExercise}>
-          <Text style={styles.addExerciseBtnText}>+ 種目を追加</Text>
+          <Text style={styles.addExerciseBtnText}>{t('ui.active_workout.add_exercise_label')}</Text>
         </TouchableOpacity>
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -309,7 +310,7 @@ export default function ActiveWorkoutScreen() {
         <View style={styles.timerOverlay}>
           <View style={styles.timerContent}>
             <View>
-              <Text style={styles.timerLabel}>休憩中</Text>
+              <Text style={styles.timerLabel}>{t('ui.active_workout.rest_label_resting')}</Text>
               <Text style={styles.timerDigits}>{formatTime(restTimer.remaining)}</Text>
             </View>
             <View style={styles.timerActions}>
@@ -317,7 +318,7 @@ export default function ActiveWorkoutScreen() {
                 <Text style={styles.timerBtnText}>-30s</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.timerBtn, { backgroundColor: Theme.colors.card }]} onPress={stopRestTimer}>
-                <Text style={styles.timerBtnText}>スキップ</Text>
+                <Text style={styles.timerBtnText}>{t('ui.active_workout.skip_label')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.timerBtn} onPress={() => handleAdjustRest(30)}>
                 <Text style={styles.timerBtnText}>+30s</Text>
@@ -331,7 +332,7 @@ export default function ActiveWorkoutScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.md }}>
-              <Text style={styles.modalTitle}>バーとプレート計算</Text>
+              <Text style={styles.modalTitle}>{t('ui.active_workout.plate_calc_title')}</Text>
               <TouchableOpacity onPress={() => setPlateCalcVisible(false)}>
                 <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
               </TouchableOpacity>
@@ -340,12 +341,12 @@ export default function ActiveWorkoutScreen() {
             <View style={styles.calcResultContainer}>
               <Text style={styles.calcResultText}>{totalPlateWeight} {settings.weightUnit}</Text>
               <Text style={styles.calcFormulaText}>
-                バー {plateCalcBar}{settings.weightUnit} + 片側 {platesOnOneSide.reduce((a,b)=>a+b, 0)}{settings.weightUnit} × 2
+                {t('ui.active_workout.plate_calc_bar_weight')} {plateCalcBar}{settings.weightUnit} + {t('ui.active_workout.plate_calc_add_plates')} {platesOnOneSide.reduce((a,b)=>a+b, 0)}{settings.weightUnit} × 2
               </Text>
             </View>
 
             {/* バーの選択 */}
-            <Text style={styles.sectionTitle}>バーの重さ</Text>
+            <Text style={styles.sectionTitle}>{t('ui.active_workout.plate_calc_bar_weight')}</Text>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
               {(settings.weightUnit === 'lbs' ? [45, 35] : [20, 15, 10]).map(w => (
                 <TouchableOpacity
@@ -400,9 +401,9 @@ export default function ActiveWorkoutScreen() {
             </View>
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text style={styles.sectionTitle}>追加するプレート (片側)</Text>
+              <Text style={styles.sectionTitle}>{t('ui.active_workout.plate_calc_add_plates')}</Text>
               <TouchableOpacity onPress={() => setPlatesOnOneSide(prev => prev.slice(0, -1))} disabled={platesOnOneSide.length === 0}>
-                 <Text style={{ color: platesOnOneSide.length > 0 ? Theme.colors.danger : Theme.colors.textMuted }}>元に戻す</Text>
+                 <Text style={{ color: platesOnOneSide.length > 0 ? Theme.colors.danger : Theme.colors.textMuted }}>{t('ui.active_workout.plate_calc_undo')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -423,14 +424,14 @@ export default function ActiveWorkoutScreen() {
               onPress={() => {
                 if (activeSetForCalc) {
                   updateSet(activeSetForCalc.exId, activeSetForCalc.setId, { weight: totalPlateWeight });
-                  Alert.alert('反映完了', `${totalPlateWeight}${settings.weightUnit}をセットに入力しました。`);
+                  Alert.alert(t('ui.active_workout.plate_calc_success_title'), t('ui.active_workout.plate_calc_success_message', { weight: totalPlateWeight, unit: settings.weightUnit }));
                 } else {
-                  Alert.alert('エラー', '反映先のセットを選択(タップ)してからお試しください。');
+                  Alert.alert(t('ui.common.error'), t('ui.active_workout.plate_calc_error_no_set'));
                 }
                 setPlateCalcVisible(false);
               }}
             >
-              <Text style={styles.applyBtnText}>入力中のセットに反映する</Text>
+              <Text style={styles.applyBtnText}>{t('ui.active_workout.plate_calc_apply_btn')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -508,7 +509,7 @@ export default function ActiveWorkoutScreen() {
                             setStanceModalVisible(false);
                           }}
                         >
-                          <Text style={[styles.choiceChipText, isActive && styles.choiceChipTextActive]}>{preset}</Text>
+                          <Text style={[styles.choiceChipText, isActive && styles.choiceChipTextActive]}>{translateStance(preset)}</Text>
                         </TouchableOpacity>
                       );
                     })}
@@ -616,15 +617,15 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
 
   const handleLongPress = () => {
     if (set.is_completed) {
-      Alert.alert('削除不可', 'チェックが入っているセットは削除できません。まずチェックを外してください。');
+      Alert.alert(t('ui.active_workout.alert_delete_set_error_title'), t('ui.active_workout.alert_delete_set_error_message'));
       return;
     }
     Alert.alert(
-      'セットの削除',
-      `セット ${set.set_number} を削除しますか？`,
+      t('ui.active_workout.alert_delete_set_title'),
+      t('ui.active_workout.alert_delete_set_message', { number: set.set_number }),
       [
-        { text: 'キャンセル', style: 'cancel' },
-        { text: '削除する', style: 'destructive', onPress: () => removeSet(ex.id, set.id) }
+        { text: t('ui.common.cancel'), style: 'cancel' },
+        { text: t('ui.active_workout.alert_delete_set_confirm'), style: 'destructive', onPress: () => removeSet(ex.id, set.id) }
       ]
     );
   };
@@ -707,7 +708,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
         <View style={{ flex: 1.5, flexDirection: 'row', alignItems: 'center', paddingLeft: 4 }}>
           {set.is_completed ? (
             <Text style={{ color: Theme.colors.textMuted, fontSize: 11 }} numberOfLines={2}>
-              {set.variation ? `${t('ui.active_workout.stance_label')}: ${set.variation}` : `${t('ui.active_workout.stance_label')}: -`}
+              {set.variation ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.variation)}` : `${t('ui.active_workout.stance_label')}: -`}
             </Text>
           ) : (
             <TouchableOpacity 
@@ -719,7 +720,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
               style={{ flexDirection: 'row', alignItems: 'center' }}
             >
               <Text style={{ color: Theme.colors.primary, fontSize: 11, textDecorationLine: 'underline' }} numberOfLines={2}>
-                {set.variation ? `${t('ui.active_workout.stance_label')}: ${set.variation}` : t('ui.active_workout.stance_add_link')}
+                {set.variation ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.variation)}` : t('ui.active_workout.stance_add_link')}
               </Text>
             </TouchableOpacity>
           )}

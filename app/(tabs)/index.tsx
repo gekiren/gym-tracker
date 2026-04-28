@@ -2,11 +2,14 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { getRoutines, getPreviousWorkoutSets, getPersonalRecords, saveSetting } from '../../src/db/database';
+import { translateExercise } from '../../src/i18n';
 
 export default function WorkoutScreen() {
+  const { t } = useTranslation();
   const { startWorkout, addExercise, isActive, title, settings, loadSettings } = useWorkoutStore();
   const [routines, setRoutines] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +30,7 @@ export default function WorkoutScreen() {
   };
 
   const handleStartEmpty = () => {
-    startWorkout('フリーワークアウト');
+    startWorkout(t('ui.home.free_workout_title'));
     router.push('/active-workout');
   };
 
@@ -58,30 +61,30 @@ export default function WorkoutScreen() {
     <View style={{ flex: 1 }}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>トレーニングを開始</Text>
-          <Text style={styles.subtitle}>新しいワークアウトを始めるか、ルーティンを選んでください。</Text>
+          <Text style={styles.title}>{t('ui.home.home_header_title')}</Text>
+          <Text style={styles.subtitle}>{t('ui.home.home_header_subtitle')}</Text>
         </View>
 
       {isActive ? (
         <TouchableOpacity style={[styles.primaryButton, { backgroundColor: Theme.colors.success || '#4caf50' }]} activeOpacity={0.8} onPress={() => router.push('/active-workout')}>
           <Ionicons name="play" size={24} color="#fff" style={{ marginRight: 8 }} />
           <View style={{ flex: 1, alignItems: 'center' }}>
-            <Text style={styles.primaryButtonText}>進行中のワークアウトに戻る</Text>
+            <Text style={styles.primaryButtonText}>{t('ui.home.return_to_active')}</Text>
             {title && <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 4 }}>{title}</Text>}
           </View>
         </TouchableOpacity>
       ) : (
         <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8} onPress={handleStartEmpty}>
           <Ionicons name="add-circle-outline" size={24} color="#fff" style={{ marginRight: 8 }} />
-          <Text style={styles.primaryButtonText}>フリーワークアウトを開始</Text>
+          <Text style={styles.primaryButtonText}>{t('ui.home.start_free_workout')}</Text>
         </TouchableOpacity>
       )}
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>マイ ルーティン</Text>
+          <Text style={styles.sectionTitle}>{t('ui.home.my_routines')}</Text>
           <TouchableOpacity onPress={() => router.push('/routines')}>
-            <Text style={styles.linkText}>すべて見る</Text>
+            <Text style={styles.linkText}>{t('ui.home.view_all')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -97,7 +100,7 @@ export default function WorkoutScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.routineTitle}>{r.title}</Text>
                 <Text style={styles.routineDesc} numberOfLines={2}>
-                  {r.exercises?.map((e: any) => e.name).join(', ') || '種目なし'}
+                  {r.exercises?.map((e: any) => translateExercise(e.name)).join(', ') || t('ui.home.no_exercises')}
                 </Text>
               </View>
               <Ionicons name="play-circle" size={32} color={Theme.colors.primary} style={{ marginLeft: 16 }} />
@@ -107,7 +110,7 @@ export default function WorkoutScreen() {
 
         {routines.length === 0 && (
           <View style={{ padding: 24, alignItems: 'center' }}>
-            <Text style={{ color: Theme.colors.textMuted }}>ルーティンがありません。</Text>
+            <Text style={{ color: Theme.colors.textMuted }}>{t('ui.home.no_routines')}</Text>
           </View>
         )}
       </View>
@@ -125,16 +128,16 @@ export default function WorkoutScreen() {
         <View style={styles.modalBg}>
           <View style={styles.modalCard}>
             <Ionicons name="barbell" size={48} color={Theme.colors.primary} style={{ marginBottom: 16 }} />
-            <Text style={styles.modalTitle}>重量の単位を選択</Text>
+            <Text style={styles.modalTitle}>{t('ui.home.onboarding_unit_title')}</Text>
             <Text style={styles.modalDesc}>
-              普段トレーニングで使用している重量の単位を選んでください。この設定はあとから環境設定で変更できます。
+              {t('ui.home.onboarding_unit_desc')}
             </Text>
             <View style={styles.modalBtnContainer}>
               <TouchableOpacity style={styles.unitBtn} onPress={() => handleSelectUnit('kg')}>
-                <Text style={styles.unitBtnText}>kg (キログラム)</Text>
+                <Text style={styles.unitBtnText}>{t('ui.home.unit_kg_desc')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.unitBtn} onPress={() => handleSelectUnit('lbs')}>
-                <Text style={styles.unitBtnText}>lbs (ポンド)</Text>
+                <Text style={styles.unitBtnText}>{t('ui.home.unit_lbs_desc')}</Text>
               </TouchableOpacity>
             </View>
           </View>

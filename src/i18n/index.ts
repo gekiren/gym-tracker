@@ -56,3 +56,11 @@ export const translateEquipment = (equip: string): string => {
   const key = `equipment.${equip}`;
   return i18n.t(key, { defaultValue: equip });
 };
+
+/**
+ * スタンス・バリエーション名を翻訳する
+ */
+export const translateStance = (stance: string): string => {
+  const key = `stances.${stance}`;
+  return i18n.t(key, { defaultValue: stance });
+};

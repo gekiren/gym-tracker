@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import i18n from '../i18n';
 
 // Behavior for local notifications when app is in foreground
 Notifications.setNotificationHandler({
@@ -37,11 +38,10 @@ export const scheduleRestTimer = async (seconds: number) => {
     });
   }
 
-  // Schedule a new one
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: "休憩終了！",
-      body: "次のセットを始めましょう🔥",
+      title: i18n.t('ui.notifications.rest_finished_title'),
+      body: i18n.t('ui.notifications.rest_finished_body'),
       sound: true, // Default notification sound
     },
     trigger: {

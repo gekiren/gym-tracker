@@ -129,12 +129,12 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Ionicons name="settings-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>環境設定</Text>
+          <Text style={styles.sectionTitle}>{t('ui.profile.section_preferences')}</Text>
         </View>
 
         <View style={styles.settingCard}>
           <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>重量の単位</Text>
+            <Text style={styles.settingLabel}>{t('ui.profile.weight_unit_label')}</Text>
             <View style={[styles.chipContainer, { marginTop: 0, gap: 4 }]}>
               <TouchableOpacity
                 style={[styles.langChip, { paddingVertical: 8, paddingHorizontal: 16 }, weightUnit === 'kg' && styles.chipActive]}
@@ -188,7 +188,7 @@ export default function ProfileScreen() {
             </View>
             <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.settingRow, { borderBottomWidth: 0 }]} onPress={() => Linking.openURL('mailto:t2549480@gmail.com')}>
+          <TouchableOpacity style={[styles.settingRow, { borderBottomWidth: 0 }]} onPress={() => Linking.openURL('mailto:trenotesupport@gmail.com')}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="mail-outline" size={20} color={Theme.colors.text} style={{ marginRight: 10 }} />
               <Text style={styles.settingLabel}>{t('ui.profile.contact')}</Text>

@@ -3,9 +3,9 @@ import { Stack } from 'expo-router';
 import { Theme } from '../src/theme';
 import { useTranslation } from 'react-i18next';
 
-const CONTACT_EMAIL = 't2549480@gmail.com';
-const LAST_UPDATED_JA = '2026年4月11日';
-const LAST_UPDATED_EN = 'April 11, 2026';
+const CONTACT_EMAIL = 'trenotesupport@gmail.com';
+const LAST_UPDATED_JA = '2026年4月29日';
+const LAST_UPDATED_EN = 'April 29, 2026';
 
 export default function PrivacyPolicyScreen() {
   const { i18n } = useTranslation();

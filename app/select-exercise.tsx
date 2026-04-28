@@ -8,7 +8,7 @@ import { getDB, addCustomExercise, getPreviousWorkoutSets, getPersonalRecords, g
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useTranslation } from 'react-i18next';
-import { translateExercise, translateMuscleGroup, translateEquipment } from '../src/i18n';
+import { translateExercise, translateMuscleGroup, translateEquipment, translateStance } from '../src/i18n';
 
 type Exercise = {
   id: number;
@@ -59,7 +59,7 @@ export default function SelectExerciseScreen() {
       setFavoriteIds(favs);
       setExercises(rows as Exercise[]);
     } catch (e: any) {
-      Alert.alert('エラー詳細', `取得失敗: ${e?.message || String(e)}`);
+      Alert.alert(t('ui.common.error'), `${t('ui.exercise_select.error_add_failed')}: ${e?.message || String(e)}`);
     }
   };
 
@@ -113,7 +113,7 @@ export default function SelectExerciseScreen() {
       await fetchAll();
       handleSelect({ id: newId, name: newName.trim(), muscle_group: newGroup, equipment: newEquip, is_unilateral: isUnilateral ? 1 : 0, default_variation: defaultVar });
     } catch (e) {
-      Alert.alert('エラー', '追加に失敗しました');
+      Alert.alert(t('ui.common.error'), t('ui.exercise_select.error_add_failed'));
     }
   };
 
@@ -136,8 +136,8 @@ export default function SelectExerciseScreen() {
   const otherItems = filtered.filter(e => !favoriteIds.has(e.id));
 
   const sections = [];
-  if (favItems.length > 0) sections.push({ title: 'お気に入り', data: favItems });
-  if (otherItems.length > 0) sections.push({ title: favItems.length > 0 ? 'その他の種目' : '種目', data: otherItems });
+  if (favItems.length > 0) sections.push({ title: t('ui.exercise_select.section_favorites'), data: favItems });
+  if (otherItems.length > 0) sections.push({ title: favItems.length > 0 ? t('ui.exercise_select.section_others') : t('ui.exercise_select.section_all'), data: otherItems });
 
   const handleDelete = async (ex: Exercise) => {
     Alert.alert(
@@ -225,7 +225,7 @@ export default function SelectExerciseScreen() {
           <Ionicons name="search" size={20} color={Theme.colors.textMuted} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="種目を検索..."
+            placeholder={t('ui.exercise_select.search_placeholder')}
             placeholderTextColor={Theme.colors.textMuted}
             value={search}
             onChangeText={setSearch}
@@ -260,7 +260,7 @@ export default function SelectExerciseScreen() {
               style={[styles.chip, selectedEquipment === equip && { backgroundColor: 'rgba(79, 172, 254, 0.1)', borderColor: 'rgba(79, 172, 254, 0.5)' }]}
               onPress={() => setSelectedEquipment(equip)}
             >
-              <Text style={[styles.chipText, selectedEquipment === equip && styles.chipTextActive]}>{equip === 'すべて' || equip === 'その他' ? equip : translateEquipment(equip)}</Text>
+              <Text style={[styles.chipText, selectedEquipment === equip && styles.chipTextActive]}>{translateEquipment(equip)}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -268,7 +268,7 @@ export default function SelectExerciseScreen() {
 
       {sections.length === 0 ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: Theme.colors.textMuted }}>種目が見つかりません</Text>
+          <Text style={{ color: Theme.colors.textMuted }}>{t('ui.exercise_select.not_found')}</Text>
         </View>
       ) : (
         <SectionList
@@ -277,7 +277,7 @@ export default function SelectExerciseScreen() {
           renderItem={renderItem}
           renderSectionHeader={({ section }) => (
             <View style={styles.sectionHeader}>
-              {section.title === 'お気に入り' && (
+              {section.title === t('ui.exercise_select.section_favorites') && (
                 <Ionicons name="star" size={14} color="#f5a623" style={{ marginRight: 6 }} />
               )}
               <Text style={styles.sectionHeaderText}>{section.title}</Text>
@@ -298,7 +298,7 @@ export default function SelectExerciseScreen() {
             <View style={styles.choiceContainer}>
               {allCategories.map(g => (
                 <TouchableOpacity key={g} onPress={() => setNewGroup(g)} style={[styles.choiceChip, newGroup === g && styles.choiceChipActive]}>
-                  <Text style={[styles.choiceChipText, newGroup === g && styles.choiceChipTextActive]}>{g}</Text>
+                  <Text style={[styles.choiceChipText, newGroup === g && styles.choiceChipTextActive]}>{translateMuscleGroup(g)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -308,7 +308,7 @@ export default function SelectExerciseScreen() {
             <View style={styles.choiceContainer}>
               {allEquipments.map(e => (
                 <TouchableOpacity key={e} onPress={() => setNewEquip(e)} style={[styles.choiceChip, newEquip === e && styles.choiceChipActive]}>
-                  <Text style={[styles.choiceChipText, newEquip === e && styles.choiceChipTextActive]}>{e}</Text>
+                  <Text style={[styles.choiceChipText, newEquip === e && styles.choiceChipTextActive]}>{translateEquipment(e)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -333,7 +333,7 @@ export default function SelectExerciseScreen() {
                       style={[styles.choiceChip, newDefaultStance === preset && styles.choiceChipActive]}
                       onPress={() => setNewDefaultStance(preset)}
                     >
-                      <Text style={[styles.choiceChipText, newDefaultStance === preset && styles.choiceChipTextActive]}>{preset}</Text>
+                      <Text style={[styles.choiceChipText, newDefaultStance === preset && styles.choiceChipTextActive]}>{translateStance(preset)}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>

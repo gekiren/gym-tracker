@@ -12,7 +12,20 @@
       "continue_workout": "ワークアウトを続ける",
       "no_workout": "ワークアウトが開始されていません",
       "routines": "ルーティン",
-      "start_routine": "ルーティンを開始"
+      "start_routine": "ルーティンを開始",
+      "free_workout_title": "フリーワークアウト",
+      "home_header_title": "トレーニングを開始",
+      "home_header_subtitle": "新しいワークアウトを始めるか、ルーティンを選んでください。",
+      "return_to_active": "進行中のワークアウトに戻る",
+      "start_free_workout": "フリーワークアウトを開始",
+      "my_routines": "マイ ルーティン",
+      "view_all": "すべて見る",
+      "no_exercises": "種目なし",
+      "no_routines": "ルーティンがありません。",
+      "onboarding_unit_title": "重量の単位を選択",
+      "onboarding_unit_desc": "普段トレーニングで使用している重量の単位を選んでください。この設定はあとから環境設定で変更できます。",
+      "unit_kg_desc": "kg (キログラム)",
+      "unit_lbs_desc": "lbs (ポンド)"
     },
     "active_workout": {
       "finish": "完了",
@@ -43,7 +56,32 @@
       "stance_exercise_hint": "※変更すると、以降に追加するセットのスタンスが自動的に設定されます。（未チェックのセットにも反映されます）",
       "stance_label": "スタンス",
       "stance_add_link": "スタンス: 追加",
-      "pr_label": "🏆最高記録!"
+      "pr_label": "🏆 自己ベスト!",
+      "alert_pause_title": "ワークアウトの中断",
+      "alert_pause_message": "ワークアウトを中止して終了しますか？\n中止せずに離れる場合はバックグラウンドで継続します。",
+      "alert_pause_cancel": "キャンセル",
+      "alert_pause_leave": "中止せずに離れる",
+      "alert_pause_discard": "中止して終了する",
+      "alert_finish_title": "ワークアウトの終了",
+      "alert_finish_message": "現在の記録を保存して終了しますか？",
+      "alert_finish_save": "保存して終了",
+      "add_set_label": "+ セット追加",
+      "add_exercise_label": "+ 種目を追加",
+      "rest_label_resting": "休憩中",
+      "skip_label": "スキップ",
+      "plate_calc_title": "バーとプレート計算",
+      "plate_calc_bar_weight": "バーの重さ",
+      "plate_calc_add_plates": "追加するプレート (片側)",
+      "plate_calc_undo": "元に戻す",
+      "plate_calc_apply_btn": "入力中のセットに反映する",
+      "plate_calc_success_title": "反映完了",
+      "plate_calc_success_message": "{{weight}}{{unit}}をセットに入力しました。",
+      "plate_calc_error_no_set": "反映先のセットを選択(タップ)してからお試しください。",
+      "alert_delete_set_error_title": "削除不可",
+      "alert_delete_set_error_message": "チェックが入っているセットは削除できません。まずチェックを外してください。",
+      "alert_delete_set_title": "セットの削除",
+      "alert_delete_set_message": "セット {{number}} を削除しますか？",
+      "alert_delete_set_confirm": "削除する"
     },
     "exercise_select": {
       "search_placeholder": "種目を検索...",
@@ -73,7 +111,9 @@
       "empty": "まだ記録がありません",
       "delete_title": "履歴を削除",
       "delete_message": "このワークアウト記録を削除しますか？",
-      "sets": "セット"
+      "sets": "セット",
+      "not_found": "ワークアウトが見つかりませんでした。",
+      "back": "戻る"
     },
     "exercise_detail": {
       "title": "種目詳細",
@@ -86,22 +126,105 @@
       "header_weight": "重量",
       "rpe_label": "@RPE"
     },
+    "edit_workout": {
+      "title": "履歴の編集",
+      "save_success_title": "保存完了",
+      "save_success_message": "履歴を上書き保存しました。",
+      "save_error_title": "エラー",
+      "save_error_message": "保存に失敗しました。",
+      "delete_set_title": "セットの削除",
+      "delete_set_message": "このセット記録を削除しますか？",
+      "workout_name_label": "ワークアウト名",
+      "workout_notes_label": "メモ",
+      "workout_notes_placeholder": "ワークアウトの感想やメモを入力...",
+      "exercise_notes_placeholder": "種目メモを入力..."
+    },
+    "exercise_detail": {
+      "title": "詳細",
+      "export_md_header": "## {{name}} 記録履歴\n\n",
+      "export_md_table_header": "| 日付 | セット | 重量 | 回数 | RPE | Time/Rest |\n| :--- | :--- | :--- | :--- | :--- | :--- |\n",
+      "copy_success_title": "コピー完了",
+      "copy_success_message": "履歴をMarkdown形式でクリップボードにコピーしました。",
+      "not_found": "種目が見つかりません。",
+      "section_pr": "自己ベスト (PR)",
+      "section_history": "過去の履歴",
+      "copy_md_btn": "MD形式でコピー",
+      "empty_history": "まだ完了済みの記録がありません。",
+      "empty_history_sub": "ワークアウトで記録をつけるとここに履歴が並びます。",
+      "table_header_set": "セット",
+      "table_header_record": "記録"
+    },
+    "build_routine": {
+      "title": "ルーティンの作成",
+      "error_no_title": "ルーティン名を入力してください。",
+      "error_no_exercises": "最低1つの種目を追加してください。",
+      "error_save_failed": "ルーティンの保存に失敗しました。",
+      "routine_name_label": "ルーティン名 *",
+      "routine_name_placeholder": "例: 胸トレ（高重量）",
+      "exercises_count_label": "構成種目 ({{count}})",
+      "add_exercise_btn": "+ 種目を追加"
+    },
+    "history": {
+      "title": "履歴",
+      "subtitle": "過去のワークアウト記録とMarkdown出力",
+      "chart_title": "最近の総ボリューム ({{unit}})",
+      "empty_state": "まだ記録がありません。",
+      "delete_alert_title": "履歴の削除",
+      "delete_alert_message": "「{{title}}」の記録を削除してもよろしいですか？",
+      "delete_confirm": "削除する",
+      "copy_success_title": "Markdown Copied!",
+      "copy_success_message": "ワークアウトの記録をMarkdown形式でクリップボードにコピーしました😎",
+      "duration_label": "所要時間",
+      "exercises_count": "種目数",
+      "volume_label": "ボリューム"
+    },
+    "exercise_library": {
+      "title": "種目辞典",
+      "subtitle": "登録されているトレーニング種目の管理",
+      "search_placeholder": "種目を検索...",
+      "create_custom_title": "オリジナル種目の作成",
+      "exercise_name_label": "種目名 *",
+      "exercise_name_placeholder": "例: ダンベルプレス",
+      "target_muscle_label": "対象部位",
+      "equipment_label": "使用器具",
+      "manual_input_placeholder": "リストにない場合は入力...",
+      "save_and_add_btn": "保存して追加",
+      "error_no_name": "種目名を入力してください。",
+      "error_add_failed": "追加に失敗しました"
+    },
+    "tabs": {
+      "home": "ホーム",
+      "workout": "ワークアウト",
+      "history": "履歴",
+      "exercises": "種目",
+      "profile": "プロフィール"
+    },
+    "notifications": {
+      "rest_finished_title": "休憩終了！",
+      "rest_finished_body": "次のセットを始めましょう🔥"
+    },
     "profile": {
       "title": "設定・ツール",
       "section_tools": "ツール",
       "section_timer": "タイマー設定",
-      "section_language": "言語",
+      "section_preferences": "環境設定",
+      "section_language": "言語設定",
       "section_info": "アプリ情報",
       "rm_calculator": "RM計算機",
-      "rm_calculator_desc": "重量と回数から最大挙上重量を推算",
+      "rm_calculator_desc": "最大挙上重量を推算します",
       "auto_rest": "インターバルタイマーの自動開始",
-      "auto_rest_desc": "ワークアウトでセットを完了した時に、自動的にタイマーを開始します。",
-      "default_rest": "デフォルトのインターバル時間",
-      "default_rest_desc": "タイマー開始時にセットされる基準の休憩時間です。",
+      "auto_rest_desc": "セット完了時に自動でタイマーを開始します。",
+      "default_rest": "デフォルトのインターバル",
+      "default_rest_desc": "タイマー開始時の標準の時間です。",
+      "weight_unit_label": "重量の単位",
       "language_label": "アプリの言語",
       "version": "バージョン",
       "privacy_policy": "プライバシーポリシー",
-      "contact": "お問い合わせ"
+      "contact": "お問い合わせ",
+      "db_error_title": "データベースエラー",
+      "db_error_text": "初期化に失敗しました。アプリを再起動するか、下のボタンを押して再試行してください。",
+      "retry": "再試行",
+      "screen_title_select_exercise": "種目を選択"
     },
     "edit_workout": {
       "title": "ワークアウトを編集",
@@ -118,12 +241,24 @@
       "title": "ルーティン",
       "empty": "まだルーティンがありません",
       "create": "ルーティンを作成",
-      "delete_title": "削除",
-      "delete_message": "このルーティンを削除しますか？"
+      "delete_title": "ルーティンの削除",
+      "delete_message": "このルーティンを削除しますか？",
+      "delete_message_with_title": "{{title}} を削除してもよろしいですか？",
+      "all_routines": "すべてのルーティン"
     },
     "timer": {
       "rest_end_title": "休憩終了！",
       "rest_end_body": "次のセットを始めましょう🔥"
+    },
+    "rm_calc": {
+      "title": "RM計算機",
+      "subtitle": "挙上重量と回数から、最大挙上重量（1RM）や各回数の適切な設定重量を推算します。",
+      "weight": "重量",
+      "reps": "回数",
+      "estimated_1rm": "推定 1 RM",
+      "estimated_weight": "推定重量",
+      "ratio_1rm": "1RM比",
+      "invalid_input": "有効な重量と回数を入力してください。"
     },
     "common": {
       "cancel": "キャンセル",
@@ -132,7 +267,16 @@
       "error": "エラー",
       "ok": "OK",
       "secs_unit": "秒",
-      "min_unit": "分"
+      "min_unit": "分",
+      "weight_unit": "kg"
+    },
+    "markdown": {
+      "date_label": "日付",
+      "content_title": "トレーニング内容",
+      "exercise_note": "メモ",
+      "history_title": "{{name}} の履歴",
+      "max_weight": "最大重量",
+      "volume": "ボリューム"
     }
   },
   "exercises": {
@@ -149,14 +293,14 @@
     "チェストプレス": "チェストプレス",
     "スミスマシン ベンチプレス": "スミスマシン ベンチプレス",
     "スミスマシン インクラインプレス": "スミスマシン インクラインプレス",
-    "プッシュアップ (腕立て伏せ)": "プッシュアップ (腕立て伏せ)",
+    "プッシュアップ": "プッシュアップ",
     "加重プッシュアップ": "加重プッシュアップ",
     "ディップス": "ディップス",
     "加重ディップス": "加重ディップス",
     "デッドリフト": "デッドリフト",
     "ルーマニアンデッドリフト": "ルーマニアンデッドリフト",
     "ハーフデッドリフト": "ハーフデッドリフト",
-    "懸垂 (チンニング)": "懸垂 (チンニング)",
+    "懸垂": "懸垂",
     "加重懸垂": "加重懸垂",
     "ラットプルダウン": "ラットプルダウン",
     "リバースグリップ ラットプルダウン": "リバースグリップ ラットプルダウン",
@@ -170,7 +314,7 @@
     "プルオーバー": "プルオーバー",
     "ストレートアームプルダウン": "ストレートアームプルダウン",
     "バックエクステンション": "バックエクステンション",
-    "オーバーヘッドプレス (ミリタリープレス)": "オーバーヘッドプレス (ミリタリープレス)",
+    "オーバーヘッドプレス": "オーバーヘッドプレス",
     "ダンベルショルダープレス": "ダンベルショルダープレス",
     "アーノルドプレス": "アーノルドプレス",
     "スミスマシン ショルダープレス": "スミスマシン ショルダープレス",
@@ -215,8 +359,8 @@
     "スタンディングカーフレイズ": "スタンディングカーフレイズ",
     "シーテッドカーフレイズ": "シーテッドカーフレイズ",
     "ヒップスラスト": "ヒップスラスト",
-    "マシンアブダクター (外転)": "マシンアブダクター (外転)",
-    "マシンアダクター (内転)": "マシンアダクター (内転)",
+    "マシンアブダクター": "マシンアブダクター",
+    "マシンアダクター": "マシンアダクター",
     "グッドモーニング": "グッドモーニング",
     "クランチ": "クランチ",
     "シットアップ": "シットアップ",
@@ -236,7 +380,8 @@
     "腕": "腕",
     "脚": "脚",
     "腹筋": "腹筋",
-    "その他": "その他"
+    "その他": "その他",
+    "すべて": "すべて"
   },
   "equipment": {
     "バーベル": "バーベル",
@@ -247,6 +392,22 @@
     "EZバー": "EZバー",
     "自重": "自重",
     "ウエイト": "ウエイト",
-    "その他": "その他"
+    "その他": "その他",
+    "すべて": "すべて"
+  },
+  "stances": {
+    "ナロー": "ナロー",
+    "ワイド": "ワイド",
+    "スモウ": "スモウ",
+    "コンベンショナル": "コンベンショナル",
+    "ハイバー": "ハイバー",
+    "ローバー": "ローバー",
+    "リバースグリップ": "リバースグリップ",
+    "ニュートラルグリップ": "ニュートラルグリップ",
+    "オルタネイトグリップ": "オルタネイトグリップ",
+    "サムレスグリップ": "サムレスグリップ",
+    "フックグリップ": "フックグリップ",
+    "ポーズ": "ポーズ",
+    "デッドストップ": "デッドストップ"
   }
 }

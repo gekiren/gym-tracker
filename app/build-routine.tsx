@@ -5,9 +5,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { addRoutine } from '../src/db/database';
+import { useTranslation } from 'react-i18next';
 
 export default function BuildRoutineScreen() {
   const { draftRoutine, updateDraftTitle, removeDraftExercise, clearDraft } = useWorkoutStore();
+  const { t } = useTranslation();
 
   useEffect(() => {
     // initialize empty draft
@@ -16,11 +18,11 @@ export default function BuildRoutineScreen() {
 
   const handleSave = async () => {
     if (!draftRoutine.title.trim()) {
-      Alert.alert('エラー', 'ルーティン名を入力してください。');
+      Alert.alert(t('ui.common.error'), t('ui.build_routine.error_no_title'));
       return;
     }
     if (draftRoutine.exercises.length === 0) {
-      Alert.alert('エラー', '最低1つの種目を追加してください。');
+      Alert.alert(t('ui.common.error'), t('ui.build_routine.error_no_exercises'));
       return;
     }
 
@@ -33,7 +35,7 @@ export default function BuildRoutineScreen() {
       clearDraft();
       router.back();
     } catch (e) {
-      Alert.alert('エラー', 'ルーティンの保存に失敗しました。');
+      Alert.alert(t('ui.common.error'), t('ui.build_routine.error_save_failed'));
       console.error(e);
     }
   };
@@ -44,24 +46,24 @@ export default function BuildRoutineScreen() {
         <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
           <Ionicons name="close" size={28} color={Theme.colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.title}>ルーティンの作成</Text>
+        <Text style={styles.title}>{t('ui.build_routine.title')}</Text>
         <TouchableOpacity onPress={handleSave} style={styles.saveBtn}>
-          <Text style={styles.saveBtnText}>保存</Text>
+          <Text style={styles.saveBtnText}>{t('ui.common.save')}</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.label}>ルーティン名 *</Text>
+        <Text style={styles.label}>{t('ui.build_routine.routine_name_label')}</Text>
         <TextInput
           style={styles.input}
-          placeholder="例: 胸トレ（高重量）"
+          placeholder={t('ui.build_routine.routine_name_placeholder')}
           placeholderTextColor={Theme.colors.textMuted}
           value={draftRoutine.title}
           onChangeText={updateDraftTitle}
         />
 
         <View style={styles.exercisesHeader}>
-          <Text style={styles.label}>構成種目 ({draftRoutine.exercises.length})</Text>
+          <Text style={styles.label}>{t('ui.build_routine.exercises_count_label', { count: draftRoutine.exercises.length })}</Text>
         </View>
 
         {draftRoutine.exercises.map((ex, idx) => (
@@ -80,7 +82,7 @@ export default function BuildRoutineScreen() {
           style={styles.addExerciseBtn} 
           onPress={() => router.push('/select-exercise?mode=routine')}
         >
-          <Text style={styles.addExerciseBtnText}>+ 種目を追加</Text>
+          <Text style={styles.addExerciseBtnText}>{t('ui.build_routine.add_exercise_btn')}</Text>
         </TouchableOpacity>
 
       </ScrollView>

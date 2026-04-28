@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import i18n, { translateExercise } from '../i18n';
 
 type SetData = {
   set_number: number;
@@ -28,22 +29,22 @@ type WorkoutData = {
 export const formatWorkoutToMarkdown = (workout: WorkoutData): string => {
   const dateStr = format(new Date(workout.start_time), 'yyyy-MM-dd HH:mm');
   let md = `# ${workout.title}\n`;
-  md += `**日付**: ${dateStr}\n\n`;
+  md += `**${i18n.t('ui.markdown.date_label')}**: ${dateStr}\n\n`;
   
   if (workout.notes) {
     md += `> ${workout.notes}\n\n`;
   }
 
-  md += `## トレーニング内容\n`;
+  md += `## ${i18n.t('ui.markdown.content_title')}\n`;
   workout.exercises.forEach((ex) => {
-    md += `### ${ex.exercise_name}\n`;
+    md += `### ${translateExercise(ex.exercise_name)}\n`;
     if (ex.notes) {
-      md += `メモ: ${ex.notes}\n\n`;
+      md += `${i18n.t('ui.markdown.exercise_note')}: ${ex.notes}\n\n`;
     }
     md += `| Set | Weight | Reps | RPE | Time/Rest |\n`;
     md += `|---|---|---|---|---|\n`;
     ex.sets.forEach((set) => {
-      const w = set.weight ? `${set.weight} kg` : '-';
+      const w = set.weight ? `${set.weight} ${i18n.t('ui.common.weight_unit')}` : '-';
       const r = set.reps ? `${set.reps}` : '-';
       const rpe = set.rpe ? `@${set.rpe}` : '-';
       let timeStr = '';
@@ -70,12 +71,12 @@ export const formatWorkoutToMarkdown = (workout: WorkoutData): string => {
  * 特定の種目のこれまでの履歴をMarkdown形式に変換します。
  */
 export const formatExerciseHistoryToMarkdown = (exerciseName: string, history: { date: string, maxWeight: number, totalVolume: number }[]): string => {
-  let md = `# ${exerciseName} の履歴\n\n`;
-  md += `| 日付 | 最大重量 | ボリューム |\n`;
+  let md = `# ${i18n.t('ui.markdown.history_title', { name: translateExercise(exerciseName) })}\n\n`;
+  md += `| ${i18n.t('ui.markdown.date_label')} | ${i18n.t('ui.markdown.max_weight')} | ${i18n.t('ui.markdown.volume')} |\n`;
   md += `|---|---|---|\n`;
   history.forEach((h) => {
     const d = format(new Date(h.date), 'yyyy-MM-dd');
-    md += `| ${d} | ${h.maxWeight} kg | ${h.totalVolume} kg |\n`;
+    md += `| ${d} | ${h.maxWeight} ${i18n.t('ui.common.weight_unit')} | ${h.totalVolume} ${i18n.t('ui.common.weight_unit')} |\n`;
   });
   return md;
 };

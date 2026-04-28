@@ -71,11 +71,11 @@ export default function RootLayout() {
   if (dbError) {
     return (
       <View style={[styles.center, { padding: 40 }]}>
-        <Text style={styles.errorTitle}>データベースエラー</Text>
-        <Text style={styles.errorText}>初期化に失敗しました。アプリを再起動するか、下のボタンを押して再試行してください。</Text>
+        <Text style={styles.errorTitle}>{i18n.t('ui.profile.db_error_title')}</Text>
+        <Text style={styles.errorText}>{i18n.t('ui.profile.db_error_text')}</Text>
         <Text style={[styles.errorText, { color: '#ff4444', fontSize: 12 }]}>{dbError}</Text>
         <TouchableOpacity style={styles.retryBtn} onPress={setupDB}>
-          <Text style={styles.retryBtnText}>再試行</Text>
+          <Text style={styles.retryBtnText}>{i18n.t('ui.profile.retry')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -94,7 +94,7 @@ export default function RootLayout() {
       <ThemeProvider value={DarkTheme}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="select-exercise" options={{ presentation: 'modal', title: '種目を選択' }} />
+          <Stack.Screen name="select-exercise" options={{ presentation: 'modal', title: i18n.t('ui.profile.screen_title_select_exercise') }} />
           <Stack.Screen name="active-workout" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="exercise/[id]" options={{ presentation: 'card' }} />
           <Stack.Screen name="edit-workout/[id]" options={{ presentation: 'card' }} />

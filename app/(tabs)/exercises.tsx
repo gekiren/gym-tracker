@@ -1,9 +1,11 @@
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Modal, Alert, ScrollView } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, router } from 'expo-router';
 import { Theme } from '../../src/theme';
-import { getExercises, addCustomExercise } from '../../src/db/database';
+import { getExercises, addCustomExercise, deleteExercise } from '../../src/db/database';
 import { useTranslation } from 'react-i18next';
 import { translateExercise, translateMuscleGroup, translateEquipment } from '../../src/i18n';
 
@@ -42,7 +44,7 @@ export default function ExercisesScreen() {
 
   const handleCreate = async () => {
     if (!newName.trim()) {
-      Alert.alert('エラー', '種目名を入力してください。');
+      Alert.alert(t('ui.common.error'), t('ui.exercise_library.error_no_name'));
       return;
     }
     try {
@@ -58,8 +60,51 @@ export default function ExercisesScreen() {
       fetchData();
     } catch (e) {
       console.error(e);
-      Alert.alert('エラー', '追加に失敗しました');
+      Alert.alert(t('ui.common.error'), t('ui.exercise_library.error_add_failed'));
     }
+  };
+
+  const handleDelete = async (ex: Exercise) => {
+    Alert.alert(
+      t('ui.exercise_select.delete_title'),
+      t('ui.exercise_select.delete_message', { name: translateExercise(ex.name) }),
+      [
+        { text: t('ui.common.cancel'), style: 'cancel' },
+        { 
+          text: t('ui.common.delete'), 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteExercise(ex.id);
+              fetchData();
+            } catch (e) {
+              Alert.alert(t('ui.common.error'), t('ui.exercise_select.delete_error'));
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const renderRightActions = (progress: SharedValue<number>, drag: SharedValue<number>, item: Exercise) => {
+    const styleAnimation = useAnimatedStyle(() => {
+      return {
+        transform: [{ translateX: drag.value + 80 }],
+      };
+    });
+
+    return (
+      <View style={{ width: 80, flexDirection: 'row' }}>
+        <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
+          <TouchableOpacity 
+            style={styles.deleteAction}
+            onPress={() => handleDelete(item)}
+          >
+            <Ionicons name="trash-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+        </Reanimated.View>
+      </View>
+    );
   };
 
   // Dynamically extract unique categories from existing exercises
@@ -83,8 +128,8 @@ export default function ExercisesScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>種目辞典</Text>
-        <Text style={styles.subtitle}>登録されているトレーニング種目の管理</Text>
+        <Text style={styles.title}>{t('ui.exercise_library.title')}</Text>
+        <Text style={styles.subtitle}>{t('ui.exercise_library.subtitle')}</Text>
       </View>
 
       <View style={styles.actionRow}>
@@ -92,7 +137,7 @@ export default function ExercisesScreen() {
           <Ionicons name="search" size={20} color={Theme.colors.textMuted} style={{ marginRight: 8 }} />
           <TextInput
             style={styles.searchInput}
-            placeholder="種目を検索..."
+            placeholder={t('ui.exercise_library.search_placeholder')}
             placeholderTextColor={Theme.colors.textMuted}
             value={search}
             onChangeText={setSearch}
@@ -127,7 +172,7 @@ export default function ExercisesScreen() {
               style={[styles.chip, selectedEquipment === equip && { backgroundColor: 'rgba(79, 172, 254, 0.1)', borderColor: 'rgba(79, 172, 254, 0.5)' }]}
               onPress={() => setSelectedEquipment(equip)}
             >
-              <Text style={[styles.chipText, selectedEquipment === equip && styles.chipTextActive]}>{equip === 'すべて' || equip === 'その他' ? equip : translateEquipment(equip)}</Text>
+              <Text style={[styles.chipText, selectedEquipment === equip && styles.chipTextActive]}>{translateEquipment(equip)}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -137,54 +182,60 @@ export default function ExercisesScreen() {
         data={filtered}
         keyExtractor={item => item.id.toString()}
         renderItem={({ item }) => (
-          <TouchableOpacity 
-            style={styles.item}
-            activeOpacity={0.7}
-            onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: item.id } } as any)}
+          <Swipeable
+            renderRightActions={(prog, drag) => renderRightActions(prog, drag, item)}
+            friction={2}
+            rightThreshold={40}
           >
-            <View>
-              <Text style={styles.name}>{translateExercise(item.name)}</Text>
-              <Text style={styles.meta}>{translateMuscleGroup(item.muscle_group)} • {translateEquipment(item.equipment)}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
-          </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.item}
+              activeOpacity={0.7}
+              onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: item.id } } as any)}
+            >
+              <View>
+                <Text style={styles.name}>{translateExercise(item.name)}</Text>
+                <Text style={styles.meta}>{translateMuscleGroup(item.muscle_group)} • {translateEquipment(item.equipment)}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
+            </TouchableOpacity>
+          </Swipeable>
         )}
       />
 
       <Modal visible={isModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>オリジナル種目の作成</Text>
+            <Text style={styles.modalTitle}>{t('ui.exercise_library.create_custom_title')}</Text>
             
-            <Text style={styles.label}>種目名 *</Text>
-            <TextInput style={styles.modalInput} placeholder="例: ダンベルプレス" placeholderTextColor={Theme.colors.textMuted} value={newName} onChangeText={setNewName} />
+            <Text style={styles.label}>{t('ui.exercise_library.exercise_name_label')}</Text>
+            <TextInput style={styles.modalInput} placeholder={t('ui.exercise_library.exercise_name_placeholder')} placeholderTextColor={Theme.colors.textMuted} value={newName} onChangeText={setNewName} />
             
-            <Text style={styles.label}>対象部位</Text>
+            <Text style={styles.label}>{t('ui.exercise_library.target_muscle_label')}</Text>
             <View style={styles.choiceContainer}>
               {allCategories.map(g => (
                 <TouchableOpacity key={g} onPress={() => setNewGroup(g)} style={[styles.choiceChip, newGroup === g && styles.choiceChipActive]}>
-                  <Text style={[styles.choiceChipText, newGroup === g && styles.choiceChipTextActive]}>{g}</Text>
+                  <Text style={[styles.choiceChipText, newGroup === g && styles.choiceChipTextActive]}>{translateMuscleGroup(g)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
-            <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder="リストにない場合は入力..." placeholderTextColor={Theme.colors.textMuted} value={newGroup} onChangeText={setNewGroup} />
+            <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder={t('ui.exercise_library.manual_input_placeholder')} placeholderTextColor={Theme.colors.textMuted} value={newGroup} onChangeText={setNewGroup} />
             
-            <Text style={styles.label}>使用器具</Text>
+            <Text style={styles.label}>{t('ui.exercise_library.equipment_label')}</Text>
             <View style={styles.choiceContainer}>
               {allEquipments.map(e => (
                 <TouchableOpacity key={e} onPress={() => setNewEquip(e)} style={[styles.choiceChip, newEquip === e && styles.choiceChipActive]}>
-                  <Text style={[styles.choiceChipText, newEquip === e && styles.choiceChipTextActive]}>{e}</Text>
+                  <Text style={[styles.choiceChipText, newEquip === e && styles.choiceChipTextActive]}>{translateEquipment(e)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
-            <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder="リストにない場合は入力..." placeholderTextColor={Theme.colors.textMuted} value={newEquip} onChangeText={setNewEquip} />
+            <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder={t('ui.exercise_library.manual_input_placeholder')} placeholderTextColor={Theme.colors.textMuted} value={newEquip} onChangeText={setNewEquip} />
             
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
-                <Text style={styles.cancelBtnText}>キャンセル</Text>
+                <Text style={styles.cancelBtnText}>{t('ui.common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.saveBtn} onPress={handleCreate}>
-                <Text style={styles.saveBtnText}>保存して追加</Text>
+                <Text style={styles.saveBtnText}>{t('ui.exercise_library.save_and_add_btn')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -225,5 +276,12 @@ const styles = StyleSheet.create({
   cancelBtn: { padding: 12, marginRight: 8 },
   cancelBtnText: { color: Theme.colors.textMuted, fontSize: 16 },
   saveBtn: { backgroundColor: Theme.colors.primary, paddingVertical: 12, paddingHorizontal: 20, borderRadius: Theme.borderRadius.md },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  deleteAction: {
+    backgroundColor: '#ff4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    height: '100%',
+  }
 });

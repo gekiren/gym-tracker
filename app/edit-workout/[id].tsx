@@ -5,12 +5,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
 import { loadFullWorkoutData, updateWorkoutTitle, updateWorkoutSet, deleteWorkoutSet, updateWorkoutOverallNotes, updateWorkoutExerciseNotes } from '../../src/db/database';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useTranslation } from 'react-i18next';
+import { translateExercise } from '../../src/i18n';
 
 export default function EditWorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { settings } = useWorkoutStore();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (id) {
@@ -55,19 +58,19 @@ export default function EditWorkoutScreen() {
           }
         }
       }
-      Alert.alert('保存完了', '履歴を上書き保存しました。');
+      Alert.alert(t('ui.edit_workout.save_success_title'), t('ui.edit_workout.save_success_message'));
       router.back();
     } catch (e) {
       console.error(e);
-      Alert.alert('エラー', '保存に失敗しました。');
+      Alert.alert(t('ui.common.error'), t('ui.edit_workout.save_error_message'));
     }
   };
 
   const handleRemoveSet = (exIndex: number, setIndex: number) => {
-    Alert.alert('セットの削除', 'このセット記録を削除しますか？', [
-      { text: 'キャンセル', style: 'cancel' },
+    Alert.alert(t('ui.edit_workout.delete_set_title'), t('ui.edit_workout.delete_set_message'), [
+      { text: t('ui.common.cancel'), style: 'cancel' },
       { 
-        text: '削除', style: 'destructive', 
+        text: t('ui.common.delete'), style: 'destructive', 
         onPress: () => {
           setData((prev: any) => {
             const copy = { ...prev };
@@ -93,38 +96,38 @@ export default function EditWorkoutScreen() {
     <View style={styles.container}>
       <Stack.Screen 
         options={{ 
-          title: '履歴の編集',
+          title: t('ui.edit_workout.title'),
           headerStyle: { backgroundColor: Theme.colors.background },
           headerTintColor: Theme.colors.primary,
           headerRight: () => (
             <TouchableOpacity onPress={handleSave} style={{ backgroundColor: Theme.colors.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4 }}>
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>保存</Text>
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>{t('ui.common.save')}</Text>
             </TouchableOpacity>
           )
         }} 
       />
 
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.label}>ワークアウト名</Text>
+        <Text style={styles.label}>{t('ui.edit_workout.workout_name_label')}</Text>
         <TextInput
           style={styles.inputHero}
           value={data.title}
           onChangeText={handleUpdateTitle}
-          placeholder="ワークアウト名"
+          placeholder={t('ui.edit_workout.workout_name_label')}
         />
 
-        <Text style={styles.label}>メモ</Text>
+        <Text style={styles.label}>{t('ui.edit_workout.workout_notes_label')}</Text>
         <TextInput
           style={[styles.inputHero, styles.notesInput]}
           value={data.notes || ''}
           onChangeText={(text) => setData((prev: any) => ({ ...prev, notes: text }))}
-          placeholder="ワークアウトの感想やメモを入力..."
+          placeholder={t('ui.edit_workout.workout_notes_placeholder')}
           multiline
         />
 
         {data.exercises.map((ex: any, exIdx: number) => (
           <View key={ex.workout_exercise_id} style={styles.card}>
-            <Text style={styles.exerciseTitle}>{ex.exercise_name}</Text>
+            <Text style={styles.exerciseTitle}>{translateExercise(ex.exercise_name)}</Text>
             
             <TextInput
               style={styles.exerciseNotesInput}
@@ -134,7 +137,7 @@ export default function EditWorkoutScreen() {
                 next.exercises[exIdx].notes = text;
                 return next;
               })}
-              placeholder="種目メモを入力..."
+              placeholder={t('ui.edit_workout.exercise_notes_placeholder')}
               multiline
             />
             

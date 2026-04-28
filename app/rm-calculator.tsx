@@ -49,10 +49,10 @@ export default function RMCalculatorScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'RM計算機', headerStyle: { backgroundColor: Theme.colors.background }, headerTintColor: Theme.colors.primary }} />
+      <Stack.Screen options={{ title: t('ui.rm_calc.title'), headerStyle: { backgroundColor: Theme.colors.background }, headerTintColor: Theme.colors.primary }} />
         
         <View style={styles.inputSection}>
-            <Text style={styles.subtitle}>挙上重量と回数から、最大挙上重量（1RM）や各回数の適切な設定重量を推算します。</Text>
+            <Text style={styles.subtitle}>{t('ui.rm_calc.subtitle')}</Text>
             
             <View style={styles.inputRow}>
                 <View style={styles.inputGroup}>
@@ -66,7 +66,7 @@ export default function RMCalculatorScreen() {
                     />
                 </View>
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>回数</Text>
+                    <Text style={styles.label}>{t('ui.rm_calc.reps')}</Text>
                     <TextInput 
                         style={styles.input}
                         keyboardType="numeric"
@@ -79,7 +79,7 @@ export default function RMCalculatorScreen() {
 
             {isValid && (
                 <View style={styles.resultBanner}>
-                    <Text style={styles.resultLabel}>推定 1 RM</Text>
+                    <Text style={styles.resultLabel}>{t('ui.rm_calc.estimated_1rm')}</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
                         <Text style={styles.resultValue}>{Math.round(estimated1RM)}</Text>
                         <Text style={styles.resultUnit}>{settings.weightUnit}</Text>
@@ -97,8 +97,8 @@ export default function RMCalculatorScreen() {
                 <View style={styles.tableCard}>
                     <View style={styles.tableHeader}>
                         <Text style={[styles.th, { width: 50 }]}>RM</Text>
-                        <Text style={[styles.th, { flex: 1 }]}>推定重量</Text>
-                        <Text style={[styles.th, { width: 70 }]}>1RM比</Text>
+                        <Text style={[styles.th, { flex: 1 }]}>{t('ui.rm_calc.estimated_weight')}</Text>
+                        <Text style={[styles.th, { width: 70 }]}>{t('ui.rm_calc.ratio_1rm')}</Text>
                     </View>
                     
                     {rmList.map((item) => (
@@ -111,7 +111,7 @@ export default function RMCalculatorScreen() {
                 </View>
             ) : (
                 <View style={styles.emptyState}>
-                    <Text style={styles.emptyText}>有効な重量と回数を入力してください。</Text>
+                    <Text style={styles.emptyText}>{t('ui.rm_calc.invalid_input')}</Text>
                 </View>
             )}
         </ScrollView>

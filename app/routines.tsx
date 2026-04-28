@@ -2,11 +2,14 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'rea
 import { useEffect, useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Theme } from '../src/theme';
 import { getRoutines, deleteRoutine, getPreviousWorkoutSets, getPersonalRecords } from '../src/db/database';
 import { useWorkoutStore } from '../src/store/workoutStore';
+import { translateExercise } from '../src/i18n';
 
 export default function RoutinesScreen() {
+  const { t } = useTranslation();
   const [routines, setRoutines] = useState<any[]>([]);
   const { startWorkout, addExercise } = useWorkoutStore();
 
@@ -27,12 +30,12 @@ export default function RoutinesScreen() {
 
   const handleDelete = (id: number, title: string) => {
     Alert.alert(
-      'ルーティンの削除',
-      `${title} を削除してもよろしいですか？`,
+      t('ui.routines.delete_title'),
+      t('ui.routines.delete_message_with_title', { title }),
       [
-        { text: 'キャンセル', style: 'cancel' },
+        { text: t('ui.common.cancel'), style: 'cancel' },
         { 
-          text: '削除', 
+          text: t('ui.common.delete'), 
           style: 'destructive',
           onPress: async () => {
             await deleteRoutine(id);
@@ -63,7 +66,7 @@ export default function RoutinesScreen() {
         <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
           <Ionicons name="arrow-back" size={28} color={Theme.colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.title}>すべてのルーティン</Text>
+        <Text style={styles.title}>{t('ui.routines.all_routines')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -77,7 +80,7 @@ export default function RoutinesScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.routineTitle}>{r.title}</Text>
               <Text style={styles.routineDesc} numberOfLines={2}>
-                {r.exercises?.map((e: any) => e.name).join(', ') || '種目なし'}
+                {r.exercises?.map((e: any) => translateExercise(e.name)).join(', ') || t('ui.home.no_exercises')}
               </Text>
             </View>
             <TouchableOpacity onPress={() => handleDelete(r.id, r.title)} style={styles.deleteBtn}>
@@ -88,7 +91,7 @@ export default function RoutinesScreen() {
 
         {routines.length === 0 && (
           <View style={{ padding: 24, alignItems: 'center' }}>
-            <Text style={{ color: Theme.colors.textMuted }}>ルーティンがありません。</Text>
+            <Text style={{ color: Theme.colors.textMuted }}>{t('ui.routines.empty')}</Text>
           </View>
         )}
       </ScrollView>

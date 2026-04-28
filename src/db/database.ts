@@ -157,6 +157,10 @@ export const initDB = async () => {
     }
     // Delete 懸垂 (Pull-up) as duplicate of 懸垂
     await _db.runAsync('DELETE FROM exercises WHERE name = ?', ['懸垂 (Pull-up)']);
+
+    // Migration: Rename default routines
+    await _db.runAsync('UPDATE routines SET title = "Push Day", description = "Bench Press, Overhead Press, Push-Up..." WHERE title = "Push Day (押す日)"');
+    await _db.runAsync('UPDATE routines SET title = "Pull Day", description = "Deadlift, Pull-Up, Lat Pulldown..." WHERE title = "Pull Day (引く日)"');
   } catch (e) {
     console.warn('Migration: Failed to rename exercises', e);
   }
@@ -292,14 +296,14 @@ export const initDB = async () => {
     if (routineCountRow && routineCountRow.count === 0) {
       const defaultRoutines = [
         {
-          title: 'Push Day (押す日)',
-          description: 'ベンチプレス, オーバーヘッドプレス, トライセップス...',
-          exerciseNames: ['ベンチプレス', 'オーバーヘッドプレス (ミリタリープレス)', 'プッシュアップ (腕立て伏せ)', 'トライセップスエクステンション']
+          title: 'Push Day',
+          description: 'Bench Press, Overhead Press, Push-Up...',
+          exerciseNames: ['ベンチプレス', 'オーバーヘッドプレス', 'プッシュアップ', 'トライセップスエクステンション']
         },
         {
-          title: 'Pull Day (引く日)',
-          description: '懸垂, バーベルロウ, バイセップス...',
-          exerciseNames: ['デッドリフト', '懸垂 (チンニング)', 'ラットプルダウン', 'バーベルカール']
+          title: 'Pull Day',
+          description: 'Deadlift, Pull-Up, Lat Pulldown...',
+          exerciseNames: ['デッドリフト', '懸垂', 'ラットプルダウン', 'バーベルカール']
         }
       ];
 
