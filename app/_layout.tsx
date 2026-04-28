@@ -45,6 +45,17 @@ export default function RootLayout() {
       }
       
       useWorkoutStore.getState().loadSettings(defaultRest, autoRest, weightUnit, needsUnitSelection);
+      
+      const customStancesStr = storedSettings['custom_stances'];
+      if (customStancesStr) {
+        try {
+          const stances = JSON.parse(customStancesStr);
+          useWorkoutStore.getState().loadCustomStances(stances);
+        } catch(e) {
+          console.warn('Failed to parse custom_stances', e);
+        }
+      }
+
       console.log('Database initialized successfully with settings', storedSettings);
       setDbReady(true);
     } catch (e: any) {

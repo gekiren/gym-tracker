@@ -11,7 +11,7 @@ export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [exercise, setExercise] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
-  const [personalRecords, setPersonalRecords] = useState<Record<number, number>>({});
+  const [personalRecords, setPersonalRecords] = useState<Record<string, Record<number, number>>>({});
   const [isLoading, setIsLoading] = useState(true);
   const { settings } = useWorkoutStore();
 
@@ -58,7 +58,8 @@ export default function ExerciseDetailScreen() {
         if (s.work_seconds != null) timeStr += `${fmtTime(s.work_seconds)}`;
         if (s.rest_seconds != null) timeStr += `${timeStr?' / ':''}rest ${fmtTime(s.rest_seconds)}`;
         if (!timeStr) timeStr = '-';
-        md += `| ${dateStr} | ${s.set_number} | ${s.weight ? s.weight + settings.weightUnit : '-'} | ${s.reps ? s.reps + '回' : '-'} | ${s.rpe || '-'} | ${timeStr} |\n`;
+        const varStr = s.variation ? ` (${s.variation})` : '';
+        md += `| ${dateStr} | ${s.set_number}${varStr} | ${s.weight ? s.weight + settings.weightUnit : '-'} | ${s.reps ? s.reps + '回' : '-'} | ${s.rpe || '-'} | ${timeStr} |\n`;
       });
     });
 
@@ -104,16 +105,23 @@ export default function ExerciseDetailScreen() {
       {Object.keys(personalRecords).length > 0 && (
         <View style={styles.prSection}>
           <Text style={[styles.sectionTitle, { paddingHorizontal: Theme.spacing.lg, marginBottom: 8 }]}>自己ベスト (PR)</Text>
-          <View style={styles.prList}>
-            {Object.keys(personalRecords)
-              .sort((a, b) => parseInt(a) - parseInt(b))
-              .map(reps => (
-              <View key={reps} style={styles.prItem}>
-                <Text style={styles.prReps}>{reps} 回</Text>
-                <Text style={styles.prWeight}>{personalRecords[parseInt(reps)]} {settings.weightUnit}</Text>
+          {Object.entries(personalRecords).map(([variation, prMap]) => (
+            <View key={variation} style={{ marginBottom: 12 }}>
+              {variation !== 'default' && (
+                <Text style={styles.prVariationTitle}>スタンス: {variation}</Text>
+              )}
+              <View style={styles.prList}>
+                {Object.keys(prMap)
+                  .sort((a, b) => parseInt(a) - parseInt(b))
+                  .map(reps => (
+                  <View key={reps} style={styles.prItem}>
+                    <Text style={styles.prReps}>{reps} 回</Text>
+                    <Text style={styles.prWeight}>{prMap[parseInt(reps)]} {settings.weightUnit}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
+            </View>
+          ))}
         </View>
       )}
 
@@ -164,9 +172,12 @@ export default function ExerciseDetailScreen() {
                   <View key={idx} style={{ paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
                     <View style={[styles.setRow, { paddingVertical: 0 }]}>
                       <Text style={styles.tdSet}>{s.set_number}</Text>
-                      <Text style={styles.tdVal}>
-                        {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps} 回` : '-'}
-                      </Text>
+                      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <Text style={styles.tdVal}>
+                          {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps} 回` : '-'}
+                        </Text>
+                        {s.variation && <View style={styles.historyVariationBadge}><Text style={styles.historyVariationText}>{s.variation}</Text></View>}
+                      </View>
                       {s.rpe && <Text style={styles.tdRpe}>@RPE {s.rpe}</Text>}
                     </View>
                     {timeStr ? (
@@ -212,5 +223,8 @@ const styles = StyleSheet.create({
   prList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: Theme.spacing.lg },
   prItem: { backgroundColor: '#1a1a1a', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#333', minWidth: 70 },
   prReps: { color: Theme.colors.textMuted, fontSize: 12, fontWeight: 'bold', marginBottom: 2 },
-  prWeight: { color: Theme.colors.primary, fontSize: 16, fontWeight: 'bold' }
+  prWeight: { color: Theme.colors.primary, fontSize: 16, fontWeight: 'bold' },
+  prVariationTitle: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: 'bold', paddingHorizontal: Theme.spacing.lg, marginBottom: 4 },
+  historyVariationBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 8 },
+  historyVariationText: { color: Theme.colors.text, fontSize: 11, fontWeight: 'bold' }
 });

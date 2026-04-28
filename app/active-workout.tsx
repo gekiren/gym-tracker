@@ -4,7 +4,7 @@ import { Stack, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { Theme } from '../src/theme';
-import { saveWorkout } from '../src/db/database';
+import { saveWorkout, saveSetting } from '../src/db/database';
 import { useTranslation } from 'react-i18next';
 
 export default function ActiveWorkoutScreen() {
@@ -25,6 +25,19 @@ export default function ActiveWorkoutScreen() {
   const [plateCalcBar, setPlateCalcBar] = useState(20);
   const [platesOnOneSide, setPlatesOnOneSide] = useState<number[]>([]);
   const [activeSetForCalc, setActiveSetForCalc] = useState<{exId: string, setId: string} | null>(null);
+
+  // スタンス用State
+  const [stanceModalVisible, setStanceModalVisible] = useState(false);
+  const [stanceModalTarget, setStanceModalTarget] = useState<{ type: 'exercise' | 'set', exId: string, setId?: string, currentValue: string | null } | null>(null);
+  const [customStance, setCustomStance] = useState('');
+  const [isAddingStance, setIsAddingStance] = useState(false);
+  const builtinStances = [
+    'ナロー', 'ワイド', 'スモウ', 'コンベンショナル', 
+    'ハイバー', 'ローバー', 
+    'リバースグリップ', 'ニュートラルグリップ', 'オルタネイトグリップ', 'サムレスグリップ', 'フックグリップ',
+    'ポーズ', 'デッドストップ'
+  ];
+  const presetStances = Array.from(new Set([...builtinStances, ...(settings.customStances || [])]));
 
   useEffect(() => {
     setPlateCalcBar(settings.weightUnit === 'lbs' ? 45 : 20);
@@ -216,9 +229,24 @@ export default function ActiveWorkoutScreen() {
         {exercises.map((ex) => (
           <View key={ex.id} style={styles.card}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.md }}>
-              <TouchableOpacity onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: ex.exercise_id || ex.id } } as any)}>
-                <Text style={styles.exerciseTitle}>{ex.name}</Text>
-              </TouchableOpacity>
+              <View style={{ flex: 1 }}>
+                <TouchableOpacity onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: ex.exercise_id || ex.id } } as any)}>
+                  <Text style={styles.exerciseTitle}>{ex.name}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.exerciseVariationBtn}
+                  onPress={() => {
+                    setStanceModalTarget({ type: 'exercise', exId: ex.id, currentValue: ex.default_variation || null });
+                    setCustomStance(ex.default_variation || '');
+                    setStanceModalVisible(true);
+                  }}
+                >
+                  <Text style={styles.exerciseVariationText}>
+                    スタンス: {ex.default_variation || '標準 (変更)'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={12} color={Theme.colors.primary} />
+                </TouchableOpacity>
+              </View>
               <TouchableOpacity onPress={() => setExpandedExerciseNotes(prev => ({ ...prev, [ex.id]: !prev[ex.id] }))}>
                 <Ionicons 
                   name={ex.notes ? "chatbubble-ellipses" : "chatbubble-outline"} 
@@ -258,6 +286,9 @@ export default function ActiveWorkoutScreen() {
                 setActiveSetForCalc={setActiveSetForCalc}
                 calculateRM={calculateRM}
                 startTime={startTime}
+                setStanceModalTarget={setStanceModalTarget}
+                setStanceModalVisible={setStanceModalVisible}
+                setCustomStance={setCustomStance}
               />
             ))}
 
@@ -404,11 +435,108 @@ export default function ActiveWorkoutScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* スタンス選択モーダル */}
+      <Modal visible={stanceModalVisible} animationType="fade" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { padding: 0 }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: Theme.colors.border }}>
+              <Text style={styles.modalTitle}>
+                {stanceModalTarget?.type === 'exercise' ? 'デフォルトスタンスの選択' : 'セットのスタンス変更'}
+              </Text>
+              <TouchableOpacity onPress={() => { setStanceModalVisible(false); setIsAddingStance(false); }}>
+                <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ padding: 16 }}>
+              {isAddingStance ? (
+                <>
+                  <Text style={styles.sectionTitle}>新しいスタンスを追加</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="例: デッドストップ"
+                    placeholderTextColor={Theme.colors.textMuted}
+                    value={customStance}
+                    onChangeText={setCustomStance}
+                    autoFocus
+                  />
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TouchableOpacity 
+                      style={[styles.applyBtn, { flex: 1, backgroundColor: Theme.colors.card, borderWidth: 1, borderColor: Theme.colors.border }]}
+                      onPress={() => {
+                        setCustomStance('');
+                        setIsAddingStance(false);
+                      }}
+                    >
+                      <Text style={{ color: Theme.colors.text, fontWeight: 'bold', textAlign: 'center' }}>キャンセル</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                      style={[styles.applyBtn, { flex: 1 }]}
+                      onPress={() => {
+                        const val = customStance.trim() || null;
+                        if (val) {
+                          useWorkoutStore.getState().addCustomStance(val);
+                          saveSetting('custom_stances', JSON.stringify(Array.from(new Set([...(settings.customStances || []), val]))));
+                        }
+                        setCustomStance('');
+                        setIsAddingStance(false);
+                      }}
+                    >
+                      <Text style={styles.applyBtnText}>一覧に追加</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.sectionTitle}>プリセットから選ぶ</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                    {['標準', ...presetStances].map(preset => {
+                      const val = preset === '標準' ? null : preset;
+                      const isActive = stanceModalTarget?.currentValue === val;
+                      return (
+                        <TouchableOpacity
+                          key={preset}
+                          style={[styles.choiceChip, isActive && styles.choiceChipActive]}
+                          onPress={() => {
+                            if (stanceModalTarget?.type === 'exercise') {
+                              useWorkoutStore.getState().updateExerciseVariation(stanceModalTarget.exId, val);
+                            } else if (stanceModalTarget?.type === 'set' && stanceModalTarget.setId) {
+                              useWorkoutStore.getState().updateSet(stanceModalTarget.exId, stanceModalTarget.setId, { variation: val });
+                            }
+                            setStanceModalVisible(false);
+                          }}
+                        >
+                          <Text style={[styles.choiceChipText, isActive && styles.choiceChipTextActive]}>{preset}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                  
+                  <TouchableOpacity 
+                    style={[styles.applyBtn, { backgroundColor: Theme.colors.card, borderWidth: 1, borderColor: Theme.colors.border, marginTop: 8 }]}
+                    onPress={() => setIsAddingStance(true)}
+                  >
+                    <Text style={{ color: Theme.colors.primary, fontWeight: 'bold', textAlign: 'center' }}>+ オリジナルのスタンスを追加</Text>
+                  </TouchableOpacity>
+
+                  {stanceModalTarget?.type === 'exercise' && (
+                    <Text style={{ color: Theme.colors.textMuted, fontSize: 12, marginTop: 12 }}>
+                      ※変更すると、以降に追加するセットのスタンスが自動的に設定されます。（未チェックのセットにも反映されます）
+                    </Text>
+                  )}
+                </>
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
-function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, setActiveSetForCalc, calculateRM, startTime }: any) {
+function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, setActiveSetForCalc, calculateRM, startTime, setStanceModalTarget, setStanceModalVisible, setCustomStance }: any) {
   const [localWeight, setLocalWeight] = useState(set.weight != null ? String(set.weight) : '');
   const [localReps, setLocalReps] = useState(set.reps != null ? String(set.reps) : '');
   const [localRpe, setLocalRpe] = useState(set.rpe != null ? String(set.rpe) : '');
@@ -453,8 +581,10 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
   };
 
   const currentRM = calculateRM(set.weight, set.reps);
+  const varKey = set.variation || 'default';
+  const prMapForVar = ex.personalRecords ? ex.personalRecords[varKey] : null;
   const isPR = !!(set.weight && set.reps && set.weight > 0 && 
-                (!ex.personalRecords || !ex.personalRecords[set.reps] || set.weight > ex.personalRecords[set.reps]));
+                (!prMapForVar || !prMapForVar[set.reps] || set.weight > prMapForVar[set.reps]));
   
   let timeTakenStr = '';
   let restTimeStr = '';
@@ -506,7 +636,10 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
         onLongPress={handleLongPress}
         delayLongPress={500}
       >
-        <Text style={styles.tdSet}>{set.set_number}{set.side ? `(${set.side})` : ''}</Text>
+        <View style={{ width: 40, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={styles.tdSet}>{set.set_number}{set.side ? `\n(${set.side})` : ''}</Text>
+        </View>
+
         {set.is_completed ? (
           <View style={[styles.input, styles.inputReadOnly]}>
             <Text style={styles.inputReadOnlyText}>{localWeight || (set.prev_weight ? String(set.prev_weight) : '-')}</Text>
@@ -567,15 +700,38 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
         </View>
       </TouchableOpacity>
       
-      {/* Meta Row (RM & Time & PR) */}
-      {(currentRM != null || timeTakenStr || restTimeStr || isPR) && (
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingRight: 8, marginBottom: 8, marginTop: -4 }}>
+      {/* Meta Row (Variation & RM & Time & PR) */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 8, marginBottom: 8, marginTop: -4 }}>
+        {/* Left side: Variation */}
+        <View style={{ flex: 1.5, flexDirection: 'row', alignItems: 'center', paddingLeft: 4 }}>
+          {set.is_completed ? (
+            <Text style={{ color: Theme.colors.textMuted, fontSize: 11 }} numberOfLines={2}>
+              {set.variation ? `スタンス: ${set.variation}` : 'スタンス: -'}
+            </Text>
+          ) : (
+            <TouchableOpacity 
+              onPress={() => {
+                setStanceModalTarget({ type: 'set', exId: ex.id, setId: set.id, currentValue: set.variation || null });
+                setCustomStance(set.variation || '');
+                setStanceModalVisible(true);
+              }}
+              style={{ flexDirection: 'row', alignItems: 'center' }}
+            >
+              <Text style={{ color: Theme.colors.primary, fontSize: 11, textDecorationLine: 'underline' }} numberOfLines={2}>
+                {set.variation ? `スタンス: ${set.variation}` : 'スタンス: 追加'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Right side: RM & Time & PR */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', flex: 1 }}>
            {isPR && <Text style={{ color: '#f5a623', fontSize: 11, fontWeight: 'bold', marginRight: 12 }}>🏆最高記録!</Text>}
            {currentRM != null && <Text style={{ color: Theme.colors.primary, fontSize: 11, marginRight: 12 }}>1RM {currentRM}</Text>}
            {restTimeStr ? <Text style={{ color: Theme.colors.textMuted, fontSize: 11, marginRight: 8 }}>{restTimeStr}</Text> : null}
            {timeTakenStr ? <Text style={{ color: Theme.colors.success, fontSize: 11 }}>{timeTakenStr}</Text> : null}
         </View>
-      )}
+      </View>
     </View>
   );
 }
@@ -585,12 +741,16 @@ const styles = StyleSheet.create({
   content: { padding: Theme.spacing.md, paddingBottom: 100 },
   timeText: { color: Theme.colors.textMuted, fontSize: 16, textAlign: 'center', marginVertical: 8 },
   card: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, marginBottom: Theme.spacing.lg },
-  exerciseTitle: { color: Theme.colors.primary, fontSize: 18, fontWeight: 'bold', marginBottom: Theme.spacing.md },
+  exerciseTitle: { color: Theme.colors.primary, fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
+  exerciseVariationBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(79, 172, 254, 0.1)', alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.3)' },
+  exerciseVariationText: { color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold', marginRight: 4 },
   tableHeader: { flexDirection: 'row', marginBottom: 8, paddingHorizontal: 4 },
   th: { color: Theme.colors.textMuted, fontSize: 14, fontWeight: '600', textAlign: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, paddingHorizontal: 4 },
   rowCompleted: { opacity: 0.7 },
-  tdSet: { color: Theme.colors.text, width: 40, textAlign: 'center', fontSize: 16, fontWeight: '500' },
+  tdSet: { color: Theme.colors.text, textAlign: 'center', fontSize: 16, fontWeight: '500' },
+  setVariationBadge: { marginTop: 4, backgroundColor: '#333', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 },
+  setVariationText: { color: Theme.colors.textMuted, fontSize: 10, fontWeight: 'bold' },
   input: { backgroundColor: '#2a2a2a', color: Theme.colors.text, flex: 1, marginHorizontal: 3, borderRadius: 4, paddingVertical: 6, textAlign: 'center', fontSize: 16 },
   inputReadOnly: { opacity: 0.7, justifyContent: 'center', alignItems: 'center' },
   inputReadOnlyText: { color: Theme.colors.text, fontSize: 16 },
@@ -632,6 +792,7 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { width: '90%', backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.lg, maxHeight: '90%' },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
+  modalInput: { backgroundColor: '#121212', color: Theme.colors.text, padding: 12, borderRadius: 4, fontSize: 16, borderWidth: 1, borderColor: Theme.colors.border, marginBottom: 16 },
   calcResultContainer: { alignItems: 'center', backgroundColor: '#1a1a1a', padding: 16, borderRadius: Theme.borderRadius.md, marginBottom: Theme.spacing.md },
   calcResultText: { fontSize: 36, fontWeight: 'bold', color: Theme.colors.primary, marginBottom: 4 },
   calcFormulaText: { fontSize: 14, color: Theme.colors.textMuted },
@@ -644,5 +805,9 @@ const styles = StyleSheet.create({
   plateBtn: { paddingVertical: 12, paddingHorizontal: 16, backgroundColor: '#222', borderRadius: 8, minWidth: '22%', alignItems: 'center' },
   plateBtnText: { color: Theme.colors.text, fontWeight: 'bold', fontSize: 14 },
   applyBtn: { backgroundColor: Theme.colors.primary, paddingVertical: 14, borderRadius: Theme.borderRadius.md, alignItems: 'center', marginTop: 8 },
-  applyBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+  applyBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  choiceChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333' },
+  choiceChipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: Theme.colors.primary },
+  choiceChipText: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: '500' },
+  choiceChipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' }
 });
