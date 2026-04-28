@@ -232,9 +232,9 @@
       "save_success": "保存しました",
       "save_error": "保存に失敗しました",
       "add_set": "+ セット追加",
-      "header_set": "Set",
-      "header_weight": "Weight (kg)",
-      "header_reps": "Reps",
+      "header_set": "セット",
+      "header_weight": "重量 ({{unit}})",
+      "header_reps": "回数",
       "header_rpe": "RPE"
     },
     "routines": {
@@ -268,7 +268,8 @@
       "ok": "OK",
       "secs_unit": "秒",
       "min_unit": "分",
-      "weight_unit": "kg"
+      "weight_unit": "kg",
+      "reps_unit": "回"
     },
     "markdown": {
       "date_label": "日付",

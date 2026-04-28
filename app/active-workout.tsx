@@ -268,10 +268,10 @@ export default function ActiveWorkoutScreen() {
               />
             )}
               <View style={styles.tableHeader}>
-                <Text style={[styles.th, { width: 40 }]}>Set</Text>
+                <Text style={[styles.th, { width: 40 }]}>{t('ui.active_workout.header_set')}</Text>
                 <Text style={[styles.th, { flex: 1 }]}>{settings.weightUnit}</Text>
-                <Text style={[styles.th, { flex: 1 }]}>Reps</Text>
-                <Text style={[styles.th, { width: 45 }]}>RPE</Text>
+                <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_reps')}</Text>
+                <Text style={[styles.th, { width: 45 }]}>{t('ui.active_workout.header_rpe')}</Text>
                 <Text style={[styles.th, { width: 36 }]}></Text>
               </View>
 

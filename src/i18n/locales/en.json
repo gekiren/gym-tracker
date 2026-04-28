@@ -269,7 +269,8 @@
       "ok": "OK",
       "secs_unit": "s",
       "min_unit": "m",
-      "weight_unit": "kg"
+      "weight_unit": "kg",
+      "reps_unit": " reps"
     },
     "markdown": {
       "date_label": "Date",

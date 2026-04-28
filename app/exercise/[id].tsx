@@ -117,7 +117,7 @@ export default function ExerciseDetailScreen() {
                   .sort((a, b) => parseInt(a) - parseInt(b))
                   .map(reps => (
                   <View key={reps} style={styles.prItem}>
-                    <Text style={styles.prReps}>{reps} {t('ui.common.reps_unit')}</Text>
+                    <Text style={styles.prReps}>{reps}{t('ui.common.reps_unit')}</Text>
                     <Text style={styles.prWeight}>{prMap[parseInt(reps)]} {settings.weightUnit}</Text>
                   </View>
                 ))}
@@ -176,7 +176,7 @@ export default function ExerciseDetailScreen() {
                       <Text style={styles.tdSet}>{s.set_number}</Text>
                       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
                         <Text style={styles.tdVal}>
-                          {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps} ${t('ui.common.reps_unit')}` : '-'}
+                          {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps}${t('ui.common.reps_unit')}` : '-'}
                         </Text>
                         {s.variation && <View style={styles.historyVariationBadge}><Text style={styles.historyVariationText}>{translateStance(s.variation)}</Text></View>}
                       </View>
