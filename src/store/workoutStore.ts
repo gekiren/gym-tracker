@@ -14,6 +14,7 @@ export type SetRecord = {
   rest_seconds?: number | null;
   work_seconds?: number | null;
   side?: 'L' | 'R' | null;
+  variation?: string | null;
 };
 
 export type ActiveExercise = {
@@ -23,7 +24,8 @@ export type ActiveExercise = {
   is_unilateral?: number;
   sets: SetRecord[];
   notes: string;
-  personalRecords?: Record<number, number>;
+  personalRecords?: Record<string, Record<number, number>>;
+  default_variation?: string | null;
 };
 
 interface WorkoutState {
@@ -35,8 +37,9 @@ interface WorkoutState {
   startWorkout: (title: string) => void;
   updateWorkoutNotes: (notes: string) => void;
   updateExerciseNotes: (exerciseId: string, notes: string) => void;
+  updateExerciseVariation: (exerciseId: string, variation: string | null) => void;
   endWorkout: () => void;
-  addExercise: (exercise: { id: number, name: string, previousSets?: any[], personalRecords?: Record<number, number>, is_unilateral?: number }) => void;
+  addExercise: (exercise: { id: number, name: string, previousSets?: any[], personalRecords?: Record<string, Record<number, number>>, is_unilateral?: number, default_variation?: string | null }) => void;
   addSet: (exerciseId: string) => void;
   removeSet: (exerciseId: string, setId: string) => void;
   updateSet: (exerciseId: string, setId: string, changes: Partial<SetRecord>) => void;
@@ -60,8 +63,11 @@ interface WorkoutState {
     autoRest: boolean;
     weightUnit: 'kg' | 'lbs';
     needsUnitSelection: boolean;
+    customStances: string[];
   };
   loadSettings: (defaultRest: number, autoRest: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean) => void;
+  loadCustomStances: (stances: string[]) => void;
+  addCustomStance: (stance: string) => void;
 
   // Routine Draft Mode
   draftRoutine: {
@@ -87,12 +93,21 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     defaultRest: 90,
     autoRest: true,
     weightUnit: 'kg',
-    needsUnitSelection: false
+    needsUnitSelection: false,
+    customStances: []
   },
 
-  loadSettings: (defaultRest: number, autoRest: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false) => set({
-    settings: { defaultRest, autoRest, weightUnit, needsUnitSelection }
-  }),
+  loadSettings: (defaultRest: number, autoRest: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false) => set((state) => ({
+    settings: { ...state.settings, defaultRest, autoRest, weightUnit, needsUnitSelection }
+  })),
+
+  loadCustomStances: (stances: string[]) => set((state) => ({
+    settings: { ...state.settings, customStances: stances }
+  })),
+
+  addCustomStance: (stance: string) => set((state) => ({
+    settings: { ...state.settings, customStances: Array.from(new Set([...state.settings.customStances, stance])) }
+  })),
 
   draftRoutine: { title: '', exercises: [] },
 
@@ -112,6 +127,16 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     exercises: state.exercises.map(ex => 
       ex.id === exerciseId ? { ...ex, notes } : ex
     )
+  })),
+
+  updateExerciseVariation: (exerciseId, variation) => set((state) => ({
+    exercises: state.exercises.map(ex => {
+      if (ex.id === exerciseId) {
+        const newSets = ex.sets.map(s => s.is_completed ? s : { ...s, variation });
+        return { ...ex, default_variation: variation, sets: newSets };
+      }
+      return ex;
+    })
   })),
 
   endWorkout: () => {
@@ -141,13 +166,14 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         prev_reps: prev.reps,
         rpe: prev.rpe,
         is_completed: false,
-        side: prev.side || null
+        side: prev.side || null,
+        variation: prev.variation || null
       }));
     } else {
       if (exercise.is_unilateral) {
         initialSets = [
-          { id: Math.random().toString(36).substring(7), set_number: 1, weight: null, reps: null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'L' },
-          { id: Math.random().toString(36).substring(7), set_number: 1, weight: null, reps: null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'R' }
+          { id: Math.random().toString(36).substring(7), set_number: 1, weight: null, reps: null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'L', variation: exercise.default_variation || null },
+          { id: Math.random().toString(36).substring(7), set_number: 1, weight: null, reps: null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'R', variation: exercise.default_variation || null }
         ];
       } else {
         initialSets = [{ 
@@ -158,7 +184,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           rpe: null, 
           is_completed: false,
           rest_seconds: null,
-          work_seconds: null
+          work_seconds: null,
+          variation: exercise.default_variation || null
         }];
       }
     }
@@ -173,7 +200,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           is_unilateral: exercise.is_unilateral,
           sets: initialSets,
           notes: '',
-          personalRecords: exercise.personalRecords || {}
+          personalRecords: exercise.personalRecords || {},
+          default_variation: exercise.default_variation || null
         }
       ]
     };
@@ -184,14 +212,15 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       if (ex.id === exerciseId) {
         const lastSet = ex.sets[ex.sets.length - 1];
         const newSetNum = lastSet ? lastSet.set_number + 1 : 1;
+        const inheritedVariation = ex.default_variation || (lastSet ? lastSet.variation : null);
         
         if (ex.is_unilateral) {
           return {
             ...ex,
             sets: [
               ...ex.sets,
-              { id: Math.random().toString(36).substring(7), set_number: newSetNum, weight: lastSet ? lastSet.weight : null, reps: lastSet ? lastSet.reps : null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'L' },
-              { id: Math.random().toString(36).substring(7), set_number: newSetNum, weight: lastSet ? lastSet.weight : null, reps: lastSet ? lastSet.reps : null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'R' }
+              { id: Math.random().toString(36).substring(7), set_number: newSetNum, weight: lastSet ? lastSet.weight : null, reps: lastSet ? lastSet.reps : null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'L', variation: inheritedVariation },
+              { id: Math.random().toString(36).substring(7), set_number: newSetNum, weight: lastSet ? lastSet.weight : null, reps: lastSet ? lastSet.reps : null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'R', variation: inheritedVariation }
             ]
           };
         } else {
@@ -205,7 +234,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
               rpe: null,
               is_completed: false,
               rest_seconds: null,
-              work_seconds: null
+              work_seconds: null,
+              variation: inheritedVariation
             }]
           };
         }

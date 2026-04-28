@@ -4,7 +4,7 @@ import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimat
 import { useEffect, useState, useCallback } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getDB, addCustomExercise, getPreviousWorkoutSets, getPersonalRecords, getFavoriteIds, toggleFavorite, deleteExercise } from '../src/db/database';
+import { getDB, addCustomExercise, getPreviousWorkoutSets, getPersonalRecords, getFavoriteIds, toggleFavorite, deleteExercise, saveSetting } from '../src/db/database';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,7 @@ type Exercise = {
   muscle_group: string;
   equipment: string;
   is_unilateral?: number;
+  default_variation?: string | null;
 };
 
 export default function SelectExerciseScreen() {
@@ -30,9 +31,19 @@ export default function SelectExerciseScreen() {
   const [newGroup, setNewGroup] = useState('胸');
   const [newEquip, setNewEquip] = useState('ダンベル');
   const [isUnilateral, setIsUnilateral] = useState(false);
+  const [useDefaultStance, setUseDefaultStance] = useState(false);
+  const [newDefaultStance, setNewDefaultStance] = useState('');
 
-  const { addExercise, addDraftExercise } = useWorkoutStore();
+  const { addExercise, addDraftExercise, settings } = useWorkoutStore();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
+
+  const builtinStances = [
+    'ナロー', 'ワイド', 'スモウ', 'コンベンショナル', 
+    'ハイバー', 'ローバー', 
+    'リバースグリップ', 'ニュートラルグリップ', 'オルタネイトグリップ', 'サムレスグリップ', 'フックグリップ',
+    'ポーズ', 'デッドストップ'
+  ];
+  const presetStances = Array.from(new Set([...builtinStances, ...(settings?.customStances || [])]));
 
   useEffect(() => {
     fetchAll();
@@ -72,9 +83,9 @@ export default function SelectExerciseScreen() {
     try {
       const prevSets = await getPreviousWorkoutSets(ex.id);
       const personalRecords = await getPersonalRecords(ex.id);
-      addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords, is_unilateral: ex.is_unilateral });
+      addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation });
     } catch (e) {
-      addExercise({ id: ex.id, name: ex.name, is_unilateral: ex.is_unilateral });
+      addExercise({ id: ex.id, name: ex.name, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation });
     }
     router.back();
   };
@@ -85,16 +96,22 @@ export default function SelectExerciseScreen() {
       return;
     }
     try {
+      const defaultVar = useDefaultStance && newDefaultStance.trim() ? newDefaultStance.trim() : null;
+      if (defaultVar) {
+        useWorkoutStore.getState().addCustomStance(defaultVar);
+        saveSetting('custom_stances', JSON.stringify(Array.from(new Set([...(settings?.customStances || []), defaultVar]))));
+      }
       const newId = await addCustomExercise(
         newName.trim(),
         newGroup.trim() || 'その他',
         newEquip.trim() || 'その他',
-        isUnilateral
+        isUnilateral,
+        defaultVar
       );
       setModalVisible(false);
       setSearch('');
       await fetchAll();
-      handleSelect({ id: newId, name: newName.trim(), muscle_group: newGroup, equipment: newEquip, is_unilateral: isUnilateral ? 1 : 0 });
+      handleSelect({ id: newId, name: newName.trim(), muscle_group: newGroup, equipment: newEquip, is_unilateral: isUnilateral ? 1 : 0, default_variation: defaultVar });
     } catch (e) {
       Alert.alert('エラー', '追加に失敗しました');
     }
@@ -214,7 +231,7 @@ export default function SelectExerciseScreen() {
             onChangeText={setSearch}
           />
         </View>
-        <TouchableOpacity style={styles.addBtn} onPress={() => { setNewName(search); setModalVisible(true); }}>
+        <TouchableOpacity style={styles.addBtn} onPress={() => { setNewName(search); setModalVisible(true); setUseDefaultStance(false); setNewDefaultStance(''); }}>
           <Ionicons name="add" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -301,6 +318,34 @@ export default function SelectExerciseScreen() {
               <Text style={styles.label}>片側ずつ行う種目 (Left / Right)</Text>
               <Switch value={isUnilateral} onValueChange={setIsUnilateral} trackColor={{ true: Theme.colors.primary }} />
             </View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+              <Text style={styles.label}>デフォルトスタンスを設定する</Text>
+              <Switch value={useDefaultStance} onValueChange={setUseDefaultStance} trackColor={{ true: Theme.colors.primary }} />
+            </View>
+            
+            {useDefaultStance && (
+              <View style={{ marginTop: 8 }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                  {presetStances.map(preset => (
+                    <TouchableOpacity
+                      key={preset}
+                      style={[styles.choiceChip, newDefaultStance === preset && styles.choiceChipActive]}
+                      onPress={() => setNewDefaultStance(preset)}
+                    >
+                      <Text style={[styles.choiceChipText, newDefaultStance === preset && styles.choiceChipTextActive]}>{preset}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <TextInput 
+                  style={styles.modalInput} 
+                  placeholder="リストにない場合は入力..." 
+                  placeholderTextColor={Theme.colors.textMuted} 
+                  value={newDefaultStance} 
+                  onChangeText={setNewDefaultStance} 
+                />
+              </View>
+            )}
 
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>

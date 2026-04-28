@@ -17,7 +17,8 @@ export const initDB = async () => {
       name TEXT NOT NULL,
       muscle_group TEXT,
       equipment TEXT,
-      is_unilateral INTEGER DEFAULT 0
+      is_unilateral INTEGER DEFAULT 0,
+      default_variation TEXT
     );
 
     CREATE TABLE IF NOT EXISTS workouts (
@@ -48,6 +49,7 @@ export const initDB = async () => {
       rest_seconds INTEGER,
       work_seconds INTEGER,
       side TEXT,
+      variation TEXT,
       FOREIGN KEY(workout_exercise_id) REFERENCES workout_exercises(id) ON DELETE CASCADE
     );
 
@@ -99,18 +101,64 @@ export const initDB = async () => {
     if (!tableInfoSets.find(c => c.name === 'side')) {
       await _db.execAsync(`ALTER TABLE workout_sets ADD COLUMN side TEXT;`);
     }
+    if (!tableInfoSets.find(c => c.name === 'variation')) {
+      await _db.execAsync(`ALTER TABLE workout_sets ADD COLUMN variation TEXT;`);
+    }
   } catch (e) {
-    console.warn('Migration: Failed to add time columns to workout_sets', e);
+    console.warn('Migration: Failed to add time/side/variation columns to workout_sets', e);
   }
 
-  // Migration: Add is_unilateral to exercises if missing
+  // Migration: Add is_unilateral and default_variation to exercises if missing
   try {
     const tableInfoEx = await _db.getAllAsync<{ name: string }>(`PRAGMA table_info(exercises)`);
     if (!tableInfoEx.find(c => c.name === 'is_unilateral')) {
       await _db.execAsync(`ALTER TABLE exercises ADD COLUMN is_unilateral INTEGER DEFAULT 0;`);
     }
+    if (!tableInfoEx.find(c => c.name === 'default_variation')) {
+      await _db.execAsync(`ALTER TABLE exercises ADD COLUMN default_variation TEXT;`);
+    }
   } catch (e) {
-    console.warn('Migration: Failed to add is_unilateral to exercises', e);
+    console.warn('Migration: Failed to add columns to exercises', e);
+  }
+
+  // Migration: Rename exercises to remove parenthetical suffixes
+  try {
+    const renames = [
+      { from: '\u30d7\u30c3\u30b7\u30e5\u30a2\u30c3\u30d7 (\u8155\u7acb\u3066\u4f0f\u305b)', to: '\u30d7\u30c3\u30b7\u30e5\u30a2\u30c3\u30d7' },
+      { from: '\u61f8\u5782 (\u30c1\u30f3\u30cb\u30f3\u30b0)', to: '\u61f8\u5782' },
+      { from: '\u30aa\u30fc\u30d0\u30fc\u30d8\u30c3\u30c9\u30d7\u30ec\u30b9 (\u30df\u30ea\u30bf\u30ea\u30fc\u30d7\u30ec\u30b9)', to: '\u30aa\u30fc\u30d0\u30fc\u30d8\u30c3\u30c9\u30d7\u30ec\u30b9' },
+      { from: '\u30de\u30b7\u30f3\u30a2\u30d6\u30c0\u30af\u30bf\u30fc (\u5916\u8ee2)', to: '\u30de\u30b7\u30f3\u30a2\u30d6\u30c0\u30af\u30bf\u30fc' },
+      { from: '\u30de\u30b7\u30f3\u30a2\u30c0\u30af\u30bf\u30fc (\u5185\u8ee2)', to: '\u30de\u30b7\u30f3\u30a2\u30c0\u30af\u30bf\u30fc' },
+      { from: '\u30a2\u30fc\u30e0\u30ab\u30fc\u30eb\uff08\u30c0\u30f3\u30d9\u30eb\uff09', to: '\u30a2\u30fc\u30e0\u30ab\u30fc\u30eb' },
+      { from: '\u30a2\u30fc\u30e0\u30ab\u30fc\u30eb (\u30c0\u30f3\u30d9\u30eb)', to: '\u30a2\u30fc\u30e0\u30ab\u30fc\u30eb' },
+      { from: '\u30a2\u30fc\u30e0\u30ab\u30fc\u30eb(Dumbbell)', to: '\u30a2\u30fc\u30e0\u30ab\u30fc\u30eb' },
+      { from: '\u30a2\u30fc\u30e0\u30ab\u30fc\u30eb (Dumbbell)', to: '\u30a2\u30fc\u30e0\u30ab\u30fc\u30eb' },
+      // (Barbell) suffix patterns
+      { from: '\u30d9\u30f3\u30c1\u30d7\u30ec\u30b9 (Barbell)', to: '\u30d9\u30f3\u30c1\u30d7\u30ec\u30b9' },
+      { from: '\u30c7\u30c3\u30c9\u30ea\u30d5\u30c8 (Barbell)', to: '\u30c7\u30c3\u30c9\u30ea\u30d5\u30c8' },
+      { from: '\u30b9\u30af\u30ef\u30c3\u30c8 (Barbell)', to: '\u30b9\u30af\u30ef\u30c3\u30c8' },
+      { from: '\u30b7\u30e5\u30e9\u30c3\u30b0 (Barbell)', to: '\u30b7\u30e5\u30e9\u30c3\u30b0' },
+      { from: '\u30d2\u30c3\u30d7\u30b9\u30e9\u30b9\u30c8 (Barbell)', to: '\u30d2\u30c3\u30d7\u30b9\u30e9\u30b9\u30c8' },
+      { from: '\u30d9\u30f3\u30c8\u30aa\u30fc\u30d0\u30fc\u30ed\u30a6 (Barbell)', to: '\u30d9\u30f3\u30c8\u30aa\u30fc\u30d0\u30fc\u30ed\u30a6' },
+      { from: '\u30d5\u30ed\u30f3\u30c8\u30b9\u30af\u30ef\u30c3\u30c8 (Barbell)', to: '\u30d5\u30ed\u30f3\u30c8\u30b9\u30af\u30ef\u30c3\u30c8' },
+      { from: '\u30aa\u30fc\u30d0\u30fc\u30d8\u30c3\u30c9\u30d7\u30ec\u30b9 (Barbell)', to: '\u30aa\u30fc\u30d0\u30fc\u30d8\u30c3\u30c9\u30d7\u30ec\u30b9' },
+      { from: '\u30a4\u30f3\u30af\u30e9\u30a4\u30f3\u30d9\u30f3\u30c1\u30d7\u30ec\u30b9 (Barbell)', to: '\u30a4\u30f3\u30af\u30e9\u30a4\u30f3\u30d9\u30f3\u30c1\u30d7\u30ec\u30b9' },
+      { from: '\u30c7\u30af\u30e9\u30a4\u30f3\u30d9\u30f3\u30c1\u30d7\u30ec\u30b9 (Barbell)', to: '\u30c7\u30af\u30e9\u30a4\u30f3\u30d9\u30f3\u30c1\u30d7\u30ec\u30b9' },
+      // (Dumbbell) suffix patterns
+      { from: '\u30c0\u30f3\u30d9\u30eb\u30d7\u30ec\u30b9 (Dumbbell)', to: '\u30c0\u30f3\u30d9\u30eb\u30d7\u30ec\u30b9' },
+      { from: '\u30c0\u30f3\u30d9\u30eb\u30d5\u30e9\u30a4 (Dumbbell)', to: '\u30c0\u30f3\u30d9\u30eb\u30d5\u30e9\u30a4' },
+      { from: '\u30c0\u30f3\u30d9\u30eb\u30b7\u30e5\u30e9\u30c3\u30b0 (Dumbbell)', to: '\u30c0\u30f3\u30d9\u30eb\u30b7\u30e5\u30e9\u30c3\u30b0' },
+      { from: '\u30c0\u30f3\u30d9\u30eb\u30ab\u30fc\u30eb (Dumbbell)', to: '\u30c0\u30f3\u30d9\u30eb\u30ab\u30fc\u30eb' },
+      { from: '\u30aa\u30fc\u30d0\u30fc\u30d8\u30c3\u30c9\u30d7\u30ec\u30b9 (Dumbbell)', to: '\u30aa\u30fc\u30d0\u30fc\u30d8\u30c3\u30c9\u30d7\u30ec\u30b9' },
+      // (Pull-up) - delete handled separately
+    ];
+    for (const r of renames) {
+      await _db.runAsync('UPDATE exercises SET name = ? WHERE name = ?', [r.to, r.from]);
+    }
+    // Delete 懸垂 (Pull-up) as duplicate of 懸垂
+    await _db.runAsync('DELETE FROM exercises WHERE name = ?', ['懸垂 (Pull-up)']);
+  } catch (e) {
+    console.warn('Migration: Failed to rename exercises', e);
   }
 
   // Seed exercises if missing
@@ -129,7 +177,7 @@ export const initDB = async () => {
     { name: 'チェストプレス', group: '胸', equip: 'マシン' },
     { name: 'スミスマシン ベンチプレス', group: '胸', equip: 'スミスマシン' },
     { name: 'スミスマシン インクラインプレス', group: '胸', equip: 'スミスマシン' },
-    { name: 'プッシュアップ (腕立て伏せ)', group: '胸', equip: '自重' },
+    { name: 'プッシュアップ', group: '胸', equip: '自重' },
     { name: '加重プッシュアップ', group: '胸', equip: 'ウエイト' },
     { name: 'ディップス', group: '胸', equip: '自重' },
     { name: '加重ディップス', group: '胸', equip: 'ウエイト' },
@@ -138,7 +186,7 @@ export const initDB = async () => {
     { name: 'デッドリフト', group: '背中', equip: 'バーベル' },
     { name: 'ルーマニアンデッドリフト', group: '背中', equip: 'バーベル' },
     { name: 'ハーフデッドリフト', group: '背中', equip: 'バーベル' },
-    { name: '懸垂 (チンニング)', group: '背中', equip: '自重' },
+    { name: '懸垂', group: '背中', equip: '自重' },
     { name: '加重懸垂', group: '背中', equip: 'ウエイト' },
     { name: 'ラットプルダウン', group: '背中', equip: 'ケーブル' },
     { name: 'リバースグリップ ラットプルダウン', group: '背中', equip: 'ケーブル' },
@@ -154,7 +202,7 @@ export const initDB = async () => {
     { name: 'バックエクステンション', group: '背中', equip: '自重' },
     
     // Shoulders
-    { name: 'オーバーヘッドプレス (ミリタリープレス)', group: '肩', equip: 'バーベル' },
+    { name: 'オーバーヘッドプレス', group: '肩', equip: 'バーベル' },
     { name: 'ダンベルショルダープレス', group: '肩', equip: 'ダンベル' },
     { name: 'アーノルドプレス', group: '肩', equip: 'ダンベル' },
     { name: 'スミスマシン ショルダープレス', group: '肩', equip: 'スミスマシン' },
@@ -203,8 +251,8 @@ export const initDB = async () => {
     { name: 'スタンディングカーフレイズ', group: '脚', equip: 'マシン' },
     { name: 'シーテッドカーフレイズ', group: '脚', equip: 'マシン' },
     { name: 'ヒップスラスト', group: '脚', equip: 'バーベル' },
-    { name: 'マシンアブダクター (外転)', group: '脚', equip: 'マシン' },
-    { name: 'マシンアダクター (内転)', group: '脚', equip: 'マシン' },
+    { name: 'マシンアブダクター', group: '脚', equip: 'マシン' },
+    { name: 'マシンアダクター', group: '脚', equip: 'マシン' },
     { name: 'グッドモーニング', group: '脚', equip: 'バーベル' },
 
     // Core
@@ -310,8 +358,8 @@ export const saveWorkout = async (title: string, startTime: string, endTime: str
     for (const set of ex.sets) {
       if (set.weight != null || set.reps != null) { // only save valid sets
         await conn.runAsync(
-          'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds, side) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [weId, set.set_number, set.reps, set.weight, set.rpe, set.is_completed ? 1 : 0, set.rest_seconds || null, set.work_seconds || null, set.side || null]
+          'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds, side, variation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [weId, set.set_number, set.reps, set.weight, set.rpe, set.is_completed ? 1 : 0, set.rest_seconds || null, set.work_seconds || null, set.side || null, set.variation || null]
         );
       }
     }
@@ -340,8 +388,9 @@ export const getExerciseHistory = async (exerciseId: number) => {
     rest_seconds: number | null;
     work_seconds: number | null;
     side: string | null;
+    variation: string | null;
   }>(`
-    SELECT w.id as workout_id, w.start_time, ws.set_number, ws.reps, ws.weight, ws.rpe, ws.rest_seconds, ws.work_seconds, ws.side
+    SELECT w.id as workout_id, w.start_time, ws.set_number, ws.reps, ws.weight, ws.rpe, ws.rest_seconds, ws.work_seconds, ws.side, ws.variation
     FROM workout_sets ws
     JOIN workout_exercises we ON ws.workout_exercise_id = we.id
     JOIN workouts w ON we.workout_id = w.id
@@ -367,18 +416,19 @@ export const getExerciseHistory = async (exerciseId: number) => {
       rpe: row.rpe,
       rest_seconds: row.rest_seconds,
       work_seconds: row.work_seconds,
-      side: row.side
+      side: row.side,
+      variation: row.variation
     });
   }
 
   return Array.from(historyMap.values());
 };
 
-export const addCustomExercise = async (name: string, group: string, equip: string, isUnilateral: boolean = false) => {
+export const addCustomExercise = async (name: string, group: string, equip: string, isUnilateral: boolean = false, defaultVariation: string | null = null) => {
   const conn = getDB();
   const res = await conn.runAsync(
-    'INSERT INTO exercises (name, muscle_group, equipment, is_unilateral) VALUES (?, ?, ?, ?)',
-    [name, group, equip, isUnilateral ? 1 : 0]
+    'INSERT INTO exercises (name, muscle_group, equipment, is_unilateral, default_variation) VALUES (?, ?, ?, ?, ?)',
+    [name, group, equip, isUnilateral ? 1 : 0, defaultVariation]
   );
   return res.lastInsertRowId;
 };
@@ -399,7 +449,7 @@ export const getPreviousWorkoutSets = async (exerciseId: number) => {
 
   // Fetch the sets for that specific execution
   const sets = await conn.getAllAsync(`
-    SELECT set_number, weight, reps, rpe, rest_seconds, work_seconds, side
+    SELECT set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation
     FROM workout_sets 
     WHERE workout_exercise_id = ?
     ORDER BY set_number ASC, id ASC
@@ -410,19 +460,23 @@ export const getPreviousWorkoutSets = async (exerciseId: number) => {
 
 export const getPersonalRecords = async (exerciseId: number) => {
   const conn = getDB();
-  const rows = await conn.getAllAsync<{ reps: number, max_weight: number }>(`
-    SELECT ws.reps, MAX(ws.weight) as max_weight
+  const rows = await conn.getAllAsync<{ reps: number, max_weight: number, variation: string | null }>(`
+    SELECT ws.reps, MAX(ws.weight) as max_weight, ws.variation
     FROM workout_sets ws
     JOIN workout_exercises we ON ws.workout_exercise_id = we.id
     WHERE we.exercise_id = ? AND ws.is_completed = 1 AND ws.reps IS NOT NULL AND ws.weight IS NOT NULL
-    GROUP BY ws.reps
-    ORDER BY ws.reps ASC
+    GROUP BY ws.variation, ws.reps
+    ORDER BY ws.variation ASC, ws.reps ASC
   `, [exerciseId]);
   
-  const prMap: Record<number, number> = {};
+  const prMap: Record<string, Record<number, number>> = {};
   for (const row of rows) {
     if (row.reps > 0) {
-      prMap[row.reps] = row.max_weight;
+      const varKey = row.variation || 'default';
+      if (!prMap[varKey]) {
+        prMap[varKey] = {};
+      }
+      prMap[varKey][row.reps] = row.max_weight;
     }
   }
   return prMap;
@@ -491,7 +545,7 @@ export const loadFullWorkoutData = async (workoutId: number) => {
   
   const exercisesData = [];
   for (const ex of exercisesRows) {
-    const sets = await db.getAllAsync('SELECT id, set_number, weight, reps, rpe, rest_seconds, work_seconds, side FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number ASC, id ASC', [ex.workout_exercise_id]) as any[];
+    const sets = await db.getAllAsync('SELECT id, set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number ASC, id ASC', [ex.workout_exercise_id]) as any[];
     exercisesData.push({
       workout_exercise_id: ex.workout_exercise_id,
       exercise_id: ex.exercise_id,
@@ -511,9 +565,13 @@ export const loadFullWorkoutData = async (workoutId: number) => {
   };
 };
 
-export const updateWorkoutSet = async (setId: number, weight: number | null, reps: number | null, rpe: number | null) => {
+export const updateWorkoutSet = async (setId: number, weight: number | null, reps: number | null, rpe: number | null, variation?: string | null) => {
   const conn = getDB();
-  await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ?, rpe = ? WHERE id = ?', [weight, reps, rpe, setId]);
+  if (variation !== undefined) {
+    await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ?, rpe = ?, variation = ? WHERE id = ?', [weight, reps, rpe, variation, setId]);
+  } else {
+    await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ?, rpe = ? WHERE id = ?', [weight, reps, rpe, setId]);
+  }
 };
 
 export const deleteWorkoutSet = async (setId: number) => {
