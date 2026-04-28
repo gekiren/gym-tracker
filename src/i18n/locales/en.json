@@ -30,7 +30,20 @@
       "header_set": "Set",
       "workout_notes": "Workout Notes",
       "workout_notes_placeholder": "How was your workout today?",
-      "exercise_notes_placeholder": "Add a note for this exercise..."
+      "exercise_notes_placeholder": "Add a note for this exercise...",
+      "stance_modal_title_exercise": "Select Default Stance",
+      "stance_modal_title_set": "Change Set Stance",
+      "stance_add_new_title": "Add New Stance",
+      "stance_add_placeholder": "e.g. Dead Stop",
+      "stance_cancel": "Cancel",
+      "stance_add_to_list": "Add to List",
+      "stance_preset_label": "Choose from Presets",
+      "stance_standard": "Standard",
+      "stance_add_original_btn": "+ Add Original Stance",
+      "stance_exercise_hint": "Changing this will automatically apply the stance to subsequent sets.",
+      "stance_label": "Stance",
+      "stance_add_link": "Stance: Add",
+      "pr_label": "🏆 New PR!"
     },
     "exercise_select": {
       "search_placeholder": "Search exercises...",
@@ -49,7 +62,11 @@
       "delete_message": "Delete \"{{name}}\"?\nAll related workout history will also be deleted.",
       "delete_error": "Failed to delete",
       "error_no_name": "Please enter an exercise name.",
-      "error_add_failed": "Failed to add exercise"
+      "error_add_failed": "Failed to add exercise",
+      "label_unilateral": "Unilateral (Left / Right)",
+      "label_default_stance": "Set Default Stance",
+      "label_other_input_stance": "Or type a custom stance...",
+      "create_and_add": "Create & Add"
     },
     "history": {
       "title": "History",

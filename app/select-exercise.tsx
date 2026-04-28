@@ -92,7 +92,7 @@ export default function SelectExerciseScreen() {
 
   const handleCreate = async () => {
     if (!newName.trim()) {
-      Alert.alert('エラー', '種目名を入力してください。');
+      Alert.alert(t('ui.common.error'), t('ui.exercise_select.error_no_name'));
       return;
     }
     try {
@@ -289,12 +289,12 @@ export default function SelectExerciseScreen() {
       <Modal visible={isModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>オリジナル種目の作成</Text>
+            <Text style={styles.modalTitle}>{t('ui.exercise_select.create_modal_title')}</Text>
 
-            <Text style={styles.label}>種目名 *</Text>
-            <TextInput style={styles.modalInput} placeholder="例: ダンベルプレス" placeholderTextColor={Theme.colors.textMuted} value={newName} onChangeText={setNewName} />
+            <Text style={styles.label}>{t('ui.exercise_select.label_name')}</Text>
+            <TextInput style={styles.modalInput} placeholder={t('ui.exercise_select.label_name_placeholder')} placeholderTextColor={Theme.colors.textMuted} value={newName} onChangeText={setNewName} />
 
-            <Text style={styles.label}>対象部位</Text>
+            <Text style={styles.label}>{t('ui.exercise_select.label_group')}</Text>
             <View style={styles.choiceContainer}>
               {allCategories.map(g => (
                 <TouchableOpacity key={g} onPress={() => setNewGroup(g)} style={[styles.choiceChip, newGroup === g && styles.choiceChipActive]}>
@@ -302,9 +302,9 @@ export default function SelectExerciseScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder="リストにない場合は入力..." placeholderTextColor={Theme.colors.textMuted} value={newGroup} onChangeText={setNewGroup} />
+            <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder={t('ui.exercise_select.label_other_input')} placeholderTextColor={Theme.colors.textMuted} value={newGroup} onChangeText={setNewGroup} />
 
-            <Text style={styles.label}>使用器具</Text>
+            <Text style={styles.label}>{t('ui.exercise_select.label_equip')}</Text>
             <View style={styles.choiceContainer}>
               {allEquipments.map(e => (
                 <TouchableOpacity key={e} onPress={() => setNewEquip(e)} style={[styles.choiceChip, newEquip === e && styles.choiceChipActive]}>
@@ -312,15 +312,15 @@ export default function SelectExerciseScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder="リストにない場合は入力..." placeholderTextColor={Theme.colors.textMuted} value={newEquip} onChangeText={setNewEquip} />
+            <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder={t('ui.exercise_select.label_other_input')} placeholderTextColor={Theme.colors.textMuted} value={newEquip} onChangeText={setNewEquip} />
 
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
-              <Text style={styles.label}>片側ずつ行う種目 (Left / Right)</Text>
+              <Text style={styles.label}>{t('ui.exercise_select.label_unilateral')}</Text>
               <Switch value={isUnilateral} onValueChange={setIsUnilateral} trackColor={{ true: Theme.colors.primary }} />
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
-              <Text style={styles.label}>デフォルトスタンスを設定する</Text>
+              <Text style={styles.label}>{t('ui.exercise_select.label_default_stance')}</Text>
               <Switch value={useDefaultStance} onValueChange={setUseDefaultStance} trackColor={{ true: Theme.colors.primary }} />
             </View>
             
@@ -339,7 +339,7 @@ export default function SelectExerciseScreen() {
                 </View>
                 <TextInput 
                   style={styles.modalInput} 
-                  placeholder="リストにない場合は入力..." 
+                  placeholder={t('ui.exercise_select.label_other_input_stance')} 
                   placeholderTextColor={Theme.colors.textMuted} 
                   value={newDefaultStance} 
                   onChangeText={setNewDefaultStance} 
@@ -349,10 +349,10 @@ export default function SelectExerciseScreen() {
 
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
-                <Text style={styles.cancelBtnText}>キャンセル</Text>
+                <Text style={styles.cancelBtnText}>{t('ui.common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.saveBtn} onPress={handleCreate}>
-                <Text style={styles.saveBtnText}>作成して追加</Text>
+                <Text style={styles.saveBtnText}>{t('ui.exercise_select.create_and_add')}</Text>
               </TouchableOpacity>
             </View>
           </View>

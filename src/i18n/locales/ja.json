@@ -30,7 +30,20 @@
       "header_set": "セット",
       "workout_notes": "ワークアウトのメモ",
       "workout_notes_placeholder": "今日の調子や感想を入力...",
-      "exercise_notes_placeholder": "この種目のメモを入力..."
+      "exercise_notes_placeholder": "この種目のメモを入力...",
+      "stance_modal_title_exercise": "デフォルトスタンスの選択",
+      "stance_modal_title_set": "セットのスタンス変更",
+      "stance_add_new_title": "新しいスタンスを追加",
+      "stance_add_placeholder": "例: デッドストップ",
+      "stance_cancel": "キャンセル",
+      "stance_add_to_list": "一覧に追加",
+      "stance_preset_label": "プリセットから選ぶ",
+      "stance_standard": "標準",
+      "stance_add_original_btn": "+ オリジナルのスタンスを追加",
+      "stance_exercise_hint": "※変更すると、以降に追加するセットのスタンスが自動的に設定されます。（未チェックのセットにも反映されます）",
+      "stance_label": "スタンス",
+      "stance_add_link": "スタンス: 追加",
+      "pr_label": "🏆最高記録!"
     },
     "exercise_select": {
       "search_placeholder": "種目を検索...",
@@ -49,7 +62,11 @@
       "delete_message": "「{{name}}」を削除しますか？\nこの種目に関連するすべての記録履歴も削除されます。",
       "delete_error": "削除に失敗しました",
       "error_no_name": "種目名を入力してください。",
-      "error_add_failed": "追加に失敗しました"
+      "error_add_failed": "追加に失敗しました",
+      "label_unilateral": "片側ずつ行う種目 (Left / Right)",
+      "label_default_stance": "デフォルトスタンスを設定する",
+      "label_other_input_stance": "リストにない場合は入力...",
+      "create_and_add": "作成して追加"
     },
     "history": {
       "title": "履歴",

@@ -442,7 +442,7 @@ export default function ActiveWorkoutScreen() {
           <View style={[styles.modalContent, { padding: 0 }]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: Theme.colors.border }}>
               <Text style={styles.modalTitle}>
-                {stanceModalTarget?.type === 'exercise' ? 'デフォルトスタンスの選択' : 'セットのスタンス変更'}
+                {stanceModalTarget?.type === 'exercise' ? t('ui.active_workout.stance_modal_title_exercise') : t('ui.active_workout.stance_modal_title_set')}
               </Text>
               <TouchableOpacity onPress={() => { setStanceModalVisible(false); setIsAddingStance(false); }}>
                 <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
@@ -452,10 +452,10 @@ export default function ActiveWorkoutScreen() {
             <View style={{ padding: 16 }}>
               {isAddingStance ? (
                 <>
-                  <Text style={styles.sectionTitle}>新しいスタンスを追加</Text>
+                  <Text style={styles.sectionTitle}>{t('ui.active_workout.stance_add_new_title')}</Text>
                   <TextInput
                     style={styles.modalInput}
-                    placeholder="例: デッドストップ"
+                    placeholder={t('ui.active_workout.stance_add_placeholder')}
                     placeholderTextColor={Theme.colors.textMuted}
                     value={customStance}
                     onChangeText={setCustomStance}
@@ -469,7 +469,7 @@ export default function ActiveWorkoutScreen() {
                         setIsAddingStance(false);
                       }}
                     >
-                      <Text style={{ color: Theme.colors.text, fontWeight: 'bold', textAlign: 'center' }}>キャンセル</Text>
+                      <Text style={{ color: Theme.colors.text, fontWeight: 'bold', textAlign: 'center' }}>{t('ui.active_workout.stance_cancel')}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity 
@@ -484,16 +484,16 @@ export default function ActiveWorkoutScreen() {
                         setIsAddingStance(false);
                       }}
                     >
-                      <Text style={styles.applyBtnText}>一覧に追加</Text>
+                      <Text style={styles.applyBtnText}>{t('ui.active_workout.stance_add_to_list')}</Text>
                     </TouchableOpacity>
                   </View>
                 </>
               ) : (
                 <>
-                  <Text style={styles.sectionTitle}>プリセットから選ぶ</Text>
+                  <Text style={styles.sectionTitle}>{t('ui.active_workout.stance_preset_label')}</Text>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-                    {['標準', ...presetStances].map(preset => {
-                      const val = preset === '標準' ? null : preset;
+                    {[t('ui.active_workout.stance_standard'), ...presetStances].map(preset => {
+                      const val = preset === t('ui.active_workout.stance_standard') ? null : preset;
                       const isActive = stanceModalTarget?.currentValue === val;
                       return (
                         <TouchableOpacity
@@ -518,12 +518,12 @@ export default function ActiveWorkoutScreen() {
                     style={[styles.applyBtn, { backgroundColor: Theme.colors.card, borderWidth: 1, borderColor: Theme.colors.border, marginTop: 8 }]}
                     onPress={() => setIsAddingStance(true)}
                   >
-                    <Text style={{ color: Theme.colors.primary, fontWeight: 'bold', textAlign: 'center' }}>+ オリジナルのスタンスを追加</Text>
+                    <Text style={{ color: Theme.colors.primary, fontWeight: 'bold', textAlign: 'center' }}>{t('ui.active_workout.stance_add_original_btn')}</Text>
                   </TouchableOpacity>
 
                   {stanceModalTarget?.type === 'exercise' && (
                     <Text style={{ color: Theme.colors.textMuted, fontSize: 12, marginTop: 12 }}>
-                      ※変更すると、以降に追加するセットのスタンスが自動的に設定されます。（未チェックのセットにも反映されます）
+                      {t('ui.active_workout.stance_exercise_hint')}
                     </Text>
                   )}
                 </>
@@ -537,6 +537,7 @@ export default function ActiveWorkoutScreen() {
 }
 
 function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, setActiveSetForCalc, calculateRM, startTime, setStanceModalTarget, setStanceModalVisible, setCustomStance }: any) {
+  const { t } = useTranslation();
   const [localWeight, setLocalWeight] = useState(set.weight != null ? String(set.weight) : '');
   const [localReps, setLocalReps] = useState(set.reps != null ? String(set.reps) : '');
   const [localRpe, setLocalRpe] = useState(set.rpe != null ? String(set.rpe) : '');
@@ -706,7 +707,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
         <View style={{ flex: 1.5, flexDirection: 'row', alignItems: 'center', paddingLeft: 4 }}>
           {set.is_completed ? (
             <Text style={{ color: Theme.colors.textMuted, fontSize: 11 }} numberOfLines={2}>
-              {set.variation ? `スタンス: ${set.variation}` : 'スタンス: -'}
+              {set.variation ? `${t('ui.active_workout.stance_label')}: ${set.variation}` : `${t('ui.active_workout.stance_label')}: -`}
             </Text>
           ) : (
             <TouchableOpacity 
@@ -718,7 +719,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
               style={{ flexDirection: 'row', alignItems: 'center' }}
             >
               <Text style={{ color: Theme.colors.primary, fontSize: 11, textDecorationLine: 'underline' }} numberOfLines={2}>
-                {set.variation ? `スタンス: ${set.variation}` : 'スタンス: 追加'}
+                {set.variation ? `${t('ui.active_workout.stance_label')}: ${set.variation}` : t('ui.active_workout.stance_add_link')}
               </Text>
             </TouchableOpacity>
           )}
@@ -726,7 +727,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
 
         {/* Right side: RM & Time & PR */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', flex: 1 }}>
-           {isPR && <Text style={{ color: '#f5a623', fontSize: 11, fontWeight: 'bold', marginRight: 12 }}>🏆最高記録!</Text>}
+           {isPR && <Text style={{ color: '#f5a623', fontSize: 11, fontWeight: 'bold', marginRight: 12 }}>{t('ui.active_workout.pr_label')}</Text>}
            {currentRM != null && <Text style={{ color: Theme.colors.primary, fontSize: 11, marginRight: 12 }}>1RM {currentRM}</Text>}
            {restTimeStr ? <Text style={{ color: Theme.colors.textMuted, fontSize: 11, marginRight: 8 }}>{restTimeStr}</Text> : null}
            {timeTakenStr ? <Text style={{ color: Theme.colors.success, fontSize: 11 }}>{timeTakenStr}</Text> : null}
