@@ -310,7 +310,8 @@ export default function ExerciseDetailScreen() {
                 );
               })}
             </View>
-          ))
+            );
+          })
         )}
       </ScrollView>
     </View>
