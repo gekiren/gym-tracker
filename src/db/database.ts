@@ -161,8 +161,10 @@ export const initDB = async () => {
     // Migration: Rename default routines
     await _db.runAsync('UPDATE routines SET title = "Push Day", description = "Bench Press, Overhead Press, Push-Up..." WHERE title = "Push Day (押す日)"');
     await _db.runAsync('UPDATE routines SET title = "Pull Day", description = "Deadlift, Pull-Up, Lat Pulldown..." WHERE title = "Pull Day (引く日)"');
+    // Migration: Remove weighted bodyweight exercises as requested
+    await _db.runAsync('DELETE FROM exercises WHERE name IN (?, ?, ?)', ['加重懸垂', '加重プッシュアップ', '加重ディップス']);
   } catch (e) {
-    console.warn('Migration: Failed to rename exercises', e);
+    console.warn('Migration: Failed to rename/cleanup exercises', e);
   }
 
   // Seed exercises if missing
@@ -182,16 +184,13 @@ export const initDB = async () => {
     { name: 'スミスマシン ベンチプレス', group: '胸', equip: 'スミスマシン' },
     { name: 'スミスマシン インクラインプレス', group: '胸', equip: 'スミスマシン' },
     { name: 'プッシュアップ', group: '胸', equip: '自重' },
-    { name: '加重プッシュアップ', group: '胸', equip: 'ウエイト' },
     { name: 'ディップス', group: '胸', equip: '自重' },
-    { name: '加重ディップス', group: '胸', equip: 'ウエイト' },
     
     // Back
     { name: 'デッドリフト', group: '背中', equip: 'バーベル' },
     { name: 'ルーマニアンデッドリフト', group: '背中', equip: 'バーベル' },
     { name: 'ハーフデッドリフト', group: '背中', equip: 'バーベル' },
     { name: '懸垂', group: '背中', equip: '自重' },
-    { name: '加重懸垂', group: '背中', equip: 'ウエイト' },
     { name: 'ラットプルダウン', group: '背中', equip: 'ケーブル' },
     { name: 'リバースグリップ ラットプルダウン', group: '背中', equip: 'ケーブル' },
     { name: 'ベントオーバーロウ', group: '背中', equip: 'バーベル' },
