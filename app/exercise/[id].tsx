@@ -3,11 +3,12 @@ import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { getExerciseById, getExerciseHistory, getPersonalRecords } from '../../src/db/database';
+import { getExerciseById, getExerciseHistory, getPersonalRecords, updateExerciseDefaultVariation, saveSetting } from '../../src/db/database';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useTranslation } from 'react-i18next';
 import { translateExercise, translateMuscleGroup, translateEquipment, translateStance } from '../../src/i18n';
+import { DEFAULT_STANCES } from '../../src/utils/stances';
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -15,8 +16,11 @@ export default function ExerciseDetailScreen() {
   const [history, setHistory] = useState<any[]>([]);
   const [personalRecords, setPersonalRecords] = useState<Record<string, Record<number, number>>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const { settings } = useWorkoutStore();
+  const { settings, addCustomStance, removeCustomStance } = useWorkoutStore();
   const { t } = useTranslation();
+  
+  const [isAddingStance, setIsAddingStance] = useState(false);
+  const [newStance, setNewStance] = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -127,6 +131,113 @@ export default function ExerciseDetailScreen() {
         </View>
       )}
 
+      {/* Stance Management Section */}
+      <View style={styles.stanceSection}>
+        <Text style={styles.sectionTitle}>{t('ui.exercise_detail.section_stance')}</Text>
+        <View style={styles.stanceList}>
+          <TouchableOpacity
+            style={[styles.choiceChip, exercise.default_variation === null && styles.choiceChipActive]}
+            onPress={async () => {
+              await updateExerciseDefaultVariation(exercise.id, null);
+              setExercise({ ...exercise, default_variation: null });
+            }}
+          >
+            <Text style={[styles.choiceChipText, exercise.default_variation === null && styles.choiceChipTextActive]}>
+              {t('ui.active_workout.stance_standard')}
+            </Text>
+          </TouchableOpacity>
+          
+          {(settings.customStances || []).map((s: string) => {
+            const isActive = exercise.default_variation === s;
+            return (
+              <TouchableOpacity
+                key={s}
+                style={[styles.choiceChip, isActive && styles.choiceChipActive]}
+                onPress={async () => {
+                  await updateExerciseDefaultVariation(exercise.id, s);
+                  setExercise({ ...exercise, default_variation: s });
+                }}
+                onLongPress={() => {
+                  Alert.alert(
+                    t('ui.active_workout.stance_delete_title'),
+                    t('ui.active_workout.stance_delete_message', { name: translateStance(s) }),
+                    [
+                      { text: t('ui.active_workout.stance_cancel'), style: 'cancel' },
+                      { 
+                        text: t('ui.active_workout.stance_delete_confirm'), 
+                        style: 'destructive',
+                        onPress: async () => {
+                          const next = (settings.customStances || []).filter(item => item !== s);
+                          removeCustomStance(s);
+                          await saveSetting('custom_stances', JSON.stringify(next));
+                          if (exercise.default_variation === s) {
+                            await updateExerciseDefaultVariation(exercise.id, null);
+                            setExercise({ ...exercise, default_variation: null });
+                          }
+                        }
+                      }
+                    ]
+                  );
+                }}
+              >
+                <Text style={[styles.choiceChipText, isActive && styles.choiceChipTextActive]}>
+                  {translateStance(s)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+
+          <TouchableOpacity 
+            style={styles.addStanceBtn} 
+            onPress={() => setIsAddingStance(true)}
+          >
+            <Ionicons name="add" size={16} color={Theme.colors.primary} />
+            <Text style={styles.addStanceBtnText}>{t('ui.active_workout.stance_add_original_btn')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {isAddingStance && (
+          <View style={styles.addStanceInputContainer}>
+            <TextInput
+              style={styles.addStanceInput}
+              value={newStance}
+              onChangeText={setNewStance}
+              placeholder={t('ui.active_workout.stance_add_placeholder')}
+              placeholderTextColor={Theme.colors.textMuted}
+              autoFocus
+            />
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity 
+                style={styles.addStanceActionBtn}
+                onPress={() => {
+                  setIsAddingStance(false);
+                  setNewStance('');
+                }}
+              >
+                <Text style={{ color: Theme.colors.textMuted }}>{t('ui.active_workout.stance_cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.addStanceActionBtn, { backgroundColor: Theme.colors.primary }]}
+                onPress={async () => {
+                  const val = newStance.trim();
+                  if (val) {
+                    addCustomStance(val);
+                    const next = Array.from(new Set([...(settings.customStances || []), val]));
+                    await saveSetting('custom_stances', JSON.stringify(next));
+                    await updateExerciseDefaultVariation(exercise.id, val);
+                    setExercise({ ...exercise, default_variation: val });
+                  }
+                  setNewStance('');
+                  setIsAddingStance(false);
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>{t('ui.active_workout.stance_add_to_list')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </View>
+
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{t('ui.exercise_detail.section_history')}</Text>
         {history.length > 0 && (
@@ -228,5 +339,16 @@ const styles = StyleSheet.create({
   prWeight: { color: Theme.colors.primary, fontSize: 16, fontWeight: 'bold' },
   prVariationTitle: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: 'bold', paddingHorizontal: Theme.spacing.lg, marginBottom: 4 },
   historyVariationBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 8 },
-  historyVariationText: { color: Theme.colors.text, fontSize: 11, fontWeight: 'bold' }
+  historyVariationText: { color: Theme.colors.text, fontSize: 11, fontWeight: 'bold' },
+  stanceSection: { padding: Theme.spacing.lg, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
+  stanceList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  choiceChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333' },
+  choiceChipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: Theme.colors.primary },
+  choiceChipText: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: '500' },
+  choiceChipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' },
+  addStanceBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, borderStyle: 'dashed', borderWidth: 1, borderColor: Theme.colors.primary },
+  addStanceBtnText: { color: Theme.colors.primary, fontSize: 13, marginLeft: 4 },
+  addStanceInputContainer: { marginTop: 16, backgroundColor: '#1a1a1a', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#333' },
+  addStanceInput: { backgroundColor: '#121212', color: Theme.colors.text, padding: 8, borderRadius: 4, marginBottom: 12, fontSize: 14 },
+  addStanceActionBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6, alignItems: 'center', justifyContent: 'center' }
 });

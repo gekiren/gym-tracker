@@ -68,6 +68,7 @@ interface WorkoutState {
   loadSettings: (defaultRest: number, autoRest: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean) => void;
   loadCustomStances: (stances: string[]) => void;
   addCustomStance: (stance: string) => void;
+  removeCustomStance: (stance: string) => void;
 
   // Routine Draft Mode
   draftRoutine: {
@@ -107,6 +108,10 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
   addCustomStance: (stance: string) => set((state) => ({
     settings: { ...state.settings, customStances: Array.from(new Set([...state.settings.customStances, stance])) }
+  })),
+
+  removeCustomStance: (stance: string) => set((state) => ({
+    settings: { ...state.settings, customStances: state.settings.customStances.filter(s => s !== stance) }
   })),
 
   draftRoutine: { title: '', exercises: [] },

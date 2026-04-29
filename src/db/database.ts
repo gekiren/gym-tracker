@@ -617,3 +617,8 @@ export const deleteExercise = async (id: number) => {
   const conn = getDB();
   await conn.runAsync('DELETE FROM exercises WHERE id = ?', [id]);
 };
+
+export const updateExerciseDefaultVariation = async (exerciseId: number, variation: string | null) => {
+  const conn = getDB();
+  await conn.runAsync('UPDATE exercises SET default_variation = ? WHERE id = ?', [variation, exerciseId]);
+};

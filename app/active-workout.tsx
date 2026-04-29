@@ -32,13 +32,7 @@ export default function ActiveWorkoutScreen() {
   const [stanceModalTarget, setStanceModalTarget] = useState<{ type: 'exercise' | 'set', exId: string, setId?: string, currentValue: string | null } | null>(null);
   const [customStance, setCustomStance] = useState('');
   const [isAddingStance, setIsAddingStance] = useState(false);
-  const builtinStances = [
-    'ナロー', 'ワイド', 'スモウ', 'コンベンショナル', 
-    'ハイバー', 'ローバー', 
-    'リバースグリップ', 'ニュートラルグリップ', 'オルタネイトグリップ', 'サムレスグリップ', 'フックグリップ',
-    'ポーズ', 'デッドストップ'
-  ];
-  const presetStances = Array.from(new Set([...builtinStances, ...(settings.customStances || [])]));
+  const presetStances = settings.customStances || [];
 
   useEffect(() => {
     setPlateCalcBar(settings.weightUnit === 'lbs' ? 45 : 20);
@@ -243,7 +237,7 @@ export default function ActiveWorkoutScreen() {
                   }}
                 >
                   <Text style={styles.exerciseVariationText}>
-                    {t('ui.active_workout.stance_label')}: {ex.default_variation ? translateStance(ex.default_variation) : `${t('ui.active_workout.stance_standard')} (${t('ui.common.save')})`}
+                    {t('ui.active_workout.stance_label')}: {ex.default_variation ? translateStance(ex.default_variation) : t('ui.active_workout.stance_standard')}
                   </Text>
                   <Ionicons name="chevron-down" size={12} color={Theme.colors.primary} />
                 </TouchableOpacity>
@@ -482,13 +476,14 @@ export default function ActiveWorkoutScreen() {
                     <TouchableOpacity 
                       style={[styles.applyBtn, { flex: 1 }]}
                       onPress={() => {
-                        const val = customStance.trim() || null;
-                        if (val) {
-                          useWorkoutStore.getState().addCustomStance(val);
-                          saveSetting('custom_stances', JSON.stringify(Array.from(new Set([...(settings.customStances || []), val]))));
-                        }
-                        setCustomStance('');
-                        setIsAddingStance(false);
+                    const val = customStance.trim() || null;
+                    if (val) {
+                      useWorkoutStore.getState().addCustomStance(val);
+                      const updatedStances = Array.from(new Set([...(settings.customStances || []), val]));
+                      saveSetting('custom_stances', JSON.stringify(updatedStances));
+                    }
+                    setCustomStance('');
+                    setIsAddingStance(false);
                       }}
                     >
                       <Text style={styles.applyBtnText}>{t('ui.active_workout.stance_add_to_list')}</Text>
@@ -513,6 +508,25 @@ export default function ActiveWorkoutScreen() {
                               useWorkoutStore.getState().updateSet(stanceModalTarget.exId, stanceModalTarget.setId, { variation: val });
                             }
                             setStanceModalVisible(false);
+                          }}
+                          onLongPress={() => {
+                            if (val === null) return; // "標準"は削除不可
+                            Alert.alert(
+                              t('ui.active_workout.stance_delete_title'),
+                              t('ui.active_workout.stance_delete_message', { name: translateStance(preset) }),
+                              [
+                                { text: t('ui.active_workout.stance_cancel'), style: 'cancel' },
+                                { 
+                                  text: t('ui.active_workout.stance_delete_confirm'), 
+                                  style: 'destructive',
+                                  onPress: async () => {
+                                    const next = (settings.customStances || []).filter(s => s !== val);
+                                    useWorkoutStore.getState().removeCustomStance(val);
+                                    await saveSetting('custom_stances', JSON.stringify(next));
+                                  }
+                                }
+                              ]
+                            );
                           }}
                         >
                           <Text style={[styles.choiceChipText, isActive && styles.choiceChipTextActive]}>{translateStance(preset)}</Text>
@@ -601,7 +615,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
     if (set.rest_seconds != null) {
       const m = Math.floor(set.rest_seconds / 60);
       const s = set.rest_seconds % 60;
-      restTimeStr = `☕ ${m > 0 ? `${m}m` : ''}${s}s`;
+      restTimeStr = `☕${m > 0 ? `${m}:` : ''}${s.toString().padStart(m > 0 ? 2 : 1, '0')}${m === 0 ? 's' : ''}`;
     }
     
     let wSecs = set.work_seconds;
@@ -613,10 +627,11 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
     if (wSecs != null && wSecs >= 0) {
       const m = Math.floor(wSecs / 60);
       const s = wSecs % 60;
+      const fmt = `${m > 0 ? `${m}:` : ''}${s.toString().padStart(m > 0 ? 2 : 1, '0')}${m === 0 ? 's' : ''}`;
       if (set.rest_seconds != null) {
-        timeTakenStr = `🏋️ ${m > 0 ? `${m}m` : ''}${s}s`;
+        timeTakenStr = `🏋️${fmt}`;
       } else {
-        timeTakenStr = `⏱️ ${m > 0 ? `${m}m` : ''}${s}s`;
+        timeTakenStr = `⏱️${fmt}`;
       }
     }
   }
@@ -711,9 +726,9 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
       {/* Meta Row (Variation & RM & Time & PR) */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 8, marginBottom: 8, marginTop: -4 }}>
         {/* Left side: Variation */}
-        <View style={{ flex: 1.5, flexDirection: 'row', alignItems: 'center', paddingLeft: 4 }}>
+        <View style={{ flex: 1.8, flexDirection: 'row', alignItems: 'center', paddingLeft: 4 }}>
           {set.is_completed ? (
-            <Text style={{ color: Theme.colors.textMuted, fontSize: 11 }} numberOfLines={2}>
+            <Text style={{ color: Theme.colors.textMuted, fontSize: 11 }} numberOfLines={1}>
               {set.variation ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.variation)}` : `${t('ui.active_workout.stance_label')}: -`}
             </Text>
           ) : (
@@ -725,7 +740,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
               }}
               style={{ flexDirection: 'row', alignItems: 'center' }}
             >
-              <Text style={{ color: Theme.colors.primary, fontSize: 11, textDecorationLine: 'underline' }} numberOfLines={2}>
+              <Text style={{ color: Theme.colors.primary, fontSize: 11, textDecorationLine: 'underline' }} numberOfLines={1}>
                 {set.variation ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.variation)}` : t('ui.active_workout.stance_add_link')}
               </Text>
             </TouchableOpacity>
@@ -733,10 +748,10 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
         </View>
 
         {/* Right side: RM & Time & PR */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', flex: 1 }}>
-           {isPR && <Text style={{ color: '#f5a623', fontSize: 11, fontWeight: 'bold', marginRight: 12 }}>{t('ui.active_workout.pr_label')}</Text>}
-           {currentRM != null && <Text style={{ color: Theme.colors.primary, fontSize: 11, marginRight: 12 }}>1RM {currentRM}</Text>}
-           {restTimeStr ? <Text style={{ color: Theme.colors.textMuted, fontSize: 11, marginRight: 8 }}>{restTimeStr}</Text> : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', flex: 1.2 }}>
+           {isPR && <Text style={{ color: '#f5a623', fontSize: 11, fontWeight: 'bold', marginRight: 8 }}>{t('ui.active_workout.pr_label').split(' ')[0]}</Text>}
+           {currentRM != null && <Text style={{ color: Theme.colors.primary, fontSize: 11, marginRight: 8 }}>1RM{currentRM}</Text>}
+           {restTimeStr ? <Text style={{ color: Theme.colors.textMuted, fontSize: 11, marginRight: 4 }}>{restTimeStr}</Text> : null}
            {timeTakenStr ? <Text style={{ color: Theme.colors.success, fontSize: 11 }}>{timeTakenStr}</Text> : null}
         </View>
       </View>
@@ -752,6 +767,9 @@ const styles = StyleSheet.create({
   exerciseTitle: { color: Theme.colors.primary, fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
   exerciseVariationBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(79, 172, 254, 0.1)', alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.3)' },
   exerciseVariationText: { color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold', marginRight: 4 },
+  exerciseVolumeContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  exerciseVolumeLabel: { fontSize: 12, color: Theme.colors.text },
+  exerciseVolumeValue: { fontSize: 12, color: Theme.colors.text, fontWeight: 'bold' },
   tableHeader: { flexDirection: 'row', marginBottom: 8, paddingHorizontal: 4 },
   th: { color: Theme.colors.textMuted, fontSize: 14, fontWeight: '600', textAlign: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, paddingHorizontal: 4 },

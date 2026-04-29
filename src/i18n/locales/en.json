@@ -58,6 +58,9 @@
       "stance_add_link": "Stance: Add",
       "stance_standard": "Standard",
       "pr_label": "🏆 New PR!",
+      "stance_delete_title": "Delete Stance",
+      "stance_delete_message": "Delete \"{{name}}\" from the preset list?",
+      "stance_delete_confirm": "Delete",
       "alert_pause_title": "Pause Workout",
       "alert_pause_message": "Discard workout and exit?\nYou can leave without discarding to continue in the background.",
       "alert_pause_cancel": "Cancel",
@@ -149,6 +152,7 @@
       "not_found": "Exercise not found.",
       "section_pr": "Personal Records (PR)",
       "section_history": "History",
+      "section_stance": "Stance Settings",
       "copy_md_btn": "Copy as MD",
       "empty_history": "No records yet.",
       "empty_history_sub": "Your workout history for this exercise will appear here.",
@@ -400,16 +404,11 @@
   "stances": {
     "ナロー": "Narrow",
     "ワイド": "Wide",
-    "スモウ": "Sumo",
-    "コンベンショナル": "Conventional",
     "ハイバー": "High Bar",
     "ローバー": "Low Bar",
-    "リバースグリップ": "Reverse Grip",
-    "ニュートラルグリップ": "Neutral Grip",
-    "オルタネイトグリップ": "Alternate Grip",
-    "サムレスグリップ": "Thumbless Grip",
-    "フックグリップ": "Hook Grip",
-    "ポーズ": "Paused",
-    "デッドストップ": "Dead Stop"
+    "順手": "Overhand",
+    "逆手": "Underhand / Reverse",
+    "パラレル": "Parallel",
+    "ニュートラルグリップ": "Neutral Grip"
   }
 }

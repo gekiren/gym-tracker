@@ -135,7 +135,7 @@ export default function WorkoutDetailsScreen() {
               const fmtTime = (secs: number) => {
                 const m = Math.floor(secs / 60);
                 const s = secs % 60;
-                return m > 0 ? `${m}m${s.toString().padStart(2, '0')}s` : `${s}s`;
+                return `${m > 0 ? `${m}:` : ''}${s.toString().padStart(m > 0 ? 2 : 1, '0')}${m === 0 ? 's' : ''}`;
               };
               if (set.work_seconds != null) timeStr += `⏱️ ${fmtTime(set.work_seconds)} `;
               if (set.rest_seconds != null) timeStr += `☕ ${fmtTime(set.rest_seconds)}`;
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
   exerciseHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.sm },
   exerciseTitle: { color: Theme.colors.primary, fontSize: 18, fontWeight: 'bold' },
   exerciseVolumeBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  exerciseVolumeLabel: { fontSize: 12, color: Theme.colors.textMuted },
+  exerciseVolumeLabel: { fontSize: 12, color: Theme.colors.text },
   exerciseVolumeValue: { fontSize: 12, color: Theme.colors.text, fontWeight: 'bold' },
   exerciseNotes: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', padding: 8, borderRadius: 6, marginBottom: 12 },
   exerciseNotesText: { color: Theme.colors.textMuted, fontSize: 13, flex: 1 },

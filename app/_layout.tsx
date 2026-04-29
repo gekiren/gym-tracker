@@ -11,6 +11,7 @@ import { useWorkoutStore } from '../src/store/workoutStore';
 import '../src/i18n';
 import i18n, { getCurrentLanguage } from '../src/i18n';
 import * as Localization from 'expo-localization';
+import { DEFAULT_STANCES } from '../src/utils/stances';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -47,14 +48,44 @@ export default function RootLayout() {
       useWorkoutStore.getState().loadSettings(defaultRest, autoRest, weightUnit, needsUnitSelection);
       
       const customStancesStr = storedSettings['custom_stances'];
-      if (customStancesStr) {
+      const stancesMigratedV3 = storedSettings['stances_migrated_v3'] === '1';
+      
+      let finalStances: string[] = [];
+      if (!customStancesStr) {
+        // 新規ユーザー：新デフォルト(v3)を設定
+        finalStances = DEFAULT_STANCES;
+        await saveSetting('custom_stances', JSON.stringify(finalStances));
+        await saveSetting('stances_migrated_v3', '1');
+      } else {
         try {
-          const stances = JSON.parse(customStancesStr);
-          useWorkoutStore.getState().loadCustomStances(stances);
+          let stored = JSON.parse(customStancesStr);
+          if (!stancesMigratedV3) {
+            // v3への移行：ユーザーのリストから不要なものを削除、新しいものを追加、リネーム
+            const toDelete = ['スモウ', 'コンベンショナル', 'オルタネイトグリップ', 'サムレスグリップ', 'フックグリップ', 'ポーズ', 'デッドストップ'];
+            
+            // 削除
+            stored = stored.filter((s: string) => !toDelete.includes(s));
+            
+            // リバースグリップ -> 逆手 (すでにあれば統合)
+            if (stored.includes('リバースグリップ')) {
+              stored = stored.map((s: string) => s === 'リバースグリップ' ? '逆手' : s);
+            }
+            
+            // 新しいデフォルトを追加
+            const toAdd = ['順手', 'パラレル'];
+            finalStances = Array.from(new Set([...stored, ...DEFAULT_STANCES])); // DEFAULT_STANCESに含まれるものを確実に含める
+            
+            await saveSetting('custom_stances', JSON.stringify(finalStances));
+            await saveSetting('stances_migrated_v3', '1');
+          } else {
+            finalStances = stored;
+          }
         } catch(e) {
           console.warn('Failed to parse custom_stances', e);
+          finalStances = DEFAULT_STANCES;
         }
       }
+      useWorkoutStore.getState().loadCustomStances(finalStances);
 
       console.log('Database initialized successfully with settings', storedSettings);
       setDbReady(true);

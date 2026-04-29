@@ -37,13 +37,7 @@ export default function SelectExerciseScreen() {
   const { addExercise, addDraftExercise, settings } = useWorkoutStore();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
 
-  const builtinStances = [
-    'ナロー', 'ワイド', 'スモウ', 'コンベンショナル', 
-    'ハイバー', 'ローバー', 
-    'リバースグリップ', 'ニュートラルグリップ', 'オルタネイトグリップ', 'サムレスグリップ', 'フックグリップ',
-    'ポーズ', 'デッドストップ'
-  ];
-  const presetStances = Array.from(new Set([...builtinStances, ...(settings?.customStances || [])]));
+  const presetStances = settings?.customStances || [];
 
   useEffect(() => {
     fetchAll();
