@@ -139,6 +139,12 @@ export default function ExercisesScreen() {
     const matchEquipment = selectedEquipment === 'すべて' ||
                          (selectedEquipment === 'その他' ? !allEquipments.includes(e.equipment) : e.equipment === selectedEquipment);
     return matchSearch && matchCategory && matchEquipment;
+  }).sort((a, b) => {
+    const aFav = favoriteIds.has(a.id);
+    const bFav = favoriteIds.has(b.id);
+    if (aFav && !bFav) return -1;
+    if (!aFav && bFav) return 1;
+    return 0; // Maintain alphabetical order from getExercises()
   });
 
   return (
