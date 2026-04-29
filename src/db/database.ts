@@ -163,6 +163,10 @@ export const initDB = async () => {
     await _db.runAsync('UPDATE routines SET title = "Pull Day", description = "Deadlift, Pull-Up, Lat Pulldown..." WHERE title = "Pull Day (引く日)"');
     // Migration: Remove weighted bodyweight exercises and reverse grip lat pulldown as requested
     await _db.runAsync('DELETE FROM exercises WHERE name IN (?, ?, ?, ?)', ['加重懸垂', '加重プッシュアップ', '加重ディップス', 'リバースグリップ ラットプルダウン']);
+    
+    // Migration: Set is_unilateral = 1 for specific exercises
+    const unilateralExercises = ['ワンアームダンベルロウ', 'コンセントレーションカール', 'キックバック', 'ブルガリアンスプリットスクワット', 'ランジ', 'ウォーキングランジ'];
+    await _db.runAsync(`UPDATE exercises SET is_unilateral = 1 WHERE name IN (${unilateralExercises.map(() => '?').join(',')})`, unilateralExercises);
   } catch (e) {
     console.warn('Migration: Failed to rename/cleanup exercises', e);
   }
@@ -194,7 +198,7 @@ export const initDB = async () => {
     { name: 'ラットプルダウン', group: '背中', equip: 'ケーブル' },
     { name: 'ベントオーバーロウ', group: '背中', equip: 'バーベル' },
     { name: 'ペンレイロウ', group: '背中', equip: 'バーベル' },
-    { name: 'ワンアームダンベルロウ', group: '背中', equip: 'ダンベル' },
+    { name: 'ワンアームダンベルロウ', group: '背中', equip: 'ダンベル', is_unilateral: 1 },
     { name: 'シーテッドロウ', group: '背中', equip: 'ケーブル' },
     { name: 'Tバーロウ', group: '背中', equip: 'マシン' },
     { name: 'シュラッグ', group: '背中', equip: 'バーベル' },
@@ -227,14 +231,14 @@ export const initDB = async () => {
     { name: 'ハンマーカール', group: '腕', equip: 'ダンベル' },
     { name: 'プリーチャーカール', group: '腕', equip: 'EZバー' },
     { name: 'ケーブルカール', group: '腕', equip: 'ケーブル' },
-    { name: 'コンセントレーションカール', group: '腕', equip: 'ダンベル' },
+    { name: 'コンセントレーションカール', group: '腕', equip: 'ダンベル', is_unilateral: 1 },
     { name: 'リバースカール', group: '腕', equip: 'EZバー' },
     { name: 'ナローグリップ ベンチプレス', group: '腕', equip: 'バーベル' },
     { name: 'トライセップスエクステンション', group: '腕', equip: 'EZバー' },
     { name: 'ダンベル トライセップスエクステンション', group: '腕', equip: 'ダンベル' },
     { name: 'ケーブルプッシュダウン', group: '腕', equip: 'ケーブル' },
     { name: 'スカルクラッシャー', group: '腕', equip: 'EZバー' },
-    { name: 'キックバック', group: '腕', equip: 'ダンベル' },
+    { name: 'キックバック', group: '腕', equip: 'ダンベル', is_unilateral: 1 },
     { name: 'リストカール', group: '腕', equip: 'ダンベル' },
 
     // Legs
@@ -244,9 +248,9 @@ export const initDB = async () => {
     { name: 'スミスマシン スクワット', group: '脚', equip: 'スミスマシン' },
     { name: 'レッグプレス', group: '脚', equip: 'マシン' },
     { name: 'ハックスクワット', group: '脚', equip: 'マシン' },
-    { name: 'ブルガリアンスプリットスクワット', group: '脚', equip: 'ダンベル' },
-    { name: 'ランジ', group: '脚', equip: 'ダンベル' },
-    { name: 'ウォーキングランジ', group: '脚', equip: 'ダンベル' },
+    { name: 'ブルガリアンスプリットスクワット', group: '脚', equip: 'ダンベル', is_unilateral: 1 },
+    { name: 'ランジ', group: '脚', equip: 'ダンベル', is_unilateral: 1 },
+    { name: 'ウォーキングランジ', group: '脚', equip: 'ダンベル', is_unilateral: 1 },
     { name: 'レッグエクステンション', group: '脚', equip: 'マシン' },
     { name: 'レッグカール', group: '脚', equip: 'マシン' },
     { name: 'シーテッドレッグカール', group: '脚', equip: 'マシン' },
@@ -281,8 +285,8 @@ export const initDB = async () => {
         for (const ex of exercises) {
           if (!existingNames.has(ex.name)) {
             await _db.runAsync(
-              'INSERT INTO exercises (name, muscle_group, equipment) VALUES (?, ?, ?)',
-              [ex.name, ex.group, ex.equip]
+              'INSERT INTO exercises (name, muscle_group, equipment, is_unilateral) VALUES (?, ?, ?, ?)',
+              [ex.name, ex.group, ex.equip, ex.is_unilateral ? 1 : 0]
             );
           }
         }
