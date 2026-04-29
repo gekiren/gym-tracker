@@ -118,19 +118,7 @@
       "not_found": "ワークアウトが見つかりませんでした。",
       "back": "戻る"
     },
-    "exercise_detail": {
-      "title": "種目詳細",
-      "section_pr": "自己ベスト",
-      "section_history": "トレーニング履歴",
-      "section_stance": "スタンス設定",
-      "empty_history": "履歴がありません",
-      "copy_md": "MD形式でコピー",
-      "copy_done_title": "コピー完了",
-      "copy_done_message": "履歴をMarkdown形式でクリップボードにコピーしました。",
-      "header_set": "セット",
-      "header_weight": "重量",
-      "rpe_label": "@RPE"
-    },
+
     "edit_workout": {
       "title": "履歴の編集",
       "save_success_title": "保存完了",
@@ -153,11 +141,16 @@
       "not_found": "種目が見つかりません。",
       "section_pr": "自己ベスト (PR)",
       "section_history": "過去の履歴",
+      "section_stance": "スタンス設定",
+      "copy_md": "MD形式でコピー",
       "copy_md_btn": "MD形式でコピー",
       "empty_history": "まだ完了済みの記録がありません。",
       "empty_history_sub": "ワークアウトで記録をつけるとここに履歴が並びます。",
       "table_header_set": "セット",
-      "table_header_record": "記録"
+      "table_header_record": "記録",
+      "header_set": "セット",
+      "header_weight": "重量",
+      "rpe_label": "@RPE"
     },
     "build_routine": {
       "title": "ルーティンの作成",

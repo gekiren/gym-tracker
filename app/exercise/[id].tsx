@@ -254,11 +254,26 @@ export default function ExerciseDetailScreen() {
             <Text style={styles.emptySubtext}>{t('ui.exercise_detail.empty_history_sub')}</Text>
           </View>
         ) : (
-          history.map(item => (
+          history.map(item => {
+            const dailyVolume = item.sets.reduce((sum: number, s: any) => {
+              const w = parseFloat(s.weight) || 0;
+              const r = parseInt(s.reps, 10) || 0;
+              return sum + (w * r);
+            }, 0);
+
+            return (
             <View key={item.workout_id} style={[styles.historyCard, { marginHorizontal: Theme.spacing.md }]}>
               <View style={styles.historyCardHeader}>
-                <Ionicons name="calendar-outline" size={16} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
-                <Text style={styles.historyDate}>{formatDate(item.start_time)}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="calendar-outline" size={16} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
+                  <Text style={styles.historyDate}>{formatDate(item.start_time)}</Text>
+                </View>
+                {dailyVolume > 0 && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={{ color: Theme.colors.textMuted, fontSize: 12 }}>{t('ui.history.volume_label')}: </Text>
+                    <Text style={{ color: Theme.colors.primary, fontSize: 13, fontWeight: 'bold' }}>{dailyVolume} {settings.weightUnit}</Text>
+                  </View>
+                )}
               </View>
               
               <View style={styles.tableHeader}>
@@ -316,7 +331,7 @@ const styles = StyleSheet.create({
   emptySubtext: { color: Theme.colors.textMuted, fontSize: 13, marginTop: 4, textAlign: 'center' },
   listContent: { paddingHorizontal: Theme.spacing.md, paddingBottom: 40 },
   historyCard: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, marginBottom: Theme.spacing.md, borderWidth: 1, borderColor: Theme.colors.border },
-  historyCardHeader: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: Theme.colors.border, paddingBottom: 8, marginBottom: 8 },
+  historyCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: Theme.colors.border, paddingBottom: 8, marginBottom: 8 },
   historyDate: { color: Theme.colors.text, fontSize: 15, fontWeight: 'bold' },
   tableHeader: { flexDirection: 'row', marginBottom: 4 },
   thSet: { width: 50, color: Theme.colors.textMuted, fontSize: 13, fontWeight: '600' },

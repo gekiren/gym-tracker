@@ -119,17 +119,7 @@
       "not_found": "Workout not found.",
       "back": "Back"
     },
-    "exercise_detail": {
-      "title": "Exercise Detail",
-      "past_history": "Past History",
-      "no_history": "No history yet",
-      "copy_md": "Copy as MD",
-      "copy_done_title": "Copied!",
-      "copy_done_message": "History copied to clipboard in Markdown format.",
-      "header_set": "Set",
-      "header_weight": "Weight",
-      "rpe_label": "@RPE"
-    },
+
     "edit_workout": {
       "title": "Edit History",
       "save_success_title": "Saved",
@@ -157,7 +147,15 @@
       "empty_history": "No records yet.",
       "empty_history_sub": "Your workout history for this exercise will appear here.",
       "table_header_set": "Set",
-      "table_header_record": "Record"
+      "table_header_record": "Record",
+      "past_history": "Past History",
+      "no_history": "No history yet",
+      "copy_md": "Copy as MD",
+      "copy_done_title": "Copied!",
+      "copy_done_message": "History copied to clipboard in Markdown format.",
+      "header_set": "Set",
+      "header_weight": "Weight",
+      "rpe_label": "@RPE"
     },
     "build_routine": {
       "title": "Create Routine",
