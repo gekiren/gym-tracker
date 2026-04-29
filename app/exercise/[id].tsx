@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert, ScrollView, TextInput } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -98,169 +98,164 @@ export default function ExerciseDetailScreen() {
           headerTintColor: Theme.colors.primary,
         }} 
       />
-      
-      {/* Exercise Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>{translateExercise(exercise.name)}</Text>
-        <View style={styles.badges}>
-          <View style={styles.badge}><Text style={styles.badgeText}>{translateMuscleGroup(exercise.muscle_group)}</Text></View>
-          <View style={styles.badge}><Text style={styles.badgeText}>{translateEquipment(exercise.equipment)}</Text></View>
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Exercise Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>{translateExercise(exercise.name)}</Text>
+          <View style={styles.badges}>
+            <View style={styles.badge}><Text style={styles.badgeText}>{translateMuscleGroup(exercise.muscle_group)}</Text></View>
+            <View style={styles.badge}><Text style={styles.badgeText}>{translateEquipment(exercise.equipment)}</Text></View>
+          </View>
         </View>
-      </View>
 
-      {Object.keys(personalRecords).length > 0 && (
-        <View style={styles.prSection}>
-          <Text style={[styles.sectionTitle, { paddingHorizontal: Theme.spacing.lg, marginBottom: 8 }]}>{t('ui.exercise_detail.section_pr')}</Text>
-          {Object.entries(personalRecords).map(([variation, prMap]) => (
-            <View key={variation} style={{ marginBottom: 12 }}>
-              {variation !== 'default' && (
-                <Text style={styles.prVariationTitle}>{t('ui.active_workout.stance_label')}: {translateStance(variation)}</Text>
-              )}
-              <View style={styles.prList}>
-                {Object.keys(prMap)
-                  .sort((a, b) => parseInt(a) - parseInt(b))
-                  .map(reps => (
-                  <View key={reps} style={styles.prItem}>
-                    <Text style={styles.prReps}>{reps}{t('ui.common.reps_unit')}</Text>
-                    <Text style={styles.prWeight}>{prMap[parseInt(reps)]} {settings.weightUnit}</Text>
-                  </View>
-                ))}
+        {Object.keys(personalRecords).length > 0 && (
+          <View style={styles.prSection}>
+            <Text style={[styles.sectionTitle, { paddingHorizontal: Theme.spacing.lg, marginBottom: 8 }]}>{t('ui.exercise_detail.section_pr')}</Text>
+            {Object.entries(personalRecords).map(([variation, prMap]) => (
+              <View key={variation} style={{ marginBottom: 12 }}>
+                {variation !== 'default' && (
+                  <Text style={styles.prVariationTitle}>{t('ui.active_workout.stance_label')}: {translateStance(variation)}</Text>
+                )}
+                <View style={styles.prList}>
+                  {Object.keys(prMap)
+                    .sort((a, b) => parseInt(a) - parseInt(b))
+                    .map(reps => (
+                    <View key={reps} style={styles.prItem}>
+                      <Text style={styles.prReps}>{reps}{t('ui.common.reps_unit')}</Text>
+                      <Text style={styles.prWeight}>{prMap[parseInt(reps)]} {settings.weightUnit}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
-          ))}
-        </View>
-      )}
-
-      {/* Stance Management Section */}
-      <View style={styles.stanceSection}>
-        <Text style={styles.sectionTitle}>{t('ui.exercise_detail.section_stance')}</Text>
-        <View style={styles.stanceList}>
-          <TouchableOpacity
-            style={[styles.choiceChip, exercise.default_variation === null && styles.choiceChipActive]}
-            onPress={async () => {
-              await updateExerciseDefaultVariation(exercise.id, null);
-              setExercise({ ...exercise, default_variation: null });
-            }}
-          >
-            <Text style={[styles.choiceChipText, exercise.default_variation === null && styles.choiceChipTextActive]}>
-              {t('ui.active_workout.stance_standard')}
-            </Text>
-          </TouchableOpacity>
-          
-          {(settings.customStances || []).map((s: string) => {
-            const isActive = exercise.default_variation === s;
-            return (
-              <TouchableOpacity
-                key={s}
-                style={[styles.choiceChip, isActive && styles.choiceChipActive]}
-                onPress={async () => {
-                  await updateExerciseDefaultVariation(exercise.id, s);
-                  setExercise({ ...exercise, default_variation: s });
-                }}
-                onLongPress={() => {
-                  Alert.alert(
-                    t('ui.active_workout.stance_delete_title'),
-                    t('ui.active_workout.stance_delete_message', { name: translateStance(s) }),
-                    [
-                      { text: t('ui.active_workout.stance_cancel'), style: 'cancel' },
-                      { 
-                        text: t('ui.active_workout.stance_delete_confirm'), 
-                        style: 'destructive',
-                        onPress: async () => {
-                          const next = (settings.customStances || []).filter(item => item !== s);
-                          removeCustomStance(s);
-                          await saveSetting('custom_stances', JSON.stringify(next));
-                          if (exercise.default_variation === s) {
-                            await updateExerciseDefaultVariation(exercise.id, null);
-                            setExercise({ ...exercise, default_variation: null });
-                          }
-                        }
-                      }
-                    ]
-                  );
-                }}
-              >
-                <Text style={[styles.choiceChipText, isActive && styles.choiceChipTextActive]}>
-                  {translateStance(s)}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-
-          <TouchableOpacity 
-            style={styles.addStanceBtn} 
-            onPress={() => setIsAddingStance(true)}
-          >
-            <Ionicons name="add" size={16} color={Theme.colors.primary} />
-            <Text style={styles.addStanceBtnText}>{t('ui.active_workout.stance_add_original_btn')}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {isAddingStance && (
-          <View style={styles.addStanceInputContainer}>
-            <TextInput
-              style={styles.addStanceInput}
-              value={newStance}
-              onChangeText={setNewStance}
-              placeholder={t('ui.active_workout.stance_add_placeholder')}
-              placeholderTextColor={Theme.colors.textMuted}
-              autoFocus
-            />
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity 
-                style={styles.addStanceActionBtn}
-                onPress={() => {
-                  setIsAddingStance(false);
-                  setNewStance('');
-                }}
-              >
-                <Text style={{ color: Theme.colors.textMuted }}>{t('ui.active_workout.stance_cancel')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.addStanceActionBtn, { backgroundColor: Theme.colors.primary }]}
-                onPress={async () => {
-                  const val = newStance.trim();
-                  if (val) {
-                    addCustomStance(val);
-                    const next = Array.from(new Set([...(settings.customStances || []), val]));
-                    await saveSetting('custom_stances', JSON.stringify(next));
-                    await updateExerciseDefaultVariation(exercise.id, val);
-                    setExercise({ ...exercise, default_variation: val });
-                  }
-                  setNewStance('');
-                  setIsAddingStance(false);
-                }}
-              >
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>{t('ui.active_workout.stance_add_to_list')}</Text>
-              </TouchableOpacity>
-            </View>
+            ))}
           </View>
         )}
-      </View>
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{t('ui.exercise_detail.section_history')}</Text>
-        {history.length > 0 && (
-          <TouchableOpacity onPress={handleExportMarkdown} style={styles.exportBtn}>
-            <Ionicons name="copy-outline" size={14} color={Theme.colors.primary} style={{ marginRight: 4 }} />
-            <Text style={styles.exportBtnText}>{t('ui.exercise_detail.copy_md_btn')}</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+        {/* Stance Management Section */}
+        <View style={styles.stanceSection}>
+          <Text style={styles.sectionTitle}>{t('ui.exercise_detail.section_stance')}</Text>
+          <View style={styles.stanceList}>
+            <TouchableOpacity
+              style={[styles.choiceChip, exercise.default_variation === null && styles.choiceChipActive]}
+              onPress={async () => {
+                await updateExerciseDefaultVariation(exercise.id, null);
+                setExercise({ ...exercise, default_variation: null });
+              }}
+            >
+              <Text style={[styles.choiceChipText, exercise.default_variation === null && styles.choiceChipTextActive]}>
+                {t('ui.active_workout.stance_standard')}
+              </Text>
+            </TouchableOpacity>
+            
+            {(settings.customStances || []).map((s: string) => {
+              const isActive = exercise.default_variation === s;
+              return (
+                <TouchableOpacity
+                  key={s}
+                  style={[styles.choiceChip, isActive && styles.choiceChipActive]}
+                  onPress={async () => {
+                    await updateExerciseDefaultVariation(exercise.id, s);
+                    setExercise({ ...exercise, default_variation: s });
+                  }}
+                  onLongPress={() => {
+                    Alert.alert(
+                      t('ui.active_workout.stance_delete_title'),
+                      t('ui.active_workout.stance_delete_message', { name: translateStance(s) }),
+                      [
+                        { text: t('ui.active_workout.stance_cancel'), style: 'cancel' },
+                        { 
+                          text: t('ui.active_workout.stance_delete_confirm'), 
+                          style: 'destructive',
+                          onPress: async () => {
+                            const next = (settings.customStances || []).filter(item => item !== s);
+                            removeCustomStance(s);
+                            await saveSetting('custom_stances', JSON.stringify(next));
+                            if (exercise.default_variation === s) {
+                              await updateExerciseDefaultVariation(exercise.id, null);
+                              setExercise({ ...exercise, default_variation: null });
+                            }
+                          }
+                        }
+                      ]
+                    );
+                  }}
+                >
+                  <Text style={[styles.choiceChipText, isActive && styles.choiceChipTextActive]}>
+                    {translateStance(s)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
 
-      {history.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Ionicons name="barbell-outline" size={48} color={Theme.colors.border} />
-          <Text style={styles.emptyText}>{t('ui.exercise_detail.empty_history')}</Text>
-          <Text style={styles.emptySubtext}>{t('ui.exercise_detail.empty_history_sub')}</Text>
+            <TouchableOpacity 
+              style={styles.addStanceBtn} 
+              onPress={() => setIsAddingStance(true)}
+            >
+              <Ionicons name="add" size={16} color={Theme.colors.primary} />
+              <Text style={styles.addStanceBtnText}>{t('ui.active_workout.stance_add_original_btn')}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {isAddingStance && (
+            <View style={styles.addStanceInputContainer}>
+              <TextInput
+                style={styles.addStanceInput}
+                value={newStance}
+                onChangeText={setNewStance}
+                placeholder={t('ui.active_workout.stance_add_placeholder')}
+                placeholderTextColor={Theme.colors.textMuted}
+              />
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity 
+                  style={styles.addStanceActionBtn}
+                  onPress={() => {
+                    setIsAddingStance(false);
+                    setNewStance('');
+                  }}
+                >
+                  <Text style={{ color: Theme.colors.textMuted }}>{t('ui.active_workout.stance_cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.addStanceActionBtn, { backgroundColor: Theme.colors.primary }]}
+                  onPress={async () => {
+                    const val = newStance.trim();
+                    if (val) {
+                      addCustomStance(val);
+                      const next = Array.from(new Set([...(settings.customStances || []), val]));
+                      await saveSetting('custom_stances', JSON.stringify(next));
+                      await updateExerciseDefaultVariation(exercise.id, val);
+                      setExercise({ ...exercise, default_variation: val });
+                    }
+                    setNewStance('');
+                    setIsAddingStance(false);
+                  }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>{t('ui.active_workout.stance_add_to_list')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </View>
-      ) : (
-        <FlatList
-          data={history}
-          keyExtractor={item => item.workout_id.toString()}
-          contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
-            <View style={styles.historyCard}>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{t('ui.exercise_detail.section_history')}</Text>
+          {history.length > 0 && (
+            <TouchableOpacity onPress={handleExportMarkdown} style={styles.exportBtn}>
+              <Ionicons name="copy-outline" size={14} color={Theme.colors.primary} style={{ marginRight: 4 }} />
+              <Text style={styles.exportBtnText}>{t('ui.exercise_detail.copy_md_btn')}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {history.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="barbell-outline" size={48} color={Theme.colors.border} />
+            <Text style={styles.emptyText}>{t('ui.exercise_detail.empty_history')}</Text>
+            <Text style={styles.emptySubtext}>{t('ui.exercise_detail.empty_history_sub')}</Text>
+          </View>
+        ) : (
+          history.map(item => (
+            <View key={item.workout_id} style={[styles.historyCard, { marginHorizontal: Theme.spacing.md }]}>
               <View style={styles.historyCardHeader}>
                 <Ionicons name="calendar-outline" size={16} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
                 <Text style={styles.historyDate}>{formatDate(item.start_time)}</Text>
@@ -300,9 +295,9 @@ export default function ExerciseDetailScreen() {
                 );
               })}
             </View>
-          )}
-        />
-      )}
+          ))
+        )}
+      </ScrollView>
     </View>
   );
 }

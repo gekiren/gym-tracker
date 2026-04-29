@@ -61,7 +61,7 @@ export default function RootLayout() {
           let stored = JSON.parse(customStancesStr);
           if (!stancesMigratedV3) {
             // v3への移行：ユーザーのリストから不要なものを削除、新しいものを追加、リネーム
-            const toDelete = ['スモウ', 'コンベンショナル', 'オルタネイトグリップ', 'サムレスグリップ', 'フックグリップ', 'ポーズ', 'デッドストップ'];
+            const toDelete = ['スモウ', 'コンベンショナル', 'オルタネイトグリップ', 'サムレスグリップ', 'フックグリップ', 'ポーズ', 'デッドストップ', 'ニュートラルグリップ'];
             
             // 削除
             stored = stored.filter((s: string) => !toDelete.includes(s));
