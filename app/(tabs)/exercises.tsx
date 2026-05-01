@@ -203,6 +203,8 @@ export default function ExercisesScreen() {
       <FlatList
         data={filtered}
         keyExtractor={item => item.id.toString()}
+        keyboardShouldPersistTaps="handled"
+        removeClippedSubviews={false}
         renderItem={({ item }) => (
           <Swipeable
             renderRightActions={(prog, drag) => renderRightActions(prog, drag, item)}

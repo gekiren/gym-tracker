@@ -1,4 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, AppState, BackHandler, Modal, Platform } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 import { useEffect, useState, useCallback } from 'react';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -651,14 +653,61 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
     );
   };
 
+  const renderLeftActions = (progress: SharedValue<number>, drag: SharedValue<number>) => {
+    const styleAnimation = useAnimatedStyle(() => {
+      return {
+        transform: [{ translateX: drag.value - 80 }],
+      };
+    });
+    return (
+      <View style={{ width: 80 }}>
+        <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
+          <TouchableOpacity 
+            style={styles.deleteAction}
+            onPress={handleLongPress}
+          >
+            <Ionicons name="trash-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+        </Reanimated.View>
+      </View>
+    );
+  };
+
+  const renderRightActions = (progress: SharedValue<number>, drag: SharedValue<number>) => {
+    const styleAnimation = useAnimatedStyle(() => {
+      return {
+        transform: [{ translateX: drag.value + 80 }],
+      };
+    });
+    return (
+      <View style={{ width: 80 }}>
+        <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
+          <TouchableOpacity 
+            style={styles.deleteAction}
+            onPress={handleLongPress}
+          >
+            <Ionicons name="trash-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+        </Reanimated.View>
+      </View>
+    );
+  };
+
   return (
-    <View>
-      <TouchableOpacity 
-        style={[styles.row, set.is_completed && styles.rowCompleted]}
-        activeOpacity={0.8}
-        onLongPress={handleLongPress}
-        delayLongPress={500}
-      >
+    <Swipeable
+      renderLeftActions={renderLeftActions}
+      renderRightActions={renderRightActions}
+      friction={2}
+      leftThreshold={40}
+      rightThreshold={40}
+    >
+      <View style={{ backgroundColor: Theme.colors.card }}>
+        <TouchableOpacity 
+          style={[styles.row, set.is_completed && styles.rowCompleted]}
+          activeOpacity={0.8}
+          onLongPress={handleLongPress}
+          delayLongPress={500}
+        >
         <View style={{ width: 40, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={styles.tdSet}>{set.set_number}{set.side ? `\n(${set.side})` : ''}</Text>
         </View>
@@ -756,6 +805,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
         </View>
       </View>
     </View>
+    </Swipeable>
   );
 }
 
@@ -835,5 +885,12 @@ const styles = StyleSheet.create({
   choiceChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333' },
   choiceChipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: Theme.colors.primary },
   choiceChipText: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: '500' },
-  choiceChipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' }
+  choiceChipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' },
+  deleteAction: {
+    backgroundColor: '#ff4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    height: '100%',
+  }
 });

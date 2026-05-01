@@ -269,6 +269,8 @@ export default function SelectExerciseScreen() {
           sections={sections}
           keyExtractor={item => item.id.toString()}
           renderItem={renderItem}
+          keyboardShouldPersistTaps="handled"
+          removeClippedSubviews={false}
           renderSectionHeader={({ section }) => (
             <View style={styles.sectionHeader}>
               {section.title === t('ui.exercise_select.section_favorites') && (
