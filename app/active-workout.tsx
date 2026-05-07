@@ -897,8 +897,6 @@ const styles = StyleSheet.create({
     minHeight: 40,
     textAlignVertical: 'top'
   },
-  timerBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: Theme.borderRadius.sm, backgroundColor: 'rgba(79, 172, 254, 0.1)' },
-  timerBtnText: { color: Theme.colors.primary, fontSize: 16, fontWeight: 'bold' },
   manualStartOverlay: { position: 'absolute', bottom: 20, left: 20, right: 20, alignItems: 'center' },
   manualStartBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: Theme.colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5 },
   manualStartBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
