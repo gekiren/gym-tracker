@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Linking, TextInput } from 'react-native';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -17,11 +17,13 @@ export default function ProfileScreen() {
   const [autoRest, setAutoRest] = useState(settings.autoRest);
   const [weightUnit, setWeightUnit] = useState(settings.weightUnit);
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
+  const [bodyWeight, setLocalBodyWeight] = useState(settings.bodyWeight ? settings.bodyWeight.toString() : '');
 
   useEffect(() => {
     setDefaultRest(settings.defaultRest);
     setAutoRest(settings.autoRest);
     setWeightUnit(settings.weightUnit);
+    setLocalBodyWeight(settings.bodyWeight ? settings.bodyWeight.toString() : '');
   }, [settings]);
 
   const handleUpdateRest = async (secs: number) => {
@@ -46,6 +48,20 @@ export default function ProfileScreen() {
     changeLanguage(lang);
     setCurrentLang(lang);
     await saveSetting('language', lang);
+  };
+
+  const handleUpdateBodyWeight = async (val: string) => {
+    setLocalBodyWeight(val);
+    if (val === '') {
+      useWorkoutStore.getState().setBodyWeight(null);
+      await saveSetting('body_weight', '');
+    } else {
+      const num = parseFloat(val.replace(',', '.'));
+      if (!isNaN(num)) {
+        useWorkoutStore.getState().setBodyWeight(num);
+        await saveSetting('body_weight', num.toString());
+      }
+    }
   };
 
   const formatTime = (secs: number) => {
@@ -150,6 +166,18 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
           </View>
+          <View style={[styles.settingRow, { flexDirection: 'column', alignItems: 'flex-start' }]}>
+            <Text style={styles.settingLabel}>{t('ui.profile.body_weight_label')}</Text>
+            <Text style={styles.settingDesc}>{t('ui.profile.body_weight_desc')}</Text>
+            <TextInput
+              style={styles.weightInput}
+              keyboardType="numeric"
+              value={bodyWeight}
+              onChangeText={handleUpdateBodyWeight}
+              placeholder={`e.g. 70 (${weightUnit})`}
+              placeholderTextColor={Theme.colors.textMuted}
+            />
+          </View>
           <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'flex-start' }]}>
             <Text style={styles.settingLabel}>{t('ui.profile.language_label')}</Text>
             <View style={[styles.chipContainer, { marginTop: 12 }]}>
@@ -218,5 +246,6 @@ const styles = StyleSheet.create({
   langChip: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 20, backgroundColor: '#222', borderWidth: 1, borderColor: Theme.colors.border },
   chipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: Theme.colors.primary },
   chipText: { color: Theme.colors.textMuted, fontSize: 14, fontWeight: '600' },
-  chipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' }
+  chipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' },
+  weightInput: { backgroundColor: '#121212', color: Theme.colors.text, padding: 12, borderRadius: 8, fontSize: 16, borderWidth: 1, borderColor: Theme.colors.border, width: '100%', marginTop: 12 }
 });

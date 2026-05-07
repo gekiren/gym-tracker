@@ -26,7 +26,8 @@ export const initDB = async () => {
       title TEXT NOT NULL,
       start_time TEXT NOT NULL,
       end_time TEXT,
-      notes TEXT
+      notes TEXT,
+      calories REAL
     );
 
     CREATE TABLE IF NOT EXISTS workout_exercises (
@@ -87,6 +88,16 @@ export const initDB = async () => {
     }
   } catch (e) {
     console.warn('Migration: Failed to add notes column', e);
+  }
+
+  // Migration: Add calories to workouts if missing
+  try {
+    const tableInfoW = await _db.getAllAsync<{ name: string }>(`PRAGMA table_info(workouts)`);
+    if (!tableInfoW.find(c => c.name === 'calories')) {
+      await _db.execAsync(`ALTER TABLE workouts ADD COLUMN calories REAL`);
+    }
+  } catch (e) {
+    console.warn('Migration: Failed to add calories column', e);
   }
 
   // Migration: Add rest_seconds and work_seconds to workout_sets if missing
@@ -342,11 +353,11 @@ export const getDB = () => {
   return db;
 };
 
-export const saveWorkout = async (title: string, startTime: string, endTime: string, notes: string | null, exercises: any[]) => {
+export const saveWorkout = async (title: string, startTime: string, endTime: string, notes: string | null, exercises: any[], calories: number | null = null) => {
   const conn = getDB();
   const wResult = await conn.runAsync(
-    'INSERT INTO workouts (title, start_time, end_time, notes) VALUES (?, ?, ?, ?)',
-    [title, startTime, endTime, notes]
+    'INSERT INTO workouts (title, start_time, end_time, notes, calories) VALUES (?, ?, ?, ?, ?)',
+    [title, startTime, endTime, notes, calories]
   );
   
   const workoutId = wResult.lastInsertRowId;
@@ -567,6 +578,7 @@ export const loadFullWorkoutData = async (workoutId: number) => {
     start_time: workoutRow.start_time,
     end_time: workoutRow.end_time,
     notes: workoutRow.notes,
+    calories: workoutRow.calories,
     exercises: exercisesData
   };
 };

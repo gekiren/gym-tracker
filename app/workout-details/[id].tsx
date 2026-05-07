@@ -87,6 +87,13 @@ export default function WorkoutDetailsScreen() {
               <Text style={styles.dateText}>{durationMin} {t('ui.common.min_unit')}</Text>
             </>
           )}
+          {workout.calories && (
+            <>
+              <Text style={{ color: Theme.colors.textMuted, marginHorizontal: 8 }}>•</Text>
+              <Ionicons name="flame-outline" size={16} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
+              <Text style={styles.dateText}>{workout.calories} kcal</Text>
+            </>
+          )}
         </View>
 
         {workout.notes ? (

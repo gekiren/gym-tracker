@@ -84,7 +84,9 @@
       "alert_delete_set_error_message": "チェックが入っているセットは削除できません。まずチェックを外してください。",
       "alert_delete_set_title": "セットの削除",
       "alert_delete_set_message": "セット {{number}} を削除しますか？",
-      "alert_delete_set_confirm": "削除する"
+      "alert_delete_set_confirm": "削除する",
+      "manual_start_btn": "▶ ワークアウト再開（移動完了）",
+      "manual_start_success": "計測を開始しました"
     },
     "exercise_select": {
       "search_placeholder": "種目を検索...",
@@ -222,7 +224,9 @@
       "db_error_title": "データベースエラー",
       "db_error_text": "初期化に失敗しました。アプリを再起動するか、下のボタンを押して再試行してください。",
       "retry": "再試行",
-      "screen_title_select_exercise": "種目を選択"
+      "screen_title_select_exercise": "種目を選択",
+      "body_weight_label": "体重 (任意)",
+      "body_weight_desc": "カロリー計算に使用します。未設定の場合は簡易的な値が表示されます。"
     },
     "edit_workout": {
       "title": "ワークアウトを編集",
@@ -267,7 +271,8 @@
       "secs_unit": "秒",
       "min_unit": "分",
       "weight_unit": "kg",
-      "reps_unit": "回"
+      "reps_unit": "回",
+      "calories": "カロリー"
     },
     "markdown": {
       "date_label": "日付",

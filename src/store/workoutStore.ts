@@ -56,6 +56,7 @@ interface WorkoutState {
   stopRestTimer: () => void;
   adjustRestTimer: (seconds: number) => void;
   tickRestTimer: () => void;
+  markWorkStart: () => void;
 
   // Application Settings
   settings: {
@@ -64,8 +65,10 @@ interface WorkoutState {
     weightUnit: 'kg' | 'lbs';
     needsUnitSelection: boolean;
     customStances: string[];
+    bodyWeight: number | null;
   };
-  loadSettings: (defaultRest: number, autoRest: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean) => void;
+  loadSettings: (defaultRest: number, autoRest: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null) => void;
+  setBodyWeight: (weight: number | null) => void;
   loadCustomStances: (stances: string[]) => void;
   addCustomStance: (stance: string) => void;
   removeCustomStance: (stance: string) => void;
@@ -95,11 +98,16 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     autoRest: true,
     weightUnit: 'kg',
     needsUnitSelection: false,
-    customStances: []
+    customStances: [],
+    bodyWeight: null
   },
 
-  loadSettings: (defaultRest: number, autoRest: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false) => set((state) => ({
-    settings: { ...state.settings, defaultRest, autoRest, weightUnit, needsUnitSelection }
+  loadSettings: (defaultRest: number, autoRest: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false, bodyWeight: number | null = null) => set((state) => ({
+    settings: { ...state.settings, defaultRest, autoRest, weightUnit, needsUnitSelection, bodyWeight }
+  })),
+
+  setBodyWeight: (weight: number | null) => set((state) => ({
+    settings: { ...state.settings, bodyWeight: weight }
   })),
 
   loadCustomStances: (stances: string[]) => set((state) => ({
@@ -396,6 +404,13 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     }
     return { restTimer: { isActive: true, remaining: nextRemaining, endTime: state.restTimer.endTime } };
   }),
+  markWorkStart: () => {
+    cancelRestTimer();
+    set({
+      lastRestFinishedAt: Date.now(),
+      restTimer: { isActive: false, remaining: 0, endTime: null }
+    });
+  },
 
   // Draft routine actions
   updateDraftTitle: (title) => set((state) => ({

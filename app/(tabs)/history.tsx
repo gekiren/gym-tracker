@@ -162,6 +162,10 @@ export default function HistoryScreen() {
                 <Text style={styles.statLabel}>{t('ui.history.volume_label')}</Text>
                 <Text style={styles.statValue}>{w.volume ? `${w.volume} ${settings.weightUnit}` : '-'}</Text>
               </View>
+              <View style={styles.statBlock}>
+                <Text style={styles.statLabel}>{t('ui.common.calories') || 'Calories'}</Text>
+                <Text style={styles.statValue}>{w.calories ? `${w.calories} kcal` : '-'}</Text>
+              </View>
             </View>
           </TouchableOpacity>
         ))

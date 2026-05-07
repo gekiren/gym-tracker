@@ -16,7 +16,7 @@ export default function ActiveWorkoutScreen() {
     title, startTime, workoutNotes, exercises, endWorkout, 
     updateWorkoutNotes, updateExerciseNotes,
     addExercise, addSet, removeSet, toggleSetComplete, updateSet, 
-    restTimer, stopRestTimer, adjustRestTimer, tickRestTimer, settings
+    restTimer, stopRestTimer, adjustRestTimer, tickRestTimer, markWorkStart, settings
   } = useWorkoutStore();
   
   const [elapsed, setElapsed] = useState(0);
@@ -144,8 +144,24 @@ export default function ActiveWorkoutScreen() {
           style: 'default',
           onPress: async () => {
             try {
+              let totalWorkSecs = 0;
+              let totalRestSecs = 0;
+              exercises.forEach(ex => {
+                ex.sets.forEach(s => {
+                  if (s.is_completed) {
+                    totalWorkSecs += (s.work_seconds || 0);
+                    totalRestSecs += (s.rest_seconds || 0);
+                  }
+                });
+              });
+              
+              const bw = settings.bodyWeight || 70;
+              const bwKg = settings.weightUnit === 'lbs' ? bw * 0.453592 : bw;
+              const cal = ((totalWorkSecs / 3600) * 6.0 * bwKg) + ((totalRestSecs / 3600) * 1.5 * bwKg);
+              const roundedCalories = Math.round(cal);
+
               const et = new Date().toISOString();
-              await saveWorkout(title || t('ui.home.free_workout_title'), startTime || et, et, workoutNotes, exercises);
+              await saveWorkout(title || t('ui.home.free_workout_title'), startTime || et, et, workoutNotes, exercises, roundedCalories);
             } catch (e) {
               console.error(e);
             }
@@ -175,6 +191,9 @@ export default function ActiveWorkoutScreen() {
           ),
           headerRight: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity onPress={() => router.push('/rm-calculator')} style={{ marginRight: 16 }}>
+                <Ionicons name="calculator-outline" size={26} color={Theme.colors.primary} />
+              </TouchableOpacity>
               <TouchableOpacity onPress={() => setPlateCalcVisible(true)} style={{ marginRight: 16 }}>
                 <Ionicons name="barbell-outline" size={26} color={Theme.colors.primary} />
               </TouchableOpacity>
@@ -327,6 +346,19 @@ export default function ActiveWorkoutScreen() {
               </TouchableOpacity>
             </View>
           </View>
+        </View>
+      )}
+
+      {/* Floating Manual Start Button (when not resting) */}
+      {!restTimer.isActive && (
+        <View style={styles.manualStartOverlay}>
+          <TouchableOpacity style={styles.manualStartBtn} onPress={() => {
+            markWorkStart();
+            Alert.alert("", t('ui.active_workout.manual_start_success') || "Started");
+          }}>
+            <Ionicons name="play" size={16} color="#fff" style={{ marginRight: 6 }} />
+            <Text style={styles.manualStartBtnText}>{t('ui.active_workout.manual_start_btn')}</Text>
+          </TouchableOpacity>
         </View>
       )}
       {/* プレート計算機モーダル */}
@@ -865,6 +897,11 @@ const styles = StyleSheet.create({
     minHeight: 40,
     textAlignVertical: 'top'
   },
+  timerBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: Theme.borderRadius.sm, backgroundColor: 'rgba(79, 172, 254, 0.1)' },
+  timerBtnText: { color: Theme.colors.primary, fontSize: 16, fontWeight: 'bold' },
+  manualStartOverlay: { position: 'absolute', bottom: 20, left: 20, right: 20, alignItems: 'center' },
+  manualStartBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: Theme.colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5 },
+  manualStartBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { width: '90%', backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.lg, maxHeight: '90%' },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },

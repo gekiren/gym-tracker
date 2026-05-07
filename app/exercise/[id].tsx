@@ -119,12 +119,20 @@ export default function ExerciseDetailScreen() {
                 <View style={styles.prList}>
                   {Object.keys(prMap)
                     .sort((a, b) => parseInt(a) - parseInt(b))
-                    .map(reps => (
-                    <View key={reps} style={styles.prItem}>
-                      <Text style={styles.prReps}>{reps}{t('ui.common.reps_unit')}</Text>
-                      <Text style={styles.prWeight}>{prMap[parseInt(reps)]} {settings.weightUnit}</Text>
-                    </View>
-                  ))}
+                    .map(reps => {
+                      const repNum = parseInt(reps);
+                      const weight = prMap[repNum];
+                      const oneRm = repNum === 1 ? weight : Math.round(weight * (1 + (repNum / 30)));
+                      return (
+                        <View key={reps} style={styles.prItem}>
+                          <Text style={styles.prReps}>{reps}{t('ui.common.reps_unit')}</Text>
+                          <Text style={styles.prWeight}>{weight} {settings.weightUnit}</Text>
+                          {repNum > 1 && (
+                            <Text style={styles.prOneRm}>1RM: {oneRm}{settings.weightUnit}</Text>
+                          )}
+                        </View>
+                      );
+                    })}
                 </View>
               </View>
             ))}
@@ -348,6 +356,7 @@ const styles = StyleSheet.create({
   prItem: { backgroundColor: '#1a1a1a', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#333', minWidth: 70 },
   prReps: { color: Theme.colors.textMuted, fontSize: 12, fontWeight: 'bold', marginBottom: 2 },
   prWeight: { color: Theme.colors.primary, fontSize: 16, fontWeight: 'bold' },
+  prOneRm: { color: '#f5a623', fontSize: 11, fontWeight: 'bold', marginTop: 4 },
   prVariationTitle: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: 'bold', paddingHorizontal: Theme.spacing.lg, marginBottom: 4 },
   historyVariationBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 8 },
   historyVariationText: { color: Theme.colors.text, fontSize: 11, fontWeight: 'bold' },

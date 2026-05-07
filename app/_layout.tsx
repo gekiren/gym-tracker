@@ -44,8 +44,9 @@ export default function RootLayout() {
         i18n.changeLanguage(initialLang);
         await saveSetting('language', initialLang);
       }
+      const bodyWeight = storedSettings['body_weight'] ? parseFloat(storedSettings['body_weight']) : null;
       
-      useWorkoutStore.getState().loadSettings(defaultRest, autoRest, weightUnit, needsUnitSelection);
+      useWorkoutStore.getState().loadSettings(defaultRest, autoRest, weightUnit, needsUnitSelection, bodyWeight);
       
       const customStancesStr = storedSettings['custom_stances'];
       const stancesMigratedV3 = storedSettings['stances_migrated_v3'] === '1';
