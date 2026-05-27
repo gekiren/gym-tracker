@@ -30,11 +30,13 @@ export type ActiveExercise = {
 
 interface WorkoutState {
   isActive: boolean;
+  isWorkoutStarted: boolean;
   startTime: string | null;
   title: string | null;
   workoutNotes: string;
   exercises: ActiveExercise[];
   startWorkout: (title: string) => void;
+  beginWorkoutTimer: () => void;
   updateWorkoutNotes: (notes: string) => void;
   updateExerciseNotes: (exerciseId: string, notes: string) => void;
   updateExerciseVariation: (exerciseId: string, variation: string | null) => void;
@@ -86,6 +88,7 @@ interface WorkoutState {
 
 export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   isActive: false,
+  isWorkoutStarted: false,
   startTime: null,
   title: null,
   workoutNotes: '',
@@ -126,12 +129,18 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
   startWorkout: (title) => set({
     isActive: true,
-    startTime: new Date().toISOString(),
+    isWorkoutStarted: false,
+    startTime: null,
     title,
     workoutNotes: '',
     exercises: [],
     lastRestFinishedAt: null,
     restTimer: { isActive: false, remaining: 0, endTime: null }
+  }),
+
+  beginWorkoutTimer: () => set({
+    isWorkoutStarted: true,
+    startTime: new Date().toISOString()
   }),
 
   updateWorkoutNotes: (notes) => set({ workoutNotes: notes }),
@@ -337,9 +346,17 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
             ...ex,
             sets: ex.sets.map(s => {
               if (s.id === setId) {
+                let finalWeight = s.weight;
+                let finalReps = s.reps;
+                if (willBeCompleted) {
+                  if (finalWeight === null && s.prev_weight != null) finalWeight = s.prev_weight;
+                  if (finalReps === null && s.prev_reps != null) finalReps = s.prev_reps;
+                }
                 return { 
                   ...s, 
                   is_completed: willBeCompleted, 
+                  weight: finalWeight,
+                  reps: finalReps,
                   completedAt: willBeCompleted ? now : undefined,
                   rest_seconds: willBeCompleted ? restSeconds : null,
                   work_seconds: willBeCompleted ? workSeconds : null
@@ -353,6 +370,9 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       })
     }));
 
+    if (willBeCompleted && !state.isWorkoutStarted) {
+      get().beginWorkoutTimer();
+    }
     if (willBeCompleted && get().settings.autoRest) {
       get().startRestTimer(get().settings.defaultRest);
     }

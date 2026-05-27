@@ -87,7 +87,8 @@
       "alert_delete_set_message": "Delete set {{number}}?",
       "alert_delete_set_confirm": "Delete",
       "manual_start_btn": "▶ Start Next Set (Ready)",
-      "manual_start_success": "Timer started"
+      "manual_start_success": "Timer started",
+      "start_training_btn": "▶ Start Workout"
     },
     "exercise_select": {
       "search_placeholder": "Search exercises...",

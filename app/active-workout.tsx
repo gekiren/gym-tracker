@@ -16,7 +16,8 @@ export default function ActiveWorkoutScreen() {
     title, startTime, workoutNotes, exercises, endWorkout, 
     updateWorkoutNotes, updateExerciseNotes,
     addExercise, addSet, removeSet, toggleSetComplete, updateSet, 
-    restTimer, stopRestTimer, adjustRestTimer, tickRestTimer, markWorkStart, settings
+    restTimer, stopRestTimer, adjustRestTimer, tickRestTimer, markWorkStart, settings,
+    isWorkoutStarted, beginWorkoutTimer
   } = useWorkoutStore();
   
   const [elapsed, setElapsed] = useState(0);
@@ -215,7 +216,13 @@ export default function ActiveWorkoutScreen() {
         keyboardShouldPersistTaps="handled" 
         automaticallyAdjustKeyboardInsets={true}
       >
-          <Text style={styles.timeText}>{formatTime(elapsed)}</Text>
+          {!isWorkoutStarted ? (
+            <TouchableOpacity style={styles.startWorkoutHeroBtn} onPress={beginWorkoutTimer}>
+              <Text style={styles.startWorkoutHeroBtnText}>{t('ui.active_workout.start_training_btn')}</Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.timeText}>{formatTime(elapsed)}</Text>
+          )}
 
         {/* Workout Notes Section */}
         <View style={{ marginBottom: 16 }}>
@@ -844,6 +851,8 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
   content: { padding: Theme.spacing.md, paddingBottom: 100 },
+  startWorkoutHeroBtn: { backgroundColor: Theme.colors.primary, paddingVertical: 16, borderRadius: Theme.borderRadius.lg, alignItems: 'center', marginBottom: 16, shadowColor: Theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  startWorkoutHeroBtnText: { color: '#fff', fontSize: 18, fontWeight: '900', letterSpacing: 1 },
   timeText: { color: Theme.colors.textMuted, fontSize: 16, textAlign: 'center', marginVertical: 8 },
   card: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, marginBottom: Theme.spacing.lg },
   exerciseTitle: { color: Theme.colors.primary, fontSize: 18, fontWeight: 'bold', marginBottom: 4 },

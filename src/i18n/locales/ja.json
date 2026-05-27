@@ -86,7 +86,8 @@
       "alert_delete_set_message": "セット {{number}} を削除しますか？",
       "alert_delete_set_confirm": "削除する",
       "manual_start_btn": "▶ ワークアウト再開（移動完了）",
-      "manual_start_success": "計測を開始しました"
+      "manual_start_success": "計測を開始しました",
+      "start_training_btn": "▶ トレーニング開始"
     },
     "exercise_select": {
       "search_placeholder": "種目を検索...",

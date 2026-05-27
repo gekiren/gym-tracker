@@ -1,16 +1,40 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { Theme } from '../src/theme';
 import { useTranslation } from 'react-i18next';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import SwipeableNumericInput from '../components/SwipeableNumericInput';
+import { saveSetting, getSettings } from '../src/db/database';
 
 export default function RMCalculatorScreen() {
   const { t } = useTranslation();
   const { settings } = useWorkoutStore();
   const [weight, setWeight] = useState('60');
   const [reps, setReps] = useState('10');
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    const loadLastValues = async () => {
+      try {
+        const dbSettings = await getSettings();
+        if (dbSettings['last_rm_weight']) setWeight(dbSettings['last_rm_weight']);
+        if (dbSettings['last_rm_reps']) setReps(dbSettings['last_rm_reps']);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+    loadLastValues();
+  }, []);
+
+  useEffect(() => {
+    if (isLoaded && weight && reps) {
+      saveSetting('last_rm_weight', weight).catch(() => {});
+      saveSetting('last_rm_reps', reps).catch(() => {});
+    }
+  }, [weight, reps, isLoaded]);
 
   // Epley Formula: 1RM = Weight * (1 + Reps / 30)
   const calculateRMList = (w: number, r: number) => {
