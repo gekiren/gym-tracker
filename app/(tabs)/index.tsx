@@ -42,7 +42,7 @@ export default function WorkoutScreen() {
       for (const ex of routine.exercises) {
         const prevSets = await getPreviousWorkoutSets(ex.id);
         const personalRecords = await getPersonalRecords(ex.id);
-        addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords });
+        addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords, equipment: ex.equipment });
       }
       router.push('/active-workout');
     } catch (e) {

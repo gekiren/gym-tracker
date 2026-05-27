@@ -272,7 +272,11 @@ export default function ActiveWorkoutScreen() {
                 <View style={styles.exerciseVolumeContainer}>
                   <Text style={styles.exerciseVolumeLabel}>{t('ui.history.volume_label')}: </Text>
                   <Text style={styles.exerciseVolumeValue}>
-                    {ex.sets.reduce((sum, s) => s.is_completed ? sum + (s.weight || 0) * (s.reps || 0) : sum, 0)} {settings.weightUnit}
+                    {ex.sets.reduce((sum, s) => {
+                      if (!s.is_completed) return sum;
+                      const bw = (ex.equipment === '自重' && settings.bodyWeight) ? settings.bodyWeight : 0;
+                      return sum + ((s.weight || 0) + bw) * (s.reps || 0);
+                    }, 0)} {settings.weightUnit}
                   </Text>
                 </View>
               </View>
@@ -297,7 +301,7 @@ export default function ActiveWorkoutScreen() {
             )}
               <View style={styles.tableHeader}>
                 <Text style={[styles.th, { width: 40 }]}>{t('ui.active_workout.header_set')}</Text>
-                <Text style={[styles.th, { flex: 1 }]}>{settings.weightUnit}</Text>
+                <Text style={[styles.th, { flex: 1 }]}>{ex.equipment === '自重' ? `+ ${settings.weightUnit}` : settings.weightUnit}</Text>
                 <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_reps')}</Text>
                 <Text style={[styles.th, { width: 45 }]}>{t('ui.active_workout.header_rpe')}</Text>
                 <Text style={[styles.th, { width: 36 }]}></Text>
@@ -646,8 +650,8 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
   const currentRM = calculateRM(set.weight, set.reps);
   const varKey = set.variation || 'default';
   const prMapForVar = ex.personalRecords ? ex.personalRecords[varKey] : null;
-  const isPR = !!(set.weight && set.reps && set.weight > 0 && 
-                (!prMapForVar || !prMapForVar[set.reps] || set.weight > prMapForVar[set.reps]));
+  const isPR = !!(set.weight != null && set.reps != null && set.reps > 0 && set.weight >= 0 && 
+                (!prMapForVar || prMapForVar[set.reps] === undefined || set.weight > prMapForVar[set.reps]));
   
   let timeTakenStr = '';
   let restTimeStr = '';
@@ -835,10 +839,10 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
           )}
         </View>
 
-        {/* Right side: RM & Time & PR */}
+         {/* Right side: RM & Time & PR */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', flex: 1.2 }}>
            {isPR && <Text style={{ color: '#f5a623', fontSize: 11, fontWeight: 'bold', marginRight: 8 }}>{t('ui.active_workout.pr_label').split(' ')[0]}</Text>}
-           {currentRM != null && <Text style={{ color: Theme.colors.primary, fontSize: 11, marginRight: 8 }}>1RM{currentRM}</Text>}
+           {currentRM != null && <Text style={{ color: Theme.colors.primary, fontSize: 11, marginRight: 8 }}>1RM: {ex.equipment === '自重' ? `BW + ${currentRM}` : currentRM}</Text>}
            {restTimeStr ? <Text style={{ color: Theme.colors.textMuted, fontSize: 11, marginRight: 4 }}>{restTimeStr}</Text> : null}
            {timeTakenStr ? <Text style={{ color: Theme.colors.success, fontSize: 11 }}>{timeTakenStr}</Text> : null}
         </View>
