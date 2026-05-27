@@ -1,10 +1,10 @@
-import { View, Text, StyleSheet, TextInput, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useState } from 'react';
 import { Stack } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../src/theme';
 import { useTranslation } from 'react-i18next';
 import { useWorkoutStore } from '../src/store/workoutStore';
+import SwipeableNumericInput from '../components/SwipeableNumericInput';
 
 export default function RMCalculatorScreen() {
   const { t } = useTranslation();
@@ -55,26 +55,24 @@ export default function RMCalculatorScreen() {
             <Text style={styles.subtitle}>{t('ui.rm_calc.subtitle')}</Text>
             
             <View style={styles.inputRow}>
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>{t('ui.rm_calc.weight')} ({settings.weightUnit})</Text>
-                    <TextInput 
-                        style={styles.input}
-                        keyboardType="numeric"
-                        value={weight}
-                        onChangeText={setWeight}
-                        maxLength={5}
-                    />
-                </View>
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>{t('ui.rm_calc.reps')}</Text>
-                    <TextInput 
-                        style={styles.input}
-                        keyboardType="numeric"
-                        value={reps}
-                        onChangeText={setReps}
-                        maxLength={3}
-                    />
-                </View>
+                <SwipeableNumericInput 
+                    label={`${t('ui.rm_calc.weight')} (${settings.weightUnit})`}
+                    value={weight}
+                    onChangeText={setWeight}
+                    step={settings.weightUnit === 'kg' ? 0.5 : 1}
+                    sensitivity={12}
+                    minValue={0.5}
+                    maxValue={999}
+                />
+                <SwipeableNumericInput 
+                    label={t('ui.rm_calc.reps')}
+                    value={reps}
+                    onChangeText={setReps}
+                    step={1}
+                    sensitivity={18}
+                    minValue={1}
+                    maxValue={100}
+                />
             </View>
 
             {isValid && (
