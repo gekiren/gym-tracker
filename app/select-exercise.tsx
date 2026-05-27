@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, SectionList, TouchableOpacity, TextInput, Modal
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 import { useEffect, useState, useCallback } from 'react';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getDB, addCustomExercise, getPreviousWorkoutSets, getPersonalRecords, getFavoriteIds, toggleFavorite, deleteExercise, saveSetting } from '../src/db/database';
 import { Theme } from '../src/theme';
@@ -214,6 +214,7 @@ export default function SelectExerciseScreen() {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen options={{ title: t('ui.profile.screen_title_select_exercise') }} />
       <View style={styles.actionRow}>
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color={Theme.colors.textMuted} style={styles.searchIcon} />
@@ -298,7 +299,7 @@ export default function SelectExerciseScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder={t('ui.exercise_select.label_other_input')} placeholderTextColor={Theme.colors.textMuted} value={newGroup} onChangeText={setNewGroup} />
+            <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder={t('ui.exercise_select.label_other_input')} placeholderTextColor={Theme.colors.textMuted} value={translateMuscleGroup(newGroup)} onChangeText={setNewGroup} />
 
             <Text style={styles.label}>{t('ui.exercise_select.label_equip')}</Text>
             <View style={styles.choiceContainer}>
@@ -308,7 +309,7 @@ export default function SelectExerciseScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder={t('ui.exercise_select.label_other_input')} placeholderTextColor={Theme.colors.textMuted} value={newEquip} onChangeText={setNewEquip} />
+            <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder={t('ui.exercise_select.label_other_input')} placeholderTextColor={Theme.colors.textMuted} value={translateEquipment(newEquip)} onChangeText={setNewEquip} />
 
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
               <Text style={styles.label}>{t('ui.exercise_select.label_unilateral')}</Text>
@@ -337,7 +338,7 @@ export default function SelectExerciseScreen() {
                   style={styles.modalInput} 
                   placeholder={t('ui.exercise_select.label_other_input_stance')} 
                   placeholderTextColor={Theme.colors.textMuted} 
-                  value={newDefaultStance} 
+                  value={translateStance(newDefaultStance)} 
                   onChangeText={setNewDefaultStance} 
                 />
               </View>

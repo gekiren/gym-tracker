@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useEffect, useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '../src/theme';
 import { getRoutines, deleteRoutine, getPreviousWorkoutSets, getPersonalRecords } from '../src/db/database';
@@ -62,6 +62,7 @@ export default function RoutinesScreen() {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
           <Ionicons name="arrow-back" size={28} color={Theme.colors.primary} />
