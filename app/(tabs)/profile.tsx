@@ -15,6 +15,7 @@ export default function ProfileScreen() {
   const { settings, loadSettings } = useWorkoutStore();
   const [defaultRest, setDefaultRest] = useState(settings.defaultRest);
   const [autoRest, setAutoRest] = useState(settings.autoRest);
+  const [timerVibrate, setTimerVibrate] = useState(settings.timerVibrate);
   const [weightUnit, setWeightUnit] = useState(settings.weightUnit);
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
   const [bodyWeight, setLocalBodyWeight] = useState(settings.bodyWeight ? settings.bodyWeight.toString() : '');
@@ -22,25 +23,32 @@ export default function ProfileScreen() {
   useEffect(() => {
     setDefaultRest(settings.defaultRest);
     setAutoRest(settings.autoRest);
+    setTimerVibrate(settings.timerVibrate);
     setWeightUnit(settings.weightUnit);
     setLocalBodyWeight(settings.bodyWeight ? settings.bodyWeight.toString() : '');
   }, [settings]);
 
   const handleUpdateRest = async (secs: number) => {
     setDefaultRest(secs);
-    loadSettings(secs, autoRest, weightUnit);
+    loadSettings(secs, autoRest, timerVibrate, weightUnit);
     await saveSetting('default_rest_timer', secs.toString());
   };
 
   const handleUpdateAuto = async (val: boolean) => {
     setAutoRest(val);
-    loadSettings(defaultRest, val, weightUnit);
+    loadSettings(defaultRest, val, timerVibrate, weightUnit);
     await saveSetting('auto_rest_timer', val ? '1' : '0');
+  };
+
+  const handleUpdateVibrate = async (val: boolean) => {
+    setTimerVibrate(val);
+    loadSettings(defaultRest, autoRest, val, weightUnit);
+    await saveSetting('timer_vibrate', val ? '1' : '0');
   };
 
   const handleUpdateUnit = async (unit: 'kg' | 'lbs') => {
     setWeightUnit(unit);
-    loadSettings(defaultRest, autoRest, unit);
+    loadSettings(defaultRest, autoRest, timerVibrate, unit);
     await saveSetting('weight_unit', unit);
   };
 
@@ -114,6 +122,19 @@ export default function ProfileScreen() {
             <Switch
               value={autoRest}
               onValueChange={handleUpdateAuto}
+              trackColor={{ false: '#333', true: Theme.colors.primary }}
+              thumbColor={'#fff'}
+            />
+          </View>
+
+          <View style={styles.settingRow}>
+            <View style={{ flex: 1, paddingRight: 16 }}>
+              <Text style={styles.settingLabel}>{t('ui.profile.timer_vibrate')}</Text>
+              <Text style={styles.settingDesc}>{t('ui.profile.timer_vibrate_desc')}</Text>
+            </View>
+            <Switch
+              value={timerVibrate}
+              onValueChange={handleUpdateVibrate}
               trackColor={{ false: '#333', true: Theme.colors.primary }}
               thumbColor={'#fff'}
             />

@@ -29,6 +29,7 @@ export default function RootLayout() {
       const storedSettings = await getSettings();
       const defaultRest = storedSettings['default_rest_timer'] ? parseInt(storedSettings['default_rest_timer'], 10) : 90;
       const autoRest = storedSettings['auto_rest_timer'] ? storedSettings['auto_rest_timer'] === '1' : true;
+      const timerVibrate = storedSettings['timer_vibrate'] ? storedSettings['timer_vibrate'] === '1' : true;
       
       const needsUnitSelection = !storedSettings['weight_unit'];
       const weightUnit = (storedSettings['weight_unit'] === 'lbs' ? 'lbs' : 'kg') as 'kg' | 'lbs';
@@ -46,7 +47,7 @@ export default function RootLayout() {
       }
       const bodyWeight = storedSettings['body_weight'] ? parseFloat(storedSettings['body_weight']) : null;
       
-      useWorkoutStore.getState().loadSettings(defaultRest, autoRest, weightUnit, needsUnitSelection, bodyWeight);
+      useWorkoutStore.getState().loadSettings(defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight);
       
       const customStancesStr = storedSettings['custom_stances'];
       const stancesMigratedV3 = storedSettings['stances_migrated_v3'] === '1';

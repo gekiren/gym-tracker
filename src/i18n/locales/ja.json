@@ -217,6 +217,8 @@
       "auto_rest_desc": "セット完了時に自動でタイマーを開始します。",
       "default_rest": "デフォルトのインターバル",
       "default_rest_desc": "タイマー開始時の標準の時間です。",
+      "timer_vibrate": "タイマー終了時にバイブ",
+      "timer_vibrate_desc": "タイマーが0になった時にデバイスを振動させます。",
       "weight_unit_label": "重量の単位",
       "language_label": "アプリの言語",
       "version": "バージョン",

@@ -222,6 +222,8 @@
       "auto_rest_desc": "Automatically start the rest timer when you complete a set.",
       "default_rest": "Default Rest Interval",
       "default_rest_desc": "The default rest time when the timer starts.",
+      "timer_vibrate": "Vibrate on Timer End",
+      "timer_vibrate_desc": "Vibrate the device when the rest timer reaches 0.",
       "weight_unit_label": "Weight Unit",
       "language_label": "App Language",
       "version": "Version",

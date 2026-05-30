@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { Vibration } from 'react-native';
 import { scheduleRestTimer, cancelRestTimer } from '../utils/timer';
 
 export type SetRecord = {
@@ -65,12 +66,13 @@ interface WorkoutState {
   settings: {
     defaultRest: number;
     autoRest: boolean;
+    timerVibrate: boolean;
     weightUnit: 'kg' | 'lbs';
     needsUnitSelection: boolean;
     customStances: string[];
     bodyWeight: number | null;
   };
-  loadSettings: (defaultRest: number, autoRest: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null) => void;
+  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null) => void;
   setBodyWeight: (weight: number | null) => void;
   loadCustomStances: (stances: string[]) => void;
   addCustomStance: (stance: string) => void;
@@ -100,14 +102,15 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   settings: {
     defaultRest: 90,
     autoRest: true,
+    timerVibrate: true,
     weightUnit: 'kg',
     needsUnitSelection: false,
     customStances: [],
     bodyWeight: null
   },
 
-  loadSettings: (defaultRest: number, autoRest: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false, bodyWeight: number | null = null) => set((state) => ({
-    settings: { ...state.settings, defaultRest, autoRest, weightUnit, needsUnitSelection, bodyWeight }
+  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false, bodyWeight: number | null = null) => set((state) => ({
+    settings: { ...state.settings, defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight }
   })),
 
   setBodyWeight: (weight: number | null) => set((state) => ({
@@ -419,6 +422,9 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     const nextRemaining = Math.ceil((state.restTimer.endTime - now) / 1000);
     
     if (nextRemaining <= 0) {
+      if (state.settings.timerVibrate) {
+        Vibration.vibrate([0, 500, 200, 500]);
+      }
       return { 
         lastRestFinishedAt: state.restTimer.endTime || now,
         restTimer: { isActive: false, remaining: 0, endTime: null } 

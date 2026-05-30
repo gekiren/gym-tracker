@@ -54,7 +54,7 @@ export default function WorkoutScreen() {
 
   const handleSelectUnit = async (unit: 'kg' | 'lbs') => {
     await saveSetting('weight_unit', unit);
-    loadSettings(settings.defaultRest, settings.autoRest, unit, false);
+    loadSettings(settings.defaultRest, settings.autoRest, settings.timerVibrate, unit, false);
   };
 
   return (
