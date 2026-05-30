@@ -160,7 +160,11 @@
       "copy_done_message": "History copied to clipboard in Markdown format.",
       "header_set": "Set",
       "header_weight": "Weight",
-      "rpe_label": "@RPE"
+      "rpe_label": "@RPE",
+      "progression_chart_title": "{{reps}}-Rep Max Progression",
+      "initial_record": "Initial Record",
+      "current_pr": "Personal Record",
+      "improvement_value": "Total Improvement"
     },
     "build_routine": {
       "title": "Create Routine",

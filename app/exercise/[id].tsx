@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert, ScrollView, TextInput, Modal, Dimensions } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { LineChart } from 'react-native-chart-kit';
 import { getExerciseById, getExerciseHistory, getPersonalRecords, updateExerciseDefaultVariation, saveSetting } from '../../src/db/database';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
@@ -21,6 +22,10 @@ export default function ExerciseDetailScreen() {
   
   const [isAddingStance, setIsAddingStance] = useState(false);
   const [newStance, setNewStance] = useState('');
+
+  const [selectedChartReps, setSelectedChartReps] = useState<number | null>(null);
+  const [selectedChartVariation, setSelectedChartVariation] = useState<string | null>(null);
+  const [showChartModal, setShowChartModal] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -71,6 +76,55 @@ export default function ExerciseDetailScreen() {
 
     await Clipboard.setStringAsync(md);
     Alert.alert(t('ui.exercise_detail.copy_success_title'), t('ui.exercise_detail.copy_success_message'));
+  };
+
+  const getPRTimeline = (reps: number, variation: string) => {
+    const sortedHistory = [...history].reverse();
+    const timeline: { date: string; weight: number }[] = [];
+
+    sortedHistory.forEach(workout => {
+      const matchingSets = workout.sets.filter((s: any) => {
+        const setVariation = s.variation || 'default';
+        return s.reps === reps && setVariation === variation;
+      });
+
+      if (matchingSets.length > 0) {
+        const maxWeight = Math.max(...matchingSets.map((s: any) => parseFloat(s.weight) || 0));
+        if (maxWeight > 0) {
+          const d = new Date(workout.start_time);
+          const dateStr = `${d.getMonth() + 1}/${d.getDate()}`;
+          timeline.push({ date: dateStr, weight: maxWeight });
+        }
+      }
+    });
+
+    return timeline;
+  };
+
+  const getChartDataForReps = () => {
+    if (selectedChartReps === null || selectedChartVariation === null) return null;
+    const timeline = getPRTimeline(selectedChartReps, selectedChartVariation);
+    if (timeline.length === 0) return null;
+
+    const displayTimeline = timeline.slice(-10); // show last 10 points
+    
+    return {
+      timeline: displayTimeline,
+      chartData: {
+        labels: displayTimeline.map((t, idx) => {
+          if (displayTimeline.length <= 6) return t.date;
+          if (idx === 0 || idx === displayTimeline.length - 1 || idx === Math.floor(displayTimeline.length / 2)) {
+            return t.date;
+          }
+          return '';
+        }),
+        datasets: [
+          {
+            data: displayTimeline.map(t => t.weight)
+          }
+        ]
+      }
+    };
   };
 
   if (isLoading) {
@@ -124,13 +178,22 @@ export default function ExerciseDetailScreen() {
                       const weight = prMap[repNum];
                       const oneRm = repNum === 1 ? weight : Math.round(weight * (1 + (repNum / 30)));
                       return (
-                        <View key={reps} style={styles.prItem}>
+                        <TouchableOpacity 
+                          key={reps} 
+                          style={styles.prItem}
+                          activeOpacity={0.7}
+                          onPress={() => {
+                            setSelectedChartReps(repNum);
+                            setSelectedChartVariation(variation);
+                            setShowChartModal(true);
+                          }}
+                        >
                           <Text style={styles.prReps}>{reps}{t('ui.common.reps_unit')}</Text>
                           <Text style={styles.prWeight}>{weight} {settings.weightUnit}</Text>
                           {repNum > 1 && (
                             <Text style={styles.prOneRm}>1RM: {oneRm}{settings.weightUnit}</Text>
                           )}
-                        </View>
+                        </TouchableOpacity>
                       );
                     })}
                 </View>
@@ -322,6 +385,85 @@ export default function ExerciseDetailScreen() {
           })
         )}
       </ScrollView>
+      {/* PR Progression Chart Modal */}
+      <Modal
+        visible={showChartModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowChartModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {selectedChartReps ? t('ui.exercise_detail.progression_chart_title', { reps: selectedChartReps }) : ''}
+              </Text>
+              <TouchableOpacity onPress={() => setShowChartModal(false)}>
+                <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            {(() => {
+              const res = getChartDataForReps();
+              if (!res) {
+                return (
+                  <View style={{ padding: 24, alignItems: 'center' }}>
+                    <Text style={{ color: Theme.colors.textMuted }}>No history found for this rep target.</Text>
+                  </View>
+                );
+              }
+
+              const { timeline, chartData } = res;
+              const initialWeight = timeline[0]?.weight || 0;
+              const currentPRWeight = Math.max(...timeline.map(t => t.weight));
+              const diff = currentPRWeight - initialWeight;
+
+              return (
+                <ScrollView contentContainerStyle={{ alignItems: 'center' }}>
+                  {/* Analysis Cards */}
+                  <View style={styles.analysisRow}>
+                    <View style={styles.analysisCard}>
+                      <Text style={styles.analysisLabel}>{t('ui.exercise_detail.initial_record')}</Text>
+                      <Text style={styles.analysisValue}>{initialWeight} {settings.weightUnit}</Text>
+                    </View>
+                    <View style={styles.analysisCard}>
+                      <Text style={styles.analysisLabel}>{t('ui.exercise_detail.current_pr')}</Text>
+                      <Text style={[styles.analysisValue, { color: Theme.colors.primary }]}>{currentPRWeight} {settings.weightUnit}</Text>
+                    </View>
+                    <View style={styles.analysisCard}>
+                      <Text style={styles.analysisLabel}>{t('ui.exercise_detail.improvement_value')}</Text>
+                      <Text style={[styles.analysisValue, { color: diff >= 0 ? Theme.colors.success : Theme.colors.danger }]}>
+                        {diff >= 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1)} {settings.weightUnit}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <LineChart
+                    data={chartData}
+                    width={Dimensions.get('window').width * 0.8}
+                    height={220}
+                    chartConfig={{
+                      backgroundColor: Theme.colors.card,
+                      backgroundGradientFrom: Theme.colors.card,
+                      backgroundGradientTo: Theme.colors.card,
+                      decimalPlaces: 1,
+                      color: (opacity = 1) => `rgba(79, 172, 254, ${opacity})`,
+                      labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                      propsForDots: {
+                        r: "5",
+                        strokeWidth: "2",
+                        stroke: Theme.colors.primary
+                      }
+                    }}
+                    bezier
+                    style={{ borderRadius: 12, marginVertical: 16 }}
+                  />
+                </ScrollView>
+              );
+            })()}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -370,5 +512,13 @@ const styles = StyleSheet.create({
   addStanceBtnText: { color: Theme.colors.primary, fontSize: 13, marginLeft: 4 },
   addStanceInputContainer: { marginTop: 16, backgroundColor: '#1a1a1a', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#333' },
   addStanceInput: { backgroundColor: '#121212', color: Theme.colors.text, padding: 8, borderRadius: 4, marginBottom: 12, fontSize: 14 },
-  addStanceActionBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6, alignItems: 'center', justifyContent: 'center' }
+  addStanceActionBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { width: '90%', backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.lg, maxHeight: '95%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
+  analysisRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 16 },
+  analysisCard: { flex: 1, backgroundColor: '#1a1a1a', borderRadius: 8, padding: 10, marginHorizontal: 4, alignItems: 'center', borderWidth: 1, borderColor: '#333' },
+  analysisLabel: { fontSize: 11, color: Theme.colors.textMuted, marginBottom: 4 },
+  analysisValue: { fontSize: 14, fontWeight: 'bold', color: Theme.colors.text }
 });

@@ -155,7 +155,11 @@
       "table_header_record": "記録",
       "header_set": "セット",
       "header_weight": "重量",
-      "rpe_label": "@RPE"
+      "rpe_label": "@RPE",
+      "progression_chart_title": "{{reps}}回挙上の重量推移",
+      "initial_record": "初回の記録",
+      "current_pr": "自己ベスト",
+      "improvement_value": "総向上値"
     },
     "build_routine": {
       "title": "ルーティンの作成",
