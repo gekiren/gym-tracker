@@ -69,6 +69,18 @@ export const initDB = async () => {
       FOREIGN KEY(exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS routine_sets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      routine_exercise_id INTEGER NOT NULL,
+      set_number INTEGER NOT NULL,
+      reps INTEGER,
+      weight REAL,
+      rpe REAL,
+      side TEXT,
+      variation TEXT,
+      FOREIGN KEY(routine_exercise_id) REFERENCES routine_exercises(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
@@ -79,6 +91,25 @@ export const initDB = async () => {
       FOREIGN KEY(exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
     );
   `);
+
+  // Migration: Ensure routine_sets exists
+  try {
+    await _db.execAsync(`
+      CREATE TABLE IF NOT EXISTS routine_sets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        routine_exercise_id INTEGER NOT NULL,
+        set_number INTEGER NOT NULL,
+        reps INTEGER,
+        weight REAL,
+        rpe REAL,
+        side TEXT,
+        variation TEXT,
+        FOREIGN KEY(routine_exercise_id) REFERENCES routine_exercises(id) ON DELETE CASCADE
+      );
+    `);
+  } catch (e) {
+    console.warn('Migration: Failed to ensure routine_sets table', e);
+  }
 
   // Migration: Add notes to workout_exercises if missing
   try {
@@ -505,26 +536,49 @@ export const getRoutines = async () => {
   
   const result = [];
   for (const r of routines) {
-    const exercises = await conn.getAllAsync(`
-      SELECT e.id, e.name, e.muscle_group, e.equipment 
+    const exercises = await conn.getAllAsync<{id: number, name: string, muscle_group: string, equipment: string, is_unilateral: number, routine_exercise_id: number}>(`
+      SELECT e.id, e.name, e.muscle_group, e.equipment, e.is_unilateral, re.id as routine_exercise_id
       FROM routine_exercises re
       JOIN exercises e ON re.exercise_id = e.id
       WHERE re.routine_id = ?
       ORDER BY re.sort_order ASC
     `, [r.id]);
-    result.push({ ...r, exercises });
+    
+    const exercisesWithSets = [];
+    for (const ex of exercises) {
+      const sets = await conn.getAllAsync(`
+        SELECT set_number, reps, weight, rpe, side, variation
+        FROM routine_sets
+        WHERE routine_exercise_id = ?
+        ORDER BY set_number ASC, id ASC
+      `, [ex.routine_exercise_id]);
+      exercisesWithSets.push({ ...ex, sets });
+    }
+    
+    result.push({ ...r, exercises: exercisesWithSets });
   }
   return result;
 };
 
-export const addRoutine = async (title: string, description: string, exerciseIds: number[]) => {
+export const addRoutine = async (title: string, description: string, exercises: { id: number, name: string, sets: any[] }[]) => {
   const conn = getDB();
   const res = await conn.runAsync('INSERT INTO routines (title, description) VALUES (?, ?)', [title, description]);
   const routineId = res.lastInsertRowId;
   
   let order = 0;
-  for (const exId of exerciseIds) {
-    await conn.runAsync('INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)', [routineId, exId, order++]);
+  for (const ex of exercises) {
+    const rxRes = await conn.runAsync(
+      'INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)', 
+      [routineId, ex.id, order++]
+    );
+    const routineExerciseId = rxRes.lastInsertRowId;
+    
+    for (const s of ex.sets) {
+      await conn.runAsync(
+        'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe, side, variation) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [routineExerciseId, s.set_number, s.reps, s.weight, s.rpe, s.side || null, s.variation || null]
+      );
+    }
   }
 };
 

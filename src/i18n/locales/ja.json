@@ -165,7 +165,11 @@
       "routine_name_label": "ルーティン名 *",
       "routine_name_placeholder": "例: 胸トレ（高重量）",
       "exercises_count_label": "構成種目 ({{count}})",
-      "add_exercise_btn": "+ 種目を追加"
+      "add_exercise_btn": "+ 種目を追加",
+      "set_label": "セット",
+      "weight_placeholder": "重量",
+      "reps_placeholder": "回数",
+      "add_set_label": "+ セットを追加"
     },
     "history": {
       "title": "履歴",

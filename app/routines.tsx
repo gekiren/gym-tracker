@@ -50,9 +50,48 @@ export default function RoutinesScreen() {
     try {
       startWorkout(routine.title);
       for (const ex of routine.exercises) {
-        const prevSets = await getPreviousWorkoutSets(ex.id);
         const personalRecords = await getPersonalRecords(ex.id);
-        addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords, equipment: ex.equipment });
+        let initialSets: any[] = [];
+
+        if (ex.sets && ex.sets.length > 0) {
+          if (ex.is_unilateral) {
+            for (const s of ex.sets) {
+              initialSets.push({
+                weight: s.weight,
+                reps: s.reps,
+                rpe: s.rpe,
+                side: 'L',
+                variation: s.variation || null
+              });
+              initialSets.push({
+                weight: s.weight,
+                reps: s.reps,
+                rpe: s.rpe,
+                side: 'R',
+                variation: s.variation || null
+              });
+            }
+          } else {
+            initialSets = ex.sets.map((s: any) => ({
+              weight: s.weight,
+              reps: s.reps,
+              rpe: s.rpe,
+              side: null,
+              variation: s.variation || null
+            }));
+          }
+        } else {
+          initialSets = await getPreviousWorkoutSets(ex.id);
+        }
+
+        addExercise({ 
+          id: ex.id, 
+          name: ex.name, 
+          previousSets: initialSets, 
+          personalRecords, 
+          is_unilateral: ex.is_unilateral, 
+          equipment: ex.equipment 
+        });
       }
       router.push('/active-workout');
     } catch (e) {

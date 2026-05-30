@@ -170,7 +170,11 @@
       "routine_name_label": "Routine Name *",
       "routine_name_placeholder": "e.g. Chest Day (Heavy)",
       "exercises_count_label": "Exercises ({{count}})",
-      "add_exercise_btn": "+ Add Exercise"
+      "add_exercise_btn": "+ Add Exercise",
+      "set_label": "Set",
+      "weight_placeholder": "Weight",
+      "reps_placeholder": "Reps",
+      "add_set_label": "+ Add Set"
     },
     "history": {
       "title": "History",
