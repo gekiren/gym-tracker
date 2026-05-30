@@ -2,7 +2,7 @@
   "expo": {
     "name": "トレノート",
     "slug": "gym-tracker",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "gymtracker",
@@ -21,6 +21,7 @@
     },
     "android": {
       "package": "com.gekirennomad.trenote",
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
