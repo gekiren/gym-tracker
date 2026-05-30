@@ -81,6 +81,8 @@
       "plate_calc_success_title": "Applied",
       "plate_calc_success_message": "{{weight}}{{unit}} applied to the set.",
       "plate_calc_error_no_set": "Please select a set before applying.",
+      "plate_calc_bar_custom": "Custom",
+      "plate_calc_bar_custom_placeholder": "Enter bar weight",
       "alert_delete_set_error_title": "Cannot Delete",
       "alert_delete_set_error_message": "Completed sets cannot be deleted. Uncheck first.",
       "alert_delete_set_title": "Delete Set",

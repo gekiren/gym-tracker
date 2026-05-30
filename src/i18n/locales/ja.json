@@ -80,6 +80,8 @@
       "plate_calc_success_title": "反映完了",
       "plate_calc_success_message": "{{weight}}{{unit}}をセットに入力しました。",
       "plate_calc_error_no_set": "反映先のセットを選択(タップ)してからお試しください。",
+      "plate_calc_bar_custom": "カスタム",
+      "plate_calc_bar_custom_placeholder": "バー重量を入力してください",
       "alert_delete_set_error_title": "削除不可",
       "alert_delete_set_error_message": "チェックが入っているセットは削除できません。まずチェックを外してください。",
       "alert_delete_set_title": "セットの削除",

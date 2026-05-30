@@ -29,6 +29,8 @@ export default function ActiveWorkoutScreen() {
   const [plateCalcBar, setPlateCalcBar] = useState(20);
   const [platesOnOneSide, setPlatesOnOneSide] = useState<number[]>([]);
   const [activeSetForCalc, setActiveSetForCalc] = useState<{exId: string, setId: string} | null>(null);
+  const [isCustomBar, setIsCustomBar] = useState(false);
+  const [customBarText, setCustomBarText] = useState('20');
 
   // スタンス用State
   const [stanceModalVisible, setStanceModalVisible] = useState(false);
@@ -38,7 +40,10 @@ export default function ActiveWorkoutScreen() {
   const presetStances = settings.customStances || [];
 
   useEffect(() => {
-    setPlateCalcBar(settings.weightUnit === 'lbs' ? 45 : 20);
+    const defaultVal = settings.weightUnit === 'lbs' ? 45 : 20;
+    setPlateCalcBar(defaultVal);
+    setCustomBarText(String(defaultVal));
+    setIsCustomBar(false);
     setPlatesOnOneSide([]);
   }, [settings.weightUnit]);
 
@@ -393,16 +398,47 @@ export default function ActiveWorkoutScreen() {
             {/* バーの選択 */}
             <Text style={styles.sectionTitle}>{t('ui.active_workout.plate_calc_bar_weight')}</Text>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
-              {(settings.weightUnit === 'lbs' ? [45, 35] : [20, 15, 10]).map(w => (
-                <TouchableOpacity
-                  key={w}
-                  style={[styles.barBtn, plateCalcBar === w && styles.barBtnActive]}
-                  onPress={() => setPlateCalcBar(w)}
-                >
-                  <Text style={[styles.barBtnText, plateCalcBar === w && styles.barBtnTextActive]}>{w} {settings.weightUnit}</Text>
-                </TouchableOpacity>
-              ))}
+              {(settings.weightUnit === 'lbs' ? [45, 35] : [20, 10, 7]).map(w => {
+                const isActive = !isCustomBar && plateCalcBar === w;
+                return (
+                  <TouchableOpacity
+                    key={w}
+                    style={[styles.barBtn, isActive && styles.barBtnActive]}
+                    onPress={() => {
+                      setIsCustomBar(false);
+                      setPlateCalcBar(w);
+                    }}
+                  >
+                    <Text style={[styles.barBtnText, isActive && styles.barBtnTextActive]}>{w} {settings.weightUnit}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+              <TouchableOpacity
+                style={[styles.barBtn, isCustomBar && styles.barBtnActive]}
+                onPress={() => {
+                  setIsCustomBar(true);
+                  setPlateCalcBar(parseFloat(customBarText) || 0);
+                }}
+              >
+                <Text style={[styles.barBtnText, isCustomBar && styles.barBtnTextActive]}>{t('ui.active_workout.plate_calc_bar_custom')}</Text>
+              </TouchableOpacity>
             </View>
+
+            {isCustomBar && (
+              <TextInput
+                style={styles.modalInput}
+                keyboardType="numeric"
+                placeholder={t('ui.active_workout.plate_calc_bar_custom_placeholder')}
+                placeholderTextColor={Theme.colors.textMuted}
+                value={customBarText}
+                onChangeText={(val) => {
+                  if (val === '' || /^\d{0,3}(\.\d{0,2})?$/.test(val)) {
+                    setCustomBarText(val);
+                    setPlateCalcBar(val !== '' && val !== '.' ? parseFloat(val) : 0);
+                  }
+                }}
+              />
+            )}
 
             <View style={{ height: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: Theme.spacing.md, backgroundColor: '#000', borderRadius: 8, overflow: 'hidden' }}>
               <View style={{ width: 10, height: '100%', backgroundColor: '#666' }} />
