@@ -421,12 +421,6 @@ export const initDB = async () => {
       premium_until: '',
       is_sms_verified: 'false',
       referral_active_count: '0',
-      style_mode: 'simple',
-      enable_stance_recording: 'false',
-      enable_rpe_recording: 'false',
-      enable_unilateral_recording: 'false',
-      enable_auto_rest_timer: 'false',
-      enable_exercise_notes: 'false',
     };
 
     for (const [key, defaultValue] of Object.entries(preAllocations)) {
