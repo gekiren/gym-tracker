@@ -178,7 +178,13 @@
       "set_label": "Set",
       "weight_placeholder": "Weight",
       "reps_placeholder": "Reps",
-      "add_set_label": "+ Add Set"
+      "add_set_label": "+ Add Set",
+      "import_title": "Import & Create",
+      "import_desc": "Start by copying an existing routine or a past workout history.",
+      "copy_routine_btn": "Copy from Routine",
+      "copy_workout_btn": "Copy from Past Workout",
+      "modal_select_routine": "Select Routine to Copy",
+      "modal_select_workout": "Select Workout to Copy"
     },
     "history": {
       "title": "History",
@@ -290,7 +296,8 @@
       "min_unit": "m",
       "weight_unit": "kg",
       "reps_unit": " reps",
-      "calories": "Calories"
+      "calories": "Calories",
+      "copy": " (Copy)"
     },
     "markdown": {
       "date_label": "Date",

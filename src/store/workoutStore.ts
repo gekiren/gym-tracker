@@ -103,6 +103,7 @@ interface WorkoutState {
   addDraftSet: (exerciseIndex: number) => void;
   removeDraftSet: (exerciseIndex: number, setIndex: number) => void;
   updateDraftSet: (exerciseIndex: number, setIndex: number, changes: Partial<{ weight: number | null; reps: number | null; rpe: number | null; side?: 'L' | 'R' | null; variation?: string | null }>) => void;
+  setDraftRoutine: (title: string, exercises: any[]) => void;
   clearDraft: () => void;
 }
 
@@ -538,6 +539,9 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     return {
       draftRoutine: { ...state.draftRoutine, exercises: nextExercises }
     };
+  }),
+  setDraftRoutine: (title, exercises) => set({
+    draftRoutine: { title, exercises }
   }),
   clearDraft: () => set({
     draftRoutine: { title: '', exercises: [] }

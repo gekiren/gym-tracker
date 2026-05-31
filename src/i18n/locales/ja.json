@@ -173,7 +173,13 @@
       "set_label": "セット",
       "weight_placeholder": "重量",
       "reps_placeholder": "回数",
-      "add_set_label": "+ セットを追加"
+      "add_set_label": "+ セットを追加",
+      "import_title": "インポートして作成",
+      "import_desc": "作成済みのルーティンや過去のワークアウト履歴をコピーして開始できます。",
+      "copy_routine_btn": "既存のルーティンからコピー",
+      "copy_workout_btn": "過去のワークアウトからコピー",
+      "modal_select_routine": "コピー元のルーティンを選択",
+      "modal_select_workout": "コピー元のワークアウトを選択"
     },
     "history": {
       "title": "履歴",
@@ -285,7 +291,8 @@
       "min_unit": "分",
       "weight_unit": "kg",
       "reps_unit": "回",
-      "calories": "カロリー"
+      "calories": "カロリー",
+      "copy": "のコピー"
     },
     "markdown": {
       "date_label": "日付",
