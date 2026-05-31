@@ -417,6 +417,8 @@ export const initDB = async () => {
     await ensureSetting('my_referral_code', '');
     await ensureSetting('referred_by_code', '');
     await ensureSetting('premium_until', '');
+    await ensureSetting('is_sms_verified', 'false');
+    await ensureSetting('referral_active_count', '0');
   } catch (e) {
     console.warn('Migration/Campaign Init: Failed to pre-allocate settings keys', e);
   }
