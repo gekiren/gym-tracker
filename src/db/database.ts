@@ -351,7 +351,7 @@ export const initDB = async () => {
         {
           title: '全身の日 (Full Body)',
           description: 'マシンと自重を組み合わせた、全身をバランス良く鍛える初心者向けメニュー（約45分〜1時間）',
-          exerciseNames: ['チェストプレス', 'ラットプルダウン', 'レッグプレス', 'クランチ']
+          exerciseNames: ['チェストプレス', 'ラットプルダウン', 'レッグプレス', 'プランク']
         },
         {
           title: '上半身の日 (Upper Body)',
@@ -360,8 +360,8 @@ export const initDB = async () => {
         },
         {
           title: '下半身の日 (Lower Body)',
-          description: '安全なマシンを中心に、太ももとお尻、お腹周りを鍛えるメニュー（約45分〜1時間）',
-          exerciseNames: ['レッグプレス', 'レッグエクステンション', 'レッグカール', 'プランク']
+          description: '安全なマシンを中心に、太ももとお尻を完璧に鍛え上げるメニュー（約45分〜1時間）',
+          exerciseNames: ['レッグプレス', 'レッグエクステンション', 'レッグカール', 'マシンアブダクター']
         },
         {
           title: '自重の日 (Bodyweight)',
@@ -384,7 +384,7 @@ export const initDB = async () => {
               // Determine beginner friendly default weight/reps for each set
               const isPlank = ename === 'プランク';
               const isDumbbell = ename.includes('ダンベル');
-              const isExtensionCurl = ename === 'レッグエクステンション' || ename === 'レッグカール';
+              const isExtensionCurl = ename === 'レッグエクステンション' || ename === 'レッグカール' || ename === 'マシンアブダクター';
               const isSeatedRow = ename === 'シーテッドロウ';
               
               let weight = 20;
@@ -399,7 +399,7 @@ export const initDB = async () => {
               } else if (isDumbbell) {
                 weight = 5; // 5kg for dumbbells
               } else if (isExtensionCurl || isSeatedRow) {
-                weight = 15; // 15kg for lighter machines
+                weight = 15; // 15kg for lighter machines (leg extension/curl/abductor/seated row)
               } else if (ename === 'レッグプレス') {
                 weight = 40; // 40kg for leg press
               } else if (ename === 'ラットプルダウン') {
