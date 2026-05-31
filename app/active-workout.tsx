@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, AppState, BackHandler, Modal, Platform, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, AppState, BackHandler, Modal, Platform, Keyboard, KeyboardAvoidingView } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 import { useEffect, useState, useCallback } from 'react';
@@ -237,11 +237,16 @@ export default function ActiveWorkoutScreen() {
         }} 
       />
 
-      <ScrollView 
-        contentContainerStyle={[styles.content, { paddingBottom: 100 + keyboardHeight }]} 
-        keyboardShouldPersistTaps="handled" 
-        automaticallyAdjustKeyboardInsets={true}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80}
       >
+        <ScrollView 
+          contentContainerStyle={styles.content} 
+          keyboardShouldPersistTaps="handled" 
+          automaticallyAdjustKeyboardInsets={false}
+        >
         <View style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: 10, borderRadius: 6, marginBottom: 16, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' }}>
           <Text style={{ color: Theme.colors.primary, fontSize: 13, fontWeight: 'bold' }}>
             🛠️ [Debug] KB Height: {keyboardHeight}px
@@ -368,6 +373,7 @@ export default function ActiveWorkoutScreen() {
         </TouchableOpacity>
         <View style={{ height: 100 }} />
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Floating Rest Timer UI */}
       {restTimer.isActive && (

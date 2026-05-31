@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal, Platform, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal, Platform, Keyboard, KeyboardAvoidingView } from 'react-native';
 import { useEffect, useState } from 'react';
 import { router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -157,11 +157,16 @@ export default function BuildRoutineScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
-        contentContainerStyle={[styles.content, { paddingBottom: 100 + keyboardHeight }]}
-        keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets={true}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80}
       >
+        <ScrollView 
+          contentContainerStyle={styles.content} 
+          keyboardShouldPersistTaps="handled" 
+          automaticallyAdjustKeyboardInsets={false}
+        >
         <Text style={styles.label}>{t('ui.build_routine.routine_name_label')}</Text>
         <TextInput
           style={styles.input}
@@ -294,6 +299,7 @@ export default function BuildRoutineScreen() {
         )}
 
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Routine Selection Modal */}
       <Modal visible={showRoutineModal} animationType="slide" transparent={true}>
