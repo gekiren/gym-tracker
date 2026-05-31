@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Linking, 
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import Constants from 'expo-constants';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { saveSetting } from '../../src/db/database';
@@ -228,7 +229,7 @@ export default function ProfileScreen() {
         <View style={styles.settingCard}>
           <View style={styles.settingRow}>
             <Text style={styles.settingLabel}>{t('ui.profile.version')}</Text>
-            <Text style={{ color: Theme.colors.textMuted }}>1.0.0</Text>
+            <Text style={{ color: Theme.colors.textMuted }}>{Constants.expoConfig?.version || '1.0.0'}</Text>
           </View>
           <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/privacy-policy' as any)}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
