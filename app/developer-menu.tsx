@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../src/theme';
 import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -10,6 +11,7 @@ import * as Updates from 'expo-updates';
 
 export default function DeveloperMenuScreen() {
   const { t } = useTranslation();
+  const [isChecking, setIsChecking] = useState(false);
 
   const handleBackup = async () => {
     try {
@@ -117,6 +119,59 @@ export default function DeveloperMenuScreen() {
     );
   };
 
+  const handleCheckUpdate = async () => {
+    if (isChecking) return;
+    setIsChecking(true);
+    try {
+      if (__DEV__) {
+        Alert.alert(
+          t('ui.developer_menu.update_up_to_date_title'),
+          t('ui.developer_menu.update_up_to_date_msg') + ' (Development Mode)'
+        );
+        setIsChecking(false);
+        return;
+      }
+
+      const updateResult = await Updates.checkForUpdateAsync();
+      if (updateResult.isAvailable) {
+        Alert.alert(
+          t('ui.developer_menu.update_available_title'),
+          t('ui.developer_menu.update_available_msg'),
+          [
+            { text: t('ui.common.cancel'), style: 'cancel', onPress: () => setIsChecking(false) },
+            {
+              text: t('ui.developer_menu.restore_alert_confirm'),
+              style: 'default',
+              onPress: async () => {
+                try {
+                  await Updates.fetchUpdateAsync();
+                  await Updates.reloadAsync();
+                } catch (fetchErr) {
+                  console.error('Fetch update failed:', fetchErr);
+                  Alert.alert(t('ui.common.error'), 'Failed to download update.');
+                  setIsChecking(false);
+                }
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          t('ui.developer_menu.update_up_to_date_title'),
+          t('ui.developer_menu.update_up_to_date_msg')
+        );
+        setIsChecking(false);
+      }
+    } catch (error) {
+      console.warn('Check update error:', error);
+      Alert.alert(
+        t('ui.developer_menu.update_check_error_title'),
+        t('ui.developer_menu.update_check_error_msg')
+      );
+      setIsChecking(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Stack.Screen
@@ -131,7 +186,47 @@ export default function DeveloperMenuScreen() {
         <View style={styles.header}>
           <Ionicons name="bug-outline" size={48} color={Theme.colors.primary} style={{ marginBottom: 12 }} />
           <Text style={styles.title}>{t('ui.developer_menu.title')}</Text>
-          <Text style={styles.subtitle}>Developer-only database utilities</Text>
+          <Text style={styles.subtitle}>Developer-only database utilities & EAS Updates</Text>
+        </View>
+
+        {/* EAS Update Info Section */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="git-branch-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>{t('ui.developer_menu.update_info_title')}</Text>
+          </View>
+          
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>{t('ui.developer_menu.update_type_label')}</Text>
+            <Text style={styles.infoValue}>
+              {Updates.isEmbeddedLaunch 
+                ? t('ui.developer_menu.update_type_embedded') 
+                : t('ui.developer_menu.update_type_ota')}
+            </Text>
+          </View>
+          
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>{t('ui.developer_menu.update_id_label')}</Text>
+            <Text style={[styles.infoValue, { fontSize: 11, fontFamily: 'monospace' }]} numberOfLines={1}>
+              {Updates.updateId || 'Embedded / None'}
+            </Text>
+          </View>
+
+          <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+            <Text style={styles.infoLabel}>Runtime Version</Text>
+            <Text style={styles.infoValue}>{Updates.runtimeVersion || 'N/A'}</Text>
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.btnOutline, { marginTop: Theme.spacing.md }]} 
+            onPress={handleCheckUpdate}
+            disabled={isChecking}
+          >
+            <Ionicons name="refresh-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.btnOutlineText}>
+              {isChecking ? t('ui.developer_menu.update_checking') : t('ui.developer_menu.update_check_btn')}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Export Section */}
@@ -186,6 +281,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Theme.colors.textMuted,
     marginTop: 4,
+    textAlign: 'center',
   },
   card: {
     backgroundColor: Theme.colors.card,
@@ -210,6 +306,39 @@ const styles = StyleSheet.create({
     color: Theme.colors.textMuted,
     lineHeight: 20,
     marginBottom: Theme.spacing.md,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  infoLabel: {
+    color: Theme.colors.textMuted,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  infoValue: {
+    color: Theme.colors.text,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  btnOutline: {
+    borderWidth: 1,
+    borderColor: Theme.colors.primary,
+    backgroundColor: 'rgba(79, 172, 254, 0.05)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: Theme.borderRadius.sm,
+  },
+  btnOutlineText: {
+    color: Theme.colors.primary,
+    fontSize: 15,
+    fontWeight: '700',
   },
   btnPrimary: {
     backgroundColor: Theme.colors.primary,

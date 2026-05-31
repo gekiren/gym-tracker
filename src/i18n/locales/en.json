@@ -326,7 +326,20 @@
       "restore_success_title": "Restore Success",
       "restore_success_message": "Data restored successfully. The app will now reload to apply changes.",
       "restore_error_title": "Restore Error",
-      "restore_error_message": "Failed to read the file, or it is an invalid backup file."
+      "restore_error_message": "Failed to read the file, or it is an invalid backup file.",
+      "update_info_title": "EAS Update Status",
+      "update_id_label": "Update ID",
+      "update_type_label": "Launch Source",
+      "update_type_embedded": "Embedded (Initial APK code)",
+      "update_type_ota": "OTA (Latest published update)",
+      "update_check_btn": "Check for Updates",
+      "update_checking": "Checking...",
+      "update_available_title": "Update Available",
+      "update_available_msg": "A new update is available. Do you want to download and apply it now?",
+      "update_up_to_date_title": "Up to Date",
+      "update_up_to_date_msg": "You are currently running the latest update.",
+      "update_check_error_title": "Check Failed",
+      "update_check_error_msg": "Failed to check for updates. This might not work in local debug environments."
     }
   },
   "exercises": {

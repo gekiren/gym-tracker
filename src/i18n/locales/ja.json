@@ -321,7 +321,20 @@
       "restore_success_title": "復元完了",
       "restore_success_message": "データの復元が完了しました。変更を適用するためアプリを再起動します。",
       "restore_error_title": "復元エラー",
-      "restore_error_message": "ファイルの読み込みに失敗したか、無効なファイルです。"
+      "restore_error_message": "ファイルの読み込みに失敗したか、無効なファイルです。",
+      "update_info_title": "EAS Update 適用状況",
+      "update_id_label": "アップデートID",
+      "update_type_label": "起動ソース",
+      "update_type_embedded": "Embedded (初期APKのコード)",
+      "update_type_ota": "OTA (配信された最新アップデート)",
+      "update_check_btn": "最新のアップデートを確認",
+      "update_checking": "確認中...",
+      "update_available_title": "アップデートあり",
+      "update_available_msg": "新しいアップデートが見つかりました。今すぐダウンロードして適用しますか？",
+      "update_up_to_date_title": "最新の状態です",
+      "update_up_to_date_msg": "現在適用されているのが最新のアップデートです。",
+      "update_check_error_title": "確認エラー",
+      "update_check_error_msg": "アップデートの確認に失敗しました。ローカルデバッグ環境では動作しない場合があります。"
     }
   },
   "exercises": {
