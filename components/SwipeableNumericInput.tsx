@@ -131,12 +131,12 @@ export default function SwipeableNumericInput({
   // Left Arrow style (moves slightly outward and scales based on drag)
   const leftArrowStyle = useAnimatedStyle(() => {
     const opacity = isDragging.value
-      ? interpolate(translationX.value, [-100, -20, 0], [1, 0.7, 0.2], 'clamp')
-      : withTiming(0, { duration: 150 });
+      ? interpolate(translationX.value, [-100, -20, 0], [1, 0.7, 0.25], 'clamp')
+      : withTiming(0.25, { duration: 150 });
 
     const scale = isDragging.value
-      ? interpolate(translationX.value, [-100, -20, 0], [1.3, 1.1, 0.8], 'clamp')
-      : withTiming(0.8, { duration: 150 });
+      ? interpolate(translationX.value, [-100, -20, 0], [1.3, 1.1, 1.0], 'clamp')
+      : withTiming(1.0, { duration: 150 });
 
     const translateX = isDragging.value
       ? interpolate(translationX.value, [-100, 0], [-10, 0], 'clamp')
@@ -151,12 +151,12 @@ export default function SwipeableNumericInput({
   // Right Arrow style (moves slightly outward and scales based on drag)
   const rightArrowStyle = useAnimatedStyle(() => {
     const opacity = isDragging.value
-      ? interpolate(translationX.value, [0, 20, 100], [0.2, 0.7, 1], 'clamp')
-      : withTiming(0, { duration: 150 });
+      ? interpolate(translationX.value, [0, 20, 100], [0.25, 0.7, 1], 'clamp')
+      : withTiming(0.25, { duration: 150 });
 
     const scale = isDragging.value
-      ? interpolate(translationX.value, [0, 20, 100], [0.8, 1.1, 1.3], 'clamp')
-      : withTiming(0.8, { duration: 150 });
+      ? interpolate(translationX.value, [0, 20, 100], [1.0, 1.1, 1.3], 'clamp')
+      : withTiming(1.0, { duration: 150 });
 
     const translateX = isDragging.value
       ? interpolate(translationX.value, [0, 100], [0, 10], 'clamp')
@@ -201,6 +201,11 @@ export default function SwipeableNumericInput({
       ) : (
         <GestureDetector gesture={gesture}>
           <Animated.View style={[styles.dragArea, containerAnimatedStyle]}>
+            {/* Keyboard Icon Indicator for direct input */}
+            <View style={{ position: 'absolute', top: 6, right: 8, opacity: 0.25 }}>
+              <Ionicons name="create-outline" size={12} color={Theme.colors.textMuted} />
+            </View>
+
             {/* Left Indicator Arrow */}
             <Animated.View style={[styles.arrowContainer, leftArrowStyle]}>
               <Ionicons name="chevron-back" size={24} color={Theme.colors.primary} />

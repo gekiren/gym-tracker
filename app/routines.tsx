@@ -150,7 +150,7 @@ export default function RoutinesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', padding: Theme.spacing.md, paddingTop: Theme.spacing.lg, backgroundColor: Theme.colors.card, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
+  header: { flexDirection: 'row', alignItems: 'center', padding: Theme.spacing.md, paddingTop: 50, backgroundColor: Theme.colors.card, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
   title: { fontSize: 22, fontWeight: 'bold', color: Theme.colors.text },
   content: { padding: Theme.spacing.md, paddingBottom: 100 },
   routineCard: { backgroundColor: Theme.colors.card, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Theme.spacing.lg, borderRadius: Theme.borderRadius.md, marginBottom: Theme.spacing.md, borderWidth: 1, borderColor: Theme.colors.border },

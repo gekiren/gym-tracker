@@ -88,9 +88,9 @@
       "alert_delete_set_title": "Delete Set",
       "alert_delete_set_message": "Delete set {{number}}?",
       "alert_delete_set_confirm": "Delete",
-      "manual_start_btn": "▶ Start Next Set (Ready)",
+      "manual_start_btn": "▶ Resume Workout",
       "manual_start_success": "Timer started",
-      "start_training_btn": "▶ Start Workout"
+      "start_training_btn": "▶ Start Training Timer"
     },
     "exercise_select": {
       "search_placeholder": "Search exercises...",
@@ -126,7 +126,10 @@
     },
 
     "edit_workout": {
-      "title": "Edit History",
+      "title": "Edit Workout",
+      "save": "Save",
+      "save_success": "Saved",
+      "save_error": "Failed to save",
       "save_success_title": "Saved",
       "save_success_message": "Workout history has been updated.",
       "save_error_title": "Error",
@@ -136,7 +139,12 @@
       "workout_name_label": "Workout Name",
       "workout_notes_label": "Overall Notes",
       "workout_notes_placeholder": "Enter notes for this workout...",
-      "exercise_notes_placeholder": "Enter exercise notes..."
+      "exercise_notes_placeholder": "Enter exercise notes...",
+      "add_set": "+ Add Set",
+      "header_set": "Set",
+      "header_weight": "Weight (kg)",
+      "header_reps": "Reps",
+      "header_rpe": "RPE"
     },
     "exercise_detail": {
       "title": "Exercise Details",
@@ -252,17 +260,6 @@
       "body_weight_label": "Body Weight (Optional)",
       "body_weight_desc": "Used for calorie calculation. A default value is used if not set."
     },
-    "edit_workout": {
-      "title": "Edit Workout",
-      "save": "Save",
-      "save_success": "Saved",
-      "save_error": "Failed to save",
-      "add_set": "+ Add Set",
-      "header_set": "Set",
-      "header_weight": "Weight (kg)",
-      "header_reps": "Reps",
-      "header_rpe": "RPE"
-    },
     "routines": {
       "title": "Routines",
       "empty": "No routines yet",
@@ -284,7 +281,8 @@
       "estimated_1rm": "Estimated 1RM",
       "estimated_weight": "Estimated Weight",
       "ratio_1rm": "1RM Ratio",
-      "invalid_input": "Please enter valid weight and reps."
+      "invalid_input": "Please enter valid weight and reps.",
+      "interaction_hint": "Tap values to type directly, or swipe left/right to adjust."
     },
     "common": {
       "cancel": "Cancel",

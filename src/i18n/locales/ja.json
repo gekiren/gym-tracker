@@ -87,9 +87,9 @@
       "alert_delete_set_title": "セットの削除",
       "alert_delete_set_message": "セット {{number}} を削除しますか？",
       "alert_delete_set_confirm": "削除する",
-      "manual_start_btn": "▶ ワークアウト再開（移動完了）",
+      "manual_start_btn": "▶ ワークアウト再開",
       "manual_start_success": "計測を開始しました",
-      "start_training_btn": "▶ トレーニング開始"
+      "start_training_btn": "▶ トレーニングタイマー開始"
     },
     "exercise_select": {
       "search_placeholder": "種目を検索...",
@@ -125,7 +125,10 @@
     },
 
     "edit_workout": {
-      "title": "履歴の編集",
+      "title": "ワークアウトを編集",
+      "save": "保存",
+      "save_success": "保存しました",
+      "save_error": "保存に失敗しました",
       "save_success_title": "保存完了",
       "save_success_message": "履歴を上書き保存しました。",
       "save_error_title": "エラー",
@@ -135,7 +138,12 @@
       "workout_name_label": "ワークアウト名",
       "workout_notes_label": "メモ",
       "workout_notes_placeholder": "ワークアウトの感想やメモを入力...",
-      "exercise_notes_placeholder": "種目メモを入力..."
+      "exercise_notes_placeholder": "種目メモを入力...",
+      "add_set": "+ セット追加",
+      "header_set": "セット",
+      "header_weight": "重量 ({{unit}})",
+      "header_reps": "回数",
+      "header_rpe": "RPE"
     },
     "exercise_detail": {
       "title": "詳細",
@@ -247,17 +255,6 @@
       "body_weight_label": "体重 (任意)",
       "body_weight_desc": "カロリー計算に使用します。未設定の場合は簡易的な値が表示されます。"
     },
-    "edit_workout": {
-      "title": "ワークアウトを編集",
-      "save": "保存",
-      "save_success": "保存しました",
-      "save_error": "保存に失敗しました",
-      "add_set": "+ セット追加",
-      "header_set": "セット",
-      "header_weight": "重量 ({{unit}})",
-      "header_reps": "回数",
-      "header_rpe": "RPE"
-    },
     "routines": {
       "title": "ルーティン",
       "empty": "まだルーティンがありません",
@@ -279,7 +276,8 @@
       "estimated_1rm": "推定 1 RM",
       "estimated_weight": "推定重量",
       "ratio_1rm": "1RM比",
-      "invalid_input": "有効な重量と回数を入力してください。"
+      "invalid_input": "有効な重量と回数を入力してください。",
+      "interaction_hint": "数値部分をタップで直接入力、左右にスワイプで微調整ができます。"
     },
     "common": {
       "cancel": "キャンセル",

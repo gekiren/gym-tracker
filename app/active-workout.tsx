@@ -305,11 +305,11 @@ export default function ActiveWorkoutScreen() {
               />
             )}
               <View style={styles.tableHeader}>
-                <Text style={[styles.th, { width: 40 }]}>{t('ui.active_workout.header_set')}</Text>
+                <Text style={[styles.th, { width: 50 }]}>{t('ui.active_workout.header_set')}</Text>
                 <Text style={[styles.th, { flex: 1 }]}>{ex.equipment === '自重' ? `+ ${settings.weightUnit}` : settings.weightUnit}</Text>
-                <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_reps')}</Text>
-                <Text style={[styles.th, { width: 45 }]}>{t('ui.active_workout.header_rpe')}</Text>
-                <Text style={[styles.th, { width: 36 }]}></Text>
+                <Text style={[styles.th, { width: 70 }]}>{t('ui.active_workout.header_reps')}</Text>
+                <Text style={[styles.th, { width: 55 }]}>{t('ui.active_workout.header_rpe')}</Text>
+                <Text style={[styles.th, { width: 40 }]}></Text>
               </View>
 
             {ex.sets.map((set, idx) => (
@@ -366,13 +366,12 @@ export default function ActiveWorkoutScreen() {
       )}
 
       {/* Floating Manual Start Button (when not resting) */}
-      {!restTimer.isActive && (
+      {isWorkoutStarted && !restTimer.isActive && (
         <View style={styles.manualStartOverlay}>
           <TouchableOpacity style={styles.manualStartBtn} onPress={() => {
             markWorkStart();
             Alert.alert("", t('ui.active_workout.manual_start_success') || "Started");
           }}>
-            <Ionicons name="play" size={16} color="#fff" style={{ marginRight: 6 }} />
             <Text style={styles.manualStartBtnText}>{t('ui.active_workout.manual_start_btn')}</Text>
           </TouchableOpacity>
         </View>
@@ -787,7 +786,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
           onLongPress={handleLongPress}
           delayLongPress={500}
         >
-        <View style={{ width: 40, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 50, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={styles.tdSet}>{set.set_number}{set.side ? `\n(${set.side})` : ''}</Text>
         </View>
 
@@ -808,12 +807,12 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
         )}
 
         {set.is_completed ? (
-          <View style={[styles.input, styles.inputReadOnly]}>
+          <View style={[styles.input, { width: 70, flex: 0 }, styles.inputReadOnly]}>
             <Text style={styles.inputReadOnlyText}>{localReps || (set.prev_reps ? String(set.prev_reps) : '-')}</Text>
           </View>
         ) : (
           <TextInput 
-            style={styles.input} 
+            style={[styles.input, { width: 70, flex: 0 }]} 
             keyboardType="numeric" 
             placeholder={set.prev_reps ? String(set.prev_reps) : "-"} 
             placeholderTextColor="rgba(255,255,255,0.2)"
@@ -823,12 +822,12 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
         )}
 
         {set.is_completed ? (
-          <View style={[styles.input, { width: 45, flex: 0 }, styles.inputReadOnly]}>
+          <View style={[styles.input, { width: 55, flex: 0 }, styles.inputReadOnly]}>
             <Text style={styles.inputReadOnlyText}>{localRpe || '-'}</Text>
           </View>
         ) : (
           <TextInput 
-            style={[styles.input, { width: 45, flex: 0 }]} 
+            style={[styles.input, { width: 55, flex: 0 }]} 
             keyboardType="numeric" 
             placeholder="-" 
             placeholderTextColor="rgba(255,255,255,0.2)"

@@ -99,6 +99,11 @@ export default function RMCalculatorScreen() {
                 />
             </View>
 
+            {/* Helper Text explaining both Tap and Swipe actions */}
+            <Text style={{ color: Theme.colors.textMuted, fontSize: 11, textAlign: 'center', marginTop: -8, marginBottom: Theme.spacing.md, fontStyle: 'italic' }}>
+                💡 {t('ui.rm_calc.interaction_hint')}
+            </Text>
+
             {isValid && (
                 <View style={styles.resultBanner}>
                     <Text style={styles.resultLabel}>{t('ui.rm_calc.estimated_1rm')}</Text>

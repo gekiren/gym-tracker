@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal } from 'react-native';
 import { useEffect, useState } from 'react';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
@@ -125,6 +125,7 @@ export default function BuildRoutineScreen() {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
           <Ionicons name="close" size={28} color={Theme.colors.primary} />
@@ -256,7 +257,6 @@ export default function BuildRoutineScreen() {
                     style={styles.addSetRowBtn} 
                     onPress={() => addDraftSet(exIdx)}
                   >
-                    <Ionicons name="add" size={16} color={Theme.colors.primary} style={{ marginRight: 4 }} />
                     <Text style={styles.addSetRowBtnText}>{t('ui.build_routine.add_set_label')}</Text>
                   </TouchableOpacity>
                 </View>
