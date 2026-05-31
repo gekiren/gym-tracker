@@ -351,15 +351,23 @@ export const initDB = async () => {
         }
       ];
 
+      // Fetch all exercises beforehand to create a name->id mapping memory cache,
+      // fully eliminating async nested SELECT queries inside SQLite transactions
+      const allExercises = await _db.getAllAsync<{ id: number; name: string }>('SELECT id, name FROM exercises');
+      const exerciseMap = new Map<string, number>(allExercises.map(e => [e.name, e.id]));
+
       await _db.withTransactionAsync(async () => {
         for (const r of defaultRoutines) {
           const res = await _db.runAsync('INSERT INTO routines (title, description) VALUES (?, ?)', [r.title, r.description]);
           const rid = res.lastInsertRowId;
           let order = 0;
           for (const ename of r.exerciseNames) {
-            const row = await _db.getFirstAsync<{id: number}>('SELECT id FROM exercises WHERE name = ?', [ename]);
-            if (row) {
-              await _db.runAsync('INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)', [rid, row.id, order++]);
+            const exerciseId = exerciseMap.get(ename);
+            if (exerciseId !== undefined) {
+              await _db.runAsync(
+                'INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)',
+                [rid, exerciseId, order++]
+              );
             }
           }
         }
