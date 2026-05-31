@@ -376,6 +376,51 @@ export const initDB = async () => {
     await _db.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['initial_seeding_done', 'true']);
   }
 
+  // Ensure Campaign & Referral keys exist in settings for future monetization
+  try {
+    const ensureSetting = async (key: string, defaultValue: string) => {
+      const existing = await _db.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = ?', [key]);
+      if (!existing) {
+        await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', [key, defaultValue]);
+      }
+    };
+
+    // Standard plain-JS UUID v4 generator to avoid native dependency issues
+    const generateUUID = () => {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    };
+
+    // Fetch user_uuid to check if it's already initialized
+    const uuidRow = await _db.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "user_uuid"');
+    if (!uuidRow) {
+      const newUuid = generateUUID();
+      await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['user_uuid', newUuid]);
+      
+      const nowISO = new Date().toISOString();
+      await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['install_date', nowISO]);
+
+      // Early adopter logic (Campaign ends August 31, 2026)
+      const campaignDeadline = new Date('2026-08-31T23:59:59.999Z').getTime();
+      const isEarly = Date.now() <= campaignDeadline ? 'true' : 'false';
+      await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['is_early_adopter', isEarly]);
+      
+      // If they are an early adopter, pre-grant perpetual premium status
+      const initialPremium = isEarly === 'true' ? 'perpetual' : '';
+      await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['premium_until', initialPremium]);
+    }
+
+    // Pre-allocate missing settings keys to avoid future SQLite schema migrations
+    await ensureSetting('my_referral_code', '');
+    await ensureSetting('referred_by_code', '');
+    await ensureSetting('premium_until', '');
+  } catch (e) {
+    console.warn('Migration/Campaign Init: Failed to pre-allocate settings keys', e);
+  }
+
   db = _db;
   return db;
 };
