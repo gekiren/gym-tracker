@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, AppState, BackHandler, Modal, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, AppState, BackHandler, Modal, Platform, Keyboard } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 import { useEffect, useState, useCallback } from 'react';
@@ -23,6 +23,27 @@ export default function ActiveWorkoutScreen() {
   const [elapsed, setElapsed] = useState(0);
   const [showWorkoutNotes, setShowWorkoutNotes] = useState(false);
   const [expandedExerciseNotes, setExpandedExerciseNotes] = useState<Record<string, boolean>>({});
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   // プレート計算機用State
   const [plateCalcVisible, setPlateCalcVisible] = useState(false);
@@ -217,9 +238,9 @@ export default function ActiveWorkoutScreen() {
       />
 
       <ScrollView 
-        contentContainerStyle={styles.content} 
+        contentContainerStyle={[styles.content, { paddingBottom: 100 + keyboardHeight }]} 
         keyboardShouldPersistTaps="handled" 
-        automaticallyAdjustKeyboardInsets={true}
+        automaticallyAdjustKeyboardInsets={false}
       >
           {!isWorkoutStarted ? (
             <TouchableOpacity style={styles.startWorkoutHeroBtn} onPress={beginWorkoutTimer}>

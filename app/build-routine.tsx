@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal, Platform, Keyboard } from 'react-native';
 import { useEffect, useState } from 'react';
 import { router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,10 +19,31 @@ export default function BuildRoutineScreen() {
   const [historyList, setHistoryList] = useState<any[]>([]);
   const [showRoutineModal, setShowRoutineModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
     clearDraft();
     fetchRoutinesAndHistory();
+  }, []);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
   }, []);
 
   const fetchRoutinesAndHistory = async () => {
@@ -137,9 +158,9 @@ export default function BuildRoutineScreen() {
       </View>
 
       <ScrollView 
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: 100 + keyboardHeight }]}
         keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets={true}
+        automaticallyAdjustKeyboardInsets={false}
       >
         <Text style={styles.label}>{t('ui.build_routine.routine_name_label')}</Text>
         <TextInput
