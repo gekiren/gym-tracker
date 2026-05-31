@@ -17,12 +17,12 @@
 ### 方法 1: スマホで直接ダウンロード（おすすめ）
 以下のインストール用URLをお手持ちのAndroid端末でタップして開き、**「Download APK」**または**「Install」**ボタンを押してインストールしてください。
 
-🔗 **[プレビュー版APKのインストールページ (Expo Dev)](https://expo.dev/accounts/gekirennomads-organization/projects/gym-tracker/builds/5bc84edf-9e6b-447a-ba93-747b4e03af5d)**
+🔗 **[プレビュー版APKのインストールページ (Expo Dev)](https://expo.dev/accounts/gekirennomads-organization/projects/gym-tracker/builds/41c01c02-45a5-412c-8f6f-1a0d764dea76)**
 
 ### 方法 2: QRコードをスキャンしてインストール
 お手持ちのテスト用Android端末のカメラやQRコードリーダーで、以下のEAS Buildページにアクセスしインストールしてください。
 
-![Scan QR Code](https://qr.api.cli.im/qr?data=https://expo.dev/accounts/gekirennomads-organization/projects/gym-tracker/builds/5bc84edf-9e6b-447a-ba93-747b4e03af5d)
+![Scan QR Code](https://qr.api.cli.im/qr?data=https://expo.dev/accounts/gekirennomads-organization/projects/gym-tracker/builds/41c01c02-45a5-412c-8f6f-1a0d764dea76)
 
 *(※QRコードが読み込めない場合は、上記の [方法 1] の直接リンクをご利用ください)*
 
