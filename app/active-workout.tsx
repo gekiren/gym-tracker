@@ -247,11 +247,6 @@ export default function ActiveWorkoutScreen() {
           keyboardShouldPersistTaps="handled" 
           automaticallyAdjustKeyboardInsets={false}
         >
-        <View style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: 10, borderRadius: 6, marginBottom: 16, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' }}>
-          <Text style={{ color: Theme.colors.primary, fontSize: 13, fontWeight: 'bold' }}>
-            🛠️ [Debug] KB Height: {keyboardHeight}px
-          </Text>
-        </View>
 
         {!isWorkoutStarted ? (
           <TouchableOpacity style={styles.startWorkoutHeroBtn} onPress={beginWorkoutTimer}>
