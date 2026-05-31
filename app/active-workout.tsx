@@ -333,9 +333,9 @@ export default function ActiveWorkoutScreen() {
             )}
               <View style={styles.tableHeader}>
                 <Text style={[styles.th, { width: 50 }]}>{t('ui.active_workout.header_set')}</Text>
-                <Text style={[styles.th, { flex: 1 }]}>{ex.equipment === '自重' ? `+ ${settings.weightUnit}` : settings.weightUnit}</Text>
-                <Text style={[styles.th, { width: 70 }]}>{t('ui.active_workout.header_reps')}</Text>
-                <Text style={[styles.th, { width: 55 }]}>{t('ui.active_workout.header_rpe')}</Text>
+                <Text style={[styles.th, { flex: 1 }]}>{ex.name === 'プランク' ? '加重' : (ex.equipment === '自重' ? `+ ${settings.weightUnit}` : settings.weightUnit)}</Text>
+                <Text style={[styles.th, { width: 70 }]}>{ex.name === 'プランク' ? '秒数' : t('ui.active_workout.header_reps')}</Text>
+                <Text style={[styles.th, { width: 55 }]}>{ex.name === 'プランク' ? '計測' : t('ui.active_workout.header_rpe')}</Text>
                 <Text style={[styles.th, { width: 40 }]}></Text>
               </View>
 
@@ -665,6 +665,52 @@ export default function ActiveWorkoutScreen() {
   );
 }
 
+function TimerButton({ onTimeCapture }: { onTimeCapture: (secs: number) => void }) {
+  const [isActive, setIsActive] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    let interval: any = null;
+    if (isActive) {
+      interval = setInterval(() => {
+        setSeconds((prev) => prev + 1);
+      }, 1000);
+    } else if (!isActive && seconds !== 0) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isActive, seconds]);
+
+  const handlePress = () => {
+    if (isActive) {
+      // Stop and capture
+      onTimeCapture(seconds);
+      setIsActive(false);
+      setSeconds(0);
+    } else {
+      // Start
+      setSeconds(0);
+      setIsActive(true);
+    }
+  };
+
+  return (
+    <TouchableOpacity 
+      style={[
+        styles.timerInputBtn, 
+        isActive && { backgroundColor: Theme.colors.danger }
+      ]} 
+      onPress={handlePress}
+    >
+      {isActive ? (
+        <Text style={styles.timerInputBtnText}>{seconds}s</Text>
+      ) : (
+        <Ionicons name="play" size={16} color="#fff" />
+      )}
+    </TouchableOpacity>
+  );
+}
+
 function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, setActiveSetForCalc, calculateRM, startTime, setStanceModalTarget, setStanceModalVisible, setCustomStance }: any) {
   const { t } = useTranslation();
   const [localWeight, setLocalWeight] = useState(set.weight != null ? String(set.weight) : '');
@@ -818,7 +864,11 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
           <Text style={styles.tdSet}>{set.set_number}{set.side ? `\n(${set.side})` : ''}</Text>
         </View>
 
-        {set.is_completed ? (
+        {ex.name === 'プランク' ? (
+          <View style={[styles.input, styles.inputReadOnly, { backgroundColor: '#1e1e1e' }]}>
+            <Text style={[styles.inputReadOnlyText, { color: Theme.colors.textMuted }]}>自重</Text>
+          </View>
+        ) : set.is_completed ? (
           <View style={[styles.input, styles.inputReadOnly]}>
             <Text style={styles.inputReadOnlyText}>{localWeight || (set.prev_weight ? String(set.prev_weight) : '-')}</Text>
           </View>
@@ -834,7 +884,22 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
           />
         )}
 
-        {set.is_completed ? (
+        {ex.name === 'プランク' ? (
+          set.is_completed ? (
+            <View style={[styles.input, { width: 70, flex: 0 }, styles.inputReadOnly]}>
+              <Text style={styles.inputReadOnlyText}>{localReps ? `${localReps}秒` : (set.prev_reps ? `${set.prev_reps}秒` : '-')}</Text>
+            </View>
+          ) : (
+            <TextInput 
+              style={[styles.input, { width: 70, flex: 0 }]} 
+              keyboardType="numeric" 
+              placeholder={set.prev_reps ? `${set.prev_reps}秒` : "秒"} 
+              placeholderTextColor="rgba(255,255,255,0.2)"
+              value={localReps}
+              onChangeText={handleRepsChange}
+            />
+          )
+        ) : set.is_completed ? (
           <View style={[styles.input, { width: 70, flex: 0 }, styles.inputReadOnly]}>
             <Text style={styles.inputReadOnlyText}>{localReps || (set.prev_reps ? String(set.prev_reps) : '-')}</Text>
           </View>
@@ -849,7 +914,20 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
           />
         )}
 
-        {set.is_completed ? (
+        {ex.name === 'プランク' ? (
+          set.is_completed ? (
+            <View style={[styles.input, { width: 55, flex: 0 }, styles.inputReadOnly]}>
+              <Ionicons name="timer-outline" size={18} color={Theme.colors.textMuted} />
+            </View>
+          ) : (
+            <TimerButton 
+              onTimeCapture={(seconds: number) => {
+                setLocalReps(String(seconds));
+                updateSet(ex.id, set.id, { reps: seconds });
+              }}
+            />
+          )
+        ) : set.is_completed ? (
           <View style={[styles.input, { width: 55, flex: 0 }, styles.inputReadOnly]}>
             <Text style={styles.inputReadOnlyText}>{localRpe || '-'}</Text>
           </View>
@@ -1003,5 +1081,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 80,
     height: '100%',
+  },
+  timerInputBtn: {
+    width: 55,
+    marginHorizontal: 3,
+    backgroundColor: '#333',
+    borderRadius: 4,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 36
+  },
+  timerInputBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold'
   }
 });
