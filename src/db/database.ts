@@ -335,19 +335,38 @@ export const initDB = async () => {
       });
     }
 
-    // Seed default routines
+    // Seed default routines (Updated to Lite User friendly menus)
     const routineCountRow = await _db.getFirstAsync<{count: number}>('SELECT count(*) as count FROM routines');
-    if (routineCountRow && routineCountRow.count === 0) {
+    
+    // If empty or only contains the old 2 default routines (Push/Pull Day), upgrade them to the new 4 Lite Routines
+    const oldRoutines = await _db.getAllAsync<{ title: string }>('SELECT title FROM routines');
+    const isOldDefaultOnly = oldRoutines.length === 0 || 
+      (oldRoutines.length <= 2 && oldRoutines.every(r => r.title === 'Push Day' || r.title === 'Pull Day'));
+
+    if (routineCountRow && (routineCountRow.count === 0 || isOldDefaultOnly)) {
+      // Clear old default routines if they exist
+      await _db.runAsync('DELETE FROM routines WHERE title IN ("Push Day", "Pull Day")');
+      
       const defaultRoutines = [
         {
-          title: 'Push Day',
-          description: 'Bench Press, Overhead Press, Push-Up...',
-          exerciseNames: ['ベンチプレス', 'オーバーヘッドプレス', 'プッシュアップ', 'トライセップスエクステンション']
+          title: '全身の日 (Full Body)',
+          description: 'マシンと自重を組み合わせた、全身をバランス良く鍛える初心者向けメニュー（約45分〜1時間）',
+          exerciseNames: ['チェストプレス', 'ラットプルダウン', 'レッグプレス', 'クランチ']
         },
         {
-          title: 'Pull Day',
-          description: 'Deadlift, Pull-Up, Lat Pulldown...',
-          exerciseNames: ['デッドリフト', '懸垂', 'ラットプルダウン', 'バーベルカール']
+          title: '上半身の日 (Upper Body)',
+          description: 'マシンとダンベルで上半身の主要な筋肉を効果的に刺激するメニュー（約45分〜1時間）',
+          exerciseNames: ['チェストプレス', 'シーテッドロウ', 'ダンベルショルダープレス', 'ダンベルカール']
+        },
+        {
+          title: '下半身の日 (Lower Body)',
+          description: '安全なマシンを中心に、太ももとお尻、お腹周りを鍛えるメニュー（約45分〜1時間）',
+          exerciseNames: ['レッグプレス', 'レッグエクステンション', 'レッグカール', 'プランク']
+        },
+        {
+          title: '自重の日 (Bodyweight)',
+          description: '器具を一切使わず、自宅や旅行先でも畳1畳分で行える自重メニュー（約30分〜45分）',
+          exerciseNames: ['プッシュアップ', 'バックエクステンション', 'クランチ', 'プランク']
         }
       ];
 
@@ -359,7 +378,41 @@ export const initDB = async () => {
           for (const ename of r.exerciseNames) {
             const row = await _db.getFirstAsync<{id: number}>('SELECT id FROM exercises WHERE name = ?', [ename]);
             if (row) {
-              await _db.runAsync('INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)', [rid, row.id, order++]);
+              const rxRes = await _db.runAsync('INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)', [rid, row.id, order++]);
+              const reid = rxRes.lastInsertRowId;
+
+              // Determine beginner friendly default weight/reps for each set
+              const isPlank = ename === 'プランク';
+              const isDumbbell = ename.includes('ダンベル');
+              const isExtensionCurl = ename === 'レッグエクステンション' || ename === 'レッグカール';
+              const isSeatedRow = ename === 'シーテッドロウ';
+              
+              let weight = 20;
+              let reps = 10;
+
+              if (isPlank) {
+                reps = 1; // 1 hold
+                weight = 0;
+              } else if (ename === 'プッシュアップ' || ename === 'バックエクステンション' || ename === 'クランチ') {
+                reps = ename === 'バックエクステンション' ? 12 : (ename === 'クランチ' ? 15 : 10);
+                weight = 0;
+              } else if (isDumbbell) {
+                weight = 5; // 5kg for dumbbells
+              } else if (isExtensionCurl || isSeatedRow) {
+                weight = 15; // 15kg for lighter machines
+              } else if (ename === 'レッグプレス') {
+                weight = 40; // 40kg for leg press
+              } else if (ename === 'ラットプルダウン') {
+                weight = 25; // 25kg for lat pulldown
+              }
+
+              // Insert exactly 3 sets for each exercise
+              for (let sn = 1; sn <= 3; sn++) {
+                await _db.runAsync(
+                  'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe) VALUES (?, ?, ?, ?, ?)',
+                  [reid, sn, reps, weight, null]
+                );
+              }
             }
           }
         }
