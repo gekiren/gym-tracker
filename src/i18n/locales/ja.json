@@ -299,6 +299,29 @@
       "history_title": "{{name}} の履歴",
       "max_weight": "最大重量",
       "volume": "ボリューム"
+    },
+    "developer_menu": {
+      "title": "デベロッパーメニュー",
+      "secret_modal_title": "開発者認証",
+      "secret_modal_desc": "パスコードを入力してください。",
+      "secret_placeholder": "パスコードを入力...",
+      "secret_submit": "認証",
+      "secret_cancel": "キャンセル",
+      "secret_error": "パスコードが正しくありません。",
+      "section_backup": "データ管理 (バックアップ・復元)",
+      "backup_title": "データをエクスポート",
+      "backup_desc": "トレーニング記録やルーティン、設定などの全データをファイルとして書き出します。端末の共有機能を利用して、クラウドや他のアプリへ保存できます。",
+      "backup_btn": "バックアップファイルを保存",
+      "restore_title": "データをインポート",
+      "restore_desc": "保存したバックアップファイル（.db）を読み込んでデータを復元します。現在のアプリ内のデータはすべて上書きされます。",
+      "restore_btn": "バックアップから復元",
+      "restore_alert_title": "データの復元",
+      "restore_alert_message": "バックアップファイルをインポートすると、現在のすべてのトレーニング記録や設定が上書きされ、元に戻せません。本当によろしいですか？",
+      "restore_alert_confirm": "復元する",
+      "restore_success_title": "復元完了",
+      "restore_success_message": "データの復元が完了しました。変更を適用するためアプリを再起動します。",
+      "restore_error_title": "復元エラー",
+      "restore_error_message": "ファイルの読み込みに失敗したか、無効なファイルです。"
     }
   },
   "exercises": {

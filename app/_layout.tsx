@@ -133,6 +133,7 @@ export default function RootLayout() {
           <Stack.Screen name="edit-workout/[id]" options={{ presentation: 'card' }} />
           <Stack.Screen name="rm-calculator" options={{ presentation: 'card' }} />
           <Stack.Screen name="privacy-policy" options={{ presentation: 'card' }} />
+          <Stack.Screen name="developer-menu" options={{ presentation: 'card' }} />
         </Stack>
         <StatusBar style="light" />
       </ThemeProvider>

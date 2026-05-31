@@ -304,6 +304,29 @@
       "history_title": "History of {{name}}",
       "max_weight": "Max Weight",
       "volume": "Volume"
+    },
+    "developer_menu": {
+      "title": "Developer Menu",
+      "secret_modal_title": "Developer Verification",
+      "secret_modal_desc": "Please enter the passcode.",
+      "secret_placeholder": "Enter passcode...",
+      "secret_submit": "Verify",
+      "secret_cancel": "Cancel",
+      "secret_error": "Incorrect passcode.",
+      "section_backup": "Data Management (Backup & Restore)",
+      "backup_title": "Export Data",
+      "backup_desc": "Export all your training history, routines, and settings into a single backup file. Save it to your cloud storage or other apps.",
+      "backup_btn": "Save Backup File",
+      "restore_title": "Import Data",
+      "restore_desc": "Restore your data by importing a previously saved backup file (.db). Please note that this will overwrite all current data.",
+      "restore_btn": "Restore from Backup",
+      "restore_alert_title": "Restore Data",
+      "restore_alert_message": "Importing a backup file will permanently overwrite all your current training logs, routines, and settings. Are you absolutely sure?",
+      "restore_alert_confirm": "Restore",
+      "restore_success_title": "Restore Success",
+      "restore_success_message": "Data restored successfully. The app will now reload to apply changes.",
+      "restore_error_title": "Restore Error",
+      "restore_error_message": "Failed to read the file, or it is an invalid backup file."
     }
   },
   "exercises": {
