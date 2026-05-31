@@ -1,5 +1,8 @@
 {
-  "expo": {
-    "name": "トレノート"
+  "ios": {
+    "CFBundleDisplayName": "トレノート"
+  },
+  "android": {
+    "app_name": "トレノート"
   }
 }
