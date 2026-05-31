@@ -242,20 +242,19 @@ export default function ActiveWorkoutScreen() {
         keyboardShouldPersistTaps="handled" 
         automaticallyAdjustKeyboardInsets={true}
       >
-          {!isWorkoutStarted ? (
-            <TouchableOpacity style={styles.startWorkoutHeroBtn} onPress={beginWorkoutTimer}>
-              <Text style={styles.startWorkoutHeroBtnText}>{t('ui.active_workout.start_training_btn')}</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={{ alignItems: 'center' }}>
-              <Text style={styles.timeText}>{formatTime(elapsed)}</Text>
-              {keyboardHeight > 0 && (
-                <Text style={{ color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold', marginTop: 4 }}>
-                  [Debug] Keyboard Height: {keyboardHeight}px
-                </Text>
-              )}
-            </View>
-          )}
+        <View style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: 10, borderRadius: 6, marginBottom: 16, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+          <Text style={{ color: Theme.colors.primary, fontSize: 13, fontWeight: 'bold' }}>
+            🛠️ [Debug] KB Height: {keyboardHeight}px
+          </Text>
+        </View>
+
+        {!isWorkoutStarted ? (
+          <TouchableOpacity style={styles.startWorkoutHeroBtn} onPress={beginWorkoutTimer}>
+            <Text style={styles.startWorkoutHeroBtnText}>{t('ui.active_workout.start_training_btn')}</Text>
+          </TouchableOpacity>
+        ) : (
+          <Text style={styles.timeText}>{formatTime(elapsed)}</Text>
+        )}
 
         {/* Workout Notes Section */}
         <View style={{ marginBottom: 16 }}>
