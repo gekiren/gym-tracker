@@ -419,6 +419,12 @@ export const initDB = async () => {
     await ensureSetting('premium_until', '');
     await ensureSetting('is_sms_verified', 'false');
     await ensureSetting('referral_active_count', '0');
+    await ensureSetting('style_mode', 'simple');
+    await ensureSetting('enable_stance_recording', 'false');
+    await ensureSetting('enable_rpe_recording', 'false');
+    await ensureSetting('enable_unilateral_recording', 'false');
+    await ensureSetting('enable_auto_rest_timer', 'false');
+    await ensureSetting('enable_exercise_notes', 'false');
   } catch (e) {
     console.warn('Migration/Campaign Init: Failed to pre-allocate settings keys', e);
   }
