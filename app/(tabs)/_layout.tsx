@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
+import SponsorBanner from '../../components/SponsorBanner';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
 import { useTranslation } from 'react-i18next';
@@ -8,7 +9,8 @@ import { useTranslation } from 'react-i18next';
 export default function TabLayout() {
   const { t } = useTranslation();
   return (
-    <Tabs
+    <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+      <Tabs
       screenOptions={{
         headerStyle: {
           backgroundColor: Theme.colors.background,
@@ -59,5 +61,7 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    <SponsorBanner />
+    </View>
   );
 }

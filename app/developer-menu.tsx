@@ -5,6 +5,7 @@ import { Theme } from '../src/theme';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
+import { pickAndImportCSV } from '../src/utils/csvImporter';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Updates from 'expo-updates';
@@ -172,6 +173,35 @@ export default function DeveloperMenuScreen() {
     }
   };
 
+  const [isImportingCSV, setIsImportingCSV] = useState(false);
+
+  const handleImportCSV = async () => {
+    if (isImportingCSV) return;
+    setIsImportingCSV(true);
+    try {
+      const result = await pickAndImportCSV();
+      if (result.success) {
+        Alert.alert(
+          'インポート成功',
+          `他社CSVデータの移行が完了しました！\n\n・ワークアウト数: ${result.workoutsCount}\n・総セット数: ${result.setsCount}\n・新規追加種目: ${result.exercisesCreated}`
+        );
+      } else {
+        if (result.error === 'CANCELED') {
+          setIsImportingCSV(false);
+          return;
+        }
+        Alert.alert(
+          'インポート失敗',
+          `エラーが発生しました。\n詳細: ${result.error}`
+        );
+      }
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    } finally {
+      setIsImportingCSV(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Stack.Screen
@@ -225,6 +255,27 @@ export default function DeveloperMenuScreen() {
             <Ionicons name="refresh-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.btnOutlineText}>
               {isChecking ? t('ui.developer_menu.update_checking') : t('ui.developer_menu.update_check_btn')}
+            </Text>
+          </TouchableOpacity>
+         </View>
+
+        {/* CSV Import Section */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="swap-horizontal-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>他社CSVインポートテスト</Text>
+          </View>
+          <Text style={styles.cardDesc}>
+            「筋トレMemo」などでエクスポートしたCSVファイルを読み込み、ワークアウト履歴を本アプリへ移行します（デバッグ・検証用）。
+          </Text>
+          <TouchableOpacity 
+            style={styles.btnPrimary} 
+            onPress={handleImportCSV}
+            disabled={isImportingCSV}
+          >
+            <Ionicons name="document-text-outline" size={20} color="#000" style={{ marginRight: 8 }} />
+            <Text style={styles.btnPrimaryText}>
+              {isImportingCSV ? 'インポート中...' : 'CSVファイルを選択して移行'}
             </Text>
           </TouchableOpacity>
         </View>
