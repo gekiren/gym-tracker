@@ -1,6 +1,9 @@
 {
   "expo": {
-    "name": "トレノート",
+    "name": "TreNote",
+    "locales": {
+      "ja": "./locales/ja.json"
+    },
     "slug": "gym-tracker",
     "version": "1.0.1",
     "orientation": "portrait",
