@@ -378,12 +378,8 @@ export const initDB = async () => {
 
   // Ensure Campaign & Referral keys exist in settings for future monetization
   try {
-    const ensureSetting = async (key: string, defaultValue: string) => {
-      const existing = await _db.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = ?', [key]);
-      if (!existing) {
-        await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', [key, defaultValue]);
-      }
-    };
+    const allRows = await _db.getAllAsync<{ key: string }>('SELECT key FROM settings');
+    const existingKeys = new Set(allRows.map(row => row.key));
 
     // Standard plain-JS UUID v4 generator to avoid native dependency issues
     const generateUUID = () => {
@@ -394,37 +390,50 @@ export const initDB = async () => {
       });
     };
 
-    // Fetch user_uuid to check if it's already initialized
-    const uuidRow = await _db.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "user_uuid"');
-    if (!uuidRow) {
-      const newUuid = generateUUID();
-      await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['user_uuid', newUuid]);
-      
-      const nowISO = new Date().toISOString();
-      await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['install_date', nowISO]);
+    const settingsToInsert: { key: string; value: string }[] = [];
 
-      // Early adopter logic (Campaign ends August 31, 2026)
+    if (!existingKeys.has('user_uuid')) {
+      const newUuid = generateUUID();
+      const nowISO = new Date().toISOString();
       const campaignDeadline = new Date('2026-08-31T23:59:59.999Z').getTime();
       const isEarly = Date.now() <= campaignDeadline ? 'true' : 'false';
-      await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['is_early_adopter', isEarly]);
-      
-      // If they are an early adopter, pre-grant perpetual premium status
       const initialPremium = isEarly === 'true' ? 'perpetual' : '';
-      await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['premium_until', initialPremium]);
+
+      settingsToInsert.push({ key: 'user_uuid', value: newUuid });
+      settingsToInsert.push({ key: 'install_date', value: nowISO });
+      settingsToInsert.push({ key: 'is_early_adopter', value: isEarly });
+      if (!existingKeys.has('premium_until')) {
+        settingsToInsert.push({ key: 'premium_until', value: initialPremium });
+      }
     }
 
-    // Pre-allocate missing settings keys to avoid future SQLite schema migrations
-    await ensureSetting('my_referral_code', '');
-    await ensureSetting('referred_by_code', '');
-    await ensureSetting('premium_until', '');
-    await ensureSetting('is_sms_verified', 'false');
-    await ensureSetting('referral_active_count', '0');
-    await ensureSetting('style_mode', 'simple');
-    await ensureSetting('enable_stance_recording', 'false');
-    await ensureSetting('enable_rpe_recording', 'false');
-    await ensureSetting('enable_unilateral_recording', 'false');
-    await ensureSetting('enable_auto_rest_timer', 'false');
-    await ensureSetting('enable_exercise_notes', 'false');
+    const preAllocations: { [key: string]: string } = {
+      my_referral_code: '',
+      referred_by_code: '',
+      premium_until: '',
+      is_sms_verified: 'false',
+      referral_active_count: '0',
+      style_mode: 'simple',
+      enable_stance_recording: 'false',
+      enable_rpe_recording: 'false',
+      enable_unilateral_recording: 'false',
+      enable_auto_rest_timer: 'false',
+      enable_exercise_notes: 'false',
+    };
+
+    for (const [key, defaultValue] of Object.entries(preAllocations)) {
+      if (!existingKeys.has(key) && !settingsToInsert.some(item => item.key === key)) {
+        settingsToInsert.push({ key, value: defaultValue });
+      }
+    }
+
+    if (settingsToInsert.length > 0) {
+      await _db.withTransactionAsync(async () => {
+        for (const item of settingsToInsert) {
+          await _db.runAsync('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', [item.key, item.value]);
+        }
+      });
+    }
   } catch (e) {
     console.warn('Migration/Campaign Init: Failed to pre-allocate settings keys', e);
   }
