@@ -240,14 +240,21 @@ export default function ActiveWorkoutScreen() {
       <ScrollView 
         contentContainerStyle={[styles.content, { paddingBottom: 100 + keyboardHeight }]} 
         keyboardShouldPersistTaps="handled" 
-        automaticallyAdjustKeyboardInsets={false}
+        automaticallyAdjustKeyboardInsets={true}
       >
           {!isWorkoutStarted ? (
             <TouchableOpacity style={styles.startWorkoutHeroBtn} onPress={beginWorkoutTimer}>
               <Text style={styles.startWorkoutHeroBtnText}>{t('ui.active_workout.start_training_btn')}</Text>
             </TouchableOpacity>
           ) : (
-            <Text style={styles.timeText}>{formatTime(elapsed)}</Text>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={styles.timeText}>{formatTime(elapsed)}</Text>
+              {keyboardHeight > 0 && (
+                <Text style={{ color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold', marginTop: 4 }}>
+                  [Debug] Keyboard Height: {keyboardHeight}px
+                </Text>
+              )}
+            </View>
           )}
 
         {/* Workout Notes Section */}

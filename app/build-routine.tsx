@@ -160,7 +160,7 @@ export default function BuildRoutineScreen() {
       <ScrollView 
         contentContainerStyle={[styles.content, { paddingBottom: 100 + keyboardHeight }]}
         keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets={false}
+        automaticallyAdjustKeyboardInsets={true}
       >
         <Text style={styles.label}>{t('ui.build_routine.routine_name_label')}</Text>
         <TextInput
