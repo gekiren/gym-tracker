@@ -25,7 +25,14 @@
       "onboarding_unit_title": "Select Weight Unit",
       "onboarding_unit_desc": "Choose the weight unit you normally use. This can be changed later in settings.",
       "unit_kg_desc": "kg (Kilograms)",
-      "unit_lbs_desc": "lbs (Pounds)"
+      "unit_lbs_desc": "lbs (Pounds)",
+      "onboarding_style_title": "Select Tracking Style",
+      "onboarding_style_desc": "Please choose the logging details to display based on your training experience and preference.",
+      "style_simple_title": "Simple",
+      "style_simple_desc": "Keep columns to a minimum and focus 100% on logging weight and reps with a minimalist layout.",
+      "style_advanced_title": "Advanced",
+      "style_advanced_desc": "Fully utilize advanced features like RPE rating, stance/grip logging, inline 1RM estimation, and total volume tracking.",
+      "style_onboarding_hint": "Note: You can easily toggle these settings ON/OFF individually later in the settings (profile) tab."
     },
     "active_workout": {
       "finish": "Finish",

@@ -25,7 +25,14 @@
       "onboarding_unit_title": "重量の単位を選択",
       "onboarding_unit_desc": "普段トレーニングで使用している重量の単位を選んでください。この設定はあとから環境設定で変更できます。",
       "unit_kg_desc": "kg (キログラム)",
-      "unit_lbs_desc": "lbs (ポンド)"
+      "unit_lbs_desc": "lbs (ポンド)",
+      "onboarding_style_title": "記録スタイルを選択",
+      "onboarding_style_desc": "ご自身のトレーニングレベルや好みに合わせて、画面に表示する記録項目を選んでください。",
+      "style_simple_title": "シンプル",
+      "style_simple_desc": "表示項目を最小限に抑え、トレーニングの重量・回数記録だけに集中できるクリーンな表示です。",
+      "style_advanced_title": "こだわり",
+      "style_advanced_desc": "RPE(辛さ)やフォームのスタンス記録、自動1RM推定、合計ボリューム計算など、こだわりの機能をフル活用できます。",
+      "style_onboarding_hint": "※選択した内容は、後からプロフィール（設定）画面で個別にいつでもON/OFFを変更可能です。"
     },
     "active_workout": {
       "finish": "完了",

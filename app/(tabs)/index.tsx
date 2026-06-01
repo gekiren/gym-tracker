@@ -54,7 +54,37 @@ export default function WorkoutScreen() {
 
   const handleSelectUnit = async (unit: 'kg' | 'lbs') => {
     await saveSetting('weight_unit', unit);
-    loadSettings(settings.defaultRest, settings.autoRest, settings.timerVibrate, unit, false);
+    loadSettings(settings.defaultRest, settings.autoRest, settings.timerVibrate, unit, false, settings.bodyWeight, settings.needsStyleSelection);
+  };
+
+  const handleSelectStyle = async (style: 'simple' | 'advanced') => {
+    await saveSetting('style_mode', style);
+    const isAdvanced = style === 'advanced';
+
+    // Save each tracking field setting to the database
+    await saveSetting('display_rpe', isAdvanced ? '1' : '0');
+    await saveSetting('display_stance', isAdvanced ? '1' : '0');
+    await saveSetting('display_1rm', isAdvanced ? '1' : '0');
+    await saveSetting('display_volume', isAdvanced ? '1' : '0');
+
+    // Update Zustand memory store display states
+    useWorkoutStore.getState().setDisplayFields({
+      showRpe: isAdvanced,
+      showStance: isAdvanced,
+      show1RM: isAdvanced,
+      showVolume: isAdvanced
+    });
+
+    // Complete style selection onboarding
+    loadSettings(
+      settings.defaultRest,
+      settings.autoRest,
+      settings.timerVibrate,
+      settings.weightUnit,
+      false,
+      settings.bodyWeight,
+      false
+    );
   };
 
   return (
@@ -143,6 +173,57 @@ export default function WorkoutScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Onboarding Style Selection Modal */}
+      <Modal visible={!settings.needsUnitSelection && settings.needsStyleSelection} animationType="fade" transparent={true}>
+        <View style={styles.modalBg}>
+          <View style={[styles.modalCard, { maxWidth: 450 }]}>
+            <Ionicons name="sparkles" size={48} color={Theme.colors.primary} style={{ marginBottom: 16 }} />
+            <Text style={styles.modalTitle}>{t('ui.home.onboarding_style_title') || '記録スタイルを選択'}</Text>
+            <Text style={[styles.modalDesc, { marginBottom: 20 }]}>
+              {t('ui.home.onboarding_style_desc') || 'ご自身のトレーニングレベルや好みに合わせて、画面に表示する記録項目を選んでください。'}
+            </Text>
+
+            {/* Simple Option Card */}
+            <TouchableOpacity 
+              style={styles.styleOptionCard} 
+              activeOpacity={0.8}
+              onPress={() => handleSelectStyle('simple')}
+            >
+              <View style={styles.styleOptionIconBg}>
+                <Ionicons name="document-text-outline" size={26} color={Theme.colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.styleOptionTitle}>{t('ui.home.style_simple_title') || 'シンプル'}</Text>
+                <Text style={styles.styleOptionDesc}>
+                  {t('ui.home.style_simple_desc') || '表示項目を最小限に抑え、トレーニングの重量・回数記録だけに集中できるクリーンな表示です。'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Advanced Option Card */}
+            <TouchableOpacity 
+              style={[styles.styleOptionCard, { marginTop: 12 }]} 
+              activeOpacity={0.8}
+              onPress={() => handleSelectStyle('advanced')}
+            >
+              <View style={[styles.styleOptionIconBg, { backgroundColor: 'rgba(79, 172, 254, 0.15)' }]}>
+                <Ionicons name="sparkles-outline" size={26} color={Theme.colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.styleOptionTitle}>{t('ui.home.style_advanced_title') || 'こだわり'}</Text>
+                <Text style={styles.styleOptionDesc}>
+                  {t('ui.home.style_advanced_desc') || 'RPE(辛さ)やフォームのスタンス記録、自動1RM推定、合計ボリューム計算など、こだわりの機能をフル活用できます。'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <Text style={styles.styleOnboardingHint}>
+              {t('ui.home.style_onboarding_hint') || '※選択した内容は、後から設定（プロフィール）画面で個別にいつでもON/OFFを変更可能です。'}
+            </Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -226,9 +307,16 @@ const styles = StyleSheet.create({
   },
   modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalCard: { backgroundColor: Theme.colors.card, width: '100%', borderRadius: Theme.borderRadius.lg, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: Theme.colors.border },
-  modalTitle: { fontSize: 22, fontWeight: 'bold', color: Theme.colors.text, marginBottom: 12 },
+  modalTitle: { fontSize: 22, fontWeight: 'bold', color: Theme.colors.text, marginBottom: 12, textAlign: 'center' },
   modalDesc: { fontSize: 14, color: Theme.colors.textMuted, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
   modalBtnContainer: { width: '100%', gap: 12 },
   unitBtn: { backgroundColor: Theme.colors.primary, paddingVertical: 16, borderRadius: Theme.borderRadius.md, alignItems: 'center' },
-  unitBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+  unitBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  
+  // Style Onboarding Cards
+  styleOptionCard: { backgroundColor: 'rgba(255,255,255,0.03)', flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: Theme.borderRadius.md, borderWidth: 1, borderColor: Theme.colors.border, width: '100%' },
+  styleOptionIconBg: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(79, 172, 254, 0.1)', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  styleOptionTitle: { fontSize: 16, fontWeight: 'bold', color: Theme.colors.text, marginBottom: 4 },
+  styleOptionDesc: { fontSize: 12, color: Theme.colors.textMuted, lineHeight: 18 },
+  styleOnboardingHint: { fontSize: 12, color: Theme.colors.textMuted, textAlign: 'center', marginTop: 24, lineHeight: 18, paddingHorizontal: 12 }
 });

@@ -32,6 +32,7 @@ export default function RootLayout() {
       const timerVibrate = storedSettings['timer_vibrate'] ? storedSettings['timer_vibrate'] === '1' : true;
       
       const needsUnitSelection = !storedSettings['weight_unit'];
+      const needsStyleSelection = !storedSettings['style_mode'];
       const weightUnit = (storedSettings['weight_unit'] === 'lbs' ? 'lbs' : 'kg') as 'kg' | 'lbs';
 
       // 言語設定：保存済みならそれを使用、なければ端末言語を初回のみ検知して保存
@@ -47,7 +48,7 @@ export default function RootLayout() {
       }
       const bodyWeight = storedSettings['body_weight'] ? parseFloat(storedSettings['body_weight']) : null;
       
-      useWorkoutStore.getState().loadSettings(defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight);
+      useWorkoutStore.getState().loadSettings(defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight, needsStyleSelection);
       
       // Display fields
       const showRpe = storedSettings['display_rpe'] !== '0';

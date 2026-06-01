@@ -70,6 +70,7 @@ interface WorkoutState {
     timerVibrate: boolean;
     weightUnit: 'kg' | 'lbs';
     needsUnitSelection: boolean;
+    needsStyleSelection: boolean;
     customStances: string[];
     bodyWeight: number | null;
     displayFields: {
@@ -79,7 +80,7 @@ interface WorkoutState {
       showStance: boolean;
     };
   };
-  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null) => void;
+  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null, needsStyleSelection?: boolean) => void;
   setBodyWeight: (weight: number | null) => void;
   loadCustomStances: (stances: string[]) => void;
   addCustomStance: (stance: string) => void;
@@ -132,6 +133,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     timerVibrate: true,
     weightUnit: 'kg',
     needsUnitSelection: false,
+    needsStyleSelection: false,
     customStances: [],
     bodyWeight: null,
     displayFields: {
@@ -142,8 +144,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     }
   },
 
-  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false, bodyWeight: number | null = null) => set((state) => ({
-    settings: { ...state.settings, defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight }
+  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false, bodyWeight: number | null = null, needsStyleSelection: boolean = false) => set((state) => ({
+    settings: { ...state.settings, defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight, needsStyleSelection }
   })),
 
   setBodyWeight: (weight: number | null) => set((state) => ({
@@ -586,6 +588,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         timerVibrate: true,
         weightUnit: 'kg',
         needsUnitSelection: true,
+        needsStyleSelection: true,
         customStances: [],
         bodyWeight: null,
         displayFields: {
