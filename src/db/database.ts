@@ -878,14 +878,11 @@ export const getAITokensBalance = async (): Promise<number> => {
   const conn = getDB();
   const balanceRow = await conn.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "ai_tokens_balance"');
   const lastResetRow = await conn.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "ai_tokens_last_reset"');
-  const isEarlyRow = await conn.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "is_early_adopter"');
-
-  const isEarly = isEarlyRow?.value === 'true';
-  if (isEarly) {
-    return 999; // Early adopters get virtually unlimited tokens
-  }
 
   let balance = balanceRow ? parseInt(balanceRow.value, 10) : 20;
+  if (balance > 20) {
+    balance = 20; // Hard cap at 20 monthly tokens
+  }
   const lastReset = lastResetRow ? lastResetRow.value : new Date().toISOString();
 
   // Check if 30 days have passed
@@ -905,14 +902,9 @@ export const getAITokensBalance = async (): Promise<number> => {
 };
 
 export const consumeAIToken = async (): Promise<void> => {
-  const conn = getDB();
-  const isEarlyRow = await conn.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "is_early_adopter"');
-  if (isEarlyRow?.value === 'true') {
-    return; // Early adopters do not consume tokens
-  }
-
   const balance = await getAITokensBalance();
   const newBalance = Math.max(0, balance - 1);
+  const conn = getDB();
   await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("ai_tokens_balance", ?)', [newBalance.toString()]);
 };
 

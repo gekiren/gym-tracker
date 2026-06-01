@@ -356,34 +356,32 @@ export default function ProfileScreen() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
               <Text style={styles.settingLabel}>{t('ui.profile.ai_tokens_balance') || '今月の利用枠残高'}</Text>
               <Text style={{ color: settings.aiTokensBalance === 0 ? Theme.colors.danger : Theme.colors.text, fontWeight: 'bold', fontSize: 16 }}>
-                {settings.aiTokensBalance === 999 ? 'Early Adopter (無制限)' : `${settings.aiTokensBalance} / 20`}
+                {`${settings.aiTokensBalance} / 20`}
               </Text>
             </View>
             <Text style={[styles.settingDesc, { paddingRight: 0 }]}>
               {t('ui.profile.ai_tokens_desc') || 'Cloudflare Worker & Gemini APIを経由した安全で高度なトレーニング指導が受けられます。'}
             </Text>
             
-            {settings.aiTokensBalance !== 999 && (
-              <View style={styles.aiTokensContainer}>
-                <View style={styles.progressBarBg}>
-                  <View 
-                    style={[
-                      styles.progressBarFill, 
-                      { 
-                        width: `${Math.min(100, Math.max(0, (settings.aiTokensBalance / 20) * 100))}%`,
-                        backgroundColor: settings.aiTokensBalance === 0 ? Theme.colors.danger : Theme.colors.primary 
-                      }
-                    ]} 
-                  />
-                </View>
-                {settings.aiTokensBalance === 0 && (
-                  <Text style={styles.quotaWarning}>{t('ui.profile.quota_exhausted_alert') || '今月の利用枠が残っていません。'}</Text>
-                )}
-                <Text style={[styles.settingDesc, { marginTop: 6, paddingRight: 0 }]}>
-                  {t('ui.profile.ai_tokens_reset_desc') || '30日後に利用枠は自動的に20回にリセットされます。'}
-                </Text>
+            <View style={styles.aiTokensContainer}>
+              <View style={styles.progressBarBg}>
+                <View 
+                  style={[
+                    styles.progressBarFill, 
+                    { 
+                      width: `${Math.min(100, Math.max(0, (settings.aiTokensBalance / 20) * 100))}%`,
+                      backgroundColor: settings.aiTokensBalance === 0 ? Theme.colors.danger : Theme.colors.primary 
+                    }
+                  ]} 
+                />
               </View>
-            )}
+              {settings.aiTokensBalance === 0 && (
+                <Text style={styles.quotaWarning}>{t('ui.profile.quota_exhausted_alert') || '今月の利用枠が残っていません。'}</Text>
+              )}
+              <Text style={[styles.settingDesc, { marginTop: 6, paddingRight: 0 }]}>
+                {t('ui.profile.ai_tokens_reset_desc') || '30日後に利用枠は自動的に20回にリセットされます。'}
+              </Text>
+            </View>
           </View>
         </View>
       </View>

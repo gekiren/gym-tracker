@@ -59,8 +59,8 @@ export default function TabLayout() {
         name="coach"
         options={{
           href: AI_CONFIG.status === 'disabled' ? null : undefined,
-          headerTitle: t('ui.tabs.coach') || 'AIコーチ',
-          title: `${t('ui.tabs.coach') || 'AIコーチ'} (${settings.aiTokensBalance}/20)`,
+          headerTitle: `${t('ui.tabs.coach') || 'AIコーチ'} (${settings.aiTokensBalance}/20)`,
+          title: t('ui.tabs.coach') || 'AIコーチ',
           tabBarIcon: ({ color }) => <Ionicons name="sparkles" size={26} color={color} />,
         }}
       />
