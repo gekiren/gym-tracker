@@ -10,6 +10,7 @@ import { saveWorkout, saveSetting } from '../src/db/database';
 import { useTranslation } from 'react-i18next';
 import { translateExercise, translateStance } from '../src/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AI_CONFIG } from '../src/config/aiConfig';
 
 export default function ActiveWorkoutScreen() {
   const { t } = useTranslation();
@@ -323,12 +324,14 @@ export default function ActiveWorkoutScreen() {
               </Text>
               {workoutNotes ? <Ionicons name="checkmark-circle" size={12} color={Theme.colors.success} style={{ marginLeft: 4 }} /> : null}
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleAICoachWorkout} style={{ padding: 4 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Ionicons name="sparkles" size={16} color={Theme.colors.primary} />
-                <Text style={{ color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold' }}>AIコーチ</Text>
-              </View>
-            </TouchableOpacity>
+            {AI_CONFIG.status === 'active' && (
+              <TouchableOpacity onPress={handleAICoachWorkout} style={{ padding: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Ionicons name="sparkles" size={16} color={Theme.colors.primary} />
+                  <Text style={{ color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold' }}>AIコーチ</Text>
+                </View>
+              </TouchableOpacity>
+            )}
           </View>
           
           {(showWorkoutNotes || workoutNotes) && (
@@ -379,9 +382,11 @@ export default function ActiveWorkoutScreen() {
                 )}
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <TouchableOpacity onPress={() => handleAICoachExercise(ex)}>
-                  <Ionicons name="sparkles" size={20} color={Theme.colors.primary} />
-                </TouchableOpacity>
+                {AI_CONFIG.status === 'active' && (
+                  <TouchableOpacity onPress={() => handleAICoachExercise(ex)}>
+                    <Ionicons name="sparkles" size={20} color={Theme.colors.primary} />
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity onPress={() => setExpandedExerciseNotes(prev => ({ ...prev, [ex.id]: !prev[ex.id] }))}>
                   <Ionicons 
                     name={ex.notes ? "chatbubble-ellipses" : "chatbubble-outline"} 

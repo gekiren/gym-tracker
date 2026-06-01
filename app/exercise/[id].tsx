@@ -10,6 +10,7 @@ import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useTranslation } from 'react-i18next';
 import { translateExercise, translateMuscleGroup, translateEquipment, translateStance } from '../../src/i18n';
 import { DEFAULT_STANCES } from '../../src/utils/stances';
+import { AI_CONFIG } from '../../src/config/aiConfig';
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -182,11 +183,11 @@ export default function ExerciseDetailScreen() {
           title: t('ui.exercise_detail.title'),
           headerStyle: { backgroundColor: Theme.colors.background },
           headerTintColor: Theme.colors.primary,
-          headerRight: () => (
+          headerRight: () => AI_CONFIG.status === 'active' ? (
             <TouchableOpacity onPress={handleAICoachExerciseDetail} style={{ marginRight: 16 }}>
               <Ionicons name="sparkles" size={22} color={Theme.colors.primary} />
             </TouchableOpacity>
-          )
+          ) : null
         }} 
       />
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>

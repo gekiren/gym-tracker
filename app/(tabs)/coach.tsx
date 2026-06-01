@@ -17,6 +17,7 @@ import { consumeAIToken, getAITokensBalance } from '../../src/db/database';
 import { sendMessageToAICoach } from '../../src/services/aiCoachService';
 import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams } from 'expo-router';
+import { AI_CONFIG } from '../../src/config/aiConfig';
 
 interface ChatMessage {
   id: string;
@@ -29,6 +30,27 @@ export default function CoachScreen() {
   const { t } = useTranslation();
   const { settings, setAITokensBalance } = useWorkoutStore();
   const params = useLocalSearchParams<{ contextPrompt?: string; prefillMessage?: string; title?: string }>();
+
+  if (AI_CONFIG.status !== 'active') {
+    return (
+      <View style={styles.maintenanceContainer}>
+        <View style={styles.maintenanceCard}>
+          <View style={styles.maintenanceIconOuter}>
+            <Ionicons name="build" size={42} color={Theme.colors.primary} />
+          </View>
+          <Text style={styles.maintenanceHeader}>
+            AIコーチ 調整中
+          </Text>
+          <Text style={styles.maintenanceBody}>
+            AIコーチ機能は、より快適で質の高いアドバイスを提供するため、現在メンテナンス（調整）を実施しております。
+          </Text>
+          <Text style={styles.maintenanceFooter}>
+            まもなく再開いたしますので、今しばらくお待ちください！
+          </Text>
+        </View>
+      </View>
+    );
+  }
   
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputVal, setInputVal] = useState('');
@@ -459,5 +481,61 @@ const styles = StyleSheet.create({
   sendBtnDisabled: {
     backgroundColor: '#222',
     opacity: 0.5,
+  },
+  
+  // Maintenance styles
+  maintenanceContainer: {
+    flex: 1,
+    backgroundColor: Theme.colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Theme.spacing.lg,
+  },
+  maintenanceCard: {
+    backgroundColor: Theme.colors.card,
+    borderRadius: Theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(79, 172, 254, 0.2)',
+    padding: 28,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 340,
+    shadowColor: Theme.colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+  maintenanceIconOuter: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(79, 172, 254, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(79, 172, 254, 0.2)',
+  },
+  maintenanceHeader: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Theme.colors.text,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  maintenanceBody: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: Theme.colors.textMuted,
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  maintenanceFooter: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: Theme.colors.primary,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

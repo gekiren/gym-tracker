@@ -11,6 +11,7 @@ import { formatWorkoutToMarkdown } from '../../src/utils/markdownExport';
 import { useFocusEffect, router } from 'expo-router';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useTranslation } from 'react-i18next';
+import { AI_CONFIG } from '../../src/config/aiConfig';
 
 export default function HistoryScreen() {
   const { settings } = useWorkoutStore();
@@ -163,9 +164,11 @@ export default function HistoryScreen() {
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>{w.title}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <TouchableOpacity onPress={() => handleAICoachHistory(w.id, w.title)} style={[styles.exportIcon, { marginRight: 8 }]}>
-                  <Ionicons name="sparkles" size={18} color={Theme.colors.primary} />
-                </TouchableOpacity>
+                {AI_CONFIG.status === 'active' && (
+                  <TouchableOpacity onPress={() => handleAICoachHistory(w.id, w.title)} style={[styles.exportIcon, { marginRight: 8 }]}>
+                    <Ionicons name="sparkles" size={18} color={Theme.colors.primary} />
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity onPress={() => handleExportMarkdown(w.id)} style={[styles.exportIcon, { marginRight: 8 }]}>
                   <Ionicons name="share-social" size={18} color={Theme.colors.primary} />
                 </TouchableOpacity>

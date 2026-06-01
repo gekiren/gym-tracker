@@ -5,9 +5,12 @@ import SponsorBanner from '../../components/SponsorBanner';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
 import { useTranslation } from 'react-i18next';
+import { useWorkoutStore } from '../../src/store/workoutStore';
+import { AI_CONFIG } from '../../src/config/aiConfig';
 
 export default function TabLayout() {
   const { t } = useTranslation();
+  const { settings } = useWorkoutStore();
   return (
     <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
       <Tabs
@@ -55,8 +58,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="coach"
         options={{
+          href: AI_CONFIG.status === 'disabled' ? null : undefined,
           headerTitle: t('ui.tabs.coach') || 'AIコーチ',
-          title: t('ui.tabs.coach') || 'AIコーチ',
+          title: `${t('ui.tabs.coach') || 'AIコーチ'} (${settings.aiTokensBalance}/20)`,
           tabBarIcon: ({ color }) => <Ionicons name="sparkles" size={26} color={color} />,
         }}
       />
