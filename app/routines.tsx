@@ -1,17 +1,56 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, UIManager, LayoutAnimation } from 'react-native';
 import { useEffect, useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '../src/theme';
-import { getRoutines, deleteRoutine, getPreviousWorkoutSets, getPersonalRecords } from '../src/db/database';
+import { getRoutines, deleteRoutine, getPreviousWorkoutSets, getPersonalRecords, updateRoutineOrders } from '../src/db/database';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { translateExercise } from '../src/i18n';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function RoutinesScreen() {
   const { t } = useTranslation();
   const [routines, setRoutines] = useState<any[]>([]);
+  const [isReorderMode, setIsReorderMode] = useState(false);
   const { startWorkout, addExercise } = useWorkoutStore();
+
+  const handleMoveUp = async (index: number) => {
+    if (index === 0) return;
+    const newRoutines = [...routines];
+    const temp = newRoutines[index];
+    newRoutines[index] = newRoutines[index - 1];
+    newRoutines[index - 1] = temp;
+
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setRoutines(newRoutines);
+
+    try {
+      await updateRoutineOrders(newRoutines.map((r, idx) => ({ id: r.id, sort_order: idx })));
+    } catch (e) {
+      console.warn('Failed to update routine order', e);
+    }
+  };
+
+  const handleMoveDown = async (index: number) => {
+    if (index === routines.length - 1) return;
+    const newRoutines = [...routines];
+    const temp = newRoutines[index];
+    newRoutines[index] = newRoutines[index + 1];
+    newRoutines[index + 1] = temp;
+
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setRoutines(newRoutines);
+
+    try {
+      await updateRoutineOrders(newRoutines.map((r, idx) => ({ id: r.id, sort_order: idx })));
+    } catch (e) {
+      console.warn('Failed to update routine order', e);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -103,19 +142,37 @@ export default function RoutinesScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
-          <Ionicons name="arrow-back" size={28} color={Theme.colors.primary} />
-        </TouchableOpacity>
-        <Text style={styles.title}>{t('ui.routines.all_routines')}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
+            <Ionicons name="arrow-back" size={28} color={Theme.colors.primary} />
+          </TouchableOpacity>
+          <Text style={styles.title}>{t('ui.routines.all_routines')}</Text>
+        </View>
+        {routines.length > 1 && (
+          <TouchableOpacity 
+            onPress={() => {
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+              setIsReorderMode(!isReorderMode);
+            }} 
+            style={styles.reorderToggleBtn}
+          >
+            <Ionicons 
+              name={isReorderMode ? "checkmark-circle" : "swap-vertical"} 
+              size={24} 
+              color={Theme.colors.primary} 
+            />
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {routines.map(r => (
+        {routines.map((r, index) => (
           <TouchableOpacity 
             key={r.id} 
-            style={styles.routineCard} 
+            style={[styles.routineCard, isReorderMode && styles.routineCardEditing]} 
             activeOpacity={0.7} 
-            onPress={() => handleStartRoutine(r)}
+            onPress={() => !isReorderMode && handleStartRoutine(r)}
+            disabled={isReorderMode}
           >
             <View style={{ flex: 1 }}>
               <Text style={styles.routineTitle}>{r.title}</Text>
@@ -123,9 +180,29 @@ export default function RoutinesScreen() {
                 {r.exercises?.map((e: any) => translateExercise(e.name)).join(', ') || t('ui.home.no_exercises')}
               </Text>
             </View>
-            <TouchableOpacity onPress={() => handleDelete(r.id, r.title)} style={styles.deleteBtn}>
-              <Ionicons name="trash-outline" size={22} color={Theme.colors.danger} />
-            </TouchableOpacity>
+            
+            {isReorderMode ? (
+              <View style={styles.reorderActions}>
+                <TouchableOpacity 
+                  onPress={() => handleMoveUp(index)} 
+                  style={[styles.reorderBtn, index === 0 && styles.reorderBtnDisabled]}
+                  disabled={index === 0}
+                >
+                  <Ionicons name="arrow-up-outline" size={22} color={index === 0 ? Theme.colors.border : Theme.colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => handleMoveDown(index)} 
+                  style={[styles.reorderBtn, index === routines.length - 1 && styles.reorderBtnDisabled]}
+                  disabled={index === routines.length - 1}
+                >
+                  <Ionicons name="arrow-down-outline" size={22} color={index === routines.length - 1 ? Theme.colors.border : Theme.colors.primary} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => handleDelete(r.id, r.title)} style={styles.deleteBtn}>
+                <Ionicons name="trash-outline" size={22} color={Theme.colors.danger} />
+              </TouchableOpacity>
+            )}
           </TouchableOpacity>
         ))}
 
@@ -152,10 +229,15 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
   header: { flexDirection: 'row', alignItems: 'center', padding: Theme.spacing.md, paddingTop: 50, backgroundColor: Theme.colors.card, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
   title: { fontSize: 22, fontWeight: 'bold', color: Theme.colors.text },
+  reorderToggleBtn: { padding: 8 },
   content: { padding: Theme.spacing.md, paddingBottom: 100 },
   routineCard: { backgroundColor: Theme.colors.card, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Theme.spacing.lg, borderRadius: Theme.borderRadius.md, marginBottom: Theme.spacing.md, borderWidth: 1, borderColor: Theme.colors.border },
+  routineCardEditing: { borderStyle: 'dashed', borderColor: Theme.colors.primary },
   routineTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text, marginBottom: 4 },
   routineDesc: { fontSize: 14, color: Theme.colors.textMuted },
   deleteBtn: { padding: 8, marginLeft: 8 },
+  reorderActions: { flexDirection: 'row', alignItems: 'center' },
+  reorderBtn: { padding: 8, marginLeft: 8 },
+  reorderBtnDisabled: { opacity: 0.3 },
   fab: { position: 'absolute', bottom: 32, right: 24, width: 64, height: 64, borderRadius: 32, backgroundColor: Theme.colors.primary, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 8 }
 });

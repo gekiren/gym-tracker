@@ -272,7 +272,17 @@
       "display_volume": "Total Set Volume",
       "display_volume_desc": "Show total completed volume (weight \u00d7 reps) per exercise.",
       "display_stance": "Stance / Variation",
-      "display_stance_desc": "Show stance/grip selectors for each exercise and set during a workout."
+      "display_stance_desc": "Show stance/grip selectors for each exercise and set during a workout.",
+      "section_danger": "Data Management (Danger Zone)",
+      "clear_data": "Reset All Data",
+      "clear_data_desc": "Delete all records, routines, and settings, returning to a clean install state.",
+      "clear_data_confirm_title": "Complete Data Reset",
+      "clear_data_confirm_message": "Are you absolutely sure you want to initialize all data? This action cannot be undone.\n\n• All workout history, personal records, and active sessions will be deleted.\n• All custom routines you created will be deleted.\n• Settings will be reset to default.\n\nTo proceed, please enter \"OK\" in half-width uppercase characters below.",
+      "clear_data_confirm_btn": "Reset Completely",
+      "clear_data_placeholder": "Enter OK here",
+      "clear_data_success_title": "Reset Completed",
+      "clear_data_success_message": "All data has been deleted and the app has been restored to the initial clean install state.",
+      "clear_data_error_mismatch": "The entered text does not match \"OK\"."
     },
     "routines": {
       "title": "Routines",

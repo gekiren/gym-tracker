@@ -233,6 +233,16 @@ export const initDB = async () => {
     console.warn('Migration: Failed to rename/cleanup/seed aerobic exercises', e);
   }
 
+  // Migration: Add sort_order to routines if missing
+  try {
+    const tableInfoR = await _db.getAllAsync<{ name: string }>(`PRAGMA table_info(routines)`);
+    if (!tableInfoR.find(c => c.name === 'sort_order')) {
+      await _db.execAsync(`ALTER TABLE routines ADD COLUMN sort_order INTEGER DEFAULT 0;`);
+    }
+  } catch (e) {
+    console.warn('Migration: Failed to add sort_order column to routines', e);
+  }
+
   // Seed exercises if missing
   const exercises = [
     // Chest
@@ -676,7 +686,7 @@ export const getPersonalRecords = async (exerciseId: number) => {
 
 export const getRoutines = async () => {
   const conn = getDB();
-  const routines = await conn.getAllAsync<{id: number, title: string, description: string}>('SELECT * FROM routines ORDER BY id ASC');
+  const routines = await conn.getAllAsync<{id: number, title: string, description: string, sort_order?: number}>('SELECT * FROM routines ORDER BY sort_order ASC, id ASC');
   
   const result = [];
   for (const r of routines) {
@@ -729,6 +739,33 @@ export const addRoutine = async (title: string, description: string, exercises: 
 export const deleteRoutine = async (id: number) => {
   const conn = getDB();
   await conn.runAsync('DELETE FROM routines WHERE id = ?', [id]);
+};
+
+export const updateRoutineOrders = async (orders: { id: number, sort_order: number }[]) => {
+  const conn = getDB();
+  await conn.withTransactionAsync(async () => {
+    for (const item of orders) {
+      await conn.runAsync('UPDATE routines SET sort_order = ? WHERE id = ?', [item.sort_order, item.id]);
+    }
+  });
+};
+
+export const resetDatabase = async () => {
+  const conn = getDB();
+  await conn.withTransactionAsync(async () => {
+    await conn.runAsync('DELETE FROM workouts');
+    await conn.runAsync('DELETE FROM workout_exercises');
+    await conn.runAsync('DELETE FROM workout_sets');
+    await conn.runAsync('DELETE FROM routines');
+    await conn.runAsync('DELETE FROM routine_exercises');
+    await conn.runAsync('DELETE FROM routine_sets');
+    await conn.runAsync('DELETE FROM settings');
+    await conn.runAsync('DELETE FROM favorite_exercises');
+    await conn.runAsync('DELETE FROM exercises');
+  });
+
+  db = null;
+  await initDB();
 };
 
 export const getSettings = async () => {

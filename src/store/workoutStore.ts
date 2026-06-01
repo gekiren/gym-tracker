@@ -113,6 +113,7 @@ interface WorkoutState {
   updateDraftSet: (exerciseIndex: number, setIndex: number, changes: Partial<{ weight: number | null; reps: number | null; rpe: number | null; side?: 'L' | 'R' | null; variation?: string | null }>) => void;
   setDraftRoutine: (title: string, exercises: any[]) => void;
   clearDraft: () => void;
+  resetAllSettingsAndWorkout: () => void;
 }
 
 export const useWorkoutStore = create<WorkoutState>((set, get) => ({
@@ -567,5 +568,34 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   }),
   clearDraft: () => set({
     draftRoutine: { title: '', exercises: [] }
-  })
+  }),
+  resetAllSettingsAndWorkout: () => {
+    cancelRestTimer();
+    set({
+      isActive: false,
+      isWorkoutStarted: false,
+      startTime: null,
+      title: null,
+      workoutNotes: '',
+      exercises: [],
+      lastRestFinishedAt: null,
+      restTimer: { isActive: false, remaining: 0, endTime: null },
+      settings: {
+        defaultRest: 90,
+        autoRest: true,
+        timerVibrate: true,
+        weightUnit: 'kg',
+        needsUnitSelection: true,
+        customStances: [],
+        bodyWeight: null,
+        displayFields: {
+          showRpe: true,
+          show1RM: true,
+          showVolume: true,
+          showStance: true,
+        }
+      },
+      draftRoutine: { title: '', exercises: [] }
+    });
+  }
 }));
