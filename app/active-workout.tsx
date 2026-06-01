@@ -14,15 +14,23 @@ import { AI_CONFIG } from '../src/config/aiConfig';
 
 export default function ActiveWorkoutScreen() {
   const { t } = useTranslation();
-  const { 
-    title, startTime, workoutNotes, exercises, endWorkout, 
-    updateWorkoutNotes, updateExerciseNotes,
-    addExercise, addSet, removeSet, toggleSetComplete, updateSet, 
-    restTimer, stopRestTimer, adjustRestTimer, tickRestTimer, markWorkStart, settings,
-    isWorkoutStarted, beginWorkoutTimer
-  } = useWorkoutStore();
-  
-  const [elapsed, setElapsed] = useState(0);
+  const title = useWorkoutStore(state => state.title);
+  const startTime = useWorkoutStore(state => state.startTime);
+  const workoutNotes = useWorkoutStore(state => state.workoutNotes);
+  const exercises = useWorkoutStore(state => state.exercises);
+  const endWorkout = useWorkoutStore(state => state.endWorkout);
+  const updateWorkoutNotes = useWorkoutStore(state => state.updateWorkoutNotes);
+  const updateExerciseNotes = useWorkoutStore(state => state.updateExerciseNotes);
+  const addSet = useWorkoutStore(state => state.addSet);
+  const removeSet = useWorkoutStore(state => state.removeSet);
+  const toggleSetComplete = useWorkoutStore(state => state.toggleSetComplete);
+  const updateSet = useWorkoutStore(state => state.updateSet);
+  const restTimerActive = useWorkoutStore(state => state.restTimer.isActive);
+  const tickRestTimer = useWorkoutStore(state => state.tickRestTimer);
+  const markWorkStart = useWorkoutStore(state => state.markWorkStart);
+  const settings = useWorkoutStore(state => state.settings);
+  const isWorkoutStarted = useWorkoutStore(state => state.isWorkoutStarted);
+  const beginWorkoutTimer = useWorkoutStore(state => state.beginWorkoutTimer);
   const [showWorkoutNotes, setShowWorkoutNotes] = useState(false);
   const [expandedExerciseNotes, setExpandedExerciseNotes] = useState<Record<string, boolean>>({});
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -127,31 +135,14 @@ export default function ActiveWorkoutScreen() {
 
   const totalPlateWeight = plateCalcBar + (platesOnOneSide.reduce((a, b) => a + b, 0) * 2);
 
-  useEffect(() => {
-    if (!startTime) return;
-    const startOffset = new Date(startTime).getTime();
-    const iv = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - startOffset) / 1000));
-    }, 1000);
-    return () => clearInterval(iv);
-  }, [startTime]);
-
-  const formatTime = (secs: number) => {
-    const h = Math.floor(secs / 3600);
-    const m = Math.floor((secs % 3600) / 60);
-    const s = secs % 60;
-    if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
-
   // Rest Timer Interval
   useEffect(() => {
-    if (!restTimer.isActive) return;
+    if (!restTimerActive) return;
     const iv = setInterval(() => {
       tickRestTimer();
     }, 1000);
     return () => clearInterval(iv);
-  }, [restTimer.isActive, tickRestTimer]);
+  }, [restTimerActive, tickRestTimer]);
 
   // Sync Push Notifications & State on Background/Foreground
   useEffect(() => {
@@ -202,9 +193,6 @@ export default function ActiveWorkoutScreen() {
     }, [handleBack])
   );
 
-  const handleAdjustRest = (secs: number) => {
-    adjustRestTimer(secs);
-  };
   
   const handleManualTimer = () => {
     const { settings, startRestTimer } = useWorkoutStore.getState();
@@ -281,7 +269,7 @@ export default function ActiveWorkoutScreen() {
               <TouchableOpacity onPress={() => setPlateCalcVisible(true)} style={{ marginRight: 16 }}>
                 <Ionicons name="barbell-outline" size={26} color={Theme.colors.primary} />
               </TouchableOpacity>
-              {!restTimer.isActive && (
+              {!restTimerActive && (
                 <TouchableOpacity onPress={handleManualTimer} style={{ marginRight: 16 }}>
                   <Ionicons name="timer-outline" size={26} color={Theme.colors.primary} />
                 </TouchableOpacity>
@@ -310,7 +298,7 @@ export default function ActiveWorkoutScreen() {
             <Text style={styles.startWorkoutHeroBtnText}>{t('ui.active_workout.start_training_btn')}</Text>
           </TouchableOpacity>
         ) : (
-          <Text style={styles.timeText}>{formatTime(elapsed)}</Text>
+          <ElapsedTimerHeader startTime={startTime} />
         )}
 
         {/* Workout Notes Section */}
@@ -458,30 +446,10 @@ export default function ActiveWorkoutScreen() {
       </KeyboardAvoidingView>
 
       {/* Floating Rest Timer UI */}
-      {restTimer.isActive && (
-        <View style={[styles.timerOverlay, { bottom: safeBottomOffset + 24 }]}>
-          <View style={styles.timerContent}>
-            <View>
-              <Text style={styles.timerLabel}>{t('ui.active_workout.rest_label_resting')}</Text>
-              <Text style={styles.timerDigits}>{formatTime(restTimer.remaining)}</Text>
-            </View>
-            <View style={styles.timerActions}>
-              <TouchableOpacity style={styles.timerBtn} onPress={() => handleAdjustRest(-30)}>
-                <Text style={styles.timerBtnText}>-30s</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.timerBtn, { backgroundColor: Theme.colors.card }]} onPress={stopRestTimer}>
-                <Text style={styles.timerBtnText}>{t('ui.active_workout.skip_label')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.timerBtn} onPress={() => handleAdjustRest(30)}>
-                <Text style={styles.timerBtnText}>+30s</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      )}
+      <FloatingRestTimer safeBottomOffset={safeBottomOffset} />
 
       {/* Floating Manual Start Button (when not resting) */}
-      {isWorkoutStarted && !restTimer.isActive && (
+      {isWorkoutStarted && !restTimerActive && (
         <View style={[styles.manualStartOverlay, { bottom: safeBottomOffset + 20 }]}>
           <TouchableOpacity style={styles.manualStartBtn} onPress={() => {
             markWorkStart();
@@ -1172,6 +1140,68 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
       </View>
     </View>
     </Swipeable>
+  );
+}
+
+function ElapsedTimerHeader({ startTime }: { startTime: string | null }) {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!startTime) return;
+    const startOffset = new Date(startTime).getTime();
+    const iv = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startOffset) / 1000));
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [startTime]);
+
+  const formatTime = (secs: number) => {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  return <Text style={styles.timeText}>{formatTime(elapsed)}</Text>;
+}
+
+function FloatingRestTimer({ safeBottomOffset }: { safeBottomOffset: number }) {
+  const { t } = useTranslation();
+  const restTimer = useWorkoutStore(state => state.restTimer);
+  const stopRestTimer = useWorkoutStore(state => state.stopRestTimer);
+  const adjustRestTimer = useWorkoutStore(state => state.adjustRestTimer);
+
+  if (!restTimer.isActive) return null;
+
+  const formatTime = (secs: number) => {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <View style={[styles.timerOverlay, { bottom: safeBottomOffset + 24 }]}>
+      <View style={styles.timerContent}>
+        <View>
+          <Text style={styles.timerLabel}>{t('ui.active_workout.rest_label_resting')}</Text>
+          <Text style={styles.timerDigits}>{formatTime(restTimer.remaining)}</Text>
+        </View>
+        <View style={styles.timerActions}>
+          <TouchableOpacity style={styles.timerBtn} onPress={() => adjustRestTimer(-30)}>
+            <Text style={styles.timerBtnText}>-30s</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.timerBtn, { backgroundColor: Theme.colors.card }]} onPress={stopRestTimer}>
+            <Text style={styles.timerBtnText}>{t('ui.active_workout.skip_label')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.timerBtn} onPress={() => adjustRestTimer(30)}>
+            <Text style={styles.timerBtnText}>+30s</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
   );
 }
 

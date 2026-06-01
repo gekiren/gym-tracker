@@ -10,7 +10,12 @@ import { translateExercise } from '../../src/i18n';
 
 export default function WorkoutScreen() {
   const { t } = useTranslation();
-  const { startWorkout, addExercise, isActive, title, settings, loadSettings } = useWorkoutStore();
+  const startWorkout = useWorkoutStore(state => state.startWorkout);
+  const addExercise = useWorkoutStore(state => state.addExercise);
+  const isActive = useWorkoutStore(state => state.isActive);
+  const title = useWorkoutStore(state => state.title);
+  const settings = useWorkoutStore(state => state.settings);
+  const loadSettings = useWorkoutStore(state => state.loadSettings);
   const [routines, setRoutines] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 

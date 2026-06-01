@@ -10,7 +10,7 @@ import { AI_CONFIG } from '../../src/config/aiConfig';
 
 export default function TabLayout() {
   const { t } = useTranslation();
-  const { settings } = useWorkoutStore();
+  const aiTokensBalance = useWorkoutStore(state => state.settings.aiTokensBalance);
   return (
     <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
       <Tabs
@@ -59,7 +59,7 @@ export default function TabLayout() {
         name="coach"
         options={{
           href: AI_CONFIG.status === 'disabled' ? null : undefined,
-          headerTitle: `${t('ui.tabs.coach') || 'AIコーチ'} (${settings.aiTokensBalance}/20)`,
+          headerTitle: `${t('ui.tabs.coach') || 'AIコーチ'} (${aiTokensBalance}/20)`,
           title: t('ui.tabs.coach') || 'AIコーチ',
           tabBarIcon: ({ color }) => <Ionicons name="sparkles" size={26} color={color} />,
         }}

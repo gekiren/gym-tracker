@@ -9,7 +9,7 @@ import { saveSetting, getSettings } from '../src/db/database';
 
 export default function RMCalculatorScreen() {
   const { t } = useTranslation();
-  const { settings } = useWorkoutStore();
+  const settings = useWorkoutStore(state => state.settings);
   const [weight, setWeight] = useState('60');
   const [reps, setReps] = useState('10');
   const [isLoaded, setIsLoaded] = useState(false);

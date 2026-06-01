@@ -12,7 +12,7 @@ import { useWorkoutStore } from '../../src/store/workoutStore';
 export default function WorkoutDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
-  const { settings } = useWorkoutStore();
+  const settings = useWorkoutStore(state => state.settings);
   const [workout, setWorkout] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 

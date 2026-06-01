@@ -12,7 +12,7 @@ export default function EditWorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { settings } = useWorkoutStore();
+  const settings = useWorkoutStore(state => state.settings);
   const { t } = useTranslation();
 
   useEffect(() => {
