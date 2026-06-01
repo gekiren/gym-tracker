@@ -288,29 +288,33 @@ export default function ActiveWorkoutScreen() {
                 <TouchableOpacity onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: ex.exercise_id || ex.id } } as any)}>
                   <Text style={styles.exerciseTitle}>{translateExercise(ex.name)}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.exerciseVariationBtn}
-                  onPress={() => {
-                    setStanceModalTarget({ type: 'exercise', exId: ex.id, currentValue: ex.default_variation || null });
-                    setCustomStance(ex.default_variation || '');
-                    setStanceModalVisible(true);
-                  }}
-                >
-                  <Text style={styles.exerciseVariationText}>
-                    {t('ui.active_workout.stance_label')}: {ex.default_variation ? translateStance(ex.default_variation) : t('ui.active_workout.stance_standard')}
-                  </Text>
-                  <Ionicons name="chevron-down" size={12} color={Theme.colors.primary} />
-                </TouchableOpacity>
-                <View style={styles.exerciseVolumeContainer}>
-                  <Text style={styles.exerciseVolumeLabel}>{t('ui.history.volume_label')}: </Text>
-                  <Text style={styles.exerciseVolumeValue}>
-                    {ex.sets.reduce((sum, s) => {
-                      if (!s.is_completed) return sum;
-                      const bw = (ex.equipment === '自重' && settings.bodyWeight) ? settings.bodyWeight : 0;
-                      return sum + ((s.weight || 0) + bw) * (s.reps || 0);
-                    }, 0)} {settings.weightUnit}
-                  </Text>
-                </View>
+                {settings.displayFields.showStance && (
+                  <TouchableOpacity 
+                    style={styles.exerciseVariationBtn}
+                    onPress={() => {
+                      setStanceModalTarget({ type: 'exercise', exId: ex.id, currentValue: ex.default_variation || null });
+                      setCustomStance(ex.default_variation || '');
+                      setStanceModalVisible(true);
+                    }}
+                  >
+                    <Text style={styles.exerciseVariationText}>
+                      {t('ui.active_workout.stance_label')}: {ex.default_variation ? translateStance(ex.default_variation) : t('ui.active_workout.stance_standard')}
+                    </Text>
+                    <Ionicons name="chevron-down" size={12} color={Theme.colors.primary} />
+                  </TouchableOpacity>
+                )}
+                {settings.displayFields.showVolume && (
+                  <View style={styles.exerciseVolumeContainer}>
+                    <Text style={styles.exerciseVolumeLabel}>{t('ui.history.volume_label')}: </Text>
+                    <Text style={styles.exerciseVolumeValue}>
+                      {ex.sets.reduce((sum, s) => {
+                        if (!s.is_completed) return sum;
+                        const bw = (ex.equipment === '自重' && settings.bodyWeight) ? settings.bodyWeight : 0;
+                        return sum + ((s.weight || 0) + bw) * (s.reps || 0);
+                      }, 0)} {settings.weightUnit}
+                    </Text>
+                  </View>
+                )}
               </View>
               <TouchableOpacity onPress={() => setExpandedExerciseNotes(prev => ({ ...prev, [ex.id]: !prev[ex.id] }))}>
                 <Ionicons 
@@ -335,7 +339,7 @@ export default function ActiveWorkoutScreen() {
                 <Text style={[styles.th, { width: 50 }]}>{t('ui.active_workout.header_set')}</Text>
                 <Text style={[styles.th, { flex: 1 }]}>{ex.equipment === '自重' ? `+ ${settings.weightUnit}` : settings.weightUnit}</Text>
                 <Text style={[styles.th, { width: 70 }]}>{t('ui.active_workout.header_reps')}</Text>
-                <Text style={[styles.th, { width: 55 }]}>{t('ui.active_workout.header_rpe')}</Text>
+                {settings.displayFields.showRpe && <Text style={[styles.th, { width: 55 }]}>{t('ui.active_workout.header_rpe')}</Text>}
                 <Text style={[styles.th, { width: 40 }]}></Text>
               </View>
 
@@ -354,6 +358,7 @@ export default function ActiveWorkoutScreen() {
                 setStanceModalTarget={setStanceModalTarget}
                 setStanceModalVisible={setStanceModalVisible}
                 setCustomStance={setCustomStance}
+                displayFields={settings.displayFields}
               />
             ))}
 
@@ -665,7 +670,7 @@ export default function ActiveWorkoutScreen() {
   );
 }
 
-function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, setActiveSetForCalc, calculateRM, startTime, setStanceModalTarget, setStanceModalVisible, setCustomStance }: any) {
+function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, setActiveSetForCalc, calculateRM, startTime, setStanceModalTarget, setStanceModalVisible, setCustomStance, displayFields }: any) {
   const { t } = useTranslation();
   const [localWeight, setLocalWeight] = useState(set.weight != null ? String(set.weight) : '');
   const [localReps, setLocalReps] = useState(set.reps != null ? String(set.reps) : '');
@@ -849,23 +854,26 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
           />
         )}
 
-        {set.is_completed ? (
-          <View style={[styles.input, { width: 55, flex: 0 }, styles.inputReadOnly]}>
-            <Text style={styles.inputReadOnlyText}>{localRpe || '-'}</Text>
-          </View>
-        ) : (
-          <TextInput 
-            style={[styles.input, { width: 55, flex: 0 }]} 
-            keyboardType="numeric" 
-            placeholder="-" 
-            placeholderTextColor="rgba(255,255,255,0.2)"
-            value={localRpe}
-            onChangeText={(val) => {
-              setLocalRpe(val);
-              updateSet(ex.id, set.id, { rpe: val ? parseFloat(val) : null });
-            }}
-          />
-        )}
+        {/* RPE column */}
+        {displayFields?.showRpe !== false ? (
+          set.is_completed ? (
+            <View style={[styles.input, { width: 55, flex: 0 }, styles.inputReadOnly]}>
+              <Text style={styles.inputReadOnlyText}>{localRpe || '-'}</Text>
+            </View>
+          ) : (
+            <TextInput 
+              style={[styles.input, { width: 55, flex: 0 }]} 
+              keyboardType="numeric" 
+              placeholder="-" 
+              placeholderTextColor="rgba(255,255,255,0.2)"
+              value={localRpe}
+              onChangeText={(val) => {
+                setLocalRpe(val);
+                updateSet(ex.id, set.id, { rpe: val ? parseFloat(val) : null });
+              }}
+            />
+          )
+        ) : null}
         
         {/* Check Button & RM Display */}
         <View style={{ width: 40, alignItems: 'center' }}>
@@ -881,31 +889,33 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
       {/* Meta Row (Variation & RM & Time & PR) */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 8, marginBottom: 8, marginTop: -4 }}>
         {/* Left side: Variation */}
-        <View style={{ flex: 1.8, flexDirection: 'row', alignItems: 'center', paddingLeft: 4 }}>
-          {set.is_completed ? (
-            <Text style={{ color: Theme.colors.textMuted, fontSize: 11 }} numberOfLines={1}>
-              {set.variation ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.variation)}` : `${t('ui.active_workout.stance_label')}: -`}
-            </Text>
-          ) : (
-            <TouchableOpacity 
-              onPress={() => {
-                setStanceModalTarget({ type: 'set', exId: ex.id, setId: set.id, currentValue: set.variation || null });
-                setCustomStance(set.variation || '');
-                setStanceModalVisible(true);
-              }}
-              style={{ flexDirection: 'row', alignItems: 'center' }}
-            >
-              <Text style={{ color: Theme.colors.primary, fontSize: 11, textDecorationLine: 'underline' }} numberOfLines={1}>
-                {set.variation ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.variation)}` : t('ui.active_workout.stance_add_link')}
+        {displayFields?.showStance !== false ? (
+          <View style={{ flex: 1.8, flexDirection: 'row', alignItems: 'center', paddingLeft: 4 }}>
+            {set.is_completed ? (
+              <Text style={{ color: Theme.colors.textMuted, fontSize: 11 }} numberOfLines={1}>
+                {set.variation ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.variation)}` : `${t('ui.active_workout.stance_label')}: -`}
               </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+            ) : (
+              <TouchableOpacity 
+                onPress={() => {
+                  setStanceModalTarget({ type: 'set', exId: ex.id, setId: set.id, currentValue: set.variation || null });
+                  setCustomStance(set.variation || '');
+                  setStanceModalVisible(true);
+                }}
+                style={{ flexDirection: 'row', alignItems: 'center' }}
+              >
+                <Text style={{ color: Theme.colors.primary, fontSize: 11, textDecorationLine: 'underline' }} numberOfLines={1}>
+                  {set.variation ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.variation)}` : t('ui.active_workout.stance_add_link')}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : <View style={{ flex: 1.8 }} />}
 
          {/* Right side: RM & Time & PR */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', flex: 1.2 }}>
            {isPR && <Text style={{ color: '#f5a623', fontSize: 11, fontWeight: 'bold', marginRight: 8 }}>{t('ui.active_workout.pr_label').split(' ')[0]}</Text>}
-           {currentRM != null && <Text style={{ color: Theme.colors.primary, fontSize: 11, marginRight: 8 }}>1RM: {ex.equipment === '自重' ? `BW + ${currentRM}` : currentRM}</Text>}
+           {displayFields?.show1RM !== false && currentRM != null && <Text style={{ color: Theme.colors.primary, fontSize: 11, marginRight: 8 }}>1RM: {ex.equipment === '自重' ? `BW + ${currentRM}` : currentRM}</Text>}
            {restTimeStr ? <Text style={{ color: Theme.colors.textMuted, fontSize: 11, marginRight: 4 }}>{restTimeStr}</Text> : null}
            {timeTakenStr ? <Text style={{ color: Theme.colors.success, fontSize: 11 }}>{timeTakenStr}</Text> : null}
         </View>

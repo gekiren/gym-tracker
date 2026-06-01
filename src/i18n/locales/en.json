@@ -258,7 +258,17 @@
       "retry": "Retry",
       "screen_title_select_exercise": "Select Exercise",
       "body_weight_label": "Body Weight (Optional)",
-      "body_weight_desc": "Used for calorie calculation. A default value is used if not set."
+      "body_weight_desc": "Used for calorie calculation. A default value is used if not set.",
+      "section_display_fields": "Customize Tracking Fields",
+      "display_fields_desc": "Choose which fields to show during a workout.",
+      "display_rpe": "RPE (Perceived Exertion)",
+      "display_rpe_desc": "Show a column to log the perceived difficulty of each set on a 1-10 scale.",
+      "display_1rm": "Estimated 1RM",
+      "display_1rm_desc": "Show an estimated 1-rep max inline with each set based on weight and reps.",
+      "display_volume": "Total Set Volume",
+      "display_volume_desc": "Show total completed volume (weight \u00d7 reps) per exercise.",
+      "display_stance": "Stance / Variation",
+      "display_stance_desc": "Show stance/grip selectors for each exercise and set during a workout."
     },
     "routines": {
       "title": "Routines",

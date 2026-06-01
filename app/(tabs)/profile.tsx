@@ -20,6 +20,10 @@ export default function ProfileScreen() {
   const [weightUnit, setWeightUnit] = useState(settings.weightUnit);
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
   const [bodyWeight, setLocalBodyWeight] = useState(settings.bodyWeight ? settings.bodyWeight.toString() : '');
+  const [showRpe, setShowRpe] = useState(settings.displayFields.showRpe);
+  const [show1RM, setShow1RM] = useState(settings.displayFields.show1RM);
+  const [showVolume, setShowVolume] = useState(settings.displayFields.showVolume);
+  const [showStance, setShowStance] = useState(settings.displayFields.showStance);
 
   useEffect(() => {
     setDefaultRest(settings.defaultRest);
@@ -27,6 +31,10 @@ export default function ProfileScreen() {
     setTimerVibrate(settings.timerVibrate);
     setWeightUnit(settings.weightUnit);
     setLocalBodyWeight(settings.bodyWeight ? settings.bodyWeight.toString() : '');
+    setShowRpe(settings.displayFields.showRpe);
+    setShow1RM(settings.displayFields.show1RM);
+    setShowVolume(settings.displayFields.showVolume);
+    setShowStance(settings.displayFields.showStance);
   }, [settings]);
 
   const handleUpdateRest = async (secs: number) => {
@@ -71,6 +79,21 @@ export default function ProfileScreen() {
         await saveSetting('body_weight', num.toString());
       }
     }
+  };
+
+  const handleToggleDisplayField = async (field: 'showRpe' | 'show1RM' | 'showVolume' | 'showStance', val: boolean) => {
+    const keyMap: Record<string, string> = {
+      showRpe: 'display_rpe',
+      show1RM: 'display_1rm',
+      showVolume: 'display_volume',
+      showStance: 'display_stance',
+    };
+    if (field === 'showRpe') setShowRpe(val);
+    else if (field === 'show1RM') setShow1RM(val);
+    else if (field === 'showVolume') setShowVolume(val);
+    else if (field === 'showStance') setShowStance(val);
+    useWorkoutStore.getState().setDisplayFields({ [field]: val });
+    await saveSetting(keyMap[field], val ? '1' : '0');
   };
 
   const formatTime = (secs: number) => {
@@ -216,6 +239,65 @@ export default function ProfileScreen() {
                 <Text style={[styles.chipText, currentLang === 'en' && styles.chipTextActive]}>🇺🇸 English</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Display Fields Section */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="eye-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+          <Text style={styles.sectionTitle}>{t('ui.profile.section_display_fields')}</Text>
+        </View>
+        <Text style={[styles.settingDesc, { marginBottom: 12, paddingRight: 0 }]}>{t('ui.profile.display_fields_desc')}</Text>
+        <View style={styles.settingCard}>
+          <View style={styles.settingRow}>
+            <View style={{ flex: 1, paddingRight: 16 }}>
+              <Text style={styles.settingLabel}>{t('ui.profile.display_rpe')}</Text>
+              <Text style={styles.settingDesc}>{t('ui.profile.display_rpe_desc')}</Text>
+            </View>
+            <Switch
+              value={showRpe}
+              onValueChange={(v) => handleToggleDisplayField('showRpe', v)}
+              trackColor={{ false: '#333', true: Theme.colors.primary }}
+              thumbColor={'#fff'}
+            />
+          </View>
+          <View style={styles.settingRow}>
+            <View style={{ flex: 1, paddingRight: 16 }}>
+              <Text style={styles.settingLabel}>{t('ui.profile.display_1rm')}</Text>
+              <Text style={styles.settingDesc}>{t('ui.profile.display_1rm_desc')}</Text>
+            </View>
+            <Switch
+              value={show1RM}
+              onValueChange={(v) => handleToggleDisplayField('show1RM', v)}
+              trackColor={{ false: '#333', true: Theme.colors.primary }}
+              thumbColor={'#fff'}
+            />
+          </View>
+          <View style={styles.settingRow}>
+            <View style={{ flex: 1, paddingRight: 16 }}>
+              <Text style={styles.settingLabel}>{t('ui.profile.display_volume')}</Text>
+              <Text style={styles.settingDesc}>{t('ui.profile.display_volume_desc')}</Text>
+            </View>
+            <Switch
+              value={showVolume}
+              onValueChange={(v) => handleToggleDisplayField('showVolume', v)}
+              trackColor={{ false: '#333', true: Theme.colors.primary }}
+              thumbColor={'#fff'}
+            />
+          </View>
+          <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
+            <View style={{ flex: 1, paddingRight: 16 }}>
+              <Text style={styles.settingLabel}>{t('ui.profile.display_stance')}</Text>
+              <Text style={styles.settingDesc}>{t('ui.profile.display_stance_desc')}</Text>
+            </View>
+            <Switch
+              value={showStance}
+              onValueChange={(v) => handleToggleDisplayField('showStance', v)}
+              trackColor={{ false: '#333', true: Theme.colors.primary }}
+              thumbColor={'#fff'}
+            />
           </View>
         </View>
       </View>

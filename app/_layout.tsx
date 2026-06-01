@@ -49,6 +49,13 @@ export default function RootLayout() {
       
       useWorkoutStore.getState().loadSettings(defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight);
       
+      // Display fields
+      const showRpe = storedSettings['display_rpe'] !== '0';
+      const show1RM = storedSettings['display_1rm'] !== '0';
+      const showVolume = storedSettings['display_volume'] !== '0';
+      const showStance = storedSettings['display_stance'] !== '0';
+      useWorkoutStore.getState().setDisplayFields({ showRpe, show1RM, showVolume, showStance });
+      
       const customStancesStr = storedSettings['custom_stances'];
       const stancesMigratedV3 = storedSettings['stances_migrated_v3'] === '1';
       

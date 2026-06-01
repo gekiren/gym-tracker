@@ -253,7 +253,17 @@
       "retry": "再試行",
       "screen_title_select_exercise": "種目を選択",
       "body_weight_label": "体重 (任意)",
-      "body_weight_desc": "カロリー計算に使用します。未設定の場合は簡易的な値が表示されます。"
+      "body_weight_desc": "カロリー計算に使用します。未設定の場合は簡易的な値が表示されます。",
+      "section_display_fields": "記録項目のカスタマイズ",
+      "display_fields_desc": "ワークアウト画面に表示する項目を選択できます。",
+      "display_rpe": "RPE（主観的運動強度）",
+      "display_rpe_desc": "セットの主観的な辛さを10段階で記録する列を表示します。",
+      "display_1rm": "1RM推定値",
+      "display_1rm_desc": "入力した重量・回数から推定最大重量(1RM)をセット行に表示します。",
+      "display_volume": "セット合計ボリューム",
+      "display_volume_desc": "種目ごとの完了セットの総ボリューム(重量×回数)を表示します。",
+      "display_stance": "スタンス・バリエーション",
+      "display_stance_desc": "フォームや握り方などのスタンス設定UIをワークアウト画面に表示します。"
     },
     "routines": {
       "title": "ルーティン",

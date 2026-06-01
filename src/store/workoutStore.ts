@@ -71,12 +71,19 @@ interface WorkoutState {
     needsUnitSelection: boolean;
     customStances: string[];
     bodyWeight: number | null;
+    displayFields: {
+      showRpe: boolean;
+      show1RM: boolean;
+      showVolume: boolean;
+      showStance: boolean;
+    };
   };
   loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null) => void;
   setBodyWeight: (weight: number | null) => void;
   loadCustomStances: (stances: string[]) => void;
   addCustomStance: (stance: string) => void;
   removeCustomStance: (stance: string) => void;
+  setDisplayFields: (fields: Partial<{ showRpe: boolean; show1RM: boolean; showVolume: boolean; showStance: boolean }>) => void;
 
   // Routine Draft Mode
   draftRoutine: {
@@ -124,7 +131,13 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     weightUnit: 'kg',
     needsUnitSelection: false,
     customStances: [],
-    bodyWeight: null
+    bodyWeight: null,
+    displayFields: {
+      showRpe: true,
+      show1RM: true,
+      showVolume: true,
+      showStance: true,
+    }
   },
 
   loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false, bodyWeight: number | null = null) => set((state) => ({
@@ -145,6 +158,13 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
   removeCustomStance: (stance: string) => set((state) => ({
     settings: { ...state.settings, customStances: state.settings.customStances.filter(s => s !== stance) }
+  })),
+
+  setDisplayFields: (fields) => set((state) => ({
+    settings: {
+      ...state.settings,
+      displayFields: { ...state.settings.displayFields, ...fields }
+    }
   })),
 
   draftRoutine: { title: '', exercises: [] },
