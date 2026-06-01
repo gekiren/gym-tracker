@@ -341,9 +341,11 @@ export default function ActiveWorkoutScreen() {
                   <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>{t('ui.active_workout.header_time')}</Text>
                 ) : (
                   <>
-                    <Text style={[styles.th, { width: 90 }]}>{ex.equipment === '自重' ? `+ ${settings.weightUnit}` : settings.weightUnit}</Text>
-                    <Text style={[styles.th, { width: 70 }]}>{t('ui.active_workout.header_reps')}</Text>
-                    {settings.displayFields.showRpe && <Text style={[styles.th, { width: 55 }]}>{t('ui.active_workout.header_rpe')}</Text>}
+                    <Text style={[styles.th, { width: 90 }]}>{ex.name === 'プランク' ? '加重' : (ex.equipment === '自重' ? `+ ${settings.weightUnit}` : settings.weightUnit)}</Text>
+                    <Text style={[styles.th, { width: 70 }]}>{ex.name === 'プランク' ? '秒数' : t('ui.active_workout.header_reps')}</Text>
+                    {(settings.displayFields.showRpe || ex.name === 'プランク') && (
+                      <Text style={[styles.th, { width: 55 }]}>{ex.name === 'プランク' ? '計測' : t('ui.active_workout.header_rpe')}</Text>
+                    )}
                   </>
                 )}
                 <Text style={[styles.th, { width: 40 }]}></Text>
@@ -676,6 +678,52 @@ export default function ActiveWorkoutScreen() {
   );
 }
 
+function TimerButton({ onTimeCapture }: { onTimeCapture: (secs: number) => void }) {
+  const [isActive, setIsActive] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    let interval: any = null;
+    if (isActive) {
+      interval = setInterval(() => {
+        setSeconds((prev) => prev + 1);
+      }, 1000);
+    } else if (!isActive && seconds !== 0) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isActive, seconds]);
+
+  const handlePress = () => {
+    if (isActive) {
+      // Stop and capture
+      onTimeCapture(seconds);
+      setIsActive(false);
+      setSeconds(0);
+    } else {
+      // Start
+      setSeconds(0);
+      setIsActive(true);
+    }
+  };
+
+  return (
+    <TouchableOpacity 
+      style={[
+        styles.timerInputBtn, 
+        isActive && { backgroundColor: Theme.colors.danger }
+      ]} 
+      onPress={handlePress}
+    >
+      {isActive ? (
+        <Text style={styles.timerInputBtnText}>{seconds}s</Text>
+      ) : (
+        <Ionicons name="play" size={16} color="#fff" />
+      )}
+    </TouchableOpacity>
+  );
+}
+
 function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, setActiveSetForCalc, calculateRM, startTime, setStanceModalTarget, setStanceModalVisible, setCustomStance, displayFields }: any) {
   const { t } = useTranslation();
   const [localWeight, setLocalWeight] = useState(set.weight != null ? String(set.weight) : '');
@@ -895,73 +943,111 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
           )
         ) : (
           <>
-        {set.is_completed ? (
-          <View style={[styles.input, styles.inputReadOnly]}>
-            <Text style={styles.inputReadOnlyText}>{localWeight || (set.prev_weight ? String(set.prev_weight) : '-')}</Text>
-          </View>
-        ) : (
-          <TextInput 
-            style={styles.input} 
-            keyboardType="numeric" 
-            placeholder={set.prev_weight ? String(set.prev_weight) : "-"} 
-            placeholderTextColor="rgba(255,255,255,0.2)"
-            value={localWeight}
-            selection={localWeight === '' ? (weightSel ?? { start: 0, end: 0 }) : weightSel}
-            onSelectionChange={() => {}}
-            onChangeText={handleWeightChange}
-            onFocus={() => {
-              setActiveSetForCalc({ exId: ex.id, setId: set.id });
-              if (localWeight === '') setWeightSel({ start: 0, end: 0 });
-            }}
-            onBlur={() => setWeightSel(undefined)}
-          />
-        )}
+            {/* Weight Column */}
+            {ex.name === 'プランク' ? (
+              <View style={[styles.input, styles.inputReadOnly, { backgroundColor: '#1e1e1e' }]}>
+                <Text style={[styles.inputReadOnlyText, { color: Theme.colors.textMuted }]}>自重</Text>
+              </View>
+            ) : set.is_completed ? (
+              <View style={[styles.input, styles.inputReadOnly]}>
+                <Text style={styles.inputReadOnlyText}>{localWeight || (set.prev_weight ? String(set.prev_weight) : '-')}</Text>
+              </View>
+            ) : (
+              <TextInput 
+                style={styles.input} 
+                keyboardType="numeric" 
+                placeholder={set.prev_weight ? String(set.prev_weight) : "-"} 
+                placeholderTextColor="rgba(255,255,255,0.2)"
+                value={localWeight}
+                selection={localWeight === '' ? (weightSel ?? { start: 0, end: 0 }) : weightSel}
+                onSelectionChange={() => {}}
+                onChangeText={handleWeightChange}
+                onFocus={() => {
+                  setActiveSetForCalc({ exId: ex.id, setId: set.id });
+                  if (localWeight === '') setWeightSel({ start: 0, end: 0 });
+                }}
+                onBlur={() => setWeightSel(undefined)}
+              />
+            )}
 
-        {set.is_completed ? (
-          <View style={[styles.input, { width: 70 }, styles.inputReadOnly]}>
-            <Text style={styles.inputReadOnlyText}>{localReps || (set.prev_reps ? String(set.prev_reps) : '-')}</Text>
-          </View>
-        ) : (
-          <TextInput 
-            style={[styles.input, { width: 70 }]} 
-            keyboardType="numeric" 
-            placeholder={set.prev_reps ? String(set.prev_reps) : "-"} 
-            placeholderTextColor="rgba(255,255,255,0.2)"
-            value={localReps}
-            selection={localReps === '' ? (repsSel ?? { start: 0, end: 0 }) : repsSel}
-            onSelectionChange={() => {}}
-            onChangeText={handleRepsChange}
-            onFocus={() => { if (localReps === '') setRepsSel({ start: 0, end: 0 }); }}
-            onBlur={() => setRepsSel(undefined)}
-          />
-        )}
+            {/* Reps Column */}
+            {ex.name === 'プランク' ? (
+              set.is_completed ? (
+                <View style={[styles.input, { width: 70 }, styles.inputReadOnly]}>
+                  <Text style={styles.inputReadOnlyText}>{localReps ? `${localReps}秒` : (set.prev_reps ? `${set.prev_reps}秒` : '-')}</Text>
+                </View>
+              ) : (
+                <TextInput 
+                  style={[styles.input, { width: 70 }]} 
+                  keyboardType="numeric" 
+                  placeholder={set.prev_reps ? `${set.prev_reps}秒` : "秒"} 
+                  placeholderTextColor="rgba(255,255,255,0.2)"
+                  value={localReps}
+                  selection={localReps === '' ? (repsSel ?? { start: 0, end: 0 }) : repsSel}
+                  onSelectionChange={() => {}}
+                  onChangeText={handleRepsChange}
+                  onFocus={() => { if (localReps === '') setRepsSel({ start: 0, end: 0 }); }}
+                  onBlur={() => setRepsSel(undefined)}
+                />
+              )
+            ) : set.is_completed ? (
+              <View style={[styles.input, { width: 70 }, styles.inputReadOnly]}>
+                <Text style={styles.inputReadOnlyText}>{localReps || (set.prev_reps ? String(set.prev_reps) : '-')}</Text>
+              </View>
+            ) : (
+              <TextInput 
+                style={[styles.input, { width: 70 }]} 
+                keyboardType="numeric" 
+                placeholder={set.prev_reps ? String(set.prev_reps) : "-"} 
+                placeholderTextColor="rgba(255,255,255,0.2)"
+                value={localReps}
+                selection={localReps === '' ? (repsSel ?? { start: 0, end: 0 }) : repsSel}
+                onSelectionChange={() => {}}
+                onChangeText={handleRepsChange}
+                onFocus={() => { if (localReps === '') setRepsSel({ start: 0, end: 0 }); }}
+                onBlur={() => setRepsSel(undefined)}
+              />
+            )}
 
-        {/* RPE column */}
-        {displayFields?.showRpe !== false ? (
-          set.is_completed ? (
-            <View style={[styles.input, { width: 55 }, styles.inputReadOnly]}>
-              <Text style={styles.inputReadOnlyText}>{localRpe || '-'}</Text>
-            </View>
-          ) : (
-            <TextInput 
-              style={[styles.input, { width: 55 }]} 
-              keyboardType="numeric" 
-              placeholder="-" 
-              placeholderTextColor="rgba(255,255,255,0.2)"
-              value={localRpe}
-              selection={localRpe === '' ? (rpeSel ?? { start: 0, end: 0 }) : rpeSel}
-              onSelectionChange={() => {}}
-              onChangeText={(val) => {
-                setLocalRpe(val);
-                setRpeSel(undefined);
-                updateSet(ex.id, set.id, { rpe: val ? parseFloat(val) : null });
-              }}
-              onFocus={() => { if (localRpe === '') setRpeSel({ start: 0, end: 0 }); }}
-              onBlur={() => setRpeSel(undefined)}
-            />
-          )
-        ) : null}
-        </>
+            {/* RPE Column */}
+            {displayFields?.showRpe !== false ? (
+              ex.name === 'プランク' ? (
+                set.is_completed ? (
+                  <View style={[styles.input, { width: 55 }, styles.inputReadOnly]}>
+                    <Ionicons name="timer-outline" size={18} color={Theme.colors.textMuted} />
+                  </View>
+                ) : (
+                  <TimerButton 
+                    onTimeCapture={(seconds: number) => {
+                      setLocalReps(String(seconds));
+                      updateSet(ex.id, set.id, { reps: seconds });
+                    }}
+                  />
+                )
+              ) : set.is_completed ? (
+                <View style={[styles.input, { width: 55 }, styles.inputReadOnly]}>
+                  <Text style={styles.inputReadOnlyText}>{localRpe || '-'}</Text>
+                </View>
+              ) : (
+                <TextInput 
+                  style={[styles.input, { width: 55 }]} 
+                  keyboardType="numeric" 
+                  placeholder="-" 
+                  placeholderTextColor="rgba(255,255,255,0.2)"
+                  value={localRpe}
+                  selection={localRpe === '' ? (rpeSel ?? { start: 0, end: 0 }) : rpeSel}
+                  onSelectionChange={() => {}}
+                  onChangeText={(val) => {
+                    setLocalRpe(val);
+                    setRpeSel(undefined);
+                    updateSet(ex.id, set.id, { rpe: val ? parseFloat(val) : null });
+                  }}
+                  onFocus={() => { if (localRpe === '') setRpeSel({ start: 0, end: 0 }); }}
+                  onBlur={() => setRpeSel(undefined)}
+                />
+              )
+            ) : null}
+          </>
         )}
 
         
@@ -1103,5 +1189,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 80,
     height: '100%',
+  },
+  timerInputBtn: {
+    width: 55,
+    marginHorizontal: 3,
+    backgroundColor: '#333',
+    borderRadius: 4,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 36
+  },
+  timerInputBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold'
   }
 });
