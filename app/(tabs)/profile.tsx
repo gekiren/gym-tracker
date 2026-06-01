@@ -13,7 +13,8 @@ const REST_OPTIONS = [30, 60, 90, 120, 150, 180, 240, 300]; // in seconds
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
-  const { settings, loadSettings } = useWorkoutStore();
+  const settings = useWorkoutStore(state => state.settings);
+  const loadSettings = useWorkoutStore(state => state.loadSettings);
   const [defaultRest, setDefaultRest] = useState(settings.defaultRest);
   const [autoRest, setAutoRest] = useState(settings.autoRest);
   const [timerVibrate, setTimerVibrate] = useState(settings.timerVibrate);

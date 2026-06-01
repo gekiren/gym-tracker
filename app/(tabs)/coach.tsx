@@ -28,7 +28,8 @@ interface ChatMessage {
 
 export default function CoachScreen() {
   const { t } = useTranslation();
-  const { settings, setAITokensBalance } = useWorkoutStore();
+  const settings = useWorkoutStore(state => state.settings);
+  const setAITokensBalance = useWorkoutStore(state => state.setAITokensBalance);
   const params = useLocalSearchParams<{ contextPrompt?: string; prefillMessage?: string; title?: string }>();
 
   if (AI_CONFIG.status !== 'active') {

@@ -34,10 +34,12 @@ export default function SelectExerciseScreen() {
   const [useDefaultStance, setUseDefaultStance] = useState(false);
   const [newDefaultStance, setNewDefaultStance] = useState('');
 
-  const { addExercise, addDraftExercise, settings } = useWorkoutStore();
+  const addExercise = useWorkoutStore(state => state.addExercise);
+  const addDraftExercise = useWorkoutStore(state => state.addDraftExercise);
+  const customStances = useWorkoutStore(state => state.settings.customStances);
   const { mode } = useLocalSearchParams<{ mode?: string }>();
 
-  const presetStances = settings?.customStances || [];
+  const presetStances = customStances || [];
 
   useEffect(() => {
     fetchAll();
@@ -93,7 +95,7 @@ export default function SelectExerciseScreen() {
       const defaultVar = useDefaultStance && newDefaultStance.trim() ? newDefaultStance.trim() : null;
       if (defaultVar) {
         useWorkoutStore.getState().addCustomStance(defaultVar);
-        saveSetting('custom_stances', JSON.stringify(Array.from(new Set([...(settings?.customStances || []), defaultVar]))));
+        saveSetting('custom_stances', JSON.stringify(Array.from(new Set([...(customStances || []), defaultVar]))));
       }
       const newId = await addCustomExercise(
         newName.trim(),

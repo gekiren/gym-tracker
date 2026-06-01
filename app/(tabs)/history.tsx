@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { AI_CONFIG } from '../../src/config/aiConfig';
 
 export default function HistoryScreen() {
-  const { settings } = useWorkoutStore();
+  const settings = useWorkoutStore(state => state.settings);
   const [workouts, setWorkouts] = useState<any[]>([]);
   const { t } = useTranslation();
 

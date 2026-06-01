@@ -18,7 +18,9 @@ export default function ExerciseDetailScreen() {
   const [history, setHistory] = useState<any[]>([]);
   const [personalRecords, setPersonalRecords] = useState<Record<string, Record<number, number>>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const { settings, addCustomStance, removeCustomStance } = useWorkoutStore();
+  const settings = useWorkoutStore(state => state.settings);
+  const addCustomStance = useWorkoutStore(state => state.addCustomStance);
+  const removeCustomStance = useWorkoutStore(state => state.removeCustomStance);
   const { t } = useTranslation();
   
   const [isAddingStance, setIsAddingStance] = useState(false);
