@@ -24,6 +24,7 @@ export type ActiveExercise = {
   name: string;
   is_unilateral?: number;
   equipment?: string;
+  muscle_group?: string;
   sets: SetRecord[];
   notes: string;
   personalRecords?: Record<string, Record<number, number>>;
@@ -43,7 +44,7 @@ interface WorkoutState {
   updateExerciseNotes: (exerciseId: string, notes: string) => void;
   updateExerciseVariation: (exerciseId: string, variation: string | null) => void;
   endWorkout: () => void;
-  addExercise: (exercise: { id: number, name: string, previousSets?: any[], personalRecords?: Record<string, Record<number, number>>, is_unilateral?: number, default_variation?: string | null, equipment?: string }) => void;
+  addExercise: (exercise: { id: number, name: string, previousSets?: any[], personalRecords?: Record<string, Record<number, number>>, is_unilateral?: number, default_variation?: string | null, equipment?: string, muscle_group?: string }) => void;
   addSet: (exerciseId: string) => void;
   removeSet: (exerciseId: string, setId: string) => void;
   updateSet: (exerciseId: string, setId: string, changes: Partial<SetRecord>) => void;
@@ -263,6 +264,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           name: exercise.name,
           is_unilateral: exercise.is_unilateral,
           equipment: exercise.equipment,
+          muscle_group: exercise.muscle_group,
           sets: initialSets,
           notes: '',
           personalRecords: exercise.personalRecords || {},

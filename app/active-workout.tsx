@@ -337,9 +337,15 @@ export default function ActiveWorkoutScreen() {
             )}
               <View style={styles.tableHeader}>
                 <Text style={[styles.th, { width: 50 }]}>{t('ui.active_workout.header_set')}</Text>
-                <Text style={[styles.th, { flex: 1 }]}>{ex.equipment === '自重' ? `+ ${settings.weightUnit}` : settings.weightUnit}</Text>
-                <Text style={[styles.th, { width: 70 }]}>{t('ui.active_workout.header_reps')}</Text>
-                {settings.displayFields.showRpe && <Text style={[styles.th, { width: 55 }]}>{t('ui.active_workout.header_rpe')}</Text>}
+                {ex.muscle_group === '有酸素' ? (
+                  <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>{t('ui.active_workout.header_time')}</Text>
+                ) : (
+                  <>
+                    <Text style={[styles.th, { width: 90 }]}>{ex.equipment === '自重' ? `+ ${settings.weightUnit}` : settings.weightUnit}</Text>
+                    <Text style={[styles.th, { width: 70 }]}>{t('ui.active_workout.header_reps')}</Text>
+                    {settings.displayFields.showRpe && <Text style={[styles.th, { width: 55 }]}>{t('ui.active_workout.header_rpe')}</Text>}
+                  </>
+                )}
                 <Text style={[styles.th, { width: 40 }]}></Text>
               </View>
 
@@ -675,6 +681,31 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
   const [localWeight, setLocalWeight] = useState(set.weight != null ? String(set.weight) : '');
   const [localReps, setLocalReps] = useState(set.reps != null ? String(set.reps) : '');
   const [localRpe, setLocalRpe] = useState(set.rpe != null ? String(set.rpe) : '');
+  // cursor fix: keep selection at start when field is empty, so | appears centered
+  const [weightSel, setWeightSel] = useState<{start:number;end:number}|undefined>(undefined);
+  const [repsSel, setRepsSel] = useState<{start:number;end:number}|undefined>(undefined);
+  const [rpeSel, setRpeSel] = useState<{start:number;end:number}|undefined>(undefined);
+
+  // 有酸素ストップウォッチ state
+  const isAerobic = ex.muscle_group === '有酸素';
+  const [swRunning, setSwRunning] = useState(false);
+  const [swElapsed, setSwElapsed] = useState(set.work_seconds != null ? set.work_seconds : 0);
+  const [swStartTs, setSwStartTs] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isAerobic) return;
+    if (!swRunning) return;
+    const iv = setInterval(() => {
+      setSwElapsed(Math.floor((Date.now() - (swStartTs ?? Date.now())) / 1000));
+    }, 500);
+    return () => clearInterval(iv);
+  }, [swRunning, swStartTs, isAerobic]);
+
+  const formatAerobicTime = (secs: number) => {
+    const m = Math.min(Math.floor(secs / 60), 99);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   // 外部からの更新（プレート計算アプリなどでストアから値が変わった場合）を検知して同期
   useEffect(() => {
@@ -704,6 +735,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
   const handleWeightChange = (val: string) => {
     if (val === '' || /^\d{0,3}(\.\d{0,1})?$/.test(val)) {
       setLocalWeight(val);
+      setWeightSel(undefined);
       updateSet(ex.id, set.id, { weight: val !== '' && val !== '.' ? parseFloat(val) : null });
     }
   };
@@ -711,6 +743,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
   const handleRepsChange = (val: string) => {
     if (val === '' || /^\d{0,2}$/.test(val)) {
       setLocalReps(val);
+      setRepsSel(undefined);
       updateSet(ex.id, set.id, { reps: val !== '' ? parseInt(val, 10) : null });
     }
   };
@@ -823,6 +856,45 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
           <Text style={styles.tdSet}>{set.set_number}{set.side ? `\n(${set.side})` : ''}</Text>
         </View>
 
+        {isAerobic ? (
+          /* 有酸素モード: ストップウォッチ表示 */
+          set.is_completed ? (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 }}>
+              <Text style={{ color: Theme.colors.success, fontSize: 22, fontWeight: 'bold', letterSpacing: 2 }}>
+                {formatAerobicTime(set.work_seconds ?? swElapsed)}
+              </Text>
+            </View>
+          ) : (
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+              <Text style={{ color: Theme.colors.primary, fontSize: 22, fontWeight: 'bold', letterSpacing: 2, minWidth: 60, textAlign: 'center' }}>
+                {formatAerobicTime(swElapsed)}
+              </Text>
+              <TouchableOpacity
+                style={{ backgroundColor: swRunning ? Theme.colors.danger : Theme.colors.success, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 }}
+                onPress={() => {
+                  if (!swRunning) {
+                    const now = Date.now() - swElapsed * 1000;
+                    setSwStartTs(now);
+                    setSwRunning(true);
+                  } else {
+                    setSwRunning(false);
+                    updateSet(ex.id, set.id, { work_seconds: swElapsed });
+                  }
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14 }}>
+                  {swRunning ? t('ui.active_workout.aerobic_stop') : (swElapsed > 0 ? t('ui.active_workout.aerobic_resume') : t('ui.active_workout.aerobic_start'))}
+                </Text>
+              </TouchableOpacity>
+              {swElapsed > 0 && !swRunning && (
+                <TouchableOpacity onPress={() => { setSwElapsed(0); setSwStartTs(null); updateSet(ex.id, set.id, { work_seconds: null }); }}>
+                  <Ionicons name="refresh" size={18} color={Theme.colors.textMuted} />
+                </TouchableOpacity>
+              )}
+            </View>
+          )
+        ) : (
+          <>
         {set.is_completed ? (
           <View style={[styles.input, styles.inputReadOnly]}>
             <Text style={styles.inputReadOnlyText}>{localWeight || (set.prev_weight ? String(set.prev_weight) : '-')}</Text>
@@ -834,46 +906,64 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
             placeholder={set.prev_weight ? String(set.prev_weight) : "-"} 
             placeholderTextColor="rgba(255,255,255,0.2)"
             value={localWeight}
+            selection={localWeight === '' ? (weightSel ?? { start: 0, end: 0 }) : weightSel}
+            onSelectionChange={() => {}}
             onChangeText={handleWeightChange}
-            onFocus={() => setActiveSetForCalc({ exId: ex.id, setId: set.id })}
+            onFocus={() => {
+              setActiveSetForCalc({ exId: ex.id, setId: set.id });
+              if (localWeight === '') setWeightSel({ start: 0, end: 0 });
+            }}
+            onBlur={() => setWeightSel(undefined)}
           />
         )}
 
         {set.is_completed ? (
-          <View style={[styles.input, { width: 70, flex: 0 }, styles.inputReadOnly]}>
+          <View style={[styles.input, { width: 70 }, styles.inputReadOnly]}>
             <Text style={styles.inputReadOnlyText}>{localReps || (set.prev_reps ? String(set.prev_reps) : '-')}</Text>
           </View>
         ) : (
           <TextInput 
-            style={[styles.input, { width: 70, flex: 0 }]} 
+            style={[styles.input, { width: 70 }]} 
             keyboardType="numeric" 
             placeholder={set.prev_reps ? String(set.prev_reps) : "-"} 
             placeholderTextColor="rgba(255,255,255,0.2)"
             value={localReps}
+            selection={localReps === '' ? (repsSel ?? { start: 0, end: 0 }) : repsSel}
+            onSelectionChange={() => {}}
             onChangeText={handleRepsChange}
+            onFocus={() => { if (localReps === '') setRepsSel({ start: 0, end: 0 }); }}
+            onBlur={() => setRepsSel(undefined)}
           />
         )}
 
         {/* RPE column */}
         {displayFields?.showRpe !== false ? (
           set.is_completed ? (
-            <View style={[styles.input, { width: 55, flex: 0 }, styles.inputReadOnly]}>
+            <View style={[styles.input, { width: 55 }, styles.inputReadOnly]}>
               <Text style={styles.inputReadOnlyText}>{localRpe || '-'}</Text>
             </View>
           ) : (
             <TextInput 
-              style={[styles.input, { width: 55, flex: 0 }]} 
+              style={[styles.input, { width: 55 }]} 
               keyboardType="numeric" 
               placeholder="-" 
               placeholderTextColor="rgba(255,255,255,0.2)"
               value={localRpe}
+              selection={localRpe === '' ? (rpeSel ?? { start: 0, end: 0 }) : rpeSel}
+              onSelectionChange={() => {}}
               onChangeText={(val) => {
                 setLocalRpe(val);
+                setRpeSel(undefined);
                 updateSet(ex.id, set.id, { rpe: val ? parseFloat(val) : null });
               }}
+              onFocus={() => { if (localRpe === '') setRpeSel({ start: 0, end: 0 }); }}
+              onBlur={() => setRpeSel(undefined)}
             />
           )
         ) : null}
+        </>
+        )}
+
         
         {/* Check Button & RM Display */}
         <View style={{ width: 40, alignItems: 'center' }}>
@@ -945,7 +1035,7 @@ const styles = StyleSheet.create({
   tdSet: { color: Theme.colors.text, textAlign: 'center', fontSize: 16, fontWeight: '500' },
   setVariationBadge: { marginTop: 4, backgroundColor: '#333', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 },
   setVariationText: { color: Theme.colors.textMuted, fontSize: 10, fontWeight: 'bold' },
-  input: { backgroundColor: '#2a2a2a', color: Theme.colors.text, flex: 1, marginHorizontal: 3, borderRadius: 4, paddingVertical: 6, textAlign: 'center', fontSize: 16 },
+  input: { backgroundColor: '#2a2a2a', color: Theme.colors.text, width: 90, marginHorizontal: 3, borderRadius: 4, paddingVertical: 6, textAlign: 'center', fontSize: 16 },
   inputReadOnly: { opacity: 0.7, justifyContent: 'center', alignItems: 'center' },
   inputReadOnlyText: { color: Theme.colors.text, fontSize: 16 },
   checkBtn: { width: 36, height: 36, backgroundColor: '#333', borderRadius: 4, alignItems: 'center', justifyContent: 'center' },

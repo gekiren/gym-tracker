@@ -126,7 +126,7 @@ export default function ExercisesScreen() {
   // Dynamically extract unique categories from existing exercises
   const dynamicCategories = Array.from(new Set(exercises.map(e => e.muscle_group).filter(Boolean)));
   // Ensure default standard ones exist for filtering and selection if they happen to miss
-  const allCategories = Array.from(new Set(['胸', '背中', '肩', '腕', '脚', '腹筋', ...dynamicCategories])).filter(c => c !== 'その他');
+  const allCategories = Array.from(new Set(['胸', '背中', '肩', '腕', '脚', '腹筋', '有酸素', ...dynamicCategories])).filter(c => c !== 'その他');
 
   const filterCategories = ['すべて', ...allCategories, 'その他'];
   const allEquipments = Array.from(new Set(['バーベル', 'ダンベル', 'マシン', 'ケーブル', 'スミスマシン', 'EZバー', '自重', 'ウエイト', ...exercises.map(e => e.equipment).filter(Boolean)])).filter(e => e !== 'その他');

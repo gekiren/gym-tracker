@@ -209,8 +209,28 @@ export const initDB = async () => {
     // Migration: Set is_unilateral = 1 for specific exercises
     const unilateralExercises = ['ワンアームダンベルロウ', 'コンセントレーションカール', 'キックバック', 'ブルガリアンスプリットスクワット', 'ランジ', 'ウォーキングランジ'];
     await _db.runAsync(`UPDATE exercises SET is_unilateral = 1 WHERE name IN (${unilateralExercises.map(() => '?').join(',')})`, unilateralExercises);
+
+    // Migration: Add new aerobic exercises if they do not exist
+    const aerobicEx = [
+      { name: 'エアロバイク', group: '有酸素', equip: 'マシン' },
+      { name: 'トレッドミル', group: '有酸素', equip: 'マシン' },
+      { name: 'ランニング', group: '有酸素', equip: '自重' },
+      { name: 'ウォーキング', group: '有酸素', equip: '自重' },
+      { name: 'ローイングマシン', group: '有酸素', equip: 'マシン' },
+      { name: 'クロストレーナー', group: '有酸素', equip: 'マシン' },
+      { name: '縄跳び', group: '有酸素', equip: '自重' }
+    ];
+    for (const ex of aerobicEx) {
+      const existing = await _db.getFirstAsync<{ id: number }>('SELECT id FROM exercises WHERE name = ?', [ex.name]);
+      if (!existing) {
+        await _db.runAsync(
+          'INSERT INTO exercises (name, muscle_group, equipment, is_unilateral) VALUES (?, ?, ?, 0)',
+          [ex.name, ex.group, ex.equip]
+        );
+      }
+    }
   } catch (e) {
-    console.warn('Migration: Failed to rename/cleanup exercises', e);
+    console.warn('Migration: Failed to rename/cleanup/seed aerobic exercises', e);
   }
 
   // Seed exercises if missing
@@ -313,7 +333,16 @@ export const initDB = async () => {
     { name: 'ケーブルクランチ', group: '腹筋', equip: 'ケーブル' },
     { name: 'ロシアンツイスト', group: '腹筋', equip: 'ウエイト' },
     { name: 'マウンテンクライマー', group: '腹筋', equip: '自重' },
-    { name: 'アブドミナルマシン', group: '腹筋', equip: 'マシン' }
+    { name: 'アブドミナルマシン', group: '腹筋', equip: 'マシン' },
+
+    // Aerobic
+    { name: 'エアロバイク', group: '有酸素', equip: 'マシン' },
+    { name: 'トレッドミル', group: '有酸素', equip: 'マシン' },
+    { name: 'ランニング', group: '有酸素', equip: '自重' },
+    { name: 'ウォーキング', group: '有酸素', equip: '自重' },
+    { name: 'ローイングマシン', group: '有酸素', equip: 'マシン' },
+    { name: 'クロストレーナー', group: '有酸素', equip: 'マシン' },
+    { name: '縄跳び', group: '有酸素', equip: '自重' }
   ];
 
   const seedFlag = await _db.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "initial_seeding_done"');
