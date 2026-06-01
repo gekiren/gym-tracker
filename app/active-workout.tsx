@@ -9,6 +9,7 @@ import { Theme } from '../src/theme';
 import { saveWorkout, saveSetting } from '../src/db/database';
 import { useTranslation } from 'react-i18next';
 import { translateExercise, translateStance } from '../src/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ActiveWorkoutScreen() {
   const { t } = useTranslation();
@@ -24,6 +25,7 @@ export default function ActiveWorkoutScreen() {
   const [showWorkoutNotes, setShowWorkoutNotes] = useState(false);
   const [expandedExerciseNotes, setExpandedExerciseNotes] = useState<Record<string, boolean>>({});
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const insets = useSafeAreaInsets();
 
   const handleAICoachWorkout = () => {
     if (exercises.length === 0) {
@@ -450,7 +452,7 @@ export default function ActiveWorkoutScreen() {
 
       {/* Floating Rest Timer UI */}
       {restTimer.isActive && (
-        <View style={styles.timerOverlay}>
+        <View style={[styles.timerOverlay, { bottom: insets.bottom + 24 }]}>
           <View style={styles.timerContent}>
             <View>
               <Text style={styles.timerLabel}>{t('ui.active_workout.rest_label_resting')}</Text>
@@ -473,7 +475,7 @@ export default function ActiveWorkoutScreen() {
 
       {/* Floating Manual Start Button (when not resting) */}
       {isWorkoutStarted && !restTimer.isActive && (
-        <View style={styles.manualStartOverlay}>
+        <View style={[styles.manualStartOverlay, { bottom: insets.bottom + 20 }]}>
           <TouchableOpacity style={styles.manualStartBtn} onPress={() => {
             markWorkStart();
             Alert.alert("", t('ui.active_workout.manual_start_success') || "Started");
