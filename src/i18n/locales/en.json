@@ -296,7 +296,12 @@
       "ai_tokens_balance": "Monthly Token Balance",
       "ai_tokens_desc": "Receive secure and advanced training guidance powered by Cloudflare Worker & Gemini API.",
       "quota_exhausted_alert": "今月の利用枠が残っていません。",
-      "ai_tokens_reset_desc": "Your token quota will automatically reset to 20 sets on the 1st of every month."
+      "ai_tokens_reset_desc": "Your token quota will automatically reset to 20 sets on the 1st of every month.",
+      "account_type_label": "Account Type",
+      "account_basic": "Basic Plan",
+      "account_premium": "Premium Plan",
+      "account_early_adopter": "Early Adopter (Unlimited)"
+
     },
     "routines": {
       "title": "Routines",

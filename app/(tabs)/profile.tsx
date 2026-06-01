@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import Constants from 'expo-constants';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
-import { saveSetting, resetDatabase } from '../../src/db/database';
+import { saveSetting, resetDatabase, getSettings } from '../../src/db/database';
 import { useTranslation } from 'react-i18next';
 import { changeLanguage, getCurrentLanguage } from '../../src/i18n';
 
@@ -29,6 +29,7 @@ export default function ProfileScreen() {
   const [isResetModalVisible, setIsResetModalVisible] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  const [accountType, setAccountType] = useState<'basic' | 'premium' | 'early_adopter'>('basic');
 
   useEffect(() => {
     setDefaultRest(settings.defaultRest);
@@ -40,6 +41,25 @@ export default function ProfileScreen() {
     setShow1RM(settings.displayFields.show1RM);
     setShowVolume(settings.displayFields.showVolume);
     setShowStance(settings.displayFields.showStance);
+
+    const fetchAccountType = async () => {
+      try {
+        const stored = await getSettings();
+        const isEarly = stored['is_early_adopter'] === 'true';
+        const isPremium = stored['premium_until'] === 'perpetual' || (stored['premium_until'] !== '' && !isNaN(Date.parse(stored['premium_until'])) && Date.parse(stored['premium_until']) > Date.now());
+        
+        if (isEarly) {
+          setAccountType('early_adopter');
+        } else if (isPremium) {
+          setAccountType('premium');
+        } else {
+          setAccountType('basic');
+        }
+      } catch (err) {
+        console.warn('Failed to fetch account type', err);
+      }
+    };
+    fetchAccountType();
   }, [settings]);
 
   const handleResetDatabase = async () => {
@@ -150,6 +170,38 @@ export default function ProfileScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={styles.title}>{t('ui.profile.title')}</Text>
+      </View>
+
+      {/* Account Type Card */}
+      <View style={styles.accountCard}>
+        <View style={styles.accountIconContainer}>
+          <Ionicons 
+            name={
+              accountType === 'early_adopter' ? 'ribbon-sharp' :
+              accountType === 'premium' ? 'star-sharp' : 'person-sharp'
+            } 
+            size={22} 
+            color={
+              accountType === 'early_adopter' ? '#ffd700' : 
+              accountType === 'premium' ? '#4facfe' : 
+              Theme.colors.textMuted
+            } 
+          />
+        </View>
+        <View style={styles.accountInfo}>
+          <Text style={styles.accountLabel}>{t('ui.profile.account_type_label') || 'アカウントの種類'}</Text>
+          <Text style={[
+            styles.accountValue,
+            accountType === 'early_adopter' && styles.accountValueEarly,
+            accountType === 'premium' && styles.accountValuePremium
+          ]}>
+            {
+              accountType === 'early_adopter' ? (t('ui.profile.account_early_adopter') || 'アーリーアダプター（無制限）') :
+              accountType === 'premium' ? (t('ui.profile.account_premium') || 'プレミアムプラン') :
+              (t('ui.profile.account_basic') || 'ベーシックプラン')
+            }
+          </Text>
+        </View>
       </View>
 
       {/* Tools Section */}
@@ -537,5 +589,39 @@ const styles = StyleSheet.create({
   aiTokensContainer: { marginTop: 12, width: '100%' },
   progressBarBg: { height: 8, backgroundColor: '#222', borderRadius: 4, width: '100%', overflow: 'hidden', marginTop: 12, marginBottom: 8 },
   progressBarFill: { height: '100%', borderRadius: 4 },
-  quotaWarning: { color: Theme.colors.danger, fontWeight: 'bold', fontSize: 13, marginTop: 8 }
+  quotaWarning: { color: Theme.colors.danger, fontWeight: 'bold', fontSize: 13, marginTop: 8 },
+
+  // Premium Account Card Styles
+  accountCard: { 
+    backgroundColor: Theme.colors.card, 
+    borderRadius: Theme.borderRadius.md, 
+    padding: 16, 
+    borderWidth: 1, 
+    borderColor: Theme.colors.border, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 24 
+  },
+  accountIconContainer: { 
+    width: 40, 
+    height: 40, 
+    borderRadius: 20, 
+    backgroundColor: '#1c1c1e', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: Theme.colors.border
+  },
+  accountInfo: { flex: 1 },
+  accountLabel: { 
+    color: Theme.colors.textMuted, 
+    fontSize: 12, 
+    textTransform: 'uppercase', 
+    letterSpacing: 0.5, 
+    marginBottom: 2 
+  },
+  accountValue: { color: Theme.colors.text, fontSize: 16, fontWeight: 'bold' },
+  accountValueEarly: { color: '#ffd700' },
+  accountValuePremium: { color: '#4facfe' }
 });
