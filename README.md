@@ -1,5 +1,9 @@
 # Welcome to your Expo app 👋
 
+> [!IMPORTANT]
+> **⚠️ 開発・デプロイに関する絶対遵守ルール (CRITICAL DEVELOPMENT RULES)**
+> このプロジェクトを開発するすべてのAIエージェントおよび開発者は、ルート直下の **[DEVELOPMENT_RULES.md](file:///c:/Users/toshi/.gemini/antigravity/scratch/kintore/gym-tracker/DEVELOPMENT_RULES.md)** を必ず最初に一読し、記述されているブランチ管理・配信フロー（勝手に本番マスターに統合しない、プレビューOTAを先に行うなど）を完全に遵守してください。
+
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
 ## Get started
