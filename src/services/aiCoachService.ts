@@ -2,7 +2,7 @@ import { getRecentWorkoutSummaryForAI } from '../db/database';
 import i18next from 'i18next';
 
 // Cloudflare Workers AI Proxy API Endpoint URL
-const WORKER_URL = 'https://gym-tracker-ai-coach.gekirennomads.workers.dev/api/chat';
+const WORKER_URL = 'https://gym-tracker-ai-proxy.toshi-diyil.workers.dev/api/chat';
 
 export interface AICoachResponse {
   reply: string;
