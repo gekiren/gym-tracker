@@ -1,5 +1,5 @@
 /**
- * Cloudflare Worker Proxy for Gemini 1.5 Flash (gym-tracker AI Coach)
+ * Cloudflare Worker Proxy for Gemini 3.5 Flash (gym-tracker AI Coach)
  *
  * Place this file inside your Cloudflare Workers dashboard.
  *
@@ -109,8 +109,8 @@ export default {
         ? `[User Context]\n- Body Weight: ${user_weight || "Not set"}\n- Unit: ${weight_unit || "kg"}\n\n[Recent Workout History]\n${workout_history || "No history available"}\n\n[User Message]\n${message}`
         : `【ユーザー情報】\n- 体重: ${user_weight || "未設定"}\n- 単位: ${weight_unit || "kg"}\n\n【最近のワークアウト履歴】\n${workout_history || "履歴なし"}\n\n【ユーザーの質問】\n${message}`;
 
-      // 9. Call Gemini API securely (Using Gemini 1.5 Flash)
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
+      // 9. Call Gemini API securely (Using Gemini 3.5 Flash)
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
       
       const response = await fetch(geminiUrl, {
         method: "POST",
