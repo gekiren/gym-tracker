@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
-import { initDB, getSettings, saveSetting } from '../src/db/database';
+import { initDB, getSettings, saveSetting, getAITokensBalance } from '../src/db/database';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import '../src/i18n';
@@ -47,8 +47,9 @@ export default function RootLayout() {
         await saveSetting('language', initialLang);
       }
       const bodyWeight = storedSettings['body_weight'] ? parseFloat(storedSettings['body_weight']) : null;
+      const tokensBalance = await getAITokensBalance();
       
-      useWorkoutStore.getState().loadSettings(defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight, needsStyleSelection);
+      useWorkoutStore.getState().loadSettings(defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight, needsStyleSelection, tokensBalance);
       
       // Display fields
       const showRpe = storedSettings['display_rpe'] !== '0';

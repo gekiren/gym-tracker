@@ -513,6 +513,8 @@ export const initDB = async () => {
       premium_until: '',
       is_sms_verified: 'false',
       referral_active_count: '0',
+      ai_tokens_balance: '20',
+      ai_tokens_last_reset: new Date().toISOString(),
     };
 
     for (const [key, defaultValue] of Object.entries(preAllocations)) {
@@ -870,4 +872,105 @@ export const deleteExercise = async (id: number) => {
 export const updateExerciseDefaultVariation = async (exerciseId: number, variation: string | null) => {
   const conn = getDB();
   await conn.runAsync('UPDATE exercises SET default_variation = ? WHERE id = ?', [variation, exerciseId]);
+};
+
+export const getAITokensBalance = async (): Promise<number> => {
+  const conn = getDB();
+  const balanceRow = await conn.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "ai_tokens_balance"');
+  const lastResetRow = await conn.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "ai_tokens_last_reset"');
+  const isEarlyRow = await conn.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "is_early_adopter"');
+
+  const isEarly = isEarlyRow?.value === 'true';
+  if (isEarly) {
+    return 999; // Early adopters get virtually unlimited tokens
+  }
+
+  let balance = balanceRow ? parseInt(balanceRow.value, 10) : 20;
+  const lastReset = lastResetRow ? lastResetRow.value : new Date().toISOString();
+
+  // Check if 30 days have passed
+  const lastResetDate = new Date(lastReset);
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - lastResetDate.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays >= 30) {
+    balance = 20;
+    const nowISO = now.toISOString();
+    await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("ai_tokens_balance", "20")');
+    await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("ai_tokens_last_reset", ?)', [nowISO]);
+  }
+
+  return balance;
+};
+
+export const consumeAIToken = async (): Promise<void> => {
+  const conn = getDB();
+  const isEarlyRow = await conn.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "is_early_adopter"');
+  if (isEarlyRow?.value === 'true') {
+    return; // Early adopters do not consume tokens
+  }
+
+  const balance = await getAITokensBalance();
+  const newBalance = Math.max(0, balance - 1);
+  await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("ai_tokens_balance", ?)', [newBalance.toString()]);
+};
+
+export const getRecentWorkoutSummaryForAI = async (limit: number = 5): Promise<string> => {
+  const conn = getDB();
+  const workouts = await conn.getAllAsync<{ id: number; title: string; start_time: string; end_time: string; notes: string | null }>(`
+    SELECT id, title, start_time, end_time, notes
+    FROM workouts
+    ORDER BY start_time DESC
+    LIMIT ?
+  `, [limit]);
+
+  if (workouts.length === 0) {
+    return "過去のワークアウト履歴はありません。";
+  }
+
+  let summary = "";
+  for (const w of workouts) {
+    const dateStr = w.start_time.split('T')[0];
+    const duration = w.end_time 
+      ? `${Math.round((new Date(w.end_time).getTime() - new Date(w.start_time).getTime()) / 60000)}分`
+      : '時間未記録';
+    summary += `\n■ 日時: ${dateStr} (${duration}) | タイトル: ${w.title}\n`;
+    if (w.notes) {
+      summary += `   全体メモ: "${w.notes}"\n`;
+    }
+
+    const exercises = await conn.getAllAsync<{ workout_exercise_id: number; exercise_name: string; notes: string | null }>(`
+      SELECT we.id as workout_exercise_id, e.name as exercise_name, we.notes
+      FROM workout_exercises we
+      JOIN exercises e ON we.exercise_id = e.id
+      WHERE we.workout_id = ?
+      ORDER BY we.sort_order ASC
+    `, [w.id]);
+
+    for (const ex of exercises) {
+      summary += `   - ${ex.exercise_name}`;
+      if (ex.notes) summary += ` (種目メモ: "${ex.notes}")`;
+      summary += `: `;
+
+      const sets = await conn.getAllAsync<{ set_number: number; weight: number | null; reps: number | null; rpe: number | null; side: string | null; variation: string | null }>(`
+        SELECT set_number, weight, reps, rpe, side, variation
+        FROM workout_sets
+        WHERE workout_exercise_id = ?
+        ORDER BY set_number ASC
+      `, [ex.workout_exercise_id]);
+
+      const setSummaries = sets.map(s => {
+        let sDesc = `${s.weight ?? 0}kg x ${s.reps ?? 0}回`;
+        if (s.side) sDesc = `[${s.side === 'L' ? '左' : '右'}] ` + sDesc;
+        if (s.variation) sDesc += ` (${s.variation})`;
+        if (s.rpe) sDesc += ` (RPE: ${s.rpe})`;
+        return sDesc;
+      });
+
+      summary += setSummaries.join(', ') + '\n';
+    }
+  }
+
+  return summary;
 };

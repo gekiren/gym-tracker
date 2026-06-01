@@ -66,6 +66,40 @@ export default function HistoryScreen() {
     }
   };
 
+  const handleAICoachHistory = async (workoutId: number, title: string) => {
+    const data = await loadFullWorkoutData(workoutId);
+    if (!data) return;
+
+    let contextStr = `【過去のワークアウト履歴データ】\n`;
+    const dateStr = data.start_time.split('T')[0];
+    contextStr += `■ 日付: ${dateStr} | タイトル: ${data.title}\n`;
+    if (data.notes) contextStr += `全体メモ: "${data.notes}"\n`;
+    
+    for (const ex of data.exercises) {
+      contextStr += `- ${ex.exercise_name}`;
+      if (ex.notes) contextStr += ` (種目メモ: "${ex.notes}")`;
+      contextStr += `: `;
+      
+      const setDescs = ex.sets.map((s: any) => {
+        let sd = `${s.weight ?? 0}${settings.weightUnit} x ${s.reps ?? 0}回`;
+        if (s.side) sd = `[${s.side === 'L' ? '左' : '右'}] ` + sd;
+        if (s.variation) sd += ` (${s.variation})`;
+        if (s.rpe) sd += ` (RPE: ${s.rpe})`;
+        return sd;
+      });
+      contextStr += setDescs.join(', ') + '\n';
+    }
+
+    router.push({
+      pathname: '/(tabs)/coach',
+      params: {
+        contextPrompt: contextStr,
+        prefillMessage: `${dateStr}に実施した「${data.title}」の記録を分析し、アドバイスや評価をください。`,
+        title: data.title
+      }
+    });
+  };
+
   const getChartData = () => {
     // Reverse to chronological order
     const wRev = [...workouts].reverse().filter(w => w.volume > 0);
@@ -129,6 +163,9 @@ export default function HistoryScreen() {
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>{w.title}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <TouchableOpacity onPress={() => handleAICoachHistory(w.id, w.title)} style={[styles.exportIcon, { marginRight: 8 }]}>
+                  <Ionicons name="sparkles" size={18} color={Theme.colors.primary} />
+                </TouchableOpacity>
                 <TouchableOpacity onPress={() => handleExportMarkdown(w.id)} style={[styles.exportIcon, { marginRight: 8 }]}>
                   <Ionicons name="share-social" size={18} color={Theme.colors.primary} />
                 </TouchableOpacity>

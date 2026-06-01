@@ -73,6 +73,7 @@ interface WorkoutState {
     needsStyleSelection: boolean;
     customStances: string[];
     bodyWeight: number | null;
+    aiTokensBalance: number;
     displayFields: {
       showRpe: boolean;
       show1RM: boolean;
@@ -80,8 +81,9 @@ interface WorkoutState {
       showStance: boolean;
     };
   };
-  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null, needsStyleSelection?: boolean) => void;
+  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null, needsStyleSelection?: boolean, aiTokensBalance?: number) => void;
   setBodyWeight: (weight: number | null) => void;
+  setAITokensBalance: (balance: number) => void;
   loadCustomStances: (stances: string[]) => void;
   addCustomStance: (stance: string) => void;
   removeCustomStance: (stance: string) => void;
@@ -136,6 +138,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     needsStyleSelection: false,
     customStances: [],
     bodyWeight: null,
+    aiTokensBalance: 20,
     displayFields: {
       showRpe: true,
       show1RM: true,
@@ -144,12 +147,16 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     }
   },
 
-  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false, bodyWeight: number | null = null, needsStyleSelection: boolean = false) => set((state) => ({
-    settings: { ...state.settings, defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight, needsStyleSelection }
+  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false, bodyWeight: number | null = null, needsStyleSelection: boolean = false, aiTokensBalance: number = 20) => set((state) => ({
+    settings: { ...state.settings, defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight, needsStyleSelection, aiTokensBalance }
   })),
 
   setBodyWeight: (weight: number | null) => set((state) => ({
     settings: { ...state.settings, bodyWeight: weight }
+  })),
+
+  setAITokensBalance: (balance: number) => set((state) => ({
+    settings: { ...state.settings, aiTokensBalance: balance }
   })),
 
   loadCustomStances: (stances: string[]) => set((state) => ({
@@ -591,6 +598,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         needsStyleSelection: true,
         customStances: [],
         bodyWeight: null,
+        aiTokensBalance: 20,
         displayFields: {
           showRpe: true,
           show1RM: true,

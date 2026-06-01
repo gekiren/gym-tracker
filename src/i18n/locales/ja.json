@@ -4,6 +4,7 @@
       "home": "ホーム",
       "history": "履歴",
       "exercises": "種目",
+      "coach": "コーチ",
       "profile": "設定"
     },
     "home": {
@@ -233,6 +234,7 @@
       "workout": "ワークアウト",
       "history": "履歴",
       "exercises": "種目",
+      "coach": "コーチ",
       "profile": "プロフィール"
     },
     "notifications": {
@@ -284,7 +286,12 @@
       "clear_data_placeholder": "ここに OK と入力",
       "clear_data_success_title": "初期化完了",
       "clear_data_success_message": "すべてのデータを初期化し、クリーンインストール時の初期状態に戻しました。",
-      "clear_data_error_mismatch": "入力された文字が「OK」と一致しません。"
+      "clear_data_error_mismatch": "入力された文字が「OK」と一致しません。",
+      "section_ai_coach": "AIコーチ設定",
+      "ai_tokens_balance": "今月の利用枠残高",
+      "ai_tokens_desc": "Cloudflare Worker & Gemini APIを経由した安全で高度なトレーニング指導が受けられます。",
+      "quota_exhausted_alert": "今月の利用枠が残っていません。",
+      "ai_tokens_reset_desc": "30日後に利用枠は自動的に20回にリセットされます。"
     },
     "routines": {
       "title": "ルーティン",
@@ -366,6 +373,20 @@
       "update_up_to_date_msg": "現在適用されているのが最新のアップデートです。",
       "update_check_error_title": "確認エラー",
       "update_check_error_msg": "アップデートの確認に失敗しました。ローカルデバッグ環境では動作しない場合があります。"
+    },
+    "coach": {
+      "welcome_msg": "こんにちは！TreNote専属AIトレーナーです。あなたの筋トレログの分析、次のセットの重量調整、あるいはトレーニング理論の質問など、何でもお手伝いします！",
+      "chip_analysis": "ログを分析して",
+      "chip_proposal": "次の重量調整案",
+      "chip_rpe": "RPEの活用法",
+      "chip_stance": "スタンスの影響",
+      "chip_analysis_prompt": "最近の筋トレログを分析して、成長や変化について教えてください。",
+      "chip_proposal_prompt": "直近の記録を踏まえて、次回のトレーニングメニューの具体的な重量と回数の調整案を提案してください。",
+      "chip_rpe_prompt": "筋トレにおけるRPE（自覚的運動強度）を活用した効率的なセット調整方法を教えて。",
+      "chip_stance_prompt": "ベンチプレスやスクワットの足幅・グリップ幅（スタンス）を変えると、効く部位はどう変化する？",
+      "input_placeholder": "コーチに質問してみる...",
+      "limit_reached_msg": "今月の利用枠が残っていません。",
+      "network_error": "ネットワークエラーが発生しました。接続を確認してください。"
     }
   },
   "exercises": {

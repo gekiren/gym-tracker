@@ -51,6 +51,38 @@ export default function ExerciseDetailScreen() {
     return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
   };
 
+  const handleAICoachExerciseDetail = () => {
+    if (!exercise || history.length === 0) {
+      Alert.alert(t('ui.common.info') || '情報', '履歴データがまだありません。まずはこの種目のトレーニングを記録してください。');
+      return;
+    }
+
+    let contextStr = `【種目名: ${exercise.name} の過去の全トレーニング履歴】\n`;
+    contextStr += `分類: ${translateMuscleGroup(exercise.muscle_group)} / 器具: ${translateEquipment(exercise.equipment)}\n`;
+    
+    history.forEach(workout => {
+      const dateStr = formatDate(workout.start_time);
+      contextStr += `- ${dateStr}: `;
+      const setDescs = workout.sets.map((s: any) => {
+        let sd = `${s.weight ?? 0}${settings.weightUnit} x ${s.reps ?? 0}回`;
+        if (s.side) sd = `[${s.side === 'L' ? '左' : '右'}] ` + sd;
+        if (s.variation) sd += ` (${translateStance(s.variation)})`;
+        if (s.rpe) sd += ` (RPE: ${s.rpe})`;
+        return sd;
+      });
+      contextStr += setDescs.join(', ') + '\n';
+    });
+
+    router.push({
+      pathname: '/(tabs)/coach',
+      params: {
+        contextPrompt: contextStr,
+        prefillMessage: `${translateExercise(exercise.name)}のこれまでの重量やボリュームの成長履歴を分析し、さらに伸ばすための改善点やアドバイスをください。`,
+        title: translateExercise(exercise.name)
+      }
+    });
+  };
+
   const handleExportMarkdown = async () => {
     if (history.length === 0) return;
 
@@ -150,6 +182,11 @@ export default function ExerciseDetailScreen() {
           title: t('ui.exercise_detail.title'),
           headerStyle: { backgroundColor: Theme.colors.background },
           headerTintColor: Theme.colors.primary,
+          headerRight: () => (
+            <TouchableOpacity onPress={handleAICoachExerciseDetail} style={{ marginRight: 16 }}>
+              <Ionicons name="sparkles" size={22} color={Theme.colors.primary} />
+            </TouchableOpacity>
+          )
         }} 
       />
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>

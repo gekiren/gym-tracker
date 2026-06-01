@@ -25,6 +25,58 @@ export default function ActiveWorkoutScreen() {
   const [expandedExerciseNotes, setExpandedExerciseNotes] = useState<Record<string, boolean>>({});
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
+  const handleAICoachWorkout = () => {
+    if (exercises.length === 0) {
+      Alert.alert(t('ui.common.info') || '情報', '現在記録中のエクササイズがありません。まずは種目を追加してください。');
+      return;
+    }
+    let contextStr = `【現在記録中のワークアウト】\n`;
+    if (workoutNotes) contextStr += `全体メモ: "${workoutNotes}"\n`;
+    for (const ex of exercises) {
+      contextStr += `- ${ex.name}: `;
+      const setDescs = ex.sets.map(s => {
+        let sd = `${s.weight ?? 0}${settings.weightUnit} x ${s.reps ?? 0}回`;
+        if (s.side) sd = `[${s.side === 'L' ? '左' : '右'}] ` + sd;
+        if (s.variation) sd += ` (${s.variation})`;
+        if (s.rpe) sd += ` (RPE: ${s.rpe})`;
+        return sd;
+      });
+      contextStr += setDescs.join(', ') + '\n';
+    }
+
+    router.push({
+      pathname: '/(tabs)/coach',
+      params: {
+        contextPrompt: contextStr,
+        prefillMessage: '現在記録中のこのワークアウト内容を分析し、アドバイスをください。',
+        title: title || t('ui.home.free_workout_title') || '本日のワークアウト'
+      }
+    });
+  };
+
+  const handleAICoachExercise = (ex: any) => {
+    let contextStr = `【現在記録中の種目データ】\n`;
+    contextStr += `- ${ex.name}: `;
+    if (ex.notes) contextStr += `(種目メモ: "${ex.notes}") `;
+    const setDescs = ex.sets.map((s: any) => {
+      let sd = `${s.weight ?? 0}${settings.weightUnit} x ${s.reps ?? 0}回`;
+      if (s.side) sd = `[${s.side === 'L' ? '左' : '右'}] ` + sd;
+      if (s.variation) sd += ` (${s.variation})`;
+      if (s.rpe) sd += ` (RPE: ${s.rpe})`;
+      return sd;
+    });
+    contextStr += setDescs.join(', ') + '\n';
+
+    router.push({
+      pathname: '/(tabs)/coach',
+      params: {
+        contextPrompt: contextStr,
+        prefillMessage: `${ex.name}のこのセット内容について分析し、次のセットの重量・回数調整のアドバイスをください。`,
+        title: ex.name
+      }
+    });
+  };
+
   useEffect(() => {
     const showSubscription = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
@@ -258,16 +310,24 @@ export default function ActiveWorkoutScreen() {
 
         {/* Workout Notes Section */}
         <View style={{ marginBottom: 16 }}>
-          <TouchableOpacity 
-            onPress={() => setShowWorkoutNotes(!showWorkoutNotes)}
-            style={{ flexDirection: 'row', alignItems: 'center', opacity: workoutNotes ? 1 : 0.6 }}
-          >
-            <Ionicons name="document-text-outline" size={18} color={Theme.colors.primary} style={{ marginRight: 6 }} />
-            <Text style={{ color: Theme.colors.primary, fontSize: 14, fontWeight: '600' }}>
-              {t('ui.active_workout.workout_notes')}
-            </Text>
-            {workoutNotes ? <Ionicons name="checkmark-circle" size={12} color={Theme.colors.success} style={{ marginLeft: 4 }} /> : null}
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <TouchableOpacity 
+              onPress={() => setShowWorkoutNotes(!showWorkoutNotes)}
+              style={{ flexDirection: 'row', alignItems: 'center', opacity: workoutNotes ? 1 : 0.6 }}
+            >
+              <Ionicons name="document-text-outline" size={18} color={Theme.colors.primary} style={{ marginRight: 6 }} />
+              <Text style={{ color: Theme.colors.primary, fontSize: 14, fontWeight: '600' }}>
+                {t('ui.active_workout.workout_notes')}
+              </Text>
+              {workoutNotes ? <Ionicons name="checkmark-circle" size={12} color={Theme.colors.success} style={{ marginLeft: 4 }} /> : null}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleAICoachWorkout} style={{ padding: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name="sparkles" size={16} color={Theme.colors.primary} />
+                <Text style={{ color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold' }}>AIコーチ</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
           
           {(showWorkoutNotes || workoutNotes) && (
             <TextInput
@@ -316,13 +376,18 @@ export default function ActiveWorkoutScreen() {
                   </View>
                 )}
               </View>
-              <TouchableOpacity onPress={() => setExpandedExerciseNotes(prev => ({ ...prev, [ex.id]: !prev[ex.id] }))}>
-                <Ionicons 
-                  name={ex.notes ? "chatbubble-ellipses" : "chatbubble-outline"} 
-                  size={20} 
-                  color={ex.notes ? Theme.colors.primary : Theme.colors.textMuted} 
-                />
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <TouchableOpacity onPress={() => handleAICoachExercise(ex)}>
+                  <Ionicons name="sparkles" size={20} color={Theme.colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setExpandedExerciseNotes(prev => ({ ...prev, [ex.id]: !prev[ex.id] }))}>
+                  <Ionicons 
+                    name={ex.notes ? "chatbubble-ellipses" : "chatbubble-outline"} 
+                    size={20} 
+                    color={ex.notes ? Theme.colors.primary : Theme.colors.textMuted} 
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
 
             {expandedExerciseNotes[ex.id] && (

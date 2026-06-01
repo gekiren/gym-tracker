@@ -345,6 +345,49 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* AI Coach Section */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="sparkles" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+          <Text style={styles.sectionTitle}>{t('ui.profile.section_ai_coach') || 'AIコーチ設定'}</Text>
+        </View>
+        <View style={styles.settingCard}>
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'flex-start' }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+              <Text style={styles.settingLabel}>{t('ui.profile.ai_tokens_balance') || '今月の利用枠残高'}</Text>
+              <Text style={{ color: settings.aiTokensBalance === 0 ? Theme.colors.danger : Theme.colors.text, fontWeight: 'bold', fontSize: 16 }}>
+                {settings.aiTokensBalance === 999 ? 'Early Adopter (無制限)' : `${settings.aiTokensBalance} / 20`}
+              </Text>
+            </View>
+            <Text style={[styles.settingDesc, { paddingRight: 0 }]}>
+              {t('ui.profile.ai_tokens_desc') || 'Cloudflare Worker & Gemini APIを経由した安全で高度なトレーニング指導が受けられます。'}
+            </Text>
+            
+            {settings.aiTokensBalance !== 999 && (
+              <View style={styles.aiTokensContainer}>
+                <View style={styles.progressBarBg}>
+                  <View 
+                    style={[
+                      styles.progressBarFill, 
+                      { 
+                        width: `${Math.min(100, Math.max(0, (settings.aiTokensBalance / 20) * 100))}%`,
+                        backgroundColor: settings.aiTokensBalance === 0 ? Theme.colors.danger : Theme.colors.primary 
+                      }
+                    ]} 
+                  />
+                </View>
+                {settings.aiTokensBalance === 0 && (
+                  <Text style={styles.quotaWarning}>{t('ui.profile.quota_exhausted_alert') || '今月の利用枠が残っていません。'}</Text>
+                )}
+                <Text style={[styles.settingDesc, { marginTop: 6, paddingRight: 0 }]}>
+                  {t('ui.profile.ai_tokens_reset_desc') || '30日後に利用枠は自動的に20回にリセットされます。'}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </View>
+
       {/* App Info Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -490,5 +533,11 @@ const styles = StyleSheet.create({
   modalCancelBtnText: { color: Theme.colors.text, fontSize: 15, fontWeight: '600' },
   modalConfirmBtn: { flex: 1, paddingVertical: 12, borderRadius: 8, backgroundColor: Theme.colors.danger, alignItems: 'center', justifyContent: 'center' },
   modalConfirmBtnDisabled: { opacity: 0.3 },
-  modalConfirmBtnText: { color: '#fff', fontSize: 15, fontWeight: 'bold' }
+  modalConfirmBtnText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
+
+  // AI Coach Settings Styles
+  aiTokensContainer: { marginTop: 12, width: '100%' },
+  progressBarBg: { height: 8, backgroundColor: '#222', borderRadius: 4, width: '100%', overflow: 'hidden', marginTop: 12, marginBottom: 8 },
+  progressBarFill: { height: '100%', borderRadius: 4 },
+  quotaWarning: { color: Theme.colors.danger, fontWeight: 'bold', fontSize: 13, marginTop: 8 }
 });

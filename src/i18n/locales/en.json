@@ -4,6 +4,7 @@
       "home": "Home",
       "history": "History",
       "exercises": "Exercises",
+      "coach": "Coach",
       "profile": "Settings"
     },
     "home": {
@@ -238,6 +239,7 @@
       "workout": "Workout",
       "history": "History",
       "exercises": "Exercises",
+      "coach": "Coach",
       "profile": "Profile"
     },
     "notifications": {
@@ -289,7 +291,12 @@
       "clear_data_placeholder": "Enter OK here",
       "clear_data_success_title": "Reset Completed",
       "clear_data_success_message": "All data has been deleted and the app has been restored to the initial clean install state.",
-      "clear_data_error_mismatch": "The entered text does not match \"OK\"."
+      "clear_data_error_mismatch": "The entered text does not match \"OK\".",
+      "section_ai_coach": "AI Coach Settings",
+      "ai_tokens_balance": "Monthly Token Balance",
+      "ai_tokens_desc": "Receive secure and advanced training guidance powered by Cloudflare Worker & Gemini API.",
+      "quota_exhausted_alert": "今月の利用枠が残っていません。",
+      "ai_tokens_reset_desc": "Your token quota will automatically reset to 20 sets in 30 days."
     },
     "routines": {
       "title": "Routines",
@@ -371,6 +378,20 @@
       "update_up_to_date_msg": "You are currently running the latest update.",
       "update_check_error_title": "Check Failed",
       "update_check_error_msg": "Failed to check for updates. This might not work in local debug environments."
+    },
+    "coach": {
+      "welcome_msg": "Hello! I am your TreNote AI Coach. I can help analyze your workout logs, suggest weight adjustments for your next set, or answer any training theory questions!",
+      "chip_analysis": "Analyze Logs",
+      "chip_proposal": "Weight Adjustment",
+      "chip_rpe": "How to use RPE",
+      "chip_stance": "Stance Variations",
+      "chip_analysis_prompt": "Please analyze my recent workout logs and share insights on my progress and changes.",
+      "chip_proposal_prompt": "Based on my recent logs, suggest concrete weight and rep adjustments for my next training session.",
+      "chip_rpe_prompt": "How can I effectively use RPE (Rate of Perceived Exertion) to adjust my sets in weight training?",
+      "chip_stance_prompt": "How do variations in grip or stance (e.g., narrow/wide grip or high/low bar squat) change the muscles targeted?",
+      "input_placeholder": "Ask your coach...",
+      "limit_reached_msg": "今月の利用枠が残っていません。",
+      "network_error": "Network error occurred. Please check your connection."
     }
   },
   "exercises": {
