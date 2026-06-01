@@ -430,11 +430,9 @@ export const initDB = async () => {
     }
 
     if (settingsToInsert.length > 0) {
-      await _db.withTransactionAsync(async () => {
-        for (const item of settingsToInsert) {
-          await _db.runAsync('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', [item.key, item.value]);
-        }
-      });
+      for (const item of settingsToInsert) {
+        await _db.runAsync('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', [item.key, item.value]);
+      }
     }
   } catch (e) {
     console.warn('Migration/Campaign Init: Failed to pre-allocate settings keys', e);
