@@ -27,6 +27,8 @@ export default function ActiveWorkoutScreen() {
   const [expandedExerciseNotes, setExpandedExerciseNotes] = useState<Record<string, boolean>>({});
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const insets = useSafeAreaInsets();
+  const isAndroid = Platform.OS === 'android';
+  const safeBottomOffset = isAndroid ? (insets.bottom === 0 ? 48 : insets.bottom) : insets.bottom;
 
   const handleAICoachWorkout = () => {
     if (exercises.length === 0) {
@@ -457,7 +459,7 @@ export default function ActiveWorkoutScreen() {
 
       {/* Floating Rest Timer UI */}
       {restTimer.isActive && (
-        <View style={[styles.timerOverlay, { bottom: insets.bottom + 24 }]}>
+        <View style={[styles.timerOverlay, { bottom: safeBottomOffset + 24 }]}>
           <View style={styles.timerContent}>
             <View>
               <Text style={styles.timerLabel}>{t('ui.active_workout.rest_label_resting')}</Text>
@@ -480,7 +482,7 @@ export default function ActiveWorkoutScreen() {
 
       {/* Floating Manual Start Button (when not resting) */}
       {isWorkoutStarted && !restTimer.isActive && (
-        <View style={[styles.manualStartOverlay, { bottom: insets.bottom + 20 }]}>
+        <View style={[styles.manualStartOverlay, { bottom: safeBottomOffset + 20 }]}>
           <TouchableOpacity style={styles.manualStartBtn} onPress={() => {
             markWorkStart();
             Alert.alert("", t('ui.active_workout.manual_start_success') || "Started");
