@@ -291,7 +291,7 @@
       "ai_tokens_balance": "今月の利用枠残高",
       "ai_tokens_desc": "Cloudflare Worker & Gemini APIを経由した安全で高度なトレーニング指導が受けられます。",
       "quota_exhausted_alert": "今月の利用枠が残っていません。",
-      "ai_tokens_reset_desc": "30日後に利用枠は自動的に20回にリセットされます。"
+      "ai_tokens_reset_desc": "毎月1日に利用枠は自動的に20回にリセットされます。"
     },
     "routines": {
       "title": "ルーティン",

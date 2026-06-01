@@ -885,13 +885,15 @@ export const getAITokensBalance = async (): Promise<number> => {
   }
   const lastReset = lastResetRow ? lastResetRow.value : new Date().toISOString();
 
-  // Check if 30 days have passed
+  // Calendar month boundary check (月ごとの管理: 毎月1日リセット)
   const lastResetDate = new Date(lastReset);
   const now = new Date();
-  const diffTime = Math.abs(now.getTime() - lastResetDate.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  const isDifferentMonth = 
+    now.getFullYear() !== lastResetDate.getFullYear() || 
+    now.getMonth() !== lastResetDate.getMonth();
 
-  if (diffDays >= 30) {
+  if (isDifferentMonth) {
     balance = 20;
     const nowISO = now.toISOString();
     await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("ai_tokens_balance", "20")');
