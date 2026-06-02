@@ -35,6 +35,8 @@ export const scheduleRestTimer = async (seconds: number) => {
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#4facfe',
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      bypassDnd: false,
     });
   }
 
@@ -43,10 +45,12 @@ export const scheduleRestTimer = async (seconds: number) => {
       title: i18n.t('ui.notifications.rest_finished_title'),
       body: i18n.t('ui.notifications.rest_finished_body'),
       sound: true, // Default notification sound
+      priority: Notifications.AndroidNotificationPriority.HIGH,
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
       seconds: seconds,
+      repeats: false,
     },
   });
 

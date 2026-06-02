@@ -5,7 +5,7 @@
       "ja": "./locales/ja.json"
     },
     "slug": "gym-tracker",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "gymtracker",
@@ -16,7 +16,7 @@
       "enabled": true,
       "checkAutomatically": "ON_LOAD"
     },
-    "runtimeVersion": "1.0.3",
+    "runtimeVersion": "1.0.4",
     "ios": {
       "supportsTablet": true
     },
@@ -52,7 +52,16 @@
         }
       ],
       "expo-sqlite",
-      "expo-updates"
+      "expo-updates",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#4facfe",
+          "defaultChannel": "rest-timer",
+          "sounds": []
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
