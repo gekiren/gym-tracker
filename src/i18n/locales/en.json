@@ -328,6 +328,7 @@
       "interaction_hint": "Tap values to type directly, or swipe left/right to adjust."
     },
     "common": {
+      "back": "Back",
       "cancel": "Cancel",
       "delete": "Delete",
       "save": "Save",

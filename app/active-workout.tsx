@@ -258,7 +258,7 @@ export default function ActiveWorkoutScreen() {
           headerTintColor: Theme.colors.text,
           headerLeft: () => (
             <TouchableOpacity onPress={handleBack} style={{ marginLeft: 8, backgroundColor: Theme.colors.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4 }}>
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>{t('ui.history.back')}</Text>
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>{t('ui.common.back')}</Text>
             </TouchableOpacity>
           ),
           headerRight: () => (
