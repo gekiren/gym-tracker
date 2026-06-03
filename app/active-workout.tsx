@@ -253,12 +253,12 @@ export default function ActiveWorkoutScreen() {
     <View style={styles.container}>
       <Stack.Screen 
         options={{ 
-          title: title || t('ui.home.free_workout_title'),
+          title: '',
           headerStyle: { backgroundColor: Theme.colors.background },
           headerTintColor: Theme.colors.text,
           headerLeft: () => (
-            <TouchableOpacity onPress={handleBack} style={{ marginLeft: 8 }}>
-              <Ionicons name="chevron-down" size={28} color={Theme.colors.primary} />
+            <TouchableOpacity onPress={handleBack} style={{ marginLeft: 8, backgroundColor: Theme.colors.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4 }}>
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>{t('ui.history.back')}</Text>
             </TouchableOpacity>
           ),
           headerRight: () => (
