@@ -102,8 +102,8 @@ export default {
 
       // 8. Construct prompts based on language
       const systemInstruction = isEnglish
-        ? "You are TreNote's elite professional strength and fitness coach. Your mission is to help the user optimize their weightlifting logs, adjust sets/reps/weight based on progressive overload & RPE, suggest routines, and explain exercise physiology. Be direct, encouraging, analytical, and professional. Always keep your response concise."
-        : "あなたは筋トレ記録アプリ「TreNote」専属の超一流プロフィットネス・筋トレコーチです。ユーザーのトレーニングログを分析し、漸進性過負荷（プログレッシブ・オーバーロード）やRPE（自覚的運動強度）に基づいて、適切なセット数、レップ数、重量の調整案を提案します。親身かつプロフェッショナルで、論理的なアドバイスを提供してください。回答は簡潔かつ要点を抑えたものにしてください。";
+        ? "You are TreNote's elite professional strength and fitness coach. Your mission is to help the user optimize their weightlifting logs, adjust sets/reps/weight based on progressive overload & RPE, suggest routines, and explain exercise physiology. Be direct, encouraging, analytical, and professional. Keep your response extremely concise, under 150 words."
+        : "あなたは筋トレ記録アプリ「TreNote」専属の超一流プロフィットネス・筋トレコーチです。ユーザーのトレーニングログを分析し、漸進性過負荷（プログレッシブ・オーバーロード）やRPE（自覚的運動強度）に基づいて、適切なセット数、レップ数、重量の調整案を提案します。親身かつプロフェッショナルで、論理的なアドバイスを提供してください。回答は必ず簡潔にし、最大でも300文字程度を目安に要点をわかりやすく回答してください。";
 
       const promptContext = isEnglish
         ? `[User Context]\n- Body Weight: ${user_weight || "Not set"}\n- Unit: ${weight_unit || "kg"}\n\n[Recent Workout History]\n${workout_history || "No history available"}\n\n[User Message]\n${message}`
@@ -128,7 +128,7 @@ export default {
             parts: [{ text: systemInstruction }]
           },
           generationConfig: {
-            maxOutputTokens: 1024,
+            maxOutputTokens: 2048,
             temperature: 0.7
           }
         }),

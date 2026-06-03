@@ -431,6 +431,12 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     if (willBeCompleted && get().settings.autoRest) {
       get().startRestTimer(get().settings.defaultRest);
     }
+    if (!willBeCompleted) {
+      cancelRestTimer();
+      set({
+        restTimer: { isActive: false, remaining: 0, endTime: null }
+      });
+    }
   },
 
   startRestTimer: (seconds) => {

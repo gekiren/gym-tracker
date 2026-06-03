@@ -910,55 +910,200 @@ export const consumeAIToken = async (): Promise<void> => {
   await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("ai_tokens_balance", ?)', [newBalance.toString()]);
 };
 
-export const getRecentWorkoutSummaryForAI = async (limit: number = 5): Promise<string> => {
+export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<string> => {
   const conn = getDB();
-  const workouts = await conn.getAllAsync<{ id: number; title: string; start_time: string; end_time: string; notes: string | null }>(`
-    SELECT id, title, start_time, end_time, notes
-    FROM workouts
-    ORDER BY start_time DESC
-    LIMIT ?
+  
+  interface FlatRow {
+    workout_id: number;
+    workout_title: string;
+    workout_start_time: string;
+    workout_end_time: string | null;
+    workout_notes: string | null;
+    workout_exercise_id: number | null;
+    exercise_notes: string | null;
+    exercise_name: string | null;
+    set_number: number | null;
+    weight: number | null;
+    reps: number | null;
+    rpe: number | null;
+    side: string | null;
+    variation: string | null;
+  }
+
+  const rows = await conn.getAllAsync<FlatRow>(`
+    SELECT 
+      w.id AS workout_id,
+      w.title AS workout_title,
+      w.start_time AS workout_start_time,
+      w.end_time AS workout_end_time,
+      w.notes AS workout_notes,
+      we.id AS workout_exercise_id,
+      we.notes AS exercise_notes,
+      e.name AS exercise_name,
+      ws.set_number,
+      ws.weight,
+      ws.reps,
+      ws.rpe,
+      ws.side,
+      ws.variation
+    FROM (
+      SELECT id, title, start_time, end_time, notes
+      FROM workouts
+      ORDER BY start_time DESC
+      LIMIT ?
+    ) w
+    LEFT JOIN workout_exercises we ON we.workout_id = w.id
+    LEFT JOIN exercises e ON we.exercise_id = e.id
+    LEFT JOIN workout_sets ws ON ws.workout_exercise_id = we.id
+    ORDER BY w.start_time DESC, we.sort_order ASC, ws.set_number ASC
   `, [limit]);
 
-  if (workouts.length === 0) {
+  if (rows.length === 0) {
     return "過去のワークアウト履歴はありません。";
   }
 
+  interface SetData {
+    set_number: number;
+    weight: number | null;
+    reps: number | null;
+    rpe: number | null;
+    side: string | null;
+    variation: string | null;
+  }
+
+  interface ExerciseData {
+    workout_exercise_id: number;
+    exercise_name: string;
+    notes: string | null;
+    sets: SetData[];
+  }
+
+  interface WorkoutData {
+    id: number;
+    title: string;
+    start_time: string;
+    end_time: string | null;
+    notes: string | null;
+    exercises: ExerciseData[];
+  }
+
+  const workoutsMap = new Map<number, WorkoutData>();
+  const workoutOrder: number[] = [];
+
+  for (const r of rows) {
+    if (!workoutsMap.has(r.workout_id)) {
+      workoutsMap.set(r.workout_id, {
+        id: r.workout_id,
+        title: r.workout_title,
+        start_time: r.workout_start_time,
+        end_time: r.workout_end_time,
+        notes: r.workout_notes,
+        exercises: []
+      });
+      workoutOrder.push(r.workout_id);
+    }
+
+    if (r.workout_exercise_id === null) {
+      continue;
+    }
+
+    const workout = workoutsMap.get(r.workout_id)!;
+    let exercise = workout.exercises.find(e => e.workout_exercise_id === r.workout_exercise_id);
+    if (!exercise) {
+      exercise = {
+        workout_exercise_id: r.workout_exercise_id,
+        exercise_name: r.exercise_name || '未定義の種目',
+        notes: r.exercise_notes,
+        sets: []
+      };
+      workout.exercises.push(exercise);
+    }
+
+    if (r.set_number === null) {
+      continue;
+    }
+
+    exercise.sets.push({
+      set_number: r.set_number,
+      weight: r.weight,
+      reps: r.reps,
+      rpe: r.rpe,
+      side: r.side,
+      variation: r.variation
+    });
+  }
+
   let summary = "";
-  for (const w of workouts) {
+  for (const wid of workoutOrder) {
+    const w = workoutsMap.get(wid)!;
     const dateStr = w.start_time.split('T')[0];
     const duration = w.end_time 
       ? `${Math.round((new Date(w.end_time).getTime() - new Date(w.start_time).getTime()) / 60000)}分`
       : '時間未記録';
+    
     summary += `\n■ 日時: ${dateStr} (${duration}) | タイトル: ${w.title}\n`;
     if (w.notes) {
       summary += `   全体メモ: "${w.notes}"\n`;
     }
 
-    const exercises = await conn.getAllAsync<{ workout_exercise_id: number; exercise_name: string; notes: string | null }>(`
-      SELECT we.id as workout_exercise_id, e.name as exercise_name, we.notes
-      FROM workout_exercises we
-      JOIN exercises e ON we.exercise_id = e.id
-      WHERE we.workout_id = ?
-      ORDER BY we.sort_order ASC
-    `, [w.id]);
-
-    for (const ex of exercises) {
+    for (const ex of w.exercises) {
       summary += `   - ${ex.exercise_name}`;
       if (ex.notes) summary += ` (種目メモ: "${ex.notes}")`;
       summary += `: `;
 
-      const sets = await conn.getAllAsync<{ set_number: number; weight: number | null; reps: number | null; rpe: number | null; side: string | null; variation: string | null }>(`
-        SELECT set_number, weight, reps, rpe, side, variation
-        FROM workout_sets
-        WHERE workout_exercise_id = ?
-        ORDER BY set_number ASC
-      `, [ex.workout_exercise_id]);
+      if (ex.sets.length === 0) {
+        summary += "セット記録なし\n";
+        continue;
+      }
 
-      const setSummaries = sets.map(s => {
-        let sDesc = `${s.weight ?? 0}kg x ${s.reps ?? 0}回`;
-        if (s.side) sDesc = `[${s.side === 'L' ? '左' : '右'}] ` + sDesc;
-        if (s.variation) sDesc += ` (${s.variation})`;
-        if (s.rpe) sDesc += ` (RPE: ${s.rpe})`;
+      // Group consecutive identical sets to save space/tokens
+      interface SetGroup {
+        weight: number;
+        reps: number;
+        rpe: number | null;
+        side: string | null;
+        variation: string | null;
+        count: number;
+      }
+
+      const groups: SetGroup[] = [];
+      for (const s of ex.sets) {
+        const weight = s.weight ?? 0;
+        const reps = s.reps ?? 0;
+        const rpe = s.rpe;
+        const side = s.side;
+        const variation = s.variation;
+
+        const lastGroup = groups[groups.length - 1];
+        if (
+          lastGroup &&
+          lastGroup.weight === weight &&
+          lastGroup.reps === reps &&
+          lastGroup.rpe === rpe &&
+          lastGroup.side === side &&
+          lastGroup.variation === variation
+        ) {
+          lastGroup.count += 1;
+        } else {
+          groups.push({
+            weight,
+            reps,
+            rpe,
+            side,
+            variation,
+            count: 1
+          });
+        }
+      }
+
+      const setSummaries = groups.map(g => {
+        let sDesc = `${g.weight}kg x ${g.reps}回`;
+        if (g.count > 1) {
+          sDesc += ` (${g.count}セット)`;
+        }
+        if (g.side) sDesc = `[${g.side === 'L' ? '左' : '右'}] ` + sDesc;
+        if (g.variation) sDesc += ` (${g.variation})`;
+        if (g.rpe) sDesc += ` (RPE: ${g.rpe})`;
         return sDesc;
       });
 

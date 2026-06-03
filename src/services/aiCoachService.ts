@@ -24,13 +24,16 @@ export const sendMessageToAICoach = async (
   userWeight?: number | null,
   weightUnit?: string
 ): Promise<AICoachResponse> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 seconds timeout
+
   try {
     // 1. Gather context: use customContext if provided (from direct page sparkles buttons),
-    // otherwise load recent 5 workout logs from the SQLite database.
+    // otherwise load recent 3 workout logs from the SQLite database.
     let workoutHistoryContext = customContext;
     if (!workoutHistoryContext) {
       try {
-        workoutHistoryContext = await getRecentWorkoutSummaryForAI(5);
+        workoutHistoryContext = await getRecentWorkoutSummaryForAI(3);
       } catch (dbErr) {
         console.warn('Failed to load recent workout logs for AI context', dbErr);
         workoutHistoryContext = '過去の履歴を取得できませんでした。';
@@ -53,7 +56,10 @@ export const sendMessageToAICoach = async (
         weight_unit: weightUnit || 'kg',
         language: lang,
       }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (response.status === 429) {
       return {
@@ -77,8 +83,18 @@ export const sendMessageToAICoach = async (
     } else {
       throw new Error('Invalid response structure from proxy');
     }
-  } catch (err) {
+  } catch (err: any) {
+    clearTimeout(timeoutId);
     console.error('Failed to communicate with AI Coach', err);
+    
+    if (err.name === 'AbortError') {
+      return {
+        reply: i18next.t('ui.coach.timeout_error') || '接続タイムアウトが発生しました。通信環境の良い場所で再度お試しください。',
+        success: false,
+        errorType: 'network',
+      };
+    }
+    
     return {
       reply: i18next.t('ui.coach.network_error') || 'ネットワークエラーが発生しました。接続を確認してください。',
       success: false,
