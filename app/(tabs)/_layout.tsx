@@ -48,14 +48,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="exercises"
-        options={{
-          headerTitle: t('ui.tabs.exercises'),
-          title: t('ui.tabs.exercises'),
-          tabBarIcon: ({ color }) => <Ionicons name="list" size={26} color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="coach"
         options={{
           href: AI_CONFIG.status === 'disabled' ? null : undefined,
