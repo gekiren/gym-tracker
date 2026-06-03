@@ -1,12 +1,12 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, FlatList, TextInput, Modal } from 'react-native';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
-import { format } from 'date-fns';
+import { format, startOfWeek, startOfMonth } from 'date-fns';
 import { Dimensions } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
+import { LineChart, BarChart } from 'react-native-chart-kit';
 import { getDB, loadFullWorkoutData, deleteWorkout, getExercises, addCustomExercise, deleteExercise, getFavoriteIds, toggleFavorite } from '../../src/db/database';
 import { Theme } from '../../src/theme';
 import { formatWorkoutToMarkdown } from '../../src/utils/markdownExport';
@@ -25,11 +25,13 @@ type Exercise = {
 
 export default function HistoryScreen() {
   const settings = useWorkoutStore(state => state.settings);
+  const chartScrollRef = useRef<ScrollView>(null);
   const [workouts, setWorkouts] = useState<any[]>([]);
   const { t } = useTranslation();
 
   // タブ切り替え用のステート
   const [activeTab, setActiveTab] = useState<'workouts' | 'exercises'>('workouts');
+  const [chartScale, setChartScale] = useState<'day' | 'week' | 'month'>('day');
 
   // 種目一覧用のステート
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -216,17 +218,75 @@ export default function HistoryScreen() {
   };
 
   const getChartData = () => {
-    const wRev = [...workouts].reverse().filter(w => w.volume > 0);
-    if (wRev.length < 2) return null;
-    
-    return {
-      labels: wRev.map(w => format(new Date(w.start_time), 'MM/dd')).slice(-6),
-      datasets: [
-        {
-          data: wRev.map(w => w.volume).slice(-6)
+    const wValid = workouts.filter(w => w.volume > 0);
+    if (wValid.length === 0) return null;
+
+    if (chartScale === 'day') {
+      const wRev = [...wValid].reverse();
+      if (wRev.length < 2) return null;
+      return {
+        labels: wRev.map(w => format(new Date(w.start_time), 'MM/dd')).slice(-50),
+        datasets: [
+          {
+            data: wRev.map(w => w.volume).slice(-50)
+          }
+        ]
+      };
+    }
+
+    if (chartScale === 'week') {
+      const weeklyVolumes: { [key: string]: { date: Date; volume: number } } = {};
+      wValid.forEach(w => {
+        const date = new Date(w.start_time);
+        const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+        const key = weekStart.toISOString();
+        if (!weeklyVolumes[key]) {
+          weeklyVolumes[key] = { date: weekStart, volume: 0 };
         }
-      ]
-    };
+        weeklyVolumes[key].volume += w.volume || 0;
+      });
+
+      const sortedWeeks = Object.values(weeklyVolumes).sort((a, b) => a.date.getTime() - b.date.getTime());
+      if (sortedWeeks.length < 2) return null;
+
+      const recentWeeks = sortedWeeks.slice(-50);
+      return {
+        labels: recentWeeks.map(w => format(w.date, 'MM/dd')),
+        datasets: [
+          {
+            data: recentWeeks.map(w => w.volume)
+          }
+        ]
+      };
+    }
+
+    if (chartScale === 'month') {
+      const monthlyVolumes: { [key: string]: { date: Date; volume: number } } = {};
+      wValid.forEach(w => {
+        const date = new Date(w.start_time);
+        const monthStart = startOfMonth(date);
+        const key = monthStart.toISOString();
+        if (!monthlyVolumes[key]) {
+          monthlyVolumes[key] = { date: monthStart, volume: 0 };
+        }
+        monthlyVolumes[key].volume += w.volume || 0;
+      });
+
+      const sortedMonths = Object.values(monthlyVolumes).sort((a, b) => a.date.getTime() - b.date.getTime());
+      if (sortedMonths.length < 2) return null;
+
+      const recentMonths = sortedMonths.slice(-50);
+      return {
+        labels: recentMonths.map(w => format(w.date, 'yyyy/MM')),
+        datasets: [
+          {
+            data: recentMonths.map(w => w.volume)
+          }
+        ]
+      };
+    }
+
+    return null;
   };
 
   const chartData = getChartData();
@@ -285,26 +345,65 @@ export default function HistoryScreen() {
           {chartData && (
             <View style={styles.chartContainer}>
               <Text style={styles.chartTitle}>{t('ui.history.chart_title', { unit: settings.weightUnit })}</Text>
-              <LineChart
-                data={chartData}
-                width={Dimensions.get('window').width - Theme.spacing.md * 2}
-                height={220}
-                chartConfig={{
-                  backgroundColor: Theme.colors.card,
-                  backgroundGradientFrom: Theme.colors.card,
-                  backgroundGradientTo: Theme.colors.card,
-                  decimalPlaces: 0,
-                  color: (opacity = 1) => `rgba(79, 172, 254, ${opacity})`,
-                  labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                  propsForDots: {
-                    r: "4",
-                    strokeWidth: "2",
-                    stroke: Theme.colors.primary
-                  }
-                }}
-                bezier
-                style={styles.chart}
-              />
+              
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
+                <View style={styles.scaleContainer}>
+                  {(['day', 'week', 'month'] as const).map(scale => (
+                    <TouchableOpacity
+                      key={scale}
+                      style={[styles.scaleButton, chartScale === scale && styles.scaleButtonActive]}
+                      onPress={() => {
+                        setChartScale(scale);
+                      }}
+                    >
+                      <Text style={[styles.scaleButtonText, chartScale === scale && styles.scaleButtonTextActive]}>
+                        {t(`ui.history.scale_${scale}`)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={{ backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, overflow: 'hidden' }}>
+                {/* スクロールするグラフ本体部分 */}
+                <ScrollView
+                  key={chartScale}
+                  ref={chartScrollRef}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  onContentSizeChange={() => chartScrollRef.current?.scrollToEnd({ animated: false })}
+                  contentContainerStyle={{ paddingLeft: 15, paddingRight: 20 }}
+                >
+                  <BarChart
+                    data={chartData}
+                    width={Math.max(180, chartData.labels.length * 48)}
+                    height={220}
+                    chartConfig={{
+                      backgroundColor: Theme.colors.card,
+                      backgroundGradientFrom: Theme.colors.card,
+                      backgroundGradientTo: Theme.colors.card,
+                      decimalPlaces: 0,
+                      color: (opacity = 1) => `rgba(79, 172, 254, ${opacity})`,
+                      labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                      barPercentage: 0.55,
+                      propsForBackgroundLines: {
+                        stroke: 'rgba(255, 255, 255, 0.05)',
+                        strokeDasharray: '3',
+                      }
+                    }}
+                    withHorizontalLabels={false}
+                    withVerticalLabels={true}
+                    showValuesOnTopOfBars={true}
+                    yAxisLabel=""
+                    yAxisSuffix=""
+                    style={{
+                      marginLeft: -10,
+                      paddingRight: 16,
+                      paddingTop: 12,
+                    }}
+                  />
+                </ScrollView>
+              </View>
             </View>
           )}
 
@@ -542,7 +641,49 @@ const styles = StyleSheet.create({
   },
   chartContainer: { marginBottom: Theme.spacing.xl },
   chartTitle: { color: Theme.colors.text, fontSize: 16, fontWeight: 'bold', marginBottom: Theme.spacing.md },
-  chart: { borderRadius: Theme.borderRadius.md, marginLeft: -16 },
+  scaleContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: Theme.borderRadius.sm,
+    padding: 2,
+    marginBottom: Theme.spacing.md,
+    alignSelf: 'flex-start',
+  },
+  scaleButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: Theme.borderRadius.sm - 2,
+  },
+  scaleButtonActive: {
+    backgroundColor: Theme.colors.card,
+  },
+  scaleButtonText: {
+    color: Theme.colors.textMuted,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  scaleButtonTextActive: {
+    color: Theme.colors.primary,
+    fontWeight: 'bold',
+  },
+  tooltipContainer: {
+    backgroundColor: 'rgba(79, 172, 254, 0.15)',
+    borderColor: 'rgba(79, 172, 254, 0.4)',
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: Theme.borderRadius.sm,
+  },
+  tooltipText: {
+    color: Theme.colors.text,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  tooltipValue: {
+    color: Theme.colors.primary,
+    fontWeight: 'bold',
+  },
+  chart: { borderRadius: Theme.borderRadius.md },
   // 種目用のスタイル
   actionRow: { flexDirection: 'row', paddingHorizontal: Theme.spacing.md, marginBottom: 8 },
   searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: Theme.colors.card, paddingHorizontal: Theme.spacing.sm, borderRadius: Theme.borderRadius.md, marginRight: Theme.spacing.md },

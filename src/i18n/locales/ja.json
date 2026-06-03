@@ -132,8 +132,7 @@
       "delete_title": "履歴を削除",
       "delete_message": "このワークアウト記録を削除しますか？",
       "sets": "セット",
-      "not_found": "ワークアウトが見つかりませんでした。",
-      "back": "戻る"
+      "not_found": "ワークアウトが見つかりませんでした。"
     },
 
     "edit_workout": {
@@ -213,7 +212,10 @@
       "copy_success_message": "ワークアウトの記録をMarkdown形式でクリップボードにコピーしました😎",
       "duration_label": "所要時間",
       "exercises_count": "種目数",
-      "volume_label": "ボリューム"
+      "volume_label": "ボリューム",
+      "scale_day": "日",
+      "scale_week": "週",
+      "scale_month": "月"
     },
     "exercise_library": {
       "title": "種目辞典",

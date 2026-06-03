@@ -133,8 +133,7 @@
       "delete_title": "Delete Workout",
       "delete_message": "Are you sure you want to delete this workout?",
       "sets": "sets",
-      "not_found": "Workout not found.",
-      "back": "Back"
+      "not_found": "Workout not found."
     },
 
     "edit_workout": {
@@ -218,7 +217,10 @@
       "copy_success_message": "Workout history copied to clipboard in Markdown format😎",
       "duration_label": "Duration",
       "exercises_count": "Exercises",
-      "volume_label": "Volume"
+      "volume_label": "Volume",
+      "scale_day": "Day",
+      "scale_week": "Week",
+      "scale_month": "Month"
     },
     "exercise_library": {
       "title": "Exercise Library",

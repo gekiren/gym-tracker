@@ -51,7 +51,7 @@ export default function WorkoutDetailsScreen() {
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <Text style={{ color: Theme.colors.textMuted }}>{t('ui.history.not_found')}</Text>
         <TouchableOpacity style={{ marginTop: 16 }} onPress={() => router.back()}>
-          <Text style={{ color: Theme.colors.primary }}>{t('ui.history.back')}</Text>
+          <Text style={{ color: Theme.colors.primary }}>{t('ui.common.back')}</Text>
         </TouchableOpacity>
       </View>
     );
