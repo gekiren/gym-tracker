@@ -318,7 +318,7 @@ export default function ActiveWorkoutScreen() {
               <TouchableOpacity onPress={handleAICoachWorkout} style={{ padding: 4 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <Ionicons name="sparkles" size={16} color={Theme.colors.primary} />
-                  <Text style={{ color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold' }}>AIコーチ</Text>
+                  <Text style={{ color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold' }}>AIトレーナー</Text>
                 </View>
               </TouchableOpacity>
             )}

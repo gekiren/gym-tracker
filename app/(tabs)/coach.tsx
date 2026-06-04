@@ -40,10 +40,10 @@ export default function CoachScreen() {
             <Ionicons name="build" size={42} color={Theme.colors.primary} />
           </View>
           <Text style={styles.maintenanceHeader}>
-            AIコーチ 調整中
+            AIトレーナー 調整中
           </Text>
           <Text style={styles.maintenanceBody}>
-            AIコーチ機能は、より快適で質の高いアドバイスを提供するため、現在メンテナンス（調整）を実施しております。
+            AIトレーナー機能は、より快適で質の高いアドバイスを提供するため、現在メンテナンス（調整）を実施しております。
           </Text>
           <Text style={styles.maintenanceFooter}>
             まもなく再開いたしますので、今しばらくお待ちください！
@@ -87,7 +87,7 @@ export default function CoachScreen() {
       // Add system message into the chat showing context was linked
       const contextLinkedMsg: ChatMessage = {
         id: `system-context-${Date.now()}`,
-        text: `📌 【連動コンテキスト：${params.title || 'ワークアウト詳細'}】が正常に読み込まれました。この内容に基づいてコーチに質問できます！`,
+        text: `📌 【連動コンテキスト：${params.title || 'ワークアウト詳細'}】が正常に読み込まれました。この内容に基づいてトレーナーに質問できます！`,
         sender: 'ai',
         timestamp: new Date(),
       };
@@ -277,7 +277,7 @@ export default function CoachScreen() {
             <View style={[styles.bubble, styles.bubbleAI, styles.loadingBubble]}>
               <View style={styles.aiSideAccent} />
               <ActivityIndicator size="small" color={Theme.colors.primary} style={{ marginRight: 10 }} />
-              <Text style={styles.loadingText}>AIコーチが分析中...</Text>
+              <Text style={styles.loadingText}>AIトレーナーが分析中...</Text>
             </View>
           </View>
         )}
@@ -319,7 +319,7 @@ export default function CoachScreen() {
           placeholder={
             isQuotaExhausted 
               ? (t('ui.profile.quota_exhausted_alert') || '今月の利用枠が残っていません。')
-              : (t('ui.coach.input_placeholder') || 'コーチに質問してみる...')
+              : (t('ui.coach.input_placeholder') || 'トレーナーに質問してみる...')
           }
           placeholderTextColor={isQuotaExhausted ? Theme.colors.danger : Theme.colors.textMuted}
           editable={!isQuotaExhausted && !loading}
