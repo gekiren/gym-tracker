@@ -288,45 +288,7 @@ export default function ExerciseDetailScreen() {
           </View>
         </View>
 
-        {Object.keys(personalRecords).length > 0 && (
-          <View style={styles.prSection}>
-            <Text style={[styles.sectionTitle, { paddingHorizontal: Theme.spacing.lg, marginBottom: 8 }]}>{t('ui.exercise_detail.section_pr')}</Text>
-            {Object.entries(personalRecords).map(([variation, prMap]) => (
-              <View key={variation} style={{ marginBottom: 12 }}>
-                {variation !== 'default' && (
-                  <Text style={styles.prVariationTitle}>{t('ui.active_workout.stance_label')}: {translateStance(variation)}</Text>
-                )}
-                <View style={styles.prList}>
-                  {Object.keys(prMap)
-                    .sort((a, b) => parseInt(a) - parseInt(b))
-                    .map(reps => {
-                      const repNum = parseInt(reps);
-                      const weight = prMap[repNum];
-                      const oneRm = repNum === 1 ? weight : Math.round(weight * (1 + (repNum / 30)));
-                      return (
-                        <TouchableOpacity 
-                          key={reps} 
-                          style={styles.prItem}
-                          activeOpacity={0.7}
-                          onPress={() => {
-                            setSelectedChartReps(repNum);
-                            setSelectedChartVariation(variation);
-                            setShowChartModal(true);
-                          }}
-                        >
-                          <Text style={styles.prReps}>{reps}{t('ui.common.reps_unit')}</Text>
-                          <Text style={styles.prWeight}>{weight} {settings.weightUnit}</Text>
-                          {repNum > 1 && (
-                            <Text style={styles.prOneRm}>1RM: {oneRm}{settings.weightUnit}</Text>
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
+
 
         {/* Stance Management Section */}
         <View style={styles.stanceSection}>
