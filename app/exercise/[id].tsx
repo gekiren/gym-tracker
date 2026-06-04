@@ -156,7 +156,7 @@ export default function ExerciseDetailScreen() {
 
     if (chartScale === 'day') {
       const hRev = [...hValid].reverse();
-      if (hRev.length < 2) return null;
+      if (hRev.length < 1) return null;
       return {
         labels: hRev.map(h => format(new Date(h.start_time), 'MM/dd')).slice(-50),
         datasets: [
@@ -180,7 +180,7 @@ export default function ExerciseDetailScreen() {
       });
 
       const sortedWeeks = Object.values(weeklyVolumes).sort((a, b) => a.date.getTime() - b.date.getTime());
-      if (sortedWeeks.length < 2) return null;
+      if (sortedWeeks.length < 1) return null;
 
       const recentWeeks = sortedWeeks.slice(-50);
       return {
@@ -206,7 +206,7 @@ export default function ExerciseDetailScreen() {
       });
 
       const sortedMonths = Object.values(monthlyVolumes).sort((a, b) => a.date.getTime() - b.date.getTime());
-      if (sortedMonths.length < 2) return null;
+      if (sortedMonths.length < 1) return null;
 
       const recentMonths = sortedMonths.slice(-50);
       return {
