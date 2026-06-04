@@ -1,6 +1,8 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { saveSetting } from '../db/database';
 import { useWorkoutStore } from '../store/workoutStore';
+import * as Sentry from '@sentry/react-native';
+import { SENTRY_CONFIG } from '../config/sentryConfig';
 
 // クラッシュログの保存先パス
 const CRASH_LOG_PATH = (FileSystem.documentDirectory || '') + 'crash_log.json';
@@ -11,6 +13,30 @@ export interface CrashLog {
   timestamp: string;
   isFatal: boolean;
 }
+
+let isSentryInitialized = false;
+
+/**
+ * Sentry を初期化する（オプトイン同意時のみ呼び出される）
+ */
+export const initializeSentry = () => {
+  if (isSentryInitialized) return;
+  try {
+    // SENTRY_CONFIG.dsn がプレースホルダーのままでないかチェック
+    if (SENTRY_CONFIG.dsn && !SENTRY_CONFIG.dsn.includes('placeholder')) {
+      Sentry.init({
+        dsn: SENTRY_CONFIG.dsn,
+        debug: SENTRY_CONFIG.debug,
+      });
+      isSentryInitialized = true;
+      console.log('[CrashReporter] Sentry initialized successfully.');
+    } else {
+      console.log('[CrashReporter] Sentry DSN is placeholder. Sentry auto-reporting is disabled, mock reporting will be used.');
+    }
+  } catch (e) {
+    console.error('[CrashReporter] Failed to initialize Sentry:', e);
+  }
+};
 
 /**
  * クラッシュログファイルを保存する
@@ -73,36 +99,34 @@ export const deleteCrashLog = async (): Promise<void> => {
 };
 
 /**
- * クラッシュレポートを外部解析ツールへ送信する（モック実装）
+ * クラッシュレポートを送信する
  */
 export const sendCrashReport = async (log: CrashLog): Promise<boolean> => {
-  console.log('[CrashReporter] Sending crash report to analytics server...', log);
+  console.log('[CrashReporter] Sending crash report to Sentry/Analytics...', log);
   
   // 送信中のローディング感を出すために1.5秒待機
   await new Promise((resolve) => setTimeout(resolve, 1500));
 
-  // --- 将来の Sentry / Firebase Crashlytics 等の SDK 導入用ガイド ---
-  //
-  // 1. Sentry (sentry-expo / @sentry/react-native) の場合:
-  //    import * as Sentry from '@sentry/react-native';
-  //    Sentry.captureException(new Error(log.message), {
-  //      extra: {
-  //        stack: log.stack,
-  //        timestamp: log.timestamp,
-  //        isFatal: log.isFatal
-  //      }
-  //    });
-  //
-  // 2. Firebase Crashlytics (@react-native-firebase/crashlytics) の場合:
-  //    import crashlytics from '@react-native-firebase/crashlytics';
-  //    crashlytics().setAttribute('timestamp', log.timestamp);
-  //    crashlytics().setAttribute('isFatal', String(log.isFatal));
-  //    crashlytics().recordError(new Error(log.message));
-  //
-  // ---------------------------------------------------------------
-
-  console.log('[CrashReporter] Crash report sent successfully.');
-  return true;
+  try {
+    if (isSentryInitialized) {
+      const errorObject = new Error(log.message);
+      errorObject.stack = log.stack;
+      
+      Sentry.captureException(errorObject, {
+        extra: {
+          timestamp: log.timestamp,
+          isFatal: log.isFatal
+        }
+      });
+      console.log('[CrashReporter] Crash report sent to Sentry successfully.');
+    } else {
+      console.log('[CrashReporter] Sentry is not initialized. Simulated success (mock).');
+    }
+    return true;
+  } catch (e) {
+    console.error('[CrashReporter] Failed to capture exception with Sentry:', e);
+    return false;
+  }
 };
 
 /**
@@ -120,7 +144,18 @@ export const registerGlobalErrorHandler = () => {
     // 1. ローカルにクラッシュログを緊急保存
     await saveCrashLog(error, isFatal ?? true);
     
-    // 2. 本来のエラーハンドラを呼び出し、アプリを終了/開発用エラー画面を表示
+    // 2. もし Sentry が初期化されている場合は、Sentry にも直接送信を試みる
+    if (isSentryInitialized) {
+      try {
+        Sentry.captureException(error, {
+          tags: { fatal: String(isFatal ?? true) }
+        });
+      } catch (sentryErr) {
+        console.error('[CrashReporter] Sentry failed to capture exception inside handler:', sentryErr);
+      }
+    }
+    
+    // 3. 本来のエラーハンドラを呼び出し、アプリを終了/開発用エラー画面を表示
     if (defaultHandler) {
       defaultHandler(error, isFatal);
     }

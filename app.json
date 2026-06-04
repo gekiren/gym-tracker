@@ -61,6 +61,13 @@
           "defaultChannel": "rest-timer",
           "sounds": []
         }
+      ],
+      [
+        "@sentry/react-native",
+        {
+          "organization": "gekirennomads-organization",
+          "project": "gym-tracker"
+        }
       ]
     ],
     "experiments": {

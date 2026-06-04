@@ -7,7 +7,7 @@ import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { getRoutines, getPreviousWorkoutSets, getPersonalRecords, saveSetting } from '../../src/db/database';
 import { translateExercise } from '../../src/i18n';
-import { checkHasCrashLog, readCrashLog, deleteCrashLog, sendCrashReport } from '../../src/services/crashReporterService';
+import { checkHasCrashLog, readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../../src/services/crashReporterService';
 
 export default function WorkoutScreen() {
   const { t } = useTranslation();
@@ -107,6 +107,10 @@ export default function WorkoutScreen() {
       
       // Zustandストアを更新
       useWorkoutStore.getState().setCrashConsent(consent);
+
+      if (consent === 'agreed') {
+        initializeSentry();
+      }
 
       // 未送信クラッシュログがある場合の処理
       if (hasUnsentCrashLog) {

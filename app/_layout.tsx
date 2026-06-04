@@ -12,7 +12,7 @@ import '../src/i18n';
 import i18n, { getCurrentLanguage } from '../src/i18n';
 import * as Localization from 'expo-localization';
 import { DEFAULT_STANCES } from '../src/utils/stances';
-import { registerGlobalErrorHandler, checkHasCrashLog, readCrashLog, deleteCrashLog, sendCrashReport } from '../src/services/crashReporterService';
+import { registerGlobalErrorHandler, checkHasCrashLog, readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../src/services/crashReporterService';
 
 // アプリの起動時にグローバルエラーハンドラを登録
 registerGlobalErrorHandler();
@@ -41,6 +41,11 @@ export default function RootLayout() {
 
       // クラッシュレポート同意ステータスと未送信ログのチェック
       const crashConsent = (storedSettings['crash_report_consent'] ?? 'unset') as 'agreed' | 'declined' | 'unset';
+      
+      if (crashConsent === 'agreed') {
+        initializeSentry();
+      }
+
       const hasCrashLog = await checkHasCrashLog();
       let hasUnsentLog = false;
 
