@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 
 const CONTACT_EMAIL = 'trenotesupport@gmail.com';
-const LAST_UPDATED_JA = '2026年4月29日';
-const LAST_UPDATED_EN = 'April 29, 2026';
+const LAST_UPDATED_JA = '2026年6月4日';
+const LAST_UPDATED_EN = 'June 4, 2026';
 
 export default function PrivacyPolicyScreen() {
   const { t, i18n } = useTranslation();
@@ -69,6 +69,8 @@ export default function PrivacyPolicyScreen() {
               The App stores the following data <Text style={styles.bold}>only on your device</Text>:{'\n\n'}
               • Workout history (exercises, sets, reps, weight, RPE){'\n'}
               • App settings (language, rest timer preferences){'\n\n'}
+              <Text style={styles.bold}>We also collect the following anonymous diagnostics (only with your explicit consent):</Text>{'\n'}
+              • Anonymous crash logs (error message, stack trace, timestamp) to help improve app quality.{'\n\n'}
               <Text style={styles.bold}>We do NOT collect any of the following:</Text>{'\n'}
               • Personal identification information (name, age, email, etc.){'\n'}
               • Location data{'\n'}
@@ -87,7 +89,7 @@ export default function PrivacyPolicyScreen() {
             </Section>
 
             <Section title="Third-Party Services">
-              The App does not use any third-party analytics, advertising SDKs, or data services. No data is shared with third parties.
+              With your consent, the App transmits anonymous crash logs to diagnostic platforms (e.g. Sentry / Firebase Crashlytics) to help debug issues. Aside from these anonymous diagnostic services, the App does not use any advertising SDKs or share your data with other third parties.
             </Section>
 
             <Section title="Children's Privacy">
@@ -112,11 +114,13 @@ export default function PrivacyPolicyScreen() {
               本アプリは、以下のデータを<Text style={styles.bold}>お客様のデバイス内にのみ</Text>保存します:{'\n\n'}
               • トレーニング記録（種目名、セット数、回数、重量、RPEなど）{'\n'}
               • アプリの設定（言語設定、インターバルタイマーの設定）{'\n\n'}
+              <Text style={styles.bold}>また、お客様の明示的な同意がある場合に限り、以下のデータを匿名で収集します：</Text>{'\n'}
+              • 匿名のクラッシュ診断レポート（エラーメッセージ、スタックトレース、発生日時などの動作ログ）。これはアプリの不具合修正にのみ利用されます。{'\n\n'}
               <Text style={styles.bold}>以下の情報は一切収集しません：</Text>{'\n'}
               • 氏名・年齢・メールアドレスなどの個人を特定できる情報{'\n'}
               • 位置情報{'\n'}
               • サーバーへ送信される運動・健康データ{'\n'}
-              • 広告識別子・利用状況 of 分析データ
+              • 広告識別子・利用状況の分析データ
             </Section>
 
             <TouchableOpacity activeOpacity={1} onPress={handleTap}>
@@ -130,7 +134,7 @@ export default function PrivacyPolicyScreen() {
             </Section>
 
             <Section title="第三者への提供">
-              本アプリは、第三者向けの分析・広告SDKを一切使用しておらず、お客様のデータを第三者に提供することはありません。
+              お客様の同意のもとで、不具合の早期発見・修正を目的として、匿名のクラッシュログを解析プラットフォーム（Sentry や Firebase Crashlytics など）に送信することがあります。これ以外の広告SDKやサードパーティサービスへのデータ提供は一切行っていません。
             </Section>
 
             <Section title="お子様のプライバシー">

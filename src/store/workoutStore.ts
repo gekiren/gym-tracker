@@ -63,6 +63,9 @@ interface WorkoutState {
   tickRestTimer: () => void;
   markWorkStart: () => void;
 
+  hasUnsentCrashLog: boolean;
+  setHasUnsentCrashLog: (hasLog: boolean) => void;
+
   // Application Settings
   settings: {
     defaultRest: number;
@@ -80,14 +83,16 @@ interface WorkoutState {
       showVolume: boolean;
       showStance: boolean;
     };
+    crashConsent: 'agreed' | 'declined' | 'unset';
   };
-  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null, needsStyleSelection?: boolean, aiTokensBalance?: number) => void;
+  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null, needsStyleSelection?: boolean, aiTokensBalance?: number, crashConsent?: 'agreed' | 'declined' | 'unset') => void;
   setBodyWeight: (weight: number | null) => void;
   setAITokensBalance: (balance: number) => void;
   loadCustomStances: (stances: string[]) => void;
   addCustomStance: (stance: string) => void;
   removeCustomStance: (stance: string) => void;
   setDisplayFields: (fields: Partial<{ showRpe: boolean; show1RM: boolean; showVolume: boolean; showStance: boolean }>) => void;
+  setCrashConsent: (consent: 'agreed' | 'declined' | 'unset') => void;
 
   // Routine Draft Mode
   draftRoutine: {
@@ -128,6 +133,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   exercises: [],
   lastRestFinishedAt: null,
   restTimer: { isActive: false, remaining: 0, endTime: null },
+  hasUnsentCrashLog: false,
+  setHasUnsentCrashLog: (hasUnsentCrashLog) => set({ hasUnsentCrashLog }),
 
   settings: {
     defaultRest: 90,
@@ -144,11 +151,12 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       show1RM: true,
       showVolume: true,
       showStance: true,
-    }
+    },
+    crashConsent: 'unset'
   },
 
-  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false, bodyWeight: number | null = null, needsStyleSelection: boolean = false, aiTokensBalance: number = 20) => set((state) => ({
-    settings: { ...state.settings, defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight, needsStyleSelection, aiTokensBalance }
+  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false, bodyWeight: number | null = null, needsStyleSelection: boolean = false, aiTokensBalance: number = 20, crashConsent: 'agreed' | 'declined' | 'unset' = 'unset') => set((state) => ({
+    settings: { ...state.settings, defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight, needsStyleSelection, aiTokensBalance, crashConsent }
   })),
 
   setBodyWeight: (weight: number | null) => set((state) => ({
@@ -176,6 +184,10 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       ...state.settings,
       displayFields: { ...state.settings.displayFields, ...fields }
     }
+  })),
+
+  setCrashConsent: (crashConsent) => set((state) => ({
+    settings: { ...state.settings, crashConsent }
   })),
 
   draftRoutine: { title: '', exercises: [] },
@@ -594,7 +606,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       workoutNotes: '',
       exercises: [],
       lastRestFinishedAt: null,
-      restTimer: { isActive: false, remaining: 0, endTime: null },
+      hasUnsentCrashLog: false,
       settings: {
         defaultRest: 90,
         autoRest: true,
@@ -610,7 +622,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           show1RM: true,
           showVolume: true,
           showStance: true,
-        }
+        },
+        crashConsent: 'unset'
       },
       draftRoutine: { title: '', exercises: [] }
     });

@@ -25,6 +25,7 @@ export default function ProfileScreen() {
   const [show1RM, setShow1RM] = useState(settings.displayFields.show1RM);
   const [showVolume, setShowVolume] = useState(settings.displayFields.showVolume);
   const [showStance, setShowStance] = useState(settings.displayFields.showStance);
+  const [crashConsent, setCrashConsent] = useState(settings.crashConsent);
 
   // Database Reset State
   const [isResetModalVisible, setIsResetModalVisible] = useState(false);
@@ -42,6 +43,7 @@ export default function ProfileScreen() {
     setShow1RM(settings.displayFields.show1RM);
     setShowVolume(settings.displayFields.showVolume);
     setShowStance(settings.displayFields.showStance);
+    setCrashConsent(settings.crashConsent);
 
     const fetchAccountType = async () => {
       try {
@@ -129,6 +131,13 @@ export default function ProfileScreen() {
     changeLanguage(lang);
     setCurrentLang(lang);
     await saveSetting('language', lang);
+  };
+
+  const handleUpdateCrashConsent = async (val: boolean) => {
+    const consent = val ? 'agreed' : 'declined';
+    setCrashConsent(consent);
+    useWorkoutStore.getState().setCrashConsent(consent);
+    await saveSetting('crash_report_consent', consent);
   };
 
   const handleUpdateBodyWeight = async (val: string) => {
@@ -319,7 +328,7 @@ export default function ProfileScreen() {
               placeholderTextColor={Theme.colors.textMuted}
             />
           </View>
-          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'flex-start' }]}>
+          <View style={[styles.settingRow, { flexDirection: 'column', alignItems: 'flex-start' }]}>
             <Text style={styles.settingLabel}>{t('ui.profile.language_label')}</Text>
             <View style={[styles.chipContainer, { marginTop: 12 }]}>
               <TouchableOpacity
@@ -335,6 +344,18 @@ export default function ProfileScreen() {
                 <Text style={[styles.chipText, currentLang === 'en' && styles.chipTextActive]}>🇺🇸 English</Text>
               </TouchableOpacity>
             </View>
+          </View>
+          <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
+            <View style={{ flex: 1, paddingRight: 16 }}>
+              <Text style={styles.settingLabel}>{t('ui.profile.crash_report_consent_label') || '匿名のクラッシュレポート自動送信'}</Text>
+              <Text style={styles.settingDesc}>{t('ui.profile.crash_report_consent_desc') || 'アプリが異常終了した際、匿名の診断ログを自動送信して品質改善に協力します。'}</Text>
+            </View>
+            <Switch
+              value={crashConsent === 'agreed'}
+              onValueChange={handleUpdateCrashConsent}
+              trackColor={{ false: '#333', true: Theme.colors.primary }}
+              thumbColor={'#fff'}
+            />
           </View>
         </View>
       </View>
