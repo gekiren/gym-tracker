@@ -65,7 +65,7 @@
       [
         "@sentry/react-native",
         {
-          "organization": "gekirennomads-organization",
+          "organization": "toshidiyilgmailcom",
           "project": "gym-tracker"
         }
       ]
