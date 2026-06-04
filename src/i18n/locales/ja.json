@@ -215,7 +215,8 @@
       "volume_label": "ボリューム",
       "scale_day": "日",
       "scale_week": "週",
-      "scale_month": "月"
+      "scale_month": "月",
+      "chart_title_calories": "最近の総消費カロリー (kcal)"
     },
     "exercise_library": {
       "title": "種目辞典",

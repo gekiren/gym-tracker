@@ -32,6 +32,7 @@ export default function HistoryScreen() {
   // タブ切り替え用のステート
   const [activeTab, setActiveTab] = useState<'workouts' | 'exercises'>('workouts');
   const [chartScale, setChartScale] = useState<'day' | 'week' | 'month'>('day');
+  const [chartMetric, setChartMetric] = useState<'volume' | 'calories'>('volume');
 
   // 種目一覧用のステート
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -218,7 +219,10 @@ export default function HistoryScreen() {
   };
 
   const getChartData = () => {
-    const wValid = workouts.filter(w => w.volume > 0);
+    const wValid = workouts.filter(w => {
+      const val = chartMetric === 'volume' ? w.volume : w.calories;
+      return val && val > 0;
+    });
     if (wValid.length === 0) return null;
 
     if (chartScale === 'day') {
@@ -228,25 +232,25 @@ export default function HistoryScreen() {
         labels: wRev.map(w => format(new Date(w.start_time), 'MM/dd')).slice(-50),
         datasets: [
           {
-            data: wRev.map(w => w.volume).slice(-50)
+            data: wRev.map(w => chartMetric === 'volume' ? w.volume : w.calories).slice(-50)
           }
         ]
       };
     }
 
     if (chartScale === 'week') {
-      const weeklyVolumes: { [key: string]: { date: Date; volume: number } } = {};
+      const weeklyData: { [key: string]: { date: Date; value: number } } = {};
       wValid.forEach(w => {
         const date = new Date(w.start_time);
         const weekStart = startOfWeek(date, { weekStartsOn: 1 });
         const key = weekStart.toISOString();
-        if (!weeklyVolumes[key]) {
-          weeklyVolumes[key] = { date: weekStart, volume: 0 };
+        if (!weeklyData[key]) {
+          weeklyData[key] = { date: weekStart, value: 0 };
         }
-        weeklyVolumes[key].volume += w.volume || 0;
+        weeklyData[key].value += (chartMetric === 'volume' ? w.volume : w.calories) || 0;
       });
 
-      const sortedWeeks = Object.values(weeklyVolumes).sort((a, b) => a.date.getTime() - b.date.getTime());
+      const sortedWeeks = Object.values(weeklyData).sort((a, b) => a.date.getTime() - b.date.getTime());
       if (sortedWeeks.length < 2) return null;
 
       const recentWeeks = sortedWeeks.slice(-50);
@@ -254,25 +258,25 @@ export default function HistoryScreen() {
         labels: recentWeeks.map(w => format(w.date, 'MM/dd')),
         datasets: [
           {
-            data: recentWeeks.map(w => w.volume)
+            data: recentWeeks.map(w => w.value)
           }
         ]
       };
     }
 
     if (chartScale === 'month') {
-      const monthlyVolumes: { [key: string]: { date: Date; volume: number } } = {};
+      const monthlyData: { [key: string]: { date: Date; value: number } } = {};
       wValid.forEach(w => {
         const date = new Date(w.start_time);
         const monthStart = startOfMonth(date);
         const key = monthStart.toISOString();
-        if (!monthlyVolumes[key]) {
-          monthlyVolumes[key] = { date: monthStart, volume: 0 };
+        if (!monthlyData[key]) {
+          monthlyData[key] = { date: monthStart, value: 0 };
         }
-        monthlyVolumes[key].volume += w.volume || 0;
+        monthlyData[key].value += (chartMetric === 'volume' ? w.volume : w.calories) || 0;
       });
 
-      const sortedMonths = Object.values(monthlyVolumes).sort((a, b) => a.date.getTime() - b.date.getTime());
+      const sortedMonths = Object.values(monthlyData).sort((a, b) => a.date.getTime() - b.date.getTime());
       if (sortedMonths.length < 2) return null;
 
       const recentMonths = sortedMonths.slice(-50);
@@ -280,7 +284,7 @@ export default function HistoryScreen() {
         labels: recentMonths.map(w => format(w.date, 'yyyy/MM')),
         datasets: [
           {
-            data: recentMonths.map(w => w.volume)
+            data: recentMonths.map(w => w.value)
           }
         ]
       };
@@ -344,9 +348,14 @@ export default function HistoryScreen() {
           
           {chartData && (
             <View style={styles.chartContainer}>
-              <Text style={styles.chartTitle}>{t('ui.history.chart_title', { unit: settings.weightUnit })}</Text>
+              <Text style={styles.chartTitle}>
+                {chartMetric === 'volume' 
+                  ? t('ui.history.chart_title', { unit: settings.weightUnit }) 
+                  : t('ui.history.chart_title_calories')}
+              </Text>
               
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
+                {/* 期間切り替え */}
                 <View style={styles.scaleContainer}>
                   {(['day', 'week', 'month'] as const).map(scale => (
                     <TouchableOpacity
@@ -362,12 +371,29 @@ export default function HistoryScreen() {
                     </TouchableOpacity>
                   ))}
                 </View>
+
+                {/* メトリクス切り替え */}
+                <View style={styles.scaleContainer}>
+                  {(['volume', 'calories'] as const).map(metric => (
+                    <TouchableOpacity
+                      key={metric}
+                      style={[styles.scaleButton, chartMetric === metric && styles.scaleButtonActive]}
+                      onPress={() => {
+                        setChartMetric(metric);
+                      }}
+                    >
+                      <Text style={[styles.scaleButtonText, chartMetric === metric && styles.scaleButtonTextActive]}>
+                        {metric === 'volume' ? t('ui.history.volume_label') : (t('ui.common.calories') || 'Calories')}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
 
               <View style={{ backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, overflow: 'hidden' }}>
                 {/* スクロールするグラフ本体部分 */}
                 <ScrollView
-                  key={chartScale}
+                  key={`${chartScale}_${chartMetric}`}
                   ref={chartScrollRef}
                   horizontal
                   showsHorizontalScrollIndicator={false}
