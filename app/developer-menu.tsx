@@ -9,6 +9,11 @@ import { pickAndImportCSV } from '../src/utils/csvImporter';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Updates from 'expo-updates';
+import { saveSetting } from '../src/db/database';
+import { showReviewDialog } from '../src/services/reviewService';
+import { saveCrashLog, readCrashLog } from '../src/services/crashReporterService';
+import { useWorkoutStore } from '../src/store/workoutStore';
+import * as Clipboard from 'expo-clipboard';
 
 export default function DeveloperMenuScreen() {
   const { t } = useTranslation();
@@ -202,6 +207,66 @@ export default function DeveloperMenuScreen() {
     }
   };
 
+  const handleResetReviewFlag = async () => {
+    try {
+      await saveSetting('has_shown_review_prompt', '0');
+      Alert.alert('リセット完了', 'レビュー促進ポップアップの表示フラグをリセットしました（未表示状態にしました）。');
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    }
+  };
+
+  const handleResetCrashConsent = async () => {
+    try {
+      await saveSetting('crash_report_consent', 'unset');
+      useWorkoutStore.getState().setCrashConsent('unset');
+      Alert.alert('リセット完了', 'クラッシュレポート同意ステータスを未設定（unset）に戻しました。');
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    }
+  };
+
+  const handleGenerateDummyCrashLog = async () => {
+    try {
+      await saveCrashLog(new Error('擬似クラッシュテストエラー'), true);
+      useWorkoutStore.getState().setHasUnsentCrashLog(true);
+      Alert.alert('生成完了', 'ローカルストレージにダミーのクラッシュログを生成し、Zustandフラグを有効化しました。アプリ再起動時または次回ホーム表示時に確認ダイアログが表示されます。');
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    }
+  };
+
+  const handleSimulateCrash = () => {
+    Alert.alert(
+      '擬似クラッシュの実行',
+      '未キャッチエラーをスローしてアプリをクラッシュさせます。よろしいですか？',
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        { 
+          text: 'クラッシュさせる', 
+          style: 'destructive',
+          onPress: () => {
+            throw new Error('デベロッパーメニューから手動実行された擬似クラッシュエラー');
+          }
+        }
+      ]
+    );
+  };
+
+  const handleCopyCrashLog = async () => {
+    try {
+      const log = await readCrashLog();
+      if (!log) {
+        Alert.alert('ログなし', '現在ローカルストレージに未送信のクラッシュログはありません。');
+        return;
+      }
+      await Clipboard.setStringAsync(JSON.stringify(log, null, 2));
+      Alert.alert('コピー完了', 'クラッシュログの内容をクリップボードにコピーしました。チャット画面に貼り付けてAIに送信してください。');
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Stack.Screen
@@ -278,6 +343,61 @@ export default function DeveloperMenuScreen() {
               {isImportingCSV ? 'インポート中...' : 'CSVファイルを選択して移行'}
             </Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Review Dialog Testing Section */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="star-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>レビュー促進ポップアップテスト</Text>
+          </View>
+          <Text style={styles.cardDesc}>
+            完了ワークアウトが10回以上になった際に表示される「レビュー・フィードバック促進ポップアップ」の動作テストを行えます。
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity style={[styles.btnOutline, { flex: 1 }]} onPress={showReviewDialog}>
+              <Ionicons name="play-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 4 }} />
+              <Text style={styles.btnOutlineText}>ダイアログ起動</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.btnOutline, { flex: 1, borderColor: '#ff4d4f', backgroundColor: 'rgba(255, 77, 79, 0.05)' }]} onPress={handleResetReviewFlag}>
+              <Ionicons name="refresh-outline" size={20} color="#ff4d4f" style={{ marginRight: 4 }} />
+              <Text style={[styles.btnOutlineText, { color: '#ff4d4f' }]}>フラグ初期化</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Crash Opt-in Testing Section */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="bug-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>クラッシュレポート機能テスト</Text>
+          </View>
+          <Text style={styles.cardDesc}>
+            アプリ起動時のクラッシュレポート自動送信同意機能（オプトイン）のデバッグテストを行えます。
+          </Text>
+          <View style={{ flexDirection: 'column', gap: 10 }}>
+            <TouchableOpacity style={styles.btnOutline} onPress={handleGenerateDummyCrashLog}>
+              <Ionicons name="document-text-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.btnOutlineText}>ダミークラッシュログ生成</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.btnOutline} onPress={handleCopyCrashLog}>
+              <Ionicons name="copy-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.btnOutlineText}>クラッシュログをコピー</Text>
+            </TouchableOpacity>
+            
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity style={[styles.btnOutline, { flex: 1 }]} onPress={handleResetCrashConsent}>
+                <Ionicons name="refresh-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 4 }} />
+                <Text style={styles.btnOutlineText}>同意状態リセット</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={[styles.btnOutline, { flex: 1, borderColor: '#ff4d4f', backgroundColor: 'rgba(255, 77, 79, 0.05)' }]} onPress={handleSimulateCrash}>
+                <Ionicons name="skull-outline" size={20} color="#ff4d4f" style={{ marginRight: 4 }} />
+                <Text style={[styles.btnOutlineText, { color: '#ff4d4f' }]}>JSクラッシュ実行</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
 
         {/* Export Section */}

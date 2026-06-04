@@ -298,8 +298,9 @@
       "account_type_label": "アカウントの種類",
       "account_basic": "ベーシックプラン",
       "account_premium": "プレミアムプラン",
-      "account_early_adopter": "アーリーアダプター"
-
+      "account_early_adopter": "アーリーアダプター",
+      "crash_report_consent_label": "匿名のクラッシュレポート自動送信",
+      "crash_report_consent_desc": "アプリが異常終了した際、匿名の診断ログを自動送信して品質改善に協力します。"
     },
     "routines": {
       "title": "ルーティン",
@@ -396,6 +397,13 @@
       "input_placeholder": "コーチに質問してみる...",
       "limit_reached_msg": "今月の利用枠が残っていません。",
       "network_error": "ネットワークエラーが発生しました。接続を確認してください。"
+    },
+    "crash_report": {
+      "title": "アプリ改善へのご協力のお願い",
+      "message_detected": "前回の起動時にアプリが予期せず終了しました。品質向上のため、匿名のクラッシュレポートを送信してもよろしいですか？",
+      "message_onboarding": "品質向上のため、匿名のクラッシュレポートを自動送信してもよろしいですか？クラッシュ発生時に自動的にレポートが送信され、早期のバグ修正に役立ちます。",
+      "btn_consent": "送信して協力する（同意）",
+      "btn_decline": "今回は送信しない（拒否）"
     }
   },
   "exercises": {

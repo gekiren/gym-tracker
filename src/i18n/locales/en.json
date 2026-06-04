@@ -303,8 +303,9 @@
       "account_type_label": "Account Type",
       "account_basic": "Basic Plan",
       "account_premium": "Premium Plan",
-      "account_early_adopter": "Early Adopter"
-
+      "account_early_adopter": "Early Adopter",
+      "crash_report_consent_label": "Auto-send anonymous crash reports",
+      "crash_report_consent_desc": "Automatically send anonymous diagnostic logs when the app crashes to help improve quality."
     },
     "routines": {
       "title": "Routines",
@@ -401,6 +402,13 @@
       "input_placeholder": "Ask your coach...",
       "limit_reached_msg": "今月の利用枠が残っていません。",
       "network_error": "Network error occurred. Please check your connection."
+    },
+    "crash_report": {
+      "title": "Help Improve the App",
+      "message_detected": "The app terminated unexpectedly during the last session. Would you like to send an anonymous crash report to help improve quality?",
+      "message_onboarding": "Would you like to automatically send anonymous crash reports to help improve the app? Sharing crash logs helps us find and fix bugs faster.",
+      "btn_consent": "Send and cooperate (Agree)",
+      "btn_decline": "Don't send this time (Decline)"
     }
   },
   "exercises": {

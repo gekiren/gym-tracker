@@ -12,6 +12,10 @@ import '../src/i18n';
 import i18n, { getCurrentLanguage } from '../src/i18n';
 import * as Localization from 'expo-localization';
 import { DEFAULT_STANCES } from '../src/utils/stances';
+import { registerGlobalErrorHandler, checkHasCrashLog, readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../src/services/crashReporterService';
+
+// アプリの起動時にグローバルエラーハンドラを登録
+registerGlobalErrorHandler();
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -35,6 +39,33 @@ export default function RootLayout() {
       const needsStyleSelection = !storedSettings['style_mode'];
       const weightUnit = (storedSettings['weight_unit'] === 'lbs' ? 'lbs' : 'kg') as 'kg' | 'lbs';
 
+      // クラッシュレポート同意ステータスと未送信ログのチェック
+      const crashConsent = (storedSettings['crash_report_consent'] ?? 'unset') as 'agreed' | 'declined' | 'unset';
+      
+      if (crashConsent === 'agreed') {
+        initializeSentry();
+      }
+
+      const hasCrashLog = await checkHasCrashLog();
+      let hasUnsentLog = false;
+
+      if (hasCrashLog) {
+        if (crashConsent === 'agreed') {
+          // 同意済み：バックグラウンド送信して破棄
+          const log = await readCrashLog();
+          if (log) {
+            sendCrashReport(log).catch(console.error);
+          }
+          await deleteCrashLog();
+        } else if (crashConsent === 'declined') {
+          // 拒否済み：破棄のみ
+          await deleteCrashLog();
+        } else {
+          // 未設定：次回起動時の確認ポップアップ表示フラグを立てる
+          hasUnsentLog = true;
+        }
+      }
+
       // 言語設定：保存済みならそれを使用、なければ端末言語を初回のみ検知して保存
       if (storedSettings['language']) {
         // 2回目以降：DBに保存された言語を使用
@@ -49,7 +80,8 @@ export default function RootLayout() {
       const bodyWeight = storedSettings['body_weight'] ? parseFloat(storedSettings['body_weight']) : null;
       const tokensBalance = await getAITokensBalance();
       
-      useWorkoutStore.getState().loadSettings(defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight, needsStyleSelection, tokensBalance);
+      useWorkoutStore.getState().loadSettings(defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight, needsStyleSelection, tokensBalance, crashConsent);
+      useWorkoutStore.getState().setHasUnsentCrashLog(hasUnsentLog);
       
       // Display fields
       const showRpe = storedSettings['display_rpe'] !== '0';
