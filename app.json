@@ -23,6 +23,9 @@
     "android": {
       "package": "com.gekirennomad.trenote",
       "versionCode": 5,
+      "permissions": [
+        "com.android.vending.BILLING"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

@@ -258,7 +258,7 @@
       "default_rest": "デフォルトのインターバル",
       "default_rest_desc": "タイマー開始時の標準の時間です。",
       "timer_vibrate": "タイマー終了時にバイブ",
-      "timer_vibrate_desc": "タイマーが0になった時にデバイスを振動させます。",
+      "timer_vibrate_desc": "タイマーが0になった時にデバイスを振動させます。※アプリ表示時のみ動作し、ホーム画面等では端末側の設定に従います。",
       "weight_unit_label": "重量の単位",
       "language_label": "アプリの言語",
       "version": "バージョン",

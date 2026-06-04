@@ -263,7 +263,7 @@
       "default_rest": "Default Rest Interval",
       "default_rest_desc": "The default rest time when the timer starts.",
       "timer_vibrate": "Vibrate on Timer End",
-      "timer_vibrate_desc": "Vibrate the device when the rest timer reaches 0.",
+      "timer_vibrate_desc": "Vibrate the device when the rest timer reaches 0. (Only works when the app is active; otherwise, it follows the device's system settings.)",
       "weight_unit_label": "Weight Unit",
       "language_label": "App Language",
       "version": "Version",
