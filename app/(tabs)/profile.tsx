@@ -242,8 +242,8 @@ export default function ProfileScreen() {
       {/* Account Type Card */}
       <TouchableOpacity 
         style={styles.accountCard} 
-        onPress={() => isBasic && setIsPaywallVisible(true)}
-        activeOpacity={isBasic ? 0.7 : 1}
+        onPress={() => setIsPaywallVisible(true)}
+        activeOpacity={0.7}
       >
         <View style={styles.accountIconContainer}>
           <Ionicons 
@@ -273,9 +273,7 @@ export default function ProfileScreen() {
             }
           </Text>
         </View>
-        {isBasic && (
-          <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
-        )}
+        <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
       </TouchableOpacity>
 
       {/* Tools Section */}
