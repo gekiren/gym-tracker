@@ -13,6 +13,7 @@ import i18n, { getCurrentLanguage } from '../src/i18n';
 import * as Localization from 'expo-localization';
 import { DEFAULT_STANCES } from '../src/utils/stances';
 import { registerGlobalErrorHandler, checkHasCrashLog, readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../src/services/crashReporterService';
+import { ReviewPromptModal } from '../components/ReviewPromptModal';
 
 // アプリの起動時にグローバルエラーハンドラを登録
 registerGlobalErrorHandler();
@@ -176,6 +177,7 @@ export default function RootLayout() {
           <Stack.Screen name="privacy-policy" options={{ presentation: 'card' }} />
           <Stack.Screen name="developer-menu" options={{ presentation: 'card' }} />
         </Stack>
+        <ReviewPromptModal />
         <StatusBar style="light" />
       </ThemeProvider>
     </GestureHandlerRootView>

@@ -1,6 +1,7 @@
 import * as Linking from 'expo-linking';
-import { Alert, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { getSettings, saveSetting, getDB } from '../db/database';
+import { useReviewStore } from '../store/reviewStore';
 
 // expo-store-review はネイティブモジュールを静的にロードするため、バイナリ未ビルドの環境や
 // EAS Update時のクラッシュを防ぐために try-catch を用いて動的に require します。
@@ -54,115 +55,63 @@ export const checkAndTriggerReviewFlow = async (): Promise<boolean> => {
  * 第1段階（メイン質問）ダイアログを表示します。
  */
 export const showReviewDialog = (currentWorkoutCount: number) => {
-  Alert.alert(
-    'TreNoteはいかがですか？',
-    '',
-    [
-      {
-        text: '⭕ 満足している！',
-        onPress: async () => {
-          // 満足/要望を選択した時点でフラグを1に更新して以降再表示を防ぐ
-          try {
-            await saveSetting('has_shown_review_prompt', '1');
-          } catch (e) {
-            console.error('Failed to update has_shown_review_prompt to 1', e);
-          }
-          showPositiveDialog();
-        },
-      },
-      {
-        text: '❌ 改善してほしい点がある',
-        onPress: async () => {
-          // 満足/要望を選択した時点でフラグを1に更新して以降再表示を防ぐ
-          try {
-            await saveSetting('has_shown_review_prompt', '1');
-          } catch (e) {
-            console.error('Failed to update has_shown_review_prompt to 1', e);
-          }
-          showNegativeDialog();
-        },
-      },
-      {
-        text: 'また今度',
-        style: 'cancel',
-        onPress: async () => {
-          try {
-            // また今度を選択された場合はさらに10回ワークアウト完了したときのみ再度表示する
-            const nextCount = currentWorkoutCount + 10;
-            await saveSetting('review_prompt_next_workout_count', String(nextCount));
-          } catch (e) {
-            console.error('Failed to update review_prompt_next_workout_count', e);
-          }
-        },
-      },
-    ],
-    { cancelable: true }
-  );
+  useReviewStore.getState().showPrompt(currentWorkoutCount);
 };
 
 /**
- * 第2段階（ポジティブ分岐）ダイアログを表示します。
+ * レビュー促進完了（「満足」または「要望」が選ばれた時）のフラグをDBに保存します。
  */
-const showPositiveDialog = () => {
-  Alert.alert(
-    'ありがとうございます！',
-    '励みになりますのでストアで応援してください！',
-    [
-      {
-        text: 'レビューする',
-        onPress: async () => {
-          try {
-            // ネイティブのインアプレビューが利用可能な場合実行
-            if (StoreReview && await StoreReview.isAvailableAsync()) {
-              await StoreReview.requestReview();
-            } else {
-              // 非サポート端末の場合はブラウザ/外部アプリでストアを開く
-              const url = Platform.OS === 'ios' ? APP_STORE_URL : PLAY_STORE_URL;
-              await Linking.openURL(url);
-            }
-          } catch (e) {
-            console.warn('Failed to trigger in-app review, fallback to URL', e);
-            const url = Platform.OS === 'ios' ? APP_STORE_URL : PLAY_STORE_URL;
-            try {
-              await Linking.openURL(url);
-            } catch (err) {
-              console.error('Failed to open store review link via Linking', err);
-            }
-          }
-        },
-      },
-      {
-        text: '閉じる',
-        style: 'cancel',
-      },
-    ],
-    { cancelable: true }
-  );
+export const markReviewPromptShown = async () => {
+  try {
+    await saveSetting('has_shown_review_prompt', '1');
+  } catch (e) {
+    console.error('Failed to update has_shown_review_prompt to 1', e);
+  }
 };
 
 /**
- * 第2段階（ネガティブ分岐）ダイアログを表示します。
+ * 「また今度」を選択された時の延期設定をDBに保存します。
  */
-const showNegativeDialog = () => {
-  Alert.alert(
-    'ご意見をお聞かせください',
-    'ご不便をおかけしてすみません。直接開発者へご意見をお寄せください。',
-    [
-      {
-        text: '意見を送る',
-        onPress: async () => {
-          try {
-            await Linking.openURL(FEEDBACK_MAIL);
-          } catch (e) {
-            console.error('Failed to open mail client for feedback', e);
-          }
-        },
-      },
-      {
-        text: '閉じる',
-        style: 'cancel',
-      },
-    ],
-    { cancelable: true }
-  );
+export const deferReviewPrompt = async (currentWorkoutCount: number) => {
+  try {
+    const nextCount = currentWorkoutCount + 10;
+    await saveSetting('review_prompt_next_workout_count', String(nextCount));
+  } catch (e) {
+    console.error('Failed to update review_prompt_next_workout_count', e);
+  }
+};
+
+/**
+ * アプリのレビューをトリガーします（アプリストアを開くか、インプレビューを表示）。
+ */
+export const handlePositiveReview = async () => {
+  try {
+    // ネイティブのインアプレビューが利用可能な場合実行
+    if (StoreReview && await StoreReview.isAvailableAsync()) {
+      await StoreReview.requestReview();
+    } else {
+      // 非サポート端末の場合はブラウザ/外部アプリでストアを開く
+      const url = Platform.OS === 'ios' ? APP_STORE_URL : PLAY_STORE_URL;
+      await Linking.openURL(url);
+    }
+  } catch (e) {
+    console.warn('Failed to trigger in-app review, fallback to URL', e);
+    const url = Platform.OS === 'ios' ? APP_STORE_URL : PLAY_STORE_URL;
+    try {
+      await Linking.openURL(url);
+    } catch (err) {
+      console.error('Failed to open store review link via Linking', err);
+    }
+  }
+};
+
+/**
+ * フィードバック送信メールを起動します。
+ */
+export const handleNegativeFeedback = async () => {
+  try {
+    await Linking.openURL(FEEDBACK_MAIL);
+  } catch (e) {
+    console.error('Failed to open mail client for feedback', e);
+  }
 };
