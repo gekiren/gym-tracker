@@ -8,6 +8,7 @@ import { useWorkoutStore } from '../src/store/workoutStore';
 import { Theme } from '../src/theme';
 import { saveWorkout, saveSetting } from '../src/db/database';
 import { useTranslation } from 'react-i18next';
+import { checkAndTriggerReviewFlow } from '../src/services/reviewService';
 import { translateExercise, translateStance } from '../src/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AI_CONFIG } from '../src/config/aiConfig';
@@ -239,6 +240,9 @@ export default function ActiveWorkoutScreen() {
             }
             endWorkout();
             router.replace('/(tabs)/history');
+            setTimeout(() => {
+              checkAndTriggerReviewFlow();
+            }, 1000);
           }
         }
       ]

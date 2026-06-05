@@ -31,9 +31,17 @@ export const checkAndTriggerReviewFlow = async (): Promise<boolean> => {
     const settings = await getSettings();
     const hasShown = settings['has_shown_review_prompt'] === '1';
 
-    // 3. 「ワークアウト総数が10回以上」かつ「未表示」の場合のみダイアログを表示
-    if (workoutsCount >= 10 && !hasShown) {
-      showReviewDialog();
+    if (hasShown) {
+      return false;
+    }
+
+    // 3. 次回表示する閾値を取得（デフォルトは 10）
+    const nextWorkoutCountStr = settings['review_prompt_next_workout_count'];
+    const nextWorkoutCount = nextWorkoutCountStr ? parseInt(nextWorkoutCountStr, 10) : 10;
+
+    // 4. 「ワークアウト総数が閾値以上」の場合のみダイアログを表示
+    if (workoutsCount >= nextWorkoutCount) {
+      showReviewDialog(workoutsCount);
       return true;
     }
   } catch (e) {
@@ -45,7 +53,7 @@ export const checkAndTriggerReviewFlow = async (): Promise<boolean> => {
 /**
  * 第1段階（メイン質問）ダイアログを表示します。
  */
-export const showReviewDialog = () => {
+export const showReviewDialog = (currentWorkoutCount: number) => {
   Alert.alert(
     'TreNoteはいかがですか？',
     '',
@@ -77,6 +85,15 @@ export const showReviewDialog = () => {
       {
         text: 'また今度',
         style: 'cancel',
+        onPress: async () => {
+          try {
+            // また今度を選択された場合はさらに10回ワークアウト完了したときのみ再度表示する
+            const nextCount = currentWorkoutCount + 10;
+            await saveSetting('review_prompt_next_workout_count', String(nextCount));
+          } catch (e) {
+            console.error('Failed to update review_prompt_next_workout_count', e);
+          }
+        },
       },
     ],
     { cancelable: true }

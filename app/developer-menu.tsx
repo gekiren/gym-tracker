@@ -393,7 +393,7 @@ export default function DeveloperMenuScreen() {
             完了ワークアウトが10回以上になった際に表示される「レビュー・フィードバック促進ポップアップ」の動作テストを行えます。
           </Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <TouchableOpacity style={[styles.btnOutline, { flex: 1 }]} onPress={showReviewDialog}>
+            <TouchableOpacity style={[styles.btnOutline, { flex: 1 }]} onPress={() => showReviewDialog(10)}>
               <Ionicons name="play-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 4 }} />
               <Text style={styles.btnOutlineText}>ダイアログ起動</Text>
             </TouchableOpacity>

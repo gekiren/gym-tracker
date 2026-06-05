@@ -15,7 +15,6 @@ import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useTranslation } from 'react-i18next';
 import { AI_CONFIG } from '../../src/config/aiConfig';
 import { translateExercise, translateMuscleGroup, translateEquipment } from '../../src/i18n';
-import { checkAndTriggerReviewFlow } from '../../src/services/reviewService';
 
 type Exercise = {
   id: number;
@@ -50,11 +49,6 @@ export default function HistoryScreen() {
     useCallback(() => {
       fetchWorkouts();
       fetchExercises();
-
-      const timer = setTimeout(() => {
-        checkAndTriggerReviewFlow();
-      }, 500);
-      return () => clearTimeout(timer);
     }, [])
   );
 
