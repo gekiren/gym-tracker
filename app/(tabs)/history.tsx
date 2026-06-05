@@ -219,20 +219,21 @@ export default function HistoryScreen() {
   };
 
   const getChartData = () => {
-    const wValid = workouts.filter(w => {
+    if (workouts.length === 0) return null;
+
+    const getValue = (w: any) => {
       const val = chartMetric === 'volume' ? w.volume : w.calories;
-      return val && val > 0;
-    });
-    if (wValid.length === 0) return null;
+      return (val && val > 0) ? val : 0;
+    };
 
     if (chartScale === 'day') {
-      const wRev = [...wValid].reverse();
+      const wRev = [...workouts].reverse();
       if (wRev.length < 2) return null;
       return {
         labels: wRev.map(w => format(new Date(w.start_time), 'MM/dd')).slice(-50),
         datasets: [
           {
-            data: wRev.map(w => chartMetric === 'volume' ? w.volume : w.calories).slice(-50)
+            data: wRev.map(w => getValue(w)).slice(-50)
           }
         ]
       };
@@ -240,14 +241,14 @@ export default function HistoryScreen() {
 
     if (chartScale === 'week') {
       const weeklyData: { [key: string]: { date: Date; value: number } } = {};
-      wValid.forEach(w => {
+      workouts.forEach(w => {
         const date = new Date(w.start_time);
         const weekStart = startOfWeek(date, { weekStartsOn: 1 });
         const key = weekStart.toISOString();
         if (!weeklyData[key]) {
           weeklyData[key] = { date: weekStart, value: 0 };
         }
-        weeklyData[key].value += (chartMetric === 'volume' ? w.volume : w.calories) || 0;
+        weeklyData[key].value += getValue(w);
       });
 
       const sortedWeeks = Object.values(weeklyData).sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -266,14 +267,14 @@ export default function HistoryScreen() {
 
     if (chartScale === 'month') {
       const monthlyData: { [key: string]: { date: Date; value: number } } = {};
-      wValid.forEach(w => {
+      workouts.forEach(w => {
         const date = new Date(w.start_time);
         const monthStart = startOfMonth(date);
         const key = monthStart.toISOString();
         if (!monthlyData[key]) {
           monthlyData[key] = { date: monthStart, value: 0 };
         }
-        monthlyData[key].value += (chartMetric === 'volume' ? w.volume : w.calories) || 0;
+        monthlyData[key].value += getValue(w);
       });
 
       const sortedMonths = Object.values(monthlyData).sort((a, b) => a.date.getTime() - b.date.getTime());
