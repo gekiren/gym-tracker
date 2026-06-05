@@ -1,0 +1,23 @@
+# EAS Build & Update ignore configuration
+# This ensures large native directories, node_modules, and past build outputs are not uploaded to Expo servers.
+
+node_modules/
+android/
+ios/
+dist/
+.expo/
+releases/
+*.apk
+*.aab
+*.txt
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.kotlin/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.metro-health-check*
