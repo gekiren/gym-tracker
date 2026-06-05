@@ -9,7 +9,7 @@ import { pickAndImportCSV } from '../src/utils/csvImporter';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Updates from 'expo-updates';
-import { saveSetting } from '../src/db/database';
+import { saveSetting, getDB, closeDB, initDB } from '../src/db/database';
 import { showReviewDialog } from '../src/services/reviewService';
 import { saveCrashLog, readCrashLog } from '../src/services/crashReporterService';
 import { useWorkoutStore } from '../src/store/workoutStore';
@@ -21,6 +21,10 @@ export default function DeveloperMenuScreen() {
 
   const handleBackup = async () => {
     try {
+      // Flush WAL to the main gymtracker.db file before copying
+      const conn = getDB();
+      await conn.execAsync('PRAGMA wal_checkpoint(TRUNCATE);');
+
       const dbDir = FileSystem.documentDirectory + 'SQLite/';
       const dbUri = dbDir + 'gymtracker.db';
 
@@ -78,13 +82,44 @@ export default function DeveloperMenuScreen() {
               const selectedFile = result.assets[0];
               const sourceUri = selectedFile.uri;
 
+              // Close database connection
+              try {
+                await closeDB();
+              } catch (closeErr) {
+                console.warn('Failed to close DB before restore:', closeErr);
+              }
+
+              // OSのファイルロックが解放されるのを確実に待つためにディレイを挿入
+              await new Promise((resolve) => setTimeout(resolve, 500));
+
               // Ensure the SQLite directory exists
               const dbDir = FileSystem.documentDirectory + 'SQLite/';
               const dbUri = dbDir + 'gymtracker.db';
+              const walUri = dbUri + '-wal';
+              const shmUri = dbUri + '-shm';
               
               const dirInfo = await FileSystem.getInfoAsync(dbDir);
               if (!dirInfo.exists) {
                 await FileSystem.makeDirectoryAsync(dbDir, { intermediates: true });
+              }
+
+              // Delete old WAL and SHM files to prevent conflicts
+              try {
+                const walInfo = await FileSystem.getInfoAsync(walUri);
+                if (walInfo.exists) {
+                  await FileSystem.deleteAsync(walUri);
+                }
+              } catch (walErr) {
+                console.warn('Failed to delete WAL file:', walErr);
+              }
+
+              try {
+                const shmInfo = await FileSystem.getInfoAsync(shmUri);
+                if (shmInfo.exists) {
+                  await FileSystem.deleteAsync(shmUri);
+                }
+              } catch (shmErr) {
+                console.warn('Failed to delete SHM file:', shmErr);
               }
 
               // 2. Overwrite gymtracker.db with the selected file
@@ -92,6 +127,9 @@ export default function DeveloperMenuScreen() {
                 from: sourceUri,
                 to: dbUri
               });
+
+              // Re-initialize database connection to prevent uninitialized crash in running UI
+              await initDB();
 
               // 3. Inform user and reload the app
               Alert.alert(
@@ -116,7 +154,7 @@ export default function DeveloperMenuScreen() {
               console.error('Restore error:', error);
               Alert.alert(
                 t('ui.developer_menu.restore_error_title'),
-                t('ui.developer_menu.restore_error_message')
+                t('ui.developer_menu.restore_error_message') + '\n\n' + (error instanceof Error ? error.message : String(error))
               );
             }
           }

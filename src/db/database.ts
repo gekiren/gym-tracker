@@ -541,6 +541,13 @@ export const getDB = () => {
   return db;
 };
 
+export const closeDB = async () => {
+  if (db) {
+    await db.closeAsync();
+    db = null;
+  }
+};
+
 export const saveWorkout = async (title: string, startTime: string, endTime: string, notes: string | null, exercises: any[], calories: number | null = null) => {
   const conn = getDB();
   const wResult = await conn.runAsync(
