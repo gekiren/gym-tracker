@@ -216,6 +216,38 @@ export default function DeveloperMenuScreen() {
     }
   };
 
+  const handleChangeTier = async (tier: 'basic' | 'early' | 'premium') => {
+    try {
+      if (tier === 'basic') {
+        await saveSetting('is_early_adopter', 'false');
+        await saveSetting('premium_until', '');
+        await saveSetting('ai_tokens_balance', '5');
+        useWorkoutStore.getState().setIsEarlyAdopter(false);
+        useWorkoutStore.getState().setPremiumUntil('');
+        useWorkoutStore.getState().setAITokensBalance(5);
+        Alert.alert('プラン変更', 'ベーシックプランに変更しました。（AI Coachトークンを5に設定しました）');
+      } else if (tier === 'early') {
+        await saveSetting('is_early_adopter', 'true');
+        await saveSetting('premium_until', '');
+        await saveSetting('ai_tokens_balance', '20');
+        useWorkoutStore.getState().setIsEarlyAdopter(true);
+        useWorkoutStore.getState().setPremiumUntil('');
+        useWorkoutStore.getState().setAITokensBalance(20);
+        Alert.alert('プラン変更', 'アーリーアダプターに変更しました。（AI Coachトークンを20に設定しました）');
+      } else if (tier === 'premium') {
+        await saveSetting('is_early_adopter', 'false');
+        await saveSetting('premium_until', 'perpetual');
+        await saveSetting('ai_tokens_balance', '20');
+        useWorkoutStore.getState().setIsEarlyAdopter(false);
+        useWorkoutStore.getState().setPremiumUntil('perpetual');
+        useWorkoutStore.getState().setAITokensBalance(20);
+        Alert.alert('プラン変更', 'プレミアムプランに変更しました。（AI Coachトークンを20に設定しました）');
+      }
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    }
+  };
+
   const [isImportingCSV, setIsImportingCSV] = useState(false);
 
   const handleImportCSV = async () => {
@@ -361,6 +393,42 @@ export default function DeveloperMenuScreen() {
             </Text>
           </TouchableOpacity>
          </View>
+
+        {/* Account Tier Testing Section */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="people-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>プラン制限のテスト (アカウント種別変更)</Text>
+          </View>
+          <Text style={styles.cardDesc}>
+            アプリのプランを手動で切り替えて、機能制限やUIの表示テストを行えます。
+          </Text>
+          <View style={{ flexDirection: 'column', gap: 10 }}>
+            <TouchableOpacity 
+              style={[styles.btnOutline, { borderColor: '#4faf54', backgroundColor: 'rgba(79, 175, 84, 0.05)' }]} 
+              onPress={() => handleChangeTier('basic')}
+            >
+              <Ionicons name="close-circle-outline" size={20} color="#4faf54" style={{ marginRight: 8 }} />
+              <Text style={[styles.btnOutlineText, { color: '#4faf54' }]}>ベーシックプランに設定 (制限あり)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.btnOutline, { borderColor: '#e6a23c', backgroundColor: 'rgba(230, 162, 60, 0.05)' }]} 
+              onPress={() => handleChangeTier('early')}
+            >
+              <Ionicons name="gift-outline" size={20} color="#e6a23c" style={{ marginRight: 8 }} />
+              <Text style={[styles.btnOutlineText, { color: '#e6a23c' }]}>アーリーアダプターに設定 (制限なし)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.btnOutline, { borderColor: '#e6c23c', backgroundColor: 'rgba(230, 194, 60, 0.05)' }]} 
+              onPress={() => handleChangeTier('premium')}
+            >
+              <Ionicons name="ribbon-outline" size={20} color="#e6c23c" style={{ marginRight: 8 }} />
+              <Text style={[styles.btnOutlineText, { color: '#e6c23c' }]}>プレミアムプランに設定 (制限なし)</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* CSV Import Section */}
         <View style={styles.card}>
