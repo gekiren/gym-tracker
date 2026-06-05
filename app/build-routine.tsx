@@ -11,9 +11,25 @@ import { translateExercise } from '../src/i18n';
 export default function BuildRoutineScreen() {
   const { 
     draftRoutine, updateDraftTitle, removeDraftExercise, 
-    addDraftSet, removeDraftSet, updateDraftSet, setDraftRoutine, clearDraft 
+    addDraftSet, removeDraftSet, updateDraftSet, setDraftRoutine, clearDraft,
+    settings
   } = useWorkoutStore();
   const { t } = useTranslation();
+
+  const isPremium = settings.premiumUntil === 'perpetual' || (settings.premiumUntil !== '' && !isNaN(Date.parse(settings.premiumUntil)) && Date.parse(settings.premiumUntil) > Date.now());
+  const isEarly = settings.isEarlyAdopter;
+  const isBasic = !isPremium && !isEarly;
+
+  const handleRestrictedFeatureAlert = () => {
+    Alert.alert(
+      'プレミアム機能',
+      '既存ルーティンや履歴からのインポート作成はプレミアムプラン限定機能です。アップグレードしてすべての制限を解除しますか？',
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        { text: 'アップグレードする', onPress: () => router.push('/(tabs)/profile') }
+      ]
+    );
+  };
 
   const [routinesList, setRoutinesList] = useState<any[]>([]);
   const [historyList, setHistoryList] = useState<any[]>([]);
@@ -177,28 +193,70 @@ export default function BuildRoutineScreen() {
         />
 
         {draftRoutine.exercises.length === 0 && (
-          <View style={styles.importBlock}>
-            <Ionicons name="copy-outline" size={36} color={Theme.colors.primary} style={{ marginBottom: 12 }} />
-            <Text style={styles.importTitle}>{t('ui.build_routine.import_title')}</Text>
-            <Text style={styles.importDesc}>{t('ui.build_routine.import_desc')}</Text>
+          <View style={[styles.importBlock, isBasic && styles.importBlockDisabled]}>
+            <Ionicons 
+              name={isBasic ? "lock-closed-outline" : "copy-outline"} 
+              size={36} 
+              color={isBasic ? Theme.colors.textMuted : Theme.colors.primary} 
+              style={{ marginBottom: 12 }} 
+            />
+            <Text style={[styles.importTitle, isBasic && styles.importTitleDisabled]}>
+              {t('ui.build_routine.import_title')}{isBasic && '（プレミアム限定）'}
+            </Text>
+            <Text style={styles.importDesc}>
+              {isBasic 
+                ? '※この機能はベーシックプランでは制限されています。ルーティンを自動作成するにはプレミアムプランへのアップグレードが必要です。'
+                : t('ui.build_routine.import_desc')
+              }
+            </Text>
             
             <View style={styles.importButtonsRow}>
               <TouchableOpacity 
-                style={[styles.importBtn, { marginRight: 8 }]} 
-                onPress={() => setShowRoutineModal(true)}
+                style={[
+                  styles.importBtn, 
+                  { marginRight: 8 },
+                  isBasic && styles.importBtnDisabled
+                ]} 
+                onPress={() => {
+                  if (isBasic) {
+                    handleRestrictedFeatureAlert();
+                  } else {
+                    setShowRoutineModal(true);
+                  }
+                }}
               >
-                <Ionicons name="barbell-outline" size={20} color={Theme.colors.primary} style={{ marginBottom: 6 }} />
-                <Text style={styles.importBtnText} numberOfLines={2}>
+                <Ionicons 
+                  name={isBasic ? "lock-closed-outline" : "barbell-outline"} 
+                  size={20} 
+                  color={isBasic ? Theme.colors.textMuted : Theme.colors.primary} 
+                  style={{ marginBottom: 6 }} 
+                />
+                <Text style={[styles.importBtnText, isBasic && styles.importBtnTextDisabled]} numberOfLines={2}>
                   {t('ui.build_routine.copy_routine_btn')}
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
-                style={[styles.importBtn, { marginLeft: 8 }]} 
-                onPress={() => setShowHistoryModal(true)}
+                style={[
+                  styles.importBtn, 
+                  { marginLeft: 8 },
+                  isBasic && styles.importBtnDisabled
+                ]} 
+                onPress={() => {
+                  if (isBasic) {
+                    handleRestrictedFeatureAlert();
+                  } else {
+                    setShowHistoryModal(true);
+                  }
+                }}
               >
-                <Ionicons name="time-outline" size={20} color={Theme.colors.primary} style={{ marginBottom: 6 }} />
-                <Text style={styles.importBtnText} numberOfLines={2}>
+                <Ionicons 
+                  name={isBasic ? "lock-closed-outline" : "time-outline"} 
+                  size={20} 
+                  color={isBasic ? Theme.colors.textMuted : Theme.colors.primary} 
+                  style={{ marginBottom: 6 }} 
+                />
+                <Text style={[styles.importBtnText, isBasic && styles.importBtnTextDisabled]} numberOfLines={2}>
                   {t('ui.build_routine.copy_workout_btn')}
                 </Text>
               </TouchableOpacity>
@@ -400,11 +458,15 @@ const styles = StyleSheet.create({
 
   // Import UI Styles
   importBlock: { backgroundColor: Theme.colors.card, borderStyle: 'dashed', borderWidth: 1.5, borderColor: 'rgba(79, 172, 254, 0.3)', borderRadius: Theme.borderRadius.lg, padding: 20, alignItems: 'center', marginVertical: 12 },
+  importBlockDisabled: { borderColor: 'rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.01)' },
   importTitle: { color: Theme.colors.text, fontSize: 16, fontWeight: 'bold', marginBottom: 6 },
+  importTitleDisabled: { color: Theme.colors.textMuted },
   importDesc: { color: Theme.colors.textMuted, fontSize: 13, textAlign: 'center', lineHeight: 18, marginBottom: 16, paddingHorizontal: 12 },
   importButtonsRow: { flexDirection: 'row', width: '100%' },
   importBtn: { flex: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 8, paddingVertical: 14, paddingHorizontal: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  importBtnDisabled: { borderColor: 'rgba(255,255,255,0.04)', backgroundColor: 'rgba(0,0,0,0.2)', opacity: 0.5 },
   importBtnText: { color: Theme.colors.text, fontSize: 13, fontWeight: '600', textAlign: 'center', lineHeight: 16 },
+  importBtnTextDisabled: { color: Theme.colors.textMuted },
 
   // Modal Selection Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },

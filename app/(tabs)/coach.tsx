@@ -16,7 +16,7 @@ import { useWorkoutStore } from '../../src/store/workoutStore';
 import { consumeAIToken, getAITokensBalance } from '../../src/db/database';
 import { sendMessageToAICoach } from '../../src/services/aiCoachService';
 import { useTranslation } from 'react-i18next';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { AI_CONFIG } from '../../src/config/aiConfig';
 
 interface ChatMessage {
@@ -30,6 +30,11 @@ export default function CoachScreen() {
   const { t } = useTranslation();
   const settings = useWorkoutStore(state => state.settings);
   const setAITokensBalance = useWorkoutStore(state => state.setAITokensBalance);
+  
+  const isPremium = settings.premiumUntil === 'perpetual' || (settings.premiumUntil !== '' && !isNaN(Date.parse(settings.premiumUntil)) && Date.parse(settings.premiumUntil) > Date.now());
+  const isEarly = settings.isEarlyAdopter;
+  const isBasic = !isPremium && !isEarly;
+
   const params = useLocalSearchParams<{ contextPrompt?: string; prefillMessage?: string; title?: string }>();
 
   if (AI_CONFIG.status !== 'active') {
@@ -204,12 +209,22 @@ export default function CoachScreen() {
     >
       {/* Top Warning Banner if out of tokens */}
       {isQuotaExhausted && (
-        <View style={styles.warningBanner}>
+        <TouchableOpacity 
+          style={styles.warningBanner} 
+          onPress={() => isBasic && router.push('/(tabs)/profile')}
+          activeOpacity={isBasic ? 0.8 : 1}
+        >
           <Ionicons name="alert-circle" size={18} color="#fff" style={{ marginRight: 6 }} />
           <Text style={styles.warningText}>
-            {t('ui.profile.quota_exhausted_alert') || '今月の利用枠が残っていません。'}
+            {isBasic 
+              ? 'ベーシックプランの今月の利用枠（5回）が終了しました。プレミアムにアップグレードする' 
+              : (t('ui.profile.quota_exhausted_alert') || '今月の利用枠が残っていません。')
+            }
           </Text>
-        </View>
+          {isBasic && (
+            <Ionicons name="chevron-forward" size={14} color="#fff" style={{ marginLeft: 4 }} />
+          )}
+        </TouchableOpacity>
       )}
 
       {/* Active Context Linked Badge */}
@@ -318,7 +333,7 @@ export default function CoachScreen() {
           onChangeText={setInputVal}
           placeholder={
             isQuotaExhausted 
-              ? (t('ui.profile.quota_exhausted_alert') || '今月の利用枠が残っていません。')
+              ? (isBasic ? '今月の利用枠（5回）が終了しました。アップグレードしてください' : (t('ui.profile.quota_exhausted_alert') || '今月の利用枠が残っていません。'))
               : (t('ui.coach.input_placeholder') || 'トレーナーに質問してみる...')
           }
           placeholderTextColor={isQuotaExhausted ? Theme.colors.danger : Theme.colors.textMuted}

@@ -8,6 +8,7 @@ import { useWorkoutStore } from '../../src/store/workoutStore';
 import { saveSetting, resetDatabase, getSettings } from '../../src/db/database';
 import { useTranslation } from 'react-i18next';
 import { changeLanguage, getCurrentLanguage } from '../../src/i18n';
+import { initIAPConnection, setupIAPListeners, purchasePremium, restorePurchases, fetchPremiumProducts, cleanupIAP } from '../../src/services/iapService';
 
 const REST_OPTIONS = [30, 60, 90, 120, 150, 180, 240, 300]; // in seconds
 
@@ -32,6 +33,62 @@ export default function ProfileScreen() {
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   const [accountType, setAccountType] = useState<'basic' | 'premium' | 'early_adopter'>('basic');
+  const [isPaywallVisible, setIsPaywallVisible] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+
+  const isPremium = settings.premiumUntil === 'perpetual' || (settings.premiumUntil !== '' && !isNaN(Date.parse(settings.premiumUntil)) && Date.parse(settings.premiumUntil) > Date.now());
+  const isEarly = settings.isEarlyAdopter;
+  const isBasic = !isPremium && !isEarly;
+  const maxTokens = (isPremium || isEarly) ? 20 : 5;
+
+  useEffect(() => {
+    initIAPConnection();
+
+    setupIAPListeners(
+      () => {
+        setIsPurchasing(false);
+        setIsPaywallVisible(false);
+        Alert.alert('アップグレード完了', 'プレミアムプランのご購入ありがとうございます！すべての機能制限が解除されました。');
+      },
+      (errorMsg) => {
+        setIsPurchasing(false);
+        Alert.alert('エラー', errorMsg);
+      }
+    );
+
+    return () => {
+      cleanupIAP();
+    };
+  }, []);
+
+  const handlePurchase = async () => {
+    setIsPurchasing(true);
+    try {
+      await purchasePremium();
+    } catch (e: any) {
+      setIsPurchasing(false);
+      if (e?.code !== 'E_USER_CANCELLED') {
+        Alert.alert('エラー', '購入手続きの開始に失敗しました。');
+      }
+    }
+  };
+
+  const handleRestore = async () => {
+    setIsPurchasing(true);
+    try {
+      const restored = await restorePurchases();
+      setIsPurchasing(false);
+      if (restored) {
+        setIsPaywallVisible(false);
+        Alert.alert('復元完了', 'プレミアムプランの購入履歴を復元しました！');
+      } else {
+        Alert.alert('情報', '復元可能な購入履歴が見つかりませんでした。');
+      }
+    } catch (e) {
+      setIsPurchasing(false);
+      Alert.alert('エラー', '購入履歴の復元中にエラーが発生しました。');
+    }
+  };
 
   useEffect(() => {
     setDefaultRest(settings.defaultRest);
@@ -183,7 +240,11 @@ export default function ProfileScreen() {
       </View>
 
       {/* Account Type Card */}
-      <View style={styles.accountCard}>
+      <TouchableOpacity 
+        style={styles.accountCard} 
+        onPress={() => isBasic && setIsPaywallVisible(true)}
+        activeOpacity={isBasic ? 0.7 : 1}
+      >
         <View style={styles.accountIconContainer}>
           <Ionicons 
             name={
@@ -208,11 +269,14 @@ export default function ProfileScreen() {
             {
               accountType === 'early_adopter' ? (t('ui.profile.account_early_adopter') || 'アーリーアダプター（無制限）') :
               accountType === 'premium' ? (t('ui.profile.account_premium') || 'プレミアムプラン') :
-              (t('ui.profile.account_basic') || 'ベーシックプラン')
+              (t('ui.profile.account_basic') || 'ベーシックプラン（タップしてアップグレード）')
             }
           </Text>
         </View>
-      </View>
+        {isBasic && (
+          <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
+        )}
+      </TouchableOpacity>
 
       {/* Tools Section */}
       <View style={styles.section}>
@@ -430,7 +494,7 @@ export default function ProfileScreen() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
               <Text style={styles.settingLabel}>{t('ui.profile.ai_tokens_balance') || '今月の利用枠残高'}</Text>
               <Text style={{ color: settings.aiTokensBalance === 0 ? Theme.colors.danger : Theme.colors.text, fontWeight: 'bold', fontSize: 16 }}>
-                {`${settings.aiTokensBalance} / 20`}
+                {`${settings.aiTokensBalance} / ${maxTokens}`}
               </Text>
             </View>
             <Text style={[styles.settingDesc, { paddingRight: 0 }]}>
@@ -443,7 +507,7 @@ export default function ProfileScreen() {
                   style={[
                     styles.progressBarFill, 
                     { 
-                      width: `${Math.min(100, Math.max(0, (settings.aiTokensBalance / 20) * 100))}%`,
+                      width: `${Math.min(100, Math.max(0, (settings.aiTokensBalance / maxTokens) * 100))}%`,
                       backgroundColor: settings.aiTokensBalance === 0 ? Theme.colors.danger : Theme.colors.primary 
                     }
                   ]} 
@@ -453,7 +517,10 @@ export default function ProfileScreen() {
                 <Text style={styles.quotaWarning}>{t('ui.profile.quota_exhausted_alert') || '今月の利用枠が残っていません。'}</Text>
               )}
               <Text style={[styles.settingDesc, { marginTop: 6, paddingRight: 0 }]}>
-                {t('ui.profile.ai_tokens_reset_desc') || '30日後に利用枠は自動的に20回にリセットされます。'}
+                {isBasic 
+                  ? '30日後に利用枠は自動的に5回にリセットされます。' 
+                  : (t('ui.profile.ai_tokens_reset_desc') || '30日後に利用枠は自動的に20回にリセットされます。')
+                }
               </Text>
             </View>
           </View>
@@ -510,6 +577,90 @@ export default function ProfileScreen() {
           </View>
         </View>
       </View>
+
+      {/* Premium Paywall Modal */}
+      <Modal visible={isPaywallVisible} animationType="slide" transparent={true}>
+        <View style={styles.paywallBg}>
+          <View style={styles.paywallCard}>
+            {/* Header */}
+            <View style={styles.paywallHeader}>
+              <Text style={styles.paywallTitle}>👑 TreNote Premium</Text>
+              <TouchableOpacity onPress={() => !isPurchasing && setIsPaywallVisible(false)} disabled={isPurchasing}>
+                <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ width: '100%', marginVertical: 16 }} showsVerticalScrollIndicator={false}>
+              <Text style={styles.paywallSubtitle}>
+                プレミアムプランへアップグレードして、すべての機能制限を解除しましょう！
+              </Text>
+
+              {/* Feature 1 */}
+              <View style={styles.paywallFeature}>
+                <View style={styles.paywallFeatureIcon}>
+                  <Ionicons name="sparkles" size={24} color="#4facfe" />
+                </View>
+                <View style={styles.paywallFeatureInfo}>
+                  <Text style={styles.paywallFeatureTitle}>AIトレーナー利用枠の拡張</Text>
+                  <Text style={styles.paywallFeatureDesc}>ベーシックプランの月5回制限から、月20回までに利用枠が拡張されます。</Text>
+                </View>
+              </View>
+
+              {/* Feature 2 */}
+              <View style={styles.paywallFeature}>
+                <View style={styles.paywallFeatureIcon}>
+                  <Ionicons name="copy" size={24} color="#4facfe" />
+                </View>
+                <View style={styles.paywallFeatureInfo}>
+                  <Text style={styles.paywallFeatureTitle}>インポート機能の解放</Text>
+                  <Text style={styles.paywallFeatureDesc}>既存のルーティンや過去のワークアウト履歴から、コピーして新しいルーティンを作成できるようになります。</Text>
+                </View>
+              </View>
+
+              {/* Feature 3 */}
+              <View style={styles.paywallFeature}>
+                <View style={styles.paywallFeatureIcon}>
+                  <Ionicons name="heart" size={24} color="#4facfe" />
+                </View>
+                <View style={styles.paywallFeatureInfo}>
+                  <Text style={styles.paywallFeatureTitle}>アプリの開発支援</Text>
+                  <Text style={styles.paywallFeatureDesc}>より便利な機能の追加や安定したサーバー運用のための開発継続をサポートできます。</Text>
+                </View>
+              </View>
+            </ScrollView>
+
+            {/* Price tag */}
+            <View style={styles.priceContainer}>
+              <Text style={styles.priceLabel}>プレミアムプラン (買い切り型)</Text>
+              <Text style={styles.priceValue}>¥980</Text>
+              <Text style={styles.priceSubtext}>※一度の購入で永久にご利用いただけます</Text>
+            </View>
+
+            {/* Actions */}
+            <View style={styles.paywallBtnContainer}>
+              <TouchableOpacity 
+                style={[styles.paywallUpgradeBtn, isPurchasing && { opacity: 0.5 }]} 
+                onPress={handlePurchase}
+                disabled={isPurchasing}
+              >
+                {isPurchasing ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.paywallUpgradeBtnText}>プレミアムにアップグレードする</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[styles.paywallRestoreBtn, isPurchasing && { opacity: 0.5 }]} 
+                onPress={handleRestore}
+                disabled={isPurchasing}
+              >
+                <Text style={styles.paywallRestoreBtnText}>購入情報を復元する (Restore)</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Safeguard Initialization Modal */}
       <Modal visible={isResetModalVisible} animationType="slide" transparent={true}>
@@ -645,5 +796,26 @@ const styles = StyleSheet.create({
   },
   accountValue: { color: Theme.colors.text, fontSize: 16, fontWeight: 'bold' },
   accountValueEarly: { color: '#ffd700' },
-  accountValuePremium: { color: '#4facfe' }
+  accountValuePremium: { color: '#4facfe' },
+
+  // Paywall Styles
+  paywallBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  paywallCard: { backgroundColor: Theme.colors.card, borderRadius: 20, padding: 24, width: '100%', maxWidth: 420, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(79,172,254,0.3)', maxHeight: '90%' },
+  paywallHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', borderBottomWidth: 1, borderBottomColor: Theme.colors.border, paddingBottom: 12 },
+  paywallTitle: { fontSize: 22, fontWeight: 'bold', color: Theme.colors.text },
+  paywallSubtitle: { fontSize: 14, color: Theme.colors.text, textAlign: 'center', lineHeight: 22, marginBottom: 20, fontWeight: '600', marginTop: 12 },
+  paywallFeature: { flexDirection: 'row', marginBottom: 18, width: '100%', alignItems: 'flex-start' },
+  paywallFeatureIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(79,172,254,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: 14, borderWidth: 1, borderColor: 'rgba(79,172,254,0.2)' },
+  paywallFeatureInfo: { flex: 1 },
+  paywallFeatureTitle: { fontSize: 16, fontWeight: 'bold', color: Theme.colors.text, marginBottom: 4 },
+  paywallFeatureDesc: { fontSize: 13, color: Theme.colors.textMuted, lineHeight: 18 },
+  priceContainer: { backgroundColor: '#1c1c1e', width: '100%', borderRadius: 12, padding: 16, alignItems: 'center', marginVertical: 12, borderWidth: 1, borderColor: Theme.colors.border },
+  priceLabel: { fontSize: 12, color: Theme.colors.textMuted, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+  priceValue: { fontSize: 26, fontWeight: 'bold', color: '#4facfe' },
+  priceSubtext: { fontSize: 11, color: Theme.colors.textMuted, marginTop: 4 },
+  paywallBtnContainer: { width: '100%', gap: 10, marginTop: 12 },
+  paywallUpgradeBtn: { backgroundColor: Theme.colors.primary, width: '100%', paddingVertical: 14, borderRadius: 25, alignItems: 'center', justifyContent: 'center', shadowColor: Theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 4 },
+  paywallUpgradeBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  paywallRestoreBtn: { width: '100%', paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
+  paywallRestoreBtnText: { color: Theme.colors.textMuted, fontSize: 13, textDecorationLine: 'underline' }
 });

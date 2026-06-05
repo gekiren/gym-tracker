@@ -77,6 +77,8 @@ interface WorkoutState {
     customStances: string[];
     bodyWeight: number | null;
     aiTokensBalance: number;
+    premiumUntil: string;
+    isEarlyAdopter: boolean;
     displayFields: {
       showRpe: boolean;
       show1RM: boolean;
@@ -85,7 +87,9 @@ interface WorkoutState {
     };
     crashConsent: 'agreed' | 'declined' | 'unset';
   };
-  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null, needsStyleSelection?: boolean, aiTokensBalance?: number, crashConsent?: 'agreed' | 'declined' | 'unset') => void;
+  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null, needsStyleSelection?: boolean, aiTokensBalance?: number, crashConsent?: 'agreed' | 'declined' | 'unset', premiumUntil?: string, isEarlyAdopter?: boolean) => void;
+  setPremiumUntil: (premiumUntil: string) => void;
+  setIsEarlyAdopter: (isEarly: boolean) => void;
   setBodyWeight: (weight: number | null) => void;
   setAITokensBalance: (balance: number) => void;
   loadCustomStances: (stances: string[]) => void;
@@ -146,6 +150,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     customStances: [],
     bodyWeight: null,
     aiTokensBalance: 20,
+    premiumUntil: '',
+    isEarlyAdopter: false,
     displayFields: {
       showRpe: true,
       show1RM: true,
@@ -155,8 +161,16 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     crashConsent: 'unset'
   },
 
-  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false, bodyWeight: number | null = null, needsStyleSelection: boolean = false, aiTokensBalance: number = 20, crashConsent: 'agreed' | 'declined' | 'unset' = 'unset') => set((state) => ({
-    settings: { ...state.settings, defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight, needsStyleSelection, aiTokensBalance, crashConsent }
+  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false, bodyWeight: number | null = null, needsStyleSelection: boolean = false, aiTokensBalance: number = 20, crashConsent: 'agreed' | 'declined' | 'unset' = 'unset', premiumUntil: string = '', isEarlyAdopter: boolean = false) => set((state) => ({
+    settings: { ...state.settings, defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight, needsStyleSelection, aiTokensBalance, crashConsent, premiumUntil, isEarlyAdopter }
+  })),
+
+  setPremiumUntil: (premiumUntil) => set((state) => ({
+    settings: { ...state.settings, premiumUntil }
+  })),
+
+  setIsEarlyAdopter: (isEarlyAdopter) => set((state) => ({
+    settings: { ...state.settings, isEarlyAdopter }
   })),
 
   setBodyWeight: (weight: number | null) => set((state) => ({
@@ -617,6 +631,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         customStances: [],
         bodyWeight: null,
         aiTokensBalance: 20,
+        premiumUntil: '',
+        isEarlyAdopter: false,
         displayFields: {
           showRpe: true,
           show1RM: true,

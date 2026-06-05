@@ -10,7 +10,12 @@ import { AI_CONFIG } from '../../src/config/aiConfig';
 
 export default function TabLayout() {
   const { t } = useTranslation();
-  const aiTokensBalance = useWorkoutStore(state => state.settings.aiTokensBalance);
+  const settings = useWorkoutStore(state => state.settings);
+  const aiTokensBalance = settings.aiTokensBalance;
+  
+  const isPremium = settings.premiumUntil === 'perpetual' || (settings.premiumUntil !== '' && !isNaN(Date.parse(settings.premiumUntil)) && Date.parse(settings.premiumUntil) > Date.now());
+  const isEarly = settings.isEarlyAdopter;
+  const maxTokens = (isPremium || isEarly) ? 20 : 5;
   return (
     <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
       <Tabs
@@ -51,7 +56,7 @@ export default function TabLayout() {
         name="coach"
         options={{
           href: AI_CONFIG.status === 'disabled' ? null : undefined,
-          headerTitle: `${t('ui.tabs.coach') || 'AIトレーナー'} (${aiTokensBalance}/20)`,
+          headerTitle: `${t('ui.tabs.coach') || 'AIトレーナー'} (${aiTokensBalance}/${maxTokens})`,
           title: t('ui.tabs.coach') || 'AIトレーナー',
           tabBarIcon: ({ color }) => <Ionicons name="sparkles" size={26} color={color} />,
         }}

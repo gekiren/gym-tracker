@@ -80,8 +80,22 @@ export default function RootLayout() {
       }
       const bodyWeight = storedSettings['body_weight'] ? parseFloat(storedSettings['body_weight']) : null;
       const tokensBalance = await getAITokensBalance();
+      const premiumUntil = storedSettings['premium_until'] || '';
+      const isEarlyAdopter = storedSettings['is_early_adopter'] === 'true';
       
-      useWorkoutStore.getState().loadSettings(defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight, needsStyleSelection, tokensBalance, crashConsent);
+      useWorkoutStore.getState().loadSettings(
+        defaultRest, 
+        autoRest, 
+        timerVibrate, 
+        weightUnit, 
+        needsUnitSelection, 
+        bodyWeight, 
+        needsStyleSelection, 
+        tokensBalance, 
+        crashConsent,
+        premiumUntil,
+        isEarlyAdopter
+      );
       useWorkoutStore.getState().setHasUnsentCrashLog(hasUnsentLog);
       
       // Display fields

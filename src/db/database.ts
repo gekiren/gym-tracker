@@ -887,9 +887,20 @@ export const getAITokensBalance = async (): Promise<number> => {
   const balanceRow = await conn.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "ai_tokens_balance"');
   const lastResetRow = await conn.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "ai_tokens_last_reset"');
 
-  let balance = balanceRow ? parseInt(balanceRow.value, 10) : 20;
-  if (balance > 20) {
-    balance = 20; // Hard cap at 20 monthly tokens
+  // Fetch settings for early adopter and premium status
+  const settingsRows = await conn.getAllAsync<{key: string, value: string}>('SELECT * FROM settings WHERE key IN ("is_early_adopter", "premium_until")');
+  const stored: Record<string, string> = {};
+  for (const r of settingsRows) {
+    stored[r.key] = r.value;
+  }
+  const isEarly = stored['is_early_adopter'] === 'true';
+  const isPremium = stored['premium_until'] === 'perpetual' || (stored['premium_until'] !== '' && !isNaN(Date.parse(stored['premium_until'] || '')) && Date.parse(stored['premium_until'] || '') > Date.now());
+
+  const maxTokens = (isPremium || isEarly) ? 20 : 5;
+
+  let balance = balanceRow ? parseInt(balanceRow.value, 10) : maxTokens;
+  if (balance > maxTokens) {
+    balance = maxTokens; // Cap at the tier's maximum monthly tokens
   }
   const lastReset = lastResetRow ? lastResetRow.value : new Date().toISOString();
 
@@ -902,9 +913,9 @@ export const getAITokensBalance = async (): Promise<number> => {
     now.getMonth() !== lastResetDate.getMonth();
 
   if (isDifferentMonth) {
-    balance = 20;
+    balance = maxTokens;
     const nowISO = now.toISOString();
-    await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("ai_tokens_balance", "20")');
+    await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("ai_tokens_balance", ?)', [maxTokens.toString()]);
     await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("ai_tokens_last_reset", ?)', [nowISO]);
   }
 
