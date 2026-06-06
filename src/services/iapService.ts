@@ -54,10 +54,12 @@ export const setupIAPListeners = (
         
         // Grant premium entitlement locally in SQLite database
         await saveSetting('premium_until', 'perpetual');
+        await saveSetting('is_early_adopter', 'false');
         await saveSetting('ai_tokens_balance', '20'); // Reset AI tokens to 20 for premium
         
         // Update Zustand store
         useWorkoutStore.getState().setPremiumUntil('perpetual');
+        useWorkoutStore.getState().setIsEarlyAdopter(false);
         useWorkoutStore.getState().setAITokensBalance(20);
         
         onSuccess();
@@ -118,8 +120,10 @@ export const restorePurchases = async (): Promise<boolean> => {
     if (premiumPurchase) {
       // Restore entitlement locally
       await saveSetting('premium_until', 'perpetual');
+      await saveSetting('is_early_adopter', 'false');
       await saveSetting('ai_tokens_balance', '20');
       useWorkoutStore.getState().setPremiumUntil('perpetual');
+      useWorkoutStore.getState().setIsEarlyAdopter(false);
       useWorkoutStore.getState().setAITokensBalance(20);
       return true;
     }

@@ -305,7 +305,17 @@
       "account_premium": "Premium Plan",
       "account_early_adopter": "Early Adopter",
       "crash_report_consent_label": "Auto-send anonymous crash reports",
-      "crash_report_consent_desc": "Automatically send anonymous diagnostic logs when the app crashes to help improve quality."
+      "crash_report_consent_desc": "Automatically send anonymous diagnostic logs when the app crashes to help improve quality.",
+      "section_backup": "Backup & Restore",
+      "backup_menu_title": "Data Backup & Restore",
+      "backup_menu_desc": "Export your history and settings to a file, or import to restore your data.",
+      "backup_premium_only_title": "Premium Feature Only",
+      "backup_premium_only_desc": "Data backup (export/import) is only available on the Premium Plan.",
+      "upgrade_btn": "Upgrade Now",
+      "backup_modal_title": "Data Backup & Restore",
+      "backup_modal_desc": "Back up your workout history and settings to prevent data loss or migrate to a new device.",
+      "backup_export_btn": "Export Data (Save)",
+      "backup_import_btn": "Import Data (Restore)"
     },
     "routines": {
       "title": "Routines",

@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, AppState, BackHandler, Modal, Platform, Keyboard, KeyboardAvoidingView } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 import { useEffect, useState, useCallback } from 'react';
 import { Stack, router, useFocusEffect } from 'expo-router';
@@ -32,6 +33,7 @@ export default function ActiveWorkoutScreen() {
   const settings = useWorkoutStore(state => state.settings);
   const isWorkoutStarted = useWorkoutStore(state => state.isWorkoutStarted);
   const beginWorkoutTimer = useWorkoutStore(state => state.beginWorkoutTimer);
+  const lastRestFinishedAt = useWorkoutStore(state => state.lastRestFinishedAt);
   const [showWorkoutNotes, setShowWorkoutNotes] = useState(false);
   const [expandedExerciseNotes, setExpandedExerciseNotes] = useState<Record<string, boolean>>({});
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -455,12 +457,13 @@ export default function ActiveWorkoutScreen() {
       {/* Floating Manual Start Button (when not resting) */}
       {isWorkoutStarted && !restTimerActive && (
         <View style={[styles.manualStartOverlay, { bottom: safeBottomOffset + 20 }]}>
-          <TouchableOpacity style={styles.manualStartBtn} onPress={() => {
-            markWorkStart();
-            Alert.alert("", t('ui.active_workout.manual_start_success') || "Started");
-          }}>
-            <Text style={styles.manualStartBtnText}>{t('ui.active_workout.manual_start_btn')}</Text>
-          </TouchableOpacity>
+          <ResumeWorkoutButton 
+            lastRestFinishedAt={lastRestFinishedAt}
+            onPress={() => {
+              markWorkStart();
+              Alert.alert("", t('ui.active_workout.manual_start_success') || "Started");
+            }}
+          />
         </View>
       )}
       {/* プレート計算機モーダル */}
@@ -724,6 +727,38 @@ export default function ActiveWorkoutScreen() {
   );
 }
 
+function ResumeWorkoutButton({ lastRestFinishedAt, onPress }: { lastRestFinishedAt: number | null, onPress: () => void }) {
+  const { t } = useTranslation();
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!lastRestFinishedAt) return;
+    
+    setElapsed(Math.floor((Date.now() - lastRestFinishedAt) / 1000));
+
+    const iv = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - lastRestFinishedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [lastRestFinishedAt]);
+
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const btnText = lastRestFinishedAt 
+    ? `${t('ui.active_workout.manual_start_btn')}（${formatTime(elapsed)}）`
+    : t('ui.active_workout.manual_start_btn');
+
+  return (
+    <TouchableOpacity style={styles.manualStartBtn} onPress={onPress}>
+      <Text style={styles.manualStartBtnText}>{btnText}</Text>
+    </TouchableOpacity>
+  );
+}
+
 function TimerButton({ onTimeCapture }: { onTimeCapture: (secs: number) => void }) {
   const [isActive, setIsActive] = useState(false);
   const [seconds, setSeconds] = useState(0);
@@ -868,11 +903,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
       const m = Math.floor(wSecs / 60);
       const s = wSecs % 60;
       const fmt = `${m > 0 ? `${m}:` : ''}${s.toString().padStart(m > 0 ? 2 : 1, '0')}${m === 0 ? 's' : ''}`;
-      if (set.rest_seconds != null) {
-        timeTakenStr = `🏋️${fmt}`;
-      } else {
-        timeTakenStr = `⏱️${fmt}`;
-      }
+      timeTakenStr = `⏱️${fmt}`;
     }
   }
 
@@ -900,12 +931,12 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
     return (
       <View style={{ width: 80 }}>
         <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
-          <TouchableOpacity 
+          <GHTouchableOpacity 
             style={styles.deleteAction}
             onPress={handleLongPress}
           >
             <Ionicons name="trash-outline" size={24} color="#fff" />
-          </TouchableOpacity>
+          </GHTouchableOpacity>
         </Reanimated.View>
       </View>
     );
@@ -920,12 +951,12 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
     return (
       <View style={{ width: 80 }}>
         <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
-          <TouchableOpacity 
+          <GHTouchableOpacity 
             style={styles.deleteAction}
             onPress={handleLongPress}
           >
             <Ionicons name="trash-outline" size={24} color="#fff" />
-          </TouchableOpacity>
+          </GHTouchableOpacity>
         </Reanimated.View>
       </View>
     );

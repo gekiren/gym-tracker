@@ -300,7 +300,17 @@
       "account_premium": "プレミアムプラン",
       "account_early_adopter": "アーリーアダプター",
       "crash_report_consent_label": "匿名のクラッシュレポート自動送信",
-      "crash_report_consent_desc": "アプリが異常終了した際、匿名の診断ログを自動送信して品質改善に協力します。"
+      "crash_report_consent_desc": "アプリが異常終了した際、匿名の診断ログを自動送信して品質改善に協力します。",
+      "section_backup": "バックアップ・復元",
+      "backup_menu_title": "データのバックアップと復元",
+      "backup_menu_desc": "履歴や設定をファイルにエクスポートしたり、インポートしてデータを復元します。",
+      "backup_premium_only_title": "プレミアムプラン専用機能",
+      "backup_premium_only_desc": "データのバックアップ（エクスポート・インポート）機能はプレミアムプラン専用の機能です。",
+      "upgrade_btn": "アップグレードする",
+      "backup_modal_title": "データのバックアップと復元",
+      "backup_modal_desc": "万が一の端末紛失や機種変更に備えて、トレーニング記録をバックアップしましょう。",
+      "backup_export_btn": "データをエクスポート (保存)",
+      "backup_import_btn": "データをインポート (復元)"
     },
     "routines": {
       "title": "ルーティン",

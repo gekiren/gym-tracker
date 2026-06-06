@@ -146,6 +146,18 @@ export default function BuildRoutineScreen() {
       return;
     }
 
+    if (isBasic && routinesList.length >= 10) {
+      Alert.alert(
+        'ルーティン登録制限',
+        'ベーシックプランでは最大10個までルーティンを登録できます。登録上限を増やすにはプレミアムプランへのアップグレードが必要です。',
+        [
+          { text: 'キャンセル', style: 'cancel' },
+          { text: 'アップグレードする', onPress: () => router.push('/(tabs)/profile') }
+        ]
+      );
+      return;
+    }
+
     try {
       await addRoutine(
         draftRoutine.title.trim(),

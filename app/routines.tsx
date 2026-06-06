@@ -16,7 +16,10 @@ export default function RoutinesScreen() {
   const { t } = useTranslation();
   const [routines, setRoutines] = useState<any[]>([]);
   const [isReorderMode, setIsReorderMode] = useState(false);
-  const { startWorkout, addExercise } = useWorkoutStore();
+  const { startWorkout, addExercise, settings } = useWorkoutStore();
+  const isPremium = settings.premiumUntil === 'perpetual' || (settings.premiumUntil !== '' && !isNaN(Date.parse(settings.premiumUntil)) && Date.parse(settings.premiumUntil) > Date.now());
+  const isEarly = settings.isEarlyAdopter;
+  const isBasic = !isPremium && !isEarly;
 
   const handleMoveUp = async (index: number) => {
     if (index === 0) return;
@@ -216,7 +219,20 @@ export default function RoutinesScreen() {
       {/* Floating Action Button */}
       <TouchableOpacity 
         style={styles.fab} 
-        onPress={() => router.push('/build-routine')}
+        onPress={() => {
+          if (isBasic && routines.length >= 10) {
+            Alert.alert(
+              'ルーティン登録制限',
+              'ベーシックプランでは最大10個までルーティンを登録できます。登録上限を増やすにはプレミアムプランへのアップグレードが必要です。',
+              [
+                { text: 'キャンセル', style: 'cancel' },
+                { text: 'アップグレードする', onPress: () => router.push('/(tabs)/profile') }
+              ]
+            );
+          } else {
+            router.push('/build-routine');
+          }
+        }}
         activeOpacity={0.8}
       >
         <Ionicons name="add" size={32} color="#fff" />

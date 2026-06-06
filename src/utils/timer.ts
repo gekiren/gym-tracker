@@ -51,6 +51,7 @@ export const scheduleRestTimer = async (seconds: number) => {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
       seconds: seconds,
       repeats: false,
+      channelId: 'rest-timer',
     },
   });
 

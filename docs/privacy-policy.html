@@ -73,7 +73,7 @@
   <!-- JAPANESE -->
   <div data-ja>
     <h1>プライバシーポリシー</h1>
-    <p class="updated">最終更新日: 2026年4月29日</p>
+    <p class="updated">最終更新日: 2026年6月6日</p>
 
     <div class="section">
       <h2>はじめに</h2>
@@ -81,20 +81,18 @@
     </div>
 
     <div class="section">
-      <h2>収集する情報</h2>
-      <p>本アプリは、以下のデータを<strong>お客様のデバイス内にのみ</strong>保存します：<br><br>
-      ・トレーニング記録（種目名、セット数、回数、重量、RPEなど）<br>
-      ・アプリの設定（言語設定、インターバルタイマーの設定）<br><br>
-      <strong>以下の情報は一切収集しません：</strong><br>
-      ・氏名・年齢・メールアドレスなどの個人を特定できる情報<br>
-      ・位置情報<br>
-      ・サーバーへ送信される運動・健康データ<br>
-      ・広告識別子・利用状況の分析データ</p>
+      <h2>収集・送信する情報</h2>
+      <p>本アプリは、基本的にデータを<strong>お客様のデバイス内にのみ</strong>保存します（トレーニング記録、言語設定、インターバルタイマーの設定など）。<br><br>
+      ただし、以下の特定の機能を利用する場合に限り、一部のデータが外部へ暗号化（HTTPS）送信または収集されます：<br><br>
+      <strong>1. Sentryによるクラッシュレポート（任意）</strong><br>
+      アプリ起動時にクラッシュレポートの送信に同意（オプトイン）いただいた場合に限り、アプリが異常終了した際のエラー原因特定および品質向上のため、エラーメッセージ、スタックトレース、デバイス情報（OSバージョンやデバイスモデル等）を第三者サービス（Sentry）に送信します。氏名やメールアドレス等の個人特定情報は一切含まれません。<br><br>
+      <strong>2. AIトレーナー機能（Gemini API）の利用</strong><br>
+      AIトレーナーとチャットを行う際、適切なアドバイスを生成するために、入力されたテキストに加え、直近のトレーニングサマリー、設定された体重、重量単位がGoogle Gemini API（安全なプロキシ経由）へ一時的に送信されます。送信されたデータは回答のリアルタイム生成にのみ使用され、永続的に保存されることはありません。</p>
     </div>
 
     <div class="section">
       <h2>データの保存場所</h2>
-      <p>すべてのデータは、お客様のデバイス内のSQLiteデータベースにローカル保存されます。外部サーバーや第三者にデータが送信されることはありません。アプリをアンインストールすると、保存されたすべてのデータが完全に削除されます。</p>
+      <p>すべてのトレーニングデータは、お客様のデバイス内のSQLiteデータベースにローカル保存されます。前述の「クラッシュレポート」および「AIトレーナー機能」を除き、外部サーバーや第三者にデータが送信されることはありません。アプリをアンインストールすると、ローカルに保存されたすべてのデータが完全に削除されます。</p>
     </div>
 
     <div class="section">
@@ -104,7 +102,7 @@
 
     <div class="section">
       <h2>第三者への提供</h2>
-      <p>本アプリは、第三者向けの分析・広告SDKを一切使用しておらず、お客様のデータを第三者に提供することはありません。</p>
+      <p>本アプリは、広告目的のSDKや不要なユーザー追跡ツールは一切使用していません。ただし、クラッシュ時のエラー分析・品質向上を目的として、ユーザーの同意のもとでSentry SDKを使用しています。</p>
     </div>
 
     <div class="section">
@@ -129,7 +127,7 @@
   <!-- ENGLISH -->
   <div data-en>
     <h1>Privacy Policy</h1>
-    <p class="updated">Last updated: April 29, 2026</p>
+    <p class="updated">Last updated: June 6, 2026</p>
 
     <div class="section">
       <h2>Overview</h2>
@@ -137,20 +135,18 @@
     </div>
 
     <div class="section">
-      <h2>Information We Collect</h2>
-      <p>The App stores the following data <strong>only on your device</strong>:<br><br>
-      • Workout history (exercises, sets, reps, weight, RPE)<br>
-      • App settings (language, rest timer preferences)<br><br>
-      <strong>We do NOT collect any of the following:</strong><br>
-      • Personal identification information (name, age, email, etc.)<br>
-      • Location data<br>
-      • Health data synced to any server<br>
-      • Advertising identifiers or usage analytics</p>
+      <h2>Information Collected & Transmitted</h2>
+      <p>By default, the App stores all workout history, language settings, and rest timer preferences <strong>only on your device</strong>.<br><br>
+      However, when using the following specific features, certain data is securely transmitted (via HTTPS) or collected:<br><br>
+      <strong>1. Crash Reporting via Sentry (Optional)</strong><br>
+      Only if you consent (opt-in) to crash reporting, the App collects and transmits crash diagnostics (error messages, stack traces, and device hardware/OS versions) to a third-party service (Sentry) to help debug and improve the App. No personally identifiable information (such as name or email) is included.<br><br>
+      <strong>2. AI Coach Feature (Gemini API)</strong><br>
+      When you interact with the AI Coach, your chat messages along with recent workout summaries, body weight, and weight units are securely sent to the Google Gemini API (via a secure proxy) to generate responses. This data is used solely in real-time to generate the advice and is not permanently stored or tracked.</p>
     </div>
 
     <div class="section">
       <h2>Data Storage</h2>
-      <p>All data is stored locally in an SQLite database on your device. No data is transmitted to external servers or third parties. Uninstalling the App will permanently delete all locally stored data.</p>
+      <p>All workout data is stored locally in an SQLite database on your device. Except for the optional crash reporting and AI Coach features described above, no data is transmitted to external servers or third parties. Uninstalling the App will permanently delete all locally stored data.</p>
     </div>
 
     <div class="section">
@@ -160,7 +156,7 @@
 
     <div class="section">
       <h2>Third-Party Services</h2>
-      <p>The App does not use any third-party analytics, advertising SDKs, or data services. No data is shared with third parties.</p>
+      <p>The App does not use advertising SDKs or unnecessary tracking tools. However, we utilize the Sentry SDK solely for crash reporting (subject to your explicit consent).</p>
     </div>
 
     <div class="section">

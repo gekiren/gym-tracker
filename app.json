@@ -24,7 +24,8 @@
       "package": "com.gekirennomad.trenote",
       "versionCode": 7,
       "permissions": [
-        "com.android.vending.BILLING"
+        "com.android.vending.BILLING",
+        "android.permission.SCHEDULE_EXACT_ALARM"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#000000",

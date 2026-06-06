@@ -5,10 +5,14 @@ import { router } from 'expo-router';
 import Constants from 'expo-constants';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
-import { saveSetting, resetDatabase, getSettings } from '../../src/db/database';
+import { saveSetting, resetDatabase, getSettings, getDB, closeDB, initDB } from '../../src/db/database';
 import { useTranslation } from 'react-i18next';
 import { changeLanguage, getCurrentLanguage } from '../../src/i18n';
 import { initIAPConnection, setupIAPListeners, purchasePremium, restorePurchases, fetchPremiumProducts, cleanupIAP } from '../../src/services/iapService';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
+import * as Updates from 'expo-updates';
 
 const REST_OPTIONS = [30, 60, 90, 120, 150, 180, 240, 300]; // in seconds
 
@@ -35,6 +39,7 @@ export default function ProfileScreen() {
   const [accountType, setAccountType] = useState<'basic' | 'premium' | 'early_adopter'>('basic');
   const [isPaywallVisible, setIsPaywallVisible] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [isBackupModalVisible, setIsBackupModalVisible] = useState(false);
 
   const isPremium = settings.premiumUntil === 'perpetual' || (settings.premiumUntil !== '' && !isNaN(Date.parse(settings.premiumUntil)) && Date.parse(settings.premiumUntil) > Date.now());
   const isEarly = settings.isEarlyAdopter;
@@ -231,6 +236,172 @@ export default function ProfileScreen() {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
     return s > 0 ? `${m}${t('ui.common.min_unit')}${s}${t('ui.common.secs_unit')}` : `${m}${t('ui.common.min_unit')}`;
+  };
+
+  const handleExportBackup = async () => {
+    try {
+      // Flush WAL to the main gymtracker.db file before copying
+      const conn = getDB();
+      await conn.execAsync('PRAGMA wal_checkpoint(TRUNCATE);');
+
+      const dbDir = FileSystem.documentDirectory + 'SQLite/';
+      const dbUri = dbDir + 'gymtracker.db';
+
+      // Check if DB file exists
+      const fileInfo = await FileSystem.getInfoAsync(dbUri);
+      if (!fileInfo.exists) {
+        Alert.alert(t('ui.common.error'), 'Database file not found.');
+        return;
+      }
+
+      // Copy to temporary cache location for sharing
+      const backupUri = FileSystem.cacheDirectory + 'trenote_backup.db';
+      await FileSystem.copyAsync({
+        from: dbUri,
+        to: backupUri
+      });
+
+      // Share the file
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(backupUri, {
+          mimeType: 'application/octet-stream',
+          dialogTitle: t('ui.developer_menu.backup_title'),
+          UTI: 'public.database'
+        });
+      } else {
+        Alert.alert(t('ui.common.error'), 'Sharing is not available on this device.');
+      }
+    } catch (error) {
+      console.error('Backup error:', error);
+      Alert.alert(t('ui.common.error'), 'Failed to create backup.');
+    }
+  };
+
+  const handleImportBackup = async () => {
+    setIsBackupModalVisible(false);
+
+    Alert.alert(
+      t('ui.developer_menu.restore_alert_title'),
+      t('ui.developer_menu.restore_alert_message'),
+      [
+        { text: t('ui.common.cancel'), style: 'cancel', onPress: () => setIsBackupModalVisible(true) },
+        {
+          text: t('ui.developer_menu.restore_alert_confirm'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // 1. Pick a file
+              const result = await DocumentPicker.getDocumentAsync({
+                type: '*/*',
+                copyToCacheDirectory: true
+              });
+
+              if (result.canceled || !result.assets || result.assets.length === 0) {
+                setIsBackupModalVisible(true);
+                return;
+              }
+
+              const selectedFile = result.assets[0];
+              const sourceUri = selectedFile.uri;
+
+              // Close database connection
+              try {
+                await closeDB();
+              } catch (closeErr) {
+                console.warn('Failed to close DB before restore:', closeErr);
+              }
+
+              // Wait for file lock release
+              await new Promise((resolve) => setTimeout(resolve, 500));
+
+              // Ensure SQLite directory exists
+              const dbDir = FileSystem.documentDirectory + 'SQLite/';
+              const dbUri = dbDir + 'gymtracker.db';
+              const walUri = dbUri + '-wal';
+              const shmUri = dbUri + '-shm';
+              
+              const dirInfo = await FileSystem.getInfoAsync(dbDir);
+              if (!dirInfo.exists) {
+                await FileSystem.makeDirectoryAsync(dbDir, { intermediates: true });
+              }
+
+              // Delete old WAL and SHM files to prevent conflicts
+              try {
+                const walInfo = await FileSystem.getInfoAsync(walUri);
+                if (walInfo.exists) {
+                  await FileSystem.deleteAsync(walUri);
+                }
+              } catch (walErr) {
+                console.warn('Failed to delete WAL file:', walErr);
+              }
+
+              try {
+                const shmInfo = await FileSystem.getInfoAsync(shmUri);
+                if (shmInfo.exists) {
+                  await FileSystem.deleteAsync(shmUri);
+                }
+              } catch (shmErr) {
+                console.warn('Failed to delete SHM file:', shmErr);
+              }
+
+              // 2. Overwrite gymtracker.db with the selected file
+              await FileSystem.copyAsync({
+                from: sourceUri,
+                to: dbUri
+              });
+
+              // Re-initialize database
+              await initDB();
+
+              // 3. Inform user and reload the app
+              Alert.alert(
+                t('ui.developer_menu.restore_success_title'),
+                t('ui.developer_menu.restore_success_message'),
+                [
+                  {
+                    text: 'OK',
+                    onPress: async () => {
+                      try {
+                        await Updates.reloadAsync();
+                      } catch (reloadErr) {
+                        Alert.alert('Info', 'Please restart the app manually to apply changes.');
+                      }
+                    }
+                  }
+                ]
+              );
+
+            } catch (error) {
+              console.error('Restore error:', error);
+              setIsBackupModalVisible(true);
+              Alert.alert(
+                t('ui.developer_menu.restore_error_title'),
+                t('ui.developer_menu.restore_error_message') + '\n\n' + (error instanceof Error ? error.message : String(error))
+              );
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleBackupMenuPress = () => {
+    const isPaidPremium = isPremium && !isEarly;
+    if (!isPaidPremium) {
+      Alert.alert(
+        t('ui.profile.backup_premium_only_title'),
+        t('ui.profile.backup_premium_only_desc'),
+        [
+          { text: t('ui.common.cancel'), style: 'cancel' },
+          { 
+            text: t('ui.profile.upgrade_btn'), 
+            onPress: () => setIsPaywallVisible(true) 
+          }
+        ]
+      );
+      return;
+    }
+    setIsBackupModalVisible(true);
   };
 
   return (
@@ -525,6 +696,36 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* Backup & Restore Section */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="cloud-upload-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+          <Text style={styles.sectionTitle}>{t('ui.profile.section_backup')}</Text>
+        </View>
+        <View style={styles.settingCard}>
+          <TouchableOpacity 
+            style={[styles.settingRow, { borderBottomWidth: 0 }]} 
+            onPress={handleBackupMenuPress}
+          >
+             <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 16 }}>
+               <Ionicons name="sync-circle-outline" size={22} color={Theme.colors.text} style={{ marginRight: 12 }} />
+               <View style={{ flex: 1 }}>
+                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                   <Text style={styles.settingLabel}>{t('ui.profile.backup_menu_title')}</Text>
+                   {!(isPremium && !isEarly) && (
+                     <View style={styles.premiumBadge}>
+                       <Text style={styles.premiumBadgeText}>PRO</Text>
+                     </View>
+                   )}
+                 </View>
+                 <Text style={styles.settingDesc}>{t('ui.profile.backup_menu_desc')}</Text>
+               </View>
+             </View>
+             <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       {/* App Info Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -576,6 +777,49 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* Backup & Restore Modal */}
+      <Modal visible={isBackupModalVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalBg}>
+          <View style={[styles.modalCard, { borderColor: 'rgba(79,172,254,0.3)', padding: 24 }]}>
+            <Ionicons name="cloud-upload-outline" size={56} color={Theme.colors.primary} style={{ marginBottom: 16 }} />
+            <Text style={styles.modalTitle}>{t('ui.profile.backup_modal_title')}</Text>
+            
+            <Text style={[styles.modalDesc, { marginBottom: 24 }]}>
+              {t('ui.profile.backup_modal_desc')}
+            </Text>
+
+            <View style={{ width: '100%', gap: 12, marginBottom: 20 }}>
+              <TouchableOpacity 
+                style={styles.modalExportBtn} 
+                onPress={handleExportBackup}
+              >
+                <Ionicons name="share-outline" size={20} color="#000" style={{ marginRight: 8 }} />
+                <Text style={styles.modalExportBtnText}>
+                  {t('ui.profile.backup_export_btn')}
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.modalImportBtn} 
+                onPress={handleImportBackup}
+              >
+                <Ionicons name="download-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.modalImportBtnText}>
+                  {t('ui.profile.backup_import_btn')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity 
+              style={styles.modalCloseBtn} 
+              onPress={() => setIsBackupModalVisible(false)}
+            >
+              <Text style={styles.modalCloseBtnText}>{t('ui.active_workout.cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Premium Paywall Modal */}
       <Modal visible={isPaywallVisible} animationType="slide" transparent={true}>
         <View style={styles.paywallBg}>
@@ -618,6 +862,17 @@ export default function ProfileScreen() {
               {/* Feature 3 */}
               <View style={styles.paywallFeature}>
                 <View style={styles.paywallFeatureIcon}>
+                  <Ionicons name="cloud-upload-outline" size={24} color="#4facfe" />
+                </View>
+                <View style={styles.paywallFeatureInfo}>
+                  <Text style={styles.paywallFeatureTitle}>バックアップ・復元機能の解放</Text>
+                  <Text style={styles.paywallFeatureDesc}>履歴や設定をファイルとして安全にエクスポート/インポートできるようになります。</Text>
+                </View>
+              </View>
+
+              {/* Feature 4 */}
+              <View style={styles.paywallFeature}>
+                <View style={styles.paywallFeatureIcon}>
                   <Ionicons name="heart" size={24} color="#4facfe" />
                 </View>
                 <View style={styles.paywallFeatureInfo}>
@@ -630,21 +885,27 @@ export default function ProfileScreen() {
             {/* Price tag */}
             <View style={styles.priceContainer}>
               <Text style={styles.priceLabel}>プレミアムプラン (買い切り型)</Text>
-              <Text style={styles.priceValue}>¥980</Text>
+              <Text style={styles.priceValue}>¥500</Text>
               <Text style={styles.priceSubtext}>※一度の購入で永久にご利用いただけます</Text>
             </View>
 
             {/* Actions */}
             <View style={styles.paywallBtnContainer}>
               <TouchableOpacity 
-                style={[styles.paywallUpgradeBtn, isPurchasing && { opacity: 0.5 }]} 
+                style={[
+                  styles.paywallUpgradeBtn, 
+                  isPurchasing && { opacity: 0.5 },
+                  (isPremium && !isEarly) && { backgroundColor: '#555', shadowColor: 'transparent', elevation: 0 }
+                ]} 
                 onPress={handlePurchase}
-                disabled={isPurchasing}
+                disabled={isPurchasing || (isPremium && !isEarly)}
               >
                 {isPurchasing ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text style={styles.paywallUpgradeBtnText}>プレミアムにアップグレードする</Text>
+                  <Text style={styles.paywallUpgradeBtnText}>
+                    {(isPremium && !isEarly) ? 'プレミアムプラン適用済み' : 'プレミアムにアップグレードする'}
+                  </Text>
                 )}
               </TouchableOpacity>
 
@@ -815,5 +1076,58 @@ const styles = StyleSheet.create({
   paywallUpgradeBtn: { backgroundColor: Theme.colors.primary, width: '100%', paddingVertical: 14, borderRadius: 25, alignItems: 'center', justifyContent: 'center', shadowColor: Theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 4 },
   paywallUpgradeBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   paywallRestoreBtn: { width: '100%', paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
-  paywallRestoreBtnText: { color: Theme.colors.textMuted, fontSize: 13, textDecorationLine: 'underline' }
+  paywallRestoreBtnText: { color: Theme.colors.textMuted, fontSize: 13, textDecorationLine: 'underline' },
+  premiumBadge: {
+    backgroundColor: 'rgba(79, 172, 254, 0.15)',
+    borderWidth: 1,
+    borderColor: '#4facfe',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    marginLeft: 8,
+  },
+  premiumBadgeText: {
+    color: '#4facfe',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  modalExportBtn: {
+    backgroundColor: Theme.colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 8,
+    width: '100%',
+  },
+  modalExportBtnText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalImportBtn: {
+    backgroundColor: '#ff4d4f',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 8,
+    width: '100%',
+  },
+  modalImportBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalCloseBtn: {
+    paddingVertical: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalCloseBtnText: {
+    color: Theme.colors.textMuted,
+    fontSize: 15,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  }
 });
