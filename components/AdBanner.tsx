@@ -48,6 +48,17 @@ export default function AdBanner() {
     return () => clearInterval(interval);
   }, [fadeAnim]);
 
+  // Retry loading Google AdMob after 30 seconds if it previously failed (e.g. offline)
+  useEffect(() => {
+    if (!adFailed) return;
+
+    const retryTimeout = setTimeout(() => {
+      setAdFailed(false);
+    }, 30000);
+
+    return () => clearTimeout(retryTimeout);
+  }, [adFailed]);
+
   const handlePromoPress = () => {
     router.navigate('/(tabs)/profile');
   };
