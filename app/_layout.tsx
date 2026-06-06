@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet, Alert, AppState } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
+import mobileAds from 'react-native-google-mobile-ads';
 import { initDB, getSettings, saveSetting, getAITokensBalance } from '../src/db/database';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
@@ -213,6 +214,16 @@ export default function RootLayout() {
   };
 
   useEffect(() => {
+    // Initialize Google Mobile Ads SDK on startup
+    mobileAds()
+      .initialize()
+      .then((adapterStatuses) => {
+        console.log('Google Mobile Ads SDK initialized successfully:', adapterStatuses);
+      })
+      .catch((err) => {
+        console.warn('Failed to initialize Google Mobile Ads SDK:', err);
+      });
+
     setupDB();
 
     const subscription = AppState.addEventListener('change', async (nextAppState) => {

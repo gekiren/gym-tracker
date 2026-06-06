@@ -73,7 +73,8 @@
           "project": "gym-tracker"
         }
       ],
-      "expo-iap"
+      "expo-iap",
+      "react-native-google-mobile-ads"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -85,6 +86,10 @@
         "projectId": "63f2d7a0-124d-4187-92f7-911a1a1733d5"
       }
     },
-    "owner": "gekirennomads-organization"
+    "owner": "gekirennomads-organization",
+    "react-native-google-mobile-ads": {
+      "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+      "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+    }
   }
 }

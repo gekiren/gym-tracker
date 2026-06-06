@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform, View } from 'react-native';
-import SponsorBanner from '../../components/SponsorBanner';
+import AdBanner from '../../components/AdBanner';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
 import { useTranslation } from 'react-i18next';
@@ -12,8 +12,7 @@ export default function TabLayout() {
   const { t } = useTranslation();
   const settings = useWorkoutStore(state => state.settings);
   const aiTokensBalance = settings.aiTokensBalance;
-  
-  const isPremium = settings.premiumUntil === 'perpetual' || (settings.premiumUntil !== '' && !isNaN(Date.parse(settings.premiumUntil)) && Date.parse(settings.premiumUntil) > Date.now());
+  const isPremium = settings.isPremium;
   const isEarly = settings.isEarlyAdopter;
   const maxTokens = (isPremium || isEarly) ? 20 : 5;
   return (
@@ -70,7 +69,7 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
-    <SponsorBanner />
+    {!isPremium && <AdBanner />}
     </View>
   );
 }

@@ -793,6 +793,27 @@ export const saveSetting = async (key: string, value: string) => {
   await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value]);
 };
 
+export const getPremiumStatusFromDB = async (): Promise<{ isPremium: boolean; premiumUntil: string; isEarlyAdopter: boolean }> => {
+  const conn = getDB();
+  const rows = await conn.getAllAsync<{ key: string; value: string }>(
+    'SELECT key, value FROM settings WHERE key IN ("is_early_adopter", "premium_until")'
+  );
+  const stored: Record<string, string> = {};
+  for (const r of rows) {
+    stored[r.key] = r.value;
+  }
+  const premiumUntil = stored['premium_until'] || '';
+  const isEarlyAdopter = stored['is_early_adopter'] === 'true';
+  const isPremium = isEarlyAdopter || premiumUntil === 'perpetual' || (
+    premiumUntil !== '' && !isNaN(Date.parse(premiumUntil)) && Date.parse(premiumUntil) > Date.now()
+  );
+  return {
+    isPremium,
+    premiumUntil,
+    isEarlyAdopter
+  };
+};
+
 export const activatePremiumFromPromo = async (): Promise<string> => {
   const conn = getDB();
   const oneMonthFromNow = new Date();

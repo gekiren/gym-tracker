@@ -82,6 +82,7 @@ interface WorkoutState {
     aiTokensBalance: number;
     premiumUntil: string;
     isEarlyAdopter: boolean;
+    isPremium: boolean;
     displayFields: {
       showRpe: boolean;
       show1RM: boolean;
@@ -159,6 +160,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     aiTokensBalance: 20,
     premiumUntil: '',
     isEarlyAdopter: false,
+    isPremium: false,
     displayFields: {
       showRpe: true,
       show1RM: true,
@@ -168,21 +170,36 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     crashConsent: 'unset'
   },
 
-  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false, bodyWeight: number | null = null, needsStyleSelection: boolean = false, aiTokensBalance: number = 20, crashConsent: 'agreed' | 'declined' | 'unset' = 'unset', premiumUntil: string = '', isEarlyAdopter: boolean = false) => set((state) => ({
-    settings: { ...state.settings, defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight, needsStyleSelection, aiTokensBalance, crashConsent, premiumUntil, isEarlyAdopter }
-  })),
+  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false, bodyWeight: number | null = null, needsStyleSelection: boolean = false, aiTokensBalance: number = 20, crashConsent: 'agreed' | 'declined' | 'unset' = 'unset', premiumUntil: string = '', isEarlyAdopter: boolean = false) => set((state) => {
+    const isPremium = isEarlyAdopter || premiumUntil === 'perpetual' || (premiumUntil !== '' && !isNaN(Date.parse(premiumUntil)) && Date.parse(premiumUntil) > Date.now());
+    return {
+      settings: { ...state.settings, defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight, needsStyleSelection, aiTokensBalance, crashConsent, premiumUntil, isEarlyAdopter, isPremium }
+    };
+  }),
 
-  setPremiumUntil: (premiumUntil) => set((state) => ({
-    settings: { ...state.settings, premiumUntil }
-  })),
+  setPremiumUntil: (premiumUntil) => set((state) => {
+    const isEarlyAdopter = state.settings.isEarlyAdopter;
+    const isPremium = isEarlyAdopter || premiumUntil === 'perpetual' || (premiumUntil !== '' && !isNaN(Date.parse(premiumUntil)) && Date.parse(premiumUntil) > Date.now());
+    return {
+      settings: { ...state.settings, premiumUntil, isPremium }
+    };
+  }),
 
-  updatePremiumStatus: (premiumUntil) => set((state) => ({
-    settings: { ...state.settings, premiumUntil, aiTokensBalance: 20 }
-  })),
+  updatePremiumStatus: (premiumUntil) => set((state) => {
+    const isEarlyAdopter = state.settings.isEarlyAdopter;
+    const isPremium = isEarlyAdopter || premiumUntil === 'perpetual' || (premiumUntil !== '' && !isNaN(Date.parse(premiumUntil)) && Date.parse(premiumUntil) > Date.now());
+    return {
+      settings: { ...state.settings, premiumUntil, aiTokensBalance: 20, isPremium }
+    };
+  }),
 
-  setIsEarlyAdopter: (isEarlyAdopter) => set((state) => ({
-    settings: { ...state.settings, isEarlyAdopter }
-  })),
+  setIsEarlyAdopter: (isEarlyAdopter) => set((state) => {
+    const premiumUntil = state.settings.premiumUntil;
+    const isPremium = isEarlyAdopter || premiumUntil === 'perpetual' || (premiumUntil !== '' && !isNaN(Date.parse(premiumUntil)) && Date.parse(premiumUntil) > Date.now());
+    return {
+      settings: { ...state.settings, isEarlyAdopter, isPremium }
+    };
+  }),
 
   setBodyWeight: (weight: number | null) => set((state) => ({
     settings: { ...state.settings, bodyWeight: weight }
@@ -644,6 +661,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         aiTokensBalance: 20,
         premiumUntil: '',
         isEarlyAdopter: false,
+        isPremium: false,
         displayFields: {
           showRpe: true,
           show1RM: true,

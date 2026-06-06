@@ -103,6 +103,15 @@
       "manual_start_success": "計測を開始しました",
       "start_training_btn": "▶ トレーニングタイマー開始"
     },
+    "ads": {
+      "promo_ai_title": "AIパーソナルトレーナー解放",
+      "promo_ai_desc": "あなた専用のメニュー作成や指導を受けましょう！",
+      "promo_backup_title": "クラウドバックアップ機能",
+      "promo_backup_desc": "大切なトレーニング履歴を安全に保存・移行できます。",
+      "promo_limit_title": "無制限のルーティン作成",
+      "promo_limit_desc": "作成上限を解除して、自由なメニュー設定を。",
+      "upgrade_btn": "詳細"
+    },
     "exercise_select": {
       "search_placeholder": "種目を検索...",
       "section_favorites": "お気に入り",

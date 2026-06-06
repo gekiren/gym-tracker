@@ -104,6 +104,15 @@
       "manual_start_success": "Timer started",
       "start_training_btn": "▶ Start Training Timer"
     },
+    "ads": {
+      "promo_ai_title": "Unlock AI Personal Coach",
+      "promo_ai_desc": "Get personalized training advice and customized programs!",
+      "promo_backup_title": "Cloud Backup & Restore",
+      "promo_backup_desc": "Securely back up your workout history and sync across devices.",
+      "promo_limit_title": "Create Unlimited Routines",
+      "promo_limit_desc": "Remove limitations and design as many routines as you want.",
+      "upgrade_btn": "Upgrade"
+    },
     "exercise_select": {
       "search_placeholder": "Search exercises...",
       "section_favorites": "Favorites",
