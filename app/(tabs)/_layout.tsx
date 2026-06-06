@@ -15,6 +15,15 @@ export default function TabLayout() {
   const isPremium = settings.isPremium;
   const isEarly = settings.isEarlyAdopter;
   const maxTokens = (isPremium || isEarly) ? 20 : 5;
+
+  const tabHeight = Platform.OS === 'ios'
+    ? (isPremium ? 88 : 96)
+    : (isPremium ? 60 : 72);
+
+  const tabPaddingBottom = Platform.OS === 'ios'
+    ? (isPremium ? 28 : 32)
+    : (isPremium ? 8 : 12);
+
   return (
     <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
       <Tabs
@@ -32,7 +41,18 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: Theme.colors.background,
           borderTopColor: Theme.colors.border,
+          height: tabHeight,
+          paddingBottom: tabPaddingBottom,
+          paddingTop: 8,
           ...(Platform.OS === 'ios' ? { position: 'absolute' } : {}),
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+          marginBottom: Platform.OS === 'ios' ? 0 : 4,
+        },
+        tabBarIconStyle: {
+          marginTop: Platform.OS === 'ios' ? 0 : 2,
         },
       }}>
       <Tabs.Screen
