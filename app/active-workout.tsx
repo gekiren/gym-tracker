@@ -548,14 +548,14 @@ export default function ActiveWorkoutScreen() {
                   <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>{t('ui.active_workout.header_time')}</Text>
                 ) : (
                   <>
-                    <Text style={[styles.th, { width: 90 }]}>{ex.name === 'プランク' ? '加重' : (ex.equipment === '自重' ? `+ ${settings.weightUnit}` : settings.weightUnit)}</Text>
-                    <Text style={[styles.th, { width: 70 }]}>{ex.name === 'プランク' ? '秒数' : t('ui.active_workout.header_reps')}</Text>
+                    <Text style={[styles.th, { width: 90, marginHorizontal: 3 }]}>{ex.name === 'プランク' ? '加重' : (ex.equipment === '自重' ? `+ ${settings.weightUnit}` : settings.weightUnit)}</Text>
+                    <Text style={[styles.th, { width: 70, marginHorizontal: 3 }]}>{ex.name === 'プランク' ? '秒数' : t('ui.active_workout.header_reps')}</Text>
                     {(settings.displayFields.showRpe || ex.name === 'プランク') && (
-                      <Text style={[styles.th, { width: 55 }]}>{ex.name === 'プランク' ? '計測' : t('ui.active_workout.header_rpe')}</Text>
+                      <Text style={[styles.th, { width: 55, marginHorizontal: 3 }]}>{ex.name === 'プランク' ? '計測' : t('ui.active_workout.header_rpe')}</Text>
                     )}
                   </>
                 )}
-                <Text style={[styles.th, { width: 40 }]}></Text>
+                <Text style={[styles.th, { width: 40 }]}>{t('ui.active_workout.header_record')}</Text>
               </View>
 
             {ex.sets.map((set, idx) => (

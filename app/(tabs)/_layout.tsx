@@ -14,15 +14,16 @@ export default function TabLayout() {
   const aiTokensBalance = settings.aiTokensBalance;
   const isPremium = settings.isPremium;
   const isEarly = settings.isEarlyAdopter;
-  const maxTokens = (isPremium || isEarly) ? 20 : 5;
+  const isPremiumOrEarly = isPremium || isEarly;
+  const maxTokens = isPremiumOrEarly ? 20 : 5;
 
   const tabHeight = Platform.OS === 'ios'
-    ? (isPremium ? 88 : 96)
-    : (isPremium ? 60 : 72);
+    ? (isPremiumOrEarly ? 88 : 96)
+    : (isPremiumOrEarly ? 60 : 72);
 
   const tabPaddingBottom = Platform.OS === 'ios'
-    ? (isPremium ? 28 : 32)
-    : (isPremium ? 8 : 12);
+    ? (isPremiumOrEarly ? 28 : 32)
+    : (isPremiumOrEarly ? 8 : 12);
 
   return (
     <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
@@ -89,7 +90,7 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
-    {!isPremium && <AdBanner />}
+    {!isPremiumOrEarly && <AdBanner />}
     </View>
   );
 }

@@ -50,6 +50,7 @@
       "header_rpe": "RPE",
       "header_set": "Set",
       "header_time": "Time",
+      "header_record": "Log",
       "aerobic_start": "▶ Start",
       "aerobic_stop": "⏹ Stop",
       "aerobic_resume": "▶ Resume",
@@ -461,7 +462,12 @@
       "new_record": "New Personal Record!",
       "no_achievements": "Excellent workout! Let's keep it up next time!",
       "done_btn": "Done",
-      "workout_details": "Workout History Details"
+      "workout_details": "Workout History Details",
+      "reward_title": "Reward Earned!",
+      "reward_title_lucky": "🎉 Super Lucky!",
+      "reward_desc_one": "Thank you for watching the ad! Your next workout completion will be ad-free🙏",
+      "reward_desc_two": "Your next 2 workout completions will be ad-free✨\nKeep up the great training!",
+      "reward_close_btn": "Close"
     }
   },
   "exercises": {

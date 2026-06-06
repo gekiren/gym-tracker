@@ -13,6 +13,8 @@ export const AD_CONFIG = {
   production: {
     androidBanner: 'ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx', // Replace with real Android banner unit ID
     iosBanner: 'ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx',     // Replace with real iOS banner unit ID
+    androidRewardedInterstitial: 'ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx', // Replace with real Android rewarded interstitial unit ID
+    iosRewardedInterstitial: 'ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx',     // Replace with real iOS rewarded interstitial unit ID
   },
 
   /**
@@ -39,6 +41,35 @@ export const AD_CONFIG = {
         android: TestIds.BANNER,
         ios: TestIds.BANNER,
         default: TestIds.BANNER,
+      });
+    }
+
+    return adId;
+  },
+
+  /**
+   * Returns the correct AdMob Rewarded Interstitial Ad Unit ID depending on platform and environment mode.
+   */
+  getRewardedInterstitialAdUnitId(): string {
+    if (this.useTestAds) {
+      return Platform.select({
+        android: TestIds.REWARDED_INTERSTITIAL,
+        ios: TestIds.REWARDED_INTERSTITIAL,
+        default: TestIds.REWARDED_INTERSTITIAL,
+      });
+    }
+
+    const adId = Platform.select({
+      android: this.production.androidRewardedInterstitial,
+      ios: this.production.iosRewardedInterstitial,
+    });
+
+    // Fall back to SDK Test ID if production ID is not set or invalid
+    if (!adId || adId.includes('xxxxxxxxxxxxxxxx')) {
+      return Platform.select({
+        android: TestIds.REWARDED_INTERSTITIAL,
+        ios: TestIds.REWARDED_INTERSTITIAL,
+        default: TestIds.REWARDED_INTERSTITIAL,
       });
     }
 

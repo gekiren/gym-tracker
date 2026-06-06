@@ -6,8 +6,16 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../src/theme';
 import { AD_CONFIG } from '../src/config/adConfig';
+import { useWorkoutStore } from '../src/store/workoutStore';
 
 export default function AdBanner() {
+  const settings = useWorkoutStore(state => state.settings);
+  const isPremiumOrEarly = settings.isPremium || settings.isEarlyAdopter;
+
+  if (isPremiumOrEarly) {
+    return null;
+  }
+
   const { t } = useTranslation();
   const [adFailed, setAdFailed] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;

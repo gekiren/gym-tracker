@@ -3,7 +3,7 @@ import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../src/theme';
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
 import { pickAndImportCSV } from '../src/utils/csvImporter';
 import * as Sharing from 'expo-sharing';
@@ -15,11 +15,52 @@ import { saveCrashLog, readCrashLog } from '../src/services/crashReporterService
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import * as Clipboard from 'expo-clipboard';
+import { useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
+import { AD_CONFIG } from '../src/config/adConfig';
 
 export default function DeveloperMenuScreen() {
   const { t } = useTranslation();
   const [isChecking, setIsChecking] = useState(false);
   const [lastAckId, setLastAckId] = useState<string>('Loading...');
+
+  // Ad testing hooks and states
+  const [loadingAd, setLoadingAd] = useState(false);
+  const shouldShowImmediateAd = useRef(false);
+  const adUnitId = AD_CONFIG.getRewardedInterstitialAdUnitId();
+  const { isLoaded, load, show, error } = useRewardedInterstitialAd(adUnitId, {
+    requestNonPersonalizedAdsOnly: true,
+  });
+
+  useEffect(() => {
+    if (shouldShowImmediateAd.current && isLoaded) {
+      shouldShowImmediateAd.current = false;
+      setLoadingAd(false);
+      show();
+    }
+  }, [isLoaded, show]);
+
+  useEffect(() => {
+    if (shouldShowImmediateAd.current && error) {
+      shouldShowImmediateAd.current = false;
+      setLoadingAd(false);
+      Alert.alert('広告ロードエラー', error.message || String(error));
+    }
+  }, [error]);
+
+  const handleResetAdSkipCount = async () => {
+    try {
+      await saveSetting('ad_skip_count', '0');
+      Alert.alert('リセット完了', '広告スキップ残数を0に設定しました。次回ワークアウト完了時に広告が表示されます。');
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    }
+  };
+
+  const handleShowAdImmediately = () => {
+    setLoadingAd(true);
+    shouldShowImmediateAd.current = true;
+    load();
+  };
 
   useEffect(() => {
     const loadAckId = async () => {
@@ -510,6 +551,37 @@ export default function DeveloperMenuScreen() {
             >
               <Ionicons name="time-outline" size={20} color="#c084fc" style={{ marginRight: 8 }} />
               <Text style={[styles.btnOutlineText, { color: '#c084fc' }]}>期間限定プレミアムの期限切れをシミュレート</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Ads Testing Section */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="megaphone-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>広告表示のテスト (Ads Testing)</Text>
+          </View>
+          <Text style={styles.cardDesc}>
+            ワークアウト完了時に表示されるリワードインタースティシャル広告のテストユーティリティです。
+          </Text>
+          <View style={{ flexDirection: 'column', gap: 10 }}>
+            <TouchableOpacity 
+              style={styles.btnOutline} 
+              onPress={handleResetAdSkipCount}
+            >
+              <Ionicons name="refresh-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.btnOutlineText}>次回ワークアウト完了時に強制表示 (スキップ残数リセット)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.btnOutline, { borderColor: Theme.colors.success, backgroundColor: 'rgba(76, 175, 80, 0.05)' }]} 
+              onPress={handleShowAdImmediately}
+              disabled={loadingAd}
+            >
+              <Ionicons name="play-outline" size={20} color={Theme.colors.success} style={{ marginRight: 8 }} />
+              <Text style={[styles.btnOutlineText, { color: Theme.colors.success }]}>
+                {loadingAd ? '広告ロード中...' : 'その場でリワード広告を表示 (ロード＆再生)'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

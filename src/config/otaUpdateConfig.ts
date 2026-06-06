@@ -11,23 +11,27 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.8-ota3', // OTA識別用のバージョン文字列
+  version: '1.0.8-ota7', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      '新機能：ワークアウト完了時に成果を祝う「Congratulation（完了）画面」を実装しました。',
-      '継続日数・週数の自動算出および自己ベスト(1RM)・総重量ボリューム更新時の動的実績カード表示を追加しました。',
-      'トレーニング完了時に華やかな紙吹雪でお祝いする演出効果（Confetti）を追加しました。',
-      '完了画面下部をスクロールすることで、今回の詳細履歴をシームレスに確認できる履歴ビューを統合しました。'
+      'ワークアウト記録画面の「重量」「回数」「RPE」ヘッダーの表示位置を、入力欄の中央と完全に揃えて視認性を改善しました。',
+      '完了チェックボックス列のヘッダーに「記録」ラベルを追加しました。',
+      'ベーシックプランにおいて、完了画面表示1秒後に全画面広告を表示する機能を追加しました。広告を最後まで視聴した場合は次の1〜2回のワークアウト完了時に広告が非表示になる特典を獲得できます。',
+      '広告読み込みエラー検知デバッグ機能の追加とAdMobネイティブ設定の最適化を行いました。',
+      'アーリーアダプター向けバナー非表示の適用、デベロッパー向け広告テスト機能の追加を行いました。',
+      'ワークアウト完了時の広告ロードタイミングの競合（レースコンディション）の修正を行いました。'
     ],
     en: [
-      'New Feature: Implemented a Congratulation (workout completion) screen to celebrate your progress.',
-      'Added automatic tracking for training streaks (days/weeks) and dynamic cards highlighting 1RM or Volume achievements.',
-      'Added a smooth and vibrant confetti animation celebrating your workout completion.',
-      'Integrated a detailed, read-only workout history list at the bottom of the screen.'
+      'Aligned the layout of table headers (Weight, Reps, RPE) to match the input fields in the active workout screen.',
+      'Added a "Log" label above the set complete checkboxes in the active workout screen.',
+      'Implemented an ad-free reward system: watching ads to completion on the basic plan grants 1-2 ad-free workouts.',
+      'Added ad load error detection diagnostics and optimized AdMob native configuration setup.',
+      'Applied banner ad visibility restrictions for Early Adopters and added ad testing utilities in the developer menu.',
+      'Fixed a race condition during ad loading on the workout completion screen.'
     ]
   }
 };

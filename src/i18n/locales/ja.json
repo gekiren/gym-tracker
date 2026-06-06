@@ -50,6 +50,7 @@
       "header_rpe": "RPE",
       "header_set": "セット",
       "header_time": "時間",
+      "header_record": "記録",
       "aerobic_start": "▶ 開始",
       "aerobic_stop": "⏹ 停止",
       "aerobic_resume": "▶ 再開",
@@ -456,7 +457,12 @@
       "new_record": "自己ベスト更新！",
       "no_achievements": "素晴らしいトレーニングでした！次回も頑張りましょう！",
       "done_btn": "終了する",
-      "workout_details": "ワークアウト履歴詳細"
+      "workout_details": "ワークアウト履歴詳細",
+      "reward_title": "特典獲得！",
+      "reward_title_lucky": "🎉 超ラッキー！",
+      "reward_desc_one": "広告のご視聴ありがとうございました！次回のワークアウト完了時は広告を非表示にします🙏",
+      "reward_desc_two": "次の2回分のワークアウト完了時は広告を非表示にします✨\n日頃のトレーニングのご継続を応援しています！",
+      "reward_close_btn": "閉じる"
     }
   },
   "exercises": {

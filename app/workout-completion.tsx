@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert } from 'react-native';
+import { useEffect, useState, useRef } from 'react';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,9 @@ import { Theme } from '../src/theme';
 import { translateExercise, translateStance } from '../src/i18n';
 import { Confetti } from '../components/Confetti';
 import { checkAndTriggerReviewFlow } from '../src/services/reviewService';
+import { useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
+import { AD_CONFIG } from '../src/config/adConfig';
+import { getSettings, saveSetting } from '../src/db/database';
 
 export default function WorkoutCompletionScreen() {
   const { t } = useTranslation();
@@ -16,12 +19,106 @@ export default function WorkoutCompletionScreen() {
   const completionData = useWorkoutStore(state => state.lastWorkoutCompletion);
   const settings = useWorkoutStore(state => state.settings);
 
+  // AdMob Hooks
+  const adUnitId = AD_CONFIG.getRewardedInterstitialAdUnitId();
+  const { isLoaded, isClosed, load, show, isEarnedReward, error } = useRewardedInterstitialAd(adUnitId, {
+    requestNonPersonalizedAdsOnly: true,
+  });
+
+  // Local States
+  const [rewardModalVisible, setRewardModalVisible] = useState(false);
+  const [rewardResult, setRewardResult] = useState<'normal' | 'lucky' | null>(null);
+  const [timerFinished, setTimerFinished] = useState(false);
+  const [shouldShowAd, setShouldShowAd] = useState(false);
+  const [shouldLoadAd, setShouldLoadAd] = useState(false);
+  const hasCheckedAd = useRef(false);
+
   useEffect(() => {
     // If no completion data (e.g. direct nav), go back or to history
     if (!completionData) {
       router.replace('/(tabs)/history');
     }
   }, [completionData]);
+
+  useEffect(() => {
+    if (!completionData || settings.isPremium || hasCheckedAd.current) return;
+    hasCheckedAd.current = true;
+
+    const checkAdFlow = async () => {
+      try {
+        const storedSettings = await getSettings();
+        const skipCount = storedSettings['ad_skip_count'] ? parseInt(storedSettings['ad_skip_count'], 10) : 0;
+
+        if (skipCount > 0) {
+          // Decrement skip count and save silently
+          await saveSetting('ad_skip_count', String(skipCount - 1));
+          console.log(`Ad skipped. Remaining skip count decremented from ${skipCount} to ${skipCount - 1}`);
+        } else {
+          // It's time to show the ad! Set state and queue ad loading
+          console.log('No skip count remaining. Setting shouldLoadAd to true...');
+          setShouldShowAd(true);
+          setShouldLoadAd(true);
+        }
+      } catch (e) {
+        console.warn('Failed to handle ad skip count', e);
+      }
+    };
+
+    checkAdFlow();
+  }, [completionData, settings.isPremium]);
+
+  useEffect(() => {
+    if (shouldLoadAd) {
+      setShouldLoadAd(false); // only load once
+      console.log('Ad instance load function ready. Calling load()...');
+      load();
+    }
+  }, [shouldLoadAd, load]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTimerFinished(true);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (timerFinished && isLoaded && shouldShowAd) {
+      show();
+      setShouldShowAd(false); // only show once
+    }
+  }, [timerFinished, isLoaded, shouldShowAd, show]);
+
+  useEffect(() => {
+    if (error) {
+      console.warn('AdMob Error in Workout Completion screen:', error);
+      Alert.alert(
+        'AdMob Error (Debug)',
+        `Error description:\n${error.message || String(error)}`,
+        [{ text: 'OK' }]
+      );
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (isClosed) {
+      if (isEarnedReward) {
+        // User watched the ad to the end!
+        const isLucky = Math.random() < 0.30;
+        const skipCount = isLucky ? 2 : 1;
+        
+        saveSetting('ad_skip_count', String(skipCount)).then(() => {
+          setRewardResult(isLucky ? 'lucky' : 'normal');
+          setRewardModalVisible(true);
+        });
+      } else {
+        // User skipped the ad!
+        const silentSkip = Math.floor(Math.random() * 3); // 0, 1, or 2 skips
+        saveSetting('ad_skip_count', String(silentSkip));
+        console.log(`Ad skipped by user. Silent skip drawn: ${silentSkip}`);
+      }
+    }
+  }, [isClosed, isEarnedReward]);
 
   if (!completionData) {
     return null;
@@ -256,6 +353,39 @@ export default function WorkoutCompletionScreen() {
         
         <View style={{ height: 60 }} />
       </ScrollView>
+
+      {/* Reward Modal */}
+      <Modal visible={rewardModalVisible} transparent={true} animationType="fade">
+        <View style={styles.rewardModalOverlay}>
+          <View style={styles.rewardModalContent}>
+            <View style={styles.rewardModalIcon}>
+              <Ionicons 
+                name={rewardResult === 'lucky' ? "gift" : "checkmark-circle"} 
+                size={54} 
+                color={rewardResult === 'lucky' ? "#ffd700" : Theme.colors.success} 
+              />
+            </View>
+            <Text style={styles.rewardModalTitle}>
+              {rewardResult === 'lucky' 
+                ? t('ui.workout_completion.reward_title_lucky') 
+                : t('ui.workout_completion.reward_title')}
+            </Text>
+            <Text style={styles.rewardModalDesc}>
+              {rewardResult === 'lucky' 
+                ? t('ui.workout_completion.reward_desc_two') 
+                : t('ui.workout_completion.reward_desc_one')}
+            </Text>
+            <TouchableOpacity 
+              style={styles.rewardModalBtn} 
+              onPress={() => setRewardModalVisible(false)}
+            >
+              <Text style={styles.rewardModalBtnText}>
+                {t('ui.workout_completion.reward_close_btn')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -537,5 +667,53 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     letterSpacing: 1,
+  },
+  rewardModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rewardModalContent: {
+    width: '85%',
+    backgroundColor: Theme.colors.card,
+    borderRadius: Theme.borderRadius.md,
+    padding: Theme.spacing.lg,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  rewardModalIcon: {
+    marginBottom: Theme.spacing.md,
+  },
+  rewardModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: Theme.spacing.sm,
+    textAlign: 'center',
+  },
+  rewardModalDesc: {
+    fontSize: 14,
+    color: Theme.colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: Theme.spacing.lg,
+  },
+  rewardModalBtn: {
+    backgroundColor: Theme.colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: Theme.borderRadius.sm,
+  },
+  rewardModalBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
 });
