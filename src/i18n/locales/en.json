@@ -332,6 +332,7 @@
       "promo_expired_title": "Premium Period Ended",
       "promo_expired_msg": "Your premium plan (limited-time) has expired, and you have returned to your original plan.",
       "promo_code": "Enter Promo Code",
+      "promo_code_desc": "* Can only be entered on the latest version. The app will verify if your version is up to date before applying.",
       "promo_modal_title": "Promotion Code",
       "promo_modal_desc": "Enter a valid promotion code during the campaign period to activate the Premium Plan for 1 month.",
       "promo_input_placeholder": "Enter promo code...",

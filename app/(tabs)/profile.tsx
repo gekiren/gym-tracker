@@ -894,16 +894,21 @@ export default function ProfileScreen() {
             onPress={handlePromoPress}
             disabled={isCheckingPromoWorkflow}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 8 }}>
               <Ionicons 
                 name={isCheckingPromoWorkflow ? "sync" : "gift-outline"} 
                 size={20} 
                 color={Theme.colors.text} 
                 style={{ marginRight: 10 }} 
               />
-              <Text style={styles.settingLabel}>
-                {isCheckingPromoWorkflow ? t('ui.profile.app_version_checking') : t('ui.profile.promo_code')}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.settingLabel}>
+                  {isCheckingPromoWorkflow ? t('ui.profile.app_version_checking') : t('ui.profile.promo_code')}
+                </Text>
+                <Text style={[styles.settingDesc, { paddingRight: 0 }]}>
+                  {t('ui.profile.promo_code_desc')}
+                </Text>
+              </View>
             </View>
             {isCheckingPromoWorkflow ? (
               <ActivityIndicator size="small" color={Theme.colors.textMuted} />
