@@ -55,6 +55,10 @@
 7. **OTAアップデート時の更新情報の記載 (Update Information Log):**
    - 今後、不具合修正や機能追加等でOTAアップデート（`eas update`）を行う際は、ユーザーがアプリアップデート後に起動した際に表示される更新情報ポップアップにその変更内容を反映させるため、必ず [src/config/otaUpdateConfig.ts](file:///c:/Users/toshi/.gemini/antigravity/scratch/kintore/gym-tracker/src/config/otaUpdateConfig.ts) の `CURRENT_OTA_CONFIG`（バージョン、タイトル、更新内容 `notes`）を適切に更新してください。
    - **EAS Update の実行前に、インフォメーションポップアップに表示する具体的な内容（日本語・英語の notes）を必ずユーザーに提示し、文言の確認と承認を得てください。**
+8. **Google Play Storeリリースノートの作成ルール (Google Play Store Release Notes):**
+   - 新しいネイティブビルド（`.aab`）を作成する際は、必ず前回の本番バージョンからの変更点をまとめたリリースノート（日本語・英語）を作成してユーザーに提示してください。
+   - **Google Play Consoleの文字数制限に対応するため、文章は極力短く簡素にまとめ、表題（概要）のみを簡潔な箇条書き形式で記述してください。**
+
 
 ---
 
