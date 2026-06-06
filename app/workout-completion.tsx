@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, ActivityIndicator } from 'react-native';
 import { useEffect, useState, useRef } from 'react';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -31,6 +31,7 @@ export default function WorkoutCompletionScreen() {
   const [timerFinished, setTimerFinished] = useState(false);
   const [shouldShowAd, setShouldShowAd] = useState(false);
   const [shouldLoadAd, setShouldLoadAd] = useState(false);
+  const [showAdPreview, setShowAdPreview] = useState(false);
   const hasCheckedAd = useRef(false);
 
   useEffect(() => {
@@ -84,10 +85,20 @@ export default function WorkoutCompletionScreen() {
 
   useEffect(() => {
     if (timerFinished && isLoaded && shouldShowAd) {
-      show();
-      setShouldShowAd(false); // only show once
+      setShowAdPreview(true);
     }
-  }, [timerFinished, isLoaded, shouldShowAd, show]);
+  }, [timerFinished, isLoaded, shouldShowAd]);
+
+  useEffect(() => {
+    if (showAdPreview) {
+      const delayTimer = setTimeout(() => {
+        show();
+        setShowAdPreview(false);
+        setShouldShowAd(false);
+      }, 1500);
+      return () => clearTimeout(delayTimer);
+    }
+  }, [showAdPreview, show]);
 
   useEffect(() => {
     if (error) {
@@ -113,9 +124,19 @@ export default function WorkoutCompletionScreen() {
         });
       } else {
         // User skipped the ad!
-        const silentSkip = Math.floor(Math.random() * 3); // 0, 1, or 2 skips
+        // Raffle probabilities: 0 skips (70%), 1 skip (20%), 2 skips (10%)
+        const rand = Math.random();
+        let silentSkip = 0;
+        if (rand < 0.70) {
+          silentSkip = 0;
+        } else if (rand < 0.90) {
+          silentSkip = 1;
+        } else {
+          silentSkip = 2;
+        }
+        
         saveSetting('ad_skip_count', String(silentSkip));
-        console.log(`Ad skipped by user. Silent skip drawn: ${silentSkip}`);
+        console.log(`Ad skipped by user. Silent skip drawn: ${silentSkip} (rand: ${rand.toFixed(4)})`);
       }
     }
   }, [isClosed, isEarnedReward]);
@@ -386,6 +407,24 @@ export default function WorkoutCompletionScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Ad Preview Overlay */}
+      {showAdPreview && (
+        <View style={styles.adPreviewOverlay}>
+          <View style={styles.adPreviewContent}>
+            <View style={styles.adPreviewIconCircle}>
+              <Ionicons name="gift" size={48} color="#ffd700" />
+            </View>
+            <Text style={styles.adPreviewTitle}>
+              {t('ui.workout_completion.ad_preview_title')}
+            </Text>
+            <Text style={styles.adPreviewDesc}>
+              {t('ui.workout_completion.ad_preview_desc')}
+            </Text>
+            <ActivityIndicator size="small" color={Theme.colors.primary} style={{ marginTop: 24 }} />
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -715,5 +754,51 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 15,
+  },
+  adPreviewOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  adPreviewContent: {
+    width: '85%',
+    backgroundColor: Theme.colors.card,
+    borderRadius: Theme.borderRadius.md,
+    padding: Theme.spacing.lg,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  adPreviewIconCircle: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Theme.spacing.md,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 215, 0, 0.25)',
+  },
+  adPreviewTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: Theme.spacing.sm,
+    textAlign: 'center',
+  },
+  adPreviewDesc: {
+    fontSize: 14,
+    color: Theme.colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: 10,
   },
 });

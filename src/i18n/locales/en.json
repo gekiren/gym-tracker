@@ -467,7 +467,9 @@
       "reward_title_lucky": "🎉 Super Lucky!",
       "reward_desc_one": "Thank you for watching the ad! Your next workout completion will be ad-free🙏",
       "reward_desc_two": "Your next 2 workout completions will be ad-free✨\nKeep up the great training!",
-      "reward_close_btn": "Close"
+      "reward_close_btn": "Close",
+      "ad_preview_title": "Ad Reward Available!",
+      "ad_preview_desc": "Watch to the end to get 1-2 ad-free workouts."
     }
   },
   "exercises": {

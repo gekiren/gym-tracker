@@ -462,7 +462,9 @@
       "reward_title_lucky": "🎉 超ラッキー！",
       "reward_desc_one": "広告のご視聴ありがとうございました！次回のワークアウト完了時は広告を非表示にします🙏",
       "reward_desc_two": "次の2回分のワークアウト完了時は広告を非表示にします✨\n日頃のトレーニングのご継続を応援しています！",
-      "reward_close_btn": "閉じる"
+      "reward_close_btn": "閉じる",
+      "ad_preview_title": "広告視聴特典を獲得可能！",
+      "ad_preview_desc": "最後まで見ると、次回から広告が1〜2回非表示になります"
     }
   },
   "exercises": {
