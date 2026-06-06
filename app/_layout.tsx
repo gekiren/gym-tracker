@@ -1,8 +1,8 @@
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet, Alert, AppState } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import { initDB, getSettings, saveSetting, getAITokensBalance } from '../src/db/database';
@@ -83,6 +83,23 @@ export default function RootLayout() {
       const premiumUntil = storedSettings['premium_until'] || '';
       const isEarlyAdopter = storedSettings['is_early_adopter'] === 'true';
       
+      let finalPremiumUntil = premiumUntil;
+      let finalTokensBalance = tokensBalance;
+      let expired = false;
+
+      if (premiumUntil !== '' && premiumUntil !== 'perpetual') {
+        const expiry = Date.parse(premiumUntil);
+        if (!isNaN(expiry) && expiry <= Date.now()) {
+          expired = true;
+          finalPremiumUntil = '';
+          await saveSetting('premium_until', '');
+          if (!isEarlyAdopter) {
+            finalTokensBalance = 5;
+            await saveSetting('ai_tokens_balance', '5');
+          }
+        }
+      }
+
       useWorkoutStore.getState().loadSettings(
         defaultRest, 
         autoRest, 
@@ -91,11 +108,14 @@ export default function RootLayout() {
         needsUnitSelection, 
         bodyWeight, 
         needsStyleSelection, 
-        tokensBalance, 
+        finalTokensBalance, 
         crashConsent,
-        premiumUntil,
+        finalPremiumUntil,
         isEarlyAdopter
       );
+      if (expired) {
+        useWorkoutStore.getState().setShouldShowPaywall(true);
+      }
       useWorkoutStore.getState().setHasUnsentCrashLog(hasUnsentLog);
       
       // Display fields
@@ -147,6 +167,22 @@ export default function RootLayout() {
 
       console.log('Database initialized successfully with settings', storedSettings);
       setDbReady(true);
+      if (expired) {
+        setTimeout(() => {
+          Alert.alert(
+            i18n.t('ui.profile.promo_expired_title') || 'プレミアム期間の終了',
+            i18n.t('ui.profile.promo_expired_msg') || 'プレミアムプラン（期間限定）の有効期限が終了したため、元のプランに戻りました。',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  router.navigate('/(tabs)/profile');
+                }
+              }
+            ]
+          );
+        }, 100);
+      }
     } catch (e: any) {
       console.error('Failed to initialize database', e);
       setDbError(e?.message || String(e));
@@ -155,6 +191,46 @@ export default function RootLayout() {
 
   useEffect(() => {
     setupDB();
+
+    const subscription = AppState.addEventListener('change', async (nextAppState) => {
+      if (nextAppState === 'active') {
+        const settings = useWorkoutStore.getState().settings;
+        const premiumUntil = settings.premiumUntil;
+        if (premiumUntil && premiumUntil !== 'perpetual') {
+          const expiry = Date.parse(premiumUntil);
+          if (!isNaN(expiry) && expiry <= Date.now()) {
+            await saveSetting('premium_until', '');
+            const isEarly = settings.isEarlyAdopter;
+            if (!isEarly) {
+              await saveSetting('ai_tokens_balance', '5');
+            }
+            
+            useWorkoutStore.getState().setPremiumUntil('');
+            if (!isEarly) {
+              useWorkoutStore.getState().setAITokensBalance(5);
+            }
+            useWorkoutStore.getState().setShouldShowPaywall(true);
+            
+            Alert.alert(
+              i18n.t('ui.profile.promo_expired_title') || 'プレミアム期間の終了',
+              i18n.t('ui.profile.promo_expired_msg') || 'プレミアムプラン（期間限定）の有効期限が終了したため、元のプランに戻りました。',
+              [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    router.navigate('/(tabs)/profile');
+                  }
+                }
+              ]
+            );
+          }
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   if (dbError) {

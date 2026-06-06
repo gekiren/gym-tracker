@@ -66,6 +66,9 @@ interface WorkoutState {
   hasUnsentCrashLog: boolean;
   setHasUnsentCrashLog: (hasLog: boolean) => void;
 
+  shouldShowPaywall: boolean;
+  setShouldShowPaywall: (show: boolean) => void;
+
   // Application Settings
   settings: {
     defaultRest: number;
@@ -140,6 +143,9 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   restTimer: { isActive: false, remaining: 0, endTime: null },
   hasUnsentCrashLog: false,
   setHasUnsentCrashLog: (hasUnsentCrashLog) => set({ hasUnsentCrashLog }),
+
+  shouldShowPaywall: false,
+  setShouldShowPaywall: (shouldShowPaywall) => set({ shouldShowPaywall }),
 
   settings: {
     defaultRest: 90,

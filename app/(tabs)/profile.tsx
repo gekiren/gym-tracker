@@ -102,6 +102,16 @@ export default function ProfileScreen() {
     }
   };
 
+  const shouldShowPaywall = useWorkoutStore(state => state.shouldShowPaywall);
+  const setShouldShowPaywall = useWorkoutStore(state => state.setShouldShowPaywall);
+
+  useEffect(() => {
+    if (shouldShowPaywall) {
+      setIsPaywallVisible(true);
+      setShouldShowPaywall(false);
+    }
+  }, [shouldShowPaywall]);
+
   useEffect(() => {
     setDefaultRest(settings.defaultRest);
     setAutoRest(settings.autoRest);
@@ -121,15 +131,43 @@ export default function ProfileScreen() {
         const premiumUntilVal = stored['premium_until'] || '';
         const isPremiumPerpetual = premiumUntilVal === 'perpetual';
         const isPremiumLimited = premiumUntilVal !== '' && premiumUntilVal !== 'perpetual' && !isNaN(Date.parse(premiumUntilVal)) && Date.parse(premiumUntilVal) > Date.now();
-        
-        if (isEarly) {
-          setAccountType('early_adopter');
-        } else if (isPremiumPerpetual) {
-          setAccountType('premium');
-        } else if (isPremiumLimited) {
-          setAccountType('premium_limited');
+        const hasExpired = premiumUntilVal !== '' && premiumUntilVal !== 'perpetual' && !isNaN(Date.parse(premiumUntilVal)) && Date.parse(premiumUntilVal) <= Date.now();
+
+        if (hasExpired) {
+          await saveSetting('premium_until', '');
+          if (!isEarly) {
+            await saveSetting('ai_tokens_balance', '5');
+          }
+          
+          useWorkoutStore.getState().setPremiumUntil('');
+          if (!isEarly) {
+            useWorkoutStore.getState().setAITokensBalance(5);
+          }
+          
+          Alert.alert(
+            t('ui.profile.promo_expired_title') || 'プレミアム期間の終了',
+            t('ui.profile.promo_expired_msg') || 'プレミアムプラン（期間限定）の有効期限が終了したため、元のプランに戻りました。',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  setIsPaywallVisible(true);
+                }
+              }
+            ]
+          );
+          
+          setAccountType(isEarly ? 'early_adopter' : 'basic');
         } else {
-          setAccountType('basic');
+          if (isEarly) {
+            setAccountType('early_adopter');
+          } else if (isPremiumPerpetual) {
+            setAccountType('premium');
+          } else if (isPremiumLimited) {
+            setAccountType('premium_limited');
+          } else {
+            setAccountType('basic');
+          }
         }
       } catch (err) {
         console.warn('Failed to fetch account type', err);

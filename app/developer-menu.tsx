@@ -216,7 +216,7 @@ export default function DeveloperMenuScreen() {
     }
   };
 
-  const handleChangeTier = async (tier: 'basic' | 'early' | 'premium') => {
+  const handleChangeTier = async (tier: 'basic' | 'early' | 'premium' | 'expired_limited') => {
     try {
       if (tier === 'basic') {
         await saveSetting('is_early_adopter', 'false');
@@ -242,6 +242,15 @@ export default function DeveloperMenuScreen() {
         useWorkoutStore.getState().setPremiumUntil('perpetual');
         useWorkoutStore.getState().setAITokensBalance(20);
         Alert.alert('プラン変更', 'プレミアムプランに変更しました。（AI Coachトークンを20に設定しました）');
+      } else if (tier === 'expired_limited') {
+        const pastDate = new Date(Date.now() - 3600000).toISOString(); // 1 hour ago
+        await saveSetting('is_early_adopter', 'false');
+        await saveSetting('premium_until', pastDate);
+        await saveSetting('ai_tokens_balance', '20');
+        useWorkoutStore.getState().setIsEarlyAdopter(false);
+        useWorkoutStore.getState().setPremiumUntil(pastDate);
+        useWorkoutStore.getState().setAITokensBalance(20);
+        Alert.alert('期限切れシミュレーション', '過去の期限を持つ期間限定プレミアムを設定しました。設定画面に移動するか、アプリを再起動すると期限切れ処理が実行されます。');
       }
     } catch (e: any) {
       Alert.alert('エラー', e?.message || String(e));
@@ -426,6 +435,14 @@ export default function DeveloperMenuScreen() {
             >
               <Ionicons name="ribbon-outline" size={20} color="#e6c23c" style={{ marginRight: 8 }} />
               <Text style={[styles.btnOutlineText, { color: '#e6c23c' }]}>プレミアムプランに設定 (制限なし)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.btnOutline, { borderColor: '#c084fc', backgroundColor: 'rgba(192, 132, 252, 0.05)' }]} 
+              onPress={() => handleChangeTier('expired_limited')}
+            >
+              <Ionicons name="time-outline" size={20} color="#c084fc" style={{ marginRight: 8 }} />
+              <Text style={[styles.btnOutlineText, { color: '#c084fc' }]}>期間限定プレミアムの期限切れをシミュレート</Text>
             </TouchableOpacity>
           </View>
         </View>
