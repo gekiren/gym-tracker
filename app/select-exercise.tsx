@@ -9,6 +9,7 @@ import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useTranslation } from 'react-i18next';
 import { translateExercise, translateMuscleGroup, translateEquipment, translateStance } from '../src/i18n';
+import { openYouTubeSearch } from '../src/utils/youtubeUtils';
 
 type Exercise = {
   id: number;
@@ -191,10 +192,18 @@ export default function SelectExerciseScreen() {
           onPress={() => handleSelect(item)}
           activeOpacity={0.7}
         >
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, marginRight: 8 }}>
             <Text style={styles.name}>{translateExercise(item.name)}</Text>
             <Text style={styles.meta}>{translateMuscleGroup(item.muscle_group)} • {translateEquipment(item.equipment)}</Text>
           </View>
+          <TouchableOpacity
+            style={styles.listHowToBtn}
+            onPress={() => openYouTubeSearch(item.name)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="play" size={10} color={Theme.colors.primary} />
+            <Text style={styles.listHowToText}>How To</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => handleToggleFavorite(item)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -378,6 +387,23 @@ const styles = StyleSheet.create({
   item: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Theme.spacing.md, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
   name: { fontSize: 16, color: Theme.colors.text, fontWeight: 'bold', marginBottom: 4 },
   meta: { fontSize: 13, color: Theme.colors.textMuted },
+  listHowToBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(79, 172, 254, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(79, 172, 254, 0.2)',
+    marginRight: 4,
+  },
+  listHowToText: {
+    color: Theme.colors.primary,
+    fontSize: 11,
+    fontWeight: 'bold',
+    marginLeft: 3,
+  },
   starBtn: { paddingHorizontal: 8 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { width: '90%', backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.lg },

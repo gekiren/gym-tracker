@@ -10,6 +10,7 @@ import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useTranslation } from 'react-i18next';
 import { translateExercise, translateMuscleGroup, translateEquipment, translateStance } from '../../src/i18n';
 import { DEFAULT_STANCES } from '../../src/utils/stances';
+import { openYouTubeSearch } from '../../src/utils/youtubeUtils';
 import { AI_CONFIG } from '../../src/config/aiConfig';
 import { format, startOfWeek, startOfMonth } from 'date-fns';
 
@@ -281,7 +282,17 @@ export default function ExerciseDetailScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Exercise Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>{translateExercise(exercise.name)}</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>{translateExercise(exercise.name)}</Text>
+            <TouchableOpacity
+              style={styles.howToBtn}
+              onPress={() => openYouTubeSearch(exercise.name)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="play" size={12} color={Theme.colors.primary} />
+              <Text style={styles.howToText}>How To</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.badges}>
             <View style={styles.badge}><Text style={styles.badgeText}>{translateMuscleGroup(exercise.muscle_group)}</Text></View>
             <View style={styles.badge}><Text style={styles.badgeText}>{translateEquipment(exercise.equipment)}</Text></View>
@@ -682,7 +693,10 @@ export default function ExerciseDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
   header: { padding: Theme.spacing.lg, backgroundColor: Theme.colors.card, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  title: { fontSize: 24, fontWeight: 'bold', color: Theme.colors.text, marginBottom: Theme.spacing.sm },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: Theme.spacing.sm },
+  title: { fontSize: 24, fontWeight: 'bold', color: Theme.colors.text, flexShrink: 1 },
+  howToBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(79, 172, 254, 0.1)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.2)' },
+  howToText: { color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold', marginLeft: 4 },
   badges: { flexDirection: 'row', gap: 8 },
   badge: { backgroundColor: 'rgba(79, 172, 254, 0.1)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.3)' },
   badgeText: { color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold' },
