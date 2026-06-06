@@ -3,21 +3,59 @@ import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../src/theme';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
 import { pickAndImportCSV } from '../src/utils/csvImporter';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Updates from 'expo-updates';
-import { saveSetting, getDB, closeDB, initDB } from '../src/db/database';
+import { saveSetting, getDB, closeDB, initDB, getSettings } from '../src/db/database';
 import { showReviewDialog } from '../src/services/reviewService';
 import { saveCrashLog, readCrashLog } from '../src/services/crashReporterService';
 import { useWorkoutStore } from '../src/store/workoutStore';
+import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import * as Clipboard from 'expo-clipboard';
 
 export default function DeveloperMenuScreen() {
   const { t } = useTranslation();
   const [isChecking, setIsChecking] = useState(false);
+  const [lastAckId, setLastAckId] = useState<string>('Loading...');
+
+  useEffect(() => {
+    const loadAckId = async () => {
+      try {
+        const settings = await getSettings();
+        setLastAckId(settings['last_acknowledged_update_id'] || 'None');
+      } catch (e) {
+        console.warn('Failed to load last acknowledged update ID:', e);
+        setLastAckId('Error');
+      }
+    };
+    loadAckId();
+  }, []);
+
+  const handleShowOtaPopup = () => {
+    useOTAUpdateStore.getState().showModal();
+  };
+
+  const handleSimulateOtaLaunch = async () => {
+    try {
+      await saveSetting('simulate_ota_popup', '1');
+      Alert.alert('シミュレーション設定', '次回起動時にOTAアップデート適用後の挙動（ポップアップ表示）を擬似的に実行します。アプリを再起動するかリロードしてください。');
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    }
+  };
+
+  const handleResetOtaAck = async () => {
+    try {
+      await saveSetting('last_acknowledged_update_id', '');
+      setLastAckId('None');
+      Alert.alert('リセット完了', '検証済みOTA IDを初期化しました。');
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    }
+  };
 
   const handleBackup = async () => {
     try {
@@ -386,9 +424,16 @@ export default function DeveloperMenuScreen() {
             </Text>
           </View>
 
-          <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+          <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Runtime Version</Text>
             <Text style={styles.infoValue}>{Updates.runtimeVersion || 'N/A'}</Text>
+          </View>
+
+          <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+            <Text style={styles.infoLabel}>Last Acknowledged ID</Text>
+            <Text style={[styles.infoValue, { fontSize: 11, fontFamily: 'monospace' }]} numberOfLines={1}>
+              {lastAckId}
+            </Text>
           </View>
 
           <TouchableOpacity 
@@ -401,6 +446,28 @@ export default function DeveloperMenuScreen() {
               {isChecking ? t('ui.developer_menu.update_checking') : t('ui.developer_menu.update_check_btn')}
             </Text>
           </TouchableOpacity>
+
+          <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.05)', paddingTop: 16 }}>
+            <Text style={[styles.cardDesc, { marginBottom: 12 }]}>OTAポップアップの検証・デバッグ：</Text>
+            <View style={{ flexDirection: 'column', gap: 10 }}>
+              <TouchableOpacity style={styles.btnOutline} onPress={handleShowOtaPopup}>
+                <Ionicons name="eye-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+                <Text style={styles.btnOutlineText}>ポップアップを手動表示</Text>
+              </TouchableOpacity>
+              
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity style={[styles.btnOutline, { flex: 1 }]} onPress={handleSimulateOtaLaunch}>
+                  <Ionicons name="sparkles-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 4 }} />
+                  <Text style={[styles.btnOutlineText, { fontSize: 13 }]}>次回起動時シミュレート</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={[styles.btnOutline, { flex: 1, borderColor: '#ff4d4f', backgroundColor: 'rgba(255, 77, 79, 0.05)' }]} onPress={handleResetOtaAck}>
+                  <Ionicons name="trash-outline" size={20} color="#ff4d4f" style={{ marginRight: 4 }} />
+                  <Text style={[styles.btnOutlineText, { color: '#ff4d4f', fontSize: 13 }]}>検証済みIDリセット</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
          </View>
 
         {/* Account Tier Testing Section */}

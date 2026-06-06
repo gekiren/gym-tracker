@@ -14,6 +14,9 @@ import * as Localization from 'expo-localization';
 import { DEFAULT_STANCES } from '../src/utils/stances';
 import { registerGlobalErrorHandler, checkHasCrashLog, readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../src/services/crashReporterService';
 import { ReviewPromptModal } from '../components/ReviewPromptModal';
+import * as Updates from 'expo-updates';
+import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
+import { OTAUpdateModal } from '../components/OTAUpdateModal';
 
 // アプリの起動時にグローバルエラーハンドラを登録
 registerGlobalErrorHandler();
@@ -78,6 +81,26 @@ export default function RootLayout() {
         i18n.changeLanguage(initialLang);
         await saveSetting('language', initialLang);
       }
+
+      // OTAアップデート後の初回起動検知
+      let showOTA = false;
+      const lastAckUpdateId = storedSettings['last_acknowledged_update_id'] || '';
+      const simulateOta = storedSettings['simulate_ota_popup'] === '1';
+
+      if (Updates.updateId && Updates.updateId !== lastAckUpdateId) {
+        showOTA = true;
+        await saveSetting('last_acknowledged_update_id', Updates.updateId);
+      } else if (simulateOta) {
+        showOTA = true;
+        await saveSetting('simulate_ota_popup', '0');
+      }
+
+      if (showOTA) {
+        setTimeout(() => {
+          useOTAUpdateStore.getState().showModal();
+        }, 500);
+      }
+
       const bodyWeight = storedSettings['body_weight'] ? parseFloat(storedSettings['body_weight']) : null;
       const tokensBalance = await getAITokensBalance();
       const premiumUntil = storedSettings['premium_until'] || '';
@@ -268,6 +291,7 @@ export default function RootLayout() {
           <Stack.Screen name="developer-menu" options={{ presentation: 'card' }} />
         </Stack>
         <ReviewPromptModal />
+        <OTAUpdateModal />
         <StatusBar style="light" />
       </ThemeProvider>
     </GestureHandlerRootView>
