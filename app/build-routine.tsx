@@ -204,7 +204,7 @@ export default function BuildRoutineScreen() {
           onChangeText={updateDraftTitle}
         />
 
-        {draftRoutine.exercises.length === 0 && (
+        {draftRoutine.exercises.length === 0 ? (
           <View style={[styles.importBlock, isBasic && styles.importBlockDisabled]}>
             <Ionicons 
               name={isBasic ? "lock-closed-outline" : "copy-outline"} 
@@ -274,9 +274,7 @@ export default function BuildRoutineScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        )}
-
-        {draftRoutine.exercises.length > 0 && (
+        ) : (
           <>
             <View style={styles.exercisesHeader}>
               <Text style={styles.label}>{t('ui.build_routine.exercises_count_label', { count: draftRoutine.exercises.length })}</Text>
@@ -358,15 +356,15 @@ export default function BuildRoutineScreen() {
                 </View>
               </View>
             ))}
-
-            <TouchableOpacity 
-              style={styles.addExerciseBtn} 
-              onPress={() => router.push('/select-exercise?mode=routine')}
-            >
-              <Text style={styles.addExerciseBtnText}>{t('ui.build_routine.add_exercise_btn')}</Text>
-            </TouchableOpacity>
           </>
         )}
+
+        <TouchableOpacity 
+          style={styles.addExerciseBtn} 
+          onPress={() => router.push('/select-exercise?mode=routine')}
+        >
+          <Text style={styles.addExerciseBtnText}>{t('ui.build_routine.add_exercise_btn')}</Text>
+        </TouchableOpacity>
 
       </ScrollView>
       </KeyboardAvoidingView>
