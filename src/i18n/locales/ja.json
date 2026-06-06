@@ -445,6 +445,18 @@
       "message_onboarding": "品質向上のため、匿名のクラッシュレポートを自動送信してもよろしいですか？クラッシュ発生時に自動的にレポートが送信され、早期のバグ修正に役立ちます。",
       "btn_consent": "送信して協力する（同意）",
       "btn_decline": "今回は送信しない（拒否）"
+    },
+    "workout_completion": {
+      "title": "お疲れ様でした！",
+      "subtitle": "今日のトレーニング完了記録",
+      "streak_days": "{{count}}日連続達成！",
+      "streak_weeks": "{{count}}週間継続中！",
+      "rm_updated": "1RM更新！",
+      "volume_updated": "総重量更新！",
+      "new_record": "自己ベスト更新！",
+      "no_achievements": "素晴らしいトレーニングでした！次回も頑張りましょう！",
+      "done_btn": "終了する",
+      "workout_details": "ワークアウト履歴詳細"
     }
   },
   "exercises": {

@@ -31,6 +31,28 @@ export type ActiveExercise = {
   default_variation?: string | null;
 };
 
+export interface WorkoutCompletionAchievement {
+  streakDays: number;
+  streakWeeks: number;
+  is1RMUpdated: boolean;
+  isVolumeUpdated: boolean;
+  updated1RMs: { name: string; oldVal: number; newVal: number }[];
+  updatedVolumes: { name: string; oldVal: number; newVal: number }[];
+}
+
+export interface WorkoutCompletionData {
+  workout: {
+    id: number;
+    title: string;
+    start_time: string;
+    end_time: string;
+    notes: string | null;
+    calories: number | null;
+    exercises: ActiveExercise[];
+  };
+  achievements: WorkoutCompletionAchievement;
+}
+
 interface WorkoutState {
   isActive: boolean;
   isWorkoutStarted: boolean;
@@ -131,6 +153,8 @@ interface WorkoutState {
   setDraftRoutine: (title: string, exercises: any[]) => void;
   clearDraft: () => void;
   resetAllSettingsAndWorkout: () => void;
+  lastWorkoutCompletion: WorkoutCompletionData | null;
+  setLastWorkoutCompletion: (data: WorkoutCompletionData | null) => void;
 }
 
 export const useWorkoutStore = create<WorkoutState>((set, get) => ({
@@ -140,6 +164,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   title: null,
   workoutNotes: '',
   exercises: [],
+  lastWorkoutCompletion: null,
+  setLastWorkoutCompletion: (lastWorkoutCompletion) => set({ lastWorkoutCompletion }),
   lastRestFinishedAt: null,
   restTimer: { isActive: false, remaining: 0, endTime: null },
   hasUnsentCrashLog: false,

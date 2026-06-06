@@ -548,7 +548,7 @@ export const closeDB = async () => {
   }
 };
 
-export const saveWorkout = async (title: string, startTime: string, endTime: string, notes: string | null, exercises: any[], calories: number | null = null) => {
+export const saveWorkout = async (title: string, startTime: string, endTime: string, notes: string | null, exercises: any[], calories: number | null = null): Promise<number> => {
   const conn = getDB();
   const wResult = await conn.runAsync(
     'INSERT INTO workouts (title, start_time, end_time, notes, calories) VALUES (?, ?, ?, ?, ?)',
@@ -576,6 +576,33 @@ export const saveWorkout = async (title: string, startTime: string, endTime: str
       }
     }
   }
+
+  return workoutId;
+};
+
+export const prefetchWorkoutCompletionData = async (exerciseIds: number[]) => {
+  const conn = getDB();
+  
+  // 1. Fetch all past workout start times
+  const workouts = await conn.getAllAsync<{ start_time: string }>(
+    'SELECT start_time FROM workouts ORDER BY start_time DESC'
+  );
+  
+  // 2. Fetch past completed sets for the given exercises
+  let pastSets: { workout_id: number; start_time: string; exercise_id: number; reps: number | null; weight: number | null; variation: string | null }[] = [];
+  if (exerciseIds.length > 0) {
+    const placeholders = exerciseIds.map(() => '?').join(',');
+    pastSets = await conn.getAllAsync<any>(
+      `SELECT w.id as workout_id, w.start_time, we.exercise_id, ws.reps, ws.weight, ws.variation
+       FROM workout_sets ws
+       JOIN workout_exercises we ON ws.workout_exercise_id = we.id
+       JOIN workouts w ON we.workout_id = w.id
+       WHERE we.exercise_id IN (${placeholders}) AND ws.is_completed = 1 AND ws.reps IS NOT NULL AND ws.weight IS NOT NULL`,
+      exerciseIds
+    );
+  }
+  
+  return { workouts, pastSets };
 };
 
 export const getExercises = async () => {

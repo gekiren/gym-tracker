@@ -7,7 +7,7 @@ import { Stack, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { Theme } from '../src/theme';
-import { saveWorkout, saveSetting } from '../src/db/database';
+import { saveWorkout, saveSetting, prefetchWorkoutCompletionData } from '../src/db/database';
 import { useTranslation } from 'react-i18next';
 import { checkAndTriggerReviewFlow } from '../src/services/reviewService';
 import { translateExercise, translateStance } from '../src/i18n';
@@ -219,6 +219,15 @@ export default function ActiveWorkoutScreen() {
           style: 'default',
           onPress: async () => {
             try {
+              // 1. Gather unique completed exercise IDs
+              const exerciseIds = exercises
+                .map(ex => ex.exercise_id)
+                .filter((id): id is number => typeof id === 'number');
+
+              // 2. Prefetch historical data to prevent deadlocks
+              const { workouts: dbWorkouts, pastSets } = await prefetchWorkoutCompletionData(exerciseIds);
+
+              // 3. Compute calorie stats
               let totalWorkSecs = 0;
               let totalRestSecs = 0;
               exercises.forEach(ex => {
@@ -234,17 +243,147 @@ export default function ActiveWorkoutScreen() {
               const bwKg = settings.weightUnit === 'lbs' ? bw * 0.453592 : bw;
               const cal = ((totalWorkSecs / 3600) * 6.0 * bwKg) + ((totalRestSecs / 3600) * 1.5 * bwKg);
               const roundedCalories = Math.round(cal);
-
               const et = new Date().toISOString();
-              await saveWorkout(title || t('ui.home.free_workout_title'), startTime || et, et, workoutNotes, exercises, roundedCalories);
+
+              // 4. Calculate achievements (1RM & Volume updates)
+              const updated1RMs: { name: string; oldVal: number; newVal: number }[] = [];
+              const updatedVolumes: { name: string; oldVal: number; newVal: number }[] = [];
+
+              exercises.forEach(ex => {
+                const completedSets = ex.sets.filter(s => s.is_completed);
+                if (completedSets.length === 0) return;
+
+                // Calculate current max 1RM
+                let currentMax1RM = 0;
+                completedSets.forEach(s => {
+                  const w = s.weight ?? 0;
+                  const r = s.reps ?? 0;
+                  if (r > 0) {
+                    const rm = r === 1 ? w : Math.round(w * (1 + r / 30));
+                    if (rm > currentMax1RM) currentMax1RM = rm;
+                  }
+                });
+
+                // Calculate current volume
+                const exBw = (ex.equipment === '自重' && settings.bodyWeight) ? settings.bodyWeight : 0;
+                const currentVolume = completedSets.reduce((sum, s) => sum + ((s.weight ?? 0) + exBw) * (s.reps ?? 0), 0);
+
+                // Filter past sets for this exercise
+                const exercisePastSets = pastSets.filter(s => s.exercise_id === ex.exercise_id);
+
+                if (exercisePastSets.length > 0) {
+                  // Past max 1RM
+                  let pastMax1RM = 0;
+                  exercisePastSets.forEach(s => {
+                    const w = s.weight ?? 0;
+                    const r = s.reps ?? 0;
+                    if (r > 0) {
+                      const rm = r === 1 ? w : Math.round(w * (1 + r / 30));
+                      if (rm > pastMax1RM) pastMax1RM = rm;
+                    }
+                  });
+
+                  if (currentMax1RM > pastMax1RM) {
+                    updated1RMs.push({ name: ex.name, oldVal: pastMax1RM, newVal: currentMax1RM });
+                  }
+
+                  // Past max volume in a single workout
+                  const volumeMap: Record<number, number> = {};
+                  exercisePastSets.forEach(s => {
+                    const setVol = ((s.weight ?? 0) + exBw) * (s.reps ?? 0);
+                    volumeMap[s.workout_id] = (volumeMap[s.workout_id] || 0) + setVol;
+                  });
+                  const pastMaxVolume = Math.max(...Object.values(volumeMap), 0);
+
+                  if (currentVolume > pastMaxVolume) {
+                    updatedVolumes.push({ name: ex.name, oldVal: pastMaxVolume, newVal: currentVolume });
+                  }
+                }
+              });
+
+              // Streak Calculations
+              const getLocalDateString = (dateOrStr: Date | string) => {
+                const d = new Date(dateOrStr);
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const date = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${date}`;
+              };
+
+              const localDates = new Set<string>();
+              const todayStr = getLocalDateString(new Date());
+              localDates.add(todayStr);
+              dbWorkouts.forEach(w => {
+                localDates.add(getLocalDateString(w.start_time));
+              });
+
+              const sortedDatesStr = Array.from(localDates).sort((a, b) => b.localeCompare(a));
+
+              // 1) Streak Days
+              let streakDays = 1;
+              let currentDate = new Date(todayStr + 'T00:00:00');
+              while (true) {
+                const yesterday = new Date(currentDate);
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = getLocalDateString(yesterday);
+                if (localDates.has(yesterdayStr)) {
+                  streakDays++;
+                  currentDate = yesterday;
+                } else {
+                  break;
+                }
+              }
+
+              // 2) Streak Weeks
+              const datesParsed = sortedDatesStr.map(dStr => new Date(dStr + 'T00:00:00')).sort((a, b) => b.getTime() - a.getTime());
+              let continuousEarliestDate = datesParsed[0];
+              for (let i = 1; i < datesParsed.length; i++) {
+                const prevDate = datesParsed[i - 1];
+                const currDate = datesParsed[i];
+                const diffTime = prevDate.getTime() - currDate.getTime();
+                const diffDays = diffTime / (1000 * 60 * 60 * 24);
+                if (diffDays <= 7) {
+                  continuousEarliestDate = currDate;
+                } else {
+                  break;
+                }
+              }
+              const totalSpanTime = datesParsed[0].getTime() - continuousEarliestDate.getTime();
+              const totalSpanDays = Math.round(totalSpanTime / (1000 * 60 * 60 * 24));
+              const streakWeeks = Math.floor(totalSpanDays / 7) + 1;
+
+              // Save the workout to DB
+              const savedTitle = title || t('ui.home.free_workout_title');
+              const savedStartTime = startTime || et;
+              const workoutId = await saveWorkout(savedTitle, savedStartTime, et, workoutNotes, exercises, roundedCalories);
+
+              // Set store state for completed screen
+              useWorkoutStore.getState().setLastWorkoutCompletion({
+                workout: {
+                  id: workoutId,
+                  title: savedTitle,
+                  start_time: savedStartTime,
+                  end_time: et,
+                  notes: workoutNotes || null,
+                  calories: roundedCalories,
+                  exercises: exercises,
+                },
+                achievements: {
+                  streakDays,
+                  streakWeeks,
+                  is1RMUpdated: updated1RMs.length > 0,
+                  isVolumeUpdated: updatedVolumes.length > 0,
+                  updated1RMs,
+                  updatedVolumes,
+                }
+              });
+
+              endWorkout();
+              router.replace('/workout-completion');
             } catch (e) {
-              console.error(e);
+              console.error('Failed to finish workout', e);
+              Alert.alert(t('ui.common.error') || 'Error', 'Failed to save workout.');
             }
-            endWorkout();
-            router.replace('/(tabs)/history');
-            setTimeout(() => {
-              checkAndTriggerReviewFlow();
-            }, 1000);
           }
         }
       ]

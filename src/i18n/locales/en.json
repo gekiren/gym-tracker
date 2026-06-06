@@ -450,6 +450,18 @@
       "message_onboarding": "Would you like to automatically send anonymous crash reports to help improve the app? Sharing crash logs helps us find and fix bugs faster.",
       "btn_consent": "Send and cooperate (Agree)",
       "btn_decline": "Don't send this time (Decline)"
+    },
+    "workout_completion": {
+      "title": "Workout Complete!",
+      "subtitle": "Today's Training Summary",
+      "streak_days": "{{count}}-Day Streak!",
+      "streak_weeks": "{{count}}-Week Streak!",
+      "rm_updated": "1RM Updated!",
+      "volume_updated": "Volume Updated!",
+      "new_record": "New Personal Record!",
+      "no_achievements": "Excellent workout! Let's keep it up next time!",
+      "done_btn": "Done",
+      "workout_details": "Workout History Details"
     }
   },
   "exercises": {
