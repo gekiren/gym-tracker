@@ -793,6 +793,18 @@ export const saveSetting = async (key: string, value: string) => {
   await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value]);
 };
 
+export const activatePremiumFromPromo = async (): Promise<string> => {
+  const conn = getDB();
+  const oneMonthFromNow = new Date();
+  oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+  const premiumUntilStr = oneMonthFromNow.toISOString();
+  
+  // Deadlock prevention: perform only INSERT OR REPLACE operations
+  await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("premium_until", ?)', [premiumUntilStr]);
+  await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("ai_tokens_balance", "20")', []);
+  return premiumUntilStr;
+};
+
 export const deleteWorkout = async (id: number) => {
   const conn = getDB();
   await conn.runAsync('DELETE FROM workouts WHERE id = ?', [id]);

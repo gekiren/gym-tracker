@@ -89,6 +89,7 @@ interface WorkoutState {
   };
   loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null, needsStyleSelection?: boolean, aiTokensBalance?: number, crashConsent?: 'agreed' | 'declined' | 'unset', premiumUntil?: string, isEarlyAdopter?: boolean) => void;
   setPremiumUntil: (premiumUntil: string) => void;
+  updatePremiumStatus: (premiumUntil: string) => void;
   setIsEarlyAdopter: (isEarly: boolean) => void;
   setBodyWeight: (weight: number | null) => void;
   setAITokensBalance: (balance: number) => void;
@@ -167,6 +168,10 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
   setPremiumUntil: (premiumUntil) => set((state) => ({
     settings: { ...state.settings, premiumUntil }
+  })),
+
+  updatePremiumStatus: (premiumUntil) => set((state) => ({
+    settings: { ...state.settings, premiumUntil, aiTokensBalance: 20 }
   })),
 
   setIsEarlyAdopter: (isEarlyAdopter) => set((state) => ({

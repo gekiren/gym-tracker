@@ -5,9 +5,10 @@ import { router } from 'expo-router';
 import Constants from 'expo-constants';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
-import { saveSetting, resetDatabase, getSettings, getDB, closeDB, initDB } from '../../src/db/database';
+import { saveSetting, resetDatabase, getSettings, getDB, closeDB, initDB, activatePremiumFromPromo } from '../../src/db/database';
 import { useTranslation } from 'react-i18next';
 import { changeLanguage, getCurrentLanguage } from '../../src/i18n';
+import { checkNativeVersion, checkAndApplyOTAUpdate, verifyPromoCode } from '../../src/services/promoService';
 import { initIAPConnection, setupIAPListeners, purchasePremium, restorePurchases, fetchPremiumProducts, cleanupIAP } from '../../src/services/iapService';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -36,10 +37,16 @@ export default function ProfileScreen() {
   const [isResetModalVisible, setIsResetModalVisible] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [isResetting, setIsResetting] = useState(false);
-  const [accountType, setAccountType] = useState<'basic' | 'premium' | 'early_adopter'>('basic');
+  const [accountType, setAccountType] = useState<'basic' | 'premium' | 'premium_limited' | 'early_adopter'>('basic');
   const [isPaywallVisible, setIsPaywallVisible] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isBackupModalVisible, setIsBackupModalVisible] = useState(false);
+
+  // Promotion code and verification states
+  const [isPromoModalVisible, setIsPromoModalVisible] = useState(false);
+  const [promoInputText, setPromoInputText] = useState('');
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false);
+  const [isCheckingPromoWorkflow, setIsCheckingPromoWorkflow] = useState(false);
 
   const isPremium = settings.premiumUntil === 'perpetual' || (settings.premiumUntil !== '' && !isNaN(Date.parse(settings.premiumUntil)) && Date.parse(settings.premiumUntil) > Date.now());
   const isEarly = settings.isEarlyAdopter;
@@ -111,12 +118,16 @@ export default function ProfileScreen() {
       try {
         const stored = await getSettings();
         const isEarly = stored['is_early_adopter'] === 'true';
-        const isPremium = stored['premium_until'] === 'perpetual' || (stored['premium_until'] !== '' && !isNaN(Date.parse(stored['premium_until'])) && Date.parse(stored['premium_until']) > Date.now());
+        const premiumUntilVal = stored['premium_until'] || '';
+        const isPremiumPerpetual = premiumUntilVal === 'perpetual';
+        const isPremiumLimited = premiumUntilVal !== '' && premiumUntilVal !== 'perpetual' && !isNaN(Date.parse(premiumUntilVal)) && Date.parse(premiumUntilVal) > Date.now();
         
         if (isEarly) {
           setAccountType('early_adopter');
-        } else if (isPremium) {
+        } else if (isPremiumPerpetual) {
           setAccountType('premium');
+        } else if (isPremiumLimited) {
+          setAccountType('premium_limited');
         } else {
           setAccountType('basic');
         }
@@ -404,6 +415,105 @@ export default function ProfileScreen() {
     setIsBackupModalVisible(true);
   };
 
+  const getRemainingDaysText = (premiumUntil: string) => {
+    if (!premiumUntil || premiumUntil === 'perpetual') return '';
+    const expiry = Date.parse(premiumUntil);
+    if (isNaN(expiry)) return '';
+    
+    const diffMs = expiry - Date.now();
+    if (diffMs <= 0) return t('ui.profile.promo_expired') || '期限切れ';
+    
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    return t('ui.profile.promo_remaining_days', { days: diffDays }) || `残り${diffDays}日`;
+  };
+
+  const handlePromoPress = async () => {
+    if (isCheckingPromoWorkflow) return;
+    setIsCheckingPromoWorkflow(true);
+    
+    try {
+      // 1. Native application version check
+      const versionResult = checkNativeVersion();
+      if (!versionResult.isUpToDate) {
+        Alert.alert(
+          t('ui.profile.app_version_outdated_title') || 'アプリ更新のお願い',
+          t('ui.profile.app_version_outdated_msg') || '最新バージョンが利用可能です。ストアからアプリを更新してください。'
+        );
+        setIsCheckingPromoWorkflow(false);
+        return;
+      }
+      
+      // 2. OTA updates check
+      const otaResult = await checkAndApplyOTAUpdate();
+      if (otaResult.isUpdateTriggered) {
+        // App is reloading
+        return;
+      }
+      if (otaResult.error) {
+        console.warn('OTA Check error (non-fatal):', otaResult.error);
+      }
+      
+      // 3. Open code input screen (Modal)
+      setIsPromoModalVisible(true);
+    } catch (err) {
+      console.error('Failed to run verification workflow:', err);
+      Alert.alert(
+        t('ui.common.error') || 'エラー',
+        t('ui.profile.promo_error_network') || '検証中にエラーが発生しました。接続を確認してください。'
+      );
+    } finally {
+      setIsCheckingPromoWorkflow(false);
+    }
+  };
+
+  const handleApplyPromo = async () => {
+    if (isApplyingPromo || promoInputText.trim() === '') return;
+    setIsApplyingPromo(true);
+    
+    try {
+      // Verify campaign validity and code matching
+      const isValid = verifyPromoCode(promoInputText);
+      if (!isValid) {
+        Alert.alert(
+          t('ui.profile.promo_error_title') || '認証エラー',
+          t('ui.profile.promo_error_invalid') || '無効なコードであるか、プロモーション期間外です。'
+        );
+        setIsApplyingPromo(false);
+        return;
+      }
+      
+      // Update SQLite settings
+      const newExpiry = await activatePremiumFromPromo();
+      
+      // Update Zustand store immediately
+      useWorkoutStore.getState().updatePremiumStatus(newExpiry);
+      
+      // Close modal and show success feedback
+      setIsPromoModalVisible(false);
+      setPromoInputText('');
+      
+      // Localized expiry date display
+      const formattedDate = new Date(newExpiry).toLocaleDateString(
+        currentLang === 'ja' ? 'ja-JP' : 'en-US',
+        { year: 'numeric', month: 'long', day: 'numeric' }
+      );
+      
+      Alert.alert(
+        t('ui.profile.promo_success_title') || '適用完了',
+        t('ui.profile.promo_success_msg', { date: formattedDate }) || `プロモーションコードが適用されました！プレミアムプランが1ヶ月間有効になりました。`
+      );
+      
+    } catch (err) {
+      console.error('Failed to apply promo code:', err);
+      Alert.alert(
+        t('ui.profile.promo_error_title') || '認証エラー',
+        t('ui.profile.promo_error_network') || 'ネットワークエラーが発生しました。しばらくしてから再度お試しください。'
+      );
+    } finally {
+      setIsApplyingPromo(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
@@ -420,12 +530,14 @@ export default function ProfileScreen() {
           <Ionicons 
             name={
               accountType === 'early_adopter' ? 'ribbon-sharp' :
-              accountType === 'premium' ? 'star-sharp' : 'person-sharp'
+              accountType === 'premium' ? 'star-sharp' : 
+              accountType === 'premium_limited' ? 'time-sharp' : 'person-sharp'
             } 
             size={22} 
             color={
               accountType === 'early_adopter' ? '#ffd700' : 
               accountType === 'premium' ? '#4facfe' : 
+              accountType === 'premium_limited' ? '#c084fc' :
               Theme.colors.textMuted
             } 
           />
@@ -435,11 +547,13 @@ export default function ProfileScreen() {
           <Text style={[
             styles.accountValue,
             accountType === 'early_adopter' && styles.accountValueEarly,
-            accountType === 'premium' && styles.accountValuePremium
+            accountType === 'premium' && styles.accountValuePremium,
+            accountType === 'premium_limited' && styles.accountValuePremiumLimited
           ]}>
             {
               accountType === 'early_adopter' ? (t('ui.profile.account_early_adopter') || 'アーリーアダプター（無制限）') :
               accountType === 'premium' ? (t('ui.profile.account_premium') || 'プレミアムプラン') :
+              accountType === 'premium_limited' ? `${t('ui.profile.account_premium_limited') || 'プレミアムプラン（期間限定）'} - ${getRemainingDaysText(settings.premiumUntil)}` :
               (t('ui.profile.account_basic') || 'ベーシックプラン（タップしてアップグレード）')
             }
           </Text>
@@ -737,6 +851,28 @@ export default function ProfileScreen() {
             <Text style={styles.settingLabel}>{t('ui.profile.version')}</Text>
             <Text style={{ color: Theme.colors.textMuted }}>{Constants.expoConfig?.version || '1.0.0'}</Text>
           </View>
+          <TouchableOpacity 
+            style={styles.settingRow} 
+            onPress={handlePromoPress}
+            disabled={isCheckingPromoWorkflow}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons 
+                name={isCheckingPromoWorkflow ? "sync" : "gift-outline"} 
+                size={20} 
+                color={Theme.colors.text} 
+                style={{ marginRight: 10 }} 
+              />
+              <Text style={styles.settingLabel}>
+                {isCheckingPromoWorkflow ? t('ui.profile.app_version_checking') : t('ui.profile.promo_code')}
+              </Text>
+            </View>
+            {isCheckingPromoWorkflow ? (
+              <ActivityIndicator size="small" color={Theme.colors.textMuted} />
+            ) : (
+              <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
+            )}
+          </TouchableOpacity>
           <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/privacy-policy' as any)}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="shield-checkmark-outline" size={20} color={Theme.colors.text} style={{ marginRight: 10 }} />
@@ -976,6 +1112,61 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Promotion Code Modal */}
+      <Modal visible={isPromoModalVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalBg}>
+          <View style={[styles.modalCard, { borderColor: 'rgba(192, 132, 252, 0.3)' }]}>
+            <Ionicons name="gift-outline" size={56} color="#c084fc" style={{ marginBottom: 16 }} />
+            <Text style={styles.modalTitle}>{t('ui.profile.promo_modal_title')}</Text>
+            
+            <Text style={styles.modalDesc}>
+              {t('ui.profile.promo_modal_desc')}
+            </Text>
+
+            <TextInput
+              style={styles.promoInput}
+              value={promoInputText}
+              onChangeText={setPromoInputText}
+              placeholder={t('ui.profile.promo_input_placeholder')}
+              placeholderTextColor="rgba(255,255,255,0.3)"
+              autoCapitalize="characters"
+              autoCorrect={false}
+              editable={!isApplyingPromo}
+            />
+
+            <View style={styles.modalBtnContainer}>
+              <TouchableOpacity 
+                style={[styles.modalCancelBtn, isApplyingPromo && { opacity: 0.5 }]} 
+                onPress={() => {
+                  if (isApplyingPromo) return;
+                  setIsPromoModalVisible(false);
+                  setPromoInputText('');
+                }}
+                disabled={isApplyingPromo}
+              >
+                <Text style={styles.modalCancelBtnText}>{t('ui.common.cancel') || 'キャンセル'}</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[
+                  styles.modalConfirmBtn, 
+                  { backgroundColor: '#c084fc' },
+                  (promoInputText.trim() === '' || isApplyingPromo) && styles.modalConfirmBtnDisabled
+                ]} 
+                onPress={handleApplyPromo}
+                disabled={promoInputText.trim() === '' || isApplyingPromo}
+              >
+                {isApplyingPromo ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.modalConfirmBtnText}>{t('ui.profile.promo_apply_btn') || '適用する'}</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -1129,5 +1320,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     textDecorationLine: 'underline',
-  }
+  },
+  promoInput: { 
+    backgroundColor: '#121212', 
+    color: Theme.colors.text, 
+    padding: 12, 
+    borderRadius: 8, 
+    fontSize: 16, 
+    borderWidth: 1, 
+    borderColor: Theme.colors.border, 
+    width: '100%', 
+    marginBottom: 20, 
+    textAlign: 'center', 
+    fontWeight: 'bold', 
+    letterSpacing: 2 
+  },
+  accountValuePremiumLimited: { color: '#c084fc' }
 });
