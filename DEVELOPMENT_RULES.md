@@ -35,6 +35,8 @@
    - ユーザー様が実機で動作確認を行い、**「マージして良い」「本番へPushして良い」などの明示的なご承認をいただいた場合のみ**、`origin/master` ブランチへ Push（マージ）します。
 6. **本番OTAの留保:**
    - 本番用チャンネルへの配信（`eas update --branch production`）は、本番用OTAのご指示があるまで絶対に実行しないでください。
+7. **OTAアップデート時の更新情報の記載 (Update Information Log):**
+   - 今後、不具合修正や機能追加等でOTAアップデート（`eas update`）を行う際は、ユーザーがアプリアップデート後に起動した際に表示される更新情報ポップアップにその変更内容を反映させるため、必ず [src/config/otaUpdateConfig.ts](file:///c:/Users/toshi/.gemini/antigravity/scratch/kintore/gym-tracker/src/config/otaUpdateConfig.ts) の `CURRENT_OTA_CONFIG`（バージョン、タイトル、更新内容 `notes`）を適切に更新してください。
 
 ---
 
