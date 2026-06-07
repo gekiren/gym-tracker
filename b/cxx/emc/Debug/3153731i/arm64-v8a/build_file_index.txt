@@ -1,0 +1,2 @@
+C:\Users\toshi\.gemini\antigravity\scratch\kintore\gym-tracker\node_modules\expo-modules-core\android\CMakeLists.txt
+C:\Users\toshi\.gemini\antigravity\scratch\kintore\gym-tracker\node_modules\expo-modules-core\android\src\fabric\CMakeLists.txt

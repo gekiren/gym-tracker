@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.8-ota10', // OTA識別用のバージョン文字列
+  version: '1.0.8-ota12', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'プロモーションコード入力機能にて、最新バージョンでのみコード入力が可能である旨、およびバージョン検証が行われる旨の注意書きを追加しました。'
+      'ワークアウト完了画面にSNSシェア機能（3種のデザインから選択可能）を追加しました。持ち上げた重量を「軽自動車」や「ゾウ」に面白換算してシェアできます！',
+      '完了画面の起動および動作の安定性を向上させました（クラッシュ防止の改善）。'
     ],
     en: [
-      'Added a notice to the promotion code entry screen indicating that codes can only be entered on the latest version and version checks are performed.'
+      'Added SNS sharing functionality to the workout completion screen with 3 design options. You can now share your lifted weight converted into cars or elephants!',
+      'Improved stability and resolved loading issues on the workout completion screen.'
     ]
   }
 };

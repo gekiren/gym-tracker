@@ -1,0 +1,9 @@
+{
+  "enabled": true,
+  "prefabPath": "C:\\Users\\toshi\\.gradle\\caches\\modules-2\\files-2.1\\com.google.prefab\\cli\\2.1.0\\aa32fec809c44fa531f01dcfb739b5b3304d3050\\cli-2.1.0-all.jar",
+  "packages": [
+    "C:\\Users\\toshi\\.gradle\\caches\\8.14.3\\transforms\\86c4502a02865a420bd555f1139b6766\\transformed\\react-android-0.81.5-debug\\prefab",
+    "C:\\Users\\toshi\\.gemini\\antigravity\\scratch\\kintore\\gym-tracker\\node_modules\\react-native-worklets\\android\\build\\intermediates\\prefab_package\\debug\\prefab",
+    "C:\\Users\\toshi\\.gradle\\caches\\8.14.3\\transforms\\cb1814ed6e2359b86fc0f824dfc20795\\transformed\\fbjni-0.7.0\\prefab"
+  ]
+}

@@ -1,0 +1,8 @@
+# ninja log v5
+32	69	0	C:/Users/toshi/.gemini/antigravity/scratch/kintore/gym-tracker/b/cxx/wo/Debug/6tg61a1o/armeabi-v7a/CMakeFiles/cmake.verify_globs	44a8a4ce47b6a2eb
+0	8	0	clean	9fb082a128580947
+59	249	0	C:/Users/toshi/.gemini/antigravity/scratch/kintore/gym-tracker/b/cxx/wo/Debug/6tg61a1o/armeabi-v7a/CMakeFiles/cmake.verify_globs	44a8a4ce47b6a2eb
+42	239	0	CMakeFiles/worklets.dir/C_/Users/toshi/.gemini/antigravity/scratch/kintore/gym-tracker/node_modules/react-native-worklets/Common/cpp/worklets/Resources/ValueUnpacker.cpp.o	23bfeecc90a56c57
+33	467	0	CMakeFiles/worklets.dir/C_/Users/toshi/.gemini/antigravity/scratch/kintore/gym-tracker/node_modules/react-native-worklets/Common/cpp/worklets/Resources/SynchronizableUnpacker.cpp.o	e0827ca6a0c8604c
+474	6938	8024960026002055	CMakeFiles/worklets.dir/src/main/cpp/worklets/android/PlatformLogger.cpp.o	ba2847bbcf3a3738
+92	6979	0	CMakeFiles/worklets.dir/C_/Users/toshi/.gemini/antigravity/scratch/kintore/gym-tracker/node_modules/react-native-worklets/Common/cpp/worklets/SharedItems/SynchronizableAccess.cpp.o	cfd4261dae1c1aea

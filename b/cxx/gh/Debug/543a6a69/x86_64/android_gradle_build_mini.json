@@ -1,0 +1,31 @@
+{
+  "buildFiles": [
+    "C:\\Users\\toshi\\.gemini\\antigravity\\scratch\\kintore\\gym-tracker\\node_modules\\react-native-gesture-handler\\android\\src\\main\\jni\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Users\\toshi\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "C:\\Users\\toshi\\.gemini\\antigravity\\scratch\\kintore\\gym-tracker\\b\\cxx\\gh\\Debug\\543a6a69\\x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Users\\toshi\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "C:\\Users\\toshi\\.gemini\\antigravity\\scratch\\kintore\\gym-tracker\\b\\cxx\\gh\\Debug\\543a6a69\\x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "gesturehandler::@6890427a1f51a3e7e1df": {
+      "artifactName": "gesturehandler",
+      "abi": "x86_64",
+      "output": "C:\\Users\\toshi\\.gemini\\antigravity\\scratch\\kintore\\gym-tracker\\node_modules\\react-native-gesture-handler\\android\\build\\intermediates\\cxx\\Debug\\543a6a69\\obj\\x86_64\\libgesturehandler.so",
+      "runtimeFiles": [
+        "C:\\Users\\toshi\\.gradle\\caches\\8.14.3\\transforms\\86c4502a02865a420bd555f1139b6766\\transformed\\react-android-0.81.5-debug\\prefab\\modules\\reactnative\\libs\\android.x86_64\\libreactnative.so",
+        "C:\\Users\\toshi\\.gradle\\caches\\8.14.3\\transforms\\86c4502a02865a420bd555f1139b6766\\transformed\\react-android-0.81.5-debug\\prefab\\modules\\jsi\\libs\\android.x86_64\\libjsi.so",
+        "C:\\Users\\toshi\\.gradle\\caches\\8.14.3\\transforms\\cb1814ed6e2359b86fc0f824dfc20795\\transformed\\fbjni-0.7.0\\prefab\\modules\\fbjni\\libs\\android.x86_64\\libfbjni.so"
+      ]
+    }
+  }
+}
