@@ -31,8 +31,24 @@
      ```
    
    > [!CAUTION]
-   > **EAS Build（ネイティブビルド）実行に関する絶対制限**
-   > ビルド回数制限（利用枠）を温存するため、**`eas build` コマンド（`npx eas build`）の実行は、ユーザーから事前に明確な「ビルドの実行指示」または「ビルドの承認」を得るまで厳格に禁止**されています。ネイティブ設定変更（`app.json` 等）が必要な場合でも、実装計画内でビルドが必要な旨を明記し、明示的な許可を得てから実行してください。
+   > **EAS Build（ネイティブビルド）実行に関する絶対制限と選択ルール**
+   > ビルド回数制限（利用枠）の節約および安全なリリースのため、**`eas build` コマンドの実行は、ユーザーから事前に明確な「ビルドの実行指示」または「ビルドの選択承認」を得るまで厳格に禁止**されています。
+   >
+   > 新規実装機能やネイティブ設定変更（`app.json` 等）に伴いネイティブビルドが必要になった場合は、**AIから必ず以下の選択肢を提示し、ユーザーにどのルートで実行するかを決めてもらってください。**
+   >
+   > - **ルート１ (EASクラウドAPK):** EASクラウドビルドで検証用APKファイルをビルド → 実機に直接インストールして確認（※クレジットを消費するため、急ぎの場合のみ推奨）
+   > - **ルート２ (ローカルAAB):** Android Studio等でローカルAABファイルをビルド（OTA対応） → Google Play Consoleにて内部テスト
+   > - **ルート３ (EASクラウドAAB):** EASクラウドビルドで本番用AABファイルをビルド → Google Play Consoleにて内部テスト
+   >
+   > ---
+   > 
+   > **🔑 ルート２（ローカルビルド）選択時のセキュリティ＆作業分担ルール**
+   > ルート２を選択する場合、**Keystoreのパスワードやキーパスワードなどの秘匿情報をチャットに入力したり、AIに扱わせることは厳禁**です。
+   > AIは以下の手順を徹底してください：
+   > 
+   > 1. AIはパスワード情報の入力を求めず、ビルドに必要な署名設定ファイル（例: `android/app/build.gradle` または `android/gradle.properties`）の**「ファイル名」と「追記・変更するべき具体的な場所」をユーザーに指示**する。
+   > 2. ユーザーがローカルでパスワードの入力作業およびビルド（Android Studioやコマンドラインでの `./gradlew bundleRelease` など）を行い、ビルドファイルを生成する。
+   > 3. ビルド完了後、ユーザーはファイルを元に戻す（パスワードを消去するか、Gitの変更を破棄する）。
 
    > [!IMPORTANT]
    > **クラウドビルド運用時のローカル Prebuild クリーン徹底ルール**
@@ -44,7 +60,7 @@
    > **ユーザーへのターミナル操作指示における絶対配慮ルール**
    > ユーザーに PowerShell やコマンドプロンプト等のターミナル操作を依頼する場合は、**必ず初期画面（`C:\Users\toshi` 等のホームディレクトリ）にいる前提で指示を作成してください。**
    > コマンドを実行させる前に、必ず以下のプロジェクトフォルダへの移動（`cd`）から順を追って丁寧に説明すること：
-   > `cd C:\Users\toshi\.gemini\antigravity\scratch\kintore\gym-tracker`
+   > `cd C:\kintore\gym-tracker`
 
 4. **ユーザーによる実機検証の依頼:**
    - 配信されたプレビュー版の **Update ID** などの情報を提示し、ユーザー様に動作確認を依頼します。
@@ -53,7 +69,7 @@
 6. **本番OTAの留保:**
    - 本番用チャンネルへの配信（`eas update --branch production`）は、本番用OTAのご指示があるまで絶対に実行しないでください。
 7. **OTAアップデート時の更新情報の記載 (Update Information Log):**
-   - 今後、不具合修正や機能追加等でOTAアップデート（`eas update`）を行う際は、ユーザーがアプリアップデート後に起動した際に表示される更新情報ポップアップにその変更内容を反映させるため、必ず [src/config/otaUpdateConfig.ts](file:///c:/Users/toshi/.gemini/antigravity/scratch/kintore/gym-tracker/src/config/otaUpdateConfig.ts) の `CURRENT_OTA_CONFIG`（バージョン、タイトル、更新内容 `notes`）を適切に更新してください。
+   - 今後、不具合修正や機能追加等でOTAアップデート（`eas update`）を行う際は、ユーザーがアプリアップデート後に起動した際に表示される更新情報ポップアップにその変更内容を反映させるため、必ず [src/config/otaUpdateConfig.ts](file:///c:/kintore/gym-tracker/src/config/otaUpdateConfig.ts) の `CURRENT_OTA_CONFIG`（バージョン、タイトル、更新内容 `notes`）を適切に更新してください。
    - **EAS Update の実行前に、インフォメーションポップアップに表示する具体的な内容（日本語・英語の notes）を必ずユーザーに提示し、文言の確認と承認を得てください。**
 8. **Google Play Storeリリースノートの作成ルール (Google Play Store Release Notes):**
    - 新しいネイティブビルド（`.aab`）を作成する際は、必ず前回の本番バージョンからの変更点をまとめたリリースノート（日本語・英語）を作成してユーザーに提示してください。
@@ -62,7 +78,60 @@
 
 ---
 
-## 3. UI/UX ＆ データベース実装の鉄則 (Critical Engineering Guardrails)
+## 3. 開発ディレクトリに関する絶対ルール (Development Directory)
+
+> [!IMPORTANT]
+> **開発は必ず `C:\kintore` で行ってください。**
+> 過去に `C:\Users\toshi\.gemini\antigravity\scratch\kintore` というディレクトリが使用されていた経緯がありますが、**現在このディレクトリは使用されていません（廃止済み）。**
+> ファイルの読み書き・コマンド実行・パス参照は、すべて `C:\kintore\gym-tracker` を基準に行ってください。
+> scratch ディレクトリ（`C:\Users\toshi\.gemini\antigravity\scratch\kintore`）への変更・参照は一切行わないこと。
+
+---
+
+### 🧹 環境移行時・ビルド不整合時のクリーンアップ手順（PowerShell用）
+開発フォルダの移行後や、ローカルビルドで原因不明のエラー・不整合（古いパスの参照など）が発生した場合、また動作が重くなったと感じた場合は、PowerShellを開き、プロジェクトルート（`C:\kintore\gym-tracker`）で以下のクリーンアップ手順を実行してください。
+
+> [!WARNING]
+> **※注意:** このクリーンアップを実行した直後の初回 `npm install` および最初のビルド（EAS Build Local等）は、すべてのキャッシュを再構築するため**通常より大幅に時間がかかります（5〜15分程度）**。
+> そのため、本手順は**「開発フォルダを移行した直後」**や**「トラブルシューティング時（※下記基準）」**などの必要な場合のみ実行してください。日常的なビルド毎に実行する必要はありません。
+
+**トラブルシューティング時の実行基準:**
+- コード의 修正や対策を行った上で、**連続して2回ビルドに失敗し、かつエラーログから具体的なコード上の原因が特定できない場合**、速やかにこのクリーンアップ手順を実行してください。
+
+**クリーンアップ実行手順:**
+
+1. **不要なキャッシュ・ビルドフォルダの物理削除**
+   以下のPowerShellコマンドを実行し、不整合の原因となるキャッシュや一時ファイルを根こそぎ強制削除します：
+   ```powershell
+   Remove-Item -Recurse -Force -ErrorAction SilentlyContinue .expo, android/.gradle, android/.idea, android/build, android/app/build, node_modules, package-lock.json
+   ```
+
+2. **npmパッケージのクリーンインストール**
+   削除後、依存関係を最新の状態で再インストールします：
+   ```powershell
+   npm install
+   ```
+
+3. **ネイティブディレクトリ（/android）のクリーン再生成**
+   `app.json` などの設定をクリーンな状態でネイティブファイルに同期します：
+   ```powershell
+   npx expo prebuild --clean --platform android
+   ```
+
+4. **Metroデベロッパーサーバーのキャッシュクリア起動**
+   JavaScriptバンドル時のキャッシュの不整合を解消して起動します：
+   ```powershell
+   npx expo start -c
+   ```
+
+### 🔗 絶対パス依存の排除ガイドライン
+- プロジェクト内のスクリプトや設定ファイルにおいて、**特定のローカルマシンに依存する絶対パス（`C:\Users\...` 等）をハードコードすることは厳禁**です。
+- パスを記述する際は、必ずプロジェクトルートからの相対パス（例: `../../@gekirennomads-organization__gym-tracker.jks`）を使用するか、Node.js of `path.resolve` 等を用いて動的に解決してください。
+- ユーザーに共有するドキュメント内（`DEVELOPMENT_RULES.md` 自体を含む）のファイルリンクも、現在のプロジェクトルート `file:///c:/kintore/gym-tracker/` を基準とした正しいパスに更新されていることを常に確認してください。
+
+---
+
+## 4. UI/UX ＆ データベース実装の鉄則 (Critical Engineering Guardrails)
 
 アプリの品質とパフォーマンスを担保するため、以下の実装仕様を維持してください。
 
@@ -82,7 +151,7 @@
 
 ---
 
-## 4. AIパーソナルトレーナー（AI Trainer）および Gemini API の仕様
+## 5. AIパーソナルトレーナー（AI Trainer）および Gemini API の仕様
 
 ### ① 使用する最新モデルの絶対的な指定
 - 最新の軽量・高速な公式モデルは **`gemini-3.5-flash`** です。過去の誤った思い込みや以前のバージョン（`gemini-1.5-flash`など）への書き換えは**厳禁**です。
