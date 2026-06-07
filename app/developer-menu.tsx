@@ -255,6 +255,15 @@ export default function DeveloperMenuScreen() {
         return;
       }
 
+      if (!Updates.isEnabled) {
+        Alert.alert(
+          'アップデート未対応',
+          `このビルドでは expo-updates が無効化されています。\nChannel: ${Updates.channel ?? 'N/A'}\nネイティブビルドの設定を確認してください。`
+        );
+        setIsChecking(false);
+        return;
+      }
+
       const updateResult = await Updates.checkForUpdateAsync();
       if (updateResult.isAvailable) {
         Alert.alert(
@@ -474,6 +483,20 @@ export default function DeveloperMenuScreen() {
             <Text style={styles.infoLabel}>Last Acknowledged ID</Text>
             <Text style={[styles.infoValue, { fontSize: 11, fontFamily: 'monospace' }]} numberOfLines={1}>
               {lastAckId}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Channel</Text>
+            <Text style={[styles.infoValue, { fontSize: 12, fontFamily: 'monospace' }]}>
+              {Updates.channel || 'N/A'}
+            </Text>
+          </View>
+
+          <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+            <Text style={styles.infoLabel}>Updates Enabled</Text>
+            <Text style={[styles.infoValue, { color: Updates.isEnabled ? '#4faf54' : '#ff4d4f' }]}>
+              {Updates.isEnabled ? 'Yes ✅' : 'No ❌'}
             </Text>
           </View>
 
