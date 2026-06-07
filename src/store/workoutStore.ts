@@ -196,10 +196,32 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     crashConsent: 'unset'
   },
 
-  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection: boolean = false, bodyWeight: number | null = null, needsStyleSelection: boolean = false, aiTokensBalance: number = 20, crashConsent: 'agreed' | 'declined' | 'unset' = 'unset', premiumUntil: string = '', isEarlyAdopter: boolean = false) => set((state) => {
-    const isPremium = isEarlyAdopter || premiumUntil === 'perpetual' || (premiumUntil !== '' && !isNaN(Date.parse(premiumUntil)) && Date.parse(premiumUntil) > Date.now());
+  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null, needsStyleSelection?: boolean, aiTokensBalance?: number, crashConsent?: 'agreed' | 'declined' | 'unset', premiumUntil?: string, isEarlyAdopter?: boolean) => set((state) => {
+    const finalNeedsUnitSelection = needsUnitSelection !== undefined ? needsUnitSelection : state.settings.needsUnitSelection;
+    const finalBodyWeight = bodyWeight !== undefined ? bodyWeight : state.settings.bodyWeight;
+    const finalNeedsStyleSelection = needsStyleSelection !== undefined ? needsStyleSelection : state.settings.needsStyleSelection;
+    const finalAiTokensBalance = aiTokensBalance !== undefined ? aiTokensBalance : state.settings.aiTokensBalance;
+    const finalCrashConsent = crashConsent !== undefined ? crashConsent : state.settings.crashConsent;
+    const finalPremiumUntil = premiumUntil !== undefined ? premiumUntil : state.settings.premiumUntil;
+    const finalIsEarlyAdopter = isEarlyAdopter !== undefined ? isEarlyAdopter : state.settings.isEarlyAdopter;
+
+    const isPremium = finalIsEarlyAdopter || finalPremiumUntil === 'perpetual' || (finalPremiumUntil !== '' && !isNaN(Date.parse(finalPremiumUntil)) && Date.parse(finalPremiumUntil) > Date.now());
     return {
-      settings: { ...state.settings, defaultRest, autoRest, timerVibrate, weightUnit, needsUnitSelection, bodyWeight, needsStyleSelection, aiTokensBalance, crashConsent, premiumUntil, isEarlyAdopter, isPremium }
+      settings: { 
+        ...state.settings, 
+        defaultRest, 
+        autoRest, 
+        timerVibrate, 
+        weightUnit, 
+        needsUnitSelection: finalNeedsUnitSelection, 
+        bodyWeight: finalBodyWeight, 
+        needsStyleSelection: finalNeedsStyleSelection, 
+        aiTokensBalance: finalAiTokensBalance, 
+        crashConsent: finalCrashConsent, 
+        premiumUntil: finalPremiumUntil, 
+        isEarlyAdopter: finalIsEarlyAdopter, 
+        isPremium 
+      }
     };
   }),
 
