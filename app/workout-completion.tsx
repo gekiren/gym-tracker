@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, ActivityIndicator, Image, UIManager } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, ActivityIndicator, Image, UIManager, NativeModules } from 'react-native';
 import { useEffect, useState, useRef } from 'react';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -56,12 +56,13 @@ export default function WorkoutCompletionScreen() {
 
   useEffect(() => {
     try {
-      const available = !!(
+      const hasNativeModule = !!NativeModules.RNViewShot;
+      const hasViewConfig = !!(
         UIManager.hasViewManagerConfig && UIManager.hasViewManagerConfig('RNViewShot')
       ) || !!(
         UIManager.getViewManagerConfig && (UIManager.getViewManagerConfig('RNViewShot') || (UIManager as any).getViewManagerConfig('RNViewShotView'))
       );
-      setViewShotAvailable(available);
+      setViewShotAvailable(hasNativeModule || hasViewConfig);
     } catch (e) {
       setViewShotAvailable(false);
     }
