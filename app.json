@@ -5,7 +5,7 @@
       "ja": "./locales/ja.json"
     },
     "slug": "gym-tracker",
-    "version": "1.0.13",
+    "version": "1.0.14",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "gymtracker",
@@ -16,13 +16,13 @@
       "enabled": true,
       "checkAutomatically": "ON_LOAD"
     },
-    "runtimeVersion": "1.0.13",
+    "runtimeVersion": "1.0.14",
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "package": "com.gekirennomad.trenote",
-      "versionCode": 13,
+      "versionCode": 14,
       "permissions": [
         "com.android.vending.BILLING",
         "android.permission.SCHEDULE_EXACT_ALARM"
