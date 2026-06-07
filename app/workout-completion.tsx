@@ -76,7 +76,7 @@ export default function WorkoutCompletionScreen() {
   }, [completionData]);
 
   useEffect(() => {
-    if (!completionData || settings.isPremium || hasCheckedAd.current) return;
+    if (!completionData || settings.isPremium || settings.isEarlyAdopter || hasCheckedAd.current) return;
     hasCheckedAd.current = true;
 
     const checkAdFlow = async () => {
@@ -100,7 +100,7 @@ export default function WorkoutCompletionScreen() {
     };
 
     checkAdFlow();
-  }, [completionData, settings.isPremium]);
+  }, [completionData, settings.isPremium, settings.isEarlyAdopter]);
 
   useEffect(() => {
     if (shouldLoadAd) {

@@ -10,12 +10,6 @@ import { useWorkoutStore } from '../src/store/workoutStore';
 
 export default function AdBanner() {
   const settings = useWorkoutStore(state => state.settings);
-  const isPremiumOrEarly = settings.isPremium || settings.isEarlyAdopter;
-
-  if (isPremiumOrEarly) {
-    return null;
-  }
-
   const { t } = useTranslation();
   const [adFailed, setAdFailed] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -66,6 +60,12 @@ export default function AdBanner() {
 
     return () => clearTimeout(retryTimeout);
   }, [adFailed]);
+
+  // プレミアム・アーリーアダプターには広告を一切表示しない（フック群の後に配置）
+  const isPremiumOrEarly = settings.isPremium || settings.isEarlyAdopter;
+  if (isPremiumOrEarly) {
+    return null;
+  }
 
   const handlePromoPress = () => {
     router.navigate('/(tabs)/profile');
