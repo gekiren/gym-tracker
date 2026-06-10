@@ -8,8 +8,11 @@ import { useTranslation } from 'react-i18next';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { AI_CONFIG } from '../../src/config/aiConfig';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 export default function TabLayout() {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const settings = useWorkoutStore(state => state.settings);
   const aiTokensBalance = settings.aiTokensBalance;
   const isPremium = settings.isPremium;
@@ -17,13 +20,24 @@ export default function TabLayout() {
   const isPremiumOrEarly = isPremium || isEarly;
   const maxTokens = isPremiumOrEarly ? 20 : 5;
 
-  const tabHeight = Platform.OS === 'ios'
-    ? (isPremiumOrEarly ? 88 : 96)
-    : (isPremiumOrEarly ? 60 : 72);
+  // Calculate tab padding and height dynamically based on safe area insets.
+  // If Premium/Early, the tab bar is at the bottom of the screen.
+  // If Basic plan, the tab bar sits above the AdBanner, so it doesn't need safe area bottom padding.
+  const baseHeight = Platform.OS === 'ios'
+    ? (isPremiumOrEarly ? 60 : 64)
+    : (isPremiumOrEarly ? 52 : 60);
 
-  const tabPaddingBottom = Platform.OS === 'ios'
-    ? (isPremiumOrEarly ? 28 : 32)
-    : (isPremiumOrEarly ? 8 : 12);
+  const defaultPaddingBottom = Platform.OS === 'ios'
+    ? (isPremiumOrEarly ? 28 : 12)
+    : (isPremiumOrEarly ? 32 : 8);
+
+  const tabPaddingBottom = isPremiumOrEarly
+    ? (Platform.OS === 'android'
+        ? Math.max(insets.bottom + 12, defaultPaddingBottom)
+        : Math.max(insets.bottom, defaultPaddingBottom))
+    : defaultPaddingBottom;
+
+  const tabHeight = baseHeight + tabPaddingBottom;
 
   return (
     <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>

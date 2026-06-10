@@ -264,6 +264,8 @@ export default function DeveloperMenuScreen() {
         return;
       }
 
+
+
       const updateResult = await Updates.checkForUpdateAsync();
       if (updateResult.isAvailable) {
         Alert.alert(
@@ -298,7 +300,7 @@ export default function DeveloperMenuScreen() {
       console.warn('Check update error:', error);
       Alert.alert(
         t('ui.developer_menu.update_check_error_title'),
-        t('ui.developer_menu.update_check_error_msg')
+        t('ui.developer_menu.update_check_error_msg') + `\n\nDetail: ${error instanceof Error ? error.message : String(error)}\nChannel: ${Updates.channel ?? 'N/A'}`
       );
       setIsChecking(false);
     }

@@ -5,12 +5,14 @@ import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../src/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AD_CONFIG } from '../src/config/adConfig';
 import { useWorkoutStore } from '../src/store/workoutStore';
 
 export default function AdBanner() {
   const settings = useWorkoutStore(state => state.settings);
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [adFailed, setAdFailed] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [promoIndex, setPromoIndex] = useState(0);
@@ -73,10 +75,14 @@ export default function AdBanner() {
 
   const adUnitId = AD_CONFIG.getBannerAdUnitId();
 
+  const bannerPaddingBottom = Platform.OS === 'android'
+    ? Math.max(insets.bottom + 12, 32)
+    : insets.bottom;
+
   if (adFailed) {
     const currentPromo = promos[promoIndex];
     return (
-      <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+      <Animated.View style={[styles.container, { opacity: fadeAnim, height: 52 + bannerPaddingBottom, paddingBottom: bannerPaddingBottom }]}>
         <TouchableOpacity
           style={styles.promoPressable}
           onPress={handlePromoPress}
@@ -104,7 +110,7 @@ export default function AdBanner() {
   }
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim, height: 52 + bannerPaddingBottom, paddingBottom: bannerPaddingBottom }]}>
       <View style={styles.adWrapper}>
         <BannerAd
           unitId={adUnitId}

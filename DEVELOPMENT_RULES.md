@@ -41,16 +41,37 @@
    > - **ルート３ (EASクラウドAAB):** EASクラウドビルドで本番用AABファイルをビルド → Google Play Consoleにて内部テスト
    >
    > ---
-   > 
-   > **🔑 ルート２（ローカルビルド）選択時のセキュリティ＆作業分担ルール**
-   > ルート２を選択する場合、**Keystoreのパスワードやキーパスワードなどの秘匿情報をチャットに入力したり、AIに扱わせることは厳禁**です。
-   > AIは以下の手順を徹底してください：
-   > 
-   > 1. AIはパスワード情報の入力を求めず、ビルドに必要な署名設定ファイル（例: `android/app/build.gradle` または `android/gradle.properties`）の**「ファイル名」と「追記・変更するべき具体的な場所」をユーザーに指示**する。
-   > 2. ユーザーがローカルでパスワードの入力作業およびビルド（Android Studioやコマンドラインでの `./gradlew bundleRelease` など）を行い、ビルドファイルを生成する。
-   > 3. ビルド完了後、ユーザーはファイルを元に戻す（パスワードを消去するか、Gitの変更を破棄する）。
+   >
+    > **🔑 ルート２（ローカルビルド）選択時のセキュリティ・手順＆チャンネル注入ルール**
+    > ルート２を選択する場合、**Keystoreのパスワードやキーパスワードなどの秘匿情報をチャットに入力したり、AIに扱わせることは厳禁**です。
+    > また、ローカルビルドの作業は**必ず PowerShell で行う**必要があります。AIがユーザーへ提示・出力するコマンドも、**PowerShell用に完全に対応した記述**としてください（パスの区切り記号 `\` や環境変数の設定方法 `$env:SENTRY_DISABLE_AUTO_UPLOAD = "true"` など）。
+    > ローカルビルドでは自動的に `EXPO_CHANNEL_NAME` が注入されないため、以下の「ローカルビルド成功手順」をそのままユーザーに提示して実行を指示してください。
+    > 
+    > **ローカルビルド成功手順（ユーザーへの指示手順）：**
+    > 
+    > 1. **事前クリーンアップ（ロックエラー回避）:** 
+    >    Android Studioや関連フォルダを閉じ、以下を実行してバックグラウンドのJava/Gradleプロセスを停止する：
+    >    `Stop-Process -Name java -Force -ErrorAction SilentlyContinue`
+    > 2. **クリーンネイティブビルドの生成 (プロジェクトルートで実行):**
+    >    `npx expo prebuild --clean --platform android`
+    > 3. **チャンネルの自動注入 ＆ 署名設定・properties生成 (プロジェクトルートで実行):**
+    >    以下を実行して、`AndroidManifest.xml` へのチャンネル注入、`build.gradle` へのリリース署名設定の追加、および `expo-updates.properties` の生成を自動で行います：
+    >    `powershell -ExecutionPolicy Bypass -File .\scripts\inject-channel.ps1`
+    > 4. **署名設定の追加 (androidディレクトリへ移動):**
+    >    `cd android` して、`gradle.properties` の末尾に以下の本番署名キー設定を一時的に追記するよう指示します：
+    >    ```properties
+    >    MYAPP_UPLOAD_KEY_ALIAS=gekirennomad
+    >    MYAPP_UPLOAD_STORE_PASSWORD=[パスワード]
+    >    MYAPP_UPLOAD_KEY_PASSWORD=[パスワード]
+    >    ```
+    > 5. **ビルド実行 (Sentry無効化・Gradleリセット):**
+    >    `.\gradlew --stop`
+    >    `$env:SENTRY_DISABLE_AUTO_UPLOAD = "true"`
+    >    `.\gradlew bundleRelease`
+    > 6. **生成ファイルと後片付け:**
+    >    ファイルは `android/app/build/outputs/bundle/release/app-release.aab` に生成されることを伝える。ビルド後は追記したパスワード等の変更をGitで元に戻す（破棄する）よう指示する。
 
-   > [!IMPORTANT]
+    > [!IMPORTANT]
    > **クラウドビルド運用時のローカル Prebuild クリーン徹底ルール**
    > 本プロジェクトでは `/android` フォルダが `.gitignore` に指定されています。クラウドビルド（EAS Build）はコミットされた `app.json` から常にクリーンビルドされますが、ローカルで動作検証（`npx expo run:android` 等）を行う際は手元の古い `android` フォルダが使い回されるため、設定が同期しない問題が発生します。
    > **`app.json` の設定（`plugins` や `android` 設定、パーミッション、バージョン等）を変更した後は、ローカル動作検証の前に必ず以下のコマンドを実行し、ローカルのネイティブファイルを最新に同期してください：**

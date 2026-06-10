@@ -18,12 +18,12 @@ export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
   },
   notes: {
     ja: [
-      '開発者メニューにおけるアップデート確認の安定性を向上させました。',
-      '内部ビルド時のチャンネル認識および署名プロセスの最適化を行いました。'
+      'Androidナビゲーションバーによるタブバーのレイアウト位置の調整を行いました。',
+      'タブバーの表示位置を押し上げて下部ボタンの操作性を高めました。'
     ],
     en: [
-      'Improved the stability of update checks in the developer menu.',
-      'Optimized channel recognition and signing processes for internal builds.'
+      'Adjusted tab bar layout placement for Android navigation bars.',
+      'Raised the tab bar height to improve bottom button usability.'
     ]
   }
 };
