@@ -70,6 +70,25 @@
     >    `.\gradlew bundleRelease`
     > 6. **生成ファイルと後片付け:**
     >    ファイルは `android/app/build/outputs/bundle/release/app-release.aab` に生成されることを伝える。ビルド後は追記したパスワード等の変更をGitで元に戻す（破棄する）よう指示する。
+    > 
+    > **ローカルビルドでのOTAチャンネル設定の内部仕様と解決策 (expo-updatesのバグ対策):**
+    > 
+    > Androidのローカルビルドにおいて、JS側で `Updates.channel` が `null` (N/A) となり、OTAアップデートが受信できなくなる問題に対する恒久的な解決策と注意点は以下の通りです。
+    > 
+    > 1. **expo-updatesライブラリのタイポバグについて:**
+    >    `expo-updates` の Android 用ネイティブコード（`UpdatesConfiguration.kt`）において、リクエストヘッダー（`requestHeaders`）を `AndroidManifest.xml` のメタデータから読み取る際に、キー名として間違って定数名そのものである `"expo.modules.updates.UPDATES_CONFIGURATION_REQUEST_HEADERS_KEY"` がハードコードされています。
+    >    標準の Expo Config Plugin は `"expo.modules.updates.requestHeaders"` に書き込むため、ネイティブコード側でチャンネル情報が読み取れず、チャンネル名が `N/A` になります。
+    > 2. **解決策 (ダブル注入):**
+    >    このため、`scripts/inject-channel.ps1` では、`AndroidManifest.xml` に以下の両方のメタデータタグを注入しています。
+    >    - `<meta-data android:name="expo.modules.updates.requestHeaders" android:value="{&quot;expo-channel-name&quot;:&quot;production&quot;,&quot;expo-release-channel&quot;:&quot;production&quot;}"/>`
+    >    - `<meta-data android:name="expo.modules.updates.UPDATES_CONFIGURATION_REQUEST_HEADERS_KEY" android:value="{&quot;expo-channel-name&quot;:&quot;production&quot;,&quot;expo-release-channel&quot;:&quot;production&quot;}"/>`
+    >    値の中のダブルクォーテーションは、XMLエンティティとして必ず `&quot;` でエスケープする必要があります。
+    > 3. **expo-updates.properties の同期:**
+    >    ローカルビルド時には、自動生成されない `android/app/src/main/assets/expo-updates.properties` ファイルにもチャンネル設定（`expo.modules.updates.EXPO_RELEASE_CHANNEL=production`）が必要です。これらすべてを `scripts/inject-channel.ps1` が自動処理します。
+    > 4. **検証方法:**
+    >    ビルド後、デベロッパーメニューを開き、`Channel: production` が表示されていること、およびアップデートIDが適用できることを確認してください。
+    > 
+    > ---
 
     > [!IMPORTANT]
    > **クラウドビルド運用時のローカル Prebuild クリーン徹底ルール**
