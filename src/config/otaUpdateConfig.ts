@@ -11,19 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.31', // OTA識別用のバージョン文字列
+  version: '1.0.32', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      '経過時間タイマーをヘッダーのRM計算ボタンの左隣へ移動',
-      'ワークアウトメモと全体AIトレーナーボタンを画面上部にスクロールせず固定表示するように変更'
+      'ワークアウト履歴画面にカレンダー表示機能を追加しました。',
+      'カレンダーの日付タップで該当のワークアウトへ自動スクロールし、一時的にハイライトします。',
+      '月間の実施日数・総ボリューム・総消費カロリーのサマリーが確認できるようになりました。'
     ],
     en: [
-      'Relocated elapsed timer to the left of the RM calculator button in the header',
-      'Fixed workout notes and overall AI coach button at the top of the screen (sticky display)'
+      'Added a monthly calendar view to the workout history screen.',
+      'Tapping a calendar date scrolls to and highlights the corresponding workout card.',
+      'View monthly summary metrics (workout days, total volume, and calories burned) at a glance.'
     ]
   }
 };

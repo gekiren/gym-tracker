@@ -4,7 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
-import { format, startOfWeek, startOfMonth } from 'date-fns';
+import { format, startOfWeek, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { Dimensions } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { getDB, loadFullWorkoutData, deleteWorkout, getExercises, addCustomExercise, deleteExercise, getFavoriteIds, toggleFavorite } from '../../src/db/database';
@@ -26,8 +26,186 @@ type Exercise = {
 export default function HistoryScreen() {
   const settings = useWorkoutStore(state => state.settings);
   const chartScrollRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
   const [workouts, setWorkouts] = useState<any[]>([]);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  // カレンダー用のステートとRef
+  const cardOffsets = useRef<{ [key: number]: number }>({});
+  const [isCalendarVisible, setCalendarVisible] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [highlightedWorkoutId, setHighlightedWorkoutId] = useState<number | null>(null);
+
+  // 指定した月の日付一覧を取得
+  const getCalendarDays = () => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(monthStart);
+    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    return eachDayOfInterval({ start: startDate, end: endDate });
+  };
+
+  // 指定した月のワークアウト統計（サマリー）を計算
+  const getMonthlyStats = () => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(monthStart);
+    let count = 0;
+    let volume = 0;
+    let calories = 0;
+
+    workouts.forEach(w => {
+      const date = new Date(w.start_time);
+      if (date >= monthStart && date <= monthEnd) {
+        count++;
+        volume += w.volume || 0;
+        calories += w.calories || 0;
+      }
+    });
+
+    return { count, volume, calories };
+  };
+
+  // カレンダーの日付タップ時のスクロール＆ハイライト
+  const handleDatePress = (dateStr: string) => {
+    const targetWorkout = workouts.find(w => {
+      const wDate = format(new Date(w.start_time), 'yyyy-MM-dd');
+      return wDate === dateStr;
+    });
+
+    if (targetWorkout) {
+      setCalendarVisible(false);
+      const yOffset = cardOffsets.current[targetWorkout.id];
+      if (yOffset !== undefined) {
+        const scrollTarget = Math.max(0, yOffset - 20);
+        setTimeout(() => {
+          scrollViewRef.current?.scrollTo({ y: scrollTarget, animated: true });
+          setHighlightedWorkoutId(targetWorkout.id);
+          setTimeout(() => {
+            setHighlightedWorkoutId(null);
+          }, 1500);
+        }, 100);
+      }
+    }
+  };
+
+  // カレンダーモーダルの描画
+  const renderCalendarModal = () => {
+    const days = getCalendarDays();
+    const { count, volume, calories } = getMonthlyStats();
+    const isJa = i18n.language === 'ja';
+
+    const monthYearText = isJa
+      ? format(currentMonth, 'yyyy年 M月')
+      : format(currentMonth, 'MMMM yyyy');
+
+    const weekdays = isJa
+      ? ['月', '火', '水', '木', '金', '土', '日']
+      : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    const workoutsMap: { [key: string]: boolean } = {};
+    workouts.forEach(w => {
+      const dStr = format(new Date(w.start_time), 'yyyy-MM-dd');
+      workoutsMap[dStr] = true;
+    });
+
+    return (
+      <Modal
+        visible={isCalendarVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCalendarVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: '90%' }]}>
+            <View style={styles.calendarModalHeader}>
+              <Text style={styles.calendarModalTitle}>
+                {isJa ? 'ワークアウト履歴カレンダー' : 'Workout Calendar'}
+              </Text>
+              <TouchableOpacity onPress={() => setCalendarVisible(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.monthSelector}>
+              <TouchableOpacity
+                onPress={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
+                style={styles.monthNavButton}
+              >
+                <Ionicons name="chevron-back" size={22} color={Theme.colors.primary} />
+              </TouchableOpacity>
+              <Text style={styles.monthText}>{monthYearText}</Text>
+              <TouchableOpacity
+                onPress={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
+                style={styles.monthNavButton}
+              >
+                <Ionicons name="chevron-forward" size={22} color={Theme.colors.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.weekdaysContainer}>
+              {weekdays.map((day, idx) => (
+                <Text key={idx} style={styles.weekdayText}>{day}</Text>
+              ))}
+            </View>
+
+            <View style={styles.daysGrid}>
+              {days.map((day, idx) => {
+                const dayStr = format(day, 'yyyy-MM-dd');
+                const hasWorkout = workoutsMap[dayStr];
+                const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+
+                return (
+                  <TouchableOpacity
+                    key={idx}
+                    style={styles.dayCell}
+                    disabled={!hasWorkout}
+                    onPress={() => handleDatePress(dayStr)}
+                  >
+                    <View style={[
+                      styles.dayCircle,
+                      hasWorkout && styles.workoutDayCircle
+                    ]}>
+                      <Text style={[
+                        styles.dayText,
+                        !isCurrentMonth && styles.dimmedDayText,
+                        hasWorkout && styles.workoutDayText
+                      ]}>
+                        {format(day, 'd')}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <View style={styles.summaryContainer}>
+              <Text style={styles.summaryTitle}>
+                {isJa ? '月間サマリー' : 'Monthly Summary'}
+              </Text>
+              <View style={styles.summaryStatsRow}>
+                <View style={styles.summaryStatBlock}>
+                  <Text style={styles.summaryStatLabel}>{isJa ? '実施日数' : 'Workouts'}</Text>
+                  <Text style={styles.summaryStatValue}>{count}{isJa ? '日' : ''}</Text>
+                </View>
+                <View style={styles.summaryStatBlock}>
+                  <Text style={styles.summaryStatLabel}>{isJa ? '総ボリューム' : 'Total Volume'}</Text>
+                  <Text style={styles.summaryStatValue}>
+                    {volume > 0 ? `${volume.toLocaleString()} ${settings.weightUnit}` : '-'}
+                  </Text>
+                </View>
+                <View style={styles.summaryStatBlock}>
+                  <Text style={styles.summaryStatLabel}>{isJa ? '総消費カロリー' : 'Total Calories'}</Text>
+                  <Text style={styles.summaryStatValue}>
+                    {calories > 0 ? `${Math.round(calories).toLocaleString()} kcal` : '-'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
 
   // タブ切り替え用のステート
   const [activeTab, setActiveTab] = useState<'workouts' | 'exercises'>('workouts');
@@ -322,29 +500,40 @@ export default function HistoryScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        {/* 上部タブ切り替えバー */}
-        <View style={styles.tabContainer}>
-          <TouchableOpacity 
-            style={[styles.tabButton, activeTab === 'workouts' && styles.tabButtonActive]}
-            onPress={() => setActiveTab('workouts')}
-          >
-            <Text style={[styles.tabButtonText, activeTab === 'workouts' && styles.tabButtonTextActive]}>
-              {t('ui.tabs.workout') || 'ワークアウト'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.tabButton, activeTab === 'exercises' && styles.tabButtonActive]}
-            onPress={() => setActiveTab('exercises')}
-          >
-            <Text style={[styles.tabButtonText, activeTab === 'exercises' && styles.tabButtonTextActive]}>
-              {t('ui.tabs.exercises') || '種目'}
-            </Text>
-          </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {/* 上部タブ切り替えバー */}
+          <View style={[styles.tabContainer, { flex: 1 }]}>
+            <TouchableOpacity 
+              style={[styles.tabButton, activeTab === 'workouts' && styles.tabButtonActive]}
+              onPress={() => setActiveTab('workouts')}
+            >
+              <Text style={[styles.tabButtonText, activeTab === 'workouts' && styles.tabButtonTextActive]}>
+                {t('ui.tabs.workout') || 'ワークアウト'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.tabButton, activeTab === 'exercises' && styles.tabButtonActive]}
+              onPress={() => setActiveTab('exercises')}
+            >
+              <Text style={[styles.tabButtonText, activeTab === 'exercises' && styles.tabButtonTextActive]}>
+                {t('ui.tabs.exercises') || '種目'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {activeTab === 'workouts' && (
+            <TouchableOpacity 
+              style={styles.calendarBtn}
+              onPress={() => setCalendarVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="calendar-outline" size={22} color={Theme.colors.primary} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
       {activeTab === 'workouts' ? (
-        <ScrollView style={styles.subContainer} contentContainerStyle={styles.content}>
+        <ScrollView ref={scrollViewRef} style={styles.subContainer} contentContainerStyle={styles.content}>
           <Text style={styles.subtitle}>{t('ui.history.subtitle')}</Text>
           
           {chartData && (
@@ -439,13 +628,21 @@ export default function HistoryScreen() {
               <Text style={styles.emptyStateText}>{t('ui.history.empty_state')}</Text>
             </View>
           ) : (
-            workouts.map(w => (
-              <TouchableOpacity 
-                key={w.id} 
-                style={styles.card}
-                activeOpacity={0.7}
-                onPress={() => router.push({ pathname: '/workout-details/[id]', params: { id: w.id } } as any)}
-              >
+            workouts.map(w => {
+              const isHighlighted = w.id === highlightedWorkoutId;
+              return (
+                <TouchableOpacity 
+                  key={w.id} 
+                  style={[
+                    styles.card,
+                    isHighlighted && { borderColor: Theme.colors.primary, borderWidth: 2 }
+                  ]}
+                  activeOpacity={0.7}
+                  onLayout={(e) => {
+                    cardOffsets.current[w.id] = e.nativeEvent.layout.y;
+                  }}
+                  onPress={() => router.push({ pathname: '/workout-details/[id]', params: { id: w.id } } as any)}
+                >
                 <View style={styles.cardHeader}>
                   <Text style={styles.cardTitle}>{w.title}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -492,8 +689,9 @@ export default function HistoryScreen() {
                     <Text style={styles.statValue}>{w.calories ? `${w.calories} kcal` : '-'}</Text>
                   </View>
                 </View>
-              </TouchableOpacity>
-            ))
+                </TouchableOpacity>
+              );
+            })
           )}
         </ScrollView>
       ) : (
@@ -623,6 +821,7 @@ export default function HistoryScreen() {
           </View>
         </View>
       </Modal>
+      {renderCalendarModal()}
     </View>
   );
 }
@@ -746,5 +945,130 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 80,
     height: '100%',
+  },
+  // カレンダー用のスタイル
+  calendarBtn: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    width: 44,
+    height: 44,
+    borderRadius: Theme.borderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: Theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
+  },
+  calendarModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Theme.spacing.md,
+  },
+  calendarModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Theme.colors.text,
+  },
+  monthSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: Theme.borderRadius.sm,
+    paddingVertical: Theme.spacing.xs,
+    paddingHorizontal: Theme.spacing.sm,
+    marginBottom: Theme.spacing.md,
+  },
+  monthNavButton: {
+    padding: Theme.spacing.xs,
+  },
+  monthText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Theme.colors.text,
+  },
+  weekdaysContainer: {
+    flexDirection: 'row',
+    paddingVertical: Theme.spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+    marginBottom: Theme.spacing.xs,
+  },
+  weekdayText: {
+    width: '14.28%',
+    textAlign: 'center',
+    color: Theme.colors.textMuted,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  daysGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  dayCell: {
+    width: '14.28%',
+    aspectRatio: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 2,
+  },
+  dayCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  workoutDayCircle: {
+    backgroundColor: 'rgba(79, 172, 254, 0.15)',
+    borderWidth: 1.5,
+    borderColor: Theme.colors.primary,
+  },
+  dayText: {
+    color: Theme.colors.text,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  dimmedDayText: {
+    color: '#444444',
+  },
+  workoutDayText: {
+    color: Theme.colors.primary,
+    fontWeight: 'bold',
+  },
+  summaryContainer: {
+    marginTop: Theme.spacing.md,
+    paddingTop: Theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Theme.colors.border,
+  },
+  summaryTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: Theme.colors.text,
+    marginBottom: Theme.spacing.sm,
+  },
+  summaryStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderRadius: Theme.borderRadius.md,
+    padding: Theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  summaryStatBlock: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  summaryStatLabel: {
+    fontSize: 11,
+    color: Theme.colors.textMuted,
+    marginBottom: 2,
+  },
+  summaryStatValue: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: Theme.colors.text,
   }
 });
