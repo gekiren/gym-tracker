@@ -54,7 +54,7 @@ export default function SwipeableNumericInput({
         inputRef.current?.setSelection(0, value.length);
       }, 50);
     }
-  }, [isEditing, value.length]);
+  }, [isEditing]);
 
   // Haptic feedback function to run on JS thread
   const triggerHaptic = () => {
