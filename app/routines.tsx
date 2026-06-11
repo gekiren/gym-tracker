@@ -157,21 +157,43 @@ export default function RoutinesScreen() {
           </TouchableOpacity>
           <Text style={styles.title}>{t('ui.routines.all_routines')}</Text>
         </View>
-        {routines.length > 1 && (
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {routines.length > 1 && (
+            <TouchableOpacity 
+              onPress={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                setIsReorderMode(!isReorderMode);
+              }} 
+              style={styles.reorderToggleBtn}
+            >
+              <Ionicons 
+                name={isReorderMode ? "checkmark-circle" : "swap-vertical"} 
+                size={24} 
+                color={Theme.colors.primary} 
+              />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity 
             onPress={() => {
-              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-              setIsReorderMode(!isReorderMode);
-            }} 
-            style={styles.reorderToggleBtn}
+              if (isBasic && routines.length >= 10) {
+                Alert.alert(
+                  'ルーティン登録制限',
+                  'ベーシックプランでは最大10個までルーティンを登録できます。登録上限を増やすにはプレミアムプランへのアップグレードが必要です。',
+                  [
+                    { text: 'キャンセル', style: 'cancel' },
+                    { text: 'アップグレードする', onPress: () => router.push('/(tabs)/profile') }
+                  ]
+                );
+              } else {
+                router.push('/build-routine');
+              }
+            }}
+            style={[styles.reorderToggleBtn, { marginLeft: 8 }]}
+            activeOpacity={0.8}
           >
-            <Ionicons 
-              name={isReorderMode ? "checkmark-circle" : "swap-vertical"} 
-              size={24} 
-              color={Theme.colors.primary} 
-            />
+            <Ionicons name="add" size={28} color={Theme.colors.primary} />
           </TouchableOpacity>
-        )}
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -222,27 +244,7 @@ export default function RoutinesScreen() {
         )}
       </ScrollView>
 
-      {/* Floating Action Button */}
-      <TouchableOpacity 
-        style={styles.fab} 
-        onPress={() => {
-          if (isBasic && routines.length >= 10) {
-            Alert.alert(
-              'ルーティン登録制限',
-              'ベーシックプランでは最大10個までルーティンを登録できます。登録上限を増やすにはプレミアムプランへのアップグレードが必要です。',
-              [
-                { text: 'キャンセル', style: 'cancel' },
-                { text: 'アップグレードする', onPress: () => router.push('/(tabs)/profile') }
-              ]
-            );
-          } else {
-            router.push('/build-routine');
-          }
-        }}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={32} color="#fff" />
-      </TouchableOpacity>
+
     </View>
   );
 }
@@ -252,7 +254,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', padding: Theme.spacing.md, paddingTop: 50, backgroundColor: Theme.colors.card, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
   title: { fontSize: 22, fontWeight: 'bold', color: Theme.colors.text },
   reorderToggleBtn: { padding: 8 },
-  content: { padding: Theme.spacing.md, paddingBottom: 100 },
+  content: { padding: Theme.spacing.md, paddingBottom: 32 },
   routineCard: { backgroundColor: Theme.colors.card, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Theme.spacing.lg, borderRadius: Theme.borderRadius.md, marginBottom: Theme.spacing.md, borderWidth: 1, borderColor: Theme.colors.border },
   routineCardEditing: { borderStyle: 'dashed', borderColor: Theme.colors.primary },
   routineTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text, marginBottom: 4 },
@@ -260,6 +262,5 @@ const styles = StyleSheet.create({
   deleteBtn: { padding: 8, marginLeft: 8 },
   reorderActions: { flexDirection: 'row', alignItems: 'center' },
   reorderBtn: { padding: 8, marginLeft: 8 },
-  reorderBtnDisabled: { opacity: 0.3 },
-  fab: { position: 'absolute', bottom: 32, right: 24, width: 64, height: 64, borderRadius: 32, backgroundColor: Theme.colors.primary, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 8 }
+  reorderBtnDisabled: { opacity: 0.3 }
 });

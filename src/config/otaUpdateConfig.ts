@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.34', // OTA識別用のバージョン文字列
+  version: '1.0.35', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      '種目選択画面で一番下の種目がスクロールした際にタップしやすくなるよう、リスト下部に余白を追加しました。'
+      '「すべてのルーティン」画面にて、ルーティン追加「＋」ボタンの配置を画面右下のフローティングボタンからヘッダーの並び替えボタンの横に変更しました。'
     ],
     en: [
-      'Added bottom spacing to the exercise list in the selection screen to improve tap target accessibility.'
+      'Moved the add routine button in the "All Routines" screen from the bottom FAB to the header next to the reorder button.'
     ]
   }
 };
