@@ -19,9 +19,15 @@ import { useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
 import { AD_CONFIG } from '../src/config/adConfig';
 
 export default function DeveloperMenuScreen() {
+  const isProduction = process.env.APP_ENV === 'production';
+  if (isProduction && !__DEV__) {
+    return null; // Render absolutely nothing in production builds to satisfy store policy
+  }
+
   const { t } = useTranslation();
   const [isChecking, setIsChecking] = useState(false);
   const [lastAckId, setLastAckId] = useState<string>('Loading...');
+  const [channelOverride, setChannelOverride] = useState<string>('Loading...');
 
   // Ad testing hooks and states
   const [loadingAd, setLoadingAd] = useState(false);
@@ -63,17 +69,100 @@ export default function DeveloperMenuScreen() {
   };
 
   useEffect(() => {
-    const loadAckId = async () => {
+    const loadSettingsData = async () => {
       try {
         const settings = await getSettings();
         setLastAckId(settings['last_acknowledged_update_id'] || 'None');
+        setChannelOverride(settings['ota_channel_override'] || 'production');
       } catch (e) {
-        console.warn('Failed to load last acknowledged update ID:', e);
+        console.warn('Failed to load developer menu settings:', e);
         setLastAckId('Error');
+        setChannelOverride('Error');
       }
     };
-    loadAckId();
+    loadSettingsData();
   }, []);
+
+  const handleSwitchChannelAndCheckUpdate = async (targetChannel: string) => {
+    if (isChecking) return;
+    setIsChecking(true);
+    try {
+      if (__DEV__) {
+        Alert.alert('開発モード', '開発モードでは本番用のOTAアップデート確認はスキップされます。');
+        setIsChecking(false);
+        return;
+      }
+      if (!Updates.isEnabled) {
+         Alert.alert('アップデート未対応', 'このビルドでは expo-updates が無効化されています。');
+         setIsChecking(false);
+         return;
+      }
+
+      // 1. Set the request headers override
+      await Updates.setUpdateRequestHeadersOverride({ 'expo-channel-name': targetChannel });
+      
+      // 2. Save settings to DB
+      await saveSetting('ota_channel_override', targetChannel);
+      setChannelOverride(targetChannel);
+
+      // 3. Check for update
+      const updateCheckResult = await Updates.checkForUpdateAsync();
+      
+      if (!updateCheckResult.isAvailable) {
+        Alert.alert(
+          'アップデートはありません',
+          `チャンネル「${targetChannel}」には、適用可能な新しいアップデートはありません。`
+        );
+        setIsChecking(false);
+        return;
+      }
+
+      // 4. Defensive check: runtimeVersion check
+      const updateManifest = updateCheckResult.manifest;
+      const manifestRuntime = typeof updateManifest === 'object' && updateManifest !== null
+        ? (updateManifest as any).runtimeVersion || (updateManifest as any).extra?.expoClient?.runtimeVersion
+        : undefined;
+      const currentRuntime = Updates.runtimeVersion;
+
+      if (manifestRuntime && currentRuntime && manifestRuntime !== currentRuntime) {
+        Alert.alert(
+          '互換性エラー (ランタイム不一致)',
+          `適用しようとしたアップデートのランタイムバージョン(${manifestRuntime})が、現在のネイティブアプリのランタイムバージョン(${currentRuntime})と一致しないため、クラッシュ防止のため適用を拒否しました。`
+        );
+        setIsChecking(false);
+        return;
+      }
+
+      // 5. Ask user before downloading & applying
+      Alert.alert(
+        'アップデートが見つかりました',
+        `チャンネル「${targetChannel}」のアップデートをダウンロードして適用しますか？\n(適用後、アプリは再起動されます)`,
+        [
+          { text: 'キャンセル', style: 'cancel', onPress: () => setIsChecking(false) },
+          {
+            text: '適用する',
+            style: 'default',
+            onPress: async () => {
+              try {
+                // 6. Fetch update
+                await Updates.fetchUpdateAsync();
+                // 7. Reload
+                await Updates.reloadAsync();
+              } catch (fetchErr: any) {
+                console.error('Fetch update failed:', fetchErr);
+                Alert.alert('エラー', `アップデートの取得に失敗しました。\n${fetchErr?.message || String(fetchErr)}`);
+                setIsChecking(false);
+              }
+            }
+          }
+        ]
+      );
+    } catch (err: any) {
+      console.error('Channel switch / check update error:', err);
+      Alert.alert('エラー', `切替およびアップデート確認中にエラーが発生しました。\n${err?.message || String(err)}`);
+      setIsChecking(false);
+    }
+  };
 
   const handleShowOtaPopup = () => {
     useOTAUpdateStore.getState().showModal();
@@ -512,6 +601,31 @@ export default function DeveloperMenuScreen() {
               {isChecking ? t('ui.developer_menu.update_checking') : t('ui.developer_menu.update_check_btn')}
             </Text>
           </TouchableOpacity>
+
+          <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.05)', paddingTop: 16 }}>
+            <Text style={[styles.cardDesc, { marginBottom: 12, fontWeight: 'bold' }]}>OTAチャンネル切替 (Channel Surfing):</Text>
+            <Text style={[styles.cardDesc, { fontSize: 13, marginBottom: 8 }]}>
+              現在の適用設定: <Text style={{ color: Theme.colors.primary, fontWeight: 'bold' }}>{channelOverride}</Text>
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 6, marginBottom: 12 }}>
+              {['development', 'staging', 'production'].map((ch) => (
+                <TouchableOpacity
+                  key={ch}
+                  style={[
+                    styles.btnOutline,
+                    { flex: 1, paddingVertical: 8 },
+                    channelOverride === ch && { borderColor: Theme.colors.success, backgroundColor: 'rgba(76, 175, 80, 0.1)' }
+                  ]}
+                  onPress={() => handleSwitchChannelAndCheckUpdate(ch)}
+                  disabled={isChecking}
+                >
+                  <Text style={[styles.btnOutlineText, channelOverride === ch && { color: Theme.colors.success }, { fontSize: 12 }]}>
+                    {ch === 'development' ? 'Dev' : ch === 'staging' ? 'Staging' : 'Prod'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
           <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.05)', paddingTop: 16 }}>
             <Text style={[styles.cardDesc, { marginBottom: 12 }]}>OTAポップアップの検証・デバッグ：</Text>

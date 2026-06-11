@@ -83,6 +83,17 @@ export default function RootLayout() {
         await saveSetting('language', initialLang);
       }
 
+      // OTAチャンネルのオーバーライド設定を読み込み・適用
+      const channelOverride = storedSettings['ota_channel_override'] || '';
+      if (channelOverride && Updates.isEnabled && !__DEV__) {
+        try {
+          await Updates.setUpdateRequestHeadersOverride({ 'expo-channel-name': channelOverride });
+          console.log('Successfully applied update request headers override on startup:', channelOverride);
+        } catch (e) {
+          console.warn('Failed to apply update request headers override on startup:', e);
+        }
+      }
+
       // OTAアップデート後の初回起動検知
       let showOTA = false;
       const lastAckUpdateId = storedSettings['last_acknowledged_update_id'] || '';

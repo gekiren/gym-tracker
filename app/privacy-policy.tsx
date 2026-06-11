@@ -3,6 +3,7 @@ import { Stack, router } from 'expo-router';
 import { Theme } from '../src/theme';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
+import * as Updates from 'expo-updates';
 
 const CONTACT_EMAIL = 'trenotesupport@gmail.com';
 const LAST_UPDATED_JA = '2026年6月4日';
@@ -22,6 +23,12 @@ export default function PrivacyPolicyScreen() {
   };
 
   const handleTap = () => {
+    // ストア規約違反防止のため、本番ビルドでは絶対に機能させない
+    const isProduction = process.env.APP_ENV === 'production';
+    if (isProduction && !__DEV__) {
+      return;
+    }
+
     setTapCount(prev => {
       const next = prev + 1;
       if (next >= 5) {
