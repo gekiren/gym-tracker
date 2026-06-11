@@ -11,23 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.25', // OTA識別用のバージョン文字列
+  version: '1.0.28', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'ワークアウト履歴およびエクスポート用Markdownへのスタンス（Stance）情報記録・反映の追加（スタンス専用列の分離配置）',
-      'ワークアウト履歴詳細画面へのスタンス表示の追加',
-      '既存のスタンス（バリエーション）データの自動移行（マイグレーション）処理の実装',
-      'CSVインポート機能、ルーティン機能との互換性向上'
+      'すべての重量入力欄で、一部端末や欧州地域等のカンマ（,）キーでの小数入力をサポート',
+      '入力中に小数点（ピリオド/カンマ）が勝手に消えてしまう問題、および3桁入力時の入力不整合バグを修正'
     ],
     en: [
-      'Added support for stance information in workout history and Markdown exports (separated Stance column)',
-      'Added stance display to the workout history details screen',
-      'Implemented automatic migration of existing stance (variation) data',
-      'Enhanced compatibility with CSV import and Routine features'
+      'Supported comma (,) decimal inputs on europe/custom keyboards in all weight fields',
+      'Fixed issues where decimals or digits were stripped during active text typing'
     ]
   }
 };

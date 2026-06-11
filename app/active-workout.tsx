@@ -656,7 +656,7 @@ export default function ActiveWorkoutScreen() {
             {isCustomBar && (
               <TextInput
                 style={styles.modalInput}
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 placeholder={t('ui.active_workout.plate_calc_bar_custom_placeholder')}
                 placeholderTextColor={Theme.colors.textMuted}
                 value={customBarText}
@@ -979,14 +979,17 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
 
   // 外部からの更新（プレート計算アプリなどでストアから値が変わった場合）を検知して同期
   useEffect(() => {
+    if (weightSel !== undefined) return;
     if (set.weight != null) {
-      if (parseFloat(localWeight) !== set.weight) setLocalWeight(String(set.weight));
+      const currentLocalFloat = parseFloat(localWeight.replace(',', '.'));
+      if (currentLocalFloat !== set.weight) setLocalWeight(String(set.weight));
     } else {
       setLocalWeight('');
     }
   }, [set.weight]);
 
   useEffect(() => {
+    if (repsSel !== undefined) return;
     if (set.reps != null) {
       if (parseInt(localReps, 10) !== set.reps) setLocalReps(String(set.reps));
     } else {
@@ -995,18 +998,21 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
   }, [set.reps]);
 
   useEffect(() => {
+    if (rpeSel !== undefined) return;
     if (set.rpe != null) {
-      if (parseFloat(localRpe) !== set.rpe) setLocalRpe(String(set.rpe));
+      const currentLocalRpeFloat = parseFloat(localRpe.replace(',', '.'));
+      if (currentLocalRpeFloat !== set.rpe) setLocalRpe(String(set.rpe));
     } else {
       setLocalRpe('');
     }
   }, [set.rpe]);
 
   const handleWeightChange = (val: string) => {
-    if (val === '' || /^\d{0,3}(\.\d{0,1})?$/.test(val)) {
+    if (val === '' || /^\d{0,3}([.,]\d{0,1})?$/.test(val)) {
       setLocalWeight(val);
       setWeightSel(undefined);
-      updateSet(ex.id, set.id, { weight: val !== '' && val !== '.' ? parseFloat(val) : null });
+      const parsedVal = val.replace(',', '.');
+      updateSet(ex.id, set.id, { weight: parsedVal !== '' && parsedVal !== '.' ? parseFloat(parsedVal) : null });
     }
   };
 
@@ -1173,7 +1179,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
             ) : (
               <TextInput 
                 style={styles.input} 
-                keyboardType="numeric" 
+                keyboardType="decimal-pad" 
                 placeholder={set.prev_weight ? String(set.prev_weight) : "-"} 
                 placeholderTextColor="rgba(255,255,255,0.2)"
                 value={localWeight}
@@ -1256,9 +1262,12 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
                   selection={localRpe === '' ? (rpeSel ?? { start: 0, end: 0 }) : rpeSel}
                   onSelectionChange={() => {}}
                   onChangeText={(val) => {
-                    setLocalRpe(val);
-                    setRpeSel(undefined);
-                    updateSet(ex.id, set.id, { rpe: val ? parseFloat(val) : null });
+                    if (val === '' || /^\d{0,2}([.,]\d{0,1})?$/.test(val)) {
+                      setLocalRpe(val);
+                      setRpeSel(undefined);
+                      const parsedVal = val.replace(',', '.');
+                      updateSet(ex.id, set.id, { rpe: parsedVal !== '' && parsedVal !== '.' ? parseFloat(parsedVal) : null });
+                    }
                   }}
                   onFocus={() => { if (localRpe === '') setRpeSel({ start: 0, end: 0 }); }}
                   onBlur={() => setRpeSel(undefined)}
@@ -1402,7 +1411,7 @@ const styles = StyleSheet.create({
   tdSet: { color: Theme.colors.text, textAlign: 'center', fontSize: 16, fontWeight: '500' },
   setVariationBadge: { marginTop: 4, backgroundColor: '#333', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 },
   setVariationText: { color: Theme.colors.textMuted, fontSize: 10, fontWeight: 'bold' },
-  input: { backgroundColor: '#2a2a2a', color: Theme.colors.text, width: 90, marginHorizontal: 3, borderRadius: 4, paddingVertical: 6, textAlign: 'center', fontSize: 16 },
+  input: { backgroundColor: '#2a2a2a', color: Theme.colors.text, width: 90, marginHorizontal: 3, borderRadius: 4, paddingVertical: 6, paddingHorizontal: 4, textAlign: 'center', fontSize: 15 },
   inputReadOnly: { opacity: 0.7, justifyContent: 'center', alignItems: 'center' },
   inputReadOnlyText: { color: Theme.colors.text, fontSize: 16 },
   checkBtn: { width: 36, height: 36, backgroundColor: '#333', borderRadius: 4, alignItems: 'center', justifyContent: 'center' },

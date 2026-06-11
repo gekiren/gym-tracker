@@ -36,6 +36,21 @@ export default function RMCalculatorScreen() {
     }
   }, [weight, reps, isLoaded]);
 
+  const handleWeightChange = (val: string) => {
+    if (val === '' || /^\d{0,3}([.,]\d{0,1})?$/.test(val)) {
+      setWeight(val);
+    }
+  };
+
+  const handleRepsChange = (val: string) => {
+    if (val === '' || /^\d{0,3}$/.test(val)) {
+      const num = parseInt(val, 10);
+      if (isNaN(num) || num <= 100) {
+        setReps(val);
+      }
+    }
+  };
+
   // Epley Formula: 1RM = Weight * (1 + Reps / 30)
   const calculateRMList = (w: number, r: number) => {
     if (w <= 0 || r <= 0) return [];
@@ -64,7 +79,7 @@ export default function RMCalculatorScreen() {
     return list;
   };
 
-  const wNum = parseFloat(weight);
+  const wNum = parseFloat(weight.replace(',', '.'));
   const rNum = parseInt(reps, 10);
   const isValid = !isNaN(wNum) && wNum > 0 && !isNaN(rNum) && rNum > 0;
   
@@ -82,16 +97,17 @@ export default function RMCalculatorScreen() {
                 <SwipeableNumericInput 
                     label={`${t('ui.rm_calc.weight')} (${settings.weightUnit})`}
                     value={weight}
-                    onChangeText={setWeight}
+                    onChangeText={handleWeightChange}
                     step={settings.weightUnit === 'kg' ? 0.5 : 1}
                     sensitivity={12}
                     minValue={0.5}
-                    maxValue={999}
+                    maxValue={999.9}
+                    keyboardType="decimal-pad"
                 />
                 <SwipeableNumericInput 
                     label={t('ui.rm_calc.reps')}
                     value={reps}
-                    onChangeText={setReps}
+                    onChangeText={handleRepsChange}
                     step={1}
                     sensitivity={18}
                     minValue={1}

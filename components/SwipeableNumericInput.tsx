@@ -21,6 +21,7 @@ interface SwipeableNumericInputProps {
   minValue?: number;
   maxValue?: number;
   maxLength?: number;
+  keyboardType?: 'numeric' | 'decimal-pad' | 'number-pad';
 }
 
 export default function SwipeableNumericInput({
@@ -32,8 +33,10 @@ export default function SwipeableNumericInput({
   minValue = 0,
   maxValue = 9999,
   maxLength = 5,
+  keyboardType = 'numeric',
 }: SwipeableNumericInputProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [sel, setSel] = useState<{ start: number; end: number } | undefined>(undefined);
   const inputRef = useRef<TextInput>(null);
 
   // Reanimated shared values
@@ -191,11 +194,19 @@ export default function SwipeableNumericInput({
         <TextInput
           ref={inputRef}
           style={[styles.input, styles.activeInput]}
-          keyboardType="numeric"
+          keyboardType={keyboardType}
           value={value}
           onChangeText={onChangeText}
           maxLength={maxLength}
-          onBlur={() => setIsEditing(false)}
+          selection={value === '' ? (sel ?? { start: 0, end: 0 }) : sel}
+          onSelectionChange={() => {}}
+          onFocus={() => {
+            if (value === '') setSel({ start: 0, end: 0 });
+          }}
+          onBlur={() => {
+            setIsEditing(false);
+            setSel(undefined);
+          }}
           onSubmitEditing={() => setIsEditing(false)}
         />
       ) : (

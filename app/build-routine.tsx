@@ -306,49 +306,16 @@ export default function BuildRoutineScreen() {
                   </View>
 
                   {ex.sets.map((set, setIdx) => (
-                    <View key={set.id} style={styles.setRow}>
-                      <View style={{ width: 50, alignItems: 'center' }}>
-                        <Text style={styles.setNumberText}>{set.set_number}</Text>
-                      </View>
-
-                      <TextInput
-                        style={styles.setInput}
-                        keyboardType="numeric"
-                        placeholder="—"
-                        placeholderTextColor="rgba(255,255,255,0.2)"
-                        value={set.weight !== null ? String(set.weight) : ''}
-                        onChangeText={(val) => {
-                          if (val === '' || /^\d{0,3}(\.\d{0,1})?$/.test(val)) {
-                            updateDraftSet(exIdx, setIdx, { weight: val !== '' ? parseFloat(val) : null });
-                          }
-                        }}
-                      />
-
-                      <TextInput
-                        style={styles.setInput}
-                        keyboardType="numeric"
-                        placeholder="—"
-                        placeholderTextColor="rgba(255,255,255,0.2)"
-                        value={set.reps !== null ? String(set.reps) : ''}
-                        onChangeText={(val) => {
-                          if (val === '' || /^\d{0,3}$/.test(val)) {
-                            updateDraftSet(exIdx, setIdx, { reps: val !== '' ? parseInt(val, 10) : null });
-                          }
-                        }}
-                      />
-
-                      <TouchableOpacity 
-                        onPress={() => removeDraftSet(exIdx, setIdx)} 
-                        style={styles.deleteSetBtn}
-                        disabled={ex.sets.length <= 1}
-                      >
-                        <Ionicons 
-                          name="close" 
-                          size={20} 
-                          color={ex.sets.length > 1 ? Theme.colors.textMuted : 'rgba(255,255,255,0.08)'} 
-                        />
-                      </TouchableOpacity>
-                    </View>
+                    <RoutineSetRow
+                      key={set.id}
+                      exIdx={exIdx}
+                      setIdx={setIdx}
+                      set={set}
+                      updateDraftSet={updateDraftSet}
+                      removeDraftSet={removeDraftSet}
+                      setsCount={ex.sets.length}
+                      t={t}
+                    />
                   ))}
 
                   <TouchableOpacity 
@@ -491,3 +458,95 @@ const styles = StyleSheet.create({
   modalListItemText: { color: Theme.colors.text, fontSize: 16, fontWeight: 'bold', marginBottom: 2 },
   modalListItemSubtext: { color: Theme.colors.textMuted, fontSize: 12 }
 });
+
+function RoutineSetRow({ exIdx, setIdx, set, updateDraftSet, removeDraftSet, setsCount, t }: {
+  exIdx: number;
+  setIdx: number;
+  set: any;
+  updateDraftSet: (exIdx: number, setIdx: number, changes: any) => void;
+  removeDraftSet: (exIdx: number, setIdx: number) => void;
+  setsCount: number;
+  t: any;
+}) {
+  const [localWeight, setLocalWeight] = useState(set.weight !== null ? String(set.weight) : '');
+  const [localReps, setLocalReps] = useState(set.reps !== null ? String(set.reps) : '');
+  const [isFocusedWeight, setIsFocusedWeight] = useState(false);
+  const [isFocusedReps, setIsFocusedReps] = useState(false);
+
+  // 外部/親からの更新があった場合のみ同期
+  useEffect(() => {
+    if (isFocusedWeight) return;
+    if (set.weight !== null) {
+      const currentLocalFloat = parseFloat(localWeight.replace(',', '.'));
+      if (currentLocalFloat !== set.weight) setLocalWeight(String(set.weight));
+    } else {
+      setLocalWeight('');
+    }
+  }, [set.weight]);
+
+  useEffect(() => {
+    if (isFocusedReps) return;
+    if (set.reps !== null) {
+      if (parseInt(localReps, 10) !== set.reps) setLocalReps(String(set.reps));
+    } else {
+      setLocalReps('');
+    }
+  }, [set.reps]);
+
+  const handleWeightChange = (val: string) => {
+    if (val === '' || /^\d{0,3}([.,]\d{0,1})?$/.test(val)) {
+      setLocalWeight(val);
+      const parsedVal = val.replace(',', '.');
+      updateDraftSet(exIdx, setIdx, { weight: parsedVal !== '' && parsedVal !== '.' ? parseFloat(parsedVal) : null });
+    }
+  };
+
+  const handleRepsChange = (val: string) => {
+    if (val === '' || /^\d{0,3}$/.test(val)) {
+      setLocalReps(val);
+      updateDraftSet(exIdx, setIdx, { reps: val !== '' ? parseInt(val, 10) : null });
+    }
+  };
+
+  return (
+    <View style={styles.setRow}>
+      <View style={{ width: 50, alignItems: 'center' }}>
+        <Text style={styles.setNumberText}>{set.set_number}</Text>
+      </View>
+
+      <TextInput
+        style={styles.setInput}
+        keyboardType="decimal-pad"
+        placeholder="—"
+        placeholderTextColor="rgba(255,255,255,0.2)"
+        value={localWeight}
+        onChangeText={handleWeightChange}
+        onFocus={() => setIsFocusedWeight(true)}
+        onBlur={() => setIsFocusedWeight(false)}
+      />
+
+      <TextInput
+        style={styles.setInput}
+        keyboardType="numeric"
+        placeholder="—"
+        placeholderTextColor="rgba(255,255,255,0.2)"
+        value={localReps}
+        onChangeText={handleRepsChange}
+        onFocus={() => setIsFocusedReps(true)}
+        onBlur={() => setIsFocusedReps(false)}
+      />
+
+      <TouchableOpacity 
+        onPress={() => removeDraftSet(exIdx, setIdx)} 
+        style={styles.deleteSetBtn}
+        disabled={setsCount <= 1}
+      >
+        <Ionicons 
+          name="close" 
+          size={20} 
+          color={setsCount > 1 ? Theme.colors.textMuted : 'rgba(255,255,255,0.08)'} 
+        />
+      </TouchableOpacity>
+    </View>
+  );
+}

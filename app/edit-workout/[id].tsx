@@ -39,7 +39,8 @@ export default function EditWorkoutScreen() {
   const handleChangeSet = (exIndex: number, setIndex: number, field: 'weight' | 'reps' | 'rpe', value: string) => {
     setData((prev: any) => {
       const copy = { ...prev };
-      copy.exercises[exIndex].sets[setIndex][field] = value ? parseFloat(value) : null;
+      const parsedVal = value ? value.replace(',', '.') : '';
+      copy.exercises[exIndex].sets[setIndex][field] = parsedVal ? parseFloat(parsedVal) : null;
       return copy;
     });
   };
@@ -158,30 +159,14 @@ export default function EditWorkoutScreen() {
               if (s._deleted) return null; // Hide deleted sets
               
               return (
-                <View key={s.id} style={styles.row}>
-                  <Text style={styles.tdSet}>{s.set_number}</Text>
-                  <TextInput 
-                    style={styles.input} 
-                    keyboardType="numeric" 
-                    value={s.weight !== null ? String(s.weight) : ''}
-                    onChangeText={(val) => handleChangeSet(exIdx, sIdx, 'weight', val)}
-                  />
-                  <TextInput 
-                    style={styles.input} 
-                    keyboardType="numeric" 
-                    value={s.reps !== null ? String(s.reps) : ''}
-                    onChangeText={(val) => handleChangeSet(exIdx, sIdx, 'reps', val)}
-                  />
-                  <TextInput 
-                    style={[styles.input, { width: 45, flex: 0 }]} 
-                    keyboardType="numeric" 
-                    value={s.rpe !== null ? String(s.rpe) : ''}
-                    onChangeText={(val) => handleChangeSet(exIdx, sIdx, 'rpe', val)}
-                  />
-                  <TouchableOpacity onPress={() => handleRemoveSet(exIdx, sIdx)} style={{ width: 36, alignItems: 'center' }}>
-                    <Ionicons name="trash-outline" size={20} color={Theme.colors.danger} />
-                  </TouchableOpacity>
-                </View>
+                <EditWorkoutSetRow
+                  key={s.id}
+                  exIdx={exIdx}
+                  sIdx={sIdx}
+                  s={s}
+                  handleChangeSet={handleChangeSet}
+                  handleRemoveSet={handleRemoveSet}
+                />
               );
             })}
           </View>
@@ -222,3 +207,102 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top'
   }
 });
+
+function EditWorkoutSetRow({ exIdx, sIdx, s, handleChangeSet, handleRemoveSet }: {
+  exIdx: number;
+  sIdx: number;
+  s: any;
+  handleChangeSet: (exIdx: number, sIdx: number, field: 'weight' | 'reps' | 'rpe', value: string) => void;
+  handleRemoveSet: (exIdx: number, sIdx: number) => void;
+}) {
+  const [localWeight, setLocalWeight] = useState(s.weight !== null ? String(s.weight) : '');
+  const [localReps, setLocalReps] = useState(s.reps !== null ? String(s.reps) : '');
+  const [localRpe, setLocalRpe] = useState(s.rpe !== null ? String(s.rpe) : '');
+  const [isFocusedWeight, setIsFocusedWeight] = useState(false);
+  const [isFocusedReps, setIsFocusedReps] = useState(false);
+  const [isFocusedRpe, setIsFocusedRpe] = useState(false);
+
+  // 外部からの更新同期
+  useEffect(() => {
+    if (isFocusedWeight) return;
+    if (s.weight !== null) {
+      const currentLocalFloat = parseFloat(localWeight.replace(',', '.'));
+      if (currentLocalFloat !== s.weight) setLocalWeight(String(s.weight));
+    } else {
+      setLocalWeight('');
+    }
+  }, [s.weight]);
+
+  useEffect(() => {
+    if (isFocusedReps) return;
+    if (s.reps !== null) {
+      if (parseInt(localReps, 10) !== s.reps) setLocalReps(String(s.reps));
+    } else {
+      setLocalReps('');
+    }
+  }, [s.reps]);
+
+  useEffect(() => {
+    if (isFocusedRpe) return;
+    if (s.rpe !== null) {
+      const currentLocalRpeFloat = parseFloat(localRpe.replace(',', '.'));
+      if (currentLocalRpeFloat !== s.rpe) setLocalRpe(String(s.rpe));
+    } else {
+      setLocalRpe('');
+    }
+  }, [s.rpe]);
+
+  const handleWeightChange = (val: string) => {
+    if (val === '' || /^\d{0,3}([.,]\d{0,1})?$/.test(val)) {
+      setLocalWeight(val);
+      handleChangeSet(exIdx, sIdx, 'weight', val);
+    }
+  };
+
+  const handleRepsChange = (val: string) => {
+    if (val === '' || /^\d{0,3}$/.test(val)) {
+      setLocalReps(val);
+      handleChangeSet(exIdx, sIdx, 'reps', val);
+    }
+  };
+
+  const handleRpeChange = (val: string) => {
+    if (val === '' || /^\d{0,2}([.,]\d{0,1})?$/.test(val)) {
+      setLocalRpe(val);
+      handleChangeSet(exIdx, sIdx, 'rpe', val);
+    }
+  };
+
+  return (
+    <View style={styles.row}>
+      <Text style={styles.tdSet}>{s.set_number}</Text>
+      <TextInput 
+        style={styles.input} 
+        keyboardType="decimal-pad" 
+        value={localWeight}
+        onChangeText={handleWeightChange}
+        onFocus={() => setIsFocusedWeight(true)}
+        onBlur={() => setIsFocusedWeight(false)}
+      />
+      <TextInput 
+        style={styles.input} 
+        keyboardType="numeric" 
+        value={localReps}
+        onChangeText={handleRepsChange}
+        onFocus={() => setIsFocusedReps(true)}
+        onBlur={() => setIsFocusedReps(false)}
+      />
+      <TextInput 
+        style={[styles.input, { width: 45, flex: 0 }]} 
+        keyboardType="numeric" 
+        value={localRpe}
+        onChangeText={handleRpeChange}
+        onFocus={() => setIsFocusedRpe(true)}
+        onBlur={() => setIsFocusedRpe(false)}
+      />
+      <TouchableOpacity onPress={() => handleRemoveSet(exIdx, sIdx)} style={{ width: 36, alignItems: 'center' }}>
+        <Ionicons name="trash-outline" size={20} color={Theme.colors.danger} />
+      </TouchableOpacity>
+    </View>
+  );
+}
