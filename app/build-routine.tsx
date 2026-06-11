@@ -92,7 +92,8 @@ export default function BuildRoutineScreen() {
         reps: s.reps,
         rpe: s.rpe,
         side: s.side || null,
-        variation: s.variation || null
+        variation: s.variation || null,
+        stance: s.stance || null
       }))
     }));
     setDraftRoutine(`${selectedRoutine.title}${t('ui.common.copy') || ' (Copy)'}`, mapped);
@@ -116,7 +117,10 @@ export default function BuildRoutineScreen() {
               set_number: s.set_number,
               weight: s.weight,
               reps: s.reps,
-              rpe: s.rpe
+              rpe: s.rpe,
+              side: s.side || null,
+              variation: s.variation || null,
+              stance: s.stance || null
             });
           }
         });

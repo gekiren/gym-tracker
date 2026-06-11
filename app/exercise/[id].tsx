@@ -4,7 +4,7 @@ import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { useEffect, useState, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart, BarChart } from 'react-native-chart-kit';
-import { getExerciseById, getExerciseHistory, getPersonalRecords, updateExerciseDefaultVariation, saveSetting } from '../../src/db/database';
+import { getExerciseById, getExerciseHistory, getPersonalRecords, updateExerciseDefaultVariation, updateExerciseDefaultStance, saveSetting } from '../../src/db/database';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useTranslation } from 'react-i18next';
@@ -75,7 +75,7 @@ export default function ExerciseDetailScreen() {
       const setDescs = workout.sets.map((s: any) => {
         let sd = `${s.weight ?? 0}${settings.weightUnit} x ${s.reps ?? 0}回`;
         if (s.side) sd = `[${s.side === 'L' ? '左' : '右'}] ` + sd;
-        if (s.variation) sd += ` (${translateStance(s.variation)})`;
+        if (s.stance || s.variation) sd += ` (${translateStance(s.stance || s.variation)})`;
         if (s.rpe) sd += ` (RPE: ${s.rpe})`;
         return sd;
       });
@@ -110,8 +110,8 @@ export default function ExerciseDetailScreen() {
         if (s.work_seconds != null) timeStr += `${fmtTime(s.work_seconds)}`;
         if (s.rest_seconds != null) timeStr += `${timeStr?' / ':''}rest ${fmtTime(s.rest_seconds)}`;
         if (!timeStr) timeStr = '-';
-        const varStr = s.variation ? ` (${translateStance(s.variation)})` : '';
-        md += `| ${dateStr} | ${s.set_number}${varStr} | ${s.weight ? s.weight + settings.weightUnit : '-'} | ${s.reps ? s.reps + t('ui.common.reps_unit') : '-'} | ${s.rpe || '-'} | ${timeStr} |\n`;
+        const stanceVal = (s.stance || s.variation) ? translateStance(s.stance || s.variation) : '-';
+        md += `| ${dateStr} | ${s.set_number} | ${stanceVal} | ${s.weight ? s.weight + settings.weightUnit : '-'} | ${s.reps ? s.reps + t('ui.common.reps_unit') : '-'} | ${s.rpe || '-'} | ${timeStr} |\n`;
       });
     });
 
@@ -125,7 +125,7 @@ export default function ExerciseDetailScreen() {
 
     sortedHistory.forEach(workout => {
       const matchingSets = workout.sets.filter((s: any) => {
-        const setVariation = s.variation || 'default';
+        const setVariation = s.stance || s.variation || 'default';
         return s.reps === reps && setVariation === variation;
       });
 
@@ -318,26 +318,28 @@ export default function ExerciseDetailScreen() {
             <View>
               <View style={styles.stanceList}>
                 <TouchableOpacity
-                  style={[styles.choiceChip, exercise.default_variation === null && styles.choiceChipActive]}
+                  style={[styles.choiceChip, (exercise.default_stance === null || exercise.default_variation === null) && styles.choiceChipActive]}
                   onPress={async () => {
+                    await updateExerciseDefaultStance(exercise.id, null);
                     await updateExerciseDefaultVariation(exercise.id, null);
-                    setExercise({ ...exercise, default_variation: null });
+                    setExercise({ ...exercise, default_stance: null, default_variation: null });
                   }}
                 >
-                  <Text style={[styles.choiceChipText, exercise.default_variation === null && styles.choiceChipTextActive]}>
+                  <Text style={[styles.choiceChipText, (exercise.default_stance === null || exercise.default_variation === null) && styles.choiceChipTextActive]}>
                     {t('ui.active_workout.stance_standard')}
                   </Text>
                 </TouchableOpacity>
                 
                 {(settings.customStances || []).map((s: string) => {
-                  const isActive = exercise.default_variation === s;
+                  const isActive = exercise.default_stance === s || exercise.default_variation === s;
                   return (
                     <TouchableOpacity
                       key={s}
                       style={[styles.choiceChip, isActive && styles.choiceChipActive]}
                       onPress={async () => {
+                        await updateExerciseDefaultStance(exercise.id, s);
                         await updateExerciseDefaultVariation(exercise.id, s);
-                        setExercise({ ...exercise, default_variation: s });
+                        setExercise({ ...exercise, default_stance: s, default_variation: s });
                       }}
                       onLongPress={() => {
                         Alert.alert(
@@ -352,9 +354,10 @@ export default function ExerciseDetailScreen() {
                                 const next = (settings.customStances || []).filter(item => item !== s);
                                 removeCustomStance(s);
                                 await saveSetting('custom_stances', JSON.stringify(next));
-                                if (exercise.default_variation === s) {
+                                if (exercise.default_stance === s || exercise.default_variation === s) {
+                                  await updateExerciseDefaultStance(exercise.id, null);
                                   await updateExerciseDefaultVariation(exercise.id, null);
-                                  setExercise({ ...exercise, default_variation: null });
+                                  setExercise({ ...exercise, default_stance: null, default_variation: null });
                                 }
                               }
                             }
@@ -404,8 +407,9 @@ export default function ExerciseDetailScreen() {
                           addCustomStance(val);
                           const next = Array.from(new Set([...(settings.customStances || []), val]));
                           await saveSetting('custom_stances', JSON.stringify(next));
+                          await updateExerciseDefaultStance(exercise.id, val);
                           await updateExerciseDefaultVariation(exercise.id, val);
-                          setExercise({ ...exercise, default_variation: val });
+                          setExercise({ ...exercise, default_stance: val, default_variation: val });
                         }
                         setNewStance('');
                         setIsAddingStance(false);
@@ -592,7 +596,7 @@ export default function ExerciseDetailScreen() {
                         <Text style={styles.tdVal}>
                           {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps}${t('ui.common.reps_unit')}` : '-'}
                         </Text>
-                        {s.variation && <View style={styles.historyVariationBadge}><Text style={styles.historyVariationText}>{translateStance(s.variation)}</Text></View>}
+                        {(s.stance || s.variation) && <View style={styles.historyVariationBadge}><Text style={styles.historyVariationText}>{translateStance(s.stance || s.variation)}</Text></View>}
                       </View>
                       {s.rpe && <Text style={styles.tdRpe}>@RPE {s.rpe}</Text>}
                     </View>

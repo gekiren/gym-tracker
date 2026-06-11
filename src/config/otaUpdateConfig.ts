@@ -18,10 +18,16 @@ export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
   },
   notes: {
     ja: [
-      'テスト配信'
+      'ワークアウト履歴およびエクスポート用Markdownへのスタンス（Stance）情報記録・反映の追加（スタンス専用列の分離配置）',
+      'ワークアウト履歴詳細画面へのスタンス表示の追加',
+      '既存のスタンス（バリエーション）データの自動移行（マイグレーション）処理の実装',
+      'CSVインポート機能、ルーティン機能との互換性向上'
     ],
     en: [
-      'Test delivery'
+      'Added support for stance information in workout history and Markdown exports (separated Stance column)',
+      'Added stance display to the workout history details screen',
+      'Implemented automatic migration of existing stance (variation) data',
+      'Enhanced compatibility with CSV import and Routine features'
     ]
   }
 };

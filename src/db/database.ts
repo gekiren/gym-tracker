@@ -18,7 +18,8 @@ export const initDB = async () => {
       muscle_group TEXT,
       equipment TEXT,
       is_unilateral INTEGER DEFAULT 0,
-      default_variation TEXT
+      default_variation TEXT,
+      default_stance TEXT
     );
 
     CREATE TABLE IF NOT EXISTS workouts (
@@ -51,6 +52,7 @@ export const initDB = async () => {
       work_seconds INTEGER,
       side TEXT,
       variation TEXT,
+      stance TEXT,
       FOREIGN KEY(workout_exercise_id) REFERENCES workout_exercises(id) ON DELETE CASCADE
     );
 
@@ -78,6 +80,7 @@ export const initDB = async () => {
       rpe REAL,
       side TEXT,
       variation TEXT,
+      stance TEXT,
       FOREIGN KEY(routine_exercise_id) REFERENCES routine_exercises(id) ON DELETE CASCADE
     );
 
@@ -104,6 +107,7 @@ export const initDB = async () => {
         rpe REAL,
         side TEXT,
         variation TEXT,
+        stance TEXT,
         FOREIGN KEY(routine_exercise_id) REFERENCES routine_exercises(id) ON DELETE CASCADE
       );
     `);
@@ -146,8 +150,36 @@ export const initDB = async () => {
     if (!tableInfoSets.find(c => c.name === 'variation')) {
       await _db.execAsync(`ALTER TABLE workout_sets ADD COLUMN variation TEXT;`);
     }
+    
+    // Migration: Add stance to workout_sets if missing
+    if (!tableInfoSets.find(c => c.name === 'stance')) {
+      await _db.execAsync(`ALTER TABLE workout_sets ADD COLUMN stance TEXT;`);
+      await _db.runAsync(`UPDATE workout_sets SET stance = variation WHERE variation IS NOT NULL`);
+    }
   } catch (e) {
-    console.warn('Migration: Failed to add time/side/variation columns to workout_sets', e);
+    console.warn('Migration: Failed to add time/side/variation/stance columns to workout_sets', e);
+  }
+
+  // Migration: Add stance to routine_sets if missing
+  try {
+    const tableInfoRoutineSets = await _db.getAllAsync<{ name: string }>(`PRAGMA table_info(routine_sets)`);
+    if (!tableInfoRoutineSets.find(c => c.name === 'stance')) {
+      await _db.execAsync(`ALTER TABLE routine_sets ADD COLUMN stance TEXT;`);
+      await _db.runAsync(`UPDATE routine_sets SET stance = variation WHERE variation IS NOT NULL`);
+    }
+  } catch (e) {
+    console.warn('Migration: Failed to add stance column to routine_sets', e);
+  }
+
+  // Migration: Add default_stance to exercises if missing
+  try {
+    const tableInfoEx = await _db.getAllAsync<{ name: string }>(`PRAGMA table_info(exercises)`);
+    if (!tableInfoEx.find(c => c.name === 'default_stance')) {
+      await _db.execAsync(`ALTER TABLE exercises ADD COLUMN default_stance TEXT;`);
+      await _db.runAsync(`UPDATE exercises SET default_stance = default_variation WHERE default_variation IS NOT NULL`);
+    }
+  } catch (e) {
+    console.warn('Migration: Failed to add default_stance column to exercises', e);
   }
 
   // Migration: Add is_unilateral and default_variation to exercises if missing
@@ -570,8 +602,8 @@ export const saveWorkout = async (title: string, startTime: string, endTime: str
     for (const set of ex.sets) {
       if (set.weight != null || set.reps != null) { // only save valid sets
         await conn.runAsync(
-          'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds, side, variation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [weId, set.set_number, set.reps, set.weight, set.rpe, set.is_completed ? 1 : 0, set.rest_seconds || null, set.work_seconds || null, set.side || null, set.variation || null]
+          'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [weId, set.set_number, set.reps, set.weight, set.rpe, set.is_completed ? 1 : 0, set.rest_seconds || null, set.work_seconds || null, set.side || null, set.variation || null, set.stance || null]
         );
       }
     }
@@ -628,8 +660,9 @@ export const getExerciseHistory = async (exerciseId: number) => {
     work_seconds: number | null;
     side: string | null;
     variation: string | null;
+    stance: string | null;
   }>(`
-    SELECT w.id as workout_id, w.start_time, ws.set_number, ws.reps, ws.weight, ws.rpe, ws.rest_seconds, ws.work_seconds, ws.side, ws.variation
+    SELECT w.id as workout_id, w.start_time, ws.set_number, ws.reps, ws.weight, ws.rpe, ws.rest_seconds, ws.work_seconds, ws.side, ws.variation, ws.stance
     FROM workout_sets ws
     JOIN workout_exercises we ON ws.workout_exercise_id = we.id
     JOIN workouts w ON we.workout_id = w.id
@@ -656,18 +689,19 @@ export const getExerciseHistory = async (exerciseId: number) => {
       rest_seconds: row.rest_seconds,
       work_seconds: row.work_seconds,
       side: row.side,
-      variation: row.variation
+      variation: row.variation,
+      stance: row.stance
     });
   }
 
   return Array.from(historyMap.values());
 };
 
-export const addCustomExercise = async (name: string, group: string, equip: string, isUnilateral: boolean = false, defaultVariation: string | null = null) => {
+export const addCustomExercise = async (name: string, group: string, equip: string, isUnilateral: boolean = false, defaultVariation: string | null = null, defaultStance: string | null = null) => {
   const conn = getDB();
   const res = await conn.runAsync(
-    'INSERT INTO exercises (name, muscle_group, equipment, is_unilateral, default_variation) VALUES (?, ?, ?, ?, ?)',
-    [name, group, equip, isUnilateral ? 1 : 0, defaultVariation]
+    'INSERT INTO exercises (name, muscle_group, equipment, is_unilateral, default_variation, default_stance) VALUES (?, ?, ?, ?, ?, ?)',
+    [name, group, equip, isUnilateral ? 1 : 0, defaultVariation, defaultStance]
   );
   return res.lastInsertRowId;
 };
@@ -688,7 +722,7 @@ export const getPreviousWorkoutSets = async (exerciseId: number) => {
 
   // Fetch the sets for that specific execution
   const sets = await conn.getAllAsync(`
-    SELECT set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation
+    SELECT set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance
     FROM workout_sets 
     WHERE workout_exercise_id = ?
     ORDER BY set_number ASC, id ASC
@@ -727,8 +761,8 @@ export const getRoutines = async () => {
   
   const result = [];
   for (const r of routines) {
-    const exercises = await conn.getAllAsync<{id: number, name: string, muscle_group: string, equipment: string, is_unilateral: number, routine_exercise_id: number}>(`
-      SELECT e.id, e.name, e.muscle_group, e.equipment, e.is_unilateral, re.id as routine_exercise_id
+    const exercises = await conn.getAllAsync<{id: number, name: string, muscle_group: string, equipment: string, is_unilateral: number, routine_exercise_id: number, default_variation?: string | null, default_stance?: string | null}>(`
+      SELECT e.id, e.name, e.muscle_group, e.equipment, e.is_unilateral, e.default_variation, e.default_stance, re.id as routine_exercise_id
       FROM routine_exercises re
       JOIN exercises e ON re.exercise_id = e.id
       WHERE re.routine_id = ?
@@ -738,7 +772,7 @@ export const getRoutines = async () => {
     const exercisesWithSets = [];
     for (const ex of exercises) {
       const sets = await conn.getAllAsync(`
-        SELECT set_number, reps, weight, rpe, side, variation
+        SELECT set_number, reps, weight, rpe, side, variation, stance
         FROM routine_sets
         WHERE routine_exercise_id = ?
         ORDER BY set_number ASC, id ASC
@@ -766,8 +800,8 @@ export const addRoutine = async (title: string, description: string, exercises: 
     
     for (const s of ex.sets) {
       await conn.runAsync(
-        'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe, side, variation) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [routineExerciseId, s.set_number, s.reps, s.weight, s.rpe, s.side || null, s.variation || null]
+        'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [routineExerciseId, s.set_number, s.reps, s.weight, s.rpe, s.side || null, s.variation || null, s.stance || null]
       );
     }
   }
@@ -867,7 +901,7 @@ export const loadFullWorkoutData = async (workoutId: number) => {
   
   const exercisesData = [];
   for (const ex of exercisesRows) {
-    const sets = await db.getAllAsync('SELECT id, set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number ASC, id ASC', [ex.workout_exercise_id]) as any[];
+    const sets = await db.getAllAsync('SELECT id, set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number ASC, id ASC', [ex.workout_exercise_id]) as any[];
     exercisesData.push({
       workout_exercise_id: ex.workout_exercise_id,
       exercise_id: ex.exercise_id,
@@ -888,9 +922,13 @@ export const loadFullWorkoutData = async (workoutId: number) => {
   };
 };
 
-export const updateWorkoutSet = async (setId: number, weight: number | null, reps: number | null, rpe: number | null, variation?: string | null) => {
+export const updateWorkoutSet = async (setId: number, weight: number | null, reps: number | null, rpe: number | null, variation?: string | null, stance?: string | null) => {
   const conn = getDB();
-  if (variation !== undefined) {
+  if (stance !== undefined && variation !== undefined) {
+    await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ?, rpe = ?, variation = ?, stance = ? WHERE id = ?', [weight, reps, rpe, variation, stance, setId]);
+  } else if (stance !== undefined) {
+    await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ?, rpe = ?, stance = ? WHERE id = ?', [weight, reps, rpe, stance, setId]);
+  } else if (variation !== undefined) {
     await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ?, rpe = ?, variation = ? WHERE id = ?', [weight, reps, rpe, variation, setId]);
   } else {
     await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ?, rpe = ? WHERE id = ?', [weight, reps, rpe, setId]);
@@ -940,6 +978,11 @@ export const deleteExercise = async (id: number) => {
 export const updateExerciseDefaultVariation = async (exerciseId: number, variation: string | null) => {
   const conn = getDB();
   await conn.runAsync('UPDATE exercises SET default_variation = ? WHERE id = ?', [variation, exerciseId]);
+};
+
+export const updateExerciseDefaultStance = async (exerciseId: number, stance: string | null) => {
+  const conn = getDB();
+  await conn.runAsync('UPDATE exercises SET default_stance = ? WHERE id = ?', [stance, exerciseId]);
 };
 
 export const getAITokensBalance = async (): Promise<number> => {
@@ -1007,6 +1050,7 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
     rpe: number | null;
     side: string | null;
     variation: string | null;
+    stance: string | null;
   }
 
   const rows = await conn.getAllAsync<FlatRow>(`
@@ -1024,7 +1068,8 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
       ws.reps,
       ws.rpe,
       ws.side,
-      ws.variation
+      ws.variation,
+      ws.stance
     FROM (
       SELECT id, title, start_time, end_time, notes
       FROM workouts
@@ -1048,6 +1093,7 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
     rpe: number | null;
     side: string | null;
     variation: string | null;
+    stance: string | null;
   }
 
   interface ExerciseData {
@@ -1108,7 +1154,8 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
       reps: r.reps,
       rpe: r.rpe,
       side: r.side,
-      variation: r.variation
+      variation: r.variation,
+      stance: r.stance
     });
   }
 
@@ -1135,13 +1182,13 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
         continue;
       }
 
-      // Group consecutive identical sets to save space/tokens
       interface SetGroup {
         weight: number;
         reps: number;
         rpe: number | null;
         side: string | null;
         variation: string | null;
+        stance: string | null;
         count: number;
       }
 
@@ -1152,6 +1199,7 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
         const rpe = s.rpe;
         const side = s.side;
         const variation = s.variation;
+        const stance = s.stance || null;
 
         const lastGroup = groups[groups.length - 1];
         if (
@@ -1160,7 +1208,8 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
           lastGroup.reps === reps &&
           lastGroup.rpe === rpe &&
           lastGroup.side === side &&
-          lastGroup.variation === variation
+          lastGroup.variation === variation &&
+          lastGroup.stance === stance
         ) {
           lastGroup.count += 1;
         } else {
@@ -1170,6 +1219,7 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
             rpe,
             side,
             variation,
+            stance,
             count: 1
           });
         }
@@ -1182,6 +1232,7 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
         }
         if (g.side) sDesc = `[${g.side === 'L' ? '左' : '右'}] ` + sDesc;
         if (g.variation) sDesc += ` (${g.variation})`;
+        if (g.stance) sDesc += ` (スタンス: ${g.stance})`;
         if (g.rpe) sDesc += ` (RPE: ${g.rpe})`;
         return sDesc;
       });

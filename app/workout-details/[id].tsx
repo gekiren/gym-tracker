@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { loadFullWorkoutData } from '../../src/db/database';
 import { Theme } from '../../src/theme';
 import { useTranslation } from 'react-i18next';
-import { translateExercise } from '../../src/i18n';
+import { translateExercise, translateStance } from '../../src/i18n';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 
 export default function WorkoutDetailsScreen() {
@@ -147,6 +147,7 @@ export default function WorkoutDetailsScreen() {
               if (set.work_seconds != null) timeStr += `⏱️ ${fmtTime(set.work_seconds)} `;
               if (set.rest_seconds != null) timeStr += `☕ ${fmtTime(set.rest_seconds)}`;
               timeStr = timeStr.trim();
+              const hasStance = !!(set.stance || set.variation);
               return (
                 <View key={set.id} style={{ borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', paddingVertical: 8 }}>
                   <View style={[styles.row, { borderBottomWidth: 0, paddingVertical: 0 }]}>
@@ -156,10 +157,15 @@ export default function WorkoutDetailsScreen() {
                     <Text style={[styles.tdValue, { width: 45, flex: 0 }]}>{set.rpe ?? '-'}</Text>
                     <Text style={[styles.tdValue, { color: Theme.colors.primary }]}>{currentRM ?? '-'}</Text>
                   </View>
-                  {timeStr ? (
-                    <Text style={{ textAlign: 'right', fontSize: 11, color: Theme.colors.textMuted, marginRight: 12, marginTop: 4 }}>
-                      {timeStr}
-                    </Text>
+                  {(hasStance || timeStr) ? (
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, marginTop: 4 }}>
+                      <Text style={{ fontSize: 11, color: Theme.colors.textMuted }}>
+                        {hasStance ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.stance || set.variation)}` : ''}
+                      </Text>
+                      <Text style={{ fontSize: 11, color: Theme.colors.textMuted }}>
+                        {timeStr}
+                      </Text>
+                    </View>
                   ) : null}
                 </View>
               );

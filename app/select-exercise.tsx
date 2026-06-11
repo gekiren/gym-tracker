@@ -18,6 +18,7 @@ type Exercise = {
   equipment: string;
   is_unilateral?: number;
   default_variation?: string | null;
+  default_stance?: string | null;
 };
 
 export default function SelectExerciseScreen() {
@@ -80,9 +81,9 @@ export default function SelectExerciseScreen() {
     try {
       const prevSets = await getPreviousWorkoutSets(ex.id);
       const personalRecords = await getPersonalRecords(ex.id);
-      addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation, equipment: ex.equipment, muscle_group: ex.muscle_group });
+      addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation, default_stance: ex.default_stance, equipment: ex.equipment, muscle_group: ex.muscle_group });
     } catch (e) {
-      addExercise({ id: ex.id, name: ex.name, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation, equipment: ex.equipment, muscle_group: ex.muscle_group });
+      addExercise({ id: ex.id, name: ex.name, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation, default_stance: ex.default_stance, equipment: ex.equipment, muscle_group: ex.muscle_group });
     }
     router.back();
   };
@@ -103,12 +104,13 @@ export default function SelectExerciseScreen() {
         newGroup.trim() || 'その他',
         newEquip.trim() || 'その他',
         isUnilateral,
+        defaultVar,
         defaultVar
       );
       setModalVisible(false);
       setSearch('');
       await fetchAll();
-      handleSelect({ id: newId, name: newName.trim(), muscle_group: newGroup, equipment: newEquip, is_unilateral: isUnilateral ? 1 : 0, default_variation: defaultVar });
+      handleSelect({ id: newId, name: newName.trim(), muscle_group: newGroup, equipment: newEquip, is_unilateral: isUnilateral ? 1 : 0, default_variation: defaultVar, default_stance: defaultVar });
     } catch (e) {
       Alert.alert(t('ui.common.error'), t('ui.exercise_select.error_add_failed'));
     }

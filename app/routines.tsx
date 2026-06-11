@@ -103,14 +103,16 @@ export default function RoutinesScreen() {
                 reps: s.reps,
                 rpe: s.rpe,
                 side: 'L',
-                variation: s.variation || null
+                variation: s.variation || null,
+                stance: s.stance || null
               });
               initialSets.push({
                 weight: s.weight,
                 reps: s.reps,
                 rpe: s.rpe,
                 side: 'R',
-                variation: s.variation || null
+                variation: s.variation || null,
+                stance: s.stance || null
               });
             }
           } else {
@@ -119,20 +121,24 @@ export default function RoutinesScreen() {
               reps: s.reps,
               rpe: s.rpe,
               side: null,
-              variation: s.variation || null
+              variation: s.variation || null,
+              stance: s.stance || null
             }));
           }
         } else {
           initialSets = await getPreviousWorkoutSets(ex.id);
         }
-
+ 
         addExercise({ 
           id: ex.id, 
           name: ex.name, 
           previousSets: initialSets, 
           personalRecords, 
           is_unilateral: ex.is_unilateral, 
-          equipment: ex.equipment 
+          default_variation: ex.default_variation || null,
+          default_stance: ex.default_stance || null,
+          equipment: ex.equipment,
+          muscle_group: ex.muscle_group
         });
       }
       router.push('/active-workout');

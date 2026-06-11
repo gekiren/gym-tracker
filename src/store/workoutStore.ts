@@ -16,6 +16,7 @@ export type SetRecord = {
   work_seconds?: number | null;
   side?: 'L' | 'R' | null;
   variation?: string | null;
+  stance?: string | null;
 };
 
 export type ActiveExercise = {
@@ -29,6 +30,7 @@ export type ActiveExercise = {
   notes: string;
   personalRecords?: Record<string, Record<number, number>>;
   default_variation?: string | null;
+  default_stance?: string | null;
 };
 
 export interface WorkoutCompletionAchievement {
@@ -65,8 +67,9 @@ interface WorkoutState {
   updateWorkoutNotes: (notes: string) => void;
   updateExerciseNotes: (exerciseId: string, notes: string) => void;
   updateExerciseVariation: (exerciseId: string, variation: string | null) => void;
+  updateExerciseStance: (exerciseId: string, stance: string | null) => void;
   endWorkout: () => void;
-  addExercise: (exercise: { id: number, name: string, previousSets?: any[], personalRecords?: Record<string, Record<number, number>>, is_unilateral?: number, default_variation?: string | null, equipment?: string, muscle_group?: string }) => void;
+  addExercise: (exercise: { id: number, name: string, previousSets?: any[], personalRecords?: Record<string, Record<number, number>>, is_unilateral?: number, default_variation?: string | null, default_stance?: string | null, equipment?: string, muscle_group?: string }) => void;
   addSet: (exerciseId: string) => void;
   removeSet: (exerciseId: string, setId: string) => void;
   updateSet: (exerciseId: string, setId: string, changes: Partial<SetRecord>) => void;
@@ -316,6 +319,16 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     })
   })),
 
+  updateExerciseStance: (exerciseId, stance) => set((state) => ({
+    exercises: state.exercises.map(ex => {
+      if (ex.id === exerciseId) {
+        const newSets = ex.sets.map(s => s.is_completed ? s : { ...s, stance });
+        return { ...ex, default_stance: stance, sets: newSets };
+      }
+      return ex;
+    })
+  })),
+
   endWorkout: () => {
     cancelRestTimer();
     set({
@@ -344,13 +357,14 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         rpe: prev.rpe,
         is_completed: false,
         side: prev.side || null,
-        variation: prev.variation || null
+        variation: prev.variation || null,
+        stance: prev.stance || null
       }));
     } else {
       if (exercise.is_unilateral) {
         initialSets = [
-          { id: Math.random().toString(36).substring(7), set_number: 1, weight: null, reps: null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'L', variation: exercise.default_variation || null },
-          { id: Math.random().toString(36).substring(7), set_number: 1, weight: null, reps: null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'R', variation: exercise.default_variation || null }
+          { id: Math.random().toString(36).substring(7), set_number: 1, weight: null, reps: null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'L', variation: exercise.default_variation || null, stance: exercise.default_stance || null },
+          { id: Math.random().toString(36).substring(7), set_number: 1, weight: null, reps: null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'R', variation: exercise.default_variation || null, stance: exercise.default_stance || null }
         ];
       } else {
         initialSets = [{ 
@@ -362,7 +376,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           is_completed: false,
           rest_seconds: null,
           work_seconds: null,
-          variation: exercise.default_variation || null
+          variation: exercise.default_variation || null,
+          stance: exercise.default_stance || null
         }];
       }
     }
@@ -380,7 +395,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           sets: initialSets,
           notes: '',
           personalRecords: exercise.personalRecords || {},
-          default_variation: exercise.default_variation || null
+          default_variation: exercise.default_variation || null,
+          default_stance: exercise.default_stance || null
         }
       ]
     };
@@ -392,14 +408,15 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         const lastSet = ex.sets[ex.sets.length - 1];
         const newSetNum = lastSet ? lastSet.set_number + 1 : 1;
         const inheritedVariation = ex.default_variation || (lastSet ? lastSet.variation : null);
+        const inheritedStance = ex.default_stance || (lastSet ? lastSet.stance : null);
         
         if (ex.is_unilateral) {
           return {
             ...ex,
             sets: [
               ...ex.sets,
-              { id: Math.random().toString(36).substring(7), set_number: newSetNum, weight: lastSet ? lastSet.weight : null, reps: lastSet ? lastSet.reps : null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'L', variation: inheritedVariation },
-              { id: Math.random().toString(36).substring(7), set_number: newSetNum, weight: lastSet ? lastSet.weight : null, reps: lastSet ? lastSet.reps : null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'R', variation: inheritedVariation }
+              { id: Math.random().toString(36).substring(7), set_number: newSetNum, weight: lastSet ? lastSet.weight : null, reps: lastSet ? lastSet.reps : null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'L', variation: inheritedVariation, stance: inheritedStance },
+              { id: Math.random().toString(36).substring(7), set_number: newSetNum, weight: lastSet ? lastSet.weight : null, reps: lastSet ? lastSet.reps : null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'R', variation: inheritedVariation, stance: inheritedStance }
             ]
           };
         } else {
@@ -414,7 +431,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
               is_completed: false,
               rest_seconds: null,
               work_seconds: null,
-              variation: inheritedVariation
+              variation: inheritedVariation,
+              stance: inheritedStance
             }]
           };
         }

@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import i18n, { translateExercise } from '../i18n';
+import i18n, { translateExercise, translateStance } from '../i18n';
 
 type SetData = {
   set_number: number;
@@ -8,12 +8,14 @@ type SetData = {
   rpe?: number;
   rest_seconds?: number;
   work_seconds?: number;
+  stance?: string | null;
 };
 
 type WorkoutExerciseData = {
   exercise_name: string;
   notes?: string;
   sets: SetData[];
+  default_stance?: string | null;
 };
 
 type WorkoutData = {
@@ -41,12 +43,13 @@ export const formatWorkoutToMarkdown = (workout: WorkoutData): string => {
     if (ex.notes) {
       md += `${i18n.t('ui.markdown.exercise_note')}: ${ex.notes}\n\n`;
     }
-    md += `| Set | Weight | Reps | RPE | Time/Rest |\n`;
-    md += `|---|---|---|---|---|\n`;
+    md += `| Set | Stance | Weight | Reps | RPE | Time/Rest |\n`;
+    md += `|---|---|---|---|---|---|\n`;
     ex.sets.forEach((set) => {
       const w = set.weight ? `${set.weight} ${i18n.t('ui.common.weight_unit')}` : '-';
       const r = set.reps ? `${set.reps}` : '-';
       const rpe = set.rpe ? `@${set.rpe}` : '-';
+      const stance = set.stance ? translateStance(set.stance) : '-';
       let timeStr = '';
       const fmtTime = (secs: number) => {
         const m = Math.floor(secs / 60);
@@ -59,7 +62,7 @@ export const formatWorkoutToMarkdown = (workout: WorkoutData): string => {
          timeStr += `rest ${fmtTime(set.rest_seconds)}`;
       }
       if (!timeStr) timeStr = '-';
-      md += `| ${set.set_number} | ${w} | ${r} | ${rpe} | ${timeStr} |\n`;
+      md += `| ${set.set_number} | ${stance} | ${w} | ${r} | ${rpe} | ${timeStr} |\n`;
     });
     md += `\n`;
   });

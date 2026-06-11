@@ -169,7 +169,7 @@
     "exercise_detail": {
       "title": "詳細",
       "export_md_header": "## {{name}} 記録履歴\n\n",
-      "export_md_table_header": "| 日付 | セット | 重量 | 回数 | RPE | Time/Rest |\n| :--- | :--- | :--- | :--- | :--- | :--- |\n",
+      "export_md_table_header": "| 日付 | セット | スタンス | 重量 | 回数 | RPE | Time/Rest |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n",
       "copy_success_title": "コピー完了",
       "copy_success_message": "履歴をMarkdown形式でクリップボードにコピーしました。",
       "not_found": "種目が見つかりません。",

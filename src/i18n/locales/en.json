@@ -170,7 +170,7 @@
     "exercise_detail": {
       "title": "Exercise Details",
       "export_md_header": "## {{name}} Records\n\n",
-      "export_md_table_header": "| Date | Set | Weight | Reps | RPE | Time/Rest |\n| :--- | :--- | :--- | :--- | :--- | :--- |\n",
+      "export_md_table_header": "| Date | Set | Stance | Weight | Reps | RPE | Time/Rest |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n",
       "copy_success_title": "Copied",
       "copy_success_message": "History copied to clipboard in Markdown format.",
       "not_found": "Exercise not found.",

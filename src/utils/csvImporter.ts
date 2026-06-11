@@ -293,8 +293,8 @@ export const pickAndImportCSV = async (): Promise<ImportResult> => {
           for (const s of exSets) {
             const finalSetNum = s.setNumber || nextSetNum++;
             await db.runAsync(
-              'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds, side, variation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-              [weId, finalSetNum, s.reps, s.weight, null, 1, null, null, null, null]
+              'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+              [weId, finalSetNum, s.reps, s.weight, null, 1, null, null, null, null, null]
             );
             totalSetsImported++;
           }

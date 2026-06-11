@@ -53,7 +53,7 @@ export default function ActiveWorkoutScreen() {
       const setDescs = ex.sets.map(s => {
         let sd = `${s.weight ?? 0}${settings.weightUnit} x ${s.reps ?? 0}回`;
         if (s.side) sd = `[${s.side === 'L' ? '左' : '右'}] ` + sd;
-        if (s.variation) sd += ` (${s.variation})`;
+        if (s.stance || s.variation) sd += ` (${s.stance || s.variation})`;
         if (s.rpe) sd += ` (RPE: ${s.rpe})`;
         return sd;
       });
@@ -77,7 +77,7 @@ export default function ActiveWorkoutScreen() {
     const setDescs = ex.sets.map((s: any) => {
       let sd = `${s.weight ?? 0}${settings.weightUnit} x ${s.reps ?? 0}回`;
       if (s.side) sd = `[${s.side === 'L' ? '左' : '右'}] ` + sd;
-      if (s.variation) sd += ` (${s.variation})`;
+      if (s.stance || s.variation) sd += ` (${s.stance || s.variation})`;
       if (s.rpe) sd += ` (RPE: ${s.rpe})`;
       return sd;
     });
@@ -492,13 +492,14 @@ export default function ActiveWorkoutScreen() {
                   <TouchableOpacity 
                     style={styles.exerciseVariationBtn}
                     onPress={() => {
-                      setStanceModalTarget({ type: 'exercise', exId: ex.id, currentValue: ex.default_variation || null });
-                      setCustomStance(ex.default_variation || '');
+                      const curStance = ex.default_stance || ex.default_variation || null;
+                      setStanceModalTarget({ type: 'exercise', exId: ex.id, currentValue: curStance });
+                      setCustomStance(curStance || '');
                       setStanceModalVisible(true);
                     }}
                   >
                     <Text style={styles.exerciseVariationText}>
-                      {t('ui.active_workout.stance_label')}: {ex.default_variation ? translateStance(ex.default_variation) : t('ui.active_workout.stance_standard')}
+                      {t('ui.active_workout.stance_label')}: {(ex.default_stance || ex.default_variation) ? translateStance((ex.default_stance || ex.default_variation) as string) : t('ui.active_workout.stance_standard')}
                     </Text>
                     <Ionicons name="chevron-down" size={12} color={Theme.colors.primary} />
                   </TouchableOpacity>
@@ -812,9 +813,10 @@ export default function ActiveWorkoutScreen() {
                           style={[styles.choiceChip, isActive && styles.choiceChipActive]}
                           onPress={() => {
                             if (stanceModalTarget?.type === 'exercise') {
+                              useWorkoutStore.getState().updateExerciseStance(stanceModalTarget.exId, val);
                               useWorkoutStore.getState().updateExerciseVariation(stanceModalTarget.exId, val);
                             } else if (stanceModalTarget?.type === 'set' && stanceModalTarget.setId) {
-                              useWorkoutStore.getState().updateSet(stanceModalTarget.exId, stanceModalTarget.setId, { variation: val });
+                              useWorkoutStore.getState().updateSet(stanceModalTarget.exId, stanceModalTarget.setId, { stance: val, variation: val });
                             }
                             setStanceModalVisible(false);
                           }}
@@ -1017,7 +1019,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
   };
 
   const currentRM = calculateRM(set.weight, set.reps);
-  const varKey = set.variation || 'default';
+  const varKey = set.stance || set.variation || 'default';
   const prMapForVar = ex.personalRecords ? ex.personalRecords[varKey] : null;
   const isPR = !!(set.weight != null && set.reps != null && set.reps > 0 && set.weight >= 0 && 
                 (!prMapForVar || prMapForVar[set.reps] === undefined || set.weight > prMapForVar[set.reps]));
@@ -1285,19 +1287,20 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
           <View style={{ flex: 1.8, flexDirection: 'row', alignItems: 'center', paddingLeft: 4 }}>
             {set.is_completed ? (
               <Text style={{ color: Theme.colors.textMuted, fontSize: 11 }} numberOfLines={1}>
-                {set.variation ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.variation)}` : `${t('ui.active_workout.stance_label')}: -`}
+                {(set.stance || set.variation) ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.stance || set.variation)}` : `${t('ui.active_workout.stance_label')}: -`}
               </Text>
             ) : (
               <TouchableOpacity 
                 onPress={() => {
-                  setStanceModalTarget({ type: 'set', exId: ex.id, setId: set.id, currentValue: set.variation || null });
-                  setCustomStance(set.variation || '');
+                  const curStance = set.stance || set.variation || null;
+                  setStanceModalTarget({ type: 'set', exId: ex.id, setId: set.id, currentValue: curStance });
+                  setCustomStance(curStance || '');
                   setStanceModalVisible(true);
                 }}
                 style={{ flexDirection: 'row', alignItems: 'center' }}
               >
                 <Text style={{ color: Theme.colors.primary, fontSize: 11, textDecorationLine: 'underline' }} numberOfLines={1}>
-                  {set.variation ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.variation)}` : t('ui.active_workout.stance_add_link')}
+                  {(set.stance || set.variation) ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.stance || set.variation)}` : t('ui.active_workout.stance_add_link')}
                 </Text>
               </TouchableOpacity>
             )}
