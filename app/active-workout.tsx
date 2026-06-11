@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert,
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useWorkoutStore } from '../src/store/workoutStore';
@@ -955,6 +955,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
   const [weightSel, setWeightSel] = useState<{start:number;end:number}|undefined>(undefined);
   const [repsSel, setRepsSel] = useState<{start:number;end:number}|undefined>(undefined);
   const [rpeSel, setRpeSel] = useState<{start:number;end:number}|undefined>(undefined);
+  const repsInputRef = useRef<TextInput>(null);
 
   // 有酸素ストップウォッチ state
   const isAerobic = ex.muscle_group === '有酸素';
@@ -1191,6 +1192,8 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
                   if (localWeight === '') setWeightSel({ start: 0, end: 0 });
                 }}
                 onBlur={() => setWeightSel(undefined)}
+                returnKeyType="next"
+                onSubmitEditing={() => repsInputRef.current?.focus()}
               />
             )}
 
@@ -1202,6 +1205,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
                 </View>
               ) : (
                 <TextInput 
+                  ref={repsInputRef}
                   style={[styles.input, { width: 70 }]} 
                   keyboardType="numeric" 
                   placeholder={set.prev_reps ? `${set.prev_reps}秒` : "秒"} 
@@ -1212,6 +1216,8 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
                   onChangeText={handleRepsChange}
                   onFocus={() => { if (localReps === '') setRepsSel({ start: 0, end: 0 }); }}
                   onBlur={() => setRepsSel(undefined)}
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
                 />
               )
             ) : set.is_completed ? (
@@ -1220,6 +1226,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
               </View>
             ) : (
               <TextInput 
+                ref={repsInputRef}
                 style={[styles.input, { width: 70 }]} 
                 keyboardType="numeric" 
                 placeholder={set.prev_reps ? String(set.prev_reps) : "-"} 
@@ -1230,6 +1237,8 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
                 onChangeText={handleRepsChange}
                 onFocus={() => { if (localReps === '') setRepsSel({ start: 0, end: 0 }); }}
                 onBlur={() => setRepsSel(undefined)}
+                returnKeyType="done"
+                onSubmitEditing={() => Keyboard.dismiss()}
               />
             )}
 
