@@ -1015,7 +1015,6 @@ const styles = StyleSheet.create({
   dayBox: {
     width: 36,
     height: 36,
-    borderRadius: 8, // 角丸の四角形（Square）
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
