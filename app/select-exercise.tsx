@@ -285,6 +285,7 @@ export default function SelectExerciseScreen() {
           renderItem={renderItem}
           keyboardShouldPersistTaps="handled"
           removeClippedSubviews={false}
+          contentContainerStyle={styles.listContent}
           renderSectionHeader={({ section }) => (
             <View style={styles.sectionHeader}>
               {section.title === t('ui.exercise_select.section_favorites') && (
@@ -374,6 +375,7 @@ export default function SelectExerciseScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
+  listContent: { paddingBottom: 120 },
   actionRow: { flexDirection: 'row', paddingHorizontal: Theme.spacing.md, marginVertical: 8 },
   searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: Theme.colors.card, paddingHorizontal: Theme.spacing.sm, borderRadius: Theme.borderRadius.md, marginRight: Theme.spacing.md },
   searchIcon: { marginRight: 8 },
