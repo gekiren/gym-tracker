@@ -36,7 +36,7 @@ export function calculateShareStats(
   let totalVolume = 0;
 
   workout.exercises.forEach(ex => {
-    const completedSets = ex.sets.filter(s => s.is_completed);
+    const completedSets = ex.sets.filter(s => !!s.is_completed);
     const exBw = (ex.equipment === '自重' && settings.bodyWeight) ? settings.bodyWeight : 0;
     
     completedSets.forEach(s => {

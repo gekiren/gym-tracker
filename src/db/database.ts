@@ -902,7 +902,11 @@ export const loadFullWorkoutData = async (workoutId: number) => {
   
   const exercisesData = [];
   for (const ex of exercisesRows) {
-    const sets = await db.getAllAsync('SELECT id, set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number ASC, id ASC', [ex.workout_exercise_id]) as any[];
+    const setsRows = await db.getAllAsync('SELECT id, set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance, is_completed FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number ASC, id ASC', [ex.workout_exercise_id]) as any[];
+    const sets = setsRows.map(s => ({
+      ...s,
+      is_completed: s.is_completed === 1 || s.is_completed === true
+    }));
     exercisesData.push({
       workout_exercise_id: ex.workout_exercise_id,
       exercise_id: ex.exercise_id,

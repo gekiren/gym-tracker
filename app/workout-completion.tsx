@@ -363,7 +363,7 @@ export default function WorkoutCompletionScreen() {
           ) : null}
 
           {workout.exercises.map((ex) => {
-            const completedSets = ex.sets.filter(s => s.is_completed);
+            const completedSets = ex.sets.filter(s => !!s.is_completed);
             if (completedSets.length === 0) return null;
 
             return (
@@ -604,7 +604,7 @@ function ShareCardView({ workout, settings, pattern }: ShareCardViewProps) {
 
   const getExerciseSummary = () => {
     return workout.exercises.map(ex => {
-      const completedSets = ex.sets.filter(s => s.is_completed);
+      const completedSets = ex.sets.filter(s => !!s.is_completed);
       let max1RM = 0;
       completedSets.forEach(s => {
         if (s.weight && s.reps) {

@@ -9,12 +9,12 @@ import { Dimensions } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { getDB, loadFullWorkoutData, deleteWorkout, getExercises, addCustomExercise, deleteExercise, getFavoriteIds, toggleFavorite } from '../../src/db/database';
 import { Theme } from '../../src/theme';
-import { formatWorkoutToMarkdown } from '../../src/utils/markdownExport';
 import { useFocusEffect, router } from 'expo-router';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useTranslation } from 'react-i18next';
 import { AI_CONFIG } from '../../src/config/aiConfig';
 import { translateExercise, translateMuscleGroup, translateEquipment } from '../../src/i18n';
+import WorkoutShareModal from '../../components/WorkoutShareModal';
 
 type Exercise = {
   id: number;
@@ -209,6 +209,8 @@ export default function HistoryScreen() {
 
   // タブ切り替え用のステート
   const [activeTab, setActiveTab] = useState<'workouts' | 'exercises'>('workouts');
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [selectedWorkoutForShare, setSelectedWorkoutForShare] = useState<any>(null);
   const [chartScale, setChartScale] = useState<'day' | 'week' | 'month'>('day');
   const [chartMetric, setChartMetric] = useState<'volume' | 'calories'>('volume');
 
@@ -277,12 +279,11 @@ export default function HistoryScreen() {
     );
   };
 
-  const handleExportMarkdown = async (workoutId: number) => {
+  const handleSNSSharePress = async (workoutId: number) => {
     const data = await loadFullWorkoutData(workoutId);
     if (data) {
-      const md = formatWorkoutToMarkdown(data);
-      await Clipboard.setStringAsync(md);
-      Alert.alert(t('ui.history.copy_success_title'), t('ui.history.copy_success_message'));
+      setSelectedWorkoutForShare(data);
+      setShareModalVisible(true);
     }
   };
 
@@ -651,7 +652,7 @@ export default function HistoryScreen() {
                         <Ionicons name="sparkles" size={18} color={Theme.colors.primary} />
                       </TouchableOpacity>
                     )}
-                    <TouchableOpacity onPress={() => handleExportMarkdown(w.id)} style={[styles.exportIcon, { marginRight: 8 }]}>
+                    <TouchableOpacity onPress={() => handleSNSSharePress(w.id)} style={[styles.exportIcon, { marginRight: 8 }]}>
                       <Ionicons name="share-social" size={18} color={Theme.colors.primary} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleDeleteWorkout(w.id, w.title)} style={[styles.exportIcon, { backgroundColor: 'rgba(255,50,50,0.1)' }]}>
@@ -822,6 +823,17 @@ export default function HistoryScreen() {
         </View>
       </Modal>
       {renderCalendarModal()}
+      {selectedWorkoutForShare && (
+        <WorkoutShareModal
+          visible={shareModalVisible}
+          onClose={() => {
+            setShareModalVisible(false);
+            setSelectedWorkoutForShare(null);
+          }}
+          workout={selectedWorkoutForShare}
+          settings={settings}
+        />
+      )}
     </View>
   );
 }

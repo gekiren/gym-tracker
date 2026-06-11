@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,9 @@ import { Theme } from '../../src/theme';
 import { useTranslation } from 'react-i18next';
 import { translateExercise, translateStance } from '../../src/i18n';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import * as Clipboard from 'expo-clipboard';
+import { formatWorkoutToMarkdown } from '../../src/utils/markdownExport';
+import WorkoutShareModal from '../../components/WorkoutShareModal';
 
 export default function WorkoutDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -15,6 +18,15 @@ export default function WorkoutDetailsScreen() {
   const settings = useWorkoutStore(state => state.settings);
   const [workout, setWorkout] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+
+  const handleExportMarkdown = async () => {
+    if (workout) {
+      const md = formatWorkoutToMarkdown(workout);
+      await Clipboard.setStringAsync(md);
+      Alert.alert(t('ui.history.copy_success_title'), t('ui.history.copy_success_message'));
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -69,9 +81,14 @@ export default function WorkoutDetailsScreen() {
           headerStyle: { backgroundColor: Theme.colors.background },
           headerTintColor: Theme.colors.text,
           headerRight: () => (
-            <TouchableOpacity onPress={() => router.push({ pathname: '/edit-workout/[id]', params: { id: workout.id } } as any)}>
-              <Ionicons name="pencil" size={24} color={Theme.colors.primary} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+              <TouchableOpacity onPress={() => setShareModalVisible(true)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name="share-social-outline" size={24} color={Theme.colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push({ pathname: '/edit-workout/[id]', params: { id: workout.id } } as any)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name="pencil" size={24} color={Theme.colors.primary} />
+              </TouchableOpacity>
+            </View>
           )
         }} 
       />
@@ -172,7 +189,27 @@ export default function WorkoutDetailsScreen() {
             })}
           </View>
         ))}
+        
+        {/* Action Buttons */}
+        <View style={styles.actionButtonsContainer}>
+          <TouchableOpacity style={styles.shareButton} onPress={() => setShareModalVisible(true)}>
+            <Ionicons name="share-social-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.shareButtonText}>SNSにシェア</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.exportButton} onPress={handleExportMarkdown}>
+            <Ionicons name="document-text-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.exportButtonText}>Markdownで書き出し</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
+
+      <WorkoutShareModal
+        visible={shareModalVisible}
+        onClose={() => setShareModalVisible(false)}
+        workout={workout}
+        settings={settings}
+      />
     </View>
   );
 }
@@ -196,5 +233,42 @@ const styles = StyleSheet.create({
   th: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
   tdSet: { color: Theme.colors.textMuted, width: 40, textAlign: 'center', fontSize: 15 },
-  tdValue: { color: Theme.colors.text, flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '500' }
+  tdValue: { color: Theme.colors.text, flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '500' },
+  actionButtonsContainer: {
+    marginTop: Theme.spacing.lg,
+    gap: 12,
+    paddingBottom: 20,
+  },
+  shareButton: {
+    backgroundColor: '#1E293B',
+    borderWidth: 1.5,
+    borderColor: '#334155',
+    paddingVertical: 16,
+    borderRadius: Theme.borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  shareButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  exportButton: {
+    backgroundColor: 'rgba(79, 172, 254, 0.1)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(79, 172, 254, 0.3)',
+    paddingVertical: 16,
+    borderRadius: Theme.borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  exportButtonText: {
+    color: Theme.colors.primary,
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  }
 });
