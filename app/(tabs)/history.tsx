@@ -1013,11 +1013,12 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   dayCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+    alignSelf: 'center',
   },
   workoutDayCircle: {
     backgroundColor: 'rgba(79, 172, 254, 0.15)',
