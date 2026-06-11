@@ -162,8 +162,8 @@ export default function HistoryScreen() {
                     onPress={() => handleDatePress(dayStr)}
                   >
                     <View style={[
-                      styles.dayCircle,
-                      hasWorkout && styles.workoutDayCircle
+                      styles.dayBox,
+                      hasWorkout && styles.workoutDayBox
                     ]}>
                       <Text style={[
                         styles.dayText,
@@ -1012,15 +1012,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 2,
   },
-  dayCircle: {
+  dayBox: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 8, // 角丸の四角形（Square）
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
   },
-  workoutDayCircle: {
+  workoutDayBox: {
     backgroundColor: 'rgba(79, 172, 254, 0.15)',
     borderWidth: 1.5,
     borderColor: Theme.colors.primary,
