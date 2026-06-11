@@ -21,13 +21,13 @@
    - コードの修正や変更、コマンド実行を行う前に、必ず具体的な変更内容をまとめた「実装計画（Implementation Plan）」を作成し、ユーザーに提示して承認（確認）を得てください。勝手に実装を開始することは厳禁です。**また、実装計画（Implementation Plan）は必ず日本語で作成・出力してください。**
 2. **ローカル実装とコンパイル検証 (Local Coding & Type Check):**
    - 承認を得たプランに基づきローカルで実装し、完了後に必ず `npx tsc --noEmit` を実行して、TypeScriptのコンパイルエラーが「0件」であることを確認します。
-3. **プレビュー版への配信 (EAS Update to preview):**
-   - 変更内容を **`preview` ブランチ（プレビュー用チャンネル）** にのみ配信します。
+3. **ステージング版への配信 (EAS Update to staging):**
+   - 変更内容を **`staging` ブランチ（ステージング用チャンネル）** にのみ配信します。（検証はステージングチャンネルで行います）
    - 実行コマンド:
      ```bash
-     npx eas update -p android --branch preview
+     npx eas update -p android --branch staging
      # または
-     npx eas update -p ios --branch preview
+     npx eas update -p ios --branch staging
      ```
    
    > [!CAUTION]
@@ -103,7 +103,7 @@
    > `cd C:\kintore\gym-tracker`
 
 4. **ユーザーによる実機検証の依頼:**
-   - 配信されたプレビュー版の **Update ID** などの情報を提示し、ユーザー様に動作確認を依頼します。
+   - 配信されたステージング版の **Update ID** などの情報を提示し、ユーザー様に動作確認を依頼します。
 5. **本番マージの実行 (ユーザー承認後):**
    - ユーザー様が実機で動作確認を行い、**「マージして良い」「本番へPushして良い」などの明示的なご承認をいただいた場合のみ**、`origin/master` ブランチへ Push（マージ）します。
 6. **本番OTAの留保:**
