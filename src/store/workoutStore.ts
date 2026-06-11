@@ -115,8 +115,10 @@ interface WorkoutState {
       showStance: boolean;
     };
     crashConsent: 'agreed' | 'declined' | 'unset';
+    keepAwake: boolean;
   };
-  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null, needsStyleSelection?: boolean, aiTokensBalance?: number, crashConsent?: 'agreed' | 'declined' | 'unset', premiumUntil?: string, isEarlyAdopter?: boolean) => void;
+  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null, needsStyleSelection?: boolean, aiTokensBalance?: number, crashConsent?: 'agreed' | 'declined' | 'unset', premiumUntil?: string, isEarlyAdopter?: boolean, keepAwake?: boolean) => void;
+  setKeepAwake: (keepAwake: boolean) => void;
   setPremiumUntil: (premiumUntil: string) => void;
   updatePremiumStatus: (premiumUntil: string) => void;
   setIsEarlyAdopter: (isEarly: boolean) => void;
@@ -196,10 +198,11 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       showVolume: true,
       showStance: true,
     },
-    crashConsent: 'unset'
+    crashConsent: 'unset',
+    keepAwake: true
   },
 
-  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null, needsStyleSelection?: boolean, aiTokensBalance?: number, crashConsent?: 'agreed' | 'declined' | 'unset', premiumUntil?: string, isEarlyAdopter?: boolean) => set((state) => {
+  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null, needsStyleSelection?: boolean, aiTokensBalance?: number, crashConsent?: 'agreed' | 'declined' | 'unset', premiumUntil?: string, isEarlyAdopter?: boolean, keepAwake?: boolean) => set((state) => {
     const finalNeedsUnitSelection = needsUnitSelection !== undefined ? needsUnitSelection : state.settings.needsUnitSelection;
     const finalBodyWeight = bodyWeight !== undefined ? bodyWeight : state.settings.bodyWeight;
     const finalNeedsStyleSelection = needsStyleSelection !== undefined ? needsStyleSelection : state.settings.needsStyleSelection;
@@ -207,6 +210,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     const finalCrashConsent = crashConsent !== undefined ? crashConsent : state.settings.crashConsent;
     const finalPremiumUntil = premiumUntil !== undefined ? premiumUntil : state.settings.premiumUntil;
     const finalIsEarlyAdopter = isEarlyAdopter !== undefined ? isEarlyAdopter : state.settings.isEarlyAdopter;
+    const finalKeepAwake = keepAwake !== undefined ? keepAwake : state.settings.keepAwake;
 
     const isPremium = finalIsEarlyAdopter || finalPremiumUntil === 'perpetual' || (finalPremiumUntil !== '' && !isNaN(Date.parse(finalPremiumUntil)) && Date.parse(finalPremiumUntil) > Date.now());
     return {
@@ -223,7 +227,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         crashConsent: finalCrashConsent, 
         premiumUntil: finalPremiumUntil, 
         isEarlyAdopter: finalIsEarlyAdopter, 
-        isPremium 
+        isPremium,
+        keepAwake: finalKeepAwake
       }
     };
   }),
@@ -281,6 +286,10 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
   setCrashConsent: (crashConsent) => set((state) => ({
     settings: { ...state.settings, crashConsent }
+  })),
+
+  setKeepAwake: (keepAwake) => set((state) => ({
+    settings: { ...state.settings, keepAwake }
   })),
 
   draftRoutine: { title: '', exercises: [] },
@@ -734,7 +743,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           showVolume: true,
           showStance: true,
         },
-        crashConsent: 'unset'
+        crashConsent: 'unset',
+        keepAwake: true
       },
       draftRoutine: { title: '', exercises: [] }
     });

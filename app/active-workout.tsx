@@ -13,6 +13,12 @@ import { checkAndTriggerReviewFlow } from '../src/services/reviewService';
 import { translateExercise, translateStance } from '../src/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AI_CONFIG } from '../src/config/aiConfig';
+import { useKeepAwake } from 'expo-keep-awake';
+
+function KeepAwakeController() {
+  useKeepAwake();
+  return null;
+}
 
 export default function ActiveWorkoutScreen() {
   const { t } = useTranslation();
@@ -396,6 +402,7 @@ export default function ActiveWorkoutScreen() {
 
   return (
     <View style={styles.container}>
+      {settings.keepAwake && <KeepAwakeController />}
       <Stack.Screen 
         options={{ 
           title: '',

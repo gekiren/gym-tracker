@@ -269,6 +269,8 @@
       "default_rest_desc": "タイマー開始時の標準の時間です。",
       "timer_vibrate": "タイマー終了時にバイブ",
       "timer_vibrate_desc": "タイマーが0になった時にデバイスを振動させます。※アプリ表示時のみ動作し、ホーム画面等では端末側の設定に従います。",
+      "keep_awake": "トレーニング中の画面スリープ防止",
+      "keep_awake_desc": "トレーニング計測中、画面が自動で消灯するのを防ぎます（常時点灯）。",
       "weight_unit_label": "重量の単位",
       "language_label": "アプリの言語",
       "version": "バージョン",

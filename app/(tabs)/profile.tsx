@@ -32,6 +32,7 @@ export default function ProfileScreen() {
   const [showVolume, setShowVolume] = useState(settings.displayFields.showVolume);
   const [showStance, setShowStance] = useState(settings.displayFields.showStance);
   const [crashConsent, setCrashConsent] = useState(settings.crashConsent);
+  const [keepAwake, setKeepAwake] = useState(settings.keepAwake);
 
   // Database Reset State
   const [isResetModalVisible, setIsResetModalVisible] = useState(false);
@@ -123,6 +124,7 @@ export default function ProfileScreen() {
     setShowVolume(settings.displayFields.showVolume);
     setShowStance(settings.displayFields.showStance);
     setCrashConsent(settings.crashConsent);
+    setKeepAwake(settings.keepAwake);
 
     const fetchAccountType = async () => {
       try {
@@ -230,6 +232,12 @@ export default function ProfileScreen() {
     setTimerVibrate(val);
     loadSettings(defaultRest, autoRest, val, weightUnit);
     await saveSetting('timer_vibrate', val ? '1' : '0');
+  };
+
+  const handleUpdateKeepAwake = async (val: boolean) => {
+    setKeepAwake(val);
+    useWorkoutStore.getState().setKeepAwake(val);
+    await saveSetting('keep_awake', val ? '1' : '0');
   };
 
   const handleUpdateUnit = async (unit: 'kg' | 'lbs') => {
@@ -649,6 +657,19 @@ export default function ProfileScreen() {
             <Switch
               value={timerVibrate}
               onValueChange={handleUpdateVibrate}
+              trackColor={{ false: '#333', true: Theme.colors.primary }}
+              thumbColor={'#fff'}
+            />
+          </View>
+
+          <View style={styles.settingRow}>
+            <View style={{ flex: 1, paddingRight: 16 }}>
+              <Text style={styles.settingLabel}>{t('ui.profile.keep_awake')}</Text>
+              <Text style={styles.settingDesc}>{t('ui.profile.keep_awake_desc')}</Text>
+            </View>
+            <Switch
+              value={keepAwake}
+              onValueChange={handleUpdateKeepAwake}
               trackColor={{ false: '#333', true: Theme.colors.primary }}
               thumbColor={'#fff'}
             />

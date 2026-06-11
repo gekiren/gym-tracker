@@ -39,6 +39,7 @@ export default function RootLayout() {
       const defaultRest = storedSettings['default_rest_timer'] ? parseInt(storedSettings['default_rest_timer'], 10) : 90;
       const autoRest = storedSettings['auto_rest_timer'] ? storedSettings['auto_rest_timer'] === '1' : true;
       const timerVibrate = storedSettings['timer_vibrate'] ? storedSettings['timer_vibrate'] === '1' : true;
+      const keepAwake = storedSettings['keep_awake'] ? storedSettings['keep_awake'] === '1' : true;
       
       const needsUnitSelection = !storedSettings['weight_unit'];
       const needsStyleSelection = !storedSettings['style_mode'];
@@ -146,7 +147,8 @@ export default function RootLayout() {
         finalTokensBalance, 
         crashConsent,
         finalPremiumUntil,
-        isEarlyAdopter
+        isEarlyAdopter,
+        keepAwake
       );
       if (expired) {
         useWorkoutStore.getState().setShouldShowPaywall(true);

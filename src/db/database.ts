@@ -548,6 +548,7 @@ export const initDB = async () => {
       ai_tokens_balance: '20',
       ai_tokens_last_reset: new Date().toISOString(),
       has_shown_review_prompt: '0',
+      keep_awake: '1',
     };
 
     for (const [key, defaultValue] of Object.entries(preAllocations)) {
