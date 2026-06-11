@@ -408,7 +408,10 @@ export default function ActiveWorkoutScreen() {
           ),
           headerRight: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <TouchableOpacity onPress={() => router.push('/rm-calculator')} style={{ marginRight: 16 }}>
+              {isWorkoutStarted && (
+                <ElapsedTimerHeader startTime={startTime} style={styles.headerTimeText} />
+              )}
+              <TouchableOpacity onPress={() => router.push('/rm-calculator')} style={{ marginRight: 16, marginLeft: 8 }}>
                 <Ionicons name="calculator-outline" size={26} color={Theme.colors.primary} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setPlateCalcVisible(true)} style={{ marginRight: 16 }}>
@@ -432,22 +435,8 @@ export default function ActiveWorkoutScreen() {
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80}
       >
-        <ScrollView 
-          contentContainerStyle={styles.content} 
-          keyboardShouldPersistTaps="handled" 
-          automaticallyAdjustKeyboardInsets={false}
-        >
-
-        {!isWorkoutStarted ? (
-          <TouchableOpacity style={styles.startWorkoutHeroBtn} onPress={beginWorkoutTimer}>
-            <Text style={styles.startWorkoutHeroBtnText}>{t('ui.active_workout.start_training_btn')}</Text>
-          </TouchableOpacity>
-        ) : (
-          <ElapsedTimerHeader startTime={startTime} />
-        )}
-
-        {/* Workout Notes Section */}
-        <View style={{ marginBottom: 16 }}>
+        {/* Workout Notes & AI Trainer Section (Fixed at Top) */}
+        <View style={styles.fixedHeader}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <TouchableOpacity 
               onPress={() => setShowWorkoutNotes(!showWorkoutNotes)}
@@ -480,6 +469,18 @@ export default function ActiveWorkoutScreen() {
             />
           )}
         </View>
+
+        <ScrollView 
+          contentContainerStyle={styles.content} 
+          keyboardShouldPersistTaps="handled" 
+          automaticallyAdjustKeyboardInsets={false}
+        >
+
+        {!isWorkoutStarted && (
+          <TouchableOpacity style={styles.startWorkoutHeroBtn} onPress={beginWorkoutTimer}>
+            <Text style={styles.startWorkoutHeroBtnText}>{t('ui.active_workout.start_training_btn')}</Text>
+          </TouchableOpacity>
+        )}
 
         {exercises.map((ex) => (
           <View key={ex.id} style={styles.card}>
@@ -1338,7 +1339,7 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
   );
 }
 
-function ElapsedTimerHeader({ startTime }: { startTime: string | null }) {
+function ElapsedTimerHeader({ startTime, style }: { startTime: string | null; style?: any }) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -1358,7 +1359,7 @@ function ElapsedTimerHeader({ startTime }: { startTime: string | null }) {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  return <Text style={styles.timeText}>{formatTime(elapsed)}</Text>;
+  return <Text style={style || styles.timeText}>{formatTime(elapsed)}</Text>;
 }
 
 function FloatingRestTimer({ safeBottomOffset }: { safeBottomOffset: number }) {
@@ -1402,6 +1403,20 @@ function FloatingRestTimer({ safeBottomOffset }: { safeBottomOffset: number }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
+  fixedHeader: {
+    backgroundColor: Theme.colors.background,
+    paddingHorizontal: Theme.spacing.md,
+    paddingTop: Theme.spacing.sm,
+    paddingBottom: Theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Theme.colors.border,
+    zIndex: 10,
+  },
+  headerTimeText: {
+    color: Theme.colors.text,
+    fontSize: 16,
+    fontWeight: '600',
+  },
   content: { padding: Theme.spacing.md, paddingBottom: 100 },
   startWorkoutHeroBtn: { backgroundColor: Theme.colors.primary, paddingVertical: 16, borderRadius: Theme.borderRadius.lg, alignItems: 'center', marginBottom: 16, shadowColor: Theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   startWorkoutHeroBtnText: { color: '#fff', fontSize: 18, fontWeight: '900', letterSpacing: 1 },

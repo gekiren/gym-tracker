@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.30', // OTA識別用のバージョン文字列
+  version: '1.0.31', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'ワークアウト画面の重量（kg/lbs）入力欄で確定キー（次へ）を押した際、自動的に同セットの「回数（Reps）」へフォーカスが移動する機能を追加',
-      '回数（Reps）入力欄で確定キー（完了）を押した際、キーボードを自動で閉じる挙動を追加'
+      '経過時間タイマーをヘッダーのRM計算ボタンの左隣へ移動',
+      'ワークアウトメモと全体AIトレーナーボタンを画面上部にスクロールせず固定表示するように変更'
     ],
     en: [
-      'Added keyboard focus auto-transition from Weight to Reps input on the workout screen',
-      'Added auto-dismiss keyboard on completing Reps input'
+      'Relocated elapsed timer to the left of the RM calculator button in the header',
+      'Fixed workout notes and overall AI coach button at the top of the screen (sticky display)'
     ]
   }
 };
