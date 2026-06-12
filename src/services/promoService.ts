@@ -49,7 +49,7 @@ export interface VersionCheckResult {
  * Performs native app version check against campaign requirements.
  */
 export const checkNativeVersion = (config: PromoCampaignConfig = DEFAULT_CAMPAIGN_CONFIG): VersionCheckResult => {
-  const currentVersion = Constants.nativeAppVersion || Constants.expoConfig?.version || '1.0.0';
+  const currentVersion = Updates.runtimeVersion || Constants.expoConfig?.version || Constants.nativeAppVersion || '1.0.0';
   const isOutdated = isVersionLessThan(currentVersion, config.minNativeVersion);
   
   return {

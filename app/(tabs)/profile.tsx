@@ -912,7 +912,9 @@ export default function ProfileScreen() {
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={{ color: Theme.colors.text, fontSize: 16 }}>{CURRENT_OTA_CONFIG.version}</Text>
               <Text style={{ color: Theme.colors.textMuted, fontSize: 11, marginTop: 2 }}>
-                {t('ui.profile.native_version_label', { version: Constants.nativeAppVersion || '1.0.0' })}
+                {t('ui.profile.native_version_label', { 
+                  version: Updates.runtimeVersion || Constants.expoConfig?.version || Constants.nativeAppVersion || '1.0.0' 
+                })}
               </Text>
             </View>
           </View>
