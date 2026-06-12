@@ -279,6 +279,7 @@
       "weight_unit_label": "Weight Unit",
       "language_label": "App Language",
       "version": "Version",
+      "native_version_label": "Base: v{{version}}",
       "privacy_policy": "Privacy Policy",
       "contact": "Contact Us",
       "db_error_title": "Database Error",

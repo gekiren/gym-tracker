@@ -274,6 +274,7 @@
       "weight_unit_label": "重量の単位",
       "language_label": "アプリの言語",
       "version": "バージョン",
+      "native_version_label": "本体: v{{version}}",
       "privacy_policy": "プライバシーポリシー",
       "contact": "お問い合わせ",
       "db_error_title": "データベースエラー",

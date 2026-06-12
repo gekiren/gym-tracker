@@ -18,10 +18,12 @@ export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
   },
   notes: {
     ja: [
-      '有酸素カテゴリの種目でストップウォッチで計測した時間が、記録チェック時に上書きされてしまう不具合を修正しました。'
+      '有酸素カテゴリの種目でストップウォッチで計測した時間が、記録チェック時に上書きされてしまう不具合を修正しました。',
+      '設定画面のバージョン表記に、動的なOTAバージョンおよび本体アプリのベースバージョンを並記するよう改善しました。'
     ],
     en: [
-      'Fixed a bug where the stopwatch time for cardio exercises was overwritten when completing a set.'
+      'Fixed a bug where the stopwatch time for cardio exercises was overwritten when completing a set.',
+      'Improved settings screen version display to show the active OTA version and native base version.'
     ]
   }
 };

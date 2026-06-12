@@ -14,6 +14,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Updates from 'expo-updates';
+import { CURRENT_OTA_CONFIG } from '../../src/config/otaUpdateConfig';
 
 const REST_OPTIONS = [30, 60, 90, 120, 150, 180, 240, 300]; // in seconds
 
@@ -908,7 +909,12 @@ export default function ProfileScreen() {
         <View style={styles.settingCard}>
           <View style={styles.settingRow}>
             <Text style={styles.settingLabel}>{t('ui.profile.version')}</Text>
-            <Text style={{ color: Theme.colors.textMuted }}>{Constants.nativeAppVersion || Constants.expoConfig?.version || '1.0.0'}</Text>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{ color: Theme.colors.text, fontSize: 16 }}>{CURRENT_OTA_CONFIG.version}</Text>
+              <Text style={{ color: Theme.colors.textMuted, fontSize: 11, marginTop: 2 }}>
+                {t('ui.profile.native_version_label', { version: Constants.nativeAppVersion || '1.0.0' })}
+              </Text>
+            </View>
           </View>
           <TouchableOpacity 
             style={styles.settingRow} 
