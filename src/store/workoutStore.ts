@@ -494,6 +494,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     const ex = state.exercises.find((e: any) => e.id === exerciseId);
     const sRecord = ex?.sets.find((s: any) => s.id === setId);
     const willBeCompleted = sRecord ? !sRecord.is_completed : false;
+    const isAerobic = ex?.muscle_group === '有酸素';
 
     let restSeconds: number | null = null;
     let workSeconds: number | null = null;
@@ -543,7 +544,9 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
                   reps: finalReps,
                   completedAt: willBeCompleted ? now : undefined,
                   rest_seconds: willBeCompleted ? restSeconds : null,
-                  work_seconds: willBeCompleted ? workSeconds : null
+                  work_seconds: willBeCompleted 
+                    ? (isAerobic ? s.work_seconds : (s.work_seconds ?? workSeconds)) 
+                    : null
                 };
               }
               return s;

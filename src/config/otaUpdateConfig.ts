@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.37', // OTA識別用のバージョン文字列
+  version: '1.0.38', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'SNSシェア画像の生成時にワークアウト記録（挙上総重量、完了セット数など）が空になってしまう不具合を修正しました。'
+      '有酸素カテゴリの種目でストップウォッチで計測した時間が、記録チェック時に上書きされてしまう不具合を修正しました。'
     ],
     en: [
-      'Fixed a bug where workout records (total volume, sets count) were missing when generating SNS share images.'
+      'Fixed a bug where the stopwatch time for cardio exercises was overwritten when completing a set.'
     ]
   }
 };

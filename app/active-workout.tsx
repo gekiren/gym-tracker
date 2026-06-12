@@ -1299,7 +1299,18 @@ function SetInputRow({ ex, set, idx, updateSet, toggleSetComplete, removeSet, se
         <View style={{ width: 40, alignItems: 'center' }}>
           <TouchableOpacity 
             style={[styles.checkBtn, set.is_completed && styles.checkBtnActive]}
-            onPress={() => toggleSetComplete(ex.id, set.id)}
+            onPress={() => {
+              if (isAerobic && !set.is_completed) {
+                let finalSeconds = swElapsed;
+                if (swRunning) {
+                  setSwRunning(false);
+                  finalSeconds = Math.floor((Date.now() - (swStartTs ?? Date.now())) / 1000);
+                  setSwElapsed(finalSeconds);
+                }
+                updateSet(ex.id, set.id, { work_seconds: finalSeconds });
+              }
+              toggleSetComplete(ex.id, set.id);
+            }}
           >
             <Ionicons name="checkmark" size={18} color={set.is_completed ? '#fff' : Theme.colors.textMuted} />
           </TouchableOpacity>
