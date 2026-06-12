@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.40', // OTA識別用のバージョン文字列
+  version: '1.0.41', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      '有酸素カテゴリの種目でストップウォッチで計測した時間が、記録チェック時に上書きされてしまう不具合を修正しました。',
-      '設定画面のバージョン表記に、動的なOTAバージョンおよび本体アプリのベースバージョンを並記するよう改善しました。'
+      'ベーシックプランにおけるカスタム種目の登録上限を20個に変更しました。'
     ],
     en: [
-      'Fixed a bug where the stopwatch time for cardio exercises was overwritten when completing a set.',
-      'Improved settings screen version display to show the active OTA version and native base version.'
+      'Changed the custom exercise registration limit for the basic plan to 20.'
     ]
   }
 };

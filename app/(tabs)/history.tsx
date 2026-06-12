@@ -7,7 +7,7 @@ import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimat
 import { format, startOfWeek, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { Dimensions } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
-import { getDB, loadFullWorkoutData, deleteWorkout, getExercises, addCustomExercise, deleteExercise, getFavoriteIds, toggleFavorite } from '../../src/db/database';
+import { getDB, loadFullWorkoutData, deleteWorkout, getExercises, addCustomExercise, deleteExercise, getFavoriteIds, toggleFavorite, getCustomExercisesCount } from '../../src/db/database';
 import { Theme } from '../../src/theme';
 import { useFocusEffect, router } from 'expo-router';
 import { useWorkoutStore } from '../../src/store/workoutStore';
@@ -25,6 +25,10 @@ type Exercise = {
 
 export default function HistoryScreen() {
   const settings = useWorkoutStore(state => state.settings);
+  const isPremium = settings.isPremium;
+  const isEarly = settings.isEarlyAdopter;
+  const isBasic = !isPremium && !isEarly;
+
   const chartScrollRef = useRef<ScrollView>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const [workouts, setWorkouts] = useState<any[]>([]);
@@ -337,6 +341,29 @@ export default function HistoryScreen() {
       Alert.alert(t('ui.common.error'), t('ui.exercise_library.error_no_name'));
       return;
     }
+
+    if (isBasic) {
+      try {
+        const count = await getCustomExercisesCount();
+        if (count >= 20) {
+          Alert.alert(
+            'カスタム種目追加制限',
+            'ベーシックプランでは最大20個までカスタム種目を登録できます。登録上限を増やすにはプレミアムプランへのアップグレードが必要です。',
+            [
+              { text: 'キャンセル', style: 'cancel' },
+              { text: 'アップグレードする', onPress: () => {
+                setModalVisible(false);
+                router.push('/(tabs)/profile');
+              }}
+            ]
+          );
+          return;
+        }
+      } catch (e) {
+        console.warn('Failed to check custom exercises count', e);
+      }
+    }
+
     try {
       await addCustomExercise(
         newName.trim(), 

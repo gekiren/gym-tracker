@@ -4,7 +4,7 @@ import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimat
 import { useEffect, useState, useCallback } from 'react';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getDB, addCustomExercise, getPreviousWorkoutSets, getPersonalRecords, getFavoriteIds, toggleFavorite, deleteExercise, saveSetting } from '../src/db/database';
+import { getDB, addCustomExercise, getPreviousWorkoutSets, getPersonalRecords, getFavoriteIds, toggleFavorite, deleteExercise, saveSetting, getCustomExercisesCount } from '../src/db/database';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useTranslation } from 'react-i18next';
@@ -36,10 +36,15 @@ export default function SelectExerciseScreen() {
   const [useDefaultStance, setUseDefaultStance] = useState(false);
   const [newDefaultStance, setNewDefaultStance] = useState('');
 
+  const settings = useWorkoutStore(state => state.settings);
   const addExercise = useWorkoutStore(state => state.addExercise);
   const addDraftExercise = useWorkoutStore(state => state.addDraftExercise);
-  const customStances = useWorkoutStore(state => state.settings.customStances);
+  const customStances = settings.customStances;
   const { mode } = useLocalSearchParams<{ mode?: string }>();
+
+  const isPremium = settings.isPremium;
+  const isEarly = settings.isEarlyAdopter;
+  const isBasic = !isPremium && !isEarly;
 
   const presetStances = customStances || [];
 
@@ -93,6 +98,29 @@ export default function SelectExerciseScreen() {
       Alert.alert(t('ui.common.error'), t('ui.exercise_select.error_no_name'));
       return;
     }
+
+    if (isBasic) {
+      try {
+        const count = await getCustomExercisesCount();
+        if (count >= 20) {
+          Alert.alert(
+            'カスタム種目追加制限',
+            'ベーシックプランでは最大20個までカスタム種目を登録できます。登録上限を増やすにはプレミアムプランへのアップグレードが必要です。',
+            [
+              { text: 'キャンセル', style: 'cancel' },
+              { text: 'アップグレードする', onPress: () => {
+                setModalVisible(false);
+                router.push('/(tabs)/profile');
+              }}
+            ]
+          );
+          return;
+        }
+      } catch (e) {
+        console.warn('Failed to check custom exercises count', e);
+      }
+    }
+
     try {
       const defaultVar = useDefaultStance && newDefaultStance.trim() ? newDefaultStance.trim() : null;
       if (defaultVar) {
