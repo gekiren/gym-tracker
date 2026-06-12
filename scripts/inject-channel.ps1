@@ -1,9 +1,12 @@
+param(
+    [string]$channelName = "production"
+)
+
 # Path definitions
 $manifestPath = "android/app/src/main/AndroidManifest.xml"
 $buildGradlePath = "android/app/build.gradle"
 $assetsDir = "android/app/src/main/assets"
 $propertiesPath = "$assetsDir/expo-updates.properties"
-$channelName = "production"
 
 # 1. Inject EXPO_CHANNEL_NAME, EXPO_RELEASE_CHANNEL, and requestHeaders into AndroidManifest.xml
 if (Test-Path $manifestPath) {
