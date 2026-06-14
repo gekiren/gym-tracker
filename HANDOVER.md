@@ -22,6 +22,7 @@
 *   **M7 (チャートデータメモ化):** 履歴画面および種目詳細画面のグラフデータ計算を `useMemo` でラップし、再計算コストを削除。また、データが1件のみの場合にグラフが消えていた表示閾値バグも同時に修正。
 *   **M14 (チャット履歴上限):** `coach.tsx` 内のステートに保持するチャット履歴数を最新の 100 件に制限し、メモリ増大を防止。
 *   **H4 (プロモコードハードコード修正):** クライアント側からプロモコード `'TREPREMIUM2026'` および期間設定のハードコードを削除し、Cloudflare Workers によるサーバーサイド検証（`/api/verify-promo`）へ移行。
+*   **M1 (consumeAIToken TOCTOU レースコンディション修正):** トークンの消費判定と減算を SQL クエリ（UPDATE）レベルでアトミックに統合。API送信前にトークンを消費し、失敗時や例外時には `refundAIToken` を呼んで返却する設計に修正し、利用枠上限を超えた並行呼び出しを防止。
 
 ---
 
@@ -69,7 +70,6 @@
 
 | ID | 問題 | 対象ファイル | 対応案 |
 |---|---|---|---|
-| **M1** | `consumeAIToken` に TOCTOU レースコンディション | [database.ts](file:///c:/kintore/gym-tracker/src/db/database.ts#L1053-L1058) | トークン消費判定と減算処理を単一の atomic SQL クエリに統合する |
 | **M2** | タイマー終了時の通知全件キャンセル | [timer.ts](file:///c:/kintore/gym-tracker/src/utils/timer.ts#L30) | 全件キャンセルではなく、タイマー通知 ID を控えておき個別キャンセルする |
 | **M3** | UUID 生成に `Math.random()` を使用 | [database.ts](file:///c:/kintore/gym-tracker/src/db/database.ts#L537-L543) | 暗号学的に安全な `expo-crypto` の `getRandomValues()` に切り替える |
 | **M4** | `loadSettings` が 12個の大量の位置引数 | [workoutStore.ts](file:///c:/kintore/gym-tracker/src/store/workoutStore.ts#L120) | 引数をオブジェクト（オプションオブジェクトパターン）に変更する |
