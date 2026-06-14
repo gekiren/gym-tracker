@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.52', // OTA識別用のバージョン文字列
+  version: '1.0.53', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'プロモーションコード機能のクリーンアップ（クライアント側の未使用設定値の整理）を行いました。'
+      'AIトークン消費処理における不整合（レースコンディション）を解消し、動作の安定性を向上させました。'
     ],
     en: [
-      'Cleaned up the promotion code feature (removed unused configuration values from the client-side).'
+      'Fixed a race condition in AI token consumption to improve system stability.'
     ]
   }
 };

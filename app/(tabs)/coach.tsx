@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
-import { consumeAIToken, getAITokensBalance } from '../../src/db/database';
+import { consumeAIToken, getAITokensBalance, refundAIToken } from '../../src/db/database';
 import { sendMessageToAICoach } from '../../src/services/aiCoachService';
 import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -111,16 +111,24 @@ export default function CoachScreen() {
     const textToSend = (customMessage || inputVal).trim();
     if (!textToSend || loading) return;
 
-    // Check token balance
-    let currentBalance = 20;
+    // Consume token atomically before API request
+    let consumed = false;
     try {
-      currentBalance = await getAITokensBalance();
+      consumed = await consumeAIToken();
     } catch (e) {
-      console.warn('Failed to retrieve token balance', e);
+      console.warn('Failed to consume token', e);
     }
 
-    if (currentBalance <= 0) {
+    if (!consumed) {
       return; // Block submission if quota is exhausted
+    }
+
+    // Update token balance UI state immediately
+    try {
+      const updatedBalance = await getAITokensBalance();
+      setAITokensBalance(updatedBalance);
+    } catch (e) {
+      console.warn('Failed to update balance UI', e);
     }
 
     // Add user message
@@ -144,14 +152,14 @@ export default function CoachScreen() {
         settings.weightUnit
       );
 
-      // If success, consume token and update store
-      if (response.success) {
+      // If failed, refund token
+      if (!response.success) {
         try {
-          await consumeAIToken();
+          await refundAIToken();
           const updatedBalance = await getAITokensBalance();
           setAITokensBalance(updatedBalance);
         } catch (e) {
-          console.warn('Failed to consume token', e);
+          console.warn('Failed to refund token', e);
         }
       }
 
@@ -165,6 +173,14 @@ export default function CoachScreen() {
       setMessages(prev => [...prev, aiMsg].slice(-100));
     } catch (err) {
       console.error('Error in AI Coach interaction:', err);
+      // Refund token on exception
+      try {
+        await refundAIToken();
+        const updatedBalance = await getAITokensBalance();
+        setAITokensBalance(updatedBalance);
+      } catch (e) {
+        console.warn('Failed to refund token', e);
+      }
       // Add error message to chat
       const errorMsg: ChatMessage = {
         id: `error-${Date.now()}`,

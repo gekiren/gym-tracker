@@ -11,7 +11,7 @@ import { Confetti } from '../components/Confetti';
 import { checkAndTriggerReviewFlow } from '../src/services/reviewService';
 import { useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
 import { AD_CONFIG } from '../src/config/adConfig';
-import { getSettings, saveSetting, consumeAIToken, getAITokensBalance } from '../src/db/database';
+import { getSettings, saveSetting, consumeAIToken, getAITokensBalance, refundAIToken } from '../src/db/database';
 import { sendMessageToAICoach } from '../src/services/aiCoachService';
 import type ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -201,19 +201,28 @@ export default function WorkoutCompletionScreen() {
   const handleAskAICoach = async () => {
     if (loadingAI) return;
 
-    let currentBalance = 0;
+    // Consume token atomically before API request
+    let consumed = false;
     try {
-      currentBalance = await getAITokensBalance();
+      consumed = await consumeAIToken();
     } catch (e) {
-      console.warn('Failed to retrieve token balance', e);
+      console.warn('Failed to consume token', e);
     }
 
-    if (currentBalance <= 0) {
+    if (!consumed) {
       Alert.alert(
         t('ui.coach.limit_reached_title') || '利用枠エラー',
         t('ui.coach.limit_reached_msg') || '今月の利用枠が残っていません。'
       );
       return;
+    }
+
+    // Update token balance UI state immediately
+    try {
+      const updatedBalance = await getAITokensBalance();
+      setAITokensBalance(updatedBalance);
+    } catch (e) {
+      console.warn('Failed to update balance UI', e);
     }
 
     setLoadingAI(true);
@@ -266,10 +275,16 @@ export default function WorkoutCompletionScreen() {
 
       if (response.success) {
         setAiComment(response.reply);
-        await consumeAIToken();
-        const updatedBalance = await getAITokensBalance();
-        setAITokensBalance(updatedBalance);
       } else {
+        // Refund token on failure
+        try {
+          await refundAIToken();
+          const updatedBalance = await getAITokensBalance();
+          setAITokensBalance(updatedBalance);
+        } catch (e) {
+          console.warn('Failed to refund token', e);
+        }
+
         Alert.alert(
           t('ui.common.error_title') || 'エラー',
           response.reply || '評価の取得に失敗しました。'
@@ -277,6 +292,15 @@ export default function WorkoutCompletionScreen() {
       }
     } catch (err) {
       console.error('Failed to get AI assessment', err);
+      // Refund token on exception
+      try {
+        await refundAIToken();
+        const updatedBalance = await getAITokensBalance();
+        setAITokensBalance(updatedBalance);
+      } catch (e) {
+        console.warn('Failed to refund token', e);
+      }
+
       Alert.alert(
         t('ui.common.error_title') || 'エラー',
         '通信エラーが発生しました。'

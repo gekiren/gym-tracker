@@ -1022,11 +1022,7 @@ export const updateExerciseDefaultStance = async (exerciseId: number, stance: st
   await conn.runAsync('UPDATE exercises SET default_stance = ? WHERE id = ?', [stance, exerciseId]);
 };
 
-export const getAITokensBalance = async (): Promise<number> => {
-  const conn = getDB();
-  const balanceRow = await conn.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "ai_tokens_balance"');
-  const lastResetRow = await conn.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "ai_tokens_last_reset"');
-
+export const getMaxAITokens = async (conn: SQLite.SQLiteDatabase): Promise<number> => {
   // Fetch settings for early adopter and premium status
   const settingsRows = await conn.getAllAsync<{key: string, value: string}>('SELECT * FROM settings WHERE key IN ("is_early_adopter", "premium_until")');
   const stored: Record<string, string> = {};
@@ -1036,7 +1032,15 @@ export const getAITokensBalance = async (): Promise<number> => {
   const isEarly = stored['is_early_adopter'] === 'true';
   const isPremium = stored['premium_until'] === 'perpetual' || (stored['premium_until'] !== '' && !isNaN(Date.parse(stored['premium_until'] || '')) && Date.parse(stored['premium_until'] || '') > Date.now());
 
-  const maxTokens = (isPremium || isEarly) ? 20 : 5;
+  return (isPremium || isEarly) ? 20 : 5;
+};
+
+export const getAITokensBalance = async (): Promise<number> => {
+  const conn = getDB();
+  const balanceRow = await conn.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "ai_tokens_balance"');
+  const lastResetRow = await conn.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "ai_tokens_last_reset"');
+
+  const maxTokens = await getMaxAITokens(conn);
 
   let balance = balanceRow ? parseInt(balanceRow.value, 10) : maxTokens;
   if (balance > maxTokens) {
@@ -1062,22 +1066,37 @@ export const getAITokensBalance = async (): Promise<number> => {
   return balance;
 };
 
-export const consumeAIToken = async (): Promise<void> => {
+export const consumeAIToken = async (): Promise<boolean> => {
   // Ensure that month-boundary resetting has run before decrementing
   await getAITokensBalance();
 
   const conn = getDB();
   // Perform atomic decrement, ensuring the balance doesn't drop below 0
+  // Returns true if the decrement succeeded (balance > 0), false otherwise
+  const result = await conn.runAsync(`
+    UPDATE settings 
+    SET value = CAST(CAST(value AS INTEGER) - 1 AS TEXT)
+    WHERE key = 'ai_tokens_balance' AND CAST(value AS INTEGER) > 0
+  `);
+
+  return result.changes > 0;
+};
+
+export const refundAIToken = async (): Promise<void> => {
+  const conn = getDB();
+  const maxTokens = await getMaxAITokens(conn);
+
+  // Increment the balance, ensuring it doesn't exceed the user's monthly maximum
   await conn.runAsync(`
     UPDATE settings 
     SET value = CAST(
       CASE 
-        WHEN CAST(value AS INTEGER) > 0 THEN CAST(value AS INTEGER) - 1 
-        ELSE 0 
+        WHEN CAST(value AS INTEGER) < ? THEN CAST(value AS INTEGER) + 1 
+        ELSE ? 
       END AS TEXT
     ) 
     WHERE key = 'ai_tokens_balance'
-  `);
+  `, [maxTokens, maxTokens]);
 };
 
 export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<string> => {
