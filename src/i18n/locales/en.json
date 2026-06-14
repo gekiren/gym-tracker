@@ -465,6 +465,7 @@
       "volume_updated": "Volume Updated!",
       "new_record": "New Personal Record!",
       "no_achievements": "Excellent workout! Let's keep it up next time!",
+      "ask_ai_coach": "Ask AI Coach ({{balance}}/{{max}})",
       "done_btn": "Done",
       "workout_details": "Workout History Details",
       "reward_title": "Reward Earned!",

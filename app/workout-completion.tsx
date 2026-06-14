@@ -11,7 +11,8 @@ import { Confetti } from '../components/Confetti';
 import { checkAndTriggerReviewFlow } from '../src/services/reviewService';
 import { useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
 import { AD_CONFIG } from '../src/config/adConfig';
-import { getSettings, saveSetting } from '../src/db/database';
+import { getSettings, saveSetting, consumeAIToken, getAITokensBalance } from '../src/db/database';
+import { sendMessageToAICoach } from '../src/services/aiCoachService';
 import type ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { calculateShareStats, generateShareText, copyShareTextToClipboard } from '../src/services/shareService';
@@ -27,10 +28,11 @@ try {
 const APP_ICON = require('../assets/images/icon.png');
 
 export default function WorkoutCompletionScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const completionData = useWorkoutStore(state => state.lastWorkoutCompletion);
   const settings = useWorkoutStore(state => state.settings);
+  const setAITokensBalance = useWorkoutStore(state => state.setAITokensBalance);
 
   // AdMob Hooks
   const adUnitId = AD_CONFIG.getRewardedInterstitialAdUnitId();
@@ -46,6 +48,20 @@ export default function WorkoutCompletionScreen() {
   const [shouldLoadAd, setShouldLoadAd] = useState(false);
   const [showAdPreview, setShowAdPreview] = useState(false);
   const hasCheckedAd = useRef(false);
+  const [aiComment, setAiComment] = useState<string | null>(null);
+  const [loadingAI, setLoadingAI] = useState(false);
+
+  useEffect(() => {
+    const syncTokenBalance = async () => {
+      try {
+        const balance = await getAITokensBalance();
+        setAITokensBalance(balance);
+      } catch (e) {
+        console.warn('Failed to sync token balance', e);
+      }
+    };
+    syncTokenBalance();
+  }, []);
   
   // Sharing States
   const [sharePattern, setSharePattern] = useState<'A' | 'B' | 'C'>('A');
@@ -180,6 +196,95 @@ export default function WorkoutCompletionScreen() {
   }
 
   const { workout, achievements } = completionData;
+  const maxTokens = (settings.isPremium || settings.isEarlyAdopter) ? 20 : 5;
+
+  const handleAskAICoach = async () => {
+    if (loadingAI) return;
+
+    let currentBalance = 0;
+    try {
+      currentBalance = await getAITokensBalance();
+    } catch (e) {
+      console.warn('Failed to retrieve token balance', e);
+    }
+
+    if (currentBalance <= 0) {
+      Alert.alert(
+        t('ui.coach.limit_reached_title') || '利用枠エラー',
+        t('ui.coach.limit_reached_msg') || '今月の利用枠が残っていません。'
+      );
+      return;
+    }
+
+    setLoadingAI(true);
+
+    try {
+      const durationMin = workout.end_time && workout.start_time
+        ? Math.max(1, Math.round((new Date(workout.end_time).getTime() - new Date(workout.start_time).getTime()) / 60000))
+        : null;
+
+      let workoutDetailsStr = `今日のワークアウト: ${workout.title || 'フリーワークアウト'}\n`;
+      if (durationMin !== null) {
+        workoutDetailsStr += `実施時間: ${durationMin}分\n`;
+      }
+      if (workout.calories !== null && workout.calories > 0) {
+        workoutDetailsStr += `消費カロリー: ${workout.calories} kcal\n`;
+      }
+      workoutDetailsStr += `実施種目とセット内容:\n`;
+
+      workout.exercises.forEach((ex) => {
+        const completedSets = ex.sets.filter(s => !!s.is_completed);
+        if (completedSets.length > 0) {
+          workoutDetailsStr += `- ${ex.name}:\n`;
+          completedSets.forEach((set) => {
+            const weightStr = set.weight !== null ? `${set.weight}${settings.weightUnit}` : '自重';
+            const repsStr = set.reps !== null ? `${set.reps}回` : '';
+            const rpeStr = set.rpe !== null ? ` (RPE: ${set.rpe})` : '';
+            workoutDetailsStr += `  セット${set.set_number}: ${weightStr} x ${repsStr}${rpeStr}\n`;
+          });
+        }
+      });
+
+      if (achievements.streakDays > 1) {
+        workoutDetailsStr += `継続日数: ${achievements.streakDays}日連続達成\n`;
+      }
+      if (achievements.streakWeeks > 1) {
+        workoutDetailsStr += `継続週数: ${achievements.streakWeeks}週間継続中\n`;
+      }
+
+      const isEn = i18n.language?.startsWith('en');
+      const message = isEn
+        ? "Please analyze the workout records above and generate a highly motivating, positive, and specific praise/encouragement comment in English (1-2 sentences, within 100 characters). Output only the body of the praise, omitting greetings or self-introductions."
+        : "上記の今日のワークアウト実績を分析し、ユーザーを具体的かつポジティブに褒める、前向きでモチベーションが高まるオリジナルの応援コメントを日本語で1〜2文（合計100文字以内）で作成してください。挨拶や自己紹介（AIコーチ等）は省き、褒め言葉の本文のみを出力してください。";
+
+      const response = await sendMessageToAICoach(
+        message,
+        workoutDetailsStr,
+        settings.bodyWeight,
+        settings.weightUnit
+      );
+
+      if (response.success) {
+        setAiComment(response.reply);
+        await consumeAIToken();
+        const updatedBalance = await getAITokensBalance();
+        setAITokensBalance(updatedBalance);
+      } else {
+        Alert.alert(
+          t('ui.common.error_title') || 'エラー',
+          response.reply || '評価の取得に失敗しました。'
+        );
+      }
+    } catch (err) {
+      console.error('Failed to get AI assessment', err);
+      Alert.alert(
+        t('ui.common.error_title') || 'エラー',
+        '通信エラーが発生しました。'
+      );
+    } finally {
+      setLoadingAI(false);
+    }
+  };
 
   const handleDone = () => {
     router.replace('/(tabs)/history');
@@ -343,9 +448,21 @@ export default function WorkoutCompletionScreen() {
           {/* Encouraging message if no PRs */}
           {!achievements.is1RMUpdated && !achievements.isVolumeUpdated && (
             <View style={styles.encouragingCard}>
-              <Ionicons name="sparkles-outline" size={22} color={Theme.colors.primary} style={{ marginBottom: 6 }} />
+              <View style={styles.encouragingHeader}>
+                <Ionicons name="sparkles-outline" size={22} color={Theme.colors.primary} />
+                {!aiComment && !loadingAI && (
+                  <TouchableOpacity style={styles.aiAskButton} onPress={handleAskAICoach}>
+                    <Text style={styles.aiAskButtonText}>
+                      {t('ui.workout_completion.ask_ai_coach', { balance: settings.aiTokensBalance, max: maxTokens })}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                {loadingAI && (
+                  <ActivityIndicator size="small" color={Theme.colors.primary} style={{ marginLeft: 8 }} />
+                )}
+              </View>
               <Text style={styles.encouragingText}>
-                {t('ui.workout_completion.no_achievements')}
+                {aiComment ?? t('ui.workout_completion.no_achievements')}
               </Text>
             </View>
           )}
@@ -897,6 +1014,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Theme.colors.border,
+  },
+  encouragingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  aiAskButton: {
+    backgroundColor: 'rgba(79, 172, 254, 0.15)',
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginLeft: 8,
+  },
+  aiAskButtonText: {
+    color: Theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '600',
   },
   encouragingText: {
     color: Theme.colors.textMuted,

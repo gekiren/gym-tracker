@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.41', // OTA識別用のバージョン文字列
+  version: '1.0.42', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'ベーシックプランにおけるカスタム種目の登録上限を20個に変更しました。'
+      'ワークアウト終了画面で、AIコーチによるオリジナルの評価コメントを聞く機能を追加しました。'
     ],
     en: [
-      'Changed the custom exercise registration limit for the basic plan to 20.'
+      'Added a feature to get personalized feedback from the AI Coach on the workout completion screen.'
     ]
   }
 };

@@ -146,8 +146,18 @@ export default function DeveloperMenuScreen() {
               try {
                 // 6. Fetch update
                 await Updates.fetchUpdateAsync();
-                // 7. Reload
-                await Updates.reloadAsync();
+                
+                try {
+                  // 7. Reload
+                  await Updates.reloadAsync();
+                } catch (reloadErr: any) {
+                  console.warn('Reload failed, asking user to manual restart:', reloadErr);
+                  Alert.alert(
+                    'ダウンロード完了',
+                    'アップデートのダウンロードが完了しました。変更を適用するため、アプリを一度終了（タスクキル）して手動で再起動してください。',
+                    [{ text: 'OK', onPress: () => setIsChecking(false) }]
+                  );
+                }
               } catch (fetchErr: any) {
                 console.error('Fetch update failed:', fetchErr);
                 Alert.alert('エラー', `アップデートの取得に失敗しました。\n${fetchErr?.message || String(fetchErr)}`);
@@ -368,7 +378,16 @@ export default function DeveloperMenuScreen() {
               onPress: async () => {
                 try {
                   await Updates.fetchUpdateAsync();
-                  await Updates.reloadAsync();
+                  try {
+                    await Updates.reloadAsync();
+                  } catch (reloadErr) {
+                    console.warn('Reload failed, asking user to manual restart:', reloadErr);
+                    Alert.alert(
+                      t('ui.developer_menu.update_available_title'),
+                      'アップデートのダウンロードが完了しました。変更を適用するため、アプリを一度終了（タスクキル）して手動で再起動してください。',
+                      [{ text: 'OK', onPress: () => setIsChecking(false) }]
+                    );
+                  }
                 } catch (fetchErr) {
                   console.error('Fetch update failed:', fetchErr);
                   Alert.alert(t('ui.common.error'), 'Failed to download update.');

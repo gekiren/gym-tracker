@@ -460,6 +460,7 @@
       "volume_updated": "総重量更新！",
       "new_record": "自己ベスト更新！",
       "no_achievements": "素晴らしいトレーニングでした！次回も頑張りましょう！",
+      "ask_ai_coach": "AIコーチへ評価を聞く（{{balance}}/{{max}}）",
       "done_btn": "終了する",
       "workout_details": "ワークアウト履歴詳細",
       "reward_title": "特典獲得！",
