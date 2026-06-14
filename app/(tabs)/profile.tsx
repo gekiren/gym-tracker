@@ -519,7 +519,7 @@ export default function ProfileScreen() {
     
     try {
       // Verify campaign validity and code matching
-      const isValid = verifyPromoCode(promoInputText);
+      const isValid = await verifyPromoCode(promoInputText);
       if (!isValid) {
         Alert.alert(
           t('ui.profile.promo_error_title') || '認証エラー',

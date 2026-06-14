@@ -8,10 +8,10 @@ export interface PromoCampaignConfig {
   endDate: string;           // End date (ISO format with timezone offset)
 }
 
-// Campaign configuration: 2026-06-06 to 2026-06-20 (Japan Standard Time)
+// Campaign configuration (Campaign code is verified on the server side)
 export const DEFAULT_CAMPAIGN_CONFIG: PromoCampaignConfig = {
   minNativeVersion: '1.0.0',
-  promoCode: 'TREPREMIUM2026',
+  promoCode: '',
   startDate: '2026-06-06T00:00:00+09:00',
   endDate: '2026-06-20T23:59:59+09:00',
 };
@@ -94,25 +94,48 @@ export const checkAndApplyOTAUpdate = async (): Promise<OTACheckResult> => {
 };
 
 /**
- * Verifies if the entered code is correct and matches the active campaign period.
+ * Verifies if the entered code is correct and matches the active campaign period on the server side.
  * 
  * @param inputCode The user-entered promotion code
- * @param config The active campaign configuration
- * @param now Optional date instance representing the current time for verification
  */
-export const verifyPromoCode = (
-  inputCode: string,
-  config: PromoCampaignConfig = DEFAULT_CAMPAIGN_CONFIG,
-  now: Date = new Date()
-): boolean => {
+export const verifyPromoCode = async (
+  inputCode: string
+): Promise<boolean> => {
   const code = inputCode.trim();
-  if (code !== config.promoCode) {
+  if (!code) {
     return false;
   }
 
-  const startTime = new Date(config.startDate).getTime();
-  const endTime = new Date(config.endDate).getTime();
-  const nowTime = now.getTime();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
 
-  return nowTime >= startTime && nowTime <= endTime;
+  try {
+    const proxySecret = process.env.EXPO_PUBLIC_AI_PROXY_SECRET;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (proxySecret) {
+      headers['Authorization'] = `Bearer ${proxySecret}`;
+    }
+
+    const response = await fetch('https://gym-tracker-ai-proxy.toshi-diyil.workers.dev/api/verify-promo', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ code }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = await response.json();
+    return !!data.valid;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.error('Promo code verification failed', err);
+    return false;
+  }
 };
