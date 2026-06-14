@@ -448,7 +448,7 @@ export default function DeveloperMenuScreen() {
         useWorkoutStore.getState().setIsEarlyAdopter(false);
         useWorkoutStore.getState().setPremiumUntil(pastDate);
         useWorkoutStore.getState().setAITokensBalance(20);
-        Alert.alert('期限切れシミュレーション', '過去の期限を持つ期間限定プレミアムを設定しました。設定画面に移動するか、アプリを再起動すると期限切れ処理が実行されます。');
+        Alert.alert('期限切れシミュレーション', '過去の期限を持つお試しプレミアムを設定しました。設定画面に移動するか、アプリを再起動すると期限切れ処理が実行されます。');
       }
     } catch (e: any) {
       Alert.alert('エラー', e?.message || String(e));
@@ -708,7 +708,7 @@ export default function DeveloperMenuScreen() {
               onPress={() => handleChangeTier('expired_limited')}
             >
               <Ionicons name="time-outline" size={20} color="#c084fc" style={{ marginRight: 8 }} />
-              <Text style={[styles.btnOutlineText, { color: '#c084fc' }]}>期間限定プレミアムの期限切れをシミュレート</Text>
+              <Text style={[styles.btnOutlineText, { color: '#c084fc' }]}>お試しプレミアムの期限切れをシミュレート</Text>
             </TouchableOpacity>
           </View>
         </View>

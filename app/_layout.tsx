@@ -208,7 +208,7 @@ export default function RootLayout() {
         setTimeout(() => {
           Alert.alert(
             i18n.t('ui.profile.promo_expired_title') || 'プレミアム期間の終了',
-            i18n.t('ui.profile.promo_expired_msg') || 'プレミアムプラン（期間限定）の有効期限が終了したため、元のプランに戻りました。',
+            i18n.t('ui.profile.promo_expired_msg') || 'プレミアムプラン（お試し）の有効期限が終了したため、元のプランに戻りました。',
             [
               {
                 text: 'OK',
@@ -260,7 +260,7 @@ export default function RootLayout() {
             
             Alert.alert(
               i18n.t('ui.profile.promo_expired_title') || 'プレミアム期間の終了',
-              i18n.t('ui.profile.promo_expired_msg') || 'プレミアムプラン（期間限定）の有効期限が終了したため、元のプランに戻りました。',
+              i18n.t('ui.profile.promo_expired_msg') || 'プレミアムプラン（お試し）の有効期限が終了したため、元のプランに戻りました。',
               [
                 {
                   text: 'OK',

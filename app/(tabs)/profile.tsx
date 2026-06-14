@@ -149,7 +149,7 @@ export default function ProfileScreen() {
           
           Alert.alert(
             t('ui.profile.promo_expired_title') || 'プレミアム期間の終了',
-            t('ui.profile.promo_expired_msg') || 'プレミアムプラン（期間限定）の有効期限が終了したため、元のプランに戻りました。',
+            t('ui.profile.promo_expired_msg') || 'プレミアムプラン（お試し）の有効期限が終了したため、元のプランに戻りました。',
             [
               {
                 text: 'OK',
@@ -600,7 +600,7 @@ export default function ProfileScreen() {
             {
               accountType === 'early_adopter' ? (t('ui.profile.account_early_adopter') || 'アーリーアダプター（無制限）') :
               accountType === 'premium' ? (t('ui.profile.account_premium') || 'プレミアムプラン') :
-              accountType === 'premium_limited' ? `${t('ui.profile.account_premium_limited') || 'プレミアムプラン（期間限定）'} - ${getRemainingDaysText(settings.premiumUntil)}` :
+              accountType === 'premium_limited' ? `${t('ui.profile.account_premium_limited') || 'プレミアムプラン（お試し）'} - ${getRemainingDaysText(settings.premiumUntil)}` :
               (t('ui.profile.account_basic') || 'ベーシックプラン（タップしてアップグレード）')
             }
           </Text>

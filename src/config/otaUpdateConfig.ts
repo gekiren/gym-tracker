@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.42', // OTA識別用のバージョン文字列
+  version: '1.0.43', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'ワークアウト終了画面で、AIコーチによるオリジナルの評価コメントを聞く機能を追加しました。'
+      '「プレミアムプラン（期間限定）」の表記を「プレミアムプラン（お試し）」に変更しました。'
     ],
     en: [
-      'Added a feature to get personalized feedback from the AI Coach on the workout completion screen.'
+      'Changed the name of "Premium Plan (Limited-Time)" to "Premium Plan (Trial)".'
     ]
   }
 };
