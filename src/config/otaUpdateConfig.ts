@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.51', // OTA識別用のバージョン文字列
+  version: '1.0.52', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      '設定の読み込み処理（loadSettings）のコード構造をリファクタリングし、アプリの動作安定性を向上させました。'
+      'プロモーションコード機能のクリーンアップ（クライアント側の未使用設定値の整理）を行いました。'
     ],
     en: [
-      'Refactored the settings loading process (loadSettings) code structure to improve application stability.'
+      'Cleaned up the promotion code feature (removed unused configuration values from the client-side).'
     ]
   }
 };

@@ -3,17 +3,11 @@ import * as Updates from 'expo-updates';
 
 export interface PromoCampaignConfig {
   minNativeVersion: string;   // Required minimum native version (e.g. "1.0.0")
-  promoCode: string;          // Campaign code
-  startDate: string;         // Start date (ISO format with timezone offset)
-  endDate: string;           // End date (ISO format with timezone offset)
 }
 
 // Campaign configuration (Campaign code is verified on the server side)
 export const DEFAULT_CAMPAIGN_CONFIG: PromoCampaignConfig = {
   minNativeVersion: '1.0.0',
-  promoCode: '',
-  startDate: '2026-06-06T00:00:00+09:00',
-  endDate: '2026-06-20T23:59:59+09:00',
 };
 
 /**

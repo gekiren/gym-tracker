@@ -21,6 +21,7 @@
 *   **H12 (Error Boundary 導入):** アプリルートレイアウト (`app/_layout.tsx`) にカスタム `ErrorBoundary` を配置し、画面クラッシュ発生時にアプリが強制終了するのを防ぎ再試行 UI を表示。
 *   **M7 (チャートデータメモ化):** 履歴画面および種目詳細画面のグラフデータ計算を `useMemo` でラップし、再計算コストを削除。また、データが1件のみの場合にグラフが消えていた表示閾値バグも同時に修正。
 *   **M14 (チャット履歴上限):** `coach.tsx` 内のステートに保持するチャット履歴数を最新の 100 件に制限し、メモリ増大を防止。
+*   **H4 (プロモコードハードコード修正):** クライアント側からプロモコード `'TREPREMIUM2026'` および期間設定のハードコードを削除し、Cloudflare Workers によるサーバーサイド検証（`/api/verify-promo`）へ移行。
 
 ---
 
@@ -42,11 +43,6 @@
 *   **対象ファイル:** [aiCoachService.ts](file:///c:/kintore/gym-tracker/src/services/aiCoachService.ts)
 *   **問題:** `WORKER_URL` (Cloudflare Workers) が認証なしで呼び出せるため、逆コンパイルでエンドポイントを抽出されると誰でも無制限に API を叩けてしまう。
 *   **対応案:** ヘッダーに共有シークレット（EAS Secret等で管理）または署名付き JWT を追加し、Worker 側で検証する。
-
-#### H4. プロモコードがソースコードにハードコード
-*   **対象ファイル:** [promoService.ts](file:///c:/kintore/gym-tracker/src/services/promoService.ts#L14)
-*   **問題:** プロモコード文字列（`'TREPREMIUM2026'`）がクライアントアプリに直接ハードコードされているため、逆コンパイルで簡単に露出する。
-*   **対応案:** クラウドファンクション/Workersなどのサーバーサイドでの検証へ移行するか、より安全な検証機構を導入する。
 
 #### H5. Sentry ソースマップの自動アップロード有効化
 *   **対象ファイル:** [eas.json](file:///c:/kintore/gym-tracker/eas.json)
