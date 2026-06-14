@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.57', // OTA識別用のバージョン文字列
+  version: '1.0.58', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      '履歴タブの種目タブから行うオリジナル種目の作成ページに、片側ずつのトグルやデフォルトスタンスのトグルを追加して表示項目を統一しました。'
+      'オリジナル種目作成画面において、項目が増えてもソフトウェアキーボードで入力欄が隠れないように、スクロール表示できる形に改善しました。'
     ],
     en: [
-      'Aligned the custom exercise creation screen in the History tab with the workout screen, adding unilateral and default stance toggles.'
+      'Improved the custom exercise creation screen layout to scroll when the software keyboard is active, preventing it from hiding input fields.'
     ]
   }
 };

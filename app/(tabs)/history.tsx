@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, FlatList, TextInput, Modal, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, FlatList, TextInput, Modal, Switch, KeyboardAvoidingView, Platform } from 'react-native';
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
@@ -847,74 +847,85 @@ export default function HistoryScreen() {
 
       <Modal visible={isModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{t('ui.exercise_library.create_custom_title')}</Text>
-            
-            <Text style={styles.label}>{t('ui.exercise_library.exercise_name_label')}</Text>
-            <TextInput style={styles.modalInput} placeholder={t('ui.exercise_library.exercise_name_placeholder')} placeholderTextColor={Theme.colors.textMuted} value={newName} onChangeText={setNewName} />
-            
-            <Text style={styles.label}>{t('ui.exercise_library.target_muscle_label')}</Text>
-            <View style={styles.choiceContainer}>
-              {allCategories.map(g => (
-                <TouchableOpacity key={g} onPress={() => setNewGroup(g)} style={[styles.choiceChip, newGroup === g && styles.choiceChipActive]}>
-                  <Text style={[styles.choiceChipText, newGroup === g && styles.choiceChipTextActive]}>{translateMuscleGroup(g)}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder={t('ui.exercise_library.manual_input_placeholder')} placeholderTextColor={Theme.colors.textMuted} value={newGroup} onChangeText={setNewGroup} />
-            
-            <Text style={styles.label}>{t('ui.exercise_library.equipment_label')}</Text>
-            <View style={styles.choiceContainer}>
-              {allEquipments.map(e => (
-                <TouchableOpacity key={e} onPress={() => setNewEquip(e)} style={[styles.choiceChip, newEquip === e && styles.choiceChipActive]}>
-                  <Text style={[styles.choiceChipText, newEquip === e && styles.choiceChipTextActive]}>{translateEquipment(e)}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder={t('ui.exercise_library.manual_input_placeholder')} placeholderTextColor={Theme.colors.textMuted} value={newEquip} onChangeText={setNewEquip} />
-            
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
-              <Text style={styles.label}>{t('ui.exercise_select.label_unilateral')}</Text>
-              <Switch value={isUnilateral} onValueChange={setIsUnilateral} trackColor={{ true: Theme.colors.primary }} />
-            </View>
-
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
-              <Text style={styles.label}>{t('ui.exercise_select.label_default_stance')}</Text>
-              <Switch value={useDefaultStance} onValueChange={setUseDefaultStance} trackColor={{ true: Theme.colors.primary }} />
-            </View>
-            
-            {useDefaultStance && (
-              <View style={{ marginTop: 8 }}>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-                  {presetStances.map(preset => (
-                    <TouchableOpacity
-                      key={preset}
-                      style={[styles.choiceChip, newDefaultStance === preset && styles.choiceChipActive]}
-                      onPress={() => setNewDefaultStance(preset)}
-                    >
-                      <Text style={[styles.choiceChipText, newDefaultStance === preset && styles.choiceChipTextActive]}>{translateStance(preset)}</Text>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ width: '100%', alignItems: 'center' }}
+          >
+            <View style={[styles.modalContent, { maxHeight: '85%' }]}>
+              <Text style={styles.modalTitle}>{t('ui.exercise_library.create_custom_title')}</Text>
+              
+              <ScrollView 
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: 16 }}
+              >
+                <Text style={styles.label}>{t('ui.exercise_library.exercise_name_label')}</Text>
+                <TextInput style={styles.modalInput} placeholder={t('ui.exercise_library.exercise_name_placeholder')} placeholderTextColor={Theme.colors.textMuted} value={newName} onChangeText={setNewName} />
+                
+                <Text style={styles.label}>{t('ui.exercise_library.target_muscle_label')}</Text>
+                <View style={styles.choiceContainer}>
+                  {allCategories.map(g => (
+                    <TouchableOpacity key={g} onPress={() => setNewGroup(g)} style={[styles.choiceChip, newGroup === g && styles.choiceChipActive]}>
+                      <Text style={[styles.choiceChipText, newGroup === g && styles.choiceChipTextActive]}>{translateMuscleGroup(g)}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
-                <TextInput 
-                  style={styles.modalInput} 
-                  placeholder={t('ui.exercise_select.label_other_input_stance')} 
-                  placeholderTextColor={Theme.colors.textMuted} 
-                  value={translateStance(newDefaultStance)} 
-                  onChangeText={setNewDefaultStance} 
-                />
-              </View>
-            )}
+                <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder={t('ui.exercise_library.manual_input_placeholder')} placeholderTextColor={Theme.colors.textMuted} value={newGroup} onChangeText={setNewGroup} />
+                
+                <Text style={styles.label}>{t('ui.exercise_library.equipment_label')}</Text>
+                <View style={styles.choiceContainer}>
+                  {allEquipments.map(e => (
+                    <TouchableOpacity key={e} onPress={() => setNewEquip(e)} style={[styles.choiceChip, newEquip === e && styles.choiceChipActive]}>
+                      <Text style={[styles.choiceChipText, newEquip === e && styles.choiceChipTextActive]}>{translateEquipment(e)}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder={t('ui.exercise_library.manual_input_placeholder')} placeholderTextColor={Theme.colors.textMuted} value={newEquip} onChangeText={setNewEquip} />
+                
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+                  <Text style={styles.label}>{t('ui.exercise_select.label_unilateral')}</Text>
+                  <Switch value={isUnilateral} onValueChange={setIsUnilateral} trackColor={{ true: Theme.colors.primary }} />
+                </View>
 
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
-                <Text style={styles.cancelBtnText}>{t('ui.common.cancel')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={handleCreateExercise}>
-                <Text style={styles.saveBtnText}>{t('ui.exercise_library.save_and_add_btn')}</Text>
-              </TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+                  <Text style={styles.label}>{t('ui.exercise_select.label_default_stance')}</Text>
+                  <Switch value={useDefaultStance} onValueChange={setUseDefaultStance} trackColor={{ true: Theme.colors.primary }} />
+                </View>
+                
+                {useDefaultStance && (
+                  <View style={{ marginTop: 8 }}>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                      {presetStances.map(preset => (
+                        <TouchableOpacity
+                          key={preset}
+                          style={[styles.choiceChip, newDefaultStance === preset && styles.choiceChipActive]}
+                          onPress={() => setNewDefaultStance(preset)}
+                        >
+                          <Text style={[styles.choiceChipText, newDefaultStance === preset && styles.choiceChipTextActive]}>{translateStance(preset)}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                    <TextInput 
+                      style={styles.modalInput} 
+                      placeholder={t('ui.exercise_select.label_other_input_stance')} 
+                      placeholderTextColor={Theme.colors.textMuted} 
+                      value={translateStance(newDefaultStance)} 
+                      onChangeText={setNewDefaultStance} 
+                    />
+                  </View>
+                )}
+              </ScrollView>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
+                  <Text style={styles.cancelBtnText}>{t('ui.common.cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.saveBtn} onPress={handleCreateExercise}>
+                  <Text style={styles.saveBtnText}>{t('ui.exercise_library.save_and_add_btn')}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
       {renderCalendarModal()}
