@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.53', // OTA識別用のバージョン文字列
+  version: '1.0.54', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'AIトークン消費処理における不整合（レースコンディション）を解消し、動作の安定性を向上させました。'
+      '巨大コンポーネントを再利用可能なサブコンポーネントへ分割し、アプリの描画パフォーマンスとコードの可読性を大幅に向上させました。'
     ],
     en: [
-      'Fixed a race condition in AI token consumption to improve system stability.'
+      'Split large monolithic components into reusable subcomponents to significantly improve rendering performance and code readability.'
     ]
   }
 };
