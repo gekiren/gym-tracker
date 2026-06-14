@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.56', // OTA識別用のバージョン文字列
+  version: '1.0.57', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'ワークアウト中に誤って追加した種目を、種目名の長押し、または左右へのスワイプ（ゴミ箱アイコンタップ）で削除できるようになりました。完了したセットがある場合は誤削除を防ぐために削除できません。'
+      '履歴タブの種目タブから行うオリジナル種目の作成ページに、片側ずつのトグルやデフォルトスタンスのトグルを追加して表示項目を統一しました。'
     ],
     en: [
-      'You can now delete mistakenly added exercises by long-pressing the exercise name or swiping it to reveal a trash icon. Exercises with completed sets cannot be deleted to prevent accidental loss.'
+      'Aligned the custom exercise creation screen in the History tab with the workout screen, adding unilateral and default stance toggles.'
     ]
   }
 };

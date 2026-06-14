@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, FlatList, TextInput, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, FlatList, TextInput, Modal, Switch } from 'react-native';
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,13 +7,13 @@ import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimat
 import { format, startOfWeek, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { Dimensions } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
-import { getDB, loadFullWorkoutData, deleteWorkout, getExercises, addCustomExercise, deleteExercise, getFavoriteIds, toggleFavorite, getCustomExercisesCount } from '../../src/db/database';
+import { getDB, loadFullWorkoutData, deleteWorkout, getExercises, addCustomExercise, deleteExercise, getFavoriteIds, toggleFavorite, getCustomExercisesCount, saveSetting } from '../../src/db/database';
 import { Theme } from '../../src/theme';
 import { useFocusEffect, router } from 'expo-router';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useTranslation } from 'react-i18next';
 import { AI_CONFIG } from '../../src/config/aiConfig';
-import { translateExercise, translateMuscleGroup, translateEquipment } from '../../src/i18n';
+import { translateExercise, translateMuscleGroup, translateEquipment, translateStance } from '../../src/i18n';
 import WorkoutShareModal from '../../components/WorkoutShareModal';
 
 type Exercise = {
@@ -254,6 +254,12 @@ export default function HistoryScreen() {
   const [newName, setNewName] = useState('');
   const [newGroup, setNewGroup] = useState('胸');
   const [newEquip, setNewEquip] = useState('ダンベル');
+  const [isUnilateral, setIsUnilateral] = useState(false);
+  const [useDefaultStance, setUseDefaultStance] = useState(false);
+  const [newDefaultStance, setNewDefaultStance] = useState('');
+
+  const customStances = settings.customStances;
+  const presetStances = customStances || [];
 
   useFocusEffect(
     useCallback(() => {
@@ -391,15 +397,26 @@ export default function HistoryScreen() {
     }
 
     try {
+      const defaultVar = useDefaultStance && newDefaultStance.trim() ? newDefaultStance.trim() : null;
+      if (defaultVar) {
+        useWorkoutStore.getState().addCustomStance(defaultVar);
+        saveSetting('custom_stances', JSON.stringify(Array.from(new Set([...(customStances || []), defaultVar]))));
+      }
       await addCustomExercise(
         newName.trim(), 
         newGroup.trim() || 'その他', 
-        newEquip.trim() || 'その他'
+        newEquip.trim() || 'その他',
+        isUnilateral,
+        defaultVar,
+        defaultVar
       );
       setModalVisible(false);
       setNewName('');
       setNewGroup('胸');
       setNewEquip('ダンベル');
+      setIsUnilateral(false);
+      setUseDefaultStance(false);
+      setNewDefaultStance('');
       fetchExercises();
     } catch (e) {
       console.error(e);
@@ -753,7 +770,7 @@ export default function HistoryScreen() {
                 onChangeText={setSearch}
               />
             </View>
-            <TouchableOpacity style={styles.addBtn} onPress={() => setModalVisible(true)}>
+            <TouchableOpacity style={styles.addBtn} onPress={() => { setModalVisible(true); setUseDefaultStance(false); setNewDefaultStance(''); setIsUnilateral(false); }}>
               <Ionicons name="add" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -856,6 +873,39 @@ export default function HistoryScreen() {
             </View>
             <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder={t('ui.exercise_library.manual_input_placeholder')} placeholderTextColor={Theme.colors.textMuted} value={newEquip} onChangeText={setNewEquip} />
             
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+              <Text style={styles.label}>{t('ui.exercise_select.label_unilateral')}</Text>
+              <Switch value={isUnilateral} onValueChange={setIsUnilateral} trackColor={{ true: Theme.colors.primary }} />
+            </View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+              <Text style={styles.label}>{t('ui.exercise_select.label_default_stance')}</Text>
+              <Switch value={useDefaultStance} onValueChange={setUseDefaultStance} trackColor={{ true: Theme.colors.primary }} />
+            </View>
+            
+            {useDefaultStance && (
+              <View style={{ marginTop: 8 }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                  {presetStances.map(preset => (
+                    <TouchableOpacity
+                      key={preset}
+                      style={[styles.choiceChip, newDefaultStance === preset && styles.choiceChipActive]}
+                      onPress={() => setNewDefaultStance(preset)}
+                    >
+                      <Text style={[styles.choiceChipText, newDefaultStance === preset && styles.choiceChipTextActive]}>{translateStance(preset)}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <TextInput 
+                  style={styles.modalInput} 
+                  placeholder={t('ui.exercise_select.label_other_input_stance')} 
+                  placeholderTextColor={Theme.colors.textMuted} 
+                  value={translateStance(newDefaultStance)} 
+                  onChangeText={setNewDefaultStance} 
+                />
+              </View>
+            )}
+
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
                 <Text style={styles.cancelBtnText}>{t('ui.common.cancel')}</Text>
