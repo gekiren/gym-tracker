@@ -15,6 +15,7 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Updates from 'expo-updates';
 import { CURRENT_OTA_CONFIG } from '../../src/config/otaUpdateConfig';
+import { PaywallModal } from '../../components/active-workout/PaywallModal';
 
 const REST_OPTIONS = [30, 60, 90, 120, 150, 180, 240, 300]; // in seconds
 
@@ -1050,104 +1051,16 @@ export default function ProfileScreen() {
 
       {/* Premium Paywall Modal */}
       <Modal visible={isPaywallVisible} animationType="slide" transparent={true}>
-        <View style={styles.paywallBg}>
-          <View style={styles.paywallCard}>
-            {/* Header */}
-            <View style={styles.paywallHeader}>
-              <Text style={styles.paywallTitle}>👑 TreNote Premium</Text>
-              <TouchableOpacity onPress={() => !isPurchasing && setIsPaywallVisible(false)} disabled={isPurchasing}>
-                <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={{ width: '100%', marginVertical: 16 }} showsVerticalScrollIndicator={false}>
-              <Text style={styles.paywallSubtitle}>
-                プレミアムプランへアップグレードして、すべての機能制限を解除しましょう！
-              </Text>
-
-              {/* Feature 1 */}
-              <View style={styles.paywallFeature}>
-                <View style={styles.paywallFeatureIcon}>
-                  <Ionicons name="sparkles" size={24} color="#4facfe" />
-                </View>
-                <View style={styles.paywallFeatureInfo}>
-                  <Text style={styles.paywallFeatureTitle}>AIトレーナー利用枠の拡張</Text>
-                  <Text style={styles.paywallFeatureDesc}>ベーシックプランの月5回制限から、月20回までに利用枠が拡張されます。</Text>
-                </View>
-              </View>
-
-              {/* Feature 2 */}
-              <View style={styles.paywallFeature}>
-                <View style={styles.paywallFeatureIcon}>
-                  <Ionicons name="copy" size={24} color="#4facfe" />
-                </View>
-                <View style={styles.paywallFeatureInfo}>
-                  <Text style={styles.paywallFeatureTitle}>インポート機能の解放</Text>
-                  <Text style={styles.paywallFeatureDesc}>既存のルーティンや過去のワークアウト履歴から、コピーして新しいルーティンを作成できるようになります。</Text>
-                </View>
-              </View>
-
-              {/* Feature 3 */}
-              <View style={styles.paywallFeature}>
-                <View style={styles.paywallFeatureIcon}>
-                  <Ionicons name="cloud-upload-outline" size={24} color="#4facfe" />
-                </View>
-                <View style={styles.paywallFeatureInfo}>
-                  <Text style={styles.paywallFeatureTitle}>バックアップ・復元機能の解放</Text>
-                  <Text style={styles.paywallFeatureDesc}>履歴や設定をファイルとして安全にエクスポート/インポートできるようになります。</Text>
-                </View>
-              </View>
-
-              {/* Feature 4 */}
-              <View style={styles.paywallFeature}>
-                <View style={styles.paywallFeatureIcon}>
-                  <Ionicons name="heart" size={24} color="#4facfe" />
-                </View>
-                <View style={styles.paywallFeatureInfo}>
-                  <Text style={styles.paywallFeatureTitle}>アプリの開発支援</Text>
-                  <Text style={styles.paywallFeatureDesc}>より便利な機能の追加や安定したサーバー運用のための開発継続をサポートできます。</Text>
-                </View>
-              </View>
-            </ScrollView>
-
-            {/* Price tag */}
-            <View style={styles.priceContainer}>
-              <Text style={styles.priceLabel}>プレミアムプラン (買い切り型)</Text>
-              <Text style={styles.priceValue}>¥500</Text>
-              <Text style={styles.priceSubtext}>※一度の購入で永久にご利用いただけます</Text>
-            </View>
-
-            {/* Actions */}
-            <View style={styles.paywallBtnContainer}>
-              <TouchableOpacity 
-                style={[
-                  styles.paywallUpgradeBtn, 
-                  isPurchasing && { opacity: 0.5 },
-                  (isPremium && !isEarly) && { backgroundColor: '#555', shadowColor: 'transparent', elevation: 0 }
-                ]} 
-                onPress={handlePurchase}
-                disabled={isPurchasing || (isPremium && !isEarly)}
-              >
-                {isPurchasing ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.paywallUpgradeBtnText}>
-                    {(isPremium && !isEarly) ? 'プレミアムプラン適用済み' : 'プレミアムにアップグレードする'}
-                  </Text>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[styles.paywallRestoreBtn, isPurchasing && { opacity: 0.5 }]} 
-                onPress={handleRestore}
-                disabled={isPurchasing}
-              >
-                <Text style={styles.paywallRestoreBtnText}>購入情報を復元する (Restore)</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+        <PaywallModal
+          isPurchasing={isPurchasing}
+          isPremium={isPremium}
+          isEarly={isEarly}
+          onClose={() => !isPurchasing && setIsPaywallVisible(false)}
+          onPurchase={handlePurchase}
+          onRestore={handleRestore}
+        />
       </Modal>
+
 
       {/* Safeguard Initialization Modal */}
       <Modal visible={isResetModalVisible} animationType="slide" transparent={true}>

@@ -13,6 +13,8 @@ import { DEFAULT_STANCES } from '../../src/utils/stances';
 import { openYouTubeSearch } from '../../src/utils/youtubeUtils';
 import { AI_CONFIG } from '../../src/config/aiConfig';
 import { format, startOfWeek, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval } from 'date-fns';
+import { PersonalRecordsList } from '../../components/active-workout/PersonalRecordsList';
+import { HistoryCalendarModal } from '../../components/active-workout/HistoryCalendarModal';
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -126,35 +128,6 @@ export default function ExerciseDetailScreen() {
     Alert.alert(t('ui.exercise_detail.copy_success_title'), t('ui.exercise_detail.copy_success_message'));
   };
 
-  // 指定した月の日付一覧を取得
-  const getCalendarDays = () => {
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(monthStart);
-    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
-    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
-    return eachDayOfInterval({ start: startDate, end: endDate });
-  };
-
-  // 指定した月のこの種目の統計（サマリー）を計算
-  const getMonthlyStats = () => {
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(monthStart);
-    let count = 0;
-    let volume = 0;
-    let set_count = 0;
-
-    history.forEach(item => {
-      const date = new Date(item.start_time);
-      if (date >= monthStart && date <= monthEnd) {
-        count++;
-        set_count += item.sets.length;
-        volume += item.sets.reduce((sum: number, s: any) => sum + (parseFloat(s.weight) || 0) * (parseInt(s.reps, 10) || 0), 0);
-      }
-    });
-
-    return { count, volume, set_count };
-  };
-
   // カレンダーの日付タップ時のスクロール＆ハイライト
   const handleDatePress = (dateStr: string) => {
     const targetHistory = history.find(item => {
@@ -178,124 +151,6 @@ export default function ExerciseDetailScreen() {
     }
   };
 
-  // カレンダーモーダルの描画
-  const renderCalendarModal = () => {
-    const days = getCalendarDays();
-    const { count, volume, set_count } = getMonthlyStats();
-    const isJa = i18n.language === 'ja';
-
-    const monthYearText = isJa
-      ? format(currentMonth, 'yyyy年 M月')
-      : format(currentMonth, 'MMMM yyyy');
-
-    const weekdays = isJa
-      ? ['月', '火', '水', '木', '金', '土', '日']
-      : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-    const workoutsMap: { [key: string]: boolean } = {};
-    history.forEach(item => {
-      const dStr = format(new Date(item.start_time), 'yyyy-MM-dd');
-      workoutsMap[dStr] = true;
-    });
-
-    return (
-      <Modal
-        visible={isCalendarVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setCalendarVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: '90%' }]}>
-            <View style={styles.calendarModalHeader}>
-              <Text style={styles.calendarModalTitle}>
-                {isJa ? 'トレーニング履歴カレンダー' : 'Training Calendar'}
-              </Text>
-              <TouchableOpacity onPress={() => setCalendarVisible(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.monthSelector}>
-              <TouchableOpacity
-                onPress={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
-                style={styles.monthNavButton}
-              >
-                <Ionicons name="chevron-back" size={22} color={Theme.colors.primary} />
-              </TouchableOpacity>
-              <Text style={styles.monthText}>{monthYearText}</Text>
-              <TouchableOpacity
-                onPress={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
-                style={styles.monthNavButton}
-              >
-                <Ionicons name="chevron-forward" size={22} color={Theme.colors.primary} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.weekdaysContainer}>
-              {weekdays.map((day, idx) => (
-                <Text key={idx} style={styles.weekdayText}>{day}</Text>
-              ))}
-            </View>
-
-            <View style={styles.daysGrid}>
-              {days.map((day, idx) => {
-                const dayStr = format(day, 'yyyy-MM-dd');
-                const hasWorkout = workoutsMap[dayStr];
-                const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
-
-                return (
-                  <TouchableOpacity
-                    key={idx}
-                    style={styles.dayCell}
-                    disabled={!hasWorkout}
-                    onPress={() => handleDatePress(dayStr)}
-                  >
-                    <View style={[
-                      styles.dayBox,
-                      hasWorkout && styles.workoutDayBox
-                    ]}>
-                      <Text style={[
-                        styles.dayText,
-                        !isCurrentMonth && styles.dimmedDayText,
-                        hasWorkout && styles.workoutDayText
-                      ]}>
-                        {format(day, 'd')}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <View style={styles.summaryContainer}>
-              <Text style={styles.summaryTitle}>
-                {isJa ? '月間サマリー' : 'Monthly Summary'}
-              </Text>
-              <View style={styles.summaryStatsRow}>
-                <View style={styles.summaryStatBlock}>
-                  <Text style={styles.summaryStatLabel}>{isJa ? '実施日数' : 'Workouts'}</Text>
-                  <Text style={styles.summaryStatValue}>{count}{isJa ? '日' : ''}</Text>
-                </View>
-                <View style={styles.summaryStatBlock}>
-                  <Text style={styles.summaryStatLabel}>{isJa ? '総ボリューム' : 'Total Volume'}</Text>
-                  <Text style={styles.summaryStatValue}>
-                    {volume > 0 ? `${volume.toLocaleString()} ${settings.weightUnit}` : '-'}
-                  </Text>
-                </View>
-                <View style={styles.summaryStatBlock}>
-                  <Text style={styles.summaryStatLabel}>{isJa ? '総セット数' : 'Total Sets'}</Text>
-                  <Text style={styles.summaryStatValue}>
-                    {set_count > 0 ? `${set_count}${isJa ? 'セット' : ' sets'}` : '-'}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    );
-  };
 
   const getPRTimeline = (reps: number, variation: string) => {
     const sortedHistory = [...history].reverse();
@@ -603,45 +458,15 @@ export default function ExerciseDetailScreen() {
         </View>
 
         {/* PR Section */}
-        {Object.keys(personalRecords).length > 0 && (
-          <View style={styles.prSection}>
-            <Text style={[styles.sectionTitle, { paddingHorizontal: Theme.spacing.lg, marginBottom: 8 }]}>{t('ui.exercise_detail.section_pr')}</Text>
-            {Object.entries(personalRecords).map(([variation, prMap]) => (
-              <View key={variation} style={{ marginBottom: 12 }}>
-                {variation !== 'default' && (
-                  <Text style={styles.prVariationTitle}>{t('ui.active_workout.stance_label')}: {translateStance(variation)}</Text>
-                )}
-                <View style={styles.prList}>
-                  {Object.keys(prMap)
-                    .sort((a, b) => parseInt(a) - parseInt(b))
-                    .map(reps => {
-                      const repNum = parseInt(reps);
-                      const weight = prMap[repNum];
-                      const oneRm = repNum === 1 ? weight : Math.round(weight * (1 + (repNum / 30)));
-                      return (
-                        <TouchableOpacity 
-                          key={reps} 
-                          style={styles.prItem}
-                          activeOpacity={0.7}
-                          onPress={() => {
-                            setSelectedChartReps(repNum);
-                            setSelectedChartVariation(variation);
-                            setShowChartModal(true);
-                          }}
-                        >
-                          <Text style={styles.prReps}>{reps}{t('ui.common.reps_unit')}</Text>
-                          <Text style={styles.prWeight}>{weight} {settings.weightUnit}</Text>
-                          {repNum > 1 && (
-                            <Text style={styles.prOneRm}>1RM: {oneRm}{settings.weightUnit}</Text>
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
+        <PersonalRecordsList
+          personalRecords={personalRecords}
+          weightUnit={settings.weightUnit}
+          onPrPress={(reps, variation) => {
+            setSelectedChartReps(reps);
+            setSelectedChartVariation(variation);
+            setShowChartModal(true);
+          }}
+        />
 
         {vChartData && (
           <View style={styles.chartContainer}>
@@ -882,7 +707,17 @@ export default function ExerciseDetailScreen() {
           </View>
         </View>
       </Modal>
-      {renderCalendarModal()}
+      <HistoryCalendarModal
+        visible={isCalendarVisible}
+        currentMonth={currentMonth}
+        history={history}
+        weightUnit={settings.weightUnit}
+        onClose={() => setCalendarVisible(false)}
+        onNavigateMonth={(offset) => {
+          setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + offset, 1));
+        }}
+        onDatePress={handleDatePress}
+      />
     </View>
   );
 }
