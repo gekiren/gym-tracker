@@ -848,7 +848,7 @@ export default function HistoryScreen() {
       <Modal visible={isModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={{ width: '100%', alignItems: 'center' }}
           >
             <View style={[styles.modalContent, { maxHeight: '85%' }]}>
