@@ -21,6 +21,32 @@ type Exercise = {
   default_stance?: string | null;
 };
 
+interface SwipeDeleteActionProps {
+  drag: SharedValue<number>;
+  onPress: () => void;
+}
+
+function SwipeDeleteAction({ drag, onPress }: SwipeDeleteActionProps) {
+  const styleAnimation = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: drag.value + 80 }],
+    };
+  });
+
+  return (
+    <View style={{ width: 80, flexDirection: 'row' }}>
+      <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
+        <TouchableOpacity 
+          style={styles.deleteAction}
+          onPress={onPress}
+        >
+          <Ionicons name="trash-outline" size={24} color="#fff" />
+        </TouchableOpacity>
+      </Reanimated.View>
+    </View>
+  );
+}
+
 export default function SelectExerciseScreen() {
   const { t } = useTranslation();
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -189,23 +215,11 @@ export default function SelectExerciseScreen() {
   };
 
   const renderRightActions = (progress: SharedValue<number>, drag: SharedValue<number>, item: Exercise) => {
-    const styleAnimation = useAnimatedStyle(() => {
-      return {
-        transform: [{ translateX: drag.value + 80 }],
-      };
-    });
-
     return (
-      <View style={{ width: 80, flexDirection: 'row' }}>
-        <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
-          <TouchableOpacity 
-            style={styles.deleteAction}
-            onPress={() => handleDelete(item)}
-          >
-            <Ionicons name="trash-outline" size={24} color="#fff" />
-          </TouchableOpacity>
-        </Reanimated.View>
-      </View>
+      <SwipeDeleteAction 
+        drag={drag}
+        onPress={() => handleDelete(item)}
+      />
     );
   };
 

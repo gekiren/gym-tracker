@@ -42,6 +42,7 @@ export default function ActiveWorkoutScreen() {
   const lastRestFinishedAt = useWorkoutStore(state => state.lastRestFinishedAt);
   const [showWorkoutNotes, setShowWorkoutNotes] = useState(false);
   const [expandedExerciseNotes, setExpandedExerciseNotes] = useState<Record<string, boolean>>({});
+  const [isSaving, setIsSaving] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const insets = useSafeAreaInsets();
   const isAndroid = Platform.OS === 'android';
@@ -215,6 +216,8 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleFinish = () => {
+    if (isSaving) return;
+
     Alert.alert(
       t('ui.active_workout.alert_finish_title'),
       t('ui.active_workout.alert_finish_message'),
@@ -224,6 +227,8 @@ export default function ActiveWorkoutScreen() {
           text: t('ui.active_workout.alert_finish_save'),
           style: 'default',
           onPress: async () => {
+            if (isSaving) return;
+            setIsSaving(true);
             try {
               // 1. Gather unique completed exercise IDs
               const exerciseIds = exercises
@@ -389,6 +394,7 @@ export default function ActiveWorkoutScreen() {
             } catch (e) {
               console.error('Failed to finish workout', e);
               Alert.alert(t('ui.common.error') || 'Error', 'Failed to save workout.');
+              setIsSaving(false);
             }
           }
         }

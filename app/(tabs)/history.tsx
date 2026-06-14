@@ -23,6 +23,32 @@ type Exercise = {
   equipment: string;
 };
 
+interface SwipeDeleteActionProps {
+  drag: SharedValue<number>;
+  onPress: () => void;
+}
+
+function SwipeDeleteAction({ drag, onPress }: SwipeDeleteActionProps) {
+  const styleAnimation = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: drag.value + 80 }],
+    };
+  });
+
+  return (
+    <View style={{ width: 80, flexDirection: 'row' }}>
+      <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
+        <TouchableOpacity 
+          style={styles.deleteAction}
+          onPress={onPress}
+        >
+          <Ionicons name="trash-outline" size={24} color="#fff" />
+        </TouchableOpacity>
+      </Reanimated.View>
+    </View>
+  );
+}
+
 export default function HistoryScreen() {
   const settings = useWorkoutStore(state => state.settings);
   const isPremium = settings.isPremium;
@@ -404,23 +430,11 @@ export default function HistoryScreen() {
   };
 
   const renderRightActions = (progress: SharedValue<number>, drag: SharedValue<number>, item: Exercise) => {
-    const styleAnimation = useAnimatedStyle(() => {
-      return {
-        transform: [{ translateX: drag.value + 80 }],
-      };
-    });
-
     return (
-      <View style={{ width: 80, flexDirection: 'row' }}>
-        <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
-          <TouchableOpacity 
-            style={styles.deleteAction}
-            onPress={() => handleDeleteExercise(item)}
-          >
-            <Ionicons name="trash-outline" size={24} color="#fff" />
-          </TouchableOpacity>
-        </Reanimated.View>
-      </View>
+      <SwipeDeleteAction 
+        drag={drag}
+        onPress={() => handleDeleteExercise(item)}
+      />
     );
   };
 
