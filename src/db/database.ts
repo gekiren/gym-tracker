@@ -1063,10 +1063,21 @@ export const getAITokensBalance = async (): Promise<number> => {
 };
 
 export const consumeAIToken = async (): Promise<void> => {
-  const balance = await getAITokensBalance();
-  const newBalance = Math.max(0, balance - 1);
+  // Ensure that month-boundary resetting has run before decrementing
+  await getAITokensBalance();
+
   const conn = getDB();
-  await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("ai_tokens_balance", ?)', [newBalance.toString()]);
+  // Perform atomic decrement, ensuring the balance doesn't drop below 0
+  await conn.runAsync(`
+    UPDATE settings 
+    SET value = CAST(
+      CASE 
+        WHEN CAST(value AS INTEGER) > 0 THEN CAST(value AS INTEGER) - 1 
+        ELSE 0 
+      END AS TEXT
+    ) 
+    WHERE key = 'ai_tokens_balance'
+  `);
 };
 
 export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<string> => {
