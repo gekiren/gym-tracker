@@ -608,32 +608,36 @@ export const closeDB = async () => {
 
 export const saveWorkout = async (title: string, startTime: string, endTime: string, notes: string | null, exercises: any[], calories: number | null = null): Promise<number> => {
   const conn = getDB();
-  const wResult = await conn.runAsync(
-    'INSERT INTO workouts (title, start_time, end_time, notes, calories) VALUES (?, ?, ?, ?, ?)',
-    [title, startTime, endTime, notes, calories]
-  );
-  
-  const workoutId = wResult.lastInsertRowId;
-  let order = 0;
+  let workoutId = 0;
 
-  for (const ex of exercises) {
-    // Save mapping
-    const waResult = await conn.runAsync(
-      'INSERT INTO workout_exercises (workout_id, exercise_id, sort_order, notes) VALUES (?, ?, ?, ?)',
-      [workoutId, ex.exercise_id, order++, ex.notes || null]
+  await conn.withTransactionAsync(async () => {
+    const wResult = await conn.runAsync(
+      'INSERT INTO workouts (title, start_time, end_time, notes, calories) VALUES (?, ?, ?, ?, ?)',
+      [title, startTime, endTime, notes, calories]
     );
-    const weId = waResult.lastInsertRowId;
+    
+    workoutId = wResult.lastInsertRowId;
+    let order = 0;
 
-    // Save sets
-    for (const set of ex.sets) {
-      if (set.weight != null || set.reps != null) { // only save valid sets
-        await conn.runAsync(
-          'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [weId, set.set_number, set.reps, set.weight, set.rpe, set.is_completed ? 1 : 0, set.rest_seconds || null, set.work_seconds || null, set.side || null, set.variation || null, set.stance || null]
-        );
+    for (const ex of exercises) {
+      // Save mapping
+      const waResult = await conn.runAsync(
+        'INSERT INTO workout_exercises (workout_id, exercise_id, sort_order, notes) VALUES (?, ?, ?, ?)',
+        [workoutId, ex.exercise_id, order++, ex.notes || null]
+      );
+      const weId = waResult.lastInsertRowId;
+
+      // Save sets
+      for (const set of ex.sets) {
+        if (set.weight != null || set.reps != null) { // only save valid sets
+          await conn.runAsync(
+            'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [weId, set.set_number, set.reps, set.weight, set.rpe, set.is_completed ? 1 : 0, set.rest_seconds || null, set.work_seconds || null, set.side || null, set.variation || null, set.stance || null]
+          );
+        }
       }
     }
-  }
+  });
 
   return workoutId;
 };
@@ -813,24 +817,27 @@ export const getRoutines = async () => {
 
 export const addRoutine = async (title: string, description: string, exercises: { id: number, name: string, sets: any[] }[]) => {
   const conn = getDB();
-  const res = await conn.runAsync('INSERT INTO routines (title, description) VALUES (?, ?)', [title, description]);
-  const routineId = res.lastInsertRowId;
   
-  let order = 0;
-  for (const ex of exercises) {
-    const rxRes = await conn.runAsync(
-      'INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)', 
-      [routineId, ex.id, order++]
-    );
-    const routineExerciseId = rxRes.lastInsertRowId;
+  await conn.withTransactionAsync(async () => {
+    const res = await conn.runAsync('INSERT INTO routines (title, description) VALUES (?, ?)', [title, description]);
+    const routineId = res.lastInsertRowId;
     
-    for (const s of ex.sets) {
-      await conn.runAsync(
-        'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [routineExerciseId, s.set_number, s.reps, s.weight, s.rpe, s.side || null, s.variation || null, s.stance || null]
+    let order = 0;
+    for (const ex of exercises) {
+      const rxRes = await conn.runAsync(
+        'INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)', 
+        [routineId, ex.id, order++]
       );
+      const routineExerciseId = rxRes.lastInsertRowId;
+      
+      for (const s of ex.sets) {
+        await conn.runAsync(
+          'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [routineExerciseId, s.set_number, s.reps, s.weight, s.rpe, s.side || null, s.variation || null, s.stance || null]
+        );
+      }
     }
-  }
+  });
 };
 
 export const deleteRoutine = async (id: number) => {
