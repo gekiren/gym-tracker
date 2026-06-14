@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { addMonths } from 'date-fns';
 
 // Initialize the database connection
 let db: SQLite.SQLiteDatabase | null = null;
@@ -910,8 +911,7 @@ export const getPremiumStatusFromDB = async (): Promise<{ isPremium: boolean; pr
 
 export const activatePremiumFromPromo = async (): Promise<string> => {
   const conn = getDB();
-  const oneMonthFromNow = new Date();
-  oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+  const oneMonthFromNow = addMonths(new Date(), 1);
   const premiumUntilStr = oneMonthFromNow.toISOString();
   
   // Deadlock prevention: perform only INSERT OR REPLACE operations
