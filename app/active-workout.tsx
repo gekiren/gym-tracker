@@ -14,6 +14,9 @@ import { ElapsedTimerHeader } from '../components/active-workout/ElapsedTimerHea
 import { ResumeWorkoutButton } from '../components/active-workout/ResumeWorkoutButton';
 import { FloatingRestTimer } from '../components/active-workout/FloatingRestTimer';
 import { SetInputRow } from '../components/active-workout/SetInputRow';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
+import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 
 function KeepAwakeController() {
   useKeepAwake();
@@ -31,6 +34,7 @@ export default function ActiveWorkoutScreen() {
   const updateExerciseNotes = useWorkoutStore(state => state.updateExerciseNotes);
   const addSet = useWorkoutStore(state => state.addSet);
   const removeSet = useWorkoutStore(state => state.removeSet);
+  const removeExercise = useWorkoutStore(state => state.removeExercise);
   const toggleSetComplete = useWorkoutStore(state => state.toggleSetComplete);
   const updateSet = useWorkoutStore(state => state.updateSet);
   const restTimerActive = useWorkoutStore(state => state.restTimer.isActive);
@@ -47,6 +51,73 @@ export default function ActiveWorkoutScreen() {
   const insets = useSafeAreaInsets();
   const isAndroid = Platform.OS === 'android';
   const safeBottomOffset = isAndroid ? (insets.bottom === 0 ? 48 : insets.bottom) : insets.bottom;
+
+  const handleDeleteExercise = (ex: any) => {
+    // 完了チェックが入っているセットがあるか確認
+    const hasCompletedSet = ex.sets.some((s: any) => s.is_completed);
+    if (hasCompletedSet) {
+      Alert.alert(
+        t('ui.active_workout.alert_delete_exercise_error_title'),
+        t('ui.active_workout.alert_delete_exercise_error_message')
+      );
+      return;
+    }
+
+    Alert.alert(
+      t('ui.active_workout.alert_delete_exercise_title'),
+      t('ui.active_workout.alert_delete_exercise_message', { name: translateExercise(ex.name) }),
+      [
+        { text: t('ui.common.cancel'), style: 'cancel' },
+        {
+          text: t('ui.active_workout.alert_delete_exercise_confirm'),
+          style: 'destructive',
+          onPress: () => {
+            removeExercise(ex.id);
+          }
+        }
+      ]
+    );
+  };
+
+  const renderLeftActions = (progress: SharedValue<number>, drag: SharedValue<number>, ex: any) => {
+    const styleAnimation = useAnimatedStyle(() => {
+      return {
+        transform: [{ translateX: drag.value - 80 }],
+      };
+    });
+    return (
+      <View style={{ width: 80 }}>
+        <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
+          <GHTouchableOpacity 
+            style={styles.deleteAction}
+            onPress={() => handleDeleteExercise(ex)}
+          >
+            <Ionicons name="trash-outline" size={24} color="#fff" />
+          </GHTouchableOpacity>
+        </Reanimated.View>
+      </View>
+    );
+  };
+
+  const renderRightActions = (progress: SharedValue<number>, drag: SharedValue<number>, ex: any) => {
+    const styleAnimation = useAnimatedStyle(() => {
+      return {
+        transform: [{ translateX: drag.value + 80 }],
+      };
+    });
+    return (
+      <View style={{ width: 80 }}>
+        <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
+          <GHTouchableOpacity 
+            style={styles.deleteAction}
+            onPress={() => handleDeleteExercise(ex)}
+          >
+            <Ionicons name="trash-outline" size={24} color="#fff" />
+          </GHTouchableOpacity>
+        </Reanimated.View>
+      </View>
+    );
+  };
 
   const handleAICoachWorkout = () => {
     if (exercises.length === 0) {
@@ -497,55 +568,69 @@ export default function ActiveWorkoutScreen() {
 
         {exercises.map((ex) => (
           <View key={ex.id} style={styles.card}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.md }}>
-              <View style={{ flex: 1 }}>
-                <TouchableOpacity onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: ex.exercise_id || ex.id } } as any)}>
-                  <Text style={styles.exerciseTitle}>{translateExercise(ex.name)}</Text>
-                </TouchableOpacity>
-                {settings.displayFields.showStance && (
-                  <TouchableOpacity 
-                    style={styles.exerciseVariationBtn}
-                    onPress={() => {
-                      const curStance = ex.default_stance || ex.default_variation || null;
-                      setStanceModalTarget({ type: 'exercise', exId: ex.id, currentValue: curStance });
-                      setCustomStance(curStance || '');
-                      setStanceModalVisible(true);
-                    }}
-                  >
-                    <Text style={styles.exerciseVariationText}>
-                      {t('ui.active_workout.stance_label')}: {(ex.default_stance || ex.default_variation) ? translateStance((ex.default_stance || ex.default_variation) as string) : t('ui.active_workout.stance_standard')}
-                    </Text>
-                    <Ionicons name="chevron-down" size={12} color={Theme.colors.primary} />
-                  </TouchableOpacity>
-                )}
-                {settings.displayFields.showVolume && (
-                  <View style={styles.exerciseVolumeContainer}>
-                    <Text style={styles.exerciseVolumeLabel}>{t('ui.history.volume_label')}: </Text>
-                    <Text style={styles.exerciseVolumeValue}>
-                      {ex.sets.reduce((sum, s) => {
-                        if (!s.is_completed) return sum;
-                        const bw = (ex.equipment === '自重' && settings.bodyWeight) ? settings.bodyWeight : 0;
-                        return sum + ((s.weight || 0) + bw) * (s.reps || 0);
-                      }, 0)} {settings.weightUnit}
-                    </Text>
+            <Swipeable
+              renderLeftActions={(progress, drag) => renderLeftActions(progress, drag, ex)}
+              renderRightActions={(progress, drag) => renderRightActions(progress, drag, ex)}
+              friction={2}
+              leftThreshold={40}
+              rightThreshold={40}
+            >
+              <View style={{ backgroundColor: Theme.colors.card, paddingVertical: 4 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.md }}>
+                  <View style={{ flex: 1 }}>
+                    <TouchableOpacity 
+                      onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: ex.exercise_id || ex.id } } as any)}
+                      onLongPress={() => handleDeleteExercise(ex)}
+                      delayLongPress={500}
+                    >
+                      <Text style={styles.exerciseTitle}>{translateExercise(ex.name)}</Text>
+                    </TouchableOpacity>
+                    {settings.displayFields.showStance && (
+                      <TouchableOpacity 
+                        style={styles.exerciseVariationBtn}
+                        onPress={() => {
+                          const curStance = ex.default_stance || ex.default_variation || null;
+                          setStanceModalTarget({ type: 'exercise', exId: ex.id, currentValue: curStance });
+                          setCustomStance(curStance || '');
+                          setStanceModalVisible(true);
+                        }}
+                      >
+                        <Text style={styles.exerciseVariationText}>
+                          {t('ui.active_workout.stance_label')}: {(ex.default_stance || ex.default_variation) ? translateStance((ex.default_stance || ex.default_variation) as string) : t('ui.active_workout.stance_standard')}
+                        </Text>
+                        <Ionicons name="chevron-down" size={12} color={Theme.colors.primary} />
+                      </TouchableOpacity>
+                    )}
+                    {settings.displayFields.showVolume && (
+                      <View style={styles.exerciseVolumeContainer}>
+                        <Text style={styles.exerciseVolumeLabel}>{t('ui.history.volume_label')}: </Text>
+                        <Text style={styles.exerciseVolumeValue}>
+                          {ex.sets.reduce((sum, s) => {
+                            if (!s.is_completed) return sum;
+                            const bw = (ex.equipment === '自重' && settings.bodyWeight) ? settings.bodyWeight : 0;
+                            return sum + ((s.weight || 0) + bw) * (s.reps || 0);
+                          }, 0)} {settings.weightUnit}
+                        </Text>
+                      </View>
+                    )}
                   </View>
-                )}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    {AI_CONFIG.status === 'active' && (
+                      <TouchableOpacity onPress={() => handleAICoachExercise(ex)}>
+                        <Ionicons name="sparkles" size={20} color={Theme.colors.primary} />
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity onPress={() => setExpandedExerciseNotes(prev => ({ ...prev, [ex.id]: !prev[ex.id] }))}>
+                      <Ionicons 
+                        name={ex.notes ? "chatbubble-ellipses" : "chatbubble-outline"} 
+                        size={20} 
+                        color={ex.notes ? Theme.colors.primary : Theme.colors.textMuted} 
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                {AI_CONFIG.status === 'active' && (
-                  <TouchableOpacity onPress={() => handleAICoachExercise(ex)}>
-                    <Ionicons name="sparkles" size={20} color={Theme.colors.primary} />
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity onPress={() => setExpandedExerciseNotes(prev => ({ ...prev, [ex.id]: !prev[ex.id] }))}>
-                  <Ionicons 
-                    name={ex.notes ? "chatbubble-ellipses" : "chatbubble-outline"} 
-                    size={20} 
-                    color={ex.notes ? Theme.colors.primary : Theme.colors.textMuted} 
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
+            </Swipeable>
 
             {expandedExerciseNotes[ex.id] && (
               <TextInput

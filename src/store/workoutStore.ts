@@ -86,6 +86,7 @@ interface WorkoutState {
   updateExerciseStance: (exerciseId: string, stance: string | null) => void;
   endWorkout: () => void;
   addExercise: (exercise: { id: number, name: string, previousSets?: any[], personalRecords?: Record<string, Record<number, number>>, is_unilateral?: number, default_variation?: string | null, default_stance?: string | null, equipment?: string, muscle_group?: string }) => void;
+  removeExercise: (exerciseId: string) => void;
   addSet: (exerciseId: string) => void;
   removeSet: (exerciseId: string, setId: string) => void;
   updateSet: (exerciseId: string, setId: string, changes: Partial<SetRecord>) => void;
@@ -499,6 +500,10 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       ]
     };
   }),
+
+  removeExercise: (exerciseId) => set((state) => ({
+    exercises: state.exercises.filter(ex => ex.id !== exerciseId)
+  })),
 
   addSet: (exerciseId) => set((state) => ({
     exercises: state.exercises.map(ex => {

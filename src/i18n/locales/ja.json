@@ -100,6 +100,11 @@
       "alert_delete_set_title": "セットの削除",
       "alert_delete_set_message": "セット {{number}} を削除しますか？",
       "alert_delete_set_confirm": "削除する",
+      "alert_delete_exercise_title": "種目の削除",
+      "alert_delete_exercise_message": "この種目「{{name}}」をワークアウトから削除しますか？\n（入力したセットデータも削除されます）",
+      "alert_delete_exercise_confirm": "削除する",
+      "alert_delete_exercise_error_title": "削除不可",
+      "alert_delete_exercise_error_message": "完了したセットが含まれる種目は削除できません。まずセットのチェックを外してください。",
       "manual_start_btn": "▶ ワークアウト再開",
       "manual_start_success": "計測を開始しました",
       "start_training_btn": "▶ トレーニングタイマー開始"
