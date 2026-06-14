@@ -2,6 +2,7 @@ import * as SQLite from 'expo-sqlite';
 
 // Initialize the database connection
 let db: SQLite.SQLiteDatabase | null = null;
+let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export const PRESET_EXERCISES = [
     // Chest
@@ -117,23 +118,26 @@ export const PRESET_EXERCISES = [
 export const PRESET_EXERCISE_NAMES = new Set(PRESET_EXERCISES.map(e => e.name));
 
 export const getCustomExercisesCount = async (): Promise<number> => {
-  if (!db) {
-    try {
-      const conn = await SQLite.openDatabaseAsync('gymtracker.db');
-      const rows = await conn.getAllAsync<{ name: string }>('SELECT name FROM exercises');
-      return rows.filter(r => !PRESET_EXERCISE_NAMES.has(r.name)).length;
-    } catch (e) {
-      console.warn('Failed to open database in getCustomExercisesCount', e);
-      return 0;
-    }
+  try {
+    const conn = await initDB();
+    const rows = await conn.getAllAsync<{ name: string }>('SELECT name FROM exercises');
+    return rows.filter(r => !PRESET_EXERCISE_NAMES.has(r.name)).length;
+  } catch (e) {
+    console.warn('Failed to retrieve custom exercises count in getCustomExercisesCount', e);
+    return 0;
   }
-  const rows = await db.getAllAsync<{ name: string }>('SELECT name FROM exercises');
-  return rows.filter(r => !PRESET_EXERCISE_NAMES.has(r.name)).length;
 };
 
 
-export const initDB = async () => {
+export const initDB = async (): Promise<SQLite.SQLiteDatabase> => {
   if (db) return db;
+  if (!dbPromise) {
+    dbPromise = _initDBInternal();
+  }
+  return dbPromise;
+};
+
+const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
   const _db = await SQLite.openDatabaseAsync('gymtracker.db');
 
   // Create tables if they don't exist
@@ -599,6 +603,7 @@ export const closeDB = async () => {
     await db.closeAsync();
     db = null;
   }
+  dbPromise = null;
 };
 
 export const saveWorkout = async (title: string, startTime: string, endTime: string, notes: string | null, exercises: any[], calories: number | null = null): Promise<number> => {

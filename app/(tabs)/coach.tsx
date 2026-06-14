@@ -37,27 +37,6 @@ export default function CoachScreen() {
 
   const params = useLocalSearchParams<{ contextPrompt?: string; prefillMessage?: string; title?: string }>();
 
-  if (AI_CONFIG.status !== 'active') {
-    return (
-      <View style={styles.maintenanceContainer}>
-        <View style={styles.maintenanceCard}>
-          <View style={styles.maintenanceIconOuter}>
-            <Ionicons name="build" size={42} color={Theme.colors.primary} />
-          </View>
-          <Text style={styles.maintenanceHeader}>
-            AIトレーナー 調整中
-          </Text>
-          <Text style={styles.maintenanceBody}>
-            AIトレーナー機能は、より快適で質の高いアドバイスを提供するため、現在メンテナンス（調整）を実施しております。
-          </Text>
-          <Text style={styles.maintenanceFooter}>
-            まもなく再開いたしますので、今しばらくお待ちください！
-          </Text>
-        </View>
-      </View>
-    );
-  }
-  
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputVal, setInputVal] = useState('');
   const [loading, setLoading] = useState(false);
@@ -101,6 +80,27 @@ export default function CoachScreen() {
     }
   }, [params.contextPrompt, params.prefillMessage, params.title]);
 
+  if (AI_CONFIG.status !== 'active') {
+    return (
+      <View style={styles.maintenanceContainer}>
+        <View style={styles.maintenanceCard}>
+          <View style={styles.maintenanceIconOuter}>
+            <Ionicons name="build" size={42} color={Theme.colors.primary} />
+          </View>
+          <Text style={styles.maintenanceHeader}>
+            AIトレーナー 調整中
+          </Text>
+          <Text style={styles.maintenanceBody}>
+            AIトレーナー機能は、より快適で質の高いアドバイスを提供するため、現在メンテナンス（調整）を実施しております。
+          </Text>
+          <Text style={styles.maintenanceFooter}>
+            まもなく再開いたしますので、今しばらくお待ちください！
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   const scrollToBottom = () => {
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -135,35 +135,48 @@ export default function CoachScreen() {
     setLoading(true);
     scrollToBottom();
 
-    // Call service to get advice
-    const response = await sendMessageToAICoach(
-      textToSend,
-      activeContext || undefined,
-      settings.bodyWeight,
-      settings.weightUnit
-    );
+    try {
+      // Call service to get advice
+      const response = await sendMessageToAICoach(
+        textToSend,
+        activeContext || undefined,
+        settings.bodyWeight,
+        settings.weightUnit
+      );
 
-    // If success, consume token and update store
-    if (response.success) {
-      try {
-        await consumeAIToken();
-        const updatedBalance = await getAITokensBalance();
-        setAITokensBalance(updatedBalance);
-      } catch (e) {
-        console.warn('Failed to consume token', e);
+      // If success, consume token and update store
+      if (response.success) {
+        try {
+          await consumeAIToken();
+          const updatedBalance = await getAITokensBalance();
+          setAITokensBalance(updatedBalance);
+        } catch (e) {
+          console.warn('Failed to consume token', e);
+        }
       }
-    }
 
-    // Add AI response
-    const aiMsg: ChatMessage = {
-      id: `ai-${Date.now()}`,
-      text: response.reply,
-      sender: 'ai',
-      timestamp: new Date(),
-    };
-    setMessages(prev => [...prev, aiMsg]);
-    setLoading(false);
-    scrollToBottom();
+      // Add AI response
+      const aiMsg: ChatMessage = {
+        id: `ai-${Date.now()}`,
+        text: response.reply,
+        sender: 'ai',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, aiMsg]);
+    } catch (err) {
+      console.error('Error in AI Coach interaction:', err);
+      // Add error message to chat
+      const errorMsg: ChatMessage = {
+        id: `error-${Date.now()}`,
+        text: t('ui.coach.system_error') || 'システムエラーが発生しました。しばらく経ってから再度お試しください。',
+        sender: 'ai',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMsg]);
+    } finally {
+      setLoading(false);
+      scrollToBottom();
+    }
   };
 
   const handleChipPress = (chipType: 'analysis' | 'proposal' | 'rpe' | 'stance') => {
