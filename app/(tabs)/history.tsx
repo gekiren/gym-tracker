@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, FlatList, TextInput, Modal } from 'react-native';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -56,7 +56,7 @@ export default function HistoryScreen() {
   const isBasic = !isPremium && !isEarly;
 
   const chartScrollRef = useRef<ScrollView>(null);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<FlatList>(null);
   const [workouts, setWorkouts] = useState<any[]>([]);
   const { t, i18n } = useTranslation();
 
@@ -108,7 +108,7 @@ export default function HistoryScreen() {
       if (yOffset !== undefined) {
         const scrollTarget = Math.max(0, yOffset - 20);
         setTimeout(() => {
-          scrollViewRef.current?.scrollTo({ y: scrollTarget, animated: true });
+          scrollViewRef.current?.scrollToOffset({ offset: scrollTarget, animated: true });
           setHighlightedWorkoutId(targetWorkout.id);
           setTimeout(() => {
             setHighlightedWorkoutId(null);
@@ -438,7 +438,7 @@ export default function HistoryScreen() {
     );
   };
 
-  const getChartData = () => {
+  const chartData = useMemo(() => {
     if (workouts.length === 0) return null;
 
     const getValue = (w: any) => {
@@ -512,9 +512,7 @@ export default function HistoryScreen() {
     }
 
     return null;
-  };
-
-  const chartData = getChartData();
+  }, [workouts, chartScale, chartMetric]);
 
   // 種目のフィルタ＆ソート
   const dynamicCategories = Array.from(new Set(exercises.map(e => e.muscle_group).filter(Boolean)));
@@ -575,116 +573,26 @@ export default function HistoryScreen() {
       </View>
 
       {activeTab === 'workouts' ? (
-        <ScrollView ref={scrollViewRef} style={styles.subContainer} contentContainerStyle={styles.content}>
-          <Text style={styles.subtitle}>{t('ui.history.subtitle')}</Text>
-          
-          {chartData && (
-            <View style={styles.chartContainer}>
-              <Text style={styles.chartTitle}>
-                {chartMetric === 'volume' 
-                  ? t('ui.history.chart_title', { unit: settings.weightUnit }) 
-                  : t('ui.history.chart_title_calories')}
-              </Text>
-              
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
-                {/* 期間切り替え */}
-                <View style={styles.scaleContainer}>
-                  {(['day', 'week', 'month'] as const).map(scale => (
-                    <TouchableOpacity
-                      key={scale}
-                      style={[styles.scaleButton, chartScale === scale && styles.scaleButtonActive]}
-                      onPress={() => {
-                        setChartScale(scale);
-                      }}
-                    >
-                      <Text style={[styles.scaleButtonText, chartScale === scale && styles.scaleButtonTextActive]}>
-                        {t(`ui.history.scale_${scale}`)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                {/* メトリクス切り替え */}
-                <View style={styles.scaleContainer}>
-                  {(['volume', 'calories'] as const).map(metric => (
-                    <TouchableOpacity
-                      key={metric}
-                      style={[styles.scaleButton, chartMetric === metric && styles.scaleButtonActive]}
-                      onPress={() => {
-                        setChartMetric(metric);
-                      }}
-                    >
-                      <Text style={[styles.scaleButtonText, chartMetric === metric && styles.scaleButtonTextActive]}>
-                        {metric === 'volume' ? t('ui.history.volume_label') : (t('ui.common.calories') || 'Calories')}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              <View style={{ backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, overflow: 'hidden' }}>
-                {/* スクロールするグラフ本体部分 */}
-                <ScrollView
-                  key={`${chartScale}_${chartMetric}`}
-                  ref={chartScrollRef}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  onContentSizeChange={() => chartScrollRef.current?.scrollToEnd({ animated: false })}
-                  contentContainerStyle={{ paddingLeft: 15, paddingRight: 20 }}
-                >
-                  <BarChart
-                    data={chartData}
-                    width={Math.max(180, chartData.labels.length * 48)}
-                    height={220}
-                    chartConfig={{
-                      backgroundColor: Theme.colors.card,
-                      backgroundGradientFrom: Theme.colors.card,
-                      backgroundGradientTo: Theme.colors.card,
-                      decimalPlaces: 0,
-                      color: (opacity = 1) => `rgba(79, 172, 254, ${opacity})`,
-                      labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                      barPercentage: 0.55,
-                      propsForBackgroundLines: {
-                        stroke: 'rgba(255, 255, 255, 0.05)',
-                        strokeDasharray: '3',
-                      }
-                    }}
-                    withHorizontalLabels={false}
-                    withVerticalLabels={true}
-                    showValuesOnTopOfBars={true}
-                    yAxisLabel=""
-                    yAxisSuffix=""
-                    style={{
-                      marginLeft: -10,
-                      paddingRight: 16,
-                      paddingTop: 12,
-                    }}
-                  />
-                </ScrollView>
-              </View>
-            </View>
-          )}
-
-          {workouts.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>{t('ui.history.empty_state')}</Text>
-            </View>
-          ) : (
-            workouts.map(w => {
-              const isHighlighted = w.id === highlightedWorkoutId;
-              return (
-                <TouchableOpacity 
-                  key={w.id} 
-                  style={[
-                    styles.card,
-                    isHighlighted && { borderColor: Theme.colors.primary, borderWidth: 2 }
-                  ]}
-                  activeOpacity={0.7}
-                  onLayout={(e) => {
-                    cardOffsets.current[w.id] = e.nativeEvent.layout.y;
-                  }}
-                  onPress={() => router.push({ pathname: '/workout-details/[id]', params: { id: w.id } } as any)}
-                >
+        <FlatList
+          ref={scrollViewRef}
+          style={styles.subContainer}
+          contentContainerStyle={styles.content}
+          data={workouts}
+          keyExtractor={item => item.id.toString()}
+          renderItem={({ item: w }) => {
+            const isHighlighted = w.id === highlightedWorkoutId;
+            return (
+              <TouchableOpacity 
+                style={[
+                  styles.card,
+                  isHighlighted && { borderColor: Theme.colors.primary, borderWidth: 2 }
+                ]}
+                activeOpacity={0.7}
+                onLayout={(e) => {
+                  cardOffsets.current[w.id] = e.nativeEvent.layout.y;
+                }}
+                onPress={() => router.push({ pathname: '/workout-details/[id]', params: { id: w.id } } as any)}
+              >
                 <View style={styles.cardHeader}>
                   <Text style={styles.cardTitle}>{w.title}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -731,11 +639,107 @@ export default function HistoryScreen() {
                     <Text style={styles.statValue}>{w.calories ? `${w.calories} kcal` : '-'}</Text>
                   </View>
                 </View>
-                </TouchableOpacity>
-              );
-            })
-          )}
-        </ScrollView>
+              </TouchableOpacity>
+            );
+          }}
+          ListHeaderComponent={
+            <>
+              <Text style={styles.subtitle}>{t('ui.history.subtitle')}</Text>
+              
+              {chartData && (
+                <View style={styles.chartContainer}>
+                  <Text style={styles.chartTitle}>
+                    {chartMetric === 'volume' 
+                      ? t('ui.history.chart_title', { unit: settings.weightUnit }) 
+                      : t('ui.history.chart_title_calories')}
+                  </Text>
+                  
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
+                    {/* 期間切り替え */}
+                    <View style={styles.scaleContainer}>
+                      {(['day', 'week', 'month'] as const).map(scale => (
+                        <TouchableOpacity
+                          key={scale}
+                          style={[styles.scaleButton, chartScale === scale && styles.scaleButtonActive]}
+                          onPress={() => {
+                            setChartScale(scale);
+                          }}
+                        >
+                          <Text style={[styles.scaleButtonText, chartScale === scale && styles.scaleButtonTextActive]}>
+                            {t(`ui.history.scale_${scale}`)}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+
+                    {/* メトリクス切り替え */}
+                    <View style={styles.scaleContainer}>
+                      {(['volume', 'calories'] as const).map(metric => (
+                        <TouchableOpacity
+                          key={metric}
+                          style={[styles.scaleButton, chartMetric === metric && styles.scaleButtonActive]}
+                          onPress={() => {
+                            setChartMetric(metric);
+                          }}
+                        >
+                          <Text style={[styles.scaleButtonText, chartMetric === metric && styles.scaleButtonTextActive]}>
+                            {metric === 'volume' ? t('ui.history.volume_label') : (t('ui.common.calories') || 'Calories')}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
+                  <View style={{ backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, overflow: 'hidden' }}>
+                    {/* スクロールするグラフ本体部分 */}
+                    <ScrollView
+                      key={`${chartScale}_${chartMetric}`}
+                      ref={chartScrollRef}
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      onContentSizeChange={() => chartScrollRef.current?.scrollToEnd({ animated: false })}
+                      contentContainerStyle={{ paddingLeft: 15, paddingRight: 20 }}
+                    >
+                      <BarChart
+                        data={chartData}
+                        width={Math.max(180, chartData.labels.length * 48)}
+                        height={220}
+                        chartConfig={{
+                          backgroundColor: Theme.colors.card,
+                          backgroundGradientFrom: Theme.colors.card,
+                          backgroundGradientTo: Theme.colors.card,
+                          decimalPlaces: 0,
+                          color: (opacity = 1) => `rgba(79, 172, 254, ${opacity})`,
+                          labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                          barPercentage: 0.55,
+                          propsForBackgroundLines: {
+                            stroke: 'rgba(255, 255, 255, 0.05)',
+                            strokeDasharray: '3',
+                          }
+                        }}
+                        withHorizontalLabels={false}
+                        withVerticalLabels={true}
+                        showValuesOnTopOfBars={true}
+                        yAxisLabel=""
+                        yAxisSuffix=""
+                        style={{
+                          marginLeft: -10,
+                          paddingRight: 16,
+                          paddingTop: 12,
+                        }}
+                      />
+                    </ScrollView>
+                  </View>
+                </View>
+              )}
+            </>
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>{t('ui.history.empty_state')}</Text>
+            </View>
+          }
+        />
       ) : (
         <View style={styles.subContainer}>
           <View style={styles.actionRow}>

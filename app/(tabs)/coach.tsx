@@ -75,7 +75,7 @@ export default function CoachScreen() {
         sender: 'ai',
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, contextLinkedMsg]);
+      setMessages(prev => [...prev, contextLinkedMsg].slice(-100));
       scrollToBottom();
     }
   }, [params.contextPrompt, params.prefillMessage, params.title]);
@@ -130,7 +130,7 @@ export default function CoachScreen() {
       sender: 'user',
       timestamp: new Date(),
     };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages(prev => [...prev, userMsg].slice(-100));
     setInputVal('');
     setLoading(true);
     scrollToBottom();
@@ -162,7 +162,7 @@ export default function CoachScreen() {
         sender: 'ai',
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, aiMsg]);
+      setMessages(prev => [...prev, aiMsg].slice(-100));
     } catch (err) {
       console.error('Error in AI Coach interaction:', err);
       // Add error message to chat
@@ -172,7 +172,7 @@ export default function CoachScreen() {
         sender: 'ai',
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMsg]);
+      setMessages(prev => [...prev, errorMsg].slice(-100));
     } finally {
       setLoading(false);
       scrollToBottom();

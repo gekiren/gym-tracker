@@ -1,8 +1,9 @@
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, router } from 'expo-router';
+import { Stack, router, ErrorBoundaryProps } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet, Alert, AppState } from 'react-native';
+import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet, Alert, AppState, ScrollView } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import mobileAds from 'react-native-google-mobile-ads';
@@ -353,4 +354,97 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold'
   }
+});
+
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  return (
+    <View style={errorStyles.container}>
+      <View style={errorStyles.card}>
+        <View style={errorStyles.iconOuter}>
+          <Ionicons name="alert-circle-outline" size={48} color={Theme.colors.danger} />
+        </View>
+        <Text style={errorStyles.title}>問題が発生しました</Text>
+        <Text style={errorStyles.message}>
+          アプリの実行中に予期しないエラーが発生しました。お手数ですが、以下のボタンから再試行してください。
+        </Text>
+        <ScrollView style={errorStyles.errorDetailsContainer} contentContainerStyle={{ padding: 10 }}>
+          <Text style={errorStyles.errorText}>{error.stack || error.message}</Text>
+        </ScrollView>
+        <TouchableOpacity style={errorStyles.retryButton} onPress={retry} activeOpacity={0.8}>
+          <Text style={errorStyles.retryButtonText}>再試行する</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const errorStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Theme.colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  card: {
+    backgroundColor: Theme.colors.card,
+    borderRadius: Theme.borderRadius.md,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  iconOuter: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,59,48,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  title: {
+    color: Theme.colors.text,
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  message: {
+    color: Theme.colors.textMuted,
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  errorDetailsContainer: {
+    width: '100%',
+    maxHeight: 150,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: Theme.borderRadius.sm,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  errorText: {
+    color: '#ff6b6b',
+    fontFamily: 'monospace',
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  retryButton: {
+    backgroundColor: Theme.colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: Theme.borderRadius.sm,
+    width: '100%',
+    alignItems: 'center',
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });

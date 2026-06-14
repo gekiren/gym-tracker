@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert, ScrollView, TextInput, Modal, Dimensions } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, Stack, router } from 'expo-router';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { getExerciseById, getExerciseHistory, getPersonalRecords, updateExerciseDefaultVariation, updateExerciseDefaultStance, saveSetting } from '../../src/db/database';
@@ -320,7 +320,7 @@ export default function ExerciseDetailScreen() {
     return timeline;
   };
 
-  const getVolumeChartData = () => {
+  const vChartData = useMemo(() => {
     const hValid = history
       .map(item => {
         const volume = item.sets.reduce((sum: number, s: any) => sum + (parseFloat(s.weight) || 0) * (parseInt(s.reps, 10) || 0), 0);
@@ -399,7 +399,7 @@ export default function ExerciseDetailScreen() {
     }
 
     return null;
-  };
+  }, [history, chartScale]);
 
   const getChartDataForReps = () => {
     if (selectedChartReps === null || selectedChartVariation === null) return null;
@@ -643,83 +643,78 @@ export default function ExerciseDetailScreen() {
           </View>
         )}
 
-        {/* Volume Chart Section */}
-        {(() => {
-          const vChartData = getVolumeChartData();
-          if (!vChartData) return null;
-          return (
-            <View style={styles.chartContainer}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
-                <Text style={[styles.chartTitle, { marginBottom: 0 }]}>{t('ui.history.chart_title', { unit: settings.weightUnit })}</Text>
-                <TouchableOpacity 
-                  style={styles.calendarBtn}
-                  onPress={() => setCalendarVisible(true)}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="calendar-outline" size={22} color={Theme.colors.primary} />
-                </TouchableOpacity>
-              </View>
-              
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
-                <View style={styles.scaleContainer}>
-                  {(['day', 'week', 'month'] as const).map(scale => (
-                    <TouchableOpacity
-                      key={scale}
-                      style={[styles.scaleButton, chartScale === scale && styles.scaleButtonActive]}
-                      onPress={() => {
-                        setChartScale(scale);
-                      }}
-                    >
-                      <Text style={[styles.scaleButtonText, chartScale === scale && styles.scaleButtonTextActive]}>
-                        {t(`ui.history.scale_${scale}`)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              <View style={{ backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, overflow: 'hidden' }}>
-                <ScrollView
-                  key={chartScale}
-                  ref={chartScrollRef}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  onContentSizeChange={() => chartScrollRef.current?.scrollToEnd({ animated: false })}
-                  contentContainerStyle={{ paddingLeft: 15, paddingRight: 20 }}
-                >
-                  <BarChart
-                    data={vChartData}
-                    width={Math.max(180, vChartData.labels.length * 48)}
-                    height={220}
-                    chartConfig={{
-                      backgroundColor: Theme.colors.card,
-                      backgroundGradientFrom: Theme.colors.card,
-                      backgroundGradientTo: Theme.colors.card,
-                      decimalPlaces: 0,
-                      color: (opacity = 1) => `rgba(79, 172, 254, ${opacity})`,
-                      labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                      barPercentage: 0.55,
-                      propsForBackgroundLines: {
-                        stroke: 'rgba(255, 255, 255, 0.05)',
-                        strokeDasharray: '3',
-                      }
+        {vChartData && (
+          <View style={styles.chartContainer}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
+              <Text style={[styles.chartTitle, { marginBottom: 0 }]}>{t('ui.history.chart_title', { unit: settings.weightUnit })}</Text>
+              <TouchableOpacity 
+                style={styles.calendarBtn}
+                onPress={() => setCalendarVisible(true)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="calendar-outline" size={22} color={Theme.colors.primary} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
+              <View style={styles.scaleContainer}>
+                {(['day', 'week', 'month'] as const).map(scale => (
+                  <TouchableOpacity
+                    key={scale}
+                    style={[styles.scaleButton, chartScale === scale && styles.scaleButtonActive]}
+                    onPress={() => {
+                      setChartScale(scale);
                     }}
-                    withHorizontalLabels={false}
-                    withVerticalLabels={true}
-                    showValuesOnTopOfBars={true}
-                    yAxisLabel=""
-                    yAxisSuffix=""
-                    style={{
-                      marginLeft: -10,
-                      paddingRight: 16,
-                      paddingTop: 12,
-                    }}
-                  />
-                </ScrollView>
+                  >
+                    <Text style={[styles.scaleButtonText, chartScale === scale && styles.scaleButtonTextActive]}>
+                      {t(`ui.history.scale_${scale}`)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
-          );
-        })()}
+
+            <View style={{ backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, overflow: 'hidden' }}>
+              <ScrollView
+                key={chartScale}
+                ref={chartScrollRef}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                onContentSizeChange={() => chartScrollRef.current?.scrollToEnd({ animated: false })}
+                contentContainerStyle={{ paddingLeft: 15, paddingRight: 20 }}
+              >
+                <BarChart
+                  data={vChartData}
+                  width={Math.max(180, vChartData.labels.length * 48)}
+                  height={220}
+                  chartConfig={{
+                    backgroundColor: Theme.colors.card,
+                    backgroundGradientFrom: Theme.colors.card,
+                    backgroundGradientTo: Theme.colors.card,
+                    decimalPlaces: 0,
+                    color: (opacity = 1) => `rgba(79, 172, 254, ${opacity})`,
+                    labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                    barPercentage: 0.55,
+                    propsForBackgroundLines: {
+                      stroke: 'rgba(255, 255, 255, 0.05)',
+                      strokeDasharray: '3',
+                    }
+                  }}
+                  withHorizontalLabels={false}
+                  withVerticalLabels={true}
+                  showValuesOnTopOfBars={true}
+                  yAxisLabel=""
+                  yAxisSuffix=""
+                  style={{
+                    marginLeft: -10,
+                    paddingRight: 16,
+                    paddingTop: 12,
+                  }}
+                />
+              </ScrollView>
+            </View>
+          </View>
+        )}
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('ui.exercise_detail.section_history')}</Text>
