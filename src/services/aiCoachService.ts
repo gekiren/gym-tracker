@@ -43,12 +43,19 @@ export const sendMessageToAICoach = async (
     const bodyWeightStr = userWeight ? `${userWeight} ${weightUnit}` : '未設定';
     const lang = i18next.language || 'ja';
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    const proxySecret = process.env.EXPO_PUBLIC_AI_PROXY_SECRET;
+    if (proxySecret) {
+      headers['Authorization'] = `Bearer ${proxySecret}`;
+    }
+
     // 2. Make the secure POST request to Cloudflare Workers proxy
     const response = await fetch(WORKER_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         message,
         workout_history: workoutHistoryContext,
