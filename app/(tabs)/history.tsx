@@ -448,7 +448,7 @@ export default function HistoryScreen() {
 
     if (chartScale === 'day') {
       const wRev = [...workouts].reverse();
-      if (wRev.length < 2) return null;
+      if (wRev.length < 1) return null;
       return {
         labels: wRev.map(w => format(new Date(w.start_time), 'MM/dd')).slice(-50),
         datasets: [
@@ -472,7 +472,7 @@ export default function HistoryScreen() {
       });
 
       const sortedWeeks = Object.values(weeklyData).sort((a, b) => a.date.getTime() - b.date.getTime());
-      if (sortedWeeks.length < 2) return null;
+      if (sortedWeeks.length < 1) return null;
 
       const recentWeeks = sortedWeeks.slice(-50);
       return {
@@ -498,7 +498,7 @@ export default function HistoryScreen() {
       });
 
       const sortedMonths = Object.values(monthlyData).sort((a, b) => a.date.getTime() - b.date.getTime());
-      if (sortedMonths.length < 2) return null;
+      if (sortedMonths.length < 1) return null;
 
       const recentMonths = sortedMonths.slice(-50);
       return {
