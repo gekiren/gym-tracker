@@ -1,3 +1,5 @@
+import Constants from 'expo-constants';
+
 /**
  * Sentry Configuration
  * 
@@ -5,8 +7,8 @@
  * 本番稼働時には、ご自身の Sentry プロジェクトの DSN に置き換えてください。
  */
 export const SENTRY_CONFIG = {
-  // Sentry管理画面から取得した DSN キーを入力します
-  dsn: 'https://c6b042033b77aab57ff1b3edc2bb2dcc@o4511505124425728.ingest.de.sentry.io/4511505138122832',
+  // Constants から環境変数経由の Sentry Dsn を動的取得
+  dsn: Constants.expoConfig?.extra?.sentryDsn ?? '',
 
   // デバッグログを有効にするか（開発時は true、本番時は false にすることを推奨）
   debug: __DEV__,
