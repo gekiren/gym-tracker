@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.54', // OTA識別用のバージョン文字列
+  version: '1.0.55', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      '巨大コンポーネントを再利用可能なサブコンポーネントへ分割し、アプリの描画パフォーマンスとコードの可読性を大幅に向上させました。'
+      '手動で種目を追加した際、常に1セット（左右種目はL/R各1セット）のみデフォルトで追加する設定を「設定・ツール」画面に追加しました。'
     ],
     en: [
-      'Split large monolithic components into reusable subcomponents to significantly improve rendering performance and code readability.'
+      'Added a setting in "Settings" to always add exactly one set (or L/R sets for unilateral exercises) by default when manually adding exercises.'
     ]
   }
 };

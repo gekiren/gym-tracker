@@ -283,6 +283,8 @@
       "screen_title_select_exercise": "種目を選択",
       "body_weight_label": "体重 (任意)",
       "body_weight_desc": "カロリー計算に使用します。未設定の場合は簡易的な値が表示されます。",
+      "always_one_set_label": "常に1セットのみ追加",
+      "always_one_set_desc": "手動で種目を追加した際、前回の実績にかかわらず初期状態で1セット（片側種目の場合は左右1セットずつ）のみ追加します。",
       "section_display_fields": "記録項目のカスタマイズ",
       "display_fields_desc": "ワークアウト画面に表示する項目を選択できます。",
       "display_rpe": "RPE（主観的運動強度）",

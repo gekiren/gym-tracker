@@ -288,6 +288,8 @@
       "screen_title_select_exercise": "Select Exercise",
       "body_weight_label": "Body Weight (Optional)",
       "body_weight_desc": "Used for calorie calculation. A default value is used if not set.",
+      "always_one_set_label": "Always Start with 1 Set",
+      "always_one_set_desc": "When adding an exercise, always initialize with only 1 set (or 1 set per side for unilateral exercises) regardless of previous performance.",
       "section_display_fields": "Customize Tracking Fields",
       "display_fields_desc": "Choose which fields to show during a workout.",
       "display_rpe": "RPE (Perceived Exertion)",

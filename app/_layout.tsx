@@ -116,6 +116,7 @@ export default function RootLayout() {
       }
 
       const bodyWeight = storedSettings['body_weight'] ? parseFloat(storedSettings['body_weight']) : null;
+      const alwaysOneSet = storedSettings['always_one_set'] === '1';
       const tokensBalance = await getAITokensBalance();
       const premiumUntil = storedSettings['premium_until'] || '';
       const isEarlyAdopter = storedSettings['is_early_adopter'] === 'true';
@@ -149,7 +150,8 @@ export default function RootLayout() {
         crashConsent,
         premiumUntil: finalPremiumUntil,
         isEarlyAdopter,
-        keepAwake
+        keepAwake,
+        alwaysOneSet
       });
       if (expired) {
         useWorkoutStore.getState().setShouldShowPaywall(true);

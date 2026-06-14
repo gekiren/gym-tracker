@@ -35,6 +35,7 @@ export default function ProfileScreen() {
   const [showStance, setShowStance] = useState(settings.displayFields.showStance);
   const [crashConsent, setCrashConsent] = useState(settings.crashConsent);
   const [keepAwake, setKeepAwake] = useState(settings.keepAwake);
+  const [alwaysOneSet, setAlwaysOneSet] = useState(settings.alwaysOneSet);
 
   // Database Reset State
   const [isResetModalVisible, setIsResetModalVisible] = useState(false);
@@ -127,6 +128,7 @@ export default function ProfileScreen() {
     setShowStance(settings.displayFields.showStance);
     setCrashConsent(settings.crashConsent);
     setKeepAwake(settings.keepAwake);
+    setAlwaysOneSet(settings.alwaysOneSet);
 
     const fetchAccountType = async () => {
       try {
@@ -279,6 +281,12 @@ export default function ProfileScreen() {
     setCrashConsent(consent);
     useWorkoutStore.getState().setCrashConsent(consent);
     await saveSetting('crash_report_consent', consent);
+  };
+
+  const handleUpdateAlwaysOneSet = async (val: boolean) => {
+    setAlwaysOneSet(val);
+    useWorkoutStore.getState().setAlwaysOneSet(val);
+    await saveSetting('always_one_set', val ? '1' : '0');
   };
 
   const handleUpdateBodyWeight = async (val: string) => {
@@ -832,7 +840,7 @@ export default function ProfileScreen() {
               thumbColor={'#fff'}
             />
           </View>
-          <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
+          <View style={styles.settingRow}>
             <View style={{ flex: 1, paddingRight: 16 }}>
               <Text style={styles.settingLabel}>{t('ui.profile.display_stance')}</Text>
               <Text style={styles.settingDesc}>{t('ui.profile.display_stance_desc')}</Text>
@@ -840,6 +848,18 @@ export default function ProfileScreen() {
             <Switch
               value={showStance}
               onValueChange={(v) => handleToggleDisplayField('showStance', v)}
+              trackColor={{ false: '#333', true: Theme.colors.primary }}
+              thumbColor={'#fff'}
+            />
+          </View>
+          <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
+            <View style={{ flex: 1, paddingRight: 16 }}>
+              <Text style={styles.settingLabel}>{t('ui.profile.always_one_set_label')}</Text>
+              <Text style={styles.settingDesc}>{t('ui.profile.always_one_set_desc')}</Text>
+            </View>
+            <Switch
+              value={alwaysOneSet}
+              onValueChange={handleUpdateAlwaysOneSet}
               trackColor={{ false: '#333', true: Theme.colors.primary }}
               thumbColor={'#fff'}
             />
