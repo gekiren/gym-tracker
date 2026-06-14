@@ -219,19 +219,34 @@ export default function ProfileScreen() {
 
   const handleUpdateRest = async (secs: number) => {
     setDefaultRest(secs);
-    loadSettings(secs, autoRest, timerVibrate, weightUnit);
+    loadSettings({
+      defaultRest: secs,
+      autoRest,
+      timerVibrate,
+      weightUnit
+    });
     await saveSetting('default_rest_timer', secs.toString());
   };
 
   const handleUpdateAuto = async (val: boolean) => {
     setAutoRest(val);
-    loadSettings(defaultRest, val, timerVibrate, weightUnit);
+    loadSettings({
+      defaultRest,
+      autoRest: val,
+      timerVibrate,
+      weightUnit
+    });
     await saveSetting('auto_rest_timer', val ? '1' : '0');
   };
 
   const handleUpdateVibrate = async (val: boolean) => {
     setTimerVibrate(val);
-    loadSettings(defaultRest, autoRest, val, weightUnit);
+    loadSettings({
+      defaultRest,
+      autoRest,
+      timerVibrate: val,
+      weightUnit
+    });
     await saveSetting('timer_vibrate', val ? '1' : '0');
   };
 
@@ -243,7 +258,12 @@ export default function ProfileScreen() {
 
   const handleUpdateUnit = async (unit: 'kg' | 'lbs') => {
     setWeightUnit(unit);
-    loadSettings(defaultRest, autoRest, timerVibrate, unit);
+    loadSettings({
+      defaultRest,
+      autoRest,
+      timerVibrate,
+      weightUnit: unit
+    });
     await saveSetting('weight_unit', unit);
   };
 

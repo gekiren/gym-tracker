@@ -137,20 +137,20 @@ export default function RootLayout() {
         }
       }
 
-      useWorkoutStore.getState().loadSettings(
-        defaultRest, 
-        autoRest, 
-        timerVibrate, 
-        weightUnit, 
-        needsUnitSelection, 
-        bodyWeight, 
-        needsStyleSelection, 
-        finalTokensBalance, 
+      useWorkoutStore.getState().loadSettings({
+        defaultRest,
+        autoRest,
+        timerVibrate,
+        weightUnit,
+        needsUnitSelection,
+        bodyWeight,
+        needsStyleSelection,
+        aiTokensBalance: finalTokensBalance,
         crashConsent,
-        finalPremiumUntil,
+        premiumUntil: finalPremiumUntil,
         isEarlyAdopter,
         keepAwake
-      );
+      });
       if (expired) {
         useWorkoutStore.getState().setShouldShowPaywall(true);
       }

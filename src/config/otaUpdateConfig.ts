@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.50', // OTA識別用のバージョン文字列
+  version: '1.0.51', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'プロモコード適用時のプレミアム有効期限の計算（月末日のエッジケース）において、日付が正しく計算されるよう改善しました。'
+      '設定の読み込み処理（loadSettings）のコード構造をリファクタリングし、アプリの動作安定性を向上させました。'
     ],
     en: [
-      'Fixed an edge case in promo code expiration calculations on the last day of the month to ensure correct date arithmetic.'
+      'Refactored the settings loading process (loadSettings) code structure to improve application stability.'
     ]
   }
 };

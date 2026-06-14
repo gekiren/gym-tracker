@@ -55,6 +55,21 @@ export interface WorkoutCompletionData {
   achievements: WorkoutCompletionAchievement;
 }
 
+export interface LoadSettingsPayload {
+  defaultRest: number;
+  autoRest: boolean;
+  timerVibrate: boolean;
+  weightUnit: 'kg' | 'lbs';
+  needsUnitSelection?: boolean;
+  bodyWeight?: number | null;
+  needsStyleSelection?: boolean;
+  aiTokensBalance?: number;
+  crashConsent?: 'agreed' | 'declined' | 'unset';
+  premiumUntil?: string;
+  isEarlyAdopter?: boolean;
+  keepAwake?: boolean;
+}
+
 interface WorkoutState {
   isActive: boolean;
   isWorkoutStarted: boolean;
@@ -117,7 +132,7 @@ interface WorkoutState {
     crashConsent: 'agreed' | 'declined' | 'unset';
     keepAwake: boolean;
   };
-  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null, needsStyleSelection?: boolean, aiTokensBalance?: number, crashConsent?: 'agreed' | 'declined' | 'unset', premiumUntil?: string, isEarlyAdopter?: boolean, keepAwake?: boolean) => void;
+  loadSettings: (payload: LoadSettingsPayload) => void;
   setKeepAwake: (keepAwake: boolean) => void;
   setPremiumUntil: (premiumUntil: string) => void;
   updatePremiumStatus: (premiumUntil: string) => void;
@@ -202,7 +217,21 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     keepAwake: true
   },
 
-  loadSettings: (defaultRest: number, autoRest: boolean, timerVibrate: boolean, weightUnit: 'kg' | 'lbs', needsUnitSelection?: boolean, bodyWeight?: number | null, needsStyleSelection?: boolean, aiTokensBalance?: number, crashConsent?: 'agreed' | 'declined' | 'unset', premiumUntil?: string, isEarlyAdopter?: boolean, keepAwake?: boolean) => set((state) => {
+  loadSettings: (payload: LoadSettingsPayload) => set((state) => {
+    const {
+      defaultRest,
+      autoRest,
+      timerVibrate,
+      weightUnit,
+      needsUnitSelection,
+      bodyWeight,
+      needsStyleSelection,
+      aiTokensBalance,
+      crashConsent,
+      premiumUntil,
+      isEarlyAdopter,
+      keepAwake
+    } = payload;
     const finalNeedsUnitSelection = needsUnitSelection !== undefined ? needsUnitSelection : state.settings.needsUnitSelection;
     const finalBodyWeight = bodyWeight !== undefined ? bodyWeight : state.settings.bodyWeight;
     const finalNeedsStyleSelection = needsStyleSelection !== undefined ? needsStyleSelection : state.settings.needsStyleSelection;

@@ -63,7 +63,15 @@ export default function WorkoutScreen() {
 
   const handleSelectUnit = async (unit: 'kg' | 'lbs') => {
     await saveSetting('weight_unit', unit);
-    loadSettings(settings.defaultRest, settings.autoRest, settings.timerVibrate, unit, false, settings.bodyWeight, settings.needsStyleSelection);
+    loadSettings({
+      defaultRest: settings.defaultRest,
+      autoRest: settings.autoRest,
+      timerVibrate: settings.timerVibrate,
+      weightUnit: unit,
+      needsUnitSelection: false,
+      bodyWeight: settings.bodyWeight,
+      needsStyleSelection: settings.needsStyleSelection
+    });
   };
 
   const handleSelectStyle = async (style: 'simple' | 'advanced') => {
@@ -85,17 +93,17 @@ export default function WorkoutScreen() {
     });
 
     // Complete style selection onboarding
-    loadSettings(
-      settings.defaultRest,
-      settings.autoRest,
-      settings.timerVibrate,
-      settings.weightUnit,
-      false,
-      settings.bodyWeight,
-      false,
-      settings.aiTokensBalance,
-      settings.crashConsent
-    );
+    loadSettings({
+      defaultRest: settings.defaultRest,
+      autoRest: settings.autoRest,
+      timerVibrate: settings.timerVibrate,
+      weightUnit: settings.weightUnit,
+      needsUnitSelection: false,
+      bodyWeight: settings.bodyWeight,
+      needsStyleSelection: false,
+      aiTokensBalance: settings.aiTokensBalance,
+      crashConsent: settings.crashConsent
+    });
   };
 
   const handleCrashConsent = async (consent: 'agreed' | 'declined') => {
