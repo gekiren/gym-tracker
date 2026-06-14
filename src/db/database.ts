@@ -547,7 +547,7 @@ export const initDB = async () => {
     if (!existingKeys.has('user_uuid')) {
       const newUuid = generateUUID();
       const nowISO = new Date().toISOString();
-      const campaignDeadline = new Date('2026-08-31T23:59:59.999Z').getTime();
+      const campaignDeadline = new Date('2026-07-31T23:59:59.999Z').getTime();
       const isEarly = Date.now() <= campaignDeadline ? 'true' : 'false';
       const initialPremium = isEarly === 'true' ? 'perpetual' : '';
 

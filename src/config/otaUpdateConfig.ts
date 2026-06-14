@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.43', // OTA識別用のバージョン文字列
+  version: '1.0.44', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      '「プレミアムプラン（期間限定）」の表記を「プレミアムプラン（お試し）」に変更しました。'
+      'アーリーアダプターの判定基準となる初回起動日の期限を2026年7月31日までに変更しました。'
     ],
     en: [
-      'Changed the name of "Premium Plan (Limited-Time)" to "Premium Plan (Trial)".'
+      'Changed the early adopter eligibility deadline to July 31, 2026.'
     ]
   }
 };
