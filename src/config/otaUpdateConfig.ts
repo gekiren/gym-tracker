@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.61', // OTA識別用のバージョン文字列
+  version: '1.0.62', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'ワークアウト中のオリジナル種目作成画面にも、キーボード遮蔽対策とスクロールガイド表示を反映しました。'
+      '「すべてのルーティン」画面からルーティンをタップして直接編集できるようになりました。',
+      'ルーティン登録数が11個以上の状態で編集しようとした場合の制限を追加しました。'
     ],
     en: [
-      'Applied keyboard avoidance and scroll guidance UI improvements to the custom exercise creation screen during active workouts.'
+      'You can now edit routines directly by tapping them from the "All Routines" screen.',
+      'Added routine editing limitations when you have 11 or more registered routines.'
     ]
   }
 };
