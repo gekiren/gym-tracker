@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.60', // OTA識別用のバージョン文字列
+  version: '1.0.61', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'オリジナル種目作成画面において、画面下部にさらに設定項目があることがわかるように、スクロールガイドの表示とスクロールバーの改善を行いました。'
+      'ワークアウト中のオリジナル種目作成画面にも、キーボード遮蔽対策とスクロールガイド表示を反映しました。'
     ],
     en: [
-      'Added scroll bar and guidance text on the custom exercise creation screen to make it clear that more settings are available below.'
+      'Applied keyboard avoidance and scroll guidance UI improvements to the custom exercise creation screen during active workouts.'
     ]
   }
 };
