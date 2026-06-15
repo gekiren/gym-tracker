@@ -855,7 +855,8 @@ export default function HistoryScreen() {
               <Text style={styles.modalTitle}>{t('ui.exercise_library.create_custom_title')}</Text>
               
               <ScrollView 
-                showsVerticalScrollIndicator={false}
+                showsVerticalScrollIndicator={true}
+                persistentScrollbar={true}
                 keyboardShouldPersistTaps="handled"
                 contentContainerStyle={{ paddingBottom: 16 }}
               >
@@ -882,6 +883,11 @@ export default function HistoryScreen() {
                 </View>
                 <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder={t('ui.exercise_library.manual_input_placeholder')} placeholderTextColor={Theme.colors.textMuted} value={newEquip} onChangeText={setNewEquip} />
                 
+                <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 16 }} />
+                <Text style={{ fontSize: 12, color: Theme.colors.textMuted, textAlign: 'center', marginBottom: 8 }}>
+                  {t('ui.exercise_library.label_scroll_more')}
+                </Text>
+
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
                   <Text style={styles.label}>{t('ui.exercise_select.label_unilateral')}</Text>
                   <Switch value={isUnilateral} onValueChange={setIsUnilateral} trackColor={{ true: Theme.colors.primary }} />

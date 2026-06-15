@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.59', // OTA識別用のバージョン文字列
+  version: '1.0.60', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'Android端末において、オリジナル種目作成画面でキーボードが表示された際に、表示エリアが狭くなりすぎる問題を改善しました。'
+      'オリジナル種目作成画面において、画面下部にさらに設定項目があることがわかるように、スクロールガイドの表示とスクロールバーの改善を行いました。'
     ],
     en: [
-      'Fixed layout compression issue on Android when the keyboard is visible on the custom exercise creation screen.'
+      'Added scroll bar and guidance text on the custom exercise creation screen to make it clear that more settings are available below.'
     ]
   }
 };

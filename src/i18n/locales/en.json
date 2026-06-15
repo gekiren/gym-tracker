@@ -250,7 +250,8 @@
       "manual_input_placeholder": "Or enter manually...",
       "save_and_add_btn": "Save & Add",
       "error_no_name": "Please enter an exercise name.",
-      "error_add_failed": "Failed to add exercise."
+      "error_add_failed": "Failed to add exercise.",
+      "label_scroll_more": "▼ Scroll for more settings (Unilateral, Stance)"
     },
     "tabs": {
       "home": "Home",

@@ -245,7 +245,8 @@
       "manual_input_placeholder": "リストにない場合は入力...",
       "save_and_add_btn": "保存して追加",
       "error_no_name": "種目名を入力してください。",
-      "error_add_failed": "追加に失敗しました"
+      "error_add_failed": "追加に失敗しました",
+      "label_scroll_more": "▼ スクロールして詳細設定を追加 (片側・スタンス)"
     },
     "tabs": {
       "home": "ホーム",
