@@ -842,6 +842,31 @@ export const addRoutine = async (title: string, description: string, exercises: 
   });
 };
 
+export const updateRoutine = async (id: number, title: string, description: string, exercises: { id: number, name: string, sets: any[] }[]) => {
+  const conn = getDB();
+  
+  await conn.withTransactionAsync(async () => {
+    await conn.runAsync('UPDATE routines SET title = ?, description = ? WHERE id = ?', [title, description, id]);
+    await conn.runAsync('DELETE FROM routine_exercises WHERE routine_id = ?', [id]);
+    
+    let order = 0;
+    for (const ex of exercises) {
+      const rxRes = await conn.runAsync(
+        'INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)', 
+        [id, ex.id, order++]
+      );
+      const routineExerciseId = rxRes.lastInsertRowId;
+      
+      for (const s of ex.sets) {
+        await conn.runAsync(
+          'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [routineExerciseId, s.set_number, s.reps, s.weight, s.rpe, s.side || null, s.variation || null, s.stance || null]
+        );
+      }
+    }
+  });
+};
+
 export const deleteRoutine = async (id: number) => {
   const conn = getDB();
   await conn.runAsync('DELETE FROM routines WHERE id = ?', [id]);

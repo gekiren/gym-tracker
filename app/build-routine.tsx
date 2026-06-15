@@ -1,14 +1,17 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal, Platform, Keyboard, KeyboardAvoidingView } from 'react-native';
 import { useEffect, useState } from 'react';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
-import { addRoutine, getRoutines, loadFullWorkoutData, getDB } from '../src/db/database';
+import { addRoutine, updateRoutine, getRoutines, loadFullWorkoutData, getDB } from '../src/db/database';
 import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../src/i18n';
 
 export default function BuildRoutineScreen() {
+  const { id: routineIdString } = useLocalSearchParams<{ id: string }>();
+  const routineId = routineIdString ? parseInt(routineIdString, 10) : undefined;
+  const isEditMode = routineId !== undefined;
   const { 
     draftRoutine, updateDraftTitle, removeDraftExercise, 
     addDraftSet, removeDraftSet, updateDraftSet, setDraftRoutine, clearDraft,
@@ -62,10 +65,38 @@ export default function BuildRoutineScreen() {
     };
   }, []);
 
+  useEffect(() => {
+    clearDraft();
+    fetchRoutinesAndHistory();
+  }, [routineId]);
+
   const fetchRoutinesAndHistory = async () => {
     try {
       const routinesData = await getRoutines();
       setRoutinesList(routinesData);
+
+      if (isEditMode) {
+        const targetRoutine = routinesData.find(r => r.id === routineId);
+        if (targetRoutine) {
+          const mappedExercises = targetRoutine.exercises.map((ex: any) => ({
+            id: ex.id,
+            name: ex.name,
+            is_unilateral: ex.is_unilateral,
+            equipment: ex.equipment,
+            sets: ex.sets.map((s: any) => ({
+              id: Math.random().toString(36).substring(7),
+              set_number: s.set_number,
+              weight: s.weight,
+              reps: s.reps,
+              rpe: s.rpe,
+              side: s.side || null,
+              variation: s.variation || null,
+              stance: s.stance || null
+            }))
+          }));
+          setDraftRoutine(targetRoutine.title, mappedExercises);
+        }
+      }
 
       const db = getDB();
       const historyRows = await db.getAllAsync(`
@@ -150,7 +181,7 @@ export default function BuildRoutineScreen() {
       return;
     }
 
-    if (isBasic && routinesList.length >= 10) {
+    if (!isEditMode && isBasic && routinesList.length >= 10) {
       Alert.alert(
         'ルーティン登録制限',
         'ベーシックプランでは最大10個までルーティンを登録できます。登録上限を増やすにはプレミアムプランへのアップグレードが必要です。',
@@ -163,11 +194,20 @@ export default function BuildRoutineScreen() {
     }
 
     try {
-      await addRoutine(
-        draftRoutine.title.trim(),
-        draftRoutine.exercises.map(e => e.name).join(', '),
-        draftRoutine.exercises
-      );
+      if (isEditMode) {
+        await updateRoutine(
+          routineId,
+          draftRoutine.title.trim(),
+          draftRoutine.exercises.map(e => e.name).join(', '),
+          draftRoutine.exercises
+        );
+      } else {
+        await addRoutine(
+          draftRoutine.title.trim(),
+          draftRoutine.exercises.map(e => e.name).join(', '),
+          draftRoutine.exercises
+        );
+      }
       clearDraft();
       router.back();
     } catch (e) {
@@ -183,7 +223,7 @@ export default function BuildRoutineScreen() {
         <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
           <Ionicons name="close" size={28} color={Theme.colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.title}>{t('ui.build_routine.title')}</Text>
+        <Text style={styles.title}>{isEditMode ? 'ルーティン編集' : t('ui.build_routine.title')}</Text>
         <TouchableOpacity onPress={handleSave} style={styles.saveBtn}>
           <Text style={styles.saveBtnText}>{t('ui.common.save')}</Text>
         </TouchableOpacity>

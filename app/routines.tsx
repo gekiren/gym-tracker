@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, UIManager, LayoutAnimation } from 'react-native';
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '../src/theme';
-import { getRoutines, deleteRoutine, getPreviousWorkoutSets, getPersonalRecords, updateRoutineOrders } from '../src/db/database';
+import { getRoutines, deleteRoutine, updateRoutineOrders } from '../src/db/database';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { translateExercise } from '../src/i18n';
 
@@ -16,7 +16,7 @@ export default function RoutinesScreen() {
   const { t } = useTranslation();
   const [routines, setRoutines] = useState<any[]>([]);
   const [isReorderMode, setIsReorderMode] = useState(false);
-  const { startWorkout, addExercise, settings } = useWorkoutStore();
+  const { settings } = useWorkoutStore();
   const isPremium = settings.premiumUntil === 'perpetual' || (settings.premiumUntil !== '' && !isNaN(Date.parse(settings.premiumUntil)) && Date.parse(settings.premiumUntil) > Date.now());
   const isEarly = settings.isEarlyAdopter;
   const isBasic = !isPremium && !isEarly;
@@ -88,64 +88,7 @@ export default function RoutinesScreen() {
     );
   };
 
-  const handleStartRoutine = async (routine: any) => {
-    try {
-      startWorkout(routine.title);
-      for (const ex of routine.exercises) {
-        const personalRecords = await getPersonalRecords(ex.id);
-        let initialSets: any[] = [];
 
-        if (ex.sets && ex.sets.length > 0) {
-          if (ex.is_unilateral) {
-            for (const s of ex.sets) {
-              initialSets.push({
-                weight: s.weight,
-                reps: s.reps,
-                rpe: s.rpe,
-                side: 'L',
-                variation: s.variation || null,
-                stance: s.stance || null
-              });
-              initialSets.push({
-                weight: s.weight,
-                reps: s.reps,
-                rpe: s.rpe,
-                side: 'R',
-                variation: s.variation || null,
-                stance: s.stance || null
-              });
-            }
-          } else {
-            initialSets = ex.sets.map((s: any) => ({
-              weight: s.weight,
-              reps: s.reps,
-              rpe: s.rpe,
-              side: null,
-              variation: s.variation || null,
-              stance: s.stance || null
-            }));
-          }
-        } else {
-          initialSets = await getPreviousWorkoutSets(ex.id);
-        }
- 
-        addExercise({ 
-          id: ex.id, 
-          name: ex.name, 
-          previousSets: initialSets, 
-          personalRecords, 
-          is_unilateral: ex.is_unilateral, 
-          default_variation: ex.default_variation || null,
-          default_stance: ex.default_stance || null,
-          equipment: ex.equipment,
-          muscle_group: ex.muscle_group
-        });
-      }
-      router.push('/active-workout');
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
   return (
     <View style={styles.container}>
@@ -202,7 +145,18 @@ export default function RoutinesScreen() {
             key={r.id} 
             style={[styles.routineCard, isReorderMode && styles.routineCardEditing]} 
             activeOpacity={0.7} 
-            onPress={() => !isReorderMode && handleStartRoutine(r)}
+            onPress={() => {
+              if (isReorderMode) return;
+              if (isBasic && routines.length >= 11) {
+                Alert.alert(
+                  '編集制限',
+                  'ベーシックプランではルーティンが11個以上ある場合、編集画面を開くことができません。ルーティンを10個以下に減らしてから操作してください。',
+                  [{ text: 'OK', style: 'default' }]
+                );
+                return;
+              }
+              router.push(`/build-routine?id=${r.id}`);
+            }}
             disabled={isReorderMode}
           >
             <View style={{ flex: 1 }}>
