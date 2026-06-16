@@ -261,17 +261,18 @@ export default function BuildRoutineScreen() {
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
-          <Ionicons name="close" size={28} color={Theme.colors.primary} />
-        </TouchableOpacity>
-        <Text style={styles.title}>{isEditMode ? 'ルーティン編集' : t('ui.build_routine.title')}</Text>
-        <TouchableOpacity onPress={handleSave} style={styles.saveBtn}>
-          <Text style={styles.saveBtnText}>{t('ui.common.save')}</Text>
-        </TouchableOpacity>
-      </View>
 
       <KeyboardAvoidingWrapper>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
+            <Ionicons name="close" size={28} color={Theme.colors.primary} />
+          </TouchableOpacity>
+          <Text style={styles.title}>{isEditMode ? 'ルーティン編集' : t('ui.build_routine.title')}</Text>
+          <TouchableOpacity onPress={handleSave} style={styles.saveBtn}>
+            <Text style={styles.saveBtnText}>{t('ui.common.save')}</Text>
+          </TouchableOpacity>
+        </View>
+
         <ScrollView 
           contentContainerStyle={styles.content} 
           keyboardShouldPersistTaps="handled" 
