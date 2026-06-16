@@ -312,6 +312,7 @@ export default function RootLayout() {
           <Stack.Screen name="select-exercise" options={{ presentation: 'modal', title: i18n.t('ui.profile.screen_title_select_exercise') }} />
           <Stack.Screen name="active-workout" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="workout-completion" options={{ presentation: 'fullScreenModal', headerShown: false }} />
+          <Stack.Screen name="build-routine" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="exercise/[id]" options={{ presentation: 'card' }} />
           <Stack.Screen name="edit-workout/[id]" options={{ presentation: 'card' }} />
           <Stack.Screen name="rm-calculator" options={{ presentation: 'card' }} />
