@@ -8,6 +8,21 @@ import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../../src/i18n';
 
+const KeyboardAvoidingWrapper = ({ children }: { children: React.ReactNode }) => {
+  if (Platform.OS === 'ios') {
+    return (
+      <KeyboardAvoidingView
+        behavior="padding"
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={90}
+      >
+        {children}
+      </KeyboardAvoidingView>
+    );
+  }
+  return <View style={{ flex: 1 }}>{children}</View>;
+};
+
 export default function EditWorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<any>(null);
@@ -108,12 +123,12 @@ export default function EditWorkoutScreen() {
         }} 
       />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80}
-      >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingWrapper>
+        <ScrollView 
+          contentContainerStyle={styles.content} 
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'android'}
+        >
         <Text style={styles.label}>{t('ui.edit_workout.workout_name_label')}</Text>
         <TextInput
           style={styles.inputHero}
@@ -172,14 +187,14 @@ export default function EditWorkoutScreen() {
           </View>
         ))}
       </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingWrapper>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
-  content: { padding: Theme.spacing.md, paddingBottom: 100 },
+  content: { padding: Theme.spacing.md, paddingBottom: 180 },
   label: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: 'bold', marginBottom: 8 },
   inputHero: { backgroundColor: Theme.colors.card, color: Theme.colors.text, fontSize: 20, fontWeight: 'bold', padding: 16, borderRadius: Theme.borderRadius.md, borderWidth: 1, borderColor: Theme.colors.border, marginBottom: 24 },
   card: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, marginBottom: Theme.spacing.lg },

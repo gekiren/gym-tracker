@@ -8,6 +8,21 @@ import { addRoutine, updateRoutine, getRoutines, loadFullWorkoutData, getDB } fr
 import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../src/i18n';
 
+const KeyboardAvoidingWrapper = ({ children }: { children: React.ReactNode }) => {
+  if (Platform.OS === 'ios') {
+    return (
+      <KeyboardAvoidingView
+        behavior="padding"
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={90}
+      >
+        {children}
+      </KeyboardAvoidingView>
+    );
+  }
+  return <View style={{ flex: 1 }}>{children}</View>;
+};
+
 export default function BuildRoutineScreen() {
   const { id: routineIdString } = useLocalSearchParams<{ id: string }>();
   const routineId = routineIdString ? parseInt(routineIdString, 10) : undefined;
@@ -229,15 +244,11 @@ export default function BuildRoutineScreen() {
         </TouchableOpacity>
       </View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80}
-      >
+      <KeyboardAvoidingWrapper>
         <ScrollView 
           contentContainerStyle={styles.content} 
           keyboardShouldPersistTaps="handled" 
-          automaticallyAdjustKeyboardInsets={false}
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'android'}
         >
         <Text style={styles.label}>{t('ui.build_routine.routine_name_label')}</Text>
         <TextInput
@@ -378,7 +389,7 @@ export default function BuildRoutineScreen() {
         </TouchableOpacity>
 
       </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingWrapper>
 
       {/* Routine Selection Modal */}
       <Modal visible={showRoutineModal} animationType="slide" transparent={true}>
@@ -456,7 +467,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 20, fontWeight: 'bold', color: Theme.colors.text, flex: 1 },
   saveBtn: { backgroundColor: Theme.colors.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
   saveBtnText: { color: '#fff', fontWeight: 'bold' },
-  content: { padding: Theme.spacing.md, paddingBottom: 100 },
+  content: { padding: Theme.spacing.md, paddingBottom: 180 },
   label: { color: Theme.colors.textMuted, marginBottom: 8, fontSize: 16, fontWeight: '600' },
   input: { backgroundColor: Theme.colors.card, color: Theme.colors.text, padding: 16, borderRadius: Theme.borderRadius.md, fontSize: 18, borderWidth: 1, borderColor: Theme.colors.border, marginBottom: 24 },
   exercisesHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
