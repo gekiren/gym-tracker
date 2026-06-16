@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,24 @@ import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../../src/i18n';
 
 const KeyboardAvoidingWrapper = ({ children }: { children: React.ReactNode }) => {
+  const [behavior, setBehavior] = useState<'padding' | undefined>(undefined);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    const showListener = Keyboard.addListener('keyboardDidShow', () => {
+      setBehavior('padding');
+    });
+    const hideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setBehavior(undefined);
+    });
+
+    return () => {
+      showListener.remove();
+      hideListener.remove();
+    };
+  }, []);
+
   if (Platform.OS === 'ios') {
     return (
       <KeyboardAvoidingView
@@ -20,7 +38,16 @@ const KeyboardAvoidingWrapper = ({ children }: { children: React.ReactNode }) =>
       </KeyboardAvoidingView>
     );
   }
-  return <View style={{ flex: 1 }}>{children}</View>;
+
+  return (
+    <KeyboardAvoidingView
+      behavior={behavior}
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={80}
+    >
+      {children}
+    </KeyboardAvoidingView>
+  );
 };
 
 export default function EditWorkoutScreen() {
@@ -127,7 +154,7 @@ export default function EditWorkoutScreen() {
         <ScrollView 
           contentContainerStyle={styles.content} 
           keyboardShouldPersistTaps="handled"
-          automaticallyAdjustKeyboardInsets={Platform.OS === 'android'}
+          automaticallyAdjustKeyboardInsets={false}
         >
         <Text style={styles.label}>{t('ui.edit_workout.workout_name_label')}</Text>
         <TextInput

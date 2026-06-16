@@ -19,6 +19,24 @@ import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-han
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 
 const KeyboardAvoidingWrapper = ({ children }: { children: React.ReactNode }) => {
+  const [behavior, setBehavior] = useState<'padding' | undefined>(undefined);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    const showListener = Keyboard.addListener('keyboardDidShow', () => {
+      setBehavior('padding');
+    });
+    const hideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setBehavior(undefined);
+    });
+
+    return () => {
+      showListener.remove();
+      hideListener.remove();
+    };
+  }, []);
+
   if (Platform.OS === 'ios') {
     return (
       <KeyboardAvoidingView
@@ -30,7 +48,16 @@ const KeyboardAvoidingWrapper = ({ children }: { children: React.ReactNode }) =>
       </KeyboardAvoidingView>
     );
   }
-  return <View style={{ flex: 1 }}>{children}</View>;
+
+  return (
+    <KeyboardAvoidingView
+      behavior={behavior}
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={80}
+    >
+      {children}
+    </KeyboardAvoidingView>
+  );
 };
 
 function KeepAwakeController() {
@@ -568,7 +595,7 @@ export default function ActiveWorkoutScreen() {
         <ScrollView 
           contentContainerStyle={styles.content} 
           keyboardShouldPersistTaps="handled" 
-          automaticallyAdjustKeyboardInsets={Platform.OS === 'android'}
+          automaticallyAdjustKeyboardInsets={false}
         >
 
         {!isWorkoutStarted && (
