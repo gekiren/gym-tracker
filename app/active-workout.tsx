@@ -18,6 +18,21 @@ import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 
+const KeyboardAvoidingWrapper = ({ children }: { children: React.ReactNode }) => {
+  if (Platform.OS === 'ios') {
+    return (
+      <KeyboardAvoidingView
+        behavior="padding"
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={120}
+      >
+        {children}
+      </KeyboardAvoidingView>
+    );
+  }
+  return <View style={{ flex: 1 }}>{children}</View>;
+};
+
 function KeepAwakeController() {
   useKeepAwake();
   return null;
@@ -514,11 +529,7 @@ export default function ActiveWorkoutScreen() {
         }} 
       />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80}
-      >
+      <KeyboardAvoidingWrapper>
         {/* Workout Notes & AI Trainer Section (Fixed at Top) */}
         <View style={styles.fixedHeader}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -557,7 +568,7 @@ export default function ActiveWorkoutScreen() {
         <ScrollView 
           contentContainerStyle={styles.content} 
           keyboardShouldPersistTaps="handled" 
-          automaticallyAdjustKeyboardInsets={false}
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'android'}
         >
 
         {!isWorkoutStarted && (
@@ -686,9 +697,9 @@ export default function ActiveWorkoutScreen() {
         <TouchableOpacity style={styles.addExerciseBtn} onPress={handleAddExercise}>
           <Text style={styles.addExerciseBtnText}>{t('ui.active_workout.add_exercise_label')}</Text>
         </TouchableOpacity>
-        <View style={{ height: 100 }} />
+        <View style={{ height: 180 }} />
       </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingWrapper>
 
       {/* Floating Rest Timer UI */}
       <FloatingRestTimer safeBottomOffset={safeBottomOffset} />
