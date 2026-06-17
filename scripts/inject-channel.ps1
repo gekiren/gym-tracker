@@ -132,19 +132,33 @@ $propertiesContent = "expo.modules.updates.ENABLED=true`r`n" +
 Set-Content -Path $propertiesPath -Value $propertiesContent -NoNewline
 Write-Host "Success: expo-updates.properties created/updated (Channel: $channelName)" -ForegroundColor Green
 
-# 4. Redirect buildDir to a short path for :app to prevent Windows MAX_PATH (260 chars) error
+# 4. Redirect buildDir and C++ buildStagingDirectory (.cxx) to a short path for :app to prevent Windows MAX_PATH (260 chars) error
 $appBuildGradlePath = "android/app/build.gradle"
 if (Test-Path $appBuildGradlePath) {
     $gradleContent = Get-Content $appBuildGradlePath -Raw
+    $hasChanged = $false
+
     if ($gradleContent -notmatch 'buildDir\s*=') {
         if (!(Test-Path "C:\t")) {
             New-Item -ItemType Directory -Path "C:\t" -Force | Out-Null
         }
         $redirectConfig = "buildDir = `"C:/t/TreNote/app`"`r`n`r`n"
         $gradleContent = $redirectConfig + $gradleContent
-        Set-Content $appBuildGradlePath $gradleContent -NoNewline
+        $hasChanged = $true
         Write-Host "Success: Redirected :app buildDir to C:/t/TreNote/app in android/app/build.gradle" -ForegroundColor Green
-    } else {
-        Write-Host "Info: buildDir redirection already configured in android/app/build.gradle, skipping." -ForegroundColor Yellow
+    }
+
+    if ($gradleContent -notmatch 'buildStagingDirectory') {
+        if (!(Test-Path "C:\t")) {
+            New-Item -ItemType Directory -Path "C:\t" -Force | Out-Null
+        }
+        $cxxConfig = "`r`n`r`nandroid {`r`n    externalNativeBuild {`r`n        cmake {`r`n            buildStagingDirectory = file(`"C:/t/TreNote/app/.cxx`")`r`n        }`r`n    }`r`n}"
+        $gradleContent = $gradleContent + $cxxConfig
+        $hasChanged = $true
+        Write-Host "Success: Redirected :app C++ buildStagingDirectory to C:/t/TreNote/app/.cxx in android/app/build.gradle" -ForegroundColor Green
+    }
+
+    if ($hasChanged) {
+        Set-Content $appBuildGradlePath $gradleContent -NoNewline
     }
 }
