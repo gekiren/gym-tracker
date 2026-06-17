@@ -12,9 +12,9 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 const KeyboardAvoidingWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior="padding"
       style={{ flex: 1 }}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       {children}
     </KeyboardAvoidingView>
