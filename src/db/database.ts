@@ -139,7 +139,7 @@ export const initDB = async (): Promise<SQLite.SQLiteDatabase> => {
 };
 
 const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
-  const _db = await SQLite.openDatabaseAsync('gymtracker.db');
+  const _db = await SQLite.openDatabaseAsync('gymtracker.db', { useNewConnection: true });
 
   // Create tables if they don't exist
   await _db.execAsync(`
