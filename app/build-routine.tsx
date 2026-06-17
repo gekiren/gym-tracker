@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal, Platform, Keyboard, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal, Platform, Keyboard } from 'react-native';
 import { useEffect, useState } from 'react';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,43 +7,14 @@ import { useWorkoutStore } from '../src/store/workoutStore';
 import { addRoutine, updateRoutine, getRoutines, loadFullWorkoutData, getDB } from '../src/db/database';
 import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../src/i18n';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
 const KeyboardAvoidingWrapper = ({ children }: { children: React.ReactNode }) => {
-  const [behavior, setBehavior] = useState<'padding' | undefined>(undefined);
-
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-
-    const showListener = Keyboard.addListener('keyboardDidShow', () => {
-      setBehavior('padding');
-    });
-    const hideListener = Keyboard.addListener('keyboardDidHide', () => {
-      setBehavior(undefined);
-    });
-
-    return () => {
-      showListener.remove();
-      hideListener.remove();
-    };
-  }, []);
-
-  if (Platform.OS === 'ios') {
-    return (
-      <KeyboardAvoidingView
-        behavior="padding"
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={90}
-      >
-        {children}
-      </KeyboardAvoidingView>
-    );
-  }
-
   return (
     <KeyboardAvoidingView
-      behavior={behavior}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ flex: 1 }}
-      keyboardVerticalOffset={80}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80}
     >
       {children}
     </KeyboardAvoidingView>

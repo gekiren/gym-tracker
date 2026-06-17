@@ -19,6 +19,7 @@ import { ReviewPromptModal } from '../components/ReviewPromptModal';
 import * as Updates from 'expo-updates';
 import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import { OTAUpdateModal } from '../components/OTAUpdateModal';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 // アプリの起動時にグローバルエラーハンドラを登録
 registerGlobalErrorHandler();
@@ -306,23 +307,25 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={DarkTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="select-exercise" options={{ presentation: 'modal', title: i18n.t('ui.profile.screen_title_select_exercise') }} />
-          <Stack.Screen name="active-workout" options={{ presentation: 'fullScreenModal' }} />
-          <Stack.Screen name="workout-completion" options={{ presentation: 'fullScreenModal', headerShown: false }} />
-          <Stack.Screen name="build-routine" options={{ presentation: 'fullScreenModal' }} />
-          <Stack.Screen name="exercise/[id]" options={{ presentation: 'card' }} />
-          <Stack.Screen name="edit-workout/[id]" options={{ presentation: 'card' }} />
-          <Stack.Screen name="rm-calculator" options={{ presentation: 'card' }} />
-          <Stack.Screen name="privacy-policy" options={{ presentation: 'card' }} />
-          <Stack.Screen name="developer-menu" options={{ presentation: 'card' }} />
-        </Stack>
-        <ReviewPromptModal />
-        <OTAUpdateModal />
-        <StatusBar style="light" />
-      </ThemeProvider>
+      <KeyboardProvider>
+        <ThemeProvider value={DarkTheme}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="select-exercise" options={{ presentation: 'modal', title: i18n.t('ui.profile.screen_title_select_exercise') }} />
+            <Stack.Screen name="active-workout" options={{ presentation: 'fullScreenModal' }} />
+            <Stack.Screen name="workout-completion" options={{ presentation: 'fullScreenModal', headerShown: false }} />
+            <Stack.Screen name="build-routine" options={{ presentation: 'fullScreenModal' }} />
+            <Stack.Screen name="exercise/[id]" options={{ presentation: 'card' }} />
+            <Stack.Screen name="edit-workout/[id]" options={{ presentation: 'card' }} />
+            <Stack.Screen name="rm-calculator" options={{ presentation: 'card' }} />
+            <Stack.Screen name="privacy-policy" options={{ presentation: 'card' }} />
+            <Stack.Screen name="developer-menu" options={{ presentation: 'card' }} />
+          </Stack>
+          <ReviewPromptModal />
+          <OTAUpdateModal />
+          <StatusBar style="light" />
+        </ThemeProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }
