@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.73', // OTA識別用のバージョン文字列
+  version: '1.0.74', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'Android端末でキーボード表示時に入力欄が隠れず、自動でスクロールされるように改善しました。',
-      'Keyboard Controllerライブラリの段階的導入により、ルーティン編集画面でのキーボード表示時のレイアウト不具合（黒い領域）を修正しました。'
+      'ルーティン編集画面のレイアウト構造をKeyboardAwareScrollViewに刷新し、キーボード立ち上げ時の黒い余白が発生する問題を根本修正しました。',
+      'ステータスバー表示領域のインセット計算処理を最適化しました。'
     ],
     en: [
-      'Fixed an issue on Android where text inputs were hidden behind the keyboard and did not auto-scroll.',
-      'Introduced Keyboard Controller to resolve the keyboard layout gap issue on the routine builder screen.'
+      'Replaced the layout structure with KeyboardAwareScrollView on the routine editor screen to resolve the black layout gap issue.',
+      'Optimized status bar inset calculations.'
     ]
   }
 };

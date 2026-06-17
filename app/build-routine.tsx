@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal, Platform, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal } from 'react-native';
 import { useEffect, useState } from 'react';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,19 +7,7 @@ import { useWorkoutStore } from '../src/store/workoutStore';
 import { addRoutine, updateRoutine, getRoutines, loadFullWorkoutData, getDB } from '../src/db/database';
 import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../src/i18n';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-
-const KeyboardAvoidingWrapper = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <KeyboardAvoidingView
-      behavior="padding"
-      style={{ flex: 1 }}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
-      {children}
-    </KeyboardAvoidingView>
-  );
-};
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 export default function BuildRoutineScreen() {
   const { id: routineIdString } = useLocalSearchParams<{ id: string }>();
@@ -51,31 +39,10 @@ export default function BuildRoutineScreen() {
   const [historyList, setHistoryList] = useState<any[]>([]);
   const [showRoutineModal, setShowRoutineModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
     clearDraft();
     fetchRoutinesAndHistory();
-  }, []);
-
-  useEffect(() => {
-    const showSubscription = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      (e) => {
-        setKeyboardHeight(e.endCoordinates.height);
-      }
-    );
-    const hideSubscription = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => {
-        setKeyboardHeight(0);
-      }
-    );
-
-    return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
-    };
   }, []);
 
   useEffect(() => {
@@ -233,22 +200,21 @@ export default function BuildRoutineScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <KeyboardAvoidingWrapper>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
-            <Ionicons name="close" size={28} color={Theme.colors.primary} />
-          </TouchableOpacity>
-          <Text style={styles.title}>{isEditMode ? 'ルーティン編集' : t('ui.build_routine.title')}</Text>
-          <TouchableOpacity onPress={handleSave} style={styles.saveBtn}>
-            <Text style={styles.saveBtnText}>{t('ui.common.save')}</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
+          <Ionicons name="close" size={28} color={Theme.colors.primary} />
+        </TouchableOpacity>
+        <Text style={styles.title}>{isEditMode ? 'ルーティン編集' : t('ui.build_routine.title')}</Text>
+        <TouchableOpacity onPress={handleSave} style={styles.saveBtn}>
+          <Text style={styles.saveBtnText}>{t('ui.common.save')}</Text>
+        </TouchableOpacity>
+      </View>
 
-        <ScrollView 
-          contentContainerStyle={styles.content} 
-          keyboardShouldPersistTaps="handled" 
-          automaticallyAdjustKeyboardInsets={false}
-        >
+      <KeyboardAwareScrollView 
+        contentContainerStyle={styles.content} 
+        keyboardShouldPersistTaps="handled" 
+        bottomOffset={16}
+      >
         <Text style={styles.label}>{t('ui.build_routine.routine_name_label')}</Text>
         <TextInput
           style={styles.input}
@@ -387,8 +353,7 @@ export default function BuildRoutineScreen() {
           <Text style={styles.addExerciseBtnText}>{t('ui.build_routine.add_exercise_btn')}</Text>
         </TouchableOpacity>
 
-      </ScrollView>
-      </KeyboardAvoidingWrapper>
+      </KeyboardAwareScrollView>
 
       {/* Routine Selection Modal */}
       <Modal visible={showRoutineModal} animationType="slide" transparent={true}>

@@ -307,7 +307,7 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <KeyboardProvider>
+      <KeyboardProvider statusBarTranslucent={true}>
         <ThemeProvider value={DarkTheme}>
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
