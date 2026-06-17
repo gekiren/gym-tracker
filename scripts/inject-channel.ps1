@@ -131,3 +131,20 @@ $propertiesContent = "expo.modules.updates.ENABLED=true`r`n" +
 
 Set-Content -Path $propertiesPath -Value $propertiesContent -NoNewline
 Write-Host "Success: expo-updates.properties created/updated (Channel: $channelName)" -ForegroundColor Green
+
+# 4. Redirect buildDir to a short path to prevent Windows MAX_PATH (260 chars) error
+$topBuildGradlePath = "android/build.gradle"
+if (Test-Path $topBuildGradlePath) {
+    $gradleContent = Get-Content $topBuildGradlePath -Raw
+    if ($gradleContent -notmatch 'buildDir\s*=') {
+        if (!(Test-Path "C:\t")) {
+            New-Item -ItemType Directory -Path "C:\t" -Force | Out-Null
+        }
+        $redirectConfig = "`r`n`r`nallprojects {`r`n    buildDir = `"C:/t/`${rootProject.name}/`${project.name}`"`r`n}"
+        $gradleContent = $gradleContent + $redirectConfig
+        Set-Content $topBuildGradlePath $gradleContent -NoNewline
+        Write-Host "Success: Redirected buildDir to C:/t in android/build.gradle" -ForegroundColor Green
+    } else {
+        Write-Host "Info: buildDir redirection already configured in android/build.gradle, skipping." -ForegroundColor Yellow
+    }
+}
