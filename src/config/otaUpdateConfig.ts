@@ -11,18 +11,18 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.83', // OTA識別用のバージョン文字列
+  version: '1.0.84', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'Android端末におけるAIコーチ画面のキーボード表示不具合を改善しました。',
+      'Android端末におけるAIコーチ画面のキーボード回避挙動を修正しました。',
       'アプリ内課金の内部ログ出力セキュリティを強化しました。'
     ],
     en: [
-      'Fixed keyboard rendering issue on the AI Coach screen for Android devices.',
+      'Fixed keyboard avoiding behavior on the AI Coach screen for Android devices.',
       'Enhanced logging security for in-app purchases.'
     ]
   }
