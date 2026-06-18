@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Alert } from 'react-native';
 import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
@@ -12,6 +12,7 @@ import { checkHasCrashLog, readCrashLog, deleteCrashLog, sendCrashReport, initia
 export default function WorkoutScreen() {
   const { t } = useTranslation();
   const startWorkout = useWorkoutStore(state => state.startWorkout);
+  const endWorkout = useWorkoutStore(state => state.endWorkout);
   const addExercise = useWorkoutStore(state => state.addExercise);
   const isActive = useWorkoutStore(state => state.isActive);
   const title = useWorkoutStore(state => state.title);
@@ -45,19 +46,42 @@ export default function WorkoutScreen() {
 
   const handleStartRoutine = async (routine: any) => {
     if (isLoading) return;
-    setIsLoading(true);
-    try {
-      startWorkout(routine.title);
-      for (const ex of routine.exercises) {
-        const prevSets = await getPreviousWorkoutSets(ex.id);
-        const personalRecords = await getPersonalRecords(ex.id);
-        addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords, equipment: ex.equipment, muscle_group: ex.muscle_group });
+
+    const proceedWithRoutine = async () => {
+      setIsLoading(true);
+      try {
+        if (isActive) {
+          endWorkout();
+        }
+        startWorkout(routine.title);
+        for (const ex of routine.exercises) {
+          const prevSets = await getPreviousWorkoutSets(ex.id);
+          const personalRecords = await getPersonalRecords(ex.id);
+          addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords, equipment: ex.equipment, muscle_group: ex.muscle_group });
+        }
+        router.push('/active-workout');
+      } catch (e) {
+        console.error('Failed to start routine', e);
+      } finally {
+        setIsLoading(false);
       }
-      router.push('/active-workout');
-    } catch (e) {
-      console.error('Failed to start routine', e);
-    } finally {
-      setIsLoading(false);
+    };
+
+    if (isActive) {
+      Alert.alert(
+        t('ui.routines.confirm_start_during_workout_title'),
+        t('ui.routines.confirm_start_during_workout_message'),
+        [
+          { text: t('ui.common.cancel'), style: 'cancel' },
+          {
+            text: t('ui.common.ok'),
+            style: 'destructive',
+            onPress: proceedWithRoutine
+          }
+        ]
+      );
+    } else {
+      await proceedWithRoutine();
     }
   };
 

@@ -363,7 +363,9 @@
       "delete_title": "ルーティンの削除",
       "delete_message": "このルーティンを削除しますか？",
       "delete_message_with_title": "{{title}} を削除してもよろしいですか？",
-      "all_routines": "すべてのルーティン"
+      "all_routines": "すべてのルーティン",
+      "confirm_start_during_workout_title": "確認",
+      "confirm_start_during_workout_message": "ワークアウトを保存せず終了し、ルーティンを開始しますか？"
     },
     "timer": {
       "rest_end_title": "休憩終了！",
