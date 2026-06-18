@@ -34,8 +34,14 @@ export default function WorkoutDetailsScreen() {
 
   const fetchData = async () => {
     if (!id) return;
+    const parsedId = parseInt(id, 10);
+    if (isNaN(parsedId)) {
+      Alert.alert(t('ui.common.error') || 'Error', 'Invalid Workout ID');
+      router.back();
+      return;
+    }
     try {
-      const data = await loadFullWorkoutData(parseInt(id, 10));
+      const data = await loadFullWorkoutData(parsedId);
       setWorkout(data);
     } catch (e) {
       console.warn('Failed to load workout details', e);

@@ -47,13 +47,19 @@ export default function ExerciseDetailScreen() {
 
   useEffect(() => {
     if (!id) return;
+    const parsedId = parseInt(id, 10);
+    if (isNaN(parsedId)) {
+      Alert.alert(t('ui.common.error') || 'Error', 'Invalid Exercise ID');
+      router.back();
+      return;
+    }
     const fetchDetails = async () => {
       try {
-        const exItem = await getExerciseById(parseInt(id, 10));
+        const exItem = await getExerciseById(parsedId);
         setExercise(exItem);
-        const histData = await getExerciseHistory(parseInt(id, 10));
+        const histData = await getExerciseHistory(parsedId);
         setHistory(histData);
-        const prData = await getPersonalRecords(parseInt(id, 10));
+        const prData = await getPersonalRecords(parsedId);
         setPersonalRecords(prData);
       } catch (e) {
         console.error(e);

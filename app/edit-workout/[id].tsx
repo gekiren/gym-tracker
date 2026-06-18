@@ -59,7 +59,13 @@ export default function EditWorkoutScreen() {
 
   useEffect(() => {
     if (id) {
-      loadData(parseInt(id, 10));
+      const parsedId = parseInt(id, 10);
+      if (isNaN(parsedId)) {
+        Alert.alert(t('ui.common.error') || 'Error', 'Invalid Workout ID');
+        router.back();
+        return;
+      }
+      loadData(parsedId);
     }
   }, [id]);
 

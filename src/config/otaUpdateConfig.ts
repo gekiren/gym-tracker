@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.81', // OTA識別用のバージョン文字列
+  version: '1.0.82', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'CSVインポート機能での種目名マッチング精度を向上させました。'
+      '不正なIDが指定された場合のクラッシュ防止ガードを強化しました。'
     ],
     en: [
-      'Improved exercise name matching accuracy in the CSV import feature.'
+      'Enhanced crash prevention guards when invalid IDs are specified.'
     ]
   }
 };
