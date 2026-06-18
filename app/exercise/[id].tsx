@@ -256,7 +256,7 @@ export default function ExerciseDetailScreen() {
     return null;
   }, [history, chartScale]);
 
-  const getChartDataForReps = () => {
+  const repChartData = useMemo(() => {
     if (selectedChartReps === null || selectedChartVariation === null) return null;
     const timeline = getPRTimeline(selectedChartReps, selectedChartVariation);
     if (timeline.length === 0) return null;
@@ -280,7 +280,7 @@ export default function ExerciseDetailScreen() {
         ]
       }
     };
-  };
+  }, [history, selectedChartReps, selectedChartVariation]);
 
   if (isLoading) {
     return (
@@ -647,7 +647,7 @@ export default function ExerciseDetailScreen() {
             </View>
 
             {(() => {
-              const res = getChartDataForReps();
+              const res = repChartData;
               if (!res) {
                 return (
                   <View style={{ padding: 24, alignItems: 'center' }}>
