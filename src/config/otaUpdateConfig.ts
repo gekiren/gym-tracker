@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.75', // OTA識別用のバージョン文字列
+  version: '1.0.76', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'データベースの復元処理で発生していたエラー（java.lang.NullPointerException）を修正しました。'
+      'ワークアウト中のルーティン開始時に、確認ポップアップを表示するよう改善しました。'
     ],
     en: [
-      'Fixed a restore database error (java.lang.NullPointerException) on Android.'
+      'Added a confirmation popup when starting a routine during an active workout.'
     ]
   }
 };

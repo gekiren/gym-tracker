@@ -368,7 +368,9 @@
       "delete_title": "Delete Routine",
       "delete_message": "Delete this routine?",
       "delete_message_with_title": "Are you sure you want to delete \"{{title}}\"?",
-      "all_routines": "All Routines"
+      "all_routines": "All Routines",
+      "confirm_start_during_workout_title": "Confirmation",
+      "confirm_start_during_workout_message": "Do you want to exit without saving the workout and start the routine?"
     },
     "timer": {
       "rest_end_title": "Rest Over!",
