@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.78', // OTA識別用のバージョン文字列
+  version: '1.0.79', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'ID生成ロジックをより安全で重複リスクの少ない標準モジュール（expo-crypto）に移行しました。'
+      'ID生成ロジックをネイティブ依存のない安全なピュアJavaScript実装へ変更しました。'
     ],
     en: [
-      'Migrated to standard secure module (expo-crypto) for generating unique IDs.'
+      'Updated unique ID generator to a Pure-JS implementation to ensure compatibility.'
     ]
   }
 };

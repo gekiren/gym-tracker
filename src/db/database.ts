@@ -1,6 +1,5 @@
 import * as SQLite from 'expo-sqlite';
 import { addMonths } from 'date-fns';
-import * as Crypto from 'expo-crypto';
 
 // Initialize the database connection
 let db: SQLite.SQLiteDatabase | null = null;
@@ -539,9 +538,21 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
     const allRows = await _db.getAllAsync<{ key: string }>('SELECT key FROM settings');
     const existingKeys = new Set(allRows.map(row => row.key));
 
-    // Use expo-crypto for secure random UUID generation
+    // Standard JS UUID v4 generator with date seed to ensure uniqueness without native modules
     const generateUUID = () => {
-      return Crypto.randomUUID();
+      let d = Date.now();
+      let d2 = 0;
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        let r = Math.random() * 16;
+        if (d > 0) {
+          r = (d + r) % 16 | 0;
+          d = Math.floor(d / 16);
+        } else {
+          r = (d2 + r) % 16 | 0;
+          d2 = Math.floor(d2 / 16);
+        }
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+      });
     };
 
     const settingsToInsert: { key: string; value: string }[] = [];
