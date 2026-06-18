@@ -77,7 +77,14 @@ export const sendMessageToAICoach = async (
     }
 
     if (!response.ok) {
-      throw new Error(`Server returned status: ${response.status}`);
+      let errorMsg = `Server returned status: ${response.status}`;
+      try {
+        const errJson = await response.json();
+        if (errJson && errJson.error) {
+          errorMsg = errJson.error;
+        }
+      } catch (_) {}
+      throw new Error(errorMsg);
     }
 
     const data = await response.json();
@@ -102,8 +109,9 @@ export const sendMessageToAICoach = async (
       };
     }
     
+    const detailMsg = err.message ? `\n詳細: ${err.message}` : '';
     return {
-      reply: i18next.t('ui.coach.network_error') || 'ネットワークエラーが発生しました。接続を確認してください。',
+      reply: `${i18next.t('ui.coach.network_error') || 'ネットワークエラーが発生しました。接続を確認してください。'}${detailMsg}`,
       success: false,
       errorType: 'network',
     };

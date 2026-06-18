@@ -137,7 +137,19 @@ export default {
       if (!response.ok) {
         const errorData = await response.text();
         console.error("Gemini API error status:", response.status, errorData);
-        return new Response(JSON.stringify({ success: false, error: "Failed to communicate with AI model" }), {
+        
+        let errorDetails = errorData;
+        try {
+          const parsed = JSON.parse(errorData);
+          if (parsed && parsed.error && parsed.error.message) {
+            errorDetails = parsed.error.message;
+          }
+        } catch (_) {}
+
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: `Failed to communicate with AI model: ${errorDetails} (Status: ${response.status})` 
+        }), {
           status: 502,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
         });
