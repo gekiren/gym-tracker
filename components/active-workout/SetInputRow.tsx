@@ -21,7 +21,6 @@ interface SetInputRowProps {
   startTime: string | null;
   setStanceModalTarget: (val: { type: 'exercise' | 'set'; exId: string; setId?: string; currentValue: string | null } | null) => void;
   setStanceModalVisible: (visible: boolean) => void;
-  setCustomStance: (stance: string) => void;
   displayFields: any;
 }
 
@@ -37,7 +36,6 @@ export function SetInputRow({
   startTime,
   setStanceModalTarget,
   setStanceModalVisible,
-  setCustomStance,
   displayFields
 }: SetInputRowProps) {
   const { t } = useTranslation();
@@ -415,7 +413,6 @@ export function SetInputRow({
                 onPress={() => {
                   const curStance = set.stance || set.variation || null;
                   setStanceModalTarget({ type: 'set', exId: ex.id, setId: set.id, currentValue: curStance });
-                  setCustomStance(curStance || '');
                   setStanceModalVisible(true);
                 }}
                 style={{ flexDirection: 'row', alignItems: 'center' }}

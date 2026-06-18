@@ -233,8 +233,8 @@ export default function CoachScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-      keyboardVerticalOffset={Platform.select({ ios: 90, android: 80 })}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.select({ ios: 90, android: 120 })}
     >
       {/* Top Warning Banner if out of tokens */}
       {isQuotaExhausted && (

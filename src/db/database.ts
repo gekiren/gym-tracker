@@ -114,7 +114,7 @@ export const PRESET_EXERCISES = [
     { name: 'ローイングマシン', group: '有酸素', equip: 'マシン' },
     { name: 'クロストレーナー', group: '有酸素', equip: 'マシン' },
     { name: '縄跳び', group: '有酸素', equip: '自重' }
-  ];;
+  ];
 
 export const PRESET_EXERCISE_NAMES = new Set(PRESET_EXERCISES.map(e => e.name));
 
@@ -538,12 +538,20 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
     const allRows = await _db.getAllAsync<{ key: string }>('SELECT key FROM settings');
     const existingKeys = new Set(allRows.map(row => row.key));
 
-    // Standard plain-JS UUID v4 generator to avoid native dependency issues
+    // Standard JS UUID v4 generator with date seed to ensure uniqueness without native modules
     const generateUUID = () => {
+      let d = Date.now();
+      let d2 = 0;
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
+        let r = Math.random() * 16;
+        if (d > 0) {
+          r = (d + r) % 16 | 0;
+          d = Math.floor(d / 16);
+        } else {
+          r = (d2 + r) % 16 | 0;
+          d2 = Math.floor(d2 / 16);
+        }
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
       });
     };
 

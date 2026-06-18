@@ -47,13 +47,19 @@ export default function ExerciseDetailScreen() {
 
   useEffect(() => {
     if (!id) return;
+    const parsedId = parseInt(id, 10);
+    if (isNaN(parsedId)) {
+      Alert.alert(t('ui.common.error') || 'Error', 'Invalid Exercise ID');
+      router.back();
+      return;
+    }
     const fetchDetails = async () => {
       try {
-        const exItem = await getExerciseById(parseInt(id, 10));
+        const exItem = await getExerciseById(parsedId);
         setExercise(exItem);
-        const histData = await getExerciseHistory(parseInt(id, 10));
+        const histData = await getExerciseHistory(parsedId);
         setHistory(histData);
-        const prData = await getPersonalRecords(parseInt(id, 10));
+        const prData = await getPersonalRecords(parsedId);
         setPersonalRecords(prData);
       } catch (e) {
         console.error(e);
@@ -256,7 +262,7 @@ export default function ExerciseDetailScreen() {
     return null;
   }, [history, chartScale]);
 
-  const getChartDataForReps = () => {
+  const repChartData = useMemo(() => {
     if (selectedChartReps === null || selectedChartVariation === null) return null;
     const timeline = getPRTimeline(selectedChartReps, selectedChartVariation);
     if (timeline.length === 0) return null;
@@ -280,7 +286,7 @@ export default function ExerciseDetailScreen() {
         ]
       }
     };
-  };
+  }, [history, selectedChartReps, selectedChartVariation]);
 
   if (isLoading) {
     return (
@@ -647,7 +653,7 @@ export default function ExerciseDetailScreen() {
             </View>
 
             {(() => {
-              const res = getChartDataForReps();
+              const res = repChartData;
               if (!res) {
                 return (
                   <View style={{ padding: 24, alignItems: 'center' }}>

@@ -45,7 +45,9 @@ export const setupIAPListeners = (
 
   // Listener for purchase updates
   purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase: Purchase) => {
-    console.log('Purchase update received:', purchase);
+    if (__DEV__) {
+      console.log('Purchase update received:', purchase);
+    }
     const receipt = purchase.purchaseToken;
     if (receipt) {
       try {
@@ -84,7 +86,9 @@ export const fetchPremiumProducts = async () => {
       skus: [PREMIUM_PRODUCT_ID],
       type: 'in-app'
     });
-    console.log('Fetched products:', products);
+    if (__DEV__) {
+      console.log('Fetched products:', products);
+    }
     return products;
   } catch (e) {
     console.warn('Failed to fetch products:', e);
@@ -95,7 +99,9 @@ export const fetchPremiumProducts = async () => {
 export const purchasePremium = async () => {
   try {
     await initIAPConnection();
-    console.log('Requesting purchase for SKU:', PREMIUM_PRODUCT_ID);
+    if (__DEV__) {
+      console.log('Requesting purchase for SKU:', PREMIUM_PRODUCT_ID);
+    }
     await requestPurchase({
       request: {
         apple: { sku: PREMIUM_PRODUCT_ID },
@@ -112,9 +118,13 @@ export const purchasePremium = async () => {
 export const restorePurchases = async (): Promise<boolean> => {
   try {
     await initIAPConnection();
-    console.log('Restoring purchases...');
+    if (__DEV__) {
+      console.log('Restoring purchases...');
+    }
     const purchases = await getAvailablePurchases();
-    console.log('Available purchases:', purchases);
+    if (__DEV__) {
+      console.log('Available purchases:', purchases);
+    }
     
     const premiumPurchase = purchases.find((p: Purchase) => p.productId === PREMIUM_PRODUCT_ID);
     if (premiumPurchase) {
