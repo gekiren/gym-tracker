@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, AppState, BackHandler, Modal, Platform, Keyboard, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, AppState, BackHandler, Modal, Platform, Keyboard } from 'react-native';
 import { useEffect, useState, useCallback } from 'react';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,48 +17,12 @@ import { SetInputRow } from '../components/active-workout/SetInputRow';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
+import { KeyboardAvoidingWrapper } from '../components/active-workout/KeyboardAvoidingWrapper';
+import { PlateCalculatorModal } from '../components/active-workout/PlateCalculatorModal';
+import { StanceModal } from '../components/active-workout/StanceModal';
+import { calculateRM, computeCalories, computeAchievements, computeStreaks } from '../src/utils/workoutStats';
 
-const KeyboardAvoidingWrapper = ({ children }: { children: React.ReactNode }) => {
-  const [behavior, setBehavior] = useState<'padding' | undefined>(undefined);
 
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-
-    const showListener = Keyboard.addListener('keyboardDidShow', () => {
-      setBehavior('padding');
-    });
-    const hideListener = Keyboard.addListener('keyboardDidHide', () => {
-      setBehavior(undefined);
-    });
-
-    return () => {
-      showListener.remove();
-      hideListener.remove();
-    };
-  }, []);
-
-  if (Platform.OS === 'ios') {
-    return (
-      <KeyboardAvoidingView
-        behavior="padding"
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={120}
-      >
-        {children}
-      </KeyboardAvoidingView>
-    );
-  }
-
-  return (
-    <KeyboardAvoidingView
-      behavior={behavior}
-      style={{ flex: 1 }}
-      keyboardVerticalOffset={80}
-    >
-      {children}
-    </KeyboardAvoidingView>
-  );
-};
 
 function KeepAwakeController() {
   useKeepAwake();
@@ -235,28 +199,12 @@ export default function ActiveWorkoutScreen() {
 
   // プレート計算機用State
   const [plateCalcVisible, setPlateCalcVisible] = useState(false);
-  const [plateCalcBar, setPlateCalcBar] = useState(20);
-  const [platesOnOneSide, setPlatesOnOneSide] = useState<number[]>([]);
   const [activeSetForCalc, setActiveSetForCalc] = useState<{exId: string, setId: string} | null>(null);
-  const [isCustomBar, setIsCustomBar] = useState(false);
-  const [customBarText, setCustomBarText] = useState('20');
 
   // スタンス用State
   const [stanceModalVisible, setStanceModalVisible] = useState(false);
   const [stanceModalTarget, setStanceModalTarget] = useState<{ type: 'exercise' | 'set', exId: string, setId?: string, currentValue: string | null } | null>(null);
-  const [customStance, setCustomStance] = useState('');
-  const [isAddingStance, setIsAddingStance] = useState(false);
   const presetStances = settings.customStances || [];
-
-  useEffect(() => {
-    const defaultVal = settings.weightUnit === 'lbs' ? 45 : 20;
-    setPlateCalcBar(defaultVal);
-    setCustomBarText(String(defaultVal));
-    setIsCustomBar(false);
-    setPlatesOnOneSide([]);
-  }, [settings.weightUnit]);
-
-  const totalPlateWeight = plateCalcBar + (platesOnOneSide.reduce((a, b) => a + b, 0) * 2);
 
   // Rest Timer Interval
   useEffect(() => {
@@ -322,11 +270,7 @@ export default function ActiveWorkoutScreen() {
     startRestTimer(settings.defaultRest);
   };
 
-  const calculateRM = (weight: number | null, reps: number | null) => {
-    if (!weight || !reps || reps < 1) return null;
-    if (reps === 1) return weight;
-    return Math.round(weight * (1 + (reps / 30)));
-  };
+
 
   const handleFinish = () => {
     if (isSaving) return;
@@ -355,129 +299,14 @@ export default function ActiveWorkoutScreen() {
               const { workouts: dbWorkouts, pastSets } = await prefetchWorkoutCompletionData(exerciseIds);
 
               // 3. Compute calorie stats
-              let totalWorkSecs = 0;
-              let totalRestSecs = 0;
-              exercises.forEach(ex => {
-                ex.sets.forEach(s => {
-                  if (s.is_completed) {
-                    totalWorkSecs += (s.work_seconds || 0);
-                    totalRestSecs += (s.rest_seconds || 0);
-                  }
-                });
-              });
-              
-              const bw = settings.bodyWeight || 70;
-              const bwKg = settings.weightUnit === 'lbs' ? bw * 0.453592 : bw;
-              const cal = ((totalWorkSecs / 3600) * 6.0 * bwKg) + ((totalRestSecs / 3600) * 1.5 * bwKg);
-              const roundedCalories = Math.round(cal);
+              const roundedCalories = computeCalories(exercises, settings.bodyWeight || 70, settings.weightUnit);
               const et = new Date().toISOString();
 
               // 4. Calculate achievements (1RM & Volume updates)
-              const updated1RMs: { name: string; oldVal: number; newVal: number }[] = [];
-              const updatedVolumes: { name: string; oldVal: number; newVal: number }[] = [];
-
-              exercises.forEach(ex => {
-                const completedSets = ex.sets.filter(s => s.is_completed);
-                if (completedSets.length === 0) return;
-
-                // Calculate current max 1RM
-                let currentMax1RM = 0;
-                completedSets.forEach(s => {
-                  const w = s.weight ?? 0;
-                  const r = s.reps ?? 0;
-                  if (r > 0) {
-                    const rm = r === 1 ? w : Math.round(w * (1 + r / 30));
-                    if (rm > currentMax1RM) currentMax1RM = rm;
-                  }
-                });
-
-                // Calculate current volume
-                const exBw = (ex.equipment === '自重' && settings.bodyWeight) ? settings.bodyWeight : 0;
-                const currentVolume = completedSets.reduce((sum, s) => sum + ((s.weight ?? 0) + exBw) * (s.reps ?? 0), 0);
-
-                // Filter past sets for this exercise
-                const exercisePastSets = pastSets.filter(s => s.exercise_id === ex.exercise_id);
-
-                if (exercisePastSets.length > 0) {
-                  // Past max 1RM
-                  let pastMax1RM = 0;
-                  exercisePastSets.forEach(s => {
-                    const w = s.weight ?? 0;
-                    const r = s.reps ?? 0;
-                    if (r > 0) {
-                      const rm = r === 1 ? w : Math.round(w * (1 + r / 30));
-                      if (rm > pastMax1RM) pastMax1RM = rm;
-                    }
-                  });
-
-                  if (currentMax1RM > pastMax1RM) {
-                    updated1RMs.push({ name: ex.name, oldVal: pastMax1RM, newVal: currentMax1RM });
-                  }
-
-                  // Past max volume in a single workout
-                  const volumeMap: Record<number, number> = {};
-                  exercisePastSets.forEach(s => {
-                    const setVol = ((s.weight ?? 0) + exBw) * (s.reps ?? 0);
-                    volumeMap[s.workout_id] = (volumeMap[s.workout_id] || 0) + setVol;
-                  });
-                  const pastMaxVolume = Math.max(...Object.values(volumeMap), 0);
-
-                  if (currentVolume > pastMaxVolume) {
-                    updatedVolumes.push({ name: ex.name, oldVal: pastMaxVolume, newVal: currentVolume });
-                  }
-                }
-              });
+              const { updated1RMs, updatedVolumes } = computeAchievements(exercises, pastSets, settings.bodyWeight || 70);
 
               // Streak Calculations
-              const getLocalDateString = (dateOrStr: Date | string) => {
-                const d = new Date(dateOrStr);
-                const year = d.getFullYear();
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const date = String(d.getDate()).padStart(2, '0');
-                return `${year}-${month}-${date}`;
-              };
-
-              const localDates = new Set<string>();
-              const todayStr = getLocalDateString(new Date());
-              localDates.add(todayStr);
-              dbWorkouts.forEach(w => {
-                localDates.add(getLocalDateString(w.start_time));
-              });
-
-              const sortedDatesStr = Array.from(localDates).sort((a, b) => b.localeCompare(a));
-
-              // 1) Streak Days
-              let streakDays = 1;
-              let currentDate = new Date(todayStr + 'T00:00:00');
-              while (true) {
-                const yesterday = new Date(currentDate);
-                yesterday.setDate(yesterday.getDate() - 1);
-                const yesterdayStr = getLocalDateString(yesterday);
-                if (localDates.has(yesterdayStr)) {
-                  streakDays++;
-                  currentDate = yesterday;
-                } else {
-                  break;
-                }
-              }
-
-              // 2) Streak Weeks
-              const datesParsed = sortedDatesStr.map(dStr => new Date(dStr + 'T00:00:00')).sort((a, b) => b.getTime() - a.getTime());
-              let continuousEarliestDate = datesParsed[0];
-              for (let i = 1; i < datesParsed.length; i++) {
-                const prevDate = datesParsed[i - 1];
-                const currDate = datesParsed[i];
-                const diffTime = prevDate.getTime() - currDate.getTime();
-                const diffDays = diffTime / (1000 * 60 * 60 * 24);
-                if (diffDays <= 7) {
-                  continuousEarliestDate = currDate;
-                } else {
-                  break;
-                }
-              }
-              const totalSpanTime = datesParsed[0].getTime() - continuousEarliestDate.getTime();
-              const totalSpanDays = Math.round(totalSpanTime / (1000 * 60 * 60 * 24));
-              const streakWeeks = Math.floor(totalSpanDays / 7) + 1;
+              const { streakDays, streakWeeks } = computeStreaks(dbWorkouts);
 
               // Save the workout to DB
               const savedTitle = title || t('ui.home.free_workout_title');
@@ -632,7 +461,6 @@ export default function ActiveWorkoutScreen() {
                         onPress={() => {
                           const curStance = ex.default_stance || ex.default_variation || null;
                           setStanceModalTarget({ type: 'exercise', exId: ex.id, currentValue: curStance });
-                          setCustomStance(curStance || '');
                           setStanceModalVisible(true);
                         }}
                       >
@@ -713,7 +541,6 @@ export default function ActiveWorkoutScreen() {
                 startTime={startTime}
                 setStanceModalTarget={setStanceModalTarget}
                 setStanceModalVisible={setStanceModalVisible}
-                setCustomStance={setCustomStance}
                 displayFields={settings.displayFields}
               />
             ))}
@@ -747,263 +574,48 @@ export default function ActiveWorkoutScreen() {
         </View>
       )}
       {/* プレート計算機モーダル */}
-      <Modal visible={plateCalcVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.md }}>
-              <Text style={styles.modalTitle}>{t('ui.active_workout.plate_calc_title')}</Text>
-              <TouchableOpacity onPress={() => setPlateCalcVisible(false)}>
-                <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.calcResultContainer}>
-              <Text style={styles.calcResultText}>{totalPlateWeight} {settings.weightUnit}</Text>
-              <Text style={styles.calcFormulaText}>
-                {t('ui.active_workout.plate_calc_bar_weight')} {plateCalcBar}{settings.weightUnit} + {t('ui.active_workout.plate_calc_add_plates')} {platesOnOneSide.reduce((a,b)=>a+b, 0)}{settings.weightUnit} × 2
-              </Text>
-            </View>
-
-            {/* バーの選択 */}
-            <Text style={styles.sectionTitle}>{t('ui.active_workout.plate_calc_bar_weight')}</Text>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
-              {(settings.weightUnit === 'lbs' ? [45, 35] : [20, 10, 7]).map(w => {
-                const isActive = !isCustomBar && plateCalcBar === w;
-                return (
-                  <TouchableOpacity
-                    key={w}
-                    style={[styles.barBtn, isActive && styles.barBtnActive]}
-                    onPress={() => {
-                      setIsCustomBar(false);
-                      setPlateCalcBar(w);
-                    }}
-                  >
-                    <Text style={[styles.barBtnText, isActive && styles.barBtnTextActive]}>{w} {settings.weightUnit}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-              <TouchableOpacity
-                style={[styles.barBtn, isCustomBar && styles.barBtnActive]}
-                onPress={() => {
-                  setIsCustomBar(true);
-                  setPlateCalcBar(parseFloat(customBarText) || 0);
-                }}
-              >
-                <Text style={[styles.barBtnText, isCustomBar && styles.barBtnTextActive]}>{t('ui.active_workout.plate_calc_bar_custom')}</Text>
-              </TouchableOpacity>
-            </View>
-
-            {isCustomBar && (
-              <TextInput
-                style={styles.modalInput}
-                keyboardType="decimal-pad"
-                placeholder={t('ui.active_workout.plate_calc_bar_custom_placeholder')}
-                placeholderTextColor={Theme.colors.textMuted}
-                value={customBarText}
-                onChangeText={(val) => {
-                  if (val === '' || /^\d{0,3}(\.\d{0,2})?$/.test(val)) {
-                    setCustomBarText(val);
-                    setPlateCalcBar(val !== '' && val !== '.' ? parseFloat(val) : 0);
-                  }
-                }}
-              />
-            )}
-
-            <View style={{ height: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: Theme.spacing.md, backgroundColor: '#000', borderRadius: 8, overflow: 'hidden' }}>
-              <View style={{ width: 10, height: '100%', backgroundColor: '#666' }} />
-              {/* 真ん中のバー部分 */}
-              <View style={{ flex: 1, height: 16, backgroundColor: '#888', flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center' }}>
-                {/* プレートの描画 (内側から外側へ) */}
-                {platesOnOneSide.map((p, i) => {
-                  let h = 20, w = 8, color = Theme.colors.primary;
-                  if (settings.weightUnit === 'lbs') {
-                    switch (p) {
-                      case 45: h = 56; w = 30; color = '#e53935'; break; // 赤
-                      case 35: h = 56; w = 30; color = '#1e88e5'; break; // 青
-                      case 25: h = 48; w = 30; color = '#43a047'; break; // 緑
-                      case 10: h = 40; w = 30; color = '#eeeeee'; break; // 白
-                      case 5: h = 30; w = 30; color = '#424242'; break; // 黒に近いグレー
-                      case 2.5: h = 24; w = 30; color = '#ff9800'; break; // オレンジ系に変更
-                    }
-                  } else {
-                    switch (p) {
-                      case 25: h = 56; w = 30; color = '#e53935'; break; // 赤
-                      case 20: h = 56; w = 30; color = '#1e88e5'; break; // 青
-                      case 15: h = 48; w = 30; color = '#fbc02d'; break; // 黄
-                      case 10: h = 40; w = 30; color = '#43a047'; break; // 緑
-                      case 5: h = 30; w = 30; color = '#eeeeee'; break; // 白
-                      case 2.5: h = 24; w = 30; color = '#424242'; break; // 黒に近いグレー
-                      case 1.25: h = 18; w = 30; color = '#ff9800'; break; // オレンジ系に変更
-                    }
-                  }
-                  const slopY = Math.max(0, (56 - h) / 2);
-                  return (
-                    <TouchableOpacity 
-                      key={i} 
-                      onPress={() => setPlatesOnOneSide(prev => prev.filter((_, index) => index !== i))}
-                      activeOpacity={0.7}
-                      hitSlop={{ top: slopY, bottom: slopY, left: 4, right: 4 }}
-                      style={[styles.plateVisual, { height: h, width: w, backgroundColor: color }]} 
-                    />
-                  );
-                })}
-              </View>
-            </View>
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text style={styles.sectionTitle}>{t('ui.active_workout.plate_calc_add_plates')}</Text>
-              <TouchableOpacity onPress={() => setPlatesOnOneSide(prev => prev.slice(0, -1))} disabled={platesOnOneSide.length === 0}>
-                 <Text style={{ color: platesOnOneSide.length > 0 ? Theme.colors.danger : Theme.colors.textMuted }}>{t('ui.active_workout.plate_calc_undo')}</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: Theme.spacing.lg }}>
-              {(settings.weightUnit === 'lbs' ? [45, 35, 25, 10, 5, 2.5] : [25, 20, 15, 10, 5, 2.5, 1.25]).map(w => (
-                <TouchableOpacity
-                  key={w}
-                  style={styles.plateBtn}
-                  onPress={() => setPlatesOnOneSide(prev => [...prev, w])}
-                >
-                  <Text style={styles.plateBtnText}>+ {w}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <TouchableOpacity
-              style={styles.applyBtn}
-              onPress={() => {
-                if (activeSetForCalc) {
-                  updateSet(activeSetForCalc.exId, activeSetForCalc.setId, { weight: totalPlateWeight });
-                  Alert.alert(t('ui.active_workout.plate_calc_success_title'), t('ui.active_workout.plate_calc_success_message', { weight: totalPlateWeight, unit: settings.weightUnit }));
-                } else {
-                  Alert.alert(t('ui.common.error'), t('ui.active_workout.plate_calc_error_no_set'));
-                }
-                setPlateCalcVisible(false);
-              }}
-            >
-              <Text style={styles.applyBtnText}>{t('ui.active_workout.plate_calc_apply_btn')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <PlateCalculatorModal
+        visible={plateCalcVisible}
+        onClose={() => setPlateCalcVisible(false)}
+        weightUnit={settings.weightUnit}
+        onApply={(totalPlateWeight) => {
+          if (activeSetForCalc) {
+            updateSet(activeSetForCalc.exId, activeSetForCalc.setId, { weight: totalPlateWeight });
+            Alert.alert(
+              t('ui.active_workout.plate_calc_success_title'),
+              t('ui.active_workout.plate_calc_success_message', { weight: totalPlateWeight, unit: settings.weightUnit })
+            );
+          } else {
+            Alert.alert(t('ui.common.error'), t('ui.active_workout.plate_calc_error_no_set'));
+          }
+        }}
+      />
 
       {/* スタンス選択モーダル */}
-      <Modal visible={stanceModalVisible} animationType="fade" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { padding: 0 }]}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: Theme.colors.border }}>
-              <Text style={styles.modalTitle}>
-                {stanceModalTarget?.type === 'exercise' ? t('ui.active_workout.stance_modal_title_exercise') : t('ui.active_workout.stance_modal_title_set')}
-              </Text>
-              <TouchableOpacity onPress={() => { setStanceModalVisible(false); setIsAddingStance(false); }}>
-                <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={{ padding: 16 }}>
-              {isAddingStance ? (
-                <>
-                  <Text style={styles.sectionTitle}>{t('ui.active_workout.stance_add_new_title')}</Text>
-                  <TextInput
-                    style={styles.modalInput}
-                    placeholder={t('ui.active_workout.stance_add_placeholder')}
-                    placeholderTextColor={Theme.colors.textMuted}
-                    value={customStance}
-                    onChangeText={setCustomStance}
-                    autoFocus
-                  />
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                    <TouchableOpacity 
-                      style={[styles.applyBtn, { flex: 1, backgroundColor: Theme.colors.card, borderWidth: 1, borderColor: Theme.colors.border }]}
-                      onPress={() => {
-                        setCustomStance('');
-                        setIsAddingStance(false);
-                      }}
-                    >
-                      <Text style={{ color: Theme.colors.text, fontWeight: 'bold', textAlign: 'center' }}>{t('ui.active_workout.stance_cancel')}</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity 
-                      style={[styles.applyBtn, { flex: 1 }]}
-                      onPress={() => {
-                    const val = customStance.trim() || null;
-                    if (val) {
-                      useWorkoutStore.getState().addCustomStance(val);
-                      const updatedStances = Array.from(new Set([...(settings.customStances || []), val]));
-                      saveSetting('custom_stances', JSON.stringify(updatedStances));
-                    }
-                    setCustomStance('');
-                    setIsAddingStance(false);
-                      }}
-                    >
-                      <Text style={styles.applyBtnText}>{t('ui.active_workout.stance_add_to_list')}</Text>
-                    </TouchableOpacity>
-                  </View>
-                </>
-              ) : (
-                <>
-                  <Text style={styles.sectionTitle}>{t('ui.active_workout.stance_preset_label')}</Text>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-                    {[t('ui.active_workout.stance_standard'), ...presetStances].map(preset => {
-                      const val = preset === t('ui.active_workout.stance_standard') ? null : preset;
-                      const isActive = stanceModalTarget?.currentValue === val;
-                      return (
-                        <TouchableOpacity
-                          key={preset}
-                          style={[styles.choiceChip, isActive && styles.choiceChipActive]}
-                          onPress={() => {
-                            if (stanceModalTarget?.type === 'exercise') {
-                              useWorkoutStore.getState().updateExerciseStance(stanceModalTarget.exId, val);
-                              useWorkoutStore.getState().updateExerciseVariation(stanceModalTarget.exId, val);
-                            } else if (stanceModalTarget?.type === 'set' && stanceModalTarget.setId) {
-                              useWorkoutStore.getState().updateSet(stanceModalTarget.exId, stanceModalTarget.setId, { stance: val, variation: val });
-                            }
-                            setStanceModalVisible(false);
-                          }}
-                          onLongPress={() => {
-                            if (val === null) return; // "標準"は削除不可
-                            Alert.alert(
-                              t('ui.active_workout.stance_delete_title'),
-                              t('ui.active_workout.stance_delete_message', { name: translateStance(preset) }),
-                              [
-                                { text: t('ui.active_workout.stance_cancel'), style: 'cancel' },
-                                { 
-                                  text: t('ui.active_workout.stance_delete_confirm'), 
-                                  style: 'destructive',
-                                  onPress: async () => {
-                                    const next = (settings.customStances || []).filter(s => s !== val);
-                                    useWorkoutStore.getState().removeCustomStance(val);
-                                    await saveSetting('custom_stances', JSON.stringify(next));
-                                  }
-                                }
-                              ]
-                            );
-                          }}
-                        >
-                          <Text style={[styles.choiceChipText, isActive && styles.choiceChipTextActive]}>{translateStance(preset)}</Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                  
-                  <TouchableOpacity 
-                    style={[styles.applyBtn, { backgroundColor: Theme.colors.card, borderWidth: 1, borderColor: Theme.colors.border, marginTop: 8 }]}
-                    onPress={() => setIsAddingStance(true)}
-                  >
-                    <Text style={{ color: Theme.colors.primary, fontWeight: 'bold', textAlign: 'center' }}>{t('ui.active_workout.stance_add_original_btn')}</Text>
-                  </TouchableOpacity>
-
-                  {stanceModalTarget?.type === 'exercise' && (
-                    <Text style={{ color: Theme.colors.textMuted, fontSize: 12, marginTop: 12 }}>
-                      {t('ui.active_workout.stance_exercise_hint')}
-                    </Text>
-                  )}
-                </>
-              )}
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <StanceModal
+        visible={stanceModalVisible}
+        target={stanceModalTarget}
+        onClose={() => setStanceModalVisible(false)}
+        presetStances={presetStances}
+        onSelectStance={(val) => {
+          if (stanceModalTarget?.type === 'exercise') {
+            useWorkoutStore.getState().updateExerciseStance(stanceModalTarget.exId, val);
+            useWorkoutStore.getState().updateExerciseVariation(stanceModalTarget.exId, val);
+          } else if (stanceModalTarget?.type === 'set' && stanceModalTarget.setId) {
+            useWorkoutStore.getState().updateSet(stanceModalTarget.exId, stanceModalTarget.setId, { stance: val, variation: val });
+          }
+        }}
+        onAddCustomStance={(val) => {
+          useWorkoutStore.getState().addCustomStance(val);
+          const updatedStances = Array.from(new Set([...(settings.customStances || []), val]));
+          saveSetting('custom_stances', JSON.stringify(updatedStances));
+        }}
+        onRemoveCustomStance={async (val) => {
+          const next = (settings.customStances || []).filter(s => s !== val);
+          useWorkoutStore.getState().removeCustomStance(val);
+          await saveSetting('custom_stances', JSON.stringify(next));
+        }}
+      />
     </View>
   );
 }
@@ -1087,24 +699,7 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { width: '90%', backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.lg, maxHeight: '90%' },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
-  modalInput: { backgroundColor: '#121212', color: Theme.colors.text, padding: 12, borderRadius: 4, fontSize: 16, borderWidth: 1, borderColor: Theme.colors.border, marginBottom: 16 },
-  calcResultContainer: { alignItems: 'center', backgroundColor: '#1a1a1a', padding: 16, borderRadius: Theme.borderRadius.md, marginBottom: Theme.spacing.md },
-  calcResultText: { fontSize: 36, fontWeight: 'bold', color: Theme.colors.primary, marginBottom: 4 },
-  calcFormulaText: { fontSize: 14, color: Theme.colors.textMuted },
-  sectionTitle: { fontSize: 14, color: Theme.colors.textMuted, marginBottom: 8, fontWeight: 'bold' },
-  barBtn: { flex: 1, marginHorizontal: 4, paddingVertical: 12, backgroundColor: '#111', borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#333' },
-  barBtnActive: { borderColor: Theme.colors.primary, backgroundColor: 'rgba(79, 172, 254, 0.1)' },
-  barBtnText: { color: Theme.colors.textMuted, fontSize: 14, fontWeight: 'bold' },
-  barBtnTextActive: { color: Theme.colors.primary },
-  plateVisual: { marginHorizontal: 1, borderRadius: 2 },
-  plateBtn: { paddingVertical: 12, paddingHorizontal: 16, backgroundColor: '#222', borderRadius: 8, minWidth: '22%', alignItems: 'center' },
-  plateBtnText: { color: Theme.colors.text, fontWeight: 'bold', fontSize: 14 },
-  applyBtn: { backgroundColor: Theme.colors.primary, paddingVertical: 14, borderRadius: Theme.borderRadius.md, alignItems: 'center', marginTop: 8 },
-  applyBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  choiceChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333' },
-  choiceChipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: Theme.colors.primary },
-  choiceChipText: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: '500' },
-  choiceChipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' },
+
   deleteAction: {
     backgroundColor: '#ff4444',
     justifyContent: 'center',
