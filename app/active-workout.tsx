@@ -330,18 +330,21 @@ export default function ActiveWorkoutScreen() {
 
   const handleFinish = () => {
     if (isSaving) return;
+    setIsSaving(true);
 
     Alert.alert(
       t('ui.active_workout.alert_finish_title'),
       t('ui.active_workout.alert_finish_message'),
       [
-        { text: t('ui.active_workout.cancel'), style: 'cancel' },
+        { 
+          text: t('ui.active_workout.cancel'), 
+          style: 'cancel',
+          onPress: () => setIsSaving(false)
+        },
         {
           text: t('ui.active_workout.alert_finish_save'),
           style: 'default',
           onPress: async () => {
-            if (isSaving) return;
-            setIsSaving(true);
             try {
               // 1. Gather unique completed exercise IDs
               const exerciseIds = exercises
@@ -548,7 +551,7 @@ export default function ActiveWorkoutScreen() {
                   <Ionicons name="timer-outline" size={26} color={Theme.colors.primary} />
                 </TouchableOpacity>
               )}
-              <TouchableOpacity onPress={handleFinish} style={{ marginRight: 8, backgroundColor: Theme.colors.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4 }}>
+              <TouchableOpacity disabled={isSaving} onPress={handleFinish} style={{ marginRight: 8, backgroundColor: Theme.colors.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4, opacity: isSaving ? 0.5 : 1 }}>
                 <Text style={{ color: '#fff', fontWeight: 'bold' }}>{t('ui.active_workout.finish')}</Text>
               </TouchableOpacity>
             </View>

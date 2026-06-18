@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.76', // OTA識別用のバージョン文字列
+  version: '1.0.77', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'ワークアウト中のルーティン開始時に、確認ポップアップを表示するよう改善しました。'
+      'ワークアウト保存時のダブルタップ防止ガードを追加し、保存処理中の誤操作を防ぐように改善しました。',
+      'セキュリティ向上と内部コードのクリーンアップを行いました。'
     ],
     en: [
-      'Added a confirmation popup when starting a routine during an active workout.'
+      'Added double-tap prevention when saving workouts to prevent accidental operations during save.',
+      'Security improvements and codebase cleanup.'
     ]
   }
 };

@@ -114,7 +114,7 @@ export const PRESET_EXERCISES = [
     { name: 'ローイングマシン', group: '有酸素', equip: 'マシン' },
     { name: 'クロストレーナー', group: '有酸素', equip: 'マシン' },
     { name: '縄跳び', group: '有酸素', equip: '自重' }
-  ];;
+  ];
 
 export const PRESET_EXERCISE_NAMES = new Set(PRESET_EXERCISES.map(e => e.name));
 
