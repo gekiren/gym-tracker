@@ -179,9 +179,29 @@ export const pickAndImportCSV = async (): Promise<ImportResult> => {
 
       if (!exerciseId) {
         // 部分一致 (Fuzzy) の試行
-        const matched = existingExercisesRows.find(ex => 
-          ex.name.includes(cleanExName) || cleanExName.includes(ex.name)
-        );
+        let matched: typeof existingExercisesRows[number] | undefined = undefined;
+        
+        if (cleanExName.length > 2) {
+          // 既存種目の中から、部分一致し、かつ文字数（長さ）の差が最も小さいものを選ぶ
+          const candidates = existingExercisesRows
+            .map(ex => {
+              const exNameLower = ex.name.toLowerCase();
+              const cleanExNameLower = cleanExName.toLowerCase();
+              
+              const isMatch = exNameLower.includes(cleanExNameLower) || cleanExNameLower.includes(exNameLower);
+              if (!isMatch) return null;
+              
+              const lenDiff = Math.abs(exNameLower.length - cleanExNameLower.length);
+              return { ex, lenDiff };
+            })
+            .filter((item): item is { ex: typeof existingExercisesRows[number]; lenDiff: number } => item !== null);
+
+          if (candidates.length > 0) {
+            candidates.sort((a, b) => a.lenDiff - b.lenDiff);
+            matched = candidates[0].ex;
+          }
+        }
+
         if (matched) {
           exerciseId = matched.id;
           exerciseMap.set(lowerExName, exerciseId);

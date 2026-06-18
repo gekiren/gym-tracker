@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.80', // OTA識別用のバージョン文字列
+  version: '1.0.81', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      '種目詳細画面の履歴グラフの描画パフォーマンスを改善しました。'
+      'CSVインポート機能での種目名マッチング精度を向上させました。'
     ],
     en: [
-      'Improved performance when rendering history progression charts in exercise details.'
+      'Improved exercise name matching accuracy in the CSV import feature.'
     ]
   }
 };
