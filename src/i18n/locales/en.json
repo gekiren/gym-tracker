@@ -458,7 +458,8 @@
       "input_placeholder": "Ask your coach...",
       "limit_reached_msg": "今月の利用枠が残っていません。",
       "network_error": "Network error occurred. Please check your connection.",
-      "busy_error": "The AI service is currently very busy. Please wait a moment and try again."
+      "busy_error": "The AI service is currently very busy. Please wait a moment and try again.",
+      "busy_title": "Busy"
     },
     "crash_report": {
       "title": "Help Improve the App",

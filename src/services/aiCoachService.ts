@@ -7,7 +7,7 @@ const WORKER_URL = 'https://gym-tracker-ai-proxy.toshi-diyil.workers.dev/api/cha
 export interface AICoachResponse {
   reply: string;
   success: boolean;
-  errorType?: 'quota' | 'network' | 'unknown';
+  errorType?: 'quota' | 'network' | 'unknown' | 'busy';
 }
 
 /**
@@ -124,7 +124,7 @@ export const sendMessageToAICoach = async (
       return {
         reply: i18next.t('ui.coach.busy_error') || '現在AIサービスが非常に混雑しています。しばらく時間をおいてから再度お試しください。',
         success: false,
-        errorType: 'network',
+        errorType: 'busy',
       };
     }
     
