@@ -78,12 +78,23 @@ export const sendMessageToAICoach = async (
 
     if (!response.ok) {
       let errorMsg = `Server returned status: ${response.status}`;
+      let isBusy = false;
       try {
         const errJson = await response.json();
         if (errJson && errJson.error) {
           errorMsg = errJson.error;
         }
+        if (
+          response.status === 503 ||
+          (errJson && (errJson.status === 503 || errJson.status === 429 || errorMsg.includes('Status: 503') || errorMsg.includes('Status: 429')))
+        ) {
+          isBusy = true;
+        }
       } catch (_) {}
+
+      if (isBusy) {
+        throw new Error('busy');
+      }
       throw new Error(errorMsg);
     }
 
@@ -104,6 +115,14 @@ export const sendMessageToAICoach = async (
     if (err.name === 'AbortError') {
       return {
         reply: i18next.t('ui.coach.timeout_error') || '接続タイムアウトが発生しました。通信環境の良い場所で再度お試しください。',
+        success: false,
+        errorType: 'network',
+      };
+    }
+
+    if (err.message === 'busy') {
+      return {
+        reply: i18next.t('ui.coach.busy_error') || '現在AIサービスが非常に混雑しています。しばらく時間をおいてから再度お試しください。',
         success: false,
         errorType: 'network',
       };

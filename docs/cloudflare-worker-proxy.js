@@ -166,7 +166,8 @@ export default {
 
         return new Response(JSON.stringify({ 
           success: false, 
-          error: `Failed to communicate with AI model: ${errorDetails} (Status: ${response.status})` 
+          error: `Failed to communicate with AI model: ${errorDetails} (Status: ${response.status})`,
+          status: response.status
         }), {
           status: 502,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
