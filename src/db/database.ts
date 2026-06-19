@@ -1,6 +1,79 @@
 import * as SQLite from 'expo-sqlite';
 import { addMonths } from 'date-fns';
 
+// ワークアウトセットの型定義
+export interface WorkoutSet {
+  id?: number | string;
+  set_number: number;
+  reps: number | null;
+  weight: number | null;
+  rpe: number | null;
+  is_completed?: boolean | number;
+  rest_seconds?: number | null;
+  work_seconds?: number | null;
+  side?: string | null;
+  variation?: string | null;
+  stance?: string | null;
+}
+
+// ワークアウトエクササイズの型定義
+export interface WorkoutExercise {
+  exercise_id: number;
+  notes?: string | null;
+  sets: WorkoutSet[];
+}
+
+// ルーティンセットの型定義
+export interface RoutineSet {
+  set_number: number;
+  reps: number | null;
+  weight: number | null;
+  rpe: number | null;
+  side?: string | null;
+  variation?: string | null;
+  stance?: string | null;
+}
+
+// ルーティンエクササイズの型定義
+export interface RoutineExercise {
+  id: number;
+  name: string;
+  sets: RoutineSet[];
+}
+
+// DB レコード（workoutsテーブル）の型定義
+export interface WorkoutRow {
+  id: number;
+  title: string;
+  start_time: string;
+  end_time: string;
+  notes: string | null;
+  calories: number | null;
+}
+
+// DB レコード（workout_exercisesテーブル等結合）の型定義
+export interface WorkoutExerciseRow {
+  workout_exercise_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  notes: string | null;
+}
+
+// DB レコード（workout_setsテーブル）の型定義
+export interface WorkoutSetRow {
+  id: number;
+  set_number: number;
+  weight: number | null;
+  reps: number | null;
+  rpe: number | null;
+  rest_seconds: number | null;
+  work_seconds: number | null;
+  side: string | null;
+  variation: string | null;
+  stance: string | null;
+  is_completed: number | boolean;
+}
+
 // Initialize the database connection
 let db: SQLite.SQLiteDatabase | null = null;
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
@@ -538,8 +611,22 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
     const allRows = await _db.getAllAsync<{ key: string }>('SELECT key FROM settings');
     const existingKeys = new Set(allRows.map(row => row.key));
 
-    // Standard JS UUID v4 generator with date seed to ensure uniqueness without native modules
+    // Standard JS UUID v4 generator utilizing cryptographically secure API if available, with date/random fallback
     const generateUUID = () => {
+      if (typeof global !== 'undefined' && global.crypto && typeof global.crypto.getRandomValues === 'function') {
+        try {
+          const typedArray = new Uint8Array(16);
+          global.crypto.getRandomValues(typedArray);
+          // RFC4122 version 4 requirements
+          typedArray[6] = (typedArray[6] & 0x0f) | 0x40; // version 4
+          typedArray[8] = (typedArray[8] & 0x3f) | 0x80; // variant 10
+          const hex = Array.from(typedArray).map(b => b.toString(16).padStart(2, '0'));
+          return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`;
+        } catch (e) {
+          console.warn('Failed to generate secure UUID, falling back to Math.random', e);
+        }
+      }
+      
       let d = Date.now();
       let d2 = 0;
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -616,7 +703,7 @@ export const closeDB = async () => {
   dbPromise = null;
 };
 
-export const saveWorkout = async (title: string, startTime: string, endTime: string, notes: string | null, exercises: any[], calories: number | null = null): Promise<number> => {
+export const saveWorkout = async (title: string, startTime: string, endTime: string, notes: string | null, exercises: WorkoutExercise[], calories: number | null = null): Promise<number> => {
   const conn = getDB();
   let workoutId = 0;
 
@@ -664,7 +751,7 @@ export const prefetchWorkoutCompletionData = async (exerciseIds: number[]) => {
   let pastSets: { workout_id: number; start_time: string; exercise_id: number; reps: number | null; weight: number | null; variation: string | null }[] = [];
   if (exerciseIds.length > 0) {
     const placeholders = exerciseIds.map(() => '?').join(',');
-    pastSets = await conn.getAllAsync<any>(
+    pastSets = await conn.getAllAsync<typeof pastSets[0]>(
       `SELECT w.id as workout_id, w.start_time, we.exercise_id, ws.reps, ws.weight, ws.variation
        FROM workout_sets ws
        JOIN workout_exercises we ON ws.workout_exercise_id = we.id
@@ -711,7 +798,7 @@ export const getExerciseHistory = async (exerciseId: number) => {
   `, [exerciseId]);
 
   // Group by workout
-  const historyMap = new Map<number, { workout_id: number, start_time: string, sets: any[] }>();
+  const historyMap = new Map<number, { workout_id: number, start_time: string, sets: Omit<WorkoutSet, 'id' | 'is_completed'>[] }>();
   
   for (const row of rows) {
     if (!historyMap.has(row.workout_id)) {
@@ -761,14 +848,14 @@ export const getPreviousWorkoutSets = async (exerciseId: number) => {
   if (!recentEx) return [];
 
   // Fetch the sets for that specific execution
-  const sets = await conn.getAllAsync(`
+  const sets = await conn.getAllAsync<WorkoutSet>(`
     SELECT set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance
     FROM workout_sets 
     WHERE workout_exercise_id = ?
     ORDER BY set_number ASC, id ASC
   `, [recentEx.id]);
 
-  return sets as any[];
+  return sets;
 };
 
 export const getPersonalRecords = async (exerciseId: number) => {
@@ -825,7 +912,7 @@ export const getRoutines = async () => {
   return result;
 };
 
-export const addRoutine = async (title: string, description: string, exercises: { id: number, name: string, sets: any[] }[]) => {
+export const addRoutine = async (title: string, description: string, exercises: RoutineExercise[]) => {
   const conn = getDB();
   
   await conn.withTransactionAsync(async () => {
@@ -850,7 +937,7 @@ export const addRoutine = async (title: string, description: string, exercises: 
   });
 };
 
-export const updateRoutine = async (id: number, title: string, description: string, exercises: { id: number, name: string, sets: any[] }[]) => {
+export const updateRoutine = async (id: number, title: string, description: string, exercises: RoutineExercise[]) => {
   const conn = getDB();
   
   await conn.withTransactionAsync(async () => {
@@ -961,14 +1048,14 @@ export const deleteWorkout = async (id: number) => {
 
 export const loadFullWorkoutData = async (workoutId: number) => {
   const db = getDB();
-  const workoutRow = await db.getFirstAsync('SELECT * FROM workouts WHERE id = ?', [workoutId]) as any;
+  const workoutRow = await db.getFirstAsync<WorkoutRow>('SELECT * FROM workouts WHERE id = ?', [workoutId]);
   if (!workoutRow) return null;
 
-  const exercisesRows = await db.getAllAsync('SELECT we.id as workout_exercise_id, e.id as exercise_id, e.name as exercise_name, we.notes FROM workout_exercises we JOIN exercises e ON we.exercise_id = e.id WHERE we.workout_id = ? ORDER BY we.sort_order', [workoutId]) as any[];
+  const exercisesRows = await db.getAllAsync<WorkoutExerciseRow>('SELECT we.id as workout_exercise_id, e.id as exercise_id, e.name as exercise_name, we.notes FROM workout_exercises we JOIN exercises e ON we.exercise_id = e.id WHERE we.workout_id = ? ORDER BY we.sort_order', [workoutId]);
   
   const exercisesData = [];
   for (const ex of exercisesRows) {
-    const setsRows = await db.getAllAsync('SELECT id, set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance, is_completed FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number ASC, id ASC', [ex.workout_exercise_id]) as any[];
+    const setsRows = await db.getAllAsync<WorkoutSetRow>('SELECT id, set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance, is_completed FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number ASC, id ASC', [ex.workout_exercise_id]);
     const sets = setsRows.map(s => ({
       ...s,
       is_completed: s.is_completed === 1 || s.is_completed === true

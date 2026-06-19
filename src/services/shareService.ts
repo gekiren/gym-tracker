@@ -1,5 +1,5 @@
 import * as Clipboard from 'expo-clipboard';
-import { translateExercise } from '../i18n';
+import i18n, { translateExercise } from '../i18n';
 
 export interface ShareStats {
   totalVolume: number;
@@ -92,28 +92,29 @@ export function generateShareText(
   }
 ): string {
   const stats = calculateShareStats(workout, settings);
-  const dateStr = new Date().toLocaleDateString('ja-JP', {
+  const currentLang = i18n.language;
+  const locale = currentLang === 'ja' ? 'ja-JP' : 'en-US';
+  const dateStr = new Date().toLocaleDateString(locale, {
     month: 'short',
     day: 'numeric',
   });
 
-  let text = `【${dateStr}のワークアウト: ${workout.title}】\n`;
-  text += `総挙上重量：${stats.totalVolume.toLocaleString()} ${stats.weightUnit} 💪🔥\n`;
-  text += `（軽自動車 約 ${stats.carCount} 台分に相当！🚗💨）\n\n`;
+  let text = i18n.t('ui.share.header', { date: dateStr, title: workout.title });
+  text += i18n.t('ui.share.total_volume', { volume: stats.totalVolume.toLocaleString(), unit: stats.weightUnit });
+  text += i18n.t('ui.share.car_comparison', { count: stats.carCount });
 
   if (stats.totalVolumeKg >= 6000) {
-    text += `これはアフリカゾウ約 ${stats.elephantCount} 頭分を持ち上げたことになります！🐘💥\n`;
+    text += i18n.t('ui.share.elephant_comparison', { count: stats.elephantCount });
   } else if (stats.totalVolumeKg >= 2000) {
-    text += `これは大型路線バス約 ${stats.busCount} 台分を持ち上げたことになります！🚌💥\n`;
+    text += i18n.t('ui.share.bus_comparison', { count: stats.busCount });
   }
 
   if (stats.calories > 0) {
-    text += `\n消費カロリー：${stats.calories} kcal\n`;
-    text += `おにぎり約 ${stats.onigiriCount} 個分🍙 / ビール約 ${stats.beerCount} 杯分🍺\n`;
+    text += i18n.t('ui.share.calories', { calories: stats.calories });
+    text += i18n.t('ui.share.food_comparison', { onigiri: stats.onigiriCount, beer: stats.beerCount });
   }
 
-  text += `\n限界突破！明日も頑張ろう！✨\n`;
-  text += `#トレノート #TreNote #筋トレ #ワークアウト #フィットネス`;
+  text += i18n.t('ui.share.footer');
 
   return text;
 }

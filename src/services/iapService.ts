@@ -46,7 +46,12 @@ export const setupIAPListeners = (
   // Listener for purchase updates
   purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase: Purchase) => {
     if (__DEV__) {
-      console.log('Purchase update received:', purchase);
+      const safePurchase = {
+        ...purchase,
+        purchaseToken: purchase.purchaseToken ? '***' : undefined,
+        transactionReceipt: (purchase as any).transactionReceipt ? '***' : undefined,
+      };
+      console.log('Purchase update received:', safePurchase);
     }
     const receipt = purchase.purchaseToken;
     if (receipt) {
@@ -123,7 +128,12 @@ export const restorePurchases = async (): Promise<boolean> => {
     }
     const purchases = await getAvailablePurchases();
     if (__DEV__) {
-      console.log('Available purchases:', purchases);
+      const safePurchases = purchases.map((p: any) => ({
+        ...p,
+        purchaseToken: p.purchaseToken ? '***' : undefined,
+        transactionReceipt: p.transactionReceipt ? '***' : undefined,
+      }));
+      console.log('Available purchases:', safePurchases);
     }
     
     const premiumPurchase = purchases.find((p: Purchase) => p.productId === PREMIUM_PRODUCT_ID);

@@ -482,6 +482,30 @@
       "reward_close_btn": "閉じる",
       "ad_preview_title": "広告視聴特典を獲得可能！",
       "ad_preview_desc": "最後まで見ると、次回から広告が1〜2回非表示になります"
+    },
+    "youtube": {
+      "search_suffix": "やり方",
+      "error_title": "エラー",
+      "error_open_browser": "ブラウザまたはYouTubeアプリを開くことができませんでした。",
+      "error_connection": "接続中にエラーが発生しました。"
+    },
+    "share": {
+      "header": "【{{date}}のワークアウト: {{title}}】\n",
+      "total_volume": "総挙上重量：{{volume}} {{unit}} 💪🔥\n",
+      "car_comparison": "（軽自動車 約 {{count}} 台分に相当！🚗💨）\n\n",
+      "elephant_comparison": "これはアフリカゾウ約 {{count}} 頭分を持ち上げたことになります！🐘💥\n",
+      "bus_comparison": "これは大型路線バス約 {{count}} 台分を持ち上げたことになります！🚌💥\n",
+      "calories": "\n消費カロリー：{{calories}} kcal\n",
+      "food_comparison": "おにぎり約 {{onigiri}} 個分🍙 / ビール約 {{beer}} 杯分🍺\n",
+      "footer": "\n限界突破！明日も頑張ろう！✨\n#トレノート #TreNote #筋トレ #ワークアウト #フィットネス"
+    },
+    "accessibility": {
+      "rm_calculator": "RM計算機を開く",
+      "plate_calculator": "プレート計算機を開く",
+      "timer_setting": "タイマー設定を開く",
+      "ai_coach_history": "この履歴をAIコーチに送信する",
+      "share_sns": "SNSにシェアする",
+      "delete_workout": "ワークアウト履歴を削除する"
     }
   },
   "exercises": {

@@ -13,10 +13,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function TabLayout() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const settings = useWorkoutStore(state => state.settings);
-  const aiTokensBalance = settings.aiTokensBalance;
-  const isPremium = settings.isPremium;
-  const isEarly = settings.isEarlyAdopter;
+  const aiTokensBalance = useWorkoutStore(state => state.settings.aiTokensBalance);
+  const isPremium = useWorkoutStore(state => state.settings.isPremium);
+  const isEarly = useWorkoutStore(state => state.settings.isEarlyAdopter);
   const isPremiumOrEarly = isPremium || isEarly;
   const maxTokens = isPremiumOrEarly ? 20 : 5;
 

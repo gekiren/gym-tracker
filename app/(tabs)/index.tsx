@@ -21,7 +21,7 @@ export default function WorkoutScreen() {
   const hasUnsentCrashLog = useWorkoutStore(state => state.hasUnsentCrashLog);
   const [routines, setRoutines] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isNewUser] = useState(settings.needsStyleSelection);
+  const [isNewUser, setIsNewUser] = useState(settings.needsStyleSelection);
   const [isSendingCrash, setIsSendingCrash] = useState(false);
 
   useFocusEffect(
@@ -155,6 +155,9 @@ export default function WorkoutScreen() {
         await deleteCrashLog();
         useWorkoutStore.getState().setHasUnsentCrashLog(false);
       }
+
+      // Update onboarding status
+      setIsNewUser(false);
     } catch (e) {
       console.error('Failed to save crash report consent:', e);
     } finally {
