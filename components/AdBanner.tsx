@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AD_CONFIG } from '../src/config/adConfig';
 import { useWorkoutStore } from '../src/store/workoutStore';
 
-export default function AdBanner() {
+function AdBannerInternal() {
   const settings = useWorkoutStore(state => state.settings);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -219,3 +219,33 @@ const styles = StyleSheet.create({
     marginRight: 1,
   },
 });
+
+class AdBannerErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.warn('AdBanner component crashed:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
+
+export default function AdBanner() {
+  return (
+    <AdBannerErrorBoundary>
+      <AdBannerInternal />
+    </AdBannerErrorBoundary>
+  );
+}

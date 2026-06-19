@@ -41,11 +41,23 @@ export default function BuildRoutineScreen() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
 
   useEffect(() => {
+    if (routineIdString) {
+      const parsed = parseInt(routineIdString, 10);
+      if (isNaN(parsed)) {
+        Alert.alert(t('ui.common.error') || 'Error', 'Invalid Routine ID');
+        router.back();
+      }
+    }
+  }, [routineIdString]);
+
+  useEffect(() => {
     clearDraft();
     fetchRoutinesAndHistory();
   }, []);
 
   useEffect(() => {
+    // Only proceed if the ID is valid (not NaN)
+    if (routineId !== undefined && isNaN(routineId)) return;
     clearDraft();
     fetchRoutinesAndHistory();
   }, [routineId]);
