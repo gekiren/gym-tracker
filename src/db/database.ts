@@ -611,8 +611,22 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
     const allRows = await _db.getAllAsync<{ key: string }>('SELECT key FROM settings');
     const existingKeys = new Set(allRows.map(row => row.key));
 
-    // Standard JS UUID v4 generator with date seed to ensure uniqueness without native modules
+    // Standard JS UUID v4 generator utilizing cryptographically secure API if available, with date/random fallback
     const generateUUID = () => {
+      if (typeof global !== 'undefined' && global.crypto && typeof global.crypto.getRandomValues === 'function') {
+        try {
+          const typedArray = new Uint8Array(16);
+          global.crypto.getRandomValues(typedArray);
+          // RFC4122 version 4 requirements
+          typedArray[6] = (typedArray[6] & 0x0f) | 0x40; // version 4
+          typedArray[8] = (typedArray[8] & 0x3f) | 0x80; // variant 10
+          const hex = Array.from(typedArray).map(b => b.toString(16).padStart(2, '0'));
+          return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`;
+        } catch (e) {
+          console.warn('Failed to generate secure UUID, falling back to Math.random', e);
+        }
+      }
+      
       let d = Date.now();
       let d2 = 0;
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
