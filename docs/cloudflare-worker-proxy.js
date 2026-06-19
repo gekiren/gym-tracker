@@ -109,35 +109,66 @@ export default {
         ? `[User Context]\n- Body Weight: ${user_weight || "Not set"}\n- Unit: ${weight_unit || "kg"}\n\n[Recent Workout History]\n${workout_history || "No history available"}\n\n[User Message]\n${message}`
         : `【ユーザー情報】\n- 体重: ${user_weight || "未設定"}\n- 単位: ${weight_unit || "kg"}\n\n【最近のワークアウト履歴】\n${workout_history || "履歴なし"}\n\n【ユーザーの質問】\n${message}`;
 
-      // 9. Call Gemini API securely (Using Gemini 3.5 Flash)
+      // 9. Call Gemini API securely (Using Gemini 3.5 Flash) with retry logic for transient errors (503, 429)
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
       
-      const response = await fetch(geminiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: promptContext }]
-            }
-          ],
-          systemInstruction: {
-            parts: [{ text: systemInstruction }]
+      let response;
+      const maxRetries = 3;
+      let delayMs = 1000; // Initial wait: 1 second
+      
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        response = await fetch(geminiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-          generationConfig: {
-            maxOutputTokens: 2048,
-            temperature: 0.7
-          }
-        }),
-      });
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [{ text: promptContext }]
+              }
+            ],
+            systemInstruction: {
+              parts: [{ text: systemInstruction }]
+            },
+            generationConfig: {
+              maxOutputTokens: 2048,
+              temperature: 0.7
+            }
+          }),
+        });
+
+        // Break loop if response is OK, or if it is a non-retryable error (e.g. 400 Bad Request, 401 Unauthorized, etc.)
+        if (response.ok || (response.status !== 503 && response.status !== 429)) {
+          break;
+        }
+
+        // Wait before retrying (exponential backoff)
+        if (attempt < maxRetries - 1) {
+          console.warn(`Gemini API returned status ${response.status}. Retrying in ${delayMs}ms (Attempt ${attempt + 1}/${maxRetries})...`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          delayMs *= 2; // Double the delay time
+        }
+      }
 
       if (!response.ok) {
         const errorData = await response.text();
         console.error("Gemini API error status:", response.status, errorData);
-        return new Response(JSON.stringify({ success: false, error: "Failed to communicate with AI model" }), {
+        
+        let errorDetails = errorData;
+        try {
+          const parsed = JSON.parse(errorData);
+          if (parsed && parsed.error && parsed.error.message) {
+            errorDetails = parsed.error.message;
+          }
+        } catch (_) {}
+
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: `Failed to communicate with AI model: ${errorDetails} (Status: ${response.status})`,
+          status: response.status
+        }), {
           status: 502,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
         });

@@ -12,7 +12,8 @@
       },
       "env": {
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",
-        "APP_ENV": "development"
+        "APP_ENV": "development",
+        "EXPO_PUBLIC_AI_PROXY_SECRET": "ywmI3af3uBNysujRQVIJQVMGW87ZOOo4TO1yVsyLn09uQ"
       }
     },
     "staging": {
@@ -23,7 +24,8 @@
       },
       "env": {
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",
-        "APP_ENV": "staging"
+        "APP_ENV": "staging",
+        "EXPO_PUBLIC_AI_PROXY_SECRET": "ywmI3af3uBNysujRQVIJQVMGW87ZOOo4TO1yVsyLn09uQ"
       }
     },
     "production": {
@@ -33,7 +35,8 @@
       },
       "env": {
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",
-        "APP_ENV": "production"
+        "APP_ENV": "production",
+        "EXPO_PUBLIC_AI_PROXY_SECRET": "ywmI3af3uBNysujRQVIJQVMGW87ZOOo4TO1yVsyLn09uQ"
       }
     },
     "preview": {
@@ -44,7 +47,8 @@
       },
       "env": {
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",
-        "APP_ENV": "preview"
+        "APP_ENV": "preview",
+        "EXPO_PUBLIC_AI_PROXY_SECRET": "ywmI3af3uBNysujRQVIJQVMGW87ZOOo4TO1yVsyLn09uQ"
       }
     },
     "apk-verification": {
@@ -54,7 +58,8 @@
       },
       "env": {
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",
-        "APP_ENV": "production"
+        "APP_ENV": "production",
+        "EXPO_PUBLIC_AI_PROXY_SECRET": "ywmI3af3uBNysujRQVIJQVMGW87ZOOo4TO1yVsyLn09uQ"
       }
     }
   }

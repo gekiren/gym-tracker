@@ -286,8 +286,12 @@ export default function WorkoutCompletionScreen() {
           console.warn('Failed to refund token', e);
         }
 
+        const alertTitle = response.errorType === 'busy'
+          ? (t('ui.coach.busy_title') || '混雑中')
+          : (t('ui.common.error') || 'エラー');
+
         Alert.alert(
-          t('ui.common.error_title') || 'エラー',
+          alertTitle,
           response.reply || '評価の取得に失敗しました。'
         );
       }
@@ -303,7 +307,7 @@ export default function WorkoutCompletionScreen() {
       }
 
       Alert.alert(
-        t('ui.common.error_title') || 'エラー',
+        t('ui.common.error') || 'エラー',
         '通信エラーが発生しました。'
       );
     } finally {

@@ -7,7 +7,7 @@ const WORKER_URL = 'https://gym-tracker-ai-proxy.toshi-diyil.workers.dev/api/cha
 export interface AICoachResponse {
   reply: string;
   success: boolean;
-  errorType?: 'quota' | 'network' | 'unknown';
+  errorType?: 'quota' | 'network' | 'unknown' | 'busy';
 }
 
 /**
@@ -77,7 +77,25 @@ export const sendMessageToAICoach = async (
     }
 
     if (!response.ok) {
-      throw new Error(`Server returned status: ${response.status}`);
+      let errorMsg = `Server returned status: ${response.status}`;
+      let isBusy = false;
+      try {
+        const errJson = await response.json();
+        if (errJson && errJson.error) {
+          errorMsg = errJson.error;
+        }
+        if (
+          response.status === 503 ||
+          (errJson && (errJson.status === 503 || errJson.status === 429 || errorMsg.includes('Status: 503') || errorMsg.includes('Status: 429')))
+        ) {
+          isBusy = true;
+        }
+      } catch (_) {}
+
+      if (isBusy) {
+        throw new Error('busy');
+      }
+      throw new Error(errorMsg);
     }
 
     const data = await response.json();
@@ -101,9 +119,18 @@ export const sendMessageToAICoach = async (
         errorType: 'network',
       };
     }
+
+    if (err.message === 'busy') {
+      return {
+        reply: i18next.t('ui.coach.busy_error') || '現在AIサービスが非常に混雑しています。しばらく時間をおいてから再度お試しください。',
+        success: false,
+        errorType: 'busy',
+      };
+    }
     
+    const detailMsg = err.message ? `\n詳細: ${err.message}` : '';
     return {
-      reply: i18next.t('ui.coach.network_error') || 'ネットワークエラーが発生しました。接続を確認してください。',
+      reply: `${i18next.t('ui.coach.network_error') || 'ネットワークエラーが発生しました。接続を確認してください。'}${detailMsg}`,
       success: false,
       errorType: 'network',
     };

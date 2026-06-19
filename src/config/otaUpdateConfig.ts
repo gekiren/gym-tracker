@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.85', // OTA識別用のバージョン文字列
+  version: '1.0.86', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'Android端末におけるAIコーチ画面のキーボード回避時の高さを微調整しました。',
-      'アプリ内課金の内部ログ出力セキュリティを強化しました。'
+      'AIコーチが混雑している際に、分かりやすい日本語で案内を表示するよう改善しました。',
+      '接続エラー時の内部処理およびサーバー側の接続安定性を向上させました。'
     ],
     en: [
-      'Fine-tuned keyboard avoiding height on the AI Coach screen for Android devices.',
-      'Enhanced logging security for in-app purchases.'
+      'Improved error messaging when the AI Coach is busy.',
+      'Enhanced internal error handling and connection stability on the server side.'
     ]
   }
 };
