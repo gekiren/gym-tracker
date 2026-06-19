@@ -487,6 +487,30 @@
       "reward_close_btn": "Close",
       "ad_preview_title": "Ad Reward Available!",
       "ad_preview_desc": "Watch to the end to get 1-2 ad-free workouts."
+    },
+    "youtube": {
+      "search_suffix": "form tutorial",
+      "error_title": "Error",
+      "error_open_browser": "Could not open browser or YouTube app.",
+      "error_connection": "A connection error occurred."
+    },
+    "share": {
+      "header": "[Workout on {{date}}: {{title}}]\n",
+      "total_volume": "Total Weight Lifted: {{volume}} {{unit}} 💪🔥\n",
+      "car_comparison": "(Equivalent to about {{count}} light cars! 🚗💨)\n\n",
+      "elephant_comparison": "This means you lifted about {{count}} African elephants! 🐘💥\n",
+      "bus_comparison": "This means you lifted about {{count}} large city buses! 🚌💥\n",
+      "calories": "\nCalories Burned: {{calories}} kcal\n",
+      "food_comparison": "About {{onigiri}} Rice Balls 🍙 / {{beer}} Beers 🍺\n",
+      "footer": "\nPushing limits! Keep it up tomorrow! ✨\n#TreNote #Workout #Fitness #GymTracker"
+    },
+    "accessibility": {
+      "rm_calculator": "Open RM Calculator",
+      "plate_calculator": "Open Plate Calculator",
+      "timer_setting": "Open Timer Settings",
+      "ai_coach_history": "Send this history to AI Coach",
+      "share_sns": "Share on SNS",
+      "delete_workout": "Delete workout history"
     }
   },
   "exercises": {

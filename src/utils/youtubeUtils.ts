@@ -1,4 +1,5 @@
 import { Linking, Alert } from 'react-native';
+import i18n from '../i18n';
 
 /**
  * Opens a YouTube search query for "[exerciseName] やり方" using the device's default browser or YouTube app.
@@ -7,7 +8,8 @@ import { Linking, Alert } from 'react-native';
 export const openYouTubeSearch = async (exerciseName: string): Promise<void> => {
   if (!exerciseName) return;
   try {
-    const query = `${exerciseName} やり方`;
+    const suffix = i18n.t('ui.youtube.search_suffix') || 'やり方';
+    const query = `${exerciseName} ${suffix}`;
     const encodedQuery = encodeURIComponent(query);
     const url = `https://www.youtube.com/results?search_query=${encodedQuery}`;
 
@@ -15,10 +17,16 @@ export const openYouTubeSearch = async (exerciseName: string): Promise<void> => 
     if (canOpen) {
       await Linking.openURL(url);
     } else {
-      Alert.alert('エラー', 'ブラウザまたはYouTubeアプリを開くことができませんでした。');
+      Alert.alert(
+        i18n.t('ui.youtube.error_title') || 'エラー',
+        i18n.t('ui.youtube.error_open_browser') || 'ブラウザまたはYouTubeアプリを開くことができませんでした。'
+      );
     }
   } catch (error) {
     console.error('Failed to open YouTube search url:', error);
-    Alert.alert('エラー', '接続中にエラーが発生しました。');
+    Alert.alert(
+      i18n.t('ui.youtube.error_title') || 'エラー',
+      i18n.t('ui.youtube.error_connection') || '接続中にエラーが発生しました。'
+    );
   }
 };

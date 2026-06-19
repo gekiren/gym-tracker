@@ -369,14 +369,26 @@ export default function ActiveWorkoutScreen() {
               {isWorkoutStarted && (
                 <ElapsedTimerHeader startTime={startTime} style={styles.headerTimeText} />
               )}
-              <TouchableOpacity onPress={() => router.push('/rm-calculator')} style={{ marginRight: 16, marginLeft: 8 }}>
+              <TouchableOpacity 
+                onPress={() => router.push('/rm-calculator')} 
+                style={{ marginRight: 16, marginLeft: 8 }}
+                accessibilityLabel={t('ui.accessibility.rm_calculator')}
+              >
                 <Ionicons name="calculator-outline" size={26} color={Theme.colors.primary} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setPlateCalcVisible(true)} style={{ marginRight: 16 }}>
+              <TouchableOpacity 
+                onPress={() => setPlateCalcVisible(true)} 
+                style={{ marginRight: 16 }}
+                accessibilityLabel={t('ui.accessibility.plate_calculator')}
+              >
                 <Ionicons name="barbell-outline" size={26} color={Theme.colors.primary} />
               </TouchableOpacity>
               {!restTimerActive && (
-                <TouchableOpacity onPress={handleManualTimer} style={{ marginRight: 16 }}>
+                <TouchableOpacity 
+                  onPress={handleManualTimer} 
+                  style={{ marginRight: 16 }}
+                  accessibilityLabel={t('ui.accessibility.timer_setting')}
+                >
                   <Ionicons name="timer-outline" size={26} color={Theme.colors.primary} />
                 </TouchableOpacity>
               )}

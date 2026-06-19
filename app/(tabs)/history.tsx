@@ -614,14 +614,26 @@ export default function HistoryScreen() {
                   <Text style={styles.cardTitle}>{w.title}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     {AI_CONFIG.status === 'active' && (
-                      <TouchableOpacity onPress={() => handleAICoachHistory(w.id, w.title)} style={[styles.exportIcon, { marginRight: 8 }]}>
+                      <TouchableOpacity 
+                        onPress={() => handleAICoachHistory(w.id, w.title)} 
+                        style={[styles.exportIcon, { marginRight: 8 }]}
+                        accessibilityLabel={t('ui.accessibility.ai_coach_history')}
+                      >
                         <Ionicons name="sparkles" size={18} color={Theme.colors.primary} />
                       </TouchableOpacity>
                     )}
-                    <TouchableOpacity onPress={() => handleSNSSharePress(w.id)} style={[styles.exportIcon, { marginRight: 8 }]}>
+                    <TouchableOpacity 
+                      onPress={() => handleSNSSharePress(w.id)} 
+                      style={[styles.exportIcon, { marginRight: 8 }]}
+                      accessibilityLabel={t('ui.accessibility.share_sns')}
+                    >
                       <Ionicons name="share-social" size={18} color={Theme.colors.primary} />
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => handleDeleteWorkout(w.id, w.title)} style={[styles.exportIcon, { backgroundColor: 'rgba(255,50,50,0.1)' }]}>
+                    <TouchableOpacity 
+                      onPress={() => handleDeleteWorkout(w.id, w.title)} 
+                      style={[styles.exportIcon, { backgroundColor: 'rgba(255,50,50,0.1)' }]}
+                      accessibilityLabel={t('ui.accessibility.delete_workout')}
+                    >
                       <Ionicons name="trash" size={18} color={Theme.colors.danger} />
                     </TouchableOpacity>
                   </View>
