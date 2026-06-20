@@ -43,9 +43,30 @@ export default function RootLayout() {
       const timerVibrate = storedSettings['timer_vibrate'] ? storedSettings['timer_vibrate'] === '1' : true;
       const keepAwake = storedSettings['keep_awake'] ? storedSettings['keep_awake'] === '1' : true;
       
-      const needsUnitSelection = !storedSettings['weight_unit'];
+      // 言語設定を先に確定させる（後の単位判定で利用するため）
+      let currentLang = storedSettings['language'];
+      if (storedSettings['language']) {
+        // 2回目以降：DBに保存された言語を使用
+        i18n.changeLanguage(storedSettings['language']);
+      } else {
+        // 初回起動時のみ：端末の言語を検知して使用＆保存
+        const deviceLocale = Localization.getLocales()[0]?.languageCode ?? 'ja';
+        const initialLang = ['ja', 'en'].includes(deviceLocale) ? deviceLocale : 'ja';
+        i18n.changeLanguage(initialLang);
+        await saveSetting('language', initialLang);
+        currentLang = initialLang;
+      }
+
+      let needsUnitSelection = !storedSettings['weight_unit'];
+      let weightUnit = (storedSettings['weight_unit'] === 'lbs' ? 'lbs' : 'kg') as 'kg' | 'lbs';
       const needsStyleSelection = !storedSettings['style_mode'];
-      const weightUnit = (storedSettings['weight_unit'] === 'lbs' ? 'lbs' : 'kg') as 'kg' | 'lbs';
+
+      // 日本語話者の場合は、初回起動時に自動で kg を設定し、選択モーダルをスキップする
+      if (needsUnitSelection && currentLang === 'ja') {
+        await saveSetting('weight_unit', 'kg');
+        weightUnit = 'kg';
+        needsUnitSelection = false;
+      }
 
       // クラッシュレポート同意ステータスと未送信ログのチェック
       const crashConsent = (storedSettings['crash_report_consent'] ?? 'unset') as 'agreed' | 'declined' | 'unset';
@@ -72,18 +93,6 @@ export default function RootLayout() {
           // 未設定：次回起動時の確認ポップアップ表示フラグを立てる
           hasUnsentLog = true;
         }
-      }
-
-      // 言語設定：保存済みならそれを使用、なければ端末言語を初回のみ検知して保存
-      if (storedSettings['language']) {
-        // 2回目以降：DBに保存された言語を使用
-        i18n.changeLanguage(storedSettings['language']);
-      } else {
-        // 初回起動時のみ：端末の言語を検知して使用＆保存
-        const deviceLocale = Localization.getLocales()[0]?.languageCode ?? 'ja';
-        const initialLang = ['ja', 'en'].includes(deviceLocale) ? deviceLocale : 'ja';
-        i18n.changeLanguage(initialLang);
-        await saveSetting('language', initialLang);
       }
 
       // OTAチャンネルのオーバーライド設定を読み込み・適用

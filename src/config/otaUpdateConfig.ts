@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.96', // OTA識別用のバージョン文字列
+  version: '1.0.97', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'プレミアムプラン紹介ページの多言語表示（日本語・英語）および現地通貨価格の動的取得に対応しました。'
+      '初回起動時、アプリの言語が日本語に設定されている場合に、重量単位（kg / lbs）の選択画面をスキップして自動的に「kg」を設定するように改善しました。'
     ],
     en: [
-      'Added support for multilingual display (Japanese/English) and dynamic fetching of local prices on the Premium Plan introduction page.'
+      'Skipped the weight unit (kg / lbs) selection onboarding screen and set default to "kg" when the app language is Japanese.'
     ]
   }
 };
