@@ -122,6 +122,17 @@
 8. **Google Play Storeリリースノートの作成ルール (Google Play Store Release Notes):**
    - 新しいネイティブビルド（`.aab`）を作成する際は、必ず前回の本番バージョンからの変更点をまとめたリリースノート（日本語・英語）を作成してユーザーに提示してください。
    - **Google Play Consoleの文字数制限に対応するため、文章は極力短く簡素にまとめ、表題（概要）のみを簡潔な箇条書き形式で記述してください。**
+9. **EAS Update 配信時のチャンネルマッピングおよびプラットフォーム制限ルール (EAS Update Channels & Platforms):**
+   - **チャンネルとブランチのマッピング不整合の防止:**
+     - ステージング（`staging`）チャンネルは `staging` ブランチ、本番（`production`）チャンネルは `production` ブランチを指している必要があります。
+     - アップデート配信後、アプリ側で更新が検知されない場合は `npx eas channel:view <channel-name>` でマッピングを確認し、不整合があれば `npx eas channel:edit <channel-name> --branch <branch-name>` で紐付けを修正してください。
+   - **プラットフォーム制限（Webバンドルエラーの回避）:**
+     - プロジェクトには Web プラットフォームの設定（Expo Router 等）が含まれていますが、`react-native-google-mobile-ads` 等のネイティブ専用ライブラリが Web ビルド時にエラーを引き起こすため、デフォルトの `platform=all` による一括配信は失敗します。
+     - **必ず `-p android` または `-p ios` を明示的に指定して、個別に配信を行ってください。**
+       ```bash
+       npx eas update -p android --branch <branch> --message "<message>"
+       npx eas update -p ios --branch <branch> --message "<message>"
+       ```
 
 
 ---
