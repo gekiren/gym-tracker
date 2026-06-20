@@ -29,7 +29,7 @@ import { DangerZoneSection } from '../../components/profile/DangerZoneSection';
 import { PromoCodeModal } from '../../components/profile/PromoCodeModal';
 
 export default function ProfileScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const settings = useWorkoutStore(state => state.settings);
   const loadSettings = useWorkoutStore(state => state.loadSettings);
   const [defaultRest, setDefaultRest] = useState(settings.defaultRest);
@@ -201,6 +201,18 @@ export default function ProfileScreen() {
     try {
       await resetDatabase();
       useWorkoutStore.getState().resetAllSettingsAndWorkout();
+
+      // 現在のアプリの言語設定を再保存し、日本語の場合は重量単位を自動設定する
+      const activeLang = i18n.language || 'ja';
+      await saveSetting('language', activeLang);
+      if (activeLang === 'ja') {
+        await saveSetting('weight_unit', 'kg');
+        useWorkoutStore.getState().loadSettings({
+          ...useWorkoutStore.getState().settings,
+          weightUnit: 'kg',
+          needsUnitSelection: false
+        });
+      }
 
       setIsResetModalVisible(false);
       setResetConfirmText('');
