@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Modal, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { format, startOfWeek, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval } from 'date-fns';
@@ -35,15 +35,15 @@ export function HistoryCalendarModal({
     ? ['月', '火', '水', '木', '金', '土', '日']
     : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  const getCalendarDays = () => {
+  const days = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(monthStart);
     const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
     const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
     return eachDayOfInterval({ start: startDate, end: endDate });
-  };
+  }, [currentMonth]);
 
-  const getMonthlyStats = () => {
+  const { count, volume, set_count } = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(monthStart);
     let count = 0;
@@ -60,16 +60,16 @@ export function HistoryCalendarModal({
     });
 
     return { count, volume, set_count };
-  };
+  }, [currentMonth, history]);
 
-  const days = getCalendarDays();
-  const { count, volume, set_count } = getMonthlyStats();
-
-  const workoutsMap: { [key: string]: boolean } = {};
-  history.forEach(item => {
-    const dStr = format(new Date(item.start_time), 'yyyy-MM-dd');
-    workoutsMap[dStr] = true;
-  });
+  const workoutsMap = useMemo(() => {
+    const map: { [key: string]: boolean } = {};
+    history.forEach(item => {
+      const dStr = format(new Date(item.start_time), 'yyyy-MM-dd');
+      map[dStr] = true;
+    });
+    return map;
+  }, [history]);
 
   return (
     <Modal

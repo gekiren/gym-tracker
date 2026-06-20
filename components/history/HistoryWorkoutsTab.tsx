@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { router } from 'expo-router';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,16 +38,16 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
   const [chartScale, setChartScale] = useState<'day' | 'week' | 'month'>('day');
   const [chartMetric, setChartMetric] = useState<'volume' | 'calories'>('volume');
 
-  // Calendar Helpers
-  const getCalendarDays = () => {
+  // Calendar Helpers (Memoized)
+  const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(monthStart);
     const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
     const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
     return eachDayOfInterval({ start: startDate, end: endDate });
-  };
+  }, [currentMonth]);
 
-  const getMonthlyStats = () => {
+  const monthlyStats = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(monthStart);
     let count = 0;
@@ -64,7 +64,16 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
     });
 
     return { count, volume, calories };
-  };
+  }, [currentMonth, workouts]);
+
+  const workoutsMap = useMemo(() => {
+    const map: { [key: string]: boolean } = {};
+    workouts.forEach(w => {
+      const dStr = format(new Date(w.start_time), 'yyyy-MM-dd');
+      map[dStr] = true;
+    });
+    return map;
+  }, [workouts]);
 
   const handleDatePress = (dateStr: string) => {
     const targetWorkout = workouts.find(w => {
@@ -89,8 +98,8 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
   };
 
   const renderCalendarModal = () => {
-    const days = getCalendarDays();
-    const { count, volume, calories } = getMonthlyStats();
+    const days = calendarDays;
+    const { count, volume, calories } = monthlyStats;
     const isJa = i18n.language === 'ja';
 
     const monthYearText = isJa
@@ -100,12 +109,6 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
     const weekdays = isJa
       ? ['月', '火', '水', '木', '金', '土', '日']
       : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-    const workoutsMap: { [key: string]: boolean } = {};
-    workouts.forEach(w => {
-      const dStr = format(new Date(w.start_time), 'yyyy-MM-dd');
-      workoutsMap[dStr] = true;
-    });
 
     return (
       <Modal
