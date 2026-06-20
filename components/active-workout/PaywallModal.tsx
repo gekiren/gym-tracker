@@ -30,7 +30,7 @@ export function PaywallModal({
       <View style={styles.paywallCard}>
         {/* Header */}
         <View style={styles.paywallHeader}>
-          <Text style={styles.paywallTitle}>{t('profile.paywall.title')}</Text>
+          <Text style={styles.paywallTitle}>{t('ui.profile.paywall.title')}</Text>
           <TouchableOpacity onPress={onClose} disabled={isPurchasing}>
             <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
           </TouchableOpacity>
@@ -38,7 +38,7 @@ export function PaywallModal({
 
         <ScrollView style={{ width: '100%', marginVertical: 16 }} showsVerticalScrollIndicator={false}>
           <Text style={styles.paywallSubtitle}>
-            {t('profile.paywall.subtitle')}
+            {t('ui.profile.paywall.subtitle')}
           </Text>
 
           {/* Feature 1 */}
@@ -47,8 +47,8 @@ export function PaywallModal({
               <Ionicons name="sparkles" size={24} color="#4facfe" />
             </View>
             <View style={styles.paywallFeatureInfo}>
-              <Text style={styles.paywallFeatureTitle}>{t('profile.paywall.features.ai_limit.title')}</Text>
-              <Text style={styles.paywallFeatureDesc}>{t('profile.paywall.features.ai_limit.desc')}</Text>
+              <Text style={styles.paywallFeatureTitle}>{t('ui.profile.paywall.features.ai_limit.title')}</Text>
+              <Text style={styles.paywallFeatureDesc}>{t('ui.profile.paywall.features.ai_limit.desc')}</Text>
             </View>
           </View>
 
@@ -58,8 +58,8 @@ export function PaywallModal({
               <Ionicons name="copy" size={24} color="#4facfe" />
             </View>
             <View style={styles.paywallFeatureInfo}>
-              <Text style={styles.paywallFeatureTitle}>{t('profile.paywall.features.import_routine.title')}</Text>
-              <Text style={styles.paywallFeatureDesc}>{t('profile.paywall.features.import_routine.desc')}</Text>
+              <Text style={styles.paywallFeatureTitle}>{t('ui.profile.paywall.features.import_routine.title')}</Text>
+              <Text style={styles.paywallFeatureDesc}>{t('ui.profile.paywall.features.import_routine.desc')}</Text>
             </View>
           </View>
 
@@ -69,8 +69,8 @@ export function PaywallModal({
               <Ionicons name="cloud-upload-outline" size={24} color="#4facfe" />
             </View>
             <View style={styles.paywallFeatureInfo}>
-              <Text style={styles.paywallFeatureTitle}>{t('profile.paywall.features.backup_restore.title')}</Text>
-              <Text style={styles.paywallFeatureDesc}>{t('profile.paywall.features.backup_restore.desc')}</Text>
+              <Text style={styles.paywallFeatureTitle}>{t('ui.profile.paywall.features.backup_restore.title')}</Text>
+              <Text style={styles.paywallFeatureDesc}>{t('ui.profile.paywall.features.backup_restore.desc')}</Text>
             </View>
           </View>
 
@@ -80,17 +80,17 @@ export function PaywallModal({
               <Ionicons name="heart" size={24} color="#4facfe" />
             </View>
             <View style={styles.paywallFeatureInfo}>
-              <Text style={styles.paywallFeatureTitle}>{t('profile.paywall.features.support_dev.title')}</Text>
-              <Text style={styles.paywallFeatureDesc}>{t('profile.paywall.features.support_dev.desc')}</Text>
+              <Text style={styles.paywallFeatureTitle}>{t('ui.profile.paywall.features.support_dev.title')}</Text>
+              <Text style={styles.paywallFeatureDesc}>{t('ui.profile.paywall.features.support_dev.desc')}</Text>
             </View>
           </View>
         </ScrollView>
 
         {/* Price tag */}
         <View style={styles.priceContainer}>
-          <Text style={styles.priceLabel}>{t('profile.paywall.price_label')}</Text>
+          <Text style={styles.priceLabel}>{t('ui.profile.paywall.price_label')}</Text>
           <Text style={styles.priceValue}>{displayPrice}</Text>
-          <Text style={styles.priceSubtext}>{t('profile.paywall.price_subtext')}</Text>
+          <Text style={styles.priceSubtext}>{t('ui.profile.paywall.price_subtext')}</Text>
         </View>
 
         {/* Actions */}
@@ -105,7 +105,7 @@ export function PaywallModal({
             disabled={isPurchasing || (isPremium && !isEarly)}
           >
             <Text style={styles.paywallUpgradeBtnText}>
-              {(isPremium && !isEarly) ? t('profile.paywall.upgrade_btn_applied') : t('profile.paywall.upgrade_btn')}
+              {(isPremium && !isEarly) ? t('ui.profile.paywall.upgrade_btn_applied') : t('ui.profile.paywall.upgrade_btn')}
             </Text>
           </TouchableOpacity>
 
@@ -114,7 +114,7 @@ export function PaywallModal({
             onPress={onRestore}
             disabled={isPurchasing}
           >
-            <Text style={styles.paywallRestoreBtnText}>{t('profile.paywall.restore_btn')}</Text>
+            <Text style={styles.paywallRestoreBtnText}>{t('ui.profile.paywall.restore_btn')}</Text>
           </TouchableOpacity>
         </View>
       </View>

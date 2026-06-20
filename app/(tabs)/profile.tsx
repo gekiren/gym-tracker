@@ -703,7 +703,7 @@ export default function ProfileScreen() {
           onClose={() => !isPurchasing && setIsPaywallVisible(false)}
           onPurchase={handlePurchase}
           onRestore={handleRestore}
-          displayPrice={displayPrice || t('profile.paywall.fallbackPrice')}
+          displayPrice={displayPrice || t('ui.profile.paywall.fallback_price')}
         />
       </Modal>
 
