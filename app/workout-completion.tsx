@@ -424,7 +424,7 @@ export default function WorkoutCompletionScreen() {
         {/* SNS Share Button */}
         <TouchableOpacity style={styles.shareButton} onPress={handleShareButtonPress}>
           <Ionicons name="share-social-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-          <Text style={styles.shareButtonText}>SNSにシェア</Text>
+          <Text style={styles.shareButtonText}>{t('ui.common.share_sns')}</Text>
         </TouchableOpacity>
 
         {/* Done Button */}
@@ -440,7 +440,7 @@ export default function WorkoutCompletionScreen() {
         <View style={styles.loadingOverlay}>
           <View style={styles.loadingContent}>
             <ActivityIndicator size="large" color={Theme.colors.primary} />
-            <Text style={styles.loadingText}>シェア用画像を生成中...</Text>
+            <Text style={styles.loadingText}>{t('ui.share_modal.generating')}</Text>
           </View>
         </View>
       )}

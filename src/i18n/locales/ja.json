@@ -450,7 +450,9 @@
       "reps_unit": "回",
       "calories": "カロリー",
       "copy": "のコピー",
-      "add": "追加"
+      "add": "追加",
+      "share_sns": "SNSにシェア",
+      "export_markdown": "Markdownで書き出し"
     },
     "markdown": {
       "date_label": "日付",
@@ -577,6 +579,35 @@
       "ai_coach_history": "この履歴をAIコーチに送信する",
       "share_sns": "SNSにシェアする",
       "delete_workout": "ワークアウト履歴を削除する"
+    },
+    "share_modal": {
+      "title": "シェア画像のデザインを選択",
+      "pattern_a_name": "パターンA: エンタメ換算重視",
+      "pattern_a_desc": "総重量を軽自動車やゾウ、おにぎり等に面白換算！",
+      "pattern_b_name": "パターンB: 詳細記録重視",
+      "pattern_b_desc": "全種目の重量・レップ・セット数をきれいに一覧化！",
+      "pattern_c_name": "パターンC: ハイブリッド",
+      "pattern_c_desc": "面白換算に加え、種目ごとのセット数と最大1RMを表示！",
+      "generating": "シェア用画像を生成中...",
+      "rebuild_required_title": "アプリの再ビルドが必要です",
+      "rebuild_required_desc": "画像生成用のネイティブモジュールが含まれていません。プレビュー版または本番用アプリ（EAS Build）を再起動・再ビルドしてからお試しください。",
+      "share_error_title": "共有エラー",
+      "share_error_desc": "このデバイスでは共有機能が利用できません。",
+      "gen_error_title": "生成エラー",
+      "gen_error_desc": "画像生成コンポーネントが準備できていません。",
+      "error_title": "エラー",
+      "error_desc": "画像の生成中にエラーが発生しました。",
+      "dialog_title": "ワークアウト記録をシェア",
+      "car_comparison": "軽自動車約 {{count}} 台分！",
+      "car_desc": "総ボリュームを車の重量（約800kg）に換算",
+      "elephant_comparison": "アフリカゾウ約 {{count}} 頭分！",
+      "elephant_desc": "総ボリュームをゾウの重量（約6,000kg）に換算",
+      "bus_comparison": "大型路線バス約 {{count}} 台分！",
+      "bus_desc": "総ボリュームをバスの重量（約10,000kg）に換算",
+      "food_comparison": "おにぎり約 {{onigiri}} 個分 / ビール {{beer}} 杯分",
+      "food_desc": "消費エネルギー（{{calories}} kcal）の食べ物換算",
+      "plus_more_exercises_six": "+ 他 {{count}} 種目実施",
+      "plus_more_exercises_five": "+ 他 {{count}} 種目実施"
     }
   },
   "exercises": {

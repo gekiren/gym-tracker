@@ -455,7 +455,9 @@
       "reps_unit": " reps",
       "calories": "Calories",
       "copy": " (Copy)",
-      "add": "Add"
+      "add": "Add",
+      "share_sns": "Share",
+      "export_markdown": "Export as Markdown"
     },
     "markdown": {
       "date_label": "Date",
@@ -582,6 +584,35 @@
       "ai_coach_history": "Send this history to AI Coach",
       "share_sns": "Share on SNS",
       "delete_workout": "Delete workout history"
+    },
+    "share_modal": {
+      "title": "Select Share Image Design",
+      "pattern_a_name": "Pattern A: Fun Conversion",
+      "pattern_a_desc": "Convert total volume to light cars, elephants, rice balls, etc.!",
+      "pattern_b_name": "Pattern B: Workout Details",
+      "pattern_b_desc": "List all completed exercises with sets, reps, and weights!",
+      "pattern_c_name": "Pattern C: Hybrid",
+      "pattern_c_desc": "Show fun conversion plus sets and max 1RM for each exercise!",
+      "generating": "Generating share image...",
+      "rebuild_required_title": "App Rebuild Required",
+      "rebuild_required_desc": "The native module for image generation is not included. Please restart or rebuild the app (EAS Build) and try again.",
+      "share_error_title": "Share Error",
+      "share_error_desc": "Sharing is not available on this device.",
+      "gen_error_title": "Generation Error",
+      "gen_error_desc": "Image generation component is not ready.",
+      "error_title": "Error",
+      "error_desc": "An error occurred during image generation.",
+      "dialog_title": "Share Workout Record",
+      "car_comparison": "About {{count}} light cars!",
+      "car_desc": "Total volume converted to cars (approx. 800kg each)",
+      "elephant_comparison": "About {{count}} African elephants!",
+      "elephant_desc": "Total volume converted to elephants (approx. 6,000kg each)",
+      "bus_comparison": "About {{count}} city buses!",
+      "bus_desc": "Total volume converted to buses (approx. 10,000kg each)",
+      "food_comparison": "About {{onigiri}} Rice Balls / {{beer}} Beers",
+      "food_desc": "Energy burned ({{calories}} kcal) in food/drink equivalents",
+      "plus_more_exercises_six": "+ {{count}} more exercise(s)",
+      "plus_more_exercises_five": "+ {{count}} more exercise(s)"
     }
   },
   "exercises": {

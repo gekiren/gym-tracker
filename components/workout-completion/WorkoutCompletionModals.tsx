@@ -35,43 +35,43 @@ export const WorkoutCompletionModals: React.FC<WorkoutCompletionModalsProps> = (
       >
         <View style={styles.modalOverlay}>
           <View style={styles.bottomSheetContent}>
-            <Text style={styles.modalTitle}>シェア画像のデザインを選択</Text>
+            <Text style={styles.modalTitle}>{t('ui.share_modal.title')}</Text>
             
             <TouchableOpacity style={styles.patternOption} onPress={() => onShare('A')}>
               <View style={styles.patternIconCircle}>
                 <Ionicons name="sparkles" size={24} color="#ffd700" />
               </View>
               <View style={styles.patternTextContainer}>
-                <Text style={styles.patternName}>パターンA: エンタメ換算重視</Text>
-                <Text style={styles.patternDesc}>総重量を軽自動車やゾウ、おにぎり等に面白換算！</Text>
+                <Text style={styles.patternName}>{t('ui.share_modal.pattern_a_name')}</Text>
+                <Text style={styles.patternDesc}>{t('ui.share_modal.pattern_a_desc')}</Text>
               </View>
             </TouchableOpacity>
-
+ 
             <TouchableOpacity style={styles.patternOption} onPress={() => onShare('B')}>
               <View style={styles.patternIconCircle}>
                 <Ionicons name="list" size={24} color={Theme.colors.primary} />
               </View>
               <View style={styles.patternTextContainer}>
-                <Text style={styles.patternName}>パターンB: 詳細記録重視</Text>
-                <Text style={styles.patternDesc}>全種目の重量・レップ・セット数をきれいに一覧化！</Text>
+                <Text style={styles.patternName}>{t('ui.share_modal.pattern_b_name')}</Text>
+                <Text style={styles.patternDesc}>{t('ui.share_modal.pattern_b_desc')}</Text>
               </View>
             </TouchableOpacity>
-
+ 
             <TouchableOpacity style={styles.patternOption} onPress={() => onShare('C')}>
               <View style={styles.patternIconCircle}>
                 <Ionicons name="stats-chart" size={24} color={Theme.colors.success} />
               </View>
               <View style={styles.patternTextContainer}>
-                <Text style={styles.patternName}>パターンC: ハイブリッド</Text>
-                <Text style={styles.patternDesc}>面白換算に加え、種目ごとのセット数と最大1RMを表示！</Text>
+                <Text style={styles.patternName}>{t('ui.share_modal.pattern_c_name')}</Text>
+                <Text style={styles.patternDesc}>{t('ui.share_modal.pattern_c_desc')}</Text>
               </View>
             </TouchableOpacity>
-
+ 
             <TouchableOpacity 
               style={styles.cancelButton} 
               onPress={() => setPatternModalVisible(false)}
             >
-              <Text style={styles.cancelButtonText}>キャンセル</Text>
+              <Text style={styles.cancelButtonText}>{t('ui.common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -201,12 +201,12 @@ export default function WorkoutDetailsScreen() {
         <View style={styles.actionButtonsContainer}>
           <TouchableOpacity style={styles.shareButton} onPress={() => setShareModalVisible(true)}>
             <Ionicons name="share-social-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={styles.shareButtonText}>SNSにシェア</Text>
+            <Text style={styles.shareButtonText}>{t('ui.common.share_sns')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.exportButton} onPress={handleExportMarkdown}>
             <Ionicons name="document-text-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-            <Text style={styles.exportButtonText}>Markdownで書き出し</Text>
+            <Text style={styles.exportButtonText}>{t('ui.common.export_markdown')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

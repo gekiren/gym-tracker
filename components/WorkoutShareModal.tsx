@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, Alert, Image, UIManager, NativeModules } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../src/theme';
+import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../src/i18n';
 import type ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -28,6 +29,7 @@ interface WorkoutShareModalProps {
 }
 
 export default function WorkoutShareModal({ visible, onClose, workout, settings }: WorkoutShareModalProps) {
+  const { t, i18n } = useTranslation();
   const [sharePattern, setSharePattern] = useState<'A' | 'B' | 'C'>('A');
   const [isSharing, setIsSharing] = useState(false);
   const [viewShotAvailable, setViewShotAvailable] = useState(false);
@@ -50,9 +52,9 @@ export default function WorkoutShareModal({ visible, onClose, workout, settings 
   const handleShare = async (pattern: 'A' | 'B' | 'C') => {
     if (!viewShotAvailable) {
       Alert.alert(
-        'アプリの再ビルドが必要です',
-        '画像生成用のネイティブモジュールが含まれていません。プレビュー版または本番用アプリ（EAS Build）を再起動・再ビルドしてからお試しください。',
-        [{ text: 'OK' }]
+        t('ui.share_modal.rebuild_required_title'),
+        t('ui.share_modal.rebuild_required_desc'),
+        [{ text: t('ui.common.ok') || 'OK' }]
       );
       return;
     }
@@ -75,18 +77,27 @@ export default function WorkoutShareModal({ visible, onClose, workout, settings 
           if (isAvailable) {
             await Sharing.shareAsync(uri, {
               mimeType: 'image/png',
-              dialogTitle: 'ワークアウト記録をシェア',
+              dialogTitle: t('ui.share_modal.dialog_title') || 'Share Workout Record',
               UTI: 'public.png',
             });
           } else {
-            Alert.alert('共有エラー', 'このデバイスでは共有機能が利用できません。');
+            Alert.alert(
+              t('ui.share_modal.share_error_title'),
+              t('ui.share_modal.share_error_desc')
+            );
           }
         } else {
-          Alert.alert('生成エラー', '画像生成コンポーネントが準備できていません。');
+          Alert.alert(
+            t('ui.share_modal.gen_error_title'),
+            t('ui.share_modal.gen_error_desc')
+          );
         }
       } catch (err) {
         console.error('Share capture failed', err);
-        Alert.alert('エラー', '画像の生成中にエラーが発生しました。');
+        Alert.alert(
+          t('ui.share_modal.error_title'),
+          t('ui.share_modal.error_desc')
+        );
       } finally {
         setIsSharing(false);
         onClose();
@@ -100,15 +111,15 @@ export default function WorkoutShareModal({ visible, onClose, workout, settings 
       <Modal visible={visible && !isSharing} transparent={true} animationType="slide" onRequestClose={onClose}>
         <View style={styles.modalOverlay}>
           <View style={styles.bottomSheetContent}>
-            <Text style={styles.modalTitle}>シェア画像のデザインを選択</Text>
+            <Text style={styles.modalTitle}>{t('ui.share_modal.title')}</Text>
             
             <TouchableOpacity style={styles.patternOption} onPress={() => handleShare('A')}>
               <View style={styles.patternIconCircle}>
                 <Ionicons name="sparkles" size={24} color="#ffd700" />
               </View>
               <View style={styles.patternTextContainer}>
-                <Text style={styles.patternName}>パターンA: エンタメ換算重視</Text>
-                <Text style={styles.patternDesc}>総重量を軽自動車やゾウ、おにぎり等に面白換算！</Text>
+                <Text style={styles.patternName}>{t('ui.share_modal.pattern_a_name')}</Text>
+                <Text style={styles.patternDesc}>{t('ui.share_modal.pattern_a_desc')}</Text>
               </View>
             </TouchableOpacity>
 
@@ -117,8 +128,8 @@ export default function WorkoutShareModal({ visible, onClose, workout, settings 
                 <Ionicons name="list" size={24} color={Theme.colors.primary} />
               </View>
               <View style={styles.patternTextContainer}>
-                <Text style={styles.patternName}>パターンB: 詳細記録重視</Text>
-                <Text style={styles.patternDesc}>全種目の重量・レップ・セット数をきれいに一覧化！</Text>
+                <Text style={styles.patternName}>{t('ui.share_modal.pattern_b_name')}</Text>
+                <Text style={styles.patternDesc}>{t('ui.share_modal.pattern_b_desc')}</Text>
               </View>
             </TouchableOpacity>
 
@@ -127,8 +138,8 @@ export default function WorkoutShareModal({ visible, onClose, workout, settings 
                 <Ionicons name="stats-chart" size={24} color={Theme.colors.success} />
               </View>
               <View style={styles.patternTextContainer}>
-                <Text style={styles.patternName}>パターンC: ハイブリッド</Text>
-                <Text style={styles.patternDesc}>面白換算に加え、種目ごとのセット数と最大1RMを表示！</Text>
+                <Text style={styles.patternName}>{t('ui.share_modal.pattern_c_name')}</Text>
+                <Text style={styles.patternDesc}>{t('ui.share_modal.pattern_c_desc')}</Text>
               </View>
             </TouchableOpacity>
 
@@ -136,7 +147,7 @@ export default function WorkoutShareModal({ visible, onClose, workout, settings 
               style={styles.cancelButton} 
               onPress={onClose}
             >
-              <Text style={styles.cancelButtonText}>キャンセル</Text>
+              <Text style={styles.cancelButtonText}>{t('ui.common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -147,7 +158,7 @@ export default function WorkoutShareModal({ visible, onClose, workout, settings 
         <View style={styles.loadingOverlay}>
           <View style={styles.loadingContent}>
             <ActivityIndicator size="large" color={Theme.colors.primary} />
-            <Text style={styles.loadingText}>シェア用画像を生成中...</Text>
+            <Text style={styles.loadingText}>{t('ui.share_modal.generating')}</Text>
           </View>
         </View>
       )}
@@ -188,8 +199,11 @@ interface ShareCardViewProps {
 }
 
 function ShareCardView({ workout, settings, pattern }: ShareCardViewProps) {
+  const { t, i18n } = useTranslation();
   const stats = calculateShareStats(workout, settings);
-  const dateStr = new Date(workout.end_time || Date.now()).toLocaleDateString('ja-JP', {
+  const currentLang = i18n.language;
+  const locale = currentLang === 'ja' ? 'ja-JP' : 'en-US';
+  const dateStr = new Date(workout.end_time || Date.now()).toLocaleDateString(locale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -248,8 +262,8 @@ function ShareCardView({ workout, settings, pattern }: ShareCardViewProps) {
                 <View style={styles.funCard}>
                   <Text style={styles.funCardEmoji}>🚗</Text>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.funCardTitle}>軽自動車約 {stats.carCount} 台分！</Text>
-                    <Text style={styles.funCardSub}>総ボリュームを車の重量（約800kg）に換算</Text>
+                    <Text style={styles.funCardTitle}>{t('ui.share_modal.car_comparison', { count: stats.carCount })}</Text>
+                    <Text style={styles.funCardSub}>{t('ui.share_modal.car_desc')}</Text>
                   </View>
                 </View>
 
@@ -257,16 +271,16 @@ function ShareCardView({ workout, settings, pattern }: ShareCardViewProps) {
                   <View style={styles.funCard}>
                     <Text style={styles.funCardEmoji}>🐘</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.funCardTitle}>アフリカゾウ約 {stats.elephantCount} 頭分！</Text>
-                      <Text style={styles.funCardSub}>総ボリュームをゾウの重量（約6,000kg）に換算</Text>
+                      <Text style={styles.funCardTitle}>{t('ui.share_modal.elephant_comparison', { count: stats.elephantCount })}</Text>
+                      <Text style={styles.funCardSub}>{t('ui.share_modal.elephant_desc')}</Text>
                     </View>
                   </View>
                 ) : (
                   <View style={styles.funCard}>
                     <Text style={styles.funCardEmoji}>🚌</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.funCardTitle}>大型路線バス約 {stats.busCount} 台分！</Text>
-                      <Text style={styles.funCardSub}>総ボリュームをバスの重量（約10,000kg）に換算</Text>
+                      <Text style={styles.funCardTitle}>{t('ui.share_modal.bus_comparison', { count: stats.busCount })}</Text>
+                      <Text style={styles.funCardSub}>{t('ui.share_modal.bus_desc')}</Text>
                     </View>
                   </View>
                 )}
@@ -275,8 +289,8 @@ function ShareCardView({ workout, settings, pattern }: ShareCardViewProps) {
                   <View style={styles.funCard}>
                     <Text style={styles.funCardEmoji}>🍙</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.funCardTitle}>おにぎり約 {stats.onigiriCount} 個分 / ビール {stats.beerCount} 杯分</Text>
-                      <Text style={styles.funCardSub}>消費エネルギー（{stats.calories} kcal）の食べ物換算</Text>
+                      <Text style={styles.funCardTitle}>{t('ui.share_modal.food_comparison', { onigiri: stats.onigiriCount, beer: stats.beerCount })}</Text>
+                      <Text style={styles.funCardSub}>{t('ui.share_modal.food_desc', { calories: stats.calories })}</Text>
                     </View>
                   </View>
                 )}
@@ -298,7 +312,7 @@ function ShareCardView({ workout, settings, pattern }: ShareCardViewProps) {
                   </View>
                 ))}
                 {exerciseSummaries.length > 6 && (
-                  <Text style={styles.plusMoreText}>+ 他 {exerciseSummaries.length - 6} 種目実施</Text>
+                  <Text style={styles.plusMoreText}>{t('ui.share_modal.plus_more_exercises_six', { count: exerciseSummaries.length - 6 })}</Text>
                 )}
               </View>
             </View>
@@ -313,7 +327,7 @@ function ShareCardView({ workout, settings, pattern }: ShareCardViewProps) {
                   <Text style={[styles.cardVolumeValue, { fontSize: 72, lineHeight: 76 }]}>
                     {formattedVolume} <Text style={{ fontSize: 32 }}>{stats.weightUnit}</Text>
                   </Text>
-                  <Text style={styles.hybridFunText}>🚗 軽自動車約 {stats.carCount} 台分！</Text>
+                  <Text style={styles.hybridFunText}>🚗 {t('ui.share_modal.car_comparison', { count: stats.carCount })}</Text>
                 </View>
               </View>
 
@@ -330,7 +344,7 @@ function ShareCardView({ workout, settings, pattern }: ShareCardViewProps) {
                     </View>
                   ))}
                   {exerciseSummaries.length > 5 && (
-                    <Text style={[styles.plusMoreText, { marginTop: 0 }]}>+ 他 {exerciseSummaries.length - 5} 種目実施</Text>
+                    <Text style={[styles.plusMoreText, { marginTop: 0 }]}>{t('ui.share_modal.plus_more_exercises_five', { count: exerciseSummaries.length - 5 })}</Text>
                   )}
                 </View>
               </View>
