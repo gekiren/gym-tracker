@@ -251,7 +251,17 @@
       "save_and_add_btn": "Save & Add",
       "error_no_name": "Please enter an exercise name.",
       "error_add_failed": "Failed to add exercise.",
-      "label_scroll_more": "▼ Scroll for more settings (Unilateral, Stance)"
+      "label_scroll_more": "▼ Scroll for more settings (Unilateral, Stance)",
+      "add_custom_title": "Create Custom Exercise",
+      "label_name": "Exercise Name *",
+      "placeholder_name": "e.g. Dumbbell Press",
+      "label_muscle": "Target Muscle Group",
+      "label_equipment": "Equipment",
+      "label_unilateral": "Unilateral tracking",
+      "desc_unilateral": "Enable to track sets individually for left and right sides.",
+      "label_default_stance": "Default Variation",
+      "desc_default_stance": "Automatically set stance or grip (e.g., Narrow, Wide) as default.",
+      "label_stance_name": "Variation Name"
     },
     "tabs": {
       "home": "Home",
@@ -412,7 +422,8 @@
       "weight_unit": "kg",
       "reps_unit": " reps",
       "calories": "Calories",
-      "copy": " (Copy)"
+      "copy": " (Copy)",
+      "add": "Add"
     },
     "markdown": {
       "date_label": "Date",

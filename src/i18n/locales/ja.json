@@ -246,7 +246,17 @@
       "save_and_add_btn": "保存して追加",
       "error_no_name": "種目名を入力してください。",
       "error_add_failed": "追加に失敗しました",
-      "label_scroll_more": "▼ スクロールして詳細設定を追加 (片側・スタンス)"
+      "label_scroll_more": "▼ スクロールして詳細設定を追加 (片側・スタンス)",
+      "add_custom_title": "オリジナル種目の作成",
+      "label_name": "種目名 *",
+      "placeholder_name": "例: ダンベルプレス",
+      "label_muscle": "対象部位",
+      "label_equipment": "使用器具",
+      "label_unilateral": "片側ずつの計測",
+      "desc_unilateral": "チェックすると、左右個別のセットとして記録できるようになります。",
+      "label_default_stance": "デフォルトバリエーション",
+      "desc_default_stance": "スタンスやグリップ（例: ナロー, ワイド）をデフォルト値として自動設定します。",
+      "label_stance_name": "バリエーション名"
     },
     "tabs": {
       "home": "ホーム",
@@ -407,7 +417,8 @@
       "weight_unit": "kg",
       "reps_unit": "回",
       "calories": "カロリー",
-      "copy": "のコピー"
+      "copy": "のコピー",
+      "add": "追加"
     },
     "markdown": {
       "date_label": "日付",
