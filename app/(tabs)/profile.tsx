@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Modal, Alert, ActivityIndicator, TextInput, UIManager, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Modal, Alert, UIManager, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -22,6 +22,7 @@ import { SettingsSection } from '../../components/profile/SettingsSection';
 import { AccountSection } from '../../components/profile/AccountSection';
 import { BackupSection } from '../../components/profile/BackupSection';
 import { DangerZoneSection } from '../../components/profile/DangerZoneSection';
+import { PromoCodeModal } from '../../components/profile/PromoCodeModal';
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
@@ -616,59 +617,18 @@ export default function ProfileScreen() {
       </Modal>
 
       {/* Promotion Code Modal */}
-      <Modal visible={isPromoModalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalBg}>
-          <View style={[styles.modalCard, { borderColor: 'rgba(192, 132, 252, 0.3)' }]}>
-            <Ionicons name="gift-outline" size={56} color="#c084fc" style={{ marginBottom: 16 }} />
-            <Text style={styles.modalTitle}>{t('ui.profile.promo_modal_title')}</Text>
-            
-            <Text style={styles.modalDesc}>
-              {t('ui.profile.promo_modal_desc')}
-            </Text>
-
-            <TextInput
-              style={styles.promoInput}
-              value={promoInputText}
-              onChangeText={setPromoInputText}
-              placeholder={t('ui.profile.promo_input_placeholder')}
-              placeholderTextColor="rgba(255,255,255,0.3)"
-              autoCapitalize="characters"
-              autoCorrect={false}
-              editable={!isApplyingPromo}
-            />
-
-            <View style={styles.modalBtnContainer}>
-              <TouchableOpacity 
-                style={[styles.modalCancelBtn, isApplyingPromo && { opacity: 0.5 }]} 
-                onPress={() => {
-                  if (isApplyingPromo) return;
-                  setIsPromoModalVisible(false);
-                  setPromoInputText('');
-                }}
-                disabled={isApplyingPromo}
-              >
-                <Text style={styles.modalCancelBtnText}>{t('ui.common.cancel') || 'キャンセル'}</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[
-                  styles.modalConfirmBtn, 
-                  { backgroundColor: '#c084fc' },
-                  (promoInputText.trim() === '' || isApplyingPromo) && styles.modalConfirmBtnDisabled
-                ]} 
-                onPress={handleApplyPromo}
-                disabled={promoInputText.trim() === '' || isApplyingPromo}
-              >
-                {isApplyingPromo ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.modalConfirmBtnText}>{t('ui.profile.promo_apply_btn') || '適用する'}</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <PromoCodeModal
+        visible={isPromoModalVisible}
+        onClose={() => {
+          setIsPromoModalVisible(false);
+          setPromoInputText('');
+        }}
+        promoInputText={promoInputText}
+        onChangePromoInputText={setPromoInputText}
+        isApplyingPromo={isApplyingPromo}
+        onApplyPromo={handleApplyPromo}
+        t={t}
+      />
     </ScrollView>
   );
 }
@@ -678,28 +638,5 @@ const styles = StyleSheet.create({
   content: { padding: Theme.spacing.md, paddingBottom: 100 },
   header: { marginBottom: Theme.spacing.lg, marginTop: Theme.spacing.md },
   title: { fontSize: 28, fontWeight: 'bold', color: Theme.colors.text },
-  modalBg: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.75)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modalCard: { backgroundColor: Theme.colors.card, borderRadius: 16, padding: 24, width: '100%', maxWidth: 400, alignItems: 'center', borderWidth: 1, borderColor: Theme.colors.border },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: Theme.colors.text, marginBottom: 12, textAlign: 'center' },
-  modalDesc: { color: Theme.colors.textMuted, fontSize: 14, lineHeight: 20, textAlign: 'center', marginBottom: 16 },
-  modalBtnContainer: { flexDirection: 'row', gap: 12, width: '100%' },
-  modalCancelBtn: { flex: 1, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: Theme.colors.border, alignItems: 'center' },
-  modalCancelBtnText: { color: Theme.colors.text, fontSize: 15, fontWeight: '600' },
-  modalConfirmBtn: { flex: 1, paddingVertical: 12, borderRadius: 8, backgroundColor: Theme.colors.danger, alignItems: 'center', justifyContent: 'center' },
-  modalConfirmBtnDisabled: { opacity: 0.3 },
-  modalConfirmBtnText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
-  promoInput: { 
-    backgroundColor: '#121212', 
-    color: Theme.colors.text, 
-    padding: 12, 
-    borderRadius: 8, 
-    fontSize: 16, 
-    borderWidth: 1, 
-    borderColor: Theme.colors.border, 
-    width: '100%', 
-    marginBottom: 20, 
-    textAlign: 'center', 
-    fontWeight: 'bold', 
-    letterSpacing: 2 
-  },
+
 });
