@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.97', // OTA識別用のバージョン文字列
+  version: '1.1.1', // OTA識別用のバージョン文字列
   title: {
-    ja: 'アップデートのお知らせ',
-    en: 'Update Information',
+    ja: 'AIトレーナー画面の多言語化修正',
+    en: 'AI Coach Localization Fix',
   },
   notes: {
     ja: [
-      '初回起動時、アプリの言語が日本語に設定されている場合に、重量単位（kg / lbs）の選択画面をスキップして自動的に「kg」を設定するように改善しました。'
+      '英語設定時に一部のシステムメッセージや案内文が日本語で表示される問題を修正しました。',
     ],
     en: [
-      'Skipped the weight unit (kg / lbs) selection onboarding screen and set default to "kg" when the app language is Japanese.'
+      'Fixed an issue where some system messages and guides were shown in Japanese when the language is set to English.',
     ]
   }
 };

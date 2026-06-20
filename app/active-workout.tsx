@@ -148,7 +148,7 @@ export default function ActiveWorkoutScreen() {
       pathname: '/(tabs)/coach',
       params: {
         contextPrompt: contextStr,
-        prefillMessage: '現在記録中のこのワークアウト内容を分析し、アドバイスをください。',
+        prefillMessage: t('ui.coach.prefill_active_workout'),
         title: title || t('ui.home.free_workout_title') || '本日のワークアウト'
       }
     });
@@ -171,8 +171,8 @@ export default function ActiveWorkoutScreen() {
       pathname: '/(tabs)/coach',
       params: {
         contextPrompt: contextStr,
-        prefillMessage: `${ex.name}のこのセット内容について分析し、次のセットの重量・回数調整のアドバイスをください。`,
-        title: ex.name
+        prefillMessage: t('ui.coach.prefill_active_set', { name: translateExercise(ex.name) }),
+        title: translateExercise(ex.name)
       }
     });
   };
@@ -418,7 +418,7 @@ export default function ActiveWorkoutScreen() {
               <TouchableOpacity onPress={handleAICoachWorkout} style={{ padding: 4 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <Ionicons name="sparkles" size={16} color={Theme.colors.primary} />
-                  <Text style={{ color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold' }}>AIトレーナー</Text>
+                  <Text style={{ color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold' }}>{t('ui.coach.ai_coach') || 'AIトレーナー'}</Text>
                 </View>
               </TouchableOpacity>
             )}

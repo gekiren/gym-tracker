@@ -16,6 +16,7 @@ import { useWorkoutStore } from '../../src/store/workoutStore';
 import { consumeAIToken, getAITokensBalance, refundAIToken } from '../../src/db/database';
 import { sendMessageToAICoach } from '../../src/services/aiCoachService';
 import { useTranslation } from 'react-i18next';
+import { translateExercise } from '../../src/i18n';
 import { useLocalSearchParams, router } from 'expo-router';
 import { AI_CONFIG } from '../../src/config/aiConfig';
 
@@ -62,7 +63,8 @@ export default function CoachScreen() {
   useEffect(() => {
     if (params.contextPrompt) {
       setActiveContext(params.contextPrompt);
-      setContextTitle(params.title || 'コンテキスト');
+      const displayTitle = params.title ? translateExercise(params.title) : null;
+      setContextTitle(displayTitle || t('ui.coach.default_context_title') || 'コンテキスト');
       
       if (params.prefillMessage) {
         setInputVal(params.prefillMessage);
@@ -71,7 +73,7 @@ export default function CoachScreen() {
       // Add system message into the chat showing context was linked
       const contextLinkedMsg: ChatMessage = {
         id: `system-context-${Date.now()}`,
-        text: `📌 【連動コンテキスト：${params.title || 'ワークアウト詳細'}】が正常に読み込まれました。この内容に基づいてトレーナーに質問できます！`,
+        text: t('ui.coach.context_loaded_msg', { title: displayTitle || t('ui.coach.default_workout_title') || 'ワークアウト詳細' }),
         sender: 'ai',
         timestamp: new Date(),
       };
@@ -88,13 +90,13 @@ export default function CoachScreen() {
             <Ionicons name="build" size={42} color={Theme.colors.primary} />
           </View>
           <Text style={styles.maintenanceHeader}>
-            AIトレーナー 調整中
+            {t('ui.coach.maintenance_title') || 'AIトレーナー 調整中'}
           </Text>
           <Text style={styles.maintenanceBody}>
-            AIトレーナー機能は、より快適で質の高いアドバイスを提供するため、現在メンテナンス（調整）を実施しております。
+            {t('ui.coach.maintenance_body') || 'AIトレーナー機能は、より快適で質の高いアドバイスを提供するため、現在メンテナンス（調整）を実施しております。'}
           </Text>
           <Text style={styles.maintenanceFooter}>
-            まもなく再開いたしますので、今しばらくお待ちください！
+            {t('ui.coach.maintenance_footer') || 'まもなく再開いたしますので、今しばらくお待ちください！'}
           </Text>
         </View>
       </View>
@@ -220,7 +222,7 @@ export default function CoachScreen() {
       ...prev,
       {
         id: `system-clear-${Date.now()}`,
-        text: '🧹 連動していたコンテキストをクリアし、通常の履歴参照モードに戻しました。',
+        text: t('ui.coach.context_cleared_msg') || '🧹 連動していたコンテキストをクリアし、通常の履歴参照モードに戻しました。',
         sender: 'ai',
         timestamp: new Date(),
       }
@@ -246,7 +248,7 @@ export default function CoachScreen() {
           <Ionicons name="alert-circle" size={18} color="#fff" style={{ marginRight: 6 }} />
           <Text style={styles.warningText}>
             {isBasic 
-              ? 'ベーシックプランの今月の利用枠（5回）が終了しました。プレミアムにアップグレードする' 
+              ? (t('ui.coach.basic_quota_exhausted') || 'ベーシックプランの今月の利用枠（5回）が終了しました。プレミアムにアップグレードする')
               : (t('ui.profile.quota_exhausted_alert') || '今月の利用枠が残っていません。')
             }
           </Text>
@@ -262,7 +264,7 @@ export default function CoachScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
             <Ionicons name="link" size={16} color={Theme.colors.primary} style={{ marginRight: 6 }} />
             <Text style={styles.contextBadgeText} numberOfLines={1}>
-              {`連動中: ${contextTitle}`}
+              {t('ui.coach.linked_context', { title: contextTitle })}
             </Text>
           </View>
           <TouchableOpacity style={styles.clearContextBtn} onPress={handleClearContext}>
@@ -321,7 +323,7 @@ export default function CoachScreen() {
             <View style={[styles.bubble, styles.bubbleAI, styles.loadingBubble]}>
               <View style={styles.aiSideAccent} />
               <ActivityIndicator size="small" color={Theme.colors.primary} style={{ marginRight: 10 }} />
-              <Text style={styles.loadingText}>AIトレーナーが分析中...</Text>
+              <Text style={styles.loadingText}>{t('ui.coach.analyzing') || 'AIトレーナーが分析中...'}</Text>
             </View>
           </View>
         )}

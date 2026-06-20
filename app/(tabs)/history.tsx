@@ -128,7 +128,7 @@ export default function HistoryScreen() {
       pathname: '/(tabs)/coach',
       params: {
         contextPrompt: contextStr,
-        prefillMessage: `${dateStr}に実施した「${data.title}」の記録を分析し、アドバイスや評価をください。`,
+        prefillMessage: t('ui.coach.prefill_history_workout', { date: dateStr, title: data.title }),
         title: data.title
       }
     });

@@ -23,8 +23,8 @@ export default function PrivacyPolicyScreen() {
   };
 
   const handleTap = () => {
-    // ストア規約違反防止のため、本番ビルドでは絶対に機能させない
-    const isProduction = process.env.APP_ENV === 'production';
+    // ストア規約違反防止のため、本番（production）チャンネルでは絶対に機能させない
+    const isProduction = Updates.channel === 'production';
     if (isProduction && !__DEV__) {
       return;
     }
