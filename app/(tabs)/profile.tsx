@@ -414,10 +414,31 @@ export default function ProfileScreen() {
               const dbUri = dbDir + 'gymtracker.db';
               const walUri = dbUri + '-wal';
               const shmUri = dbUri + '-shm';
+              const journalUri = dbUri + '-journal';
               
               const dirInfo = await FileSystem.getInfoAsync(dbDir);
               if (!dirInfo.exists) {
                 await FileSystem.makeDirectoryAsync(dbDir, { intermediates: true });
+              }
+
+              // Delete old DB file to prevent lock/overwrite conflicts
+              try {
+                const dbInfo = await FileSystem.getInfoAsync(dbUri);
+                if (dbInfo.exists) {
+                  await FileSystem.deleteAsync(dbUri);
+                }
+              } catch (dbErr) {
+                console.warn('Failed to delete old DB file:', dbErr);
+              }
+
+              // Delete old journal file if exists
+              try {
+                const journalInfo = await FileSystem.getInfoAsync(journalUri);
+                if (journalInfo.exists) {
+                  await FileSystem.deleteAsync(journalUri);
+                }
+              } catch (journalErr) {
+                console.warn('Failed to delete journal file:', journalErr);
               }
 
               try {
