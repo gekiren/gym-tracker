@@ -18,9 +18,13 @@ import { CURRENT_OTA_CONFIG } from '../../src/config/otaUpdateConfig';
 import { PaywallModal } from '../../components/active-workout/PaywallModal';
 
 // Subcomponents
-import { SettingsSection } from '../../components/profile/SettingsSection';
-import { AccountSection } from '../../components/profile/AccountSection';
+import { AccountCard } from '../../components/profile/AccountCard';
+import { AiCoachSection } from '../../components/profile/AiCoachSection';
+import { DisplayFieldsSection } from '../../components/profile/DisplayFieldsSection';
+import { TimerSection } from '../../components/profile/TimerSection';
+import { PreferenceSection } from '../../components/profile/PreferenceSection';
 import { BackupSection } from '../../components/profile/BackupSection';
+import { AppInfoSection } from '../../components/profile/AppInfoSection';
 import { DangerZoneSection } from '../../components/profile/DangerZoneSection';
 import { PromoCodeModal } from '../../components/profile/PromoCodeModal';
 
@@ -542,20 +546,36 @@ export default function ProfileScreen() {
         <Text style={styles.title}>{t('ui.profile.title')}</Text>
       </View>
 
-      {/* Account Section */}
-      <AccountSection
+      {/* 1. アカウントの種類 */}
+      <AccountCard
         accountType={accountType}
         premiumUntil={settings.premiumUntil}
-        currentOtaVersion={CURRENT_OTA_CONFIG.version}
-        nativeVersion={nativeVersion}
-        isCheckingPromoWorkflow={isCheckingPromoWorkflow}
         onPressAccountCard={() => setIsPaywallVisible(true)}
-        onPressPromoCode={handlePromoPress}
         t={t}
       />
 
-      {/* Settings Section */}
-      <SettingsSection
+      {/* 2. AIトレーナー設定 */}
+      <AiCoachSection
+        aiTokensBalance={settings.aiTokensBalance}
+        maxTokens={maxTokens}
+        isBasic={isBasic}
+        t={t}
+      />
+
+      {/* 3. 記録項目のカスタマイズ */}
+      <DisplayFieldsSection
+        showRpe={showRpe}
+        show1RM={show1RM}
+        showVolume={showVolume}
+        showStance={showStance}
+        alwaysOneSet={alwaysOneSet}
+        onToggleDisplayField={handleToggleDisplayField}
+        onUpdateAlwaysOneSet={handleUpdateAlwaysOneSet}
+        t={t}
+      />
+
+      {/* 4. タイマー設定 */}
+      <TimerSection
         autoRest={autoRest}
         onUpdateAuto={handleUpdateAuto}
         timerVibrate={timerVibrate}
@@ -564,6 +584,11 @@ export default function ProfileScreen() {
         onUpdateKeepAwake={handleUpdateKeepAwake}
         defaultRest={defaultRest}
         onUpdateRest={handleUpdateRest}
+        t={t}
+      />
+
+      {/* 5. 環境設定 */}
+      <PreferenceSection
         weightUnit={weightUnit}
         onUpdateUnit={handleUpdateUnit}
         bodyWeight={bodyWeight}
@@ -572,20 +597,10 @@ export default function ProfileScreen() {
         onChangeLanguage={handleChangeLanguage}
         crashConsent={crashConsent}
         onUpdateCrashConsent={handleUpdateCrashConsent}
-        alwaysOneSet={alwaysOneSet}
-        onUpdateAlwaysOneSet={handleUpdateAlwaysOneSet}
-        showRpe={showRpe}
-        show1RM={show1RM}
-        showVolume={showVolume}
-        showStance={showStance}
-        onToggleDisplayField={handleToggleDisplayField}
-        aiTokensBalance={settings.aiTokensBalance}
-        maxTokens={maxTokens}
-        isBasic={isBasic}
         t={t}
       />
 
-      {/* Backup Section */}
+      {/* 6. バックアップ・復元 */}
       <BackupSection
         isBackupModalVisible={isBackupModalVisible}
         setIsBackupModalVisible={setIsBackupModalVisible}
@@ -597,7 +612,16 @@ export default function ProfileScreen() {
         t={t}
       />
 
-      {/* Danger Zone Section */}
+      {/* 7. アプリ情報 */}
+      <AppInfoSection
+        currentOtaVersion={CURRENT_OTA_CONFIG.version}
+        nativeVersion={nativeVersion}
+        isCheckingPromoWorkflow={isCheckingPromoWorkflow}
+        onPressPromoCode={handlePromoPress}
+        t={t}
+      />
+
+      {/* 8. データ管理 */}
       <DangerZoneSection
         isResetModalVisible={isResetModalVisible}
         setIsResetModalVisible={setIsResetModalVisible}
