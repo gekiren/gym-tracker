@@ -337,6 +337,8 @@
       "backup_modal_desc": "Back up your workout history and settings to prevent data loss or migrate to a new device.",
       "backup_export_btn": "Export Data (Save)",
       "backup_import_btn": "Import Data (Restore)",
+      "backup_modal_warning": "【Notice】\n- Files on cloud storage (like Google Drive) may fail to restore directly. Please download the file to your device first.\n- Avoid using double-byte characters or spaces in the file name. We recommend naming it 'trenote_backup.db'.",
+      "restore_empty_file_error": "The selected file is empty. Please ensure the cloud download is complete, or verify it is a valid backup file.",
       "account_premium_limited": "Premium Plan (Trial)",
       "promo_remaining_days": "Remaining: {{days}} days",
       "promo_expired": "Expired",

@@ -332,6 +332,8 @@
       "backup_modal_desc": "万が一の端末紛失や機種変更に備えて、トレーニング記録をバックアップしましょう。",
       "backup_export_btn": "データをエクスポート (保存)",
       "backup_import_btn": "データをインポート (復元)",
+      "backup_modal_warning": "【ご注意】\n・Googleドライブ等のクラウド上のファイルは直接復元に失敗する場合があります。その場合は一度端末にファイルをダウンロードしてから選択してください。\n・ファイル名に全角文字やスペースが含まれていると失敗する場合があります。英数字のみの名前（例: trenote_backup.db）に変更してからお試しください。",
+      "restore_empty_file_error": "選択されたファイルが空です。クラウドからのダウンロードが完了しているか、または正しいファイルかご確認ください。",
       "account_premium_limited": "プレミアムプラン（お試し）",
       "promo_remaining_days": "残り{{days}}日",
       "promo_expired": "期限切れ",

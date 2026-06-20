@@ -213,8 +213,17 @@ export default function DeveloperMenuScreen() {
         return;
       }
 
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const date = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const dateStr = `${year}${month}${date}_${hours}${minutes}${seconds}`;
+
       // Copy to temporary cache location for sharing
-      const backupUri = FileSystem.cacheDirectory + 'trenote_backup.db';
+      const backupUri = FileSystem.cacheDirectory + `trenote_backup_${dateStr}.db`;
       await FileSystem.copyAsync({
         from: dbUri,
         to: backupUri

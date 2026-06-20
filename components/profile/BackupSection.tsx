@@ -88,9 +88,16 @@ export const BackupSection: React.FC<BackupSectionProps> = ({
             <Ionicons name="cloud-upload-outline" size={56} color={Theme.colors.primary} style={{ marginBottom: 16 }} />
             <Text style={styles.modalTitle}>{t('ui.profile.backup_modal_title')}</Text>
             
-            <Text style={[styles.modalDesc, { marginBottom: 24 }]}>
+            <Text style={[styles.modalDesc, { marginBottom: 16 }]}>
               {t('ui.profile.backup_modal_desc')}
             </Text>
+
+            <View style={styles.warningBox}>
+              <Ionicons name="information-circle-outline" size={18} color="orange" style={{ marginRight: 8, marginTop: 1 }} />
+              <Text style={styles.warningText}>
+                {t('ui.profile.backup_modal_warning')}
+              </Text>
+            </View>
 
             <View style={{ width: '100%', gap: 12, marginBottom: 20 }}>
               <TouchableOpacity 
@@ -191,5 +198,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     textDecorationLine: 'underline',
+  },
+  warningBox: {
+    backgroundColor: 'rgba(255, 165, 0, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 165, 0, 0.3)',
+    borderRadius: 8,
+    padding: 12,
+    width: '100%',
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  warningText: {
+    color: Theme.colors.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
+    flex: 1,
   },
 });
