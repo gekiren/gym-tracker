@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.2', // OTA識別用のバージョン文字列
+  version: '1.1.3', // OTA識別用のバージョン文字列
   title: {
-    ja: '英語ローカリゼーションおよび日付フォーマット修正',
-    en: 'Localization and Date Formatting Fixes',
+    ja: 'ワークアウト完了・履歴画面の英語ローカライズ修正',
+    en: 'Workout Summary and History Localization Fixes',
   },
   notes: {
     ja: [
-      '英語設定時に、ワークアウト画面のプランクや自重種目で「加重」「秒数」「計測」「自重」「秒」が日本語で表示される問題を修正しました。',
-      '英語設定時の日付表示フォーマットを英語圏向けの形式にローカライズしました。',
+      '英語設定時に、ワークアウト完了画面および履歴詳細画面のSNSシェアモーダル、画像生成ローディング画面、および書き出し画像において一部日本語が表示される問題を修正しました。',
+      '書き出し用コンポーネントを共通化し、表示の一貫性を向上させました。',
     ],
     en: [
-      'Fixed an issue where "Weighted", "Seconds", "Timer", "Bodyweight", and "s" were shown in Japanese for plank and bodyweight exercises on the active workout screen when the language is set to English.',
-      'Localized date formatting to match English conventions when the language is set to English.',
+      'Fixed issues where Japanese text remained in the SNS share modal, image generation loading screen, and exported share images on the Workout Complete and Workout History screens when set to English.',
+      'Unified the share card component to improve UI consistency.',
     ]
   }
 };
