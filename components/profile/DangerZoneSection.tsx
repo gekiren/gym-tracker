@@ -10,6 +10,7 @@ interface DangerZoneSectionProps {
   setResetConfirmText: (text: string) => void;
   isResetting: boolean;
   onResetDatabase: () => void;
+  onOpenRestoreModal: () => void;
   t: (key: string, options?: any) => string;
 }
 
@@ -20,6 +21,7 @@ export const DangerZoneSection: React.FC<DangerZoneSectionProps> = ({
   setResetConfirmText,
   isResetting,
   onResetDatabase,
+  onOpenRestoreModal,
   t,
 }) => {
   return (
@@ -30,6 +32,22 @@ export const DangerZoneSection: React.FC<DangerZoneSectionProps> = ({
           <Text style={[styles.sectionTitle, { color: Theme.colors.danger }]}>{t('ui.profile.section_danger')}</Text>
         </View>
         <View style={[styles.settingCard, { borderColor: Theme.colors.danger, backgroundColor: 'rgba(239, 83, 80, 0.05)' }]}>
+          {/* 1. Default Presets Restoration */}
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: 'rgba(239, 83, 80, 0.15)', paddingBottom: 16, marginBottom: 12, alignItems: 'center' }]}>
+            <View style={{ flex: 1, paddingRight: 16 }}>
+              <Text style={styles.settingLabel}>{t('ui.profile.restore_defaults')}</Text>
+              <Text style={styles.settingDesc}>{t('ui.profile.restore_defaults_desc')}</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.restoreButton}
+              activeOpacity={0.8}
+              onPress={onOpenRestoreModal}
+            >
+              <Text style={styles.restoreButtonText}>{t('ui.profile.restore_btn_label') || '復元'}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* 2. Database Reset */}
           <View style={[styles.settingRow, { borderBottomWidth: 0, alignItems: 'center' }]}>
             <View style={{ flex: 1, paddingRight: 16 }}>
               <Text style={[styles.settingLabel, { color: Theme.colors.danger }]}>{t('ui.profile.clear_data')}</Text>
@@ -115,6 +133,8 @@ const styles = StyleSheet.create({
   settingDesc: { color: Theme.colors.textMuted, fontSize: 13, paddingRight: 40, lineHeight: 18 },
   dangerButton: { paddingVertical: 8, paddingHorizontal: 16, backgroundColor: 'rgba(239, 83, 80, 0.1)', borderRadius: 8, borderWidth: 1, borderColor: Theme.colors.danger },
   dangerButtonText: { color: Theme.colors.danger, fontWeight: 'bold', fontSize: 14 },
+  restoreButton: { paddingVertical: 8, paddingHorizontal: 16, backgroundColor: 'rgba(79, 172, 254, 0.1)', borderRadius: 8, borderWidth: 1, borderColor: Theme.colors.primary },
+  restoreButtonText: { color: Theme.colors.primary, fontWeight: 'bold', fontSize: 14 },
   modalBg: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.75)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalCard: { backgroundColor: Theme.colors.card, borderRadius: 16, padding: 24, width: '100%', maxWidth: 400, alignItems: 'center', borderWidth: 1, borderColor: Theme.colors.border },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: Theme.colors.text, marginBottom: 12, textAlign: 'center' },

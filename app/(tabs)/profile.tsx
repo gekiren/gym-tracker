@@ -26,6 +26,7 @@ import { PreferenceSection } from '../../components/profile/PreferenceSection';
 import { BackupSection } from '../../components/profile/BackupSection';
 import { AppInfoSection } from '../../components/profile/AppInfoSection';
 import { DangerZoneSection } from '../../components/profile/DangerZoneSection';
+import { RestorePresetsModal } from '../../components/profile/RestorePresetsModal';
 import { PromoCodeModal } from '../../components/profile/PromoCodeModal';
 
 export default function ProfileScreen() {
@@ -48,6 +49,7 @@ export default function ProfileScreen() {
 
   // Database Reset State
   const [isResetModalVisible, setIsResetModalVisible] = useState(false);
+  const [isRestoreModalVisible, setIsRestoreModalVisible] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   const [accountType, setAccountType] = useState<'basic' | 'premium' | 'premium_limited' | 'early_adopter'>('basic');
@@ -662,6 +664,15 @@ export default function ProfileScreen() {
         setResetConfirmText={setResetConfirmText}
         isResetting={isResetting}
         onResetDatabase={handleResetDatabase}
+        onOpenRestoreModal={() => setIsRestoreModalVisible(true)}
+        t={t}
+      />
+
+      {/* Restore Default Data Modal */}
+      <RestorePresetsModal
+        visible={isRestoreModalVisible}
+        onClose={() => setIsRestoreModalVisible(false)}
+        onRestore={() => {}}
         t={t}
       />
 

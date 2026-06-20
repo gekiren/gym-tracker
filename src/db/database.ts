@@ -191,6 +191,35 @@ export const PRESET_EXERCISES = [
 
 export const PRESET_EXERCISE_NAMES = new Set(PRESET_EXERCISES.map(e => e.name));
 
+export interface PresetRoutine {
+  title: string;
+  description: string;
+  exerciseNames: string[];
+}
+
+export const PRESET_ROUTINES: PresetRoutine[] = [
+  {
+    title: '全身の日 (Full Body)',
+    description: 'マシンと自重を組み合わせた、全身をバランス良く鍛える初心者向けメニュー（約45分〜1時間）',
+    exerciseNames: ['チェストプレス', 'ラットプルダウン', 'レッグプレス', 'プランク']
+  },
+  {
+    title: '上半身の日 (Upper Body)',
+    description: 'マシンとダンベルで上半身の主要な筋肉を効果的に刺激するメニュー（約45分〜1時間）',
+    exerciseNames: ['チェストプレス', 'シーテッドロウ', 'ダンベルショルダープレス', 'ダンベルカール']
+  },
+  {
+    title: '下半身の日 (Lower Body)',
+    description: '安全なマシンを中心に、太ももとお尻を完璧に鍛え上げるメニュー（約45分〜1時間）',
+    exerciseNames: ['レッグプレス', 'レッグエクステンション', 'レッグカール', 'マシンアブダクター']
+  },
+  {
+    title: '自重の日 (Bodyweight)',
+    description: '器具を一切使わず、自宅や旅行先でも畳1畳分で行える自重メニュー（約30分〜45分）',
+    exerciseNames: ['プッシュアップ', 'バックエクステンション', 'クランチ', 'プランク']
+  }
+];
+
 export const getCustomExercisesCount = async (): Promise<number> => {
   try {
     const conn = await initDB();
@@ -516,28 +545,7 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       // Clear old default routines if they exist
       await _db.runAsync('DELETE FROM routines WHERE title IN ("Push Day", "Pull Day")');
       
-      const defaultRoutines = [
-        {
-          title: '全身の日 (Full Body)',
-          description: 'マシンと自重を組み合わせた、全身をバランス良く鍛える初心者向けメニュー（約45分〜1時間）',
-          exerciseNames: ['チェストプレス', 'ラットプルダウン', 'レッグプレス', 'プランク']
-        },
-        {
-          title: '上半身の日 (Upper Body)',
-          description: 'マシンとダンベルで上半身の主要な筋肉を効果的に刺激するメニュー（約45分〜1時間）',
-          exerciseNames: ['チェストプレス', 'シーテッドロウ', 'ダンベルショルダープレス', 'ダンベルカール']
-        },
-        {
-          title: '下半身の日 (Lower Body)',
-          description: '安全なマシンを中心に、太ももとお尻を完璧に鍛え上げるメニュー（約45分〜1時間）',
-          exerciseNames: ['レッグプレス', 'レッグエクステンション', 'レッグカール', 'マシンアブダクター']
-        },
-        {
-          title: '自重の日 (Bodyweight)',
-          description: '器具を一切使わず、自宅や旅行先でも畳1畳分で行える自重メニュー（約30分〜45分）',
-          exerciseNames: ['プッシュアップ', 'バックエクステンション', 'クランチ', 'プランク']
-        }
-      ];
+      const defaultRoutines = PRESET_ROUTINES;
 
       // Fetch all exercises beforehand to create a name->id mapping memory cache,
       // fully eliminating async nested SELECT queries inside SQLite transactions
@@ -1431,4 +1439,105 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
   }
 
   return summary;
+};
+
+export const getMissingPresets = async () => {
+  const conn = getDB();
+  
+  // 1. Find missing exercises (by exact name matching)
+  const allExercises = await conn.getAllAsync<{ name: string }>('SELECT name FROM exercises');
+  const existingExerciseNames = new Set(allExercises.map(e => e.name));
+  const missingExercises = PRESET_EXERCISES.filter(ex => !existingExerciseNames.has(ex.name));
+
+  // 2. Find missing routines (by exact title matching)
+  const allRoutines = await conn.getAllAsync<{ title: string }>('SELECT title FROM routines');
+  const existingRoutineTitles = new Set(allRoutines.map(r => r.title));
+  const missingRoutines = PRESET_ROUTINES.filter(r => !existingRoutineTitles.has(r.title));
+
+  return {
+    missingExercises,
+    missingRoutines
+  };
+};
+
+export const restorePresets = async (exerciseNames: string[], routineTitles: string[]) => {
+  const conn = getDB();
+
+  await conn.withTransactionAsync(async () => {
+    // 1. Restore Selected Exercises
+    const exercisesToRestore = PRESET_EXERCISES.filter(ex => exerciseNames.includes(ex.name));
+    for (const ex of exercisesToRestore) {
+      const existing = await conn.getFirstAsync<{ id: number }>('SELECT id FROM exercises WHERE name = ?', [ex.name]);
+      if (!existing) {
+        await conn.runAsync(
+          'INSERT INTO exercises (name, muscle_group, equipment, is_unilateral) VALUES (?, ?, ?, ?)',
+          [ex.name, ex.group, ex.equip, ex.is_unilateral ? 1 : 0]
+        );
+      }
+    }
+
+    // 2. Restore Selected Routines
+    const routinesToRestore = PRESET_ROUTINES.filter(r => routineTitles.includes(r.title));
+    if (routinesToRestore.length > 0) {
+      // Re-fetch all exercises to get the mapping of name -> id (including newly restored ones)
+      const allExercises = await conn.getAllAsync<{ id: number; name: string }>('SELECT id, name FROM exercises');
+      const exerciseMap = new Map<string, number>(allExercises.map(e => [e.name, e.id]));
+
+      for (const r of routinesToRestore) {
+        // If a required exercise for this routine does not exist in the database, restore it automatically
+        for (const ename of r.exerciseNames) {
+          if (!exerciseMap.has(ename)) {
+            const presetEx = PRESET_EXERCISES.find(ex => ex.name === ename);
+            if (presetEx) {
+              const insRes = await conn.runAsync(
+                'INSERT INTO exercises (name, muscle_group, equipment, is_unilateral) VALUES (?, ?, ?, ?)',
+                [presetEx.name, presetEx.group, presetEx.equip, presetEx.is_unilateral ? 1 : 0]
+              );
+              exerciseMap.set(ename, insRes.lastInsertRowId);
+            }
+          }
+        }
+
+        const res = await conn.runAsync('INSERT INTO routines (title, description) VALUES (?, ?)', [r.title, r.description]);
+        const rid = res.lastInsertRowId;
+        let order = 0;
+
+        for (const ename of r.exerciseNames) {
+          const exerciseId = exerciseMap.get(ename);
+          if (exerciseId !== undefined) {
+            const rxRes = await conn.runAsync(
+              'INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)',
+              [rid, exerciseId, order++]
+            );
+            const routineExerciseId = rxRes.lastInsertRowId;
+
+            // Seed beginner friendly sets (similar to initial seed logic)
+            const isPlank = ename === 'プランク';
+            const isDumbbell = ename.includes('ダンベル');
+            const isExtensionCurl = ename === 'レッグエクステンション' || ename === 'レッグカール' || ename === 'マシンアブダクター';
+            const isSeatedRow = ename === 'シーテッドロウ';
+
+            for (let setNum = 1; setNum <= 3; setNum++) {
+              let reps = 10;
+              let weight = 20;
+
+              if (isPlank) {
+                reps = 30; // seconds
+                weight = 0;
+              } else if (isDumbbell) {
+                weight = 5;
+              } else if (isExtensionCurl || isSeatedRow) {
+                weight = 15;
+              }
+
+              await conn.runAsync(
+                'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe) VALUES (?, ?, ?, ?, ?)',
+                [routineExerciseId, setNum, reps, weight, 7]
+              );
+            }
+          }
+        }
+      }
+    }
+  });
 };
