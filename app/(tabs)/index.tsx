@@ -304,15 +304,13 @@ export default function WorkoutScreen() {
       </Modal>
 
       {/* Onboarding & Startup Crash Consent Modal */}
-      <Modal visible={!settings.needsUnitSelection && !settings.needsStyleSelection && settings.crashConsent === 'unset' && (isNewUser || hasUnsentCrashLog)} animationType="fade" transparent={true}>
+      <Modal visible={!settings.needsUnitSelection && !settings.needsStyleSelection && settings.crashConsent === 'unset' && hasUnsentCrashLog} animationType="fade" transparent={true}>
         <View style={styles.modalBg}>
           <View style={[styles.modalCard, { maxWidth: 450 }]}>
             <Ionicons name="bug-outline" size={48} color={Theme.colors.primary} style={{ marginBottom: 16 }} />
             <Text style={styles.modalTitle}>{t('ui.crash_report.title') || 'アプリ改善へのご協力のお願い'}</Text>
             <Text style={[styles.modalDesc, { marginBottom: 24 }]}>
-              {hasUnsentCrashLog 
-                ? (t('ui.crash_report.message_detected') || '前回の起動時にアプリが予期せず終了しました。品質向上のため、匿名のクラッシュレポートを送信してもよろしいですか？')
-                : (t('ui.crash_report.message_onboarding') || '品質向上のため、匿名のクラッシュレポートを自動送信してもよろしいですか？クラッシュ発生時に自動的にレポートが送信され、早期のバグ修正に役立ちます。')}
+              {t('ui.crash_report.message_detected') || '前回の起動時にアプリが予期せず終了しました。品質向上のため、匿名のクラッシュレポートを送信してもよろしいですか？'}
             </Text>
 
             <View style={styles.modalBtnContainer}>

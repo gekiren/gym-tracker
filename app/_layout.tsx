@@ -101,13 +101,21 @@ export default function RootLayout() {
       let showOTA = false;
       const lastAckUpdateId = storedSettings['last_acknowledged_update_id'] || '';
       const simulateOta = storedSettings['simulate_ota_popup'] === '1';
+      const isFirstInstall = needsStyleSelection || needsUnitSelection;
 
-      if (Updates.updateId && Updates.updateId !== lastAckUpdateId) {
-        showOTA = true;
-        await saveSetting('last_acknowledged_update_id', Updates.updateId);
-      } else if (simulateOta) {
-        showOTA = true;
-        await saveSetting('simulate_ota_popup', '0');
+      if (isFirstInstall) {
+        // 初インストール時はインフォメーションを非表示にし、次回起動時に備えて現在のupdateIdを承認済みにする
+        if (Updates.updateId) {
+          await saveSetting('last_acknowledged_update_id', Updates.updateId);
+        }
+      } else {
+        if (Updates.updateId && Updates.updateId !== lastAckUpdateId) {
+          showOTA = true;
+          await saveSetting('last_acknowledged_update_id', Updates.updateId);
+        } else if (simulateOta) {
+          showOTA = true;
+          await saveSetting('simulate_ota_popup', '0');
+        }
       }
 
       if (showOTA) {

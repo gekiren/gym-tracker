@@ -19,11 +19,13 @@ export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
   notes: {
     ja: [
       'プロフィール画面のコード整理とパフォーマンスの改善',
-      'クラッシュレポート（Sentry）設定の最適化'
+      'クラッシュレポート（Sentry）設定の最適化',
+      '初回起動時のUX改善（クラッシュ同意のタイミング変更、初インストール時インフォメーション非表示化）'
     ],
     en: [
       'Refactored the profile screen code and improved performance.',
-      'Optimized crash reporting (Sentry) configuration.'
+      'Optimized crash reporting (Sentry) configuration.',
+      'Improved onboarding UX (adjusted crash consent timing, hid update info on first install).'
     ]
   }
 };
