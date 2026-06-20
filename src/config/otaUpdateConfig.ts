@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.88', // OTA識別用のバージョン文字列
+  version: '1.0.89', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      '巨大な画面コンポーネントを分割し、コードの保守性と読み込み速度を改善しました。'
+      '履歴画面および種目詳細画面の履歴カレンダーの描画パフォーマンスを改善しました（無駄な再計算の防止）。'
     ],
     en: [
-      'Refactored large monolithic screen components into modular subcomponents for better maintainability and performance.'
+      'Improved rendering performance of history calendars on both the history and exercise detail screens by preventing redundant calculations.'
     ]
   }
 };
