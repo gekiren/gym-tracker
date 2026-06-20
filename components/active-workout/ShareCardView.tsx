@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { calculateShareStats } from '../../src/services/shareService';
 import { translateExercise } from '../../src/i18n';
 import { Theme } from '../../src/theme';
@@ -7,7 +8,21 @@ import { Theme } from '../../src/theme';
 const APP_ICON = require('../../assets/images/icon.png');
 
 interface ShareCardViewProps {
-  workout: any;
+  workout: {
+    title: string;
+    end_time?: string;
+    calories: number | null;
+    exercises: {
+      name?: string;
+      exercise_name?: string;
+      equipment?: string;
+      sets: {
+        weight: number | null;
+        reps: number | null;
+        is_completed: boolean;
+      }[];
+    }[];
+  };
   settings: {
     weightUnit: 'kg' | 'lbs';
     bodyWeight: number | null;
@@ -16,8 +31,11 @@ interface ShareCardViewProps {
 }
 
 export function ShareCardView({ workout, settings, pattern }: ShareCardViewProps) {
+  const { t, i18n } = useTranslation();
   const stats = calculateShareStats(workout, settings);
-  const dateStr = new Date(workout.end_time || Date.now()).toLocaleDateString('ja-JP', {
+  const currentLang = i18n.language;
+  const locale = currentLang === 'ja' ? 'ja-JP' : 'en-US';
+  const dateStr = new Date(workout.end_time || Date.now()).toLocaleDateString(locale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -36,7 +54,7 @@ export function ShareCardView({ workout, settings, pattern }: ShareCardViewProps
         }
       });
       return {
-        name: ex.name,
+        name: ex.name || ex.exercise_name || '',
         setsCount: completedSets.length,
         max1RM: Math.round(max1RM),
         setsDetail: completedSets.map((s: any) => `${s.weight ?? 0}${stats.weightUnit}x${s.reps ?? 0}`).join(' / '),
@@ -76,8 +94,8 @@ export function ShareCardView({ workout, settings, pattern }: ShareCardViewProps
                 <View style={styles.funCard}>
                   <Text style={styles.funCardEmoji}>🚗</Text>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.funCardTitle}>軽自動車約 {stats.carCount} 台分！</Text>
-                    <Text style={styles.funCardSub}>総ボリュームを車の重量（約800kg）に換算</Text>
+                    <Text style={styles.funCardTitle}>{t('ui.share_modal.car_comparison', { count: stats.carCount })}</Text>
+                    <Text style={styles.funCardSub}>{t('ui.share_modal.car_desc')}</Text>
                   </View>
                 </View>
 
@@ -85,16 +103,16 @@ export function ShareCardView({ workout, settings, pattern }: ShareCardViewProps
                   <View style={styles.funCard}>
                     <Text style={styles.funCardEmoji}>🐘</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.funCardTitle}>アフリカゾウ約 {stats.elephantCount} 頭分！</Text>
-                      <Text style={styles.funCardSub}>総ボリュームをゾウの重量（約6,000kg）に換算</Text>
+                      <Text style={styles.funCardTitle}>{t('ui.share_modal.elephant_comparison', { count: stats.elephantCount })}</Text>
+                      <Text style={styles.funCardSub}>{t('ui.share_modal.elephant_desc')}</Text>
                     </View>
                   </View>
                 ) : (
                   <View style={styles.funCard}>
                     <Text style={styles.funCardEmoji}>🚌</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.funCardTitle}>大型路線バス約 {stats.busCount} 台分！</Text>
-                      <Text style={styles.funCardSub}>総ボリュームをバスの重量（約10,000kg）に換算</Text>
+                      <Text style={styles.funCardTitle}>{t('ui.share_modal.bus_comparison', { count: stats.busCount })}</Text>
+                      <Text style={styles.funCardSub}>{t('ui.share_modal.bus_desc')}</Text>
                     </View>
                   </View>
                 )}
@@ -103,8 +121,8 @@ export function ShareCardView({ workout, settings, pattern }: ShareCardViewProps
                   <View style={styles.funCard}>
                     <Text style={styles.funCardEmoji}>🍙</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.funCardTitle}>おにぎり約 {stats.onigiriCount} 個分 / ビール {stats.beerCount} 杯分</Text>
-                      <Text style={styles.funCardSub}>消費エネルギー（{stats.calories} kcal）の食べ物換算</Text>
+                      <Text style={styles.funCardTitle}>{t('ui.share_modal.food_comparison', { onigiri: stats.onigiriCount, beer: stats.beerCount })}</Text>
+                      <Text style={styles.funCardSub}>{t('ui.share_modal.food_desc', { calories: stats.calories })}</Text>
                     </View>
                   </View>
                 )}
@@ -126,7 +144,7 @@ export function ShareCardView({ workout, settings, pattern }: ShareCardViewProps
                   </View>
                 ))}
                 {exerciseSummaries.length > 6 && (
-                  <Text style={styles.plusMoreText}>+ 他 {exerciseSummaries.length - 6} 種目実施</Text>
+                  <Text style={styles.plusMoreText}>{t('ui.share_modal.plus_more_exercises_six', { count: exerciseSummaries.length - 6 })}</Text>
                 )}
               </View>
             </View>
@@ -141,7 +159,7 @@ export function ShareCardView({ workout, settings, pattern }: ShareCardViewProps
                   <Text style={[styles.cardVolumeValue, { fontSize: 72, lineHeight: 76 }]}>
                     {formattedVolume} <Text style={{ fontSize: 32 }}>{stats.weightUnit}</Text>
                   </Text>
-                  <Text style={styles.hybridFunText}>🚗 軽自動車約 {stats.carCount} 台分！</Text>
+                  <Text style={styles.hybridFunText}>🚗 {t('ui.share_modal.car_comparison', { count: stats.carCount })}</Text>
                 </View>
               </View>
 
@@ -158,7 +176,7 @@ export function ShareCardView({ workout, settings, pattern }: ShareCardViewProps
                     </View>
                   ))}
                   {exerciseSummaries.length > 5 && (
-                    <Text style={[styles.plusMoreText, { marginTop: 0 }]}>+ 他 {exerciseSummaries.length - 5} 種目実施</Text>
+                    <Text style={[styles.plusMoreText, { marginTop: 0 }]}>{t('ui.share_modal.plus_more_exercises_five', { count: exerciseSummaries.length - 5 })}</Text>
                   )}
                 </View>
               </View>
