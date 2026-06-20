@@ -262,7 +262,7 @@ export function SetInputRow({
             {/* Weight Column */}
             {ex.name === 'プランク' ? (
               <View style={[styles.input, styles.inputReadOnly, { backgroundColor: '#1e1e1e' }]}>
-                <Text style={[styles.inputReadOnlyText, { color: Theme.colors.textMuted }]}>自重</Text>
+                <Text style={[styles.inputReadOnlyText, { color: Theme.colors.textMuted }]}>{t('自重')}</Text>
               </View>
             ) : set.is_completed ? (
               <View style={[styles.input, styles.inputReadOnly]}>
@@ -292,14 +292,14 @@ export function SetInputRow({
             {ex.name === 'プランク' ? (
               set.is_completed ? (
                 <View style={[styles.input, { width: 70 }, styles.inputReadOnly]}>
-                  <Text style={styles.inputReadOnlyText}>{localReps ? `${localReps}秒` : (set.prev_reps ? `${set.prev_reps}秒` : '-')}</Text>
+                  <Text style={styles.inputReadOnlyText}>{localReps ? `${localReps}${t('ui.active_workout.seconds_unit')}` : (set.prev_reps ? `${set.prev_reps}${t('ui.active_workout.seconds_unit')}` : '-')}</Text>
                 </View>
               ) : (
                 <TextInput 
                   ref={repsInputRef}
                   style={[styles.input, { width: 70 }]} 
                   keyboardType="numeric" 
-                  placeholder={set.prev_reps ? `${set.prev_reps}秒` : "秒"} 
+                  placeholder={set.prev_reps ? `${set.prev_reps}${t('ui.active_workout.seconds_unit')}` : t('ui.active_workout.seconds_unit')} 
                   placeholderTextColor="rgba(255,255,255,0.2)"
                   value={localReps}
                   selection={localReps === '' ? (repsSel ?? { start: 0, end: 0 }) : repsSel}
