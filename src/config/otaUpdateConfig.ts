@@ -11,24 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.87', // OTA識別用のバージョン文字列
+  version: '1.0.88', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'データベース処理の型安全性を向上させました。',
-      'SNSシェアテキストおよびYouTube検索キーワードの多言語対応を行いました。',
-      '一部のアイコンボタンにアクセシビリティラベルを設定し、読み上げ機能を改善しました。',
-      'アプリ内購入処理におけるデバッグログのセキュリティを強化しました。'
+      '巨大な画面コンポーネントを分割し、コードの保守性と読み込み速度を改善しました。'
     ],
     en: [
-      'Improved database query type safety.',
-      'Added multi-language support for SNS sharing text and YouTube search keywords.',
-      'Added accessibility labels to icon-only buttons for screen readers.',
-      'Enhanced security of in-app purchase debug logs.'
+      'Refactored large monolithic screen components into modular subcomponents for better maintainability and performance.'
     ]
   }
 };
-

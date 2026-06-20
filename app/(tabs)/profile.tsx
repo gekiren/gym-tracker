@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Linking, TextInput, Modal, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Modal, Alert, ActivityIndicator, TextInput, UIManager, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -9,7 +9,7 @@ import { saveSetting, resetDatabase, getSettings, getDB, closeDB, initDB, activa
 import { useTranslation } from 'react-i18next';
 import { changeLanguage, getCurrentLanguage } from '../../src/i18n';
 import { checkNativeVersion, checkAndApplyOTAUpdate, verifyPromoCode } from '../../src/services/promoService';
-import { initIAPConnection, setupIAPListeners, purchasePremium, restorePurchases, fetchPremiumProducts, cleanupIAP } from '../../src/services/iapService';
+import { initIAPConnection, setupIAPListeners, purchasePremium, restorePurchases, cleanupIAP } from '../../src/services/iapService';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -17,7 +17,11 @@ import * as Updates from 'expo-updates';
 import { CURRENT_OTA_CONFIG } from '../../src/config/otaUpdateConfig';
 import { PaywallModal } from '../../components/active-workout/PaywallModal';
 
-const REST_OPTIONS = [30, 60, 90, 120, 150, 180, 240, 300]; // in seconds
+// Subcomponents
+import { SettingsSection } from '../../components/profile/SettingsSection';
+import { AccountSection } from '../../components/profile/AccountSection';
+import { BackupSection } from '../../components/profile/BackupSection';
+import { DangerZoneSection } from '../../components/profile/DangerZoneSection';
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
@@ -190,13 +194,9 @@ export default function ProfileScreen() {
 
     setIsResetting(true);
     try {
-      // 1. Reset SQLite Database
       await resetDatabase();
-      
-      // 2. Reset Zustand Memory Store
       useWorkoutStore.getState().resetAllSettingsAndWorkout();
 
-      // 3. UI feedback & navigation
       setIsResetModalVisible(false);
       setResetConfirmText('');
       
@@ -318,37 +318,26 @@ export default function ProfileScreen() {
     await saveSetting(keyMap[field], val ? '1' : '0');
   };
 
-  const formatTime = (secs: number) => {
-    if (secs < 60) return `${secs}${t('ui.common.secs_unit')}`;
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return s > 0 ? `${m}${t('ui.common.min_unit')}${s}${t('ui.common.secs_unit')}` : `${m}${t('ui.common.min_unit')}`;
-  };
-
   const handleExportBackup = async () => {
     try {
-      // Flush WAL to the main gymtracker.db file before copying
       const conn = getDB();
       await conn.execAsync('PRAGMA wal_checkpoint(TRUNCATE);');
 
       const dbDir = FileSystem.documentDirectory + 'SQLite/';
       const dbUri = dbDir + 'gymtracker.db';
 
-      // Check if DB file exists
       const fileInfo = await FileSystem.getInfoAsync(dbUri);
       if (!fileInfo.exists) {
         Alert.alert(t('ui.common.error'), 'Database file not found.');
         return;
       }
 
-      // Copy to temporary cache location for sharing
       const backupUri = FileSystem.cacheDirectory + 'trenote_backup.db';
       await FileSystem.copyAsync({
         from: dbUri,
         to: backupUri
       });
 
-      // Share the file
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(backupUri, {
           mimeType: 'application/octet-stream',
@@ -377,7 +366,6 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // 1. Pick a file
               const result = await DocumentPicker.getDocumentAsync({
                 type: '*/*',
                 copyToCacheDirectory: true
@@ -391,17 +379,14 @@ export default function ProfileScreen() {
               const selectedFile = result.assets[0];
               const sourceUri = selectedFile.uri;
 
-              // Close database connection
               try {
                 await closeDB();
               } catch (closeErr) {
                 console.warn('Failed to close DB before restore:', closeErr);
               }
 
-              // Wait for file lock release
               await new Promise((resolve) => setTimeout(resolve, 500));
 
-              // Ensure SQLite directory exists
               const dbDir = FileSystem.documentDirectory + 'SQLite/';
               const dbUri = dbDir + 'gymtracker.db';
               const walUri = dbUri + '-wal';
@@ -412,7 +397,6 @@ export default function ProfileScreen() {
                 await FileSystem.makeDirectoryAsync(dbDir, { intermediates: true });
               }
 
-              // Delete old WAL and SHM files to prevent conflicts
               try {
                 const walInfo = await FileSystem.getInfoAsync(walUri);
                 if (walInfo.exists) {
@@ -431,16 +415,13 @@ export default function ProfileScreen() {
                 console.warn('Failed to delete SHM file:', shmErr);
               }
 
-              // 2. Overwrite gymtracker.db with the selected file
               await FileSystem.copyAsync({
                 from: sourceUri,
                 to: dbUri
               });
 
-              // Re-initialize database
               await initDB();
 
-              // 3. Inform user and reload the app
               Alert.alert(
                 t('ui.developer_menu.restore_success_title'),
                 t('ui.developer_menu.restore_success_message'),
@@ -472,43 +453,11 @@ export default function ProfileScreen() {
     );
   };
 
-  const handleBackupMenuPress = () => {
-    const isPaidPremium = isPremium && !isEarly;
-    if (!isPaidPremium) {
-      Alert.alert(
-        t('ui.profile.backup_premium_only_title'),
-        t('ui.profile.backup_premium_only_desc'),
-        [
-          { text: t('ui.common.cancel'), style: 'cancel' },
-          { 
-            text: t('ui.profile.upgrade_btn'), 
-            onPress: () => setIsPaywallVisible(true) 
-          }
-        ]
-      );
-      return;
-    }
-    setIsBackupModalVisible(true);
-  };
-
-  const getRemainingDaysText = (premiumUntil: string) => {
-    if (!premiumUntil || premiumUntil === 'perpetual') return '';
-    const expiry = Date.parse(premiumUntil);
-    if (isNaN(expiry)) return '';
-    
-    const diffMs = expiry - Date.now();
-    if (diffMs <= 0) return t('ui.profile.promo_expired') || '期限切れ';
-    
-    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    return t('ui.profile.promo_remaining_days', { days: diffDays }) || `残り${diffDays}日`;
-  };
-
   const handlePromoPress = async () => {
     if (isCheckingPromoWorkflow) return;
     setIsCheckingPromoWorkflow(true);
     
     try {
-      // 1. Native application version check
       const versionResult = checkNativeVersion();
       if (!versionResult.isUpToDate) {
         Alert.alert(
@@ -519,17 +468,14 @@ export default function ProfileScreen() {
         return;
       }
       
-      // 2. OTA updates check
       const otaResult = await checkAndApplyOTAUpdate();
       if (otaResult.isUpdateTriggered) {
-        // App is reloading
         return;
       }
       if (otaResult.error) {
         console.warn('OTA Check error (non-fatal):', otaResult.error);
       }
       
-      // 3. Open code input screen (Modal)
       setIsPromoModalVisible(true);
     } catch (err) {
       console.error('Failed to run verification workflow:', err);
@@ -547,7 +493,6 @@ export default function ProfileScreen() {
     setIsApplyingPromo(true);
     
     try {
-      // Verify campaign validity and code matching
       const isValid = await verifyPromoCode(promoInputText);
       if (!isValid) {
         Alert.alert(
@@ -558,17 +503,11 @@ export default function ProfileScreen() {
         return;
       }
       
-      // Update SQLite settings
       const newExpiry = await activatePremiumFromPromo();
-      
-      // Update Zustand store immediately
       useWorkoutStore.getState().updatePremiumStatus(newExpiry);
-      
-      // Close modal and show success feedback
       setIsPromoModalVisible(false);
       setPromoInputText('');
       
-      // Localized expiry date display
       const formattedDate = new Date(newExpiry).toLocaleDateString(
         currentLang === 'ja' ? 'ja-JP' : 'en-US',
         { year: 'numeric', month: 'long', day: 'numeric' }
@@ -590,484 +529,79 @@ export default function ProfileScreen() {
     }
   };
 
+  const nativeVersion = Updates.runtimeVersion || Constants.expoConfig?.version || Constants.nativeAppVersion || '1.0.0';
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={styles.title}>{t('ui.profile.title')}</Text>
       </View>
 
-      {/* Account Type Card */}
-      <TouchableOpacity 
-        style={styles.accountCard} 
-        onPress={() => setIsPaywallVisible(true)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.accountIconContainer}>
-          <Ionicons 
-            name={
-              accountType === 'early_adopter' ? 'ribbon-sharp' :
-              accountType === 'premium' ? 'star-sharp' : 
-              accountType === 'premium_limited' ? 'time-sharp' : 'person-sharp'
-            } 
-            size={22} 
-            color={
-              accountType === 'early_adopter' ? '#ffd700' : 
-              accountType === 'premium' ? '#4facfe' : 
-              accountType === 'premium_limited' ? '#c084fc' :
-              Theme.colors.textMuted
-            } 
-          />
-        </View>
-        <View style={styles.accountInfo}>
-          <Text style={styles.accountLabel}>{t('ui.profile.account_type_label') || 'アカウントの種類'}</Text>
-          <Text style={[
-            styles.accountValue,
-            accountType === 'early_adopter' && styles.accountValueEarly,
-            accountType === 'premium' && styles.accountValuePremium,
-            accountType === 'premium_limited' && styles.accountValuePremiumLimited
-          ]}>
-            {
-              accountType === 'early_adopter' ? (t('ui.profile.account_early_adopter') || 'アーリーアダプター（無制限）') :
-              accountType === 'premium' ? (t('ui.profile.account_premium') || 'プレミアムプラン') :
-              accountType === 'premium_limited' ? `${t('ui.profile.account_premium_limited') || 'プレミアムプラン（お試し）'} - ${getRemainingDaysText(settings.premiumUntil)}` :
-              (t('ui.profile.account_basic') || 'ベーシックプラン（タップしてアップグレード）')
-            }
-          </Text>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
-      </TouchableOpacity>
+      {/* Account Section */}
+      <AccountSection
+        accountType={accountType}
+        premiumUntil={settings.premiumUntil}
+        currentOtaVersion={CURRENT_OTA_CONFIG.version}
+        nativeVersion={nativeVersion}
+        isCheckingPromoWorkflow={isCheckingPromoWorkflow}
+        onPressAccountCard={() => setIsPaywallVisible(true)}
+        onPressPromoCode={handlePromoPress}
+        t={t}
+      />
 
-      {/* Tools Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="construct-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>{t('ui.profile.section_tools')}</Text>
-        </View>
-        
-        <View style={styles.settingCard}>
-          <TouchableOpacity style={[styles.settingRow, { borderBottomWidth: 0 }]} onPress={() => router.push('/rm-calculator')}>
-             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-               <Ionicons name="calculator" size={22} color={Theme.colors.text} style={{ marginRight: 12 }} />
-               <View>
-                 <Text style={styles.settingLabel}>{t('ui.profile.rm_calculator')}</Text>
-                 <Text style={[styles.settingDesc, { paddingRight: 0 }]}>{t('ui.profile.rm_calculator_desc')}</Text>
-               </View>
-             </View>
-             <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* Settings Section */}
+      <SettingsSection
+        autoRest={autoRest}
+        onUpdateAuto={handleUpdateAuto}
+        timerVibrate={timerVibrate}
+        onUpdateVibrate={handleUpdateVibrate}
+        keepAwake={keepAwake}
+        onUpdateKeepAwake={handleUpdateKeepAwake}
+        defaultRest={defaultRest}
+        onUpdateRest={handleUpdateRest}
+        weightUnit={weightUnit}
+        onUpdateUnit={handleUpdateUnit}
+        bodyWeight={bodyWeight}
+        onUpdateBodyWeight={handleUpdateBodyWeight}
+        currentLang={currentLang}
+        onChangeLanguage={handleChangeLanguage}
+        crashConsent={crashConsent}
+        onUpdateCrashConsent={handleUpdateCrashConsent}
+        alwaysOneSet={alwaysOneSet}
+        onUpdateAlwaysOneSet={handleUpdateAlwaysOneSet}
+        showRpe={showRpe}
+        show1RM={show1RM}
+        showVolume={showVolume}
+        showStance={showStance}
+        onToggleDisplayField={handleToggleDisplayField}
+        aiTokensBalance={settings.aiTokensBalance}
+        maxTokens={maxTokens}
+        isBasic={isBasic}
+        t={t}
+      />
 
-      {/* Timer Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="timer-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>{t('ui.profile.section_timer')}</Text>
-        </View>
-
-        <View style={styles.settingCard}>
-          <View style={styles.settingRow}>
-            <View style={{ flex: 1, paddingRight: 16 }}>
-              <Text style={styles.settingLabel}>{t('ui.profile.auto_rest')}</Text>
-              <Text style={styles.settingDesc}>{t('ui.profile.auto_rest_desc')}</Text>
-            </View>
-            <Switch
-              value={autoRest}
-              onValueChange={handleUpdateAuto}
-              trackColor={{ false: '#333', true: Theme.colors.primary }}
-              thumbColor={'#fff'}
-            />
-          </View>
-
-          <View style={styles.settingRow}>
-            <View style={{ flex: 1, paddingRight: 16 }}>
-              <Text style={styles.settingLabel}>{t('ui.profile.timer_vibrate')}</Text>
-              <Text style={styles.settingDesc}>{t('ui.profile.timer_vibrate_desc')}</Text>
-            </View>
-            <Switch
-              value={timerVibrate}
-              onValueChange={handleUpdateVibrate}
-              trackColor={{ false: '#333', true: Theme.colors.primary }}
-              thumbColor={'#fff'}
-            />
-          </View>
-
-          <View style={styles.settingRow}>
-            <View style={{ flex: 1, paddingRight: 16 }}>
-              <Text style={styles.settingLabel}>{t('ui.profile.keep_awake')}</Text>
-              <Text style={styles.settingDesc}>{t('ui.profile.keep_awake_desc')}</Text>
-            </View>
-            <Switch
-              value={keepAwake}
-              onValueChange={handleUpdateKeepAwake}
-              trackColor={{ false: '#333', true: Theme.colors.primary }}
-              thumbColor={'#fff'}
-            />
-          </View>
-
-          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'flex-start' }]}>
-            <Text style={styles.settingLabel}>{t('ui.profile.default_rest')}</Text>
-            <Text style={styles.settingDesc}>{t('ui.profile.default_rest_desc')}</Text>
-            
-            <View style={styles.chipContainer}>
-              {REST_OPTIONS.map((secs) => (
-                <TouchableOpacity
-                  key={secs}
-                  style={[styles.chip, defaultRest === secs && styles.chipActive]}
-                  onPress={() => handleUpdateRest(secs)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.chipText, defaultRest === secs && styles.chipTextActive]}>
-                    {formatTime(secs)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {/* Preference Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="settings-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>{t('ui.profile.section_preferences')}</Text>
-        </View>
-
-        <View style={styles.settingCard}>
-          <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>{t('ui.profile.weight_unit_label')}</Text>
-            <View style={[styles.chipContainer, { marginTop: 0, gap: 4 }]}>
-              <TouchableOpacity
-                style={[styles.langChip, { paddingVertical: 8, paddingHorizontal: 16 }, weightUnit === 'kg' && styles.chipActive]}
-                onPress={() => handleUpdateUnit('kg')}
-              >
-                <Text style={[styles.chipText, weightUnit === 'kg' && styles.chipTextActive]}>kg</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.langChip, { paddingVertical: 8, paddingHorizontal: 16 }, weightUnit === 'lbs' && styles.chipActive]}
-                onPress={() => handleUpdateUnit('lbs')}
-              >
-                <Text style={[styles.chipText, weightUnit === 'lbs' && styles.chipTextActive]}>lbs</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          <View style={[styles.settingRow, { flexDirection: 'column', alignItems: 'flex-start' }]}>
-            <Text style={styles.settingLabel}>{t('ui.profile.body_weight_label')}</Text>
-            <Text style={styles.settingDesc}>{t('ui.profile.body_weight_desc')}</Text>
-            <TextInput
-              style={styles.weightInput}
-              keyboardType="numeric"
-              value={bodyWeight}
-              onChangeText={handleUpdateBodyWeight}
-              placeholder={`e.g. 70 (${weightUnit})`}
-              placeholderTextColor={Theme.colors.textMuted}
-            />
-          </View>
-          <View style={[styles.settingRow, { flexDirection: 'column', alignItems: 'flex-start' }]}>
-            <Text style={styles.settingLabel}>{t('ui.profile.language_label')}</Text>
-            <View style={[styles.chipContainer, { marginTop: 12 }]}>
-              <TouchableOpacity
-                style={[styles.langChip, currentLang === 'ja' && styles.chipActive]}
-                onPress={() => handleChangeLanguage('ja')}
-              >
-                <Text style={[styles.chipText, currentLang === 'ja' && styles.chipTextActive]}>🇯🇵 日本語</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.langChip, currentLang === 'en' && styles.chipActive]}
-                onPress={() => handleChangeLanguage('en')}
-              >
-                <Text style={[styles.chipText, currentLang === 'en' && styles.chipTextActive]}>🇺🇸 English</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
-            <View style={{ flex: 1, paddingRight: 16 }}>
-              <Text style={styles.settingLabel}>{t('ui.profile.crash_report_consent_label') || '匿名のクラッシュレポート自動送信'}</Text>
-              <Text style={styles.settingDesc}>{t('ui.profile.crash_report_consent_desc') || 'アプリが異常終了した際、匿名の診断ログを自動送信して品質改善に協力します。'}</Text>
-            </View>
-            <Switch
-              value={crashConsent === 'agreed'}
-              onValueChange={handleUpdateCrashConsent}
-              trackColor={{ false: '#333', true: Theme.colors.primary }}
-              thumbColor={'#fff'}
-            />
-          </View>
-        </View>
-      </View>
-
-      {/* Display Fields Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="eye-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>{t('ui.profile.section_display_fields')}</Text>
-        </View>
-        <Text style={[styles.settingDesc, { marginBottom: 12, paddingRight: 0 }]}>{t('ui.profile.display_fields_desc')}</Text>
-        <View style={styles.settingCard}>
-          <View style={styles.settingRow}>
-            <View style={{ flex: 1, paddingRight: 16 }}>
-              <Text style={styles.settingLabel}>{t('ui.profile.display_rpe')}</Text>
-              <Text style={styles.settingDesc}>{t('ui.profile.display_rpe_desc')}</Text>
-            </View>
-            <Switch
-              value={showRpe}
-              onValueChange={(v) => handleToggleDisplayField('showRpe', v)}
-              trackColor={{ false: '#333', true: Theme.colors.primary }}
-              thumbColor={'#fff'}
-            />
-          </View>
-          <View style={styles.settingRow}>
-            <View style={{ flex: 1, paddingRight: 16 }}>
-              <Text style={styles.settingLabel}>{t('ui.profile.display_1rm')}</Text>
-              <Text style={styles.settingDesc}>{t('ui.profile.display_1rm_desc')}</Text>
-            </View>
-            <Switch
-              value={show1RM}
-              onValueChange={(v) => handleToggleDisplayField('show1RM', v)}
-              trackColor={{ false: '#333', true: Theme.colors.primary }}
-              thumbColor={'#fff'}
-            />
-          </View>
-          <View style={styles.settingRow}>
-            <View style={{ flex: 1, paddingRight: 16 }}>
-              <Text style={styles.settingLabel}>{t('ui.profile.display_volume')}</Text>
-              <Text style={styles.settingDesc}>{t('ui.profile.display_volume_desc')}</Text>
-            </View>
-            <Switch
-              value={showVolume}
-              onValueChange={(v) => handleToggleDisplayField('showVolume', v)}
-              trackColor={{ false: '#333', true: Theme.colors.primary }}
-              thumbColor={'#fff'}
-            />
-          </View>
-          <View style={styles.settingRow}>
-            <View style={{ flex: 1, paddingRight: 16 }}>
-              <Text style={styles.settingLabel}>{t('ui.profile.display_stance')}</Text>
-              <Text style={styles.settingDesc}>{t('ui.profile.display_stance_desc')}</Text>
-            </View>
-            <Switch
-              value={showStance}
-              onValueChange={(v) => handleToggleDisplayField('showStance', v)}
-              trackColor={{ false: '#333', true: Theme.colors.primary }}
-              thumbColor={'#fff'}
-            />
-          </View>
-          <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
-            <View style={{ flex: 1, paddingRight: 16 }}>
-              <Text style={styles.settingLabel}>{t('ui.profile.always_one_set_label')}</Text>
-              <Text style={styles.settingDesc}>{t('ui.profile.always_one_set_desc')}</Text>
-            </View>
-            <Switch
-              value={alwaysOneSet}
-              onValueChange={handleUpdateAlwaysOneSet}
-              trackColor={{ false: '#333', true: Theme.colors.primary }}
-              thumbColor={'#fff'}
-            />
-          </View>
-        </View>
-      </View>
-
-      {/* AI Coach Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="sparkles" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>{t('ui.profile.section_ai_coach') || 'AIトレーナー設定'}</Text>
-        </View>
-        <View style={styles.settingCard}>
-          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'flex-start' }]}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-              <Text style={styles.settingLabel}>{t('ui.profile.ai_tokens_balance') || '今月の利用枠残高'}</Text>
-              <Text style={{ color: settings.aiTokensBalance === 0 ? Theme.colors.danger : Theme.colors.text, fontWeight: 'bold', fontSize: 16 }}>
-                {`${settings.aiTokensBalance} / ${maxTokens}`}
-              </Text>
-            </View>
-            <Text style={[styles.settingDesc, { paddingRight: 0 }]}>
-              {t('ui.profile.ai_tokens_desc') || 'Cloudflare Worker & Gemini APIを経由した安全で高度なトレーニング指導が受けられます。'}
-            </Text>
-            
-            <View style={styles.aiTokensContainer}>
-              <View style={styles.progressBarBg}>
-                <View 
-                  style={[
-                    styles.progressBarFill, 
-                    { 
-                      width: `${Math.min(100, Math.max(0, (settings.aiTokensBalance / maxTokens) * 100))}%`,
-                      backgroundColor: settings.aiTokensBalance === 0 ? Theme.colors.danger : Theme.colors.primary 
-                    }
-                  ]} 
-                />
-              </View>
-              {settings.aiTokensBalance === 0 && (
-                <Text style={styles.quotaWarning}>{t('ui.profile.quota_exhausted_alert') || '今月の利用枠が残っていません。'}</Text>
-              )}
-              <Text style={[styles.settingDesc, { marginTop: 6, paddingRight: 0 }]}>
-                {isBasic 
-                  ? '30日後に利用枠は自動的に5回にリセットされます。' 
-                  : (t('ui.profile.ai_tokens_reset_desc') || '30日後に利用枠は自動的に20回にリセットされます。')
-                }
-              </Text>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {/* Backup & Restore Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="cloud-upload-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>{t('ui.profile.section_backup')}</Text>
-        </View>
-        <View style={styles.settingCard}>
-          <TouchableOpacity 
-            style={[styles.settingRow, { borderBottomWidth: 0 }]} 
-            onPress={handleBackupMenuPress}
-          >
-             <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 16 }}>
-               <Ionicons name="sync-circle-outline" size={22} color={Theme.colors.text} style={{ marginRight: 12 }} />
-               <View style={{ flex: 1 }}>
-                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                   <Text style={styles.settingLabel}>{t('ui.profile.backup_menu_title')}</Text>
-                   {!(isPremium && !isEarly) && (
-                     <View style={styles.premiumBadge}>
-                       <Text style={styles.premiumBadgeText}>PRO</Text>
-                     </View>
-                   )}
-                 </View>
-                 <Text style={styles.settingDesc}>{t('ui.profile.backup_menu_desc')}</Text>
-               </View>
-             </View>
-             <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* App Info Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="information-circle-outline" size={24} color={Theme.colors.textMuted} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>{t('ui.profile.section_info')}</Text>
-        </View>
-        <View style={styles.settingCard}>
-          <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>{t('ui.profile.version')}</Text>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ color: Theme.colors.text, fontSize: 16 }}>{CURRENT_OTA_CONFIG.version}</Text>
-              <Text style={{ color: Theme.colors.textMuted, fontSize: 11, marginTop: 2 }}>
-                {t('ui.profile.native_version_label', { 
-                  version: Updates.runtimeVersion || Constants.expoConfig?.version || Constants.nativeAppVersion || '1.0.0' 
-                })}
-              </Text>
-            </View>
-          </View>
-          <TouchableOpacity 
-            style={styles.settingRow} 
-            onPress={handlePromoPress}
-            disabled={isCheckingPromoWorkflow}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 8 }}>
-              <Ionicons 
-                name={isCheckingPromoWorkflow ? "sync" : "gift-outline"} 
-                size={20} 
-                color={Theme.colors.text} 
-                style={{ marginRight: 10 }} 
-              />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.settingLabel}>
-                  {isCheckingPromoWorkflow ? t('ui.profile.app_version_checking') : t('ui.profile.promo_code')}
-                </Text>
-                <Text style={[styles.settingDesc, { paddingRight: 0 }]}>
-                  {t('ui.profile.promo_code_desc')}
-                </Text>
-              </View>
-            </View>
-            {isCheckingPromoWorkflow ? (
-              <ActivityIndicator size="small" color={Theme.colors.textMuted} />
-            ) : (
-              <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/privacy-policy' as any)}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="shield-checkmark-outline" size={20} color={Theme.colors.text} style={{ marginRight: 10 }} />
-              <Text style={styles.settingLabel}>{t('ui.profile.privacy_policy')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.settingRow, { borderBottomWidth: 0 }]} onPress={() => Linking.openURL('mailto:trenotesupport@gmail.com')}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="mail-outline" size={20} color={Theme.colors.text} style={{ marginRight: 10 }} />
-              <Text style={styles.settingLabel}>{t('ui.profile.contact')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* Backup Section */}
+      <BackupSection
+        isBackupModalVisible={isBackupModalVisible}
+        setIsBackupModalVisible={setIsBackupModalVisible}
+        isPremium={isPremium}
+        isEarly={isEarly}
+        onExport={handleExportBackup}
+        onImport={handleImportBackup}
+        onOpenPaywall={() => setIsPaywallVisible(true)}
+        t={t}
+      />
 
       {/* Danger Zone Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="warning-outline" size={24} color={Theme.colors.danger} style={{ marginRight: 8 }} />
-          <Text style={[styles.sectionTitle, { color: Theme.colors.danger }]}>{t('ui.profile.section_danger')}</Text>
-        </View>
-        <View style={[styles.settingCard, { borderColor: Theme.colors.danger, backgroundColor: 'rgba(239, 83, 80, 0.05)' }]}>
-          <View style={[styles.settingRow, { borderBottomWidth: 0, alignItems: 'center' }]}>
-            <View style={{ flex: 1, paddingRight: 16 }}>
-              <Text style={[styles.settingLabel, { color: Theme.colors.danger }]}>{t('ui.profile.clear_data')}</Text>
-              <Text style={styles.settingDesc}>{t('ui.profile.clear_data_desc')}</Text>
-            </View>
-            <TouchableOpacity 
-              style={styles.dangerButton}
-              activeOpacity={0.8}
-              onPress={() => setIsResetModalVisible(true)}
-            >
-              <Text style={styles.dangerButtonText}>{t('ui.common.delete') || '初期化'}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-
-      {/* Backup & Restore Modal */}
-      <Modal visible={isBackupModalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalBg}>
-          <View style={[styles.modalCard, { borderColor: 'rgba(79,172,254,0.3)', padding: 24 }]}>
-            <Ionicons name="cloud-upload-outline" size={56} color={Theme.colors.primary} style={{ marginBottom: 16 }} />
-            <Text style={styles.modalTitle}>{t('ui.profile.backup_modal_title')}</Text>
-            
-            <Text style={[styles.modalDesc, { marginBottom: 24 }]}>
-              {t('ui.profile.backup_modal_desc')}
-            </Text>
-
-            <View style={{ width: '100%', gap: 12, marginBottom: 20 }}>
-              <TouchableOpacity 
-                style={styles.modalExportBtn} 
-                onPress={handleExportBackup}
-              >
-                <Ionicons name="share-outline" size={20} color="#000" style={{ marginRight: 8 }} />
-                <Text style={styles.modalExportBtnText}>
-                  {t('ui.profile.backup_export_btn')}
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.modalImportBtn} 
-                onPress={handleImportBackup}
-              >
-                <Ionicons name="download-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-                <Text style={styles.modalImportBtnText}>
-                  {t('ui.profile.backup_import_btn')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity 
-              style={styles.modalCloseBtn} 
-              onPress={() => setIsBackupModalVisible(false)}
-            >
-              <Text style={styles.modalCloseBtnText}>{t('ui.active_workout.cancel')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <DangerZoneSection
+        isResetModalVisible={isResetModalVisible}
+        setIsResetModalVisible={setIsResetModalVisible}
+        resetConfirmText={resetConfirmText}
+        setResetConfirmText={setResetConfirmText}
+        isResetting={isResetting}
+        onResetDatabase={handleResetDatabase}
+        t={t}
+      />
 
       {/* Premium Paywall Modal */}
       <Modal visible={isPaywallVisible} animationType="slide" transparent={true}>
@@ -1079,63 +613,6 @@ export default function ProfileScreen() {
           onPurchase={handlePurchase}
           onRestore={handleRestore}
         />
-      </Modal>
-
-
-      {/* Safeguard Initialization Modal */}
-      <Modal visible={isResetModalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalBg}>
-          <View style={styles.modalCard}>
-            <Ionicons name="alert-circle-outline" size={56} color={Theme.colors.danger} style={{ marginBottom: 16 }} />
-            <Text style={styles.modalTitle}>{t('ui.profile.clear_data_confirm_title')}</Text>
-            
-            <ScrollView style={{ maxHeight: 150, width: '100%', marginBottom: 16 }} showsVerticalScrollIndicator={true}>
-              <Text style={styles.modalDesc}>
-                {t('ui.profile.clear_data_confirm_message')}
-              </Text>
-            </ScrollView>
-
-            <TextInput
-              style={styles.modalInput}
-              value={resetConfirmText}
-              onChangeText={setResetConfirmText}
-              placeholder={t('ui.profile.clear_data_placeholder')}
-              placeholderTextColor="rgba(255,255,255,0.3)"
-              autoCapitalize="characters"
-              autoCorrect={false}
-              editable={!isResetting}
-            />
-
-            <View style={styles.modalBtnContainer}>
-              <TouchableOpacity 
-                style={[styles.modalCancelBtn, isResetting && { opacity: 0.5 }]} 
-                onPress={() => {
-                  if (isResetting) return;
-                  setIsResetModalVisible(false);
-                  setResetConfirmText('');
-                }}
-                disabled={isResetting}
-              >
-                <Text style={styles.modalCancelBtnText}>{t('ui.active_workout.cancel') || 'キャンセル'}</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[
-                  styles.modalConfirmBtn, 
-                  (resetConfirmText !== 'OK' || isResetting) && styles.modalConfirmBtnDisabled
-                ]} 
-                onPress={handleResetDatabase}
-                disabled={resetConfirmText !== 'OK' || isResetting}
-              >
-                {isResetting ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.modalConfirmBtnText}>{t('ui.profile.clear_data_confirm_btn') || '初期化する'}</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
       </Modal>
 
       {/* Promotion Code Modal */}
@@ -1201,151 +678,16 @@ const styles = StyleSheet.create({
   content: { padding: Theme.spacing.md, paddingBottom: 100 },
   header: { marginBottom: Theme.spacing.lg, marginTop: Theme.spacing.md },
   title: { fontSize: 28, fontWeight: 'bold', color: Theme.colors.text },
-  section: { marginBottom: Theme.spacing.xl },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: Theme.spacing.md },
-  sectionTitle: { fontSize: 18, color: Theme.colors.text, fontWeight: 'bold' },
-  settingCard: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, borderWidth: 1, borderColor: Theme.colors.border },
-  settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  settingLabel: { color: Theme.colors.text, fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  settingDesc: { color: Theme.colors.textMuted, fontSize: 13, paddingRight: 40, lineHeight: 18 },
-  chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
-  chip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#222', borderWidth: 1, borderColor: Theme.colors.border },
-  langChip: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 20, backgroundColor: '#222', borderWidth: 1, borderColor: Theme.colors.border },
-  chipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: Theme.colors.primary },
-  chipText: { color: Theme.colors.textMuted, fontSize: 14, fontWeight: '600' },
-  chipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' },
-  weightInput: { backgroundColor: '#121212', color: Theme.colors.text, padding: 12, borderRadius: 8, fontSize: 16, borderWidth: 1, borderColor: Theme.colors.border, width: '100%', marginTop: 12 },
-  
-  // Danger Zone
-  dangerButton: { paddingVertical: 8, paddingHorizontal: 16, backgroundColor: 'rgba(239, 83, 80, 0.1)', borderRadius: 8, borderWidth: 1, borderColor: Theme.colors.danger },
-  dangerButtonText: { color: Theme.colors.danger, fontWeight: 'bold', fontSize: 14 },
-  
-  // Custom Modal
   modalBg: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.75)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalCard: { backgroundColor: Theme.colors.card, borderRadius: 16, padding: 24, width: '100%', maxWidth: 400, alignItems: 'center', borderWidth: 1, borderColor: Theme.colors.border },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: Theme.colors.text, marginBottom: 12, textAlign: 'center' },
   modalDesc: { color: Theme.colors.textMuted, fontSize: 14, lineHeight: 20, textAlign: 'center', marginBottom: 16 },
-  modalInput: { backgroundColor: '#121212', color: Theme.colors.text, padding: 12, borderRadius: 8, fontSize: 16, borderWidth: 1, borderColor: Theme.colors.border, width: '100%', marginBottom: 20, textAlign: 'center', fontWeight: 'bold', letterSpacing: 2 },
   modalBtnContainer: { flexDirection: 'row', gap: 12, width: '100%' },
   modalCancelBtn: { flex: 1, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: Theme.colors.border, alignItems: 'center' },
   modalCancelBtnText: { color: Theme.colors.text, fontSize: 15, fontWeight: '600' },
   modalConfirmBtn: { flex: 1, paddingVertical: 12, borderRadius: 8, backgroundColor: Theme.colors.danger, alignItems: 'center', justifyContent: 'center' },
   modalConfirmBtnDisabled: { opacity: 0.3 },
   modalConfirmBtnText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
-
-  // AI Coach Settings Styles
-  aiTokensContainer: { marginTop: 12, width: '100%' },
-  progressBarBg: { height: 8, backgroundColor: '#222', borderRadius: 4, width: '100%', overflow: 'hidden', marginTop: 12, marginBottom: 8 },
-  progressBarFill: { height: '100%', borderRadius: 4 },
-  quotaWarning: { color: Theme.colors.danger, fontWeight: 'bold', fontSize: 13, marginTop: 8 },
-
-  // Premium Account Card Styles
-  accountCard: { 
-    backgroundColor: Theme.colors.card, 
-    borderRadius: Theme.borderRadius.md, 
-    padding: 16, 
-    borderWidth: 1, 
-    borderColor: Theme.colors.border, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginBottom: 24 
-  },
-  accountIconContainer: { 
-    width: 40, 
-    height: 40, 
-    borderRadius: 20, 
-    backgroundColor: '#1c1c1e', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: Theme.colors.border
-  },
-  accountInfo: { flex: 1 },
-  accountLabel: { 
-    color: Theme.colors.textMuted, 
-    fontSize: 12, 
-    textTransform: 'uppercase', 
-    letterSpacing: 0.5, 
-    marginBottom: 2 
-  },
-  accountValue: { color: Theme.colors.text, fontSize: 16, fontWeight: 'bold' },
-  accountValueEarly: { color: '#ffd700' },
-  accountValuePremium: { color: '#4facfe' },
-
-  // Paywall Styles
-  paywallBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  paywallCard: { backgroundColor: Theme.colors.card, borderRadius: 20, padding: 24, width: '100%', maxWidth: 420, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(79,172,254,0.3)', maxHeight: '90%' },
-  paywallHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', borderBottomWidth: 1, borderBottomColor: Theme.colors.border, paddingBottom: 12 },
-  paywallTitle: { fontSize: 22, fontWeight: 'bold', color: Theme.colors.text },
-  paywallSubtitle: { fontSize: 14, color: Theme.colors.text, textAlign: 'center', lineHeight: 22, marginBottom: 20, fontWeight: '600', marginTop: 12 },
-  paywallFeature: { flexDirection: 'row', marginBottom: 18, width: '100%', alignItems: 'flex-start' },
-  paywallFeatureIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(79,172,254,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: 14, borderWidth: 1, borderColor: 'rgba(79,172,254,0.2)' },
-  paywallFeatureInfo: { flex: 1 },
-  paywallFeatureTitle: { fontSize: 16, fontWeight: 'bold', color: Theme.colors.text, marginBottom: 4 },
-  paywallFeatureDesc: { fontSize: 13, color: Theme.colors.textMuted, lineHeight: 18 },
-  priceContainer: { backgroundColor: '#1c1c1e', width: '100%', borderRadius: 12, padding: 16, alignItems: 'center', marginVertical: 12, borderWidth: 1, borderColor: Theme.colors.border },
-  priceLabel: { fontSize: 12, color: Theme.colors.textMuted, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
-  priceValue: { fontSize: 26, fontWeight: 'bold', color: '#4facfe' },
-  priceSubtext: { fontSize: 11, color: Theme.colors.textMuted, marginTop: 4 },
-  paywallBtnContainer: { width: '100%', gap: 10, marginTop: 12 },
-  paywallUpgradeBtn: { backgroundColor: Theme.colors.primary, width: '100%', paddingVertical: 14, borderRadius: 25, alignItems: 'center', justifyContent: 'center', shadowColor: Theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 4 },
-  paywallUpgradeBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  paywallRestoreBtn: { width: '100%', paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
-  paywallRestoreBtnText: { color: Theme.colors.textMuted, fontSize: 13, textDecorationLine: 'underline' },
-  premiumBadge: {
-    backgroundColor: 'rgba(79, 172, 254, 0.15)',
-    borderWidth: 1,
-    borderColor: '#4facfe',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    marginLeft: 8,
-  },
-  premiumBadgeText: {
-    color: '#4facfe',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  modalExportBtn: {
-    backgroundColor: Theme.colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    borderRadius: 8,
-    width: '100%',
-  },
-  modalExportBtnText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  modalImportBtn: {
-    backgroundColor: '#ff4d4f',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    borderRadius: 8,
-    width: '100%',
-  },
-  modalImportBtnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  modalCloseBtn: {
-    paddingVertical: 12,
-    width: '100%',
-    alignItems: 'center',
-  },
-  modalCloseBtnText: {
-    color: Theme.colors.textMuted,
-    fontSize: 15,
-    fontWeight: '600',
-    textDecorationLine: 'underline',
-  },
   promoInput: { 
     backgroundColor: '#121212', 
     color: Theme.colors.text, 
@@ -1360,5 +702,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold', 
     letterSpacing: 2 
   },
-  accountValuePremiumLimited: { color: '#c084fc' }
 });
