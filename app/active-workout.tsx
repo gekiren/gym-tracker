@@ -148,7 +148,7 @@ export default function ActiveWorkoutScreen() {
       pathname: '/(tabs)/coach',
       params: {
         contextPrompt: contextStr,
-        prefillMessage: '現在記録中のこのワークアウト内容を分析し、アドバイスをください。',
+        prefillMessage: t('ui.coach.prefill_active_workout'),
         title: title || t('ui.home.free_workout_title') || '本日のワークアウト'
       }
     });
@@ -171,7 +171,7 @@ export default function ActiveWorkoutScreen() {
       pathname: '/(tabs)/coach',
       params: {
         contextPrompt: contextStr,
-        prefillMessage: `${ex.name}のこのセット内容について分析し、次のセットの重量・回数調整のアドバイスをください。`,
+        prefillMessage: t('ui.coach.prefill_active_set', { name: translateExercise(ex.name) }),
         title: ex.name
       }
     });

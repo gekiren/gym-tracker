@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.0', // OTA識別用のバージョン文字列
+  version: '1.1.1', // OTA識別用のバージョン文字列
   title: {
-    ja: '正式リリースのお知らせ',
-    en: 'Official Release',
+    ja: 'AIトレーナー画面の多言語化修正',
+    en: 'AI Coach Localization Fix',
   },
   notes: {
     ja: [
-      '正式リリース版です。'
+      '英語設定時に一部のシステムメッセージや案内文が日本語で表示される問題を修正しました。',
     ],
     en: [
-      'Official release version.'
+      'Fixed an issue where some system messages and guides were shown in Japanese when the language is set to English.',
     ]
   }
 };

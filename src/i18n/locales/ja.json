@@ -506,7 +506,20 @@
       "limit_reached_msg": "今月の利用枠が残っていません。",
       "network_error": "ネットワークエラーが発生しました。接続を確認してください。",
       "busy_error": "現在AIサービスが非常に混雑しています。しばらく時間をおいてから再度お試しください。",
-      "busy_title": "混雑中"
+      "busy_title": "混雑中",
+      "linked_context": "連動中: {{title}}",
+      "context_loaded_msg": "📌 【連動コンテキスト：{{title}}】が正常に読み込まれました。この内容に基づいてトレーナーに質問できます！",
+      "context_cleared_msg": "🧹 連動していたコンテキストをクリアし、通常の履歴参照モードに戻しました。",
+      "basic_quota_exhausted": "ベーシックプランの今月の利用枠（5回）が終了しました。プレミアムにアップグレードする",
+      "prefill_history_workout": "{{date}}に実施した「{{title}}」の記録を分析し、アドバイスや評価をください。",
+      "prefill_active_workout": "現在記録中のこのワークアウト内容を分析し、アドバイスをください。",
+      "prefill_active_set": "{{name}}のこのセット内容について分析し、次のセットの重量・回数調整のアドバイスをください。",
+      "prefill_exercise_history": "{{name}}のこれまでの重量やボリュームの成長履歴を分析し、さらに伸ばすための改善点やアドバイスをください。",
+      "maintenance_title": "AIトレーナー 調整中",
+      "maintenance_body": "AIトレーナー機能は、より快適で質の高いアドバイスを提供するため、現在メンテナンス（調整）を実施しております。",
+      "maintenance_footer": "まもなく再開いたしますので、今しばらくお待ちください！",
+      "default_context_title": "コンテキスト",
+      "default_workout_title": "ワークアウト詳細"
     },
     "crash_report": {
       "title": "アプリ改善へのご協力のお願い",

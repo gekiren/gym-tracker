@@ -97,7 +97,7 @@ export default function ExerciseDetailScreen() {
       pathname: '/(tabs)/coach',
       params: {
         contextPrompt: contextStr,
-        prefillMessage: `${translateExercise(exercise.name)}のこれまでの重量やボリュームの成長履歴を分析し、さらに伸ばすための改善点やアドバイスをください。`,
+        prefillMessage: t('ui.coach.prefill_exercise_history', { name: translateExercise(exercise.name) }),
         title: translateExercise(exercise.name)
       }
     });
