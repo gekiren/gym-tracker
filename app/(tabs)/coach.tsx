@@ -16,6 +16,7 @@ import { useWorkoutStore } from '../../src/store/workoutStore';
 import { consumeAIToken, getAITokensBalance, refundAIToken } from '../../src/db/database';
 import { sendMessageToAICoach } from '../../src/services/aiCoachService';
 import { useTranslation } from 'react-i18next';
+import { translateExercise } from '../../src/i18n';
 import { useLocalSearchParams, router } from 'expo-router';
 import { AI_CONFIG } from '../../src/config/aiConfig';
 
@@ -62,7 +63,8 @@ export default function CoachScreen() {
   useEffect(() => {
     if (params.contextPrompt) {
       setActiveContext(params.contextPrompt);
-      setContextTitle(params.title || t('ui.coach.default_context_title') || 'コンテキスト');
+      const displayTitle = params.title ? translateExercise(params.title) : null;
+      setContextTitle(displayTitle || t('ui.coach.default_context_title') || 'コンテキスト');
       
       if (params.prefillMessage) {
         setInputVal(params.prefillMessage);
@@ -71,7 +73,7 @@ export default function CoachScreen() {
       // Add system message into the chat showing context was linked
       const contextLinkedMsg: ChatMessage = {
         id: `system-context-${Date.now()}`,
-        text: t('ui.coach.context_loaded_msg', { title: params.title || t('ui.coach.default_workout_title') || 'ワークアウト詳細' }),
+        text: t('ui.coach.context_loaded_msg', { title: displayTitle || t('ui.coach.default_workout_title') || 'ワークアウト詳細' }),
         sender: 'ai',
         timestamp: new Date(),
       };

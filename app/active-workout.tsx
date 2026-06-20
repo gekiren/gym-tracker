@@ -172,7 +172,7 @@ export default function ActiveWorkoutScreen() {
       params: {
         contextPrompt: contextStr,
         prefillMessage: t('ui.coach.prefill_active_set', { name: translateExercise(ex.name) }),
-        title: ex.name
+        title: translateExercise(ex.name)
       }
     });
   };
