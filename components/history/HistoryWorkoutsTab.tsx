@@ -31,6 +31,7 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
   i18n,
 }) => {
   const flatListRef = useRef<FlatList>(null);
+  const isJa = i18n.language === 'ja';
   const cardOffsets = useRef<{ [key: number]: number }>({});
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [highlightedWorkoutId, setHighlightedWorkoutId] = useState<number | null>(null);
@@ -260,7 +261,7 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
                 </View>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                <Text style={styles.dateText}>{format(new Date(w.start_time), 'yyyy-MM-dd HH:mm')}</Text>
+                <Text style={styles.dateText}>{format(new Date(w.start_time), isJa ? 'yyyy-MM-dd HH:mm' : 'MMM d, yyyy, h:mm a')}</Text>
                 {w.end_time && (
                   <Text style={styles.durationText}>
                     ・{t('ui.history.duration_label')}: {Math.max(1, Math.round((new Date(w.end_time).getTime() - new Date(w.start_time).getTime()) / 60000))}{t('ui.common.min_unit')}

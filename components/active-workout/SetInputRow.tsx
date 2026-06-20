@@ -262,7 +262,7 @@ export function SetInputRow({
             {/* Weight Column */}
             {ex.name === 'プランク' ? (
               <View style={[styles.input, styles.inputReadOnly, { backgroundColor: '#1e1e1e' }]}>
-                <Text style={[styles.inputReadOnlyText, { color: Theme.colors.textMuted }]}>{t('自重')}</Text>
+                <Text style={[styles.inputReadOnlyText, { color: Theme.colors.textMuted }]}>{t('equipment.自重')}</Text>
               </View>
             ) : set.is_completed ? (
               <View style={[styles.input, styles.inputReadOnly]}>

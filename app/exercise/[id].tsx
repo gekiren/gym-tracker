@@ -27,7 +27,7 @@ export default function ExerciseDetailScreen() {
   const settings = useWorkoutStore(state => state.settings);
   const addCustomStance = useWorkoutStore(state => state.addCustomStance);
   const removeCustomStance = useWorkoutStore(state => state.removeCustomStance);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   const [chartScale, setChartScale] = useState<'day' | 'week' | 'month'>('day');
   const [selectedChartReps, setSelectedChartReps] = useState<number | null>(null);
@@ -67,8 +67,8 @@ export default function ExerciseDetailScreen() {
   }, [id]);
 
   const formatDate = (isoString: string) => {
-    const d = new Date(isoString);
-    return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+    const isJa = i18n.language === 'ja';
+    return format(new Date(isoString), isJa ? 'yyyy/MM/dd' : 'MMM d, yyyy');
   };
 
   const handleAICoachExerciseDetail = () => {

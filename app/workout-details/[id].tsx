@@ -14,7 +14,8 @@ import WorkoutShareModal from '../../components/WorkoutShareModal';
 
 export default function WorkoutDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isJa = i18n.language === 'ja';
   const settings = useWorkoutStore(state => state.settings);
   const [workout, setWorkout] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -102,7 +103,7 @@ export default function WorkoutDetailsScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.metaHeader}>
           <Ionicons name="calendar-outline" size={16} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
-          <Text style={styles.dateText}>{format(new Date(workout.start_time), 'yyyy-MM-dd HH:mm')}</Text>
+          <Text style={styles.dateText}>{format(new Date(workout.start_time), isJa ? 'yyyy-MM-dd HH:mm' : 'MMM d, yyyy, h:mm a')}</Text>
           {durationMin && (
             <>
               <Text style={{ color: Theme.colors.textMuted, marginHorizontal: 8 }}>•</Text>
