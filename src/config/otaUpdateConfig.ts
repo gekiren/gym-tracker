@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.94', // OTA識別用のバージョン文字列
+  version: '1.0.97', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      '種目詳細ページの自己ベスト（PR）セクションを折り畳み可能にし、ページの見通しを改善しました。'
+      '初回起動時、アプリの言語が日本語に設定されている場合に、重量単位（kg / lbs）の選択画面をスキップして自動的に「kg」を設定するように改善しました。'
     ],
     en: [
-      'Added collapse/expand capability to the Personal Records (PR) section on the exercise detail screen.'
+      'Skipped the weight unit (kg / lbs) selection onboarding screen and set default to "kg" when the app language is Japanese.'
     ]
   }
 };
