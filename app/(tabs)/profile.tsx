@@ -207,8 +207,12 @@ export default function ProfileScreen() {
         [
           {
             text: 'OK',
-            onPress: () => {
-              router.replace('/(tabs)');
+            onPress: async () => {
+              try {
+                await Updates.reloadAsync();
+              } catch (reloadErr) {
+                router.replace('/(tabs)');
+              }
             }
           }
         ]

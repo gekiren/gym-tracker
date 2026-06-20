@@ -991,6 +991,7 @@ export const resetDatabase = async () => {
   });
 
   db = null;
+  dbPromise = null;
   await initDB();
 };
 
