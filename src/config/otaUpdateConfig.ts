@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.90', // OTA識別用のバージョン文字列
+  version: '1.0.91', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      'アプリの内部セキュリティ向上および安定性の改善を行いました。'
+      'プロフィール画面のコード整理とパフォーマンスの改善',
+      'クラッシュレポート（Sentry）設定の最適化'
     ],
     en: [
-      'Improved internal security and stability.'
+      'Refactored the profile screen code and improved performance.',
+      'Optimized crash reporting (Sentry) configuration.'
     ]
   }
 };
