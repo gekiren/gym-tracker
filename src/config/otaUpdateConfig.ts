@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.0.95', // OTA識別用のバージョン文字列
+  version: '1.0.96', // OTA識別用のバージョン文字列
   title: {
     ja: 'アップデートのお知らせ',
     en: 'Update Information',
   },
   notes: {
     ja: [
-      '設定（プロフィール）画面のデータ管理に、誤って削除した初期種目やルーティンを個別に選択して復元できる機能を追加しました。'
+      'プレミアムプラン紹介ページの多言語表示（日本語・英語）および現地通貨価格の動的取得に対応しました。'
     ],
     en: [
-      'Added a feature to restore deleted default exercises and routines individually from the data management section in settings.'
+      'Added support for multilingual display (Japanese/English) and dynamic fetching of local prices on the Premium Plan introduction page.'
     ]
   }
 };
