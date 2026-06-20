@@ -498,6 +498,8 @@
       "update_check_error_msg": "Failed to check for updates. This might not work in local debug environments."
     },
     "coach": {
+      "ai_coach": "AI Coach",
+      "analyzing": "AI Coach is analyzing...",
       "welcome_msg": "Hello! I am your TreNote AI Coach. I can help analyze your workout logs, suggest weight adjustments for your next set, or answer any training theory questions!",
       "chip_analysis": "Analyze Logs",
       "chip_proposal": "Weight Adjustment",

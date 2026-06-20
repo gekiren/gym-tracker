@@ -323,7 +323,7 @@ export default function CoachScreen() {
             <View style={[styles.bubble, styles.bubbleAI, styles.loadingBubble]}>
               <View style={styles.aiSideAccent} />
               <ActivityIndicator size="small" color={Theme.colors.primary} style={{ marginRight: 10 }} />
-              <Text style={styles.loadingText}>AIトレーナーが分析中...</Text>
+              <Text style={styles.loadingText}>{t('ui.coach.analyzing') || 'AIトレーナーが分析中...'}</Text>
             </View>
           </View>
         )}
