@@ -9,7 +9,7 @@ import { saveSetting, resetDatabase, getSettings, getDB, closeDB, initDB, activa
 import { useTranslation } from 'react-i18next';
 import { changeLanguage, getCurrentLanguage } from '../../src/i18n';
 import { checkNativeVersion, checkAndApplyOTAUpdate, verifyPromoCode } from '../../src/services/promoService';
-import { initIAPConnection, setupIAPListeners, purchasePremium, restorePurchases, cleanupIAP } from '../../src/services/iapService';
+import { initIAPConnection, setupIAPListeners, purchasePremium, restorePurchases, cleanupIAP, fetchPremiumProducts, PREMIUM_PRODUCT_ID } from '../../src/services/iapService';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -56,6 +56,7 @@ export default function ProfileScreen() {
   const [isPaywallVisible, setIsPaywallVisible] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isBackupModalVisible, setIsBackupModalVisible] = useState(false);
+  const [displayPrice, setDisplayPrice] = useState<string>('');
 
   // Promotion code and verification states
   const [isPromoModalVisible, setIsPromoModalVisible] = useState(false);
@@ -69,7 +70,24 @@ export default function ProfileScreen() {
   const maxTokens = (isPremium || isEarly) ? 20 : 5;
 
   useEffect(() => {
-    initIAPConnection();
+    const initializeIAP = async () => {
+      const connected = await initIAPConnection();
+      if (connected) {
+        try {
+          const products = await fetchPremiumProducts();
+          if (products && products.length > 0) {
+            const premiumProduct = products.find(p => p.id === PREMIUM_PRODUCT_ID);
+            if (premiumProduct && premiumProduct.displayPrice) {
+              setDisplayPrice(premiumProduct.displayPrice);
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to fetch premium product details:', e);
+        }
+      }
+    };
+
+    initializeIAP();
 
     setupIAPListeners(
       () => {
@@ -685,6 +703,7 @@ export default function ProfileScreen() {
           onClose={() => !isPurchasing && setIsPaywallVisible(false)}
           onPurchase={handlePurchase}
           onRestore={handleRestore}
+          displayPrice={displayPrice || t('profile.paywall.fallbackPrice')}
         />
       </Modal>
 

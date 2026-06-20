@@ -377,7 +377,35 @@
       "app_version_outdated_msg": "最新バージョンが利用可能です。ストアからアプリを更新してください。",
       "app_ota_checking": "最新の修正を確認しています...",
       "app_ota_updating_title": "アプリ更新",
-      "app_ota_updating_msg": "最新の修正を適用するため、アプリを更新します。"
+      "app_ota_updating_msg": "最新の修正を適用するため、アプリを更新します。",
+      "paywall": {
+        "title": "👑 TreNote Premium",
+        "subtitle": "プレミアムプランへアップグレードして、すべての機能制限を解除しましょう！",
+        "features": {
+          "ai_limit": {
+            "title": "AIトレーナー利用枠の拡張",
+            "desc": "ベーシックプランの月5回制限から、月20回までに利用枠が拡張されます。"
+          },
+          "import_routine": {
+            "title": "インポート機能の解放",
+            "desc": "既存のルーティンや過去のワークアウト履歴から、コピーして新しいルーティンを作成できるようになります。"
+          },
+          "backup_restore": {
+            "title": "バックアップ・復元機能の解放",
+            "desc": "履歴や設定をファイルとして安全にエクスポート/インポートできるようになります。"
+          },
+          "support_dev": {
+            "title": "アプリの開発支援",
+            "desc": "より便利な機能の追加や安定したサーバー運用のための開発継続をサポートできます。"
+          }
+        },
+        "price_label": "プレミアムプラン (買い切り型)",
+        "price_subtext": "※一度の購入で永久にご利用いただけます",
+        "upgrade_btn": "プレミアムにアップグレードする",
+        "upgrade_btn_applied": "プレミアムプラン適用済み",
+        "restore_btn": "購入情報を復元する (Restore)",
+        "fallback_price": "¥500"
+      }
     },
     "routines": {
       "title": "ルーティン",

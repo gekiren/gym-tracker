@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
+import { useTranslation } from 'react-i18next';
 
 interface PaywallModalProps {
   isPurchasing: boolean;
@@ -10,6 +11,7 @@ interface PaywallModalProps {
   onClose: () => void;
   onPurchase: () => void;
   onRestore: () => void;
+  displayPrice: string;
 }
 
 export function PaywallModal({
@@ -18,14 +20,17 @@ export function PaywallModal({
   isEarly,
   onClose,
   onPurchase,
-  onRestore
+  onRestore,
+  displayPrice
 }: PaywallModalProps) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.paywallBg}>
       <View style={styles.paywallCard}>
         {/* Header */}
         <View style={styles.paywallHeader}>
-          <Text style={styles.paywallTitle}>👑 TreNote Premium</Text>
+          <Text style={styles.paywallTitle}>{t('profile.paywall.title')}</Text>
           <TouchableOpacity onPress={onClose} disabled={isPurchasing}>
             <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
           </TouchableOpacity>
@@ -33,7 +38,7 @@ export function PaywallModal({
 
         <ScrollView style={{ width: '100%', marginVertical: 16 }} showsVerticalScrollIndicator={false}>
           <Text style={styles.paywallSubtitle}>
-            プレミアムプランへアップグレードして、すべての機能制限を解除しましょう！
+            {t('profile.paywall.subtitle')}
           </Text>
 
           {/* Feature 1 */}
@@ -42,8 +47,8 @@ export function PaywallModal({
               <Ionicons name="sparkles" size={24} color="#4facfe" />
             </View>
             <View style={styles.paywallFeatureInfo}>
-              <Text style={styles.paywallFeatureTitle}>AIトレーナー利用枠の拡張</Text>
-              <Text style={styles.paywallFeatureDesc}>ベーシックプランの月5回制限から、月20回までに利用枠が拡張されます。</Text>
+              <Text style={styles.paywallFeatureTitle}>{t('profile.paywall.features.ai_limit.title')}</Text>
+              <Text style={styles.paywallFeatureDesc}>{t('profile.paywall.features.ai_limit.desc')}</Text>
             </View>
           </View>
 
@@ -53,8 +58,8 @@ export function PaywallModal({
               <Ionicons name="copy" size={24} color="#4facfe" />
             </View>
             <View style={styles.paywallFeatureInfo}>
-              <Text style={styles.paywallFeatureTitle}>インポート機能の解放</Text>
-              <Text style={styles.paywallFeatureDesc}>既存のルーティンや過去のワークアウト履歴から、コピーして新しいルーティンを作成できるようになります。</Text>
+              <Text style={styles.paywallFeatureTitle}>{t('profile.paywall.features.import_routine.title')}</Text>
+              <Text style={styles.paywallFeatureDesc}>{t('profile.paywall.features.import_routine.desc')}</Text>
             </View>
           </View>
 
@@ -64,8 +69,8 @@ export function PaywallModal({
               <Ionicons name="cloud-upload-outline" size={24} color="#4facfe" />
             </View>
             <View style={styles.paywallFeatureInfo}>
-              <Text style={styles.paywallFeatureTitle}>バックアップ・復元機能の解放</Text>
-              <Text style={styles.paywallFeatureDesc}>履歴や設定をファイルとして安全にエクスポート/インポートできるようになります。</Text>
+              <Text style={styles.paywallFeatureTitle}>{t('profile.paywall.features.backup_restore.title')}</Text>
+              <Text style={styles.paywallFeatureDesc}>{t('profile.paywall.features.backup_restore.desc')}</Text>
             </View>
           </View>
 
@@ -75,17 +80,17 @@ export function PaywallModal({
               <Ionicons name="heart" size={24} color="#4facfe" />
             </View>
             <View style={styles.paywallFeatureInfo}>
-              <Text style={styles.paywallFeatureTitle}>アプリの開発支援</Text>
-              <Text style={styles.paywallFeatureDesc}>より便利な機能の追加や安定したサーバー運用のための開発継続をサポートできます。</Text>
+              <Text style={styles.paywallFeatureTitle}>{t('profile.paywall.features.support_dev.title')}</Text>
+              <Text style={styles.paywallFeatureDesc}>{t('profile.paywall.features.support_dev.desc')}</Text>
             </View>
           </View>
         </ScrollView>
 
         {/* Price tag */}
         <View style={styles.priceContainer}>
-          <Text style={styles.priceLabel}>プレミアムプラン (買い切り型)</Text>
-          <Text style={styles.priceValue}>¥500</Text>
-          <Text style={styles.priceSubtext}>※一度の購入で永久にご利用いただけます</Text>
+          <Text style={styles.priceLabel}>{t('profile.paywall.price_label')}</Text>
+          <Text style={styles.priceValue}>{displayPrice}</Text>
+          <Text style={styles.priceSubtext}>{t('profile.paywall.price_subtext')}</Text>
         </View>
 
         {/* Actions */}
@@ -100,7 +105,7 @@ export function PaywallModal({
             disabled={isPurchasing || (isPremium && !isEarly)}
           >
             <Text style={styles.paywallUpgradeBtnText}>
-              {(isPremium && !isEarly) ? 'プレミアムプラン適用済み' : 'プレミアムにアップグレードする'}
+              {(isPremium && !isEarly) ? t('profile.paywall.upgrade_btn_applied') : t('profile.paywall.upgrade_btn')}
             </Text>
           </TouchableOpacity>
 
@@ -109,7 +114,7 @@ export function PaywallModal({
             onPress={onRestore}
             disabled={isPurchasing}
           >
-            <Text style={styles.paywallRestoreBtnText}>購入情報を復元する (Restore)</Text>
+            <Text style={styles.paywallRestoreBtnText}>{t('profile.paywall.restore_btn')}</Text>
           </TouchableOpacity>
         </View>
       </View>

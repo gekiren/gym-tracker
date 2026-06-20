@@ -382,7 +382,35 @@
       "app_version_outdated_msg": "A newer version of the app is available. Please update the app from the store.",
       "app_ota_checking": "Checking for updates...",
       "app_ota_updating_title": "Updating App",
-      "app_ota_updating_msg": "Updating the app to apply the latest fixes."
+      "app_ota_updating_msg": "Updating the app to apply the latest fixes.",
+      "paywall": {
+        "title": "👑 TreNote Premium",
+        "subtitle": "Upgrade to Premium to unlock all features!",
+        "features": {
+          "ai_limit": {
+            "title": "Expanded AI Trainer Usage",
+            "desc": "Increase your AI Trainer monthly limit from 5 requests in the Basic plan to 20 requests."
+          },
+          "import_routine": {
+            "title": "Unlock Routine Import",
+            "desc": "Easily create new routines by copying from existing routines or past workout history."
+          },
+          "backup_restore": {
+            "title": "Unlock Backup & Restore",
+            "desc": "Securely export and import your history and settings as a local file."
+          },
+          "support_dev": {
+            "title": "Support App Development",
+            "desc": "Support ongoing development for adding convenient features and stable server operation."
+          }
+        },
+        "price_label": "Premium Plan (One-Time Purchase)",
+        "price_subtext": "*One-time purchase for lifetime access",
+        "upgrade_btn": "Upgrade to Premium",
+        "upgrade_btn_applied": "Premium Plan Applied",
+        "restore_btn": "Restore Purchases",
+        "fallback_price": "$3.99"
+      }
     },
     "routines": {
       "title": "Routines",
