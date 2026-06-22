@@ -1,9 +1,10 @@
-import React, { useMemo, useRef, useCallback } from 'react';
+import React, { useMemo, useRef, useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BarChart, LineChart } from 'react-native-chart-kit';
 import { format, startOfWeek, startOfMonth } from 'date-fns';
 import { Theme } from '../../src/theme';
+import { calculateRM } from '../../src/utils/workoutStats';
 
 interface ExerciseChartsProps {
   history: any[];
@@ -35,6 +36,103 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
   t,
 }) => {
   const chartScrollRef = useRef<ScrollView>(null);
+  const [chartType, setChartType] = useState<'volume' | '1rm'>('volume');
+
+  const oneRmChartData = useMemo(() => {
+    const hValid = history
+      .map(item => {
+        const max1Rm = item.sets.reduce((max: number, s: any) => {
+          const rm = calculateRM(parseFloat(s.weight), parseInt(s.reps, 10)) || 0;
+          return Math.max(max, rm);
+        }, 0);
+        return {
+          start_time: item.start_time,
+          max1Rm
+        };
+      })
+      .filter(h => h.max1Rm > 0);
+
+    if (hValid.length === 0) return null;
+
+    if (chartScale === 'day') {
+      const daily1RMs: { [key: string]: { date: Date; max1Rm: number } } = {};
+      hValid.forEach(h => {
+        const date = new Date(h.start_time);
+        const key = format(date, 'yyyy-MM-dd');
+        if (!daily1RMs[key]) {
+          daily1RMs[key] = { date, max1Rm: 0 };
+        }
+        daily1RMs[key].max1Rm = Math.max(daily1RMs[key].max1Rm, h.max1Rm);
+      });
+
+      const sortedDays = Object.values(daily1RMs).sort((a, b) => a.date.getTime() - b.date.getTime());
+      const recentDays = sortedDays.slice(-50);
+      if (recentDays.length < 1) return null;
+
+      return {
+        labels: recentDays.map(d => format(d.date, 'MM/dd')),
+        datasets: [
+          {
+            data: recentDays.map(d => d.max1Rm)
+          }
+        ]
+      };
+    }
+
+    if (chartScale === 'week') {
+      const weekly1RMs: { [key: string]: { date: Date; max1Rm: number } } = {};
+      hValid.forEach(h => {
+        const date = new Date(h.start_time);
+        const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+        const key = weekStart.toISOString();
+        if (!weekly1RMs[key]) {
+          weekly1RMs[key] = { date: weekStart, max1Rm: 0 };
+        }
+        weekly1RMs[key].max1Rm = Math.max(weekly1RMs[key].max1Rm, h.max1Rm);
+      });
+
+      const sortedWeeks = Object.values(weekly1RMs).sort((a, b) => a.date.getTime() - b.date.getTime());
+      const recentWeeks = sortedWeeks.slice(-50);
+      if (recentWeeks.length < 1) return null;
+
+      return {
+        labels: recentWeeks.map(w => format(w.date, 'MM/dd')),
+        datasets: [
+          {
+            data: recentWeeks.map(w => w.max1Rm)
+          }
+        ]
+      };
+    }
+
+    if (chartScale === 'month') {
+      const monthly1RMs: { [key: string]: { date: Date; max1Rm: number } } = {};
+      hValid.forEach(h => {
+        const date = new Date(h.start_time);
+        const monthStart = startOfMonth(date);
+        const key = monthStart.toISOString();
+        if (!monthly1RMs[key]) {
+          monthly1RMs[key] = { date: monthStart, max1Rm: 0 };
+        }
+        monthly1RMs[key].max1Rm = Math.max(monthly1RMs[key].max1Rm, h.max1Rm);
+      });
+
+      const sortedMonths = Object.values(monthly1RMs).sort((a, b) => a.date.getTime() - b.date.getTime());
+      const recentMonths = sortedMonths.slice(-50);
+      if (recentMonths.length < 1) return null;
+
+      return {
+        labels: recentMonths.map(m => format(m.date, 'yyyy/MM')),
+        datasets: [
+          {
+            data: recentMonths.map(m => m.max1Rm)
+          }
+        ]
+      };
+    }
+
+    return null;
+  }, [history, chartScale]);
 
   const getPRTimeline = useCallback((reps: number, variation: string) => {
     const sortedHistory = [...history].reverse();
@@ -166,12 +264,18 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
     };
   }, [selectedChartReps, selectedChartVariation, getPRTimeline]);
 
+  const activeChartData = chartType === 'volume' ? vChartData : oneRmChartData;
+
   return (
     <>
-      {vChartData && (
+      {activeChartData && (
         <View style={styles.chartContainer}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
-            <Text style={[styles.chartTitle, { marginBottom: 0 }]}>{t('ui.history.chart_title', { unit: settings.weightUnit })}</Text>
+            <Text style={[styles.chartTitle, { marginBottom: 0 }]}>
+              {chartType === 'volume'
+                ? t('ui.history.chart_title', { unit: settings.weightUnit })
+                : t('ui.history.chart_1rm_title', { unit: settings.weightUnit })}
+            </Text>
             <TouchableOpacity 
               style={styles.calendarBtn}
               onPress={() => setCalendarVisible(true)}
@@ -182,6 +286,20 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
           </View>
           
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
+            <View style={styles.toggleContainer}>
+              {(['volume', '1rm'] as const).map(type => (
+                <TouchableOpacity
+                  key={type}
+                  style={[styles.toggleButton, chartType === type && styles.toggleButtonActive]}
+                  onPress={() => setChartType(type)}
+                >
+                  <Text style={[styles.toggleButtonText, chartType === type && styles.toggleButtonTextActive]}>
+                    {t(type === 'volume' ? 'ui.history.type_volume' : 'ui.history.type_1rm')}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             <View style={styles.scaleContainer}>
               {(['day', 'week', 'month'] as const).map(scale => (
                 <TouchableOpacity
@@ -199,7 +317,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
 
           <View style={{ backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, overflow: 'hidden' }}>
             <ScrollView
-              key={chartScale}
+              key={`${chartType}_${chartScale}`}
               ref={chartScrollRef}
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -207,15 +325,17 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
               contentContainerStyle={{ paddingLeft: 15, paddingRight: 20 }}
             >
               <BarChart
-                data={vChartData}
-                width={Math.max(180, vChartData.labels.length * 48)}
+                data={activeChartData}
+                width={Math.max(180, activeChartData.labels.length * 48)}
                 height={220}
                 chartConfig={{
                   backgroundColor: Theme.colors.card,
                   backgroundGradientFrom: Theme.colors.card,
                   backgroundGradientTo: Theme.colors.card,
                   decimalPlaces: 0,
-                  color: (opacity = 1) => `rgba(79, 172, 254, ${opacity})`,
+                  color: (opacity = 1) => chartType === 'volume'
+                    ? `rgba(79, 172, 254, ${opacity})`
+                    : `rgba(76, 217, 100, ${opacity})`,
                   labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
                   barPercentage: 0.55,
                   propsForBackgroundLines: {
@@ -325,6 +445,30 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
 const styles = StyleSheet.create({
   chartContainer: { paddingHorizontal: Theme.spacing.lg, marginVertical: Theme.spacing.md },
   chartTitle: { color: Theme.colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: Theme.spacing.md },
+  toggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: Theme.borderRadius.sm,
+    padding: 2,
+    alignSelf: 'flex-start',
+  },
+  toggleButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: Theme.borderRadius.sm - 2,
+  },
+  toggleButtonActive: {
+    backgroundColor: Theme.colors.card,
+  },
+  toggleButtonText: {
+    color: Theme.colors.textMuted,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  toggleButtonTextActive: {
+    color: Theme.colors.primary,
+    fontWeight: 'bold',
+  },
   scaleContainer: {
     flexDirection: 'row',
     backgroundColor: 'rgba(255,255,255,0.05)',
