@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.3', // OTA識別用のバージョン文字列
+  version: '1.1.4', // OTA識別用のバージョン文字列
   title: {
-    ja: 'ワークアウト完了・履歴画面の英語ローカライズ修正',
-    en: 'Workout Summary and History Localization Fixes',
+    ja: '種目詳細画面の1RM推移グラフ追加',
+    en: 'Added Est. 1RM Chart to Exercise Details',
   },
   notes: {
     ja: [
-      '英語設定時に、ワークアウト完了画面および履歴詳細画面のSNSシェアモーダル、画像生成ローディング画面、および書き出し画像において一部日本語が表示される問題を修正しました。',
-      '書き出し用コンポーネントを共通化し、表示の一貫性を向上させました。',
+      '種目詳細画面のグラフにおいて、これまでの「総ボリューム」に加えて「推定1RM最大値」の推移グラフを切り替えて表示できる機能を追加しました。',
+      '「推定1RM」タブに切り替えることで、日・週・月ごとの最大1RMの成長履歴を確認できます。',
     ],
     en: [
-      'Fixed issues where Japanese text remained in the SNS share modal, image generation loading screen, and exported share images on the Workout Complete and Workout History screens when set to English.',
-      'Unified the share card component to improve UI consistency.',
+      'Added an option to view the "Estimated 1RM Max" progression chart in addition to the "Total Volume" chart on the exercise details screen.',
+      'Switching to the "Est. 1RM" tab allows you to check your maximum 1RM growth history by day, week, or month.',
     ]
   }
 };
