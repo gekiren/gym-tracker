@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.4', // OTA識別用のバージョン文字列
+  version: '1.1.5', // OTA識別用のバージョン文字列
   title: {
-    ja: '種目詳細画面の1RM推移グラフ追加',
-    en: 'Added Est. 1RM Chart to Exercise Details',
+    ja: 'ルーティン開始時のセット数反映の修正',
+    en: 'Fix Routine Set Count on Start',
   },
   notes: {
     ja: [
-      '種目詳細画面のグラフにおいて、これまでの「総ボリューム」に加えて「推定1RM最大値」の推移グラフを切り替えて表示できる機能を追加しました。',
-      '「推定1RM」タブに切り替えることで、日・週・月ごとの最大1RMの成長履歴を確認できます。',
+      '「常に1セットのみ追加」をオンにしている状態でも、ルーティンからワークアウトを開始した場合は、ルーティンに設定されている正しいセット数や重量がロードされるよう修正しました。',
     ],
     en: [
-      'Added an option to view the "Estimated 1RM Max" progression chart in addition to the "Total Volume" chart on the exercise details screen.',
-      'Switching to the "Est. 1RM" tab allows you to check your maximum 1RM growth history by day, week, or month.',
+      'Fixed an issue where starting a workout from a routine loaded only one set when "Always Add One Set" was enabled. Now it correctly loads all sets configured in the routine.',
     ]
   }
 };

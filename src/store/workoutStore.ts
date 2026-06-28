@@ -85,7 +85,7 @@ interface WorkoutState {
   updateExerciseVariation: (exerciseId: string, variation: string | null) => void;
   updateExerciseStance: (exerciseId: string, stance: string | null) => void;
   endWorkout: () => void;
-  addExercise: (exercise: { id: number, name: string, previousSets?: any[], personalRecords?: Record<string, Record<number, number>>, is_unilateral?: number, default_variation?: string | null, default_stance?: string | null, equipment?: string, muscle_group?: string }) => void;
+  addExercise: (exercise: { id: number, name: string, previousSets?: any[], personalRecords?: Record<string, Record<number, number>>, is_unilateral?: number, default_variation?: string | null, default_stance?: string | null, equipment?: string, muscle_group?: string, routineSets?: any[] }) => void;
   removeExercise: (exerciseId: string) => void;
   addSet: (exerciseId: string) => void;
   removeSet: (exerciseId: string, setId: string) => void;
@@ -396,7 +396,33 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     // Scaffold initial sets. If we have previous sets, create empty sets matching their count with prev data.
     // Otherwise, create a single empty default set.
     let initialSets: SetRecord[] = [];
-    if (exercise.previousSets && exercise.previousSets.length > 0) {
+    if (exercise.routineSets && exercise.routineSets.length > 0) {
+      initialSets = exercise.routineSets.map((rs, idx) => {
+        let prev: any = null;
+        if (exercise.previousSets && exercise.previousSets.length > 0) {
+          if (exercise.is_unilateral) {
+            const sideSets = exercise.previousSets.filter(p => p.side === rs.side);
+            const rsSideIndex = exercise.routineSets!.slice(0, idx).filter(s => s.side === rs.side).length;
+            prev = sideSets[rsSideIndex] || sideSets[0];
+          } else {
+            prev = exercise.previousSets[idx] || exercise.previousSets[0];
+          }
+        }
+        return {
+          id: Math.random().toString(36).substring(7),
+          set_number: rs.set_number || (idx + 1),
+          weight: rs.weight,
+          reps: rs.reps,
+          rpe: rs.rpe,
+          prev_weight: prev ? prev.weight : null,
+          prev_reps: prev ? prev.reps : null,
+          is_completed: false,
+          side: rs.side || null,
+          variation: rs.variation || null,
+          stance: rs.stance || null
+        };
+      });
+    } else if (exercise.previousSets && exercise.previousSets.length > 0) {
       if (state.settings.alwaysOneSet) {
         if (exercise.is_unilateral) {
           const prevL = exercise.previousSets.find(p => p.side === 'L');
