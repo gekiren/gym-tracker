@@ -580,7 +580,6 @@ export default function ActiveWorkoutScreen() {
             lastRestFinishedAt={lastRestFinishedAt}
             onPress={() => {
               markWorkStart();
-              Alert.alert("", t('ui.active_workout.manual_start_success') || "Started");
             }}
           />
         </View>
