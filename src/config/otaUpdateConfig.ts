@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.4', // OTA識別用のバージョン文字列
+  version: '1.1.5', // OTA識別用のバージョン文字列
   title: {
-    ja: '種目詳細画面の1RM推移グラフ追加',
-    en: 'Added Est. 1RM Chart to Exercise Details',
+    ja: 'ワークアウト再開時の通知ポップアップ非表示化',
+    en: 'Hide Workout Resume Popup',
   },
   notes: {
     ja: [
-      '種目詳細画面のグラフにおいて、これまでの「総ボリューム」に加えて「推定1RM最大値」の推移グラフを切り替えて表示できる機能を追加しました。',
-      '「推定1RM」タブに切り替えることで、日・週・月ごとの最大1RMの成長履歴を確認できます。',
+      'タイマーの「ワークアウト再開」をタップした際に表示されていた、再開完了のアラートポップアップを非表示にしました。',
     ],
     en: [
-      'Added an option to view the "Estimated 1RM Max" progression chart in addition to the "Total Volume" chart on the exercise details screen.',
-      'Switching to the "Est. 1RM" tab allows you to check your maximum 1RM growth history by day, week, or month.',
+      'Removed the confirmation alert popup when tapping resume workout from the timer.',
     ]
   }
 };
