@@ -47,6 +47,9 @@ export function SetInputRow({
   const [repsSel, setRepsSel] = useState<{ start: number; end: number } | undefined>(undefined);
   const [rpeSel, setRpeSel] = useState<{ start: number; end: number } | undefined>(undefined);
   const repsInputRef = useRef<TextInput>(null);
+  const originalWeightRef = useRef<string>('');
+  const originalRepsRef = useRef<string>('');
+  const originalRpeRef = useRef<string>('');
 
   // 有酸素ストップウォッチ state
   const isAerobic = ex.muscle_group === '有酸素';
@@ -278,11 +281,22 @@ export function SetInputRow({
                 selection={localWeight === '' ? (weightSel ?? { start: 0, end: 0 }) : weightSel}
                 onSelectionChange={() => {}}
                 onChangeText={handleWeightChange}
+                selectTextOnFocus={true}
                 onFocus={() => {
                   setActiveSetForCalc({ exId: ex.id, setId: set.id });
+                  originalWeightRef.current = localWeight;
                   if (localWeight === '') setWeightSel({ start: 0, end: 0 });
                 }}
-                onBlur={() => setWeightSel(undefined)}
+                onBlur={() => {
+                  setWeightSel(undefined);
+                  const trimmed = localWeight.trim();
+                  if (trimmed === '' || trimmed === '.' || trimmed === ',') {
+                    const restored = originalWeightRef.current;
+                    setLocalWeight(restored);
+                    const parsedVal = restored.replace(',', '.');
+                    updateSet(ex.id, set.id, { weight: parsedVal !== '' && parsedVal !== '.' ? parseFloat(parsedVal) : null });
+                  }
+                }}
                 returnKeyType="next"
                 onSubmitEditing={() => repsInputRef.current?.focus()}
               />
@@ -305,8 +319,20 @@ export function SetInputRow({
                   selection={localReps === '' ? (repsSel ?? { start: 0, end: 0 }) : repsSel}
                   onSelectionChange={() => {}}
                   onChangeText={handleRepsChange}
-                  onFocus={() => { if (localReps === '') setRepsSel({ start: 0, end: 0 }); }}
-                  onBlur={() => setRepsSel(undefined)}
+                  selectTextOnFocus={true}
+                  onFocus={() => {
+                    originalRepsRef.current = localReps;
+                    if (localReps === '') setRepsSel({ start: 0, end: 0 });
+                  }}
+                  onBlur={() => {
+                    setRepsSel(undefined);
+                    const trimmed = localReps.trim();
+                    if (trimmed === '') {
+                      const restored = originalRepsRef.current;
+                      setLocalReps(restored);
+                      updateSet(ex.id, set.id, { reps: restored !== '' ? parseInt(restored, 10) : null });
+                    }
+                  }}
                   returnKeyType="done"
                   onSubmitEditing={() => Keyboard.dismiss()}
                 />
@@ -326,8 +352,20 @@ export function SetInputRow({
                 selection={localReps === '' ? (repsSel ?? { start: 0, end: 0 }) : repsSel}
                 onSelectionChange={() => {}}
                 onChangeText={handleRepsChange}
-                onFocus={() => { if (localReps === '') setRepsSel({ start: 0, end: 0 }); }}
-                onBlur={() => setRepsSel(undefined)}
+                selectTextOnFocus={true}
+                onFocus={() => {
+                  originalRepsRef.current = localReps;
+                  if (localReps === '') setRepsSel({ start: 0, end: 0 });
+                }}
+                onBlur={() => {
+                  setRepsSel(undefined);
+                  const trimmed = localReps.trim();
+                  if (trimmed === '') {
+                    const restored = originalRepsRef.current;
+                    setLocalReps(restored);
+                    updateSet(ex.id, set.id, { reps: restored !== '' ? parseInt(restored, 10) : null });
+                  }
+                }}
                 returnKeyType="done"
                 onSubmitEditing={() => Keyboard.dismiss()}
               />
@@ -369,8 +407,21 @@ export function SetInputRow({
                       updateSet(ex.id, set.id, { rpe: parsedVal !== '' && parsedVal !== '.' ? parseFloat(parsedVal) : null });
                     }
                   }}
-                  onFocus={() => { if (localRpe === '') setRpeSel({ start: 0, end: 0 }); }}
-                  onBlur={() => setRpeSel(undefined)}
+                  selectTextOnFocus={true}
+                  onFocus={() => {
+                    originalRpeRef.current = localRpe;
+                    if (localRpe === '') setRpeSel({ start: 0, end: 0 });
+                  }}
+                  onBlur={() => {
+                    setRpeSel(undefined);
+                    const trimmed = localRpe.trim();
+                    if (trimmed === '' || trimmed === '.' || trimmed === ',') {
+                      const restored = originalRpeRef.current;
+                      setLocalRpe(restored);
+                      const parsedVal = restored.replace(',', '.');
+                      updateSet(ex.id, set.id, { rpe: parsedVal !== '' && parsedVal !== '.' ? parseFloat(parsedVal) : null });
+                    }
+                  }}
                 />
               )
             ) : null}
