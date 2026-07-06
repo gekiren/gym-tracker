@@ -74,6 +74,37 @@ export interface WorkoutSetRow {
   is_completed: number | boolean;
 }
 
+export interface WaterLog {
+  id: number;
+  amount: number;
+  timestamp: number;
+  date: string;
+}
+
+export interface TimeLog {
+  id: number;
+  activity_name: string;
+  start_time: string;
+  end_time: string;
+  date: string;
+  duration_minutes: number;
+}
+
+export interface HabitItem {
+  id: number;
+  name: string;
+  color: string;
+  created_at: number;
+  sort_order: number;
+}
+
+export interface HabitLog {
+  id: number;
+  habit_item_id: number;
+  timestamp: number;
+  date: string;
+}
+
 // Initialize the database connection
 let db: SQLite.SQLiteDatabase | null = null;
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
@@ -329,6 +360,41 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       exercise_id INTEGER PRIMARY KEY,
       FOREIGN KEY(exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS water_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      amount INTEGER NOT NULL,
+      timestamp INTEGER NOT NULL,
+      date TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_water_logs_date ON water_logs(date);
+
+    CREATE TABLE IF NOT EXISTS time_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      activity_name TEXT NOT NULL,
+      start_time TEXT NOT NULL,
+      end_time TEXT NOT NULL,
+      date TEXT NOT NULL,
+      duration_minutes INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_time_logs_date ON time_logs(date);
+
+    CREATE TABLE IF NOT EXISTS habit_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      color TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      sort_order INTEGER DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS habit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      habit_item_id INTEGER NOT NULL,
+      timestamp INTEGER NOT NULL,
+      date TEXT NOT NULL,
+      FOREIGN KEY(habit_item_id) REFERENCES habit_items(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_habit_logs_date ON habit_logs(date);
   `);
 
   // Migration: Ensure routine_sets exists
@@ -1540,4 +1606,158 @@ export const restorePresets = async (exerciseNames: string[], routineTitles: str
       }
     }
   });
+};
+
+// ==========================================
+// ライフログ機能 CRUD ヘルパー (水分・時間・習慣)
+// ==========================================
+
+// 1. 水分補給 (Water Logs)
+export const getWaterLogs = async (date: string): Promise<WaterLog[]> => {
+  const conn = getDB();
+  return await conn.getAllAsync<WaterLog>(
+    'SELECT * FROM water_logs WHERE date = ? ORDER BY timestamp ASC',
+    [date]
+  );
+};
+
+export const addWaterLog = async (amount: number, timestamp: number, date: string): Promise<number> => {
+  const conn = getDB();
+  const res = await conn.runAsync(
+    'INSERT INTO water_logs (amount, timestamp, date) VALUES (?, ?, ?)',
+    [amount, timestamp, date]
+  );
+  return res.lastInsertRowId;
+};
+
+export const deleteWaterLog = async (id: number): Promise<void> => {
+  const conn = getDB();
+  await conn.runAsync('DELETE FROM water_logs WHERE id = ?', [id]);
+};
+
+export const getWaterGoal = async (): Promise<number> => {
+  const conn = getDB();
+  try {
+    const row = await conn.getFirstAsync<{ value: string }>(
+      "SELECT value FROM settings WHERE key = 'water_goal'"
+    );
+    return row ? parseInt(row.value, 10) : 2000;
+  } catch (e) {
+    console.warn('Failed to get water_goal setting', e);
+    return 2000;
+  }
+};
+
+export const setWaterGoal = async (goal: number): Promise<void> => {
+  const conn = getDB();
+  await conn.runAsync(
+    "INSERT OR REPLACE INTO settings (key, value) VALUES ('water_goal', ?)",
+    [String(goal)]
+  );
+};
+
+// 2. 時間管理 (Time Logs)
+export const getTimeLogs = async (date: string): Promise<TimeLog[]> => {
+  const conn = getDB();
+  return await conn.getAllAsync<TimeLog>(
+    'SELECT * FROM time_logs WHERE date = ? ORDER BY start_time ASC',
+    [date]
+  );
+};
+
+export const addTimeLog = async (
+  activityName: string,
+  startTime: string,
+  endTime: string,
+  date: string,
+  durationMinutes: number
+): Promise<number> => {
+  const conn = getDB();
+  const res = await conn.runAsync(
+    'INSERT INTO time_logs (activity_name, start_time, end_time, date, duration_minutes) VALUES (?, ?, ?, ?, ?)',
+    [activityName, startTime, endTime, date, durationMinutes]
+  );
+  return res.lastInsertRowId;
+};
+
+export const deleteTimeLog = async (id: number): Promise<void> => {
+  const conn = getDB();
+  await conn.runAsync('DELETE FROM time_logs WHERE id = ?', [id]);
+};
+
+export const updateTimeLog = async (
+  id: number,
+  activityName: string,
+  startTime: string,
+  endTime: string,
+  date: string,
+  durationMinutes: number
+): Promise<void> => {
+  const conn = getDB();
+  await conn.runAsync(
+    'UPDATE time_logs SET activity_name = ?, start_time = ?, end_time = ?, date = ?, duration_minutes = ? WHERE id = ?',
+    [activityName, startTime, endTime, date, durationMinutes, id]
+  );
+};
+
+// 3. 習慣項目マスタ (Habit Items)
+export const getHabitItems = async (): Promise<HabitItem[]> => {
+  const conn = getDB();
+  return await conn.getAllAsync<HabitItem>(
+    'SELECT * FROM habit_items ORDER BY sort_order ASC, created_at ASC'
+  );
+};
+
+export const addHabitItem = async (name: string, color: string): Promise<number> => {
+  const conn = getDB();
+  const now = Date.now();
+  const res = await conn.runAsync(
+    'INSERT INTO habit_items (name, color, created_at, sort_order) VALUES (?, ?, ?, 0)',
+    [name, color, now]
+  );
+  return res.lastInsertRowId;
+};
+
+export const deleteHabitItem = async (id: number): Promise<void> => {
+  const conn = getDB();
+  await conn.runAsync('DELETE FROM habit_items WHERE id = ?', [id]);
+};
+
+export const updateHabitItem = async (id: number, name: string, color: string): Promise<void> => {
+  const conn = getDB();
+  await conn.runAsync(
+    'UPDATE habit_items SET name = ?, color = ? WHERE id = ?',
+    [name, color, id]
+  );
+};
+
+// 4. 習慣実行履歴 (Habit Logs)
+export const getHabitLogs = async (date: string): Promise<HabitLog[]> => {
+  const conn = getDB();
+  return await conn.getAllAsync<HabitLog>(
+    'SELECT * FROM habit_logs WHERE date = ?',
+    [date]
+  );
+};
+
+export const addHabitLog = async (habitItemId: number, timestamp: number, date: string): Promise<number> => {
+  const conn = getDB();
+  const res = await conn.runAsync(
+    'INSERT INTO habit_logs (habit_item_id, timestamp, date) VALUES (?, ?, ?)',
+    [habitItemId, timestamp, date]
+  );
+  return res.lastInsertRowId;
+};
+
+export const deleteHabitLog = async (id: number): Promise<void> => {
+  const conn = getDB();
+  await conn.runAsync('DELETE FROM habit_logs WHERE id = ?', [id]);
+};
+
+export const deleteLastHabitLog = async (habitItemId: number, date: string): Promise<void> => {
+  const conn = getDB();
+  await conn.runAsync(
+    'DELETE FROM habit_logs WHERE id = (SELECT id FROM habit_logs WHERE habit_item_id = ? AND date = ? ORDER BY timestamp DESC LIMIT 1)',
+    [habitItemId, date]
+  );
 };
