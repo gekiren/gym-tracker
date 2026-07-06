@@ -1656,6 +1656,20 @@ export const setWaterGoal = async (goal: number): Promise<void> => {
   );
 };
 
+export const getSettingValue = async (key: string): Promise<string | null> => {
+  const conn = getDB();
+  try {
+    const row = await conn.getFirstAsync<{ value: string }>(
+      'SELECT value FROM settings WHERE key = ?',
+      [key]
+    );
+    return row ? row.value : null;
+  } catch (e) {
+    console.warn(`Failed to get setting ${key}`, e);
+    return null;
+  }
+};
+
 // 2. 時間管理 (Time Logs)
 export const getTimeLogs = async (date: string): Promise<TimeLog[]> => {
   const conn = getDB();

@@ -1,0 +1,452 @@
+import { create } from 'zustand';
+import {
+  WaterLog,
+  TimeLog,
+  HabitItem,
+  HabitLog,
+  getWaterLogs,
+  addWaterLog,
+  deleteWaterLog,
+  getWaterGoal,
+  setWaterGoal,
+  getTimeLogs,
+  addTimeLog,
+  deleteTimeLog,
+  updateTimeLog,
+  getHabitItems,
+  addHabitItem,
+  deleteHabitItem,
+  updateHabitItem,
+  getHabitLogs,
+  addHabitLog,
+  deleteHabitLog,
+  deleteLastHabitLog,
+  getSettingValue,
+} from '../db/database';
+
+export interface HabitSummaryItem {
+  id: number;
+  name: string;
+  color: string;
+  count: number;
+}
+
+export interface WaterSummary {
+  amount: number;
+  goal: number;
+  progress: number;
+  percentage: number;
+}
+
+export interface TimeSummaryItem {
+  name: string;
+  hours: number;
+  minutes: number;
+}
+
+export interface DaySummary {
+  habits: HabitSummaryItem[];
+  water: WaterSummary;
+  zikan: TimeSummaryItem[];
+  totalZikanMinutes: number;
+  routinesCount: number;
+  routinesCompletedToday: number;
+  dateStr: string;
+}
+
+interface LifelogState {
+  currentDate: string;
+  waterLogs: WaterLog[];
+  waterGoal: number;
+  timeLogs: TimeLog[];
+  habitItems: HabitItem[];
+  habitLogs: HabitLog[];
+  routineData: any[];
+  daySummary: DaySummary | null;
+  isLoading: boolean;
+
+  // Actions
+  setCurrentDate: (date: string) => Promise<void>;
+  
+  // Water actions
+  loadWaterData: (date: string) => Promise<void>;
+  addWater: (amount: number, date: string) => Promise<void>;
+  deleteWater: (id: number, date: string) => Promise<void>;
+  updateWaterGoal: (goal: number) => Promise<void>;
+
+  // Time actions
+  loadTimeData: (date: string) => Promise<void>;
+  addTime: (
+    activityName: string,
+    startTime: string,
+    endTime: string,
+    date: string,
+    durationMinutes: number
+  ) => Promise<void>;
+  deleteTime: (id: number, date: string) => Promise<void>;
+  updateTime: (
+    id: number,
+    activityName: string,
+    startTime: string,
+    endTime: string,
+    date: string,
+    durationMinutes: number
+  ) => Promise<void>;
+
+  // Habit actions
+  loadHabits: (date: string) => Promise<void>;
+  loadHabitItems: () => Promise<void>;
+  addHabitItem: (name: string, color: string) => Promise<void>;
+  updateHabitItem: (id: number, name: string, color: string) => Promise<void>;
+  deleteHabitItem: (id: number) => Promise<void>;
+  addHabitLog: (habitItemId: number, date: string) => Promise<void>;
+  deleteHabitLog: (id: number, date: string) => Promise<void>;
+  deleteLastHabitLog: (habitItemId: number, date: string) => Promise<void>;
+
+  // Routine actions
+  loadRoutineData: () => Promise<void>;
+
+  // Helper to trigger summary recalculation
+  refreshSummary: (date: string) => void;
+}
+
+// Helper function to calculate summary from state
+const calculateSummary = (
+  dateStr: string,
+  waterLogs: WaterLog[],
+  waterGoal: number,
+  timeLogs: TimeLog[],
+  habitItems: HabitItem[],
+  habitLogs: HabitLog[],
+  routineData: any[] = []
+): DaySummary => {
+  // 1. Water summary
+  const todayWaterAmount = waterLogs.reduce((sum, log) => sum + log.amount, 0);
+  const waterProgress = waterGoal > 0 ? todayWaterAmount / waterGoal : 0;
+  const water: WaterSummary = {
+    amount: todayWaterAmount,
+    goal: waterGoal,
+    progress: Math.min(1, waterProgress),
+    percentage: Math.round(waterProgress * 100),
+  };
+
+  // 2. Time summary
+  const activityDuration: Record<string, number> = {};
+  timeLogs.forEach((log) => {
+    activityDuration[log.activity_name] =
+      (activityDuration[log.activity_name] || 0) + log.duration_minutes;
+  });
+
+  const zikan: TimeSummaryItem[] = Object.entries(activityDuration)
+    .map(([name, mins]) => ({
+      name,
+      hours: parseFloat((mins / 60).toFixed(1)),
+      minutes: Math.round(mins),
+    }))
+    .sort((a, b) => b.minutes - a.minutes);
+
+  const totalZikanMinutes = zikan.reduce((sum, item) => sum + item.minutes, 0);
+
+  // 3. Habits summary
+  const habitCounts: Record<number, number> = {};
+  habitLogs.forEach((log) => {
+    habitCounts[log.habit_item_id] = (habitCounts[log.habit_item_id] || 0) + 1;
+  });
+
+  const habits: HabitSummaryItem[] = habitItems.map((item) => ({
+    id: item.id,
+    name: item.name,
+    color: item.color,
+    count: habitCounts[item.id] || 0,
+  }));
+
+  // 4. Routines summary
+  let routinesCompletedToday = 0;
+  const formatDateFromTimestamp = (ts: number): string => {
+    const date = new Date(ts);
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}/${m}/${d}`;
+  };
+
+  if (Array.isArray(routineData)) {
+    routineData.forEach((r) => {
+      if (r.history && Array.isArray(r.history)) {
+        const completedToday = r.history.some(
+          (h: any) => formatDateFromTimestamp(h.timestamp) === dateStr
+        );
+        if (completedToday) {
+          routinesCompletedToday++;
+        }
+      }
+    });
+  }
+
+  return {
+    habits,
+    water,
+    zikan,
+    totalZikanMinutes,
+    routinesCount: Array.isArray(routineData) ? routineData.length : 0,
+    routinesCompletedToday,
+    dateStr,
+  };
+};
+
+export const useLifelogStore = create<LifelogState>((set, get) => ({
+  currentDate: '',
+  waterLogs: [],
+  waterGoal: 2000,
+  timeLogs: [],
+  habitItems: [],
+  habitLogs: [],
+  routineData: [],
+  daySummary: null,
+  isLoading: false,
+
+  setCurrentDate: async (date: string) => {
+    set({ currentDate: date, isLoading: true });
+    try {
+      const [waterLogs, waterGoal, timeLogs, habitItems, habitLogs, routineVal] = await Promise.all([
+        getWaterLogs(date),
+        getWaterGoal(),
+        getTimeLogs(date),
+        getHabitItems(),
+        getHabitLogs(date),
+        getSettingValue('routine_tracker_data'),
+      ]);
+
+      const routineData = routineVal ? JSON.parse(routineVal) : [];
+
+      const daySummary = calculateSummary(
+        date,
+        waterLogs,
+        waterGoal,
+        timeLogs,
+        habitItems,
+        habitLogs,
+        routineData
+      );
+
+      set({
+        waterLogs,
+        waterGoal,
+        timeLogs,
+        habitItems,
+        habitLogs,
+        routineData,
+        daySummary,
+      });
+    } catch (e) {
+      console.warn('Failed to load lifelog data for date:', date, e);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  loadWaterData: async (date: string) => {
+    try {
+      const [waterLogs, waterGoal] = await Promise.all([
+        getWaterLogs(date),
+        getWaterGoal(),
+      ]);
+      set({ waterLogs, waterGoal });
+      if (get().currentDate === date) {
+        get().refreshSummary(date);
+      }
+    } catch (e) {
+      console.warn('Failed to load water data:', e);
+    }
+  },
+
+  addWater: async (amount: number, date: string) => {
+    try {
+      await addWaterLog(amount, Date.now(), date);
+      await get().loadWaterData(date);
+    } catch (e) {
+      console.warn('Failed to add water log:', e);
+    }
+  },
+
+  deleteWater: async (id: number, date: string) => {
+    try {
+      await deleteWaterLog(id);
+      await get().loadWaterData(date);
+    } catch (e) {
+      console.warn('Failed to delete water log:', e);
+    }
+  },
+
+  updateWaterGoal: async (goal: number) => {
+    try {
+      await setWaterGoal(goal);
+      set({ waterGoal: goal });
+      if (get().currentDate) {
+        get().refreshSummary(get().currentDate);
+      }
+    } catch (e) {
+      console.warn('Failed to update water goal:', e);
+    }
+  },
+
+  loadTimeData: async (date: string) => {
+    try {
+      const timeLogs = await getTimeLogs(date);
+      set({ timeLogs });
+      if (get().currentDate === date) {
+        get().refreshSummary(date);
+      }
+    } catch (e) {
+      console.warn('Failed to load time logs:', e);
+    }
+  },
+
+  addTime: async (
+    activityName: string,
+    startTime: string,
+    endTime: string,
+    date: string,
+    durationMinutes: number
+  ) => {
+    try {
+      await addTimeLog(activityName, startTime, endTime, date, durationMinutes);
+      await get().loadTimeData(date);
+    } catch (e) {
+      console.warn('Failed to add time log:', e);
+    }
+  },
+
+  deleteTime: async (id: number, date: string) => {
+    try {
+      await deleteTimeLog(id);
+      await get().loadTimeData(date);
+    } catch (e) {
+      console.warn('Failed to delete time log:', e);
+    }
+  },
+
+  updateTime: async (
+    id: number,
+    activityName: string,
+    startTime: string,
+    endTime: string,
+    date: string,
+    durationMinutes: number
+  ) => {
+    try {
+      await updateTimeLog(id, activityName, startTime, endTime, date, durationMinutes);
+      await get().loadTimeData(date);
+    } catch (e) {
+      console.warn('Failed to update time log:', e);
+    }
+  },
+
+  loadHabits: async (date: string) => {
+    try {
+      const [habitItems, habitLogs] = await Promise.all([
+        getHabitItems(),
+        getHabitLogs(date),
+      ]);
+      set({ habitItems, habitLogs });
+      if (get().currentDate === date) {
+        get().refreshSummary(date);
+      }
+    } catch (e) {
+      console.warn('Failed to load habits:', e);
+    }
+  },
+
+  loadHabitItems: async () => {
+    try {
+      const habitItems = await getHabitItems();
+      set({ habitItems });
+      if (get().currentDate) {
+        get().refreshSummary(get().currentDate);
+      }
+    } catch (e) {
+      console.warn('Failed to load habit items:', e);
+    }
+  },
+
+  addHabitItem: async (name: string, color: string) => {
+    try {
+      await addHabitItem(name, color);
+      await get().loadHabitItems();
+    } catch (e) {
+      console.warn('Failed to add habit item:', e);
+    }
+  },
+
+  updateHabitItem: async (id: number, name: string, color: string) => {
+    try {
+      await updateHabitItem(id, name, color);
+      await get().loadHabitItems();
+    } catch (e) {
+      console.warn('Failed to update habit item:', e);
+    }
+  },
+
+  deleteHabitItem: async (id: number) => {
+    try {
+      await deleteHabitItem(id);
+      await get().loadHabitItems();
+    } catch (e) {
+      console.warn('Failed to delete habit item:', e);
+    }
+  },
+
+  addHabitLog: async (habitItemId: number, date: string) => {
+    try {
+      await addHabitLog(habitItemId, Date.now(), date);
+      await get().loadHabits(date);
+    } catch (e) {
+      console.warn('Failed to add habit log:', e);
+    }
+  },
+
+  deleteHabitLog: async (id: number, date: string) => {
+    try {
+      await deleteHabitLog(id);
+      await get().loadHabits(date);
+    } catch (e) {
+      console.warn('Failed to delete habit log:', e);
+    }
+  },
+
+  deleteLastHabitLog: async (habitItemId: number, date: string) => {
+    try {
+      await deleteLastHabitLog(habitItemId, date);
+      await get().loadHabits(date);
+    } catch (e) {
+      console.warn('Failed to delete last habit log:', e);
+    }
+  },
+
+  loadRoutineData: async () => {
+    try {
+      const value = await getSettingValue('routine_tracker_data');
+      const routineData = value ? JSON.parse(value) : [];
+      set({ routineData });
+      if (get().currentDate) {
+        get().refreshSummary(get().currentDate);
+      }
+    } catch (e) {
+      console.warn('Failed to load routine data:', e);
+    }
+  },
+
+  refreshSummary: (date: string) => {
+    const { waterLogs, waterGoal, timeLogs, habitItems, habitLogs, routineData } = get();
+    const daySummary = calculateSummary(
+      date,
+      waterLogs,
+      waterGoal,
+      timeLogs,
+      habitItems,
+      habitLogs,
+      routineData
+    );
+    set({ daySummary });
+  },
+}));
