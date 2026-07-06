@@ -19,7 +19,7 @@
       "distribution": "internal",
       "channel": "staging",
       "android": {
-        "buildType": "apk"
+        "buildType": "app-bundle"
       },
       "env": {
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",
