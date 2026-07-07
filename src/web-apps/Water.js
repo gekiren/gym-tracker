@@ -105,16 +105,17 @@ export default `<!DOCTYPE html>
     <title>水分補給トラッカー</title>
     <style>
 :root {
-    --primary-color: #00bcd4;
-    --primary-gradient: linear-gradient(135deg, #00bcd4, #0097a7);
-    --secondary-color: #f5f5f5;
-    --text-color: #333333;
-    --text-muted: #888888;
-    --bg-color: #f0f4f8;
-    --card-bg: #ffffff;
+    --primary-color: #4facfe;
+    --primary-gradient: linear-gradient(135deg, #4facfe, #00f2fe);
+    --secondary-color: #1e1e1e;
+    --text-color: #ffffff;
+    --text-muted: #a0a0a0;
+    --bg-color: #121212;
+    --card-bg: #1e1e1e;
     --header-text: #ffffff;
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --border-color: #333333;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
     --radius-lg: 24px;
     --radius-md: 16px;
     --radius-sm: 8px;
@@ -279,8 +280,8 @@ input {
     align-items: center;
     justify-content: center;
     aspect-ratio: 1;
-    background-color: #e0f7fa;
-    color: #006064;
+    background-color: rgba(79, 172, 254, 0.15);
+    color: var(--primary-color);
     border-radius: var(--radius-md);
     transition: transform 0.1s, background-color 0.2s;
     font-weight: 700;
@@ -288,7 +289,7 @@ input {
 
 .quick-btn:active {
     transform: scale(0.95);
-    background-color: #b2ebf2;
+    background-color: rgba(79, 172, 254, 0.3);
 }
 
 .quick-btn .icon {
@@ -300,8 +301,8 @@ input {
     width: 100%;
     padding: 12px;
     border-radius: var(--radius-md);
-    border: 2px dashed #b2ebf2;
-    color: #006064;
+    border: 2px dashed var(--border-color);
+    color: var(--primary-color);
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -327,7 +328,7 @@ input {
     display: flex;
     gap: 16px;
     margin-bottom: 20px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 8px;
 }
 
@@ -386,7 +387,7 @@ input {
     align-items: center;
     justify-content: space-between;
     padding: 12px 0;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .log-item:last-child {
@@ -414,14 +415,14 @@ input {
 }
 
 .delete-btn {
-    color: #ef5350;
+    color: #ff3b30;
     padding: 8px;
     border-radius: 50%;
     display: flex;
 }
 
 .delete-btn:active {
-    background-color: #ffebee;
+    background-color: rgba(255, 59, 48, 0.15);
 }
 
 /* Modal */
@@ -471,7 +472,7 @@ input {
     align-items: center;
     justify-content: center;
     margin-bottom: 24px;
-    background: #f5f5f5;
+    background: var(--bg-color);
     border-radius: var(--radius-md);
     padding: 12px;
 }
@@ -507,10 +508,12 @@ input {
 .setting-item input {
     width: 100%;
     padding: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     font-size: 1.1rem;
     outline: none;
+    background: var(--bg-color);
+    color: var(--text-color);
 }
 
 .setting-item input:focus {
@@ -534,12 +537,12 @@ input {
     padding: 10px 24px;
     border-radius: 20px;
     font-weight: 600;
-    box-shadow: 0 4px 10px rgba(0, 188, 212, 0.3);
+    box-shadow: 0 4px 10px rgba(79, 172, 254, 0.3);
 }
 
 .primary-button:active {
     transform: translateY(1px);
-    box-shadow: 0 2px 5px rgba(0, 188, 212, 0.3);
+    box-shadow: 0 2px 5px rgba(79, 172, 254, 0.3);
 }
 
 /* Weekly Chart Styles */
@@ -563,7 +566,7 @@ input {
 }
 
 .icon-button.small:active {
-    background-color: #f5f5f5;
+    background-color: rgba(255, 255, 255, 0.1);
     border-radius: 50%;
 }
 
@@ -602,7 +605,7 @@ input {
 .bar-bg {
     width: 100%;
     height: 100%;
-    background: #f0f4f8;
+    background: #2a2a2a;
     border-radius: 4px;
     position: relative;
     overflow: hidden;
