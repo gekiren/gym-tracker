@@ -30,6 +30,19 @@ export default `<!DOCTYPE html>
 
   // 3. Android WebViewのセキュリティ制限対策：localStorageをインメモリのモック（ポリフィル）に差し替え
   const storageStore = {};
+  try {
+    const initData = window.__INITIAL_WEBVIEW_DATA__;
+    if (initData) {
+      for (const key in initData) {
+        if (initData.hasOwnProperty(key)) {
+          storageStore[key] = initData[key];
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Failed to copy from __INITIAL_WEBVIEW_DATA__", e);
+  }
+
   const mockLocalStorage = {
     getItem: function(key) {
       return storageStore.hasOwnProperty(key) ? storageStore[key] : null;

@@ -30,6 +30,19 @@ export default `<!DOCTYPE html>
 
   // 3. Android WebViewのセキュリティ制限対策：localStorageをインメモリのモック（ポリフィル）に差し替え
   const storageStore = {};
+  try {
+    const initData = window.__INITIAL_WEBVIEW_DATA__;
+    if (initData) {
+      for (const key in initData) {
+        if (initData.hasOwnProperty(key)) {
+          storageStore[key] = initData[key];
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Failed to copy from __INITIAL_WEBVIEW_DATA__", e);
+  }
+
   const mockLocalStorage = {
     getItem: function(key) {
       return storageStore.hasOwnProperty(key) ? storageStore[key] : null;
@@ -877,24 +890,56 @@ function loadData() {
 
 function saveData() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state.intakeHistory));
+    try {
+        if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'LOCAL_STORAGE_SET',
+                key: STORAGE_KEY,
+                value: JSON.stringify(state.intakeHistory)
+            }));
+        }
+    } catch (e) {
+        console.error("Failed to post message directly", e);
+    }
 }
 
 function saveSettings() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    try {
+        if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'LOCAL_STORAGE_SET',
+                key: SETTINGS_KEY,
+                value: JSON.stringify(settings)
+            }));
+        }
+    } catch (e) {
+        console.error("Failed to post settings message directly", e);
+    }
 }
 
 // --- Logic ---
+// Helper to format date locally in WebView
+function formatDateLocal(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dStr = String(d.getDate()).padStart(2, '0');
+    return \`\${y}/\${m}/\${dStr}\`;
+}
+
 function addIntake(amount, dateOverride = null, caffeine = 0) {
     if (!amount || amount <= 0) return;
 
-    // Use provided date or current time
-    const timestamp = dateOverride ? dateOverride.toISOString() : new Date().toISOString();
+    // Use provided date or current time (as milliseconds)
+    const timestamp = dateOverride ? dateOverride.getTime() : Date.now();
+    const dateStr = formatDateLocal(dateOverride ? dateOverride : new Date());
 
     const entry = {
-        id: Date.now(),
+        id: timestamp,
         timestamp: timestamp,
         amount: parseInt(amount),
-        caffeine: parseInt(caffeine) || 0
+        caffeine: parseInt(caffeine) || 0,
+        date: dateStr
     };
 
     state.intakeHistory.push(entry);
@@ -914,9 +959,8 @@ function deleteIntake(id) {
 }
 
 function getTodayIntake() {
-    const today = new Date().toDateString();
-    return state.intakeHistory
-        .filter(item => new Date(item.timestamp).toDateString() === today);
+    const today = formatDateLocal(new Date());
+    return state.intakeHistory.filter(item => item.date === today);
 }
 
 function getTotalToday() {
@@ -957,9 +1001,9 @@ function getWeeklyData(offset = 0) {
         const d = new Date(endOfWeek);
         d.setDate(endOfWeek.getDate() - i);
 
-        const dayString = d.toDateString();
+        const dayString = formatDateLocal(d);
         const total = state.intakeHistory
-            .filter(item => new Date(item.timestamp).toDateString() === dayString)
+            .filter(item => item.date === dayString)
             .reduce((sum, item) => sum + item.amount, 0);
 
         days.push({
@@ -980,7 +1024,7 @@ function renderControlButtons() {
         btn.className = 'quick-btn';
         btn.innerHTML = \`
             <span class="material-icons-round icon">water_drop</span>
-            <span>\\\${amount}ml</span>
+            <span>\${amount}ml</span>
         \`;
         btn.onclick = () => addIntake(amount);
         els.quickAddContainer.appendChild(btn);
@@ -995,7 +1039,7 @@ function updateUI() {
     // Update Header
     els.currentAmount.innerText = total.toLocaleString();
     els.goalAmount.innerText = settings.goal.toLocaleString();
-    els.percentage.innerText = \\\`\\\${percent}%\\\`;
+    els.percentage.innerText = \`\${percent}%\`;
     if (els.todayCaffeine) {
         els.todayCaffeine.innerText = totalCaffeine.toLocaleString();
     }
@@ -1015,7 +1059,7 @@ function updateUI() {
 }
 
 function renderTodayLog() {
-    const entries = getTodayIntake().sort((a, b) => b.timestamp.localeCompare(a.timestamp)); // Newest first
+    const entries = getTodayIntake().sort((a, b) => b.timestamp - a.timestamp); // Newest first
 
     if (entries.length === 0) {
         els.todayLogList.innerHTML = '<li class="empty-state">まだ記録がありません</li>';
@@ -1032,14 +1076,14 @@ function renderTodayLog() {
         li.innerHTML = \`
             <div class="time">
                 <span class="material-icons-round" style="font-size: 16px;">schedule</span>
-                \\\${timeStr}
+                \${timeStr}
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="text-align: right;">
-                    <span class="amount">\\\${item.amount}ml</span>
-                    \\\${item.caffeine ? \\\`<br><span style="font-size: 0.75rem; color: #ffa726; font-weight: 500;">☕ \\\${item.caffeine}mg</span>\\\` : ''}
+                    <span class="amount">\${item.amount}ml</span>
+                    \${item.caffeine ? \`<br><span style="font-size: 0.75rem; color: #ffa726; font-weight: 500;">☕ \${item.caffeine}mg</span>\` : ''}
                 </div>
-                <button class="delete-btn" onclick="deleteIntake(\\\${item.id})">
+                <button class="delete-btn" onclick="deleteIntake(\${item.id})">
                     <span class="material-icons-round" style="font-size: 20px;">close</span>
                 </button>
             </div>
@@ -1054,8 +1098,8 @@ function renderWeeklyChart() {
     // Update Range Label
     const start = data[0].date;
     const end = data[6].date;
-    const fmt = d => \\\`\\\${d.getFullYear()}/\\\${d.getMonth() + 1}/\\\${d.getDate()}\\\`;
-    els.weekRangeLabel.innerText = \\\`\\\${fmt(start)} - \\\${fmt(end)}\\\`;
+    const fmt = d => \`\${d.getFullYear()}/\${d.getMonth() + 1}/\${d.getDate()}\`;
+    els.weekRangeLabel.innerText = \`\${fmt(start)} - \${fmt(end)}\`;
 
     const maxVal = Math.max(...data.map(d => d.total), settings.goal);
 
@@ -1068,17 +1112,17 @@ function renderWeeklyChart() {
         // Pass ISO string to avoid issues, we'll parse it back
         const dateParam = day.date.toISOString();
 
-        chartHTML += \\\`
-            <div class="bar-col" onclick="openDailyDetail(new Date('\\\${dateParam}'))">
-                <div class="bar-value">\\\${day.total}</div>
+        chartHTML += \`
+            <div class="bar-col" onclick="openDailyDetail(new Date('\${dateParam}'))">
+                <div class="bar-value">\${day.total}</div>
                 <div class="bar-bg">
-                    <div class="bar-fill" style="height: \\\${heightPercent}%; background-color: \\\${color};"></div>
+                    <div class="bar-fill" style="height: \${heightPercent}%; background-color: \${color};"></div>
                 </div>
-                <div class="bar-date" style="\\\${isToday ? 'font-weight:bold; color:var(--primary-color)' : ''}">
-                    \\\${day.label}<br>\\\${day.dayName}
+                <div class="bar-date" style="\${isToday ? 'font-weight:bold; color:var(--primary-color)' : ''}">
+                    \${day.label}<br>\${day.dayName}
                 </div>
             </div>
-        \\\`;
+        \`;
     });
     chartHTML += '</div>';
 
@@ -1126,12 +1170,12 @@ function setupEventListeners() {
 
     window.openDailyDetail = (date) => {
         currentDetailDate = date;
-        detailEls.dateTitle.innerText = \\\`\\\${date.getFullYear()}/\\\${date.getMonth() + 1}/\\\${date.getDate()}\\\`;
+        detailEls.dateTitle.innerText = \`\${date.getFullYear()}/\${date.getMonth() + 1}/\${date.getDate()}\`;
 
         // Filter logs for this date
-        const dayStr = date.toDateString();
-        const logs = state.intakeHistory.filter(item => new Date(item.timestamp).toDateString() === dayStr);
-        logs.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+        const dayStr = formatDateLocal(date);
+        const logs = state.intakeHistory.filter(item => item.date === dayStr);
+        logs.sort((a, b) => b.timestamp - a.timestamp);
 
         detailEls.list.innerHTML = '';
         if (logs.length === 0) {
@@ -1140,15 +1184,15 @@ function setupEventListeners() {
             logs.forEach(item => {
                 const li = document.createElement('li');
                 li.className = 'log-item';
-                li.innerHTML = \\\`
+                li.innerHTML = \`
                     <div style="display: flex; flex-direction: column;">
-                        <div style="font-weight:bold;">\\\${item.amount}ml</div>
-                        \\\${item.caffeine ? \\\`<div style="font-size:0.75rem; color:#ffa726; font-weight: 500;">☕ \\\${item.caffeine}mg</div>\\\` : ''}
+                        <div style="font-weight:bold;">\${item.amount}ml</div>
+                        \${item.caffeine ? \`<div style="font-size:0.75rem; color:#ffa726; font-weight: 500;">☕ \${item.caffeine}mg</div>\` : ''}
                     </div>
-                    <button class="delete-btn" onclick="deleteHistoryItem(\\\${item.id})">
+                    <button class="delete-btn" onclick="deleteHistoryItem(\${item.id})">
                         <span class="material-icons-round" style="font-size: 20px;">close</span>
                     </button>
-                \\\`;
+                \`;
                 detailEls.list.appendChild(li);
             });
         }

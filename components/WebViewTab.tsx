@@ -52,12 +52,7 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
     const injectScript = `
       <script>
         (function() {
-          window.isInitialSync = true;
-          const initialData = ${JSON.stringify(initialStorage)};
-          for (const key in initialData) {
-            localStorage.setItem(key, initialData[key]);
-          }
-          window.isInitialSync = false;
+          window.__INITIAL_WEBVIEW_DATA__ = ${JSON.stringify(initialStorage)};
         })();
       </script>
     `;
@@ -71,6 +66,7 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
   // Handle messages from the WebView
   const onMessage = async (event: any) => {
     try {
+      console.log('[WebViewTab] onMessage raw data:', event.nativeEvent.data);
       const message = JSON.parse(event.nativeEvent.data);
 
       if (message.type === 'WEB_ERROR') {
@@ -80,6 +76,7 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
 
       if (message.type === 'LOCAL_STORAGE_SET') {
         const { key, value } = message;
+        console.log(`[WebViewTab] LOCAL_STORAGE_SET key=${key}, value length=${value ? value.length : 0}`);
         // Update database and store
         const responseValue = await handleWebViewMessage(key, value, currentDate);
 

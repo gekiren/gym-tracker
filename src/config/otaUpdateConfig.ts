@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.9', // OTA識別用のバージョン文字列
+  version: '1.1.16', // OTA識別用のバージョン文字列
   title: {
-    ja: '水分補給のカフェイン記録対応',
-    en: 'Caffeine Tracking in Hydration',
+    ja: 'データ同期不具合の解決',
+    en: 'Resolve Data Sync Issues',
   },
   notes: {
     ja: [
-      '水分補給の記録時に、オプションでカフェイン量（mg）を入力・記録できるようになりました。',
-      '今日の記録リストや詳細履歴にカフェイン量（☕）が表示されるようになりました。',
+      '一部環境における生localStorageの書き込み制限を回避するため、メモリ共有による確実な初期データ同期方式に改修しました。',
     ],
     en: [
-      'Added an option to track caffeine intake (mg) alongside water consumption.',
-      'Caffeine intake is now displayed in your logs and daily detail views.',
+      'Migrated initial data synchronization to a memory-based mechanism to bypass write restrictions on raw localStorage.',
     ]
   }
 };

@@ -9,6 +9,22 @@ const formatDate = (date: Date): string => {
   return `${y}/${m}/${d}`;
 };
 
+// Helper to parse timestamp safely across JS engines (handling number and ISO strings)
+const parseTimestampToDate = (ts: string | number): Date => {
+  if (typeof ts === 'number') {
+    return new Date(ts);
+  }
+  const num = Number(ts);
+  if (!isNaN(num)) {
+    return new Date(num);
+  }
+  const parsed = new Date(ts);
+  if (!isNaN(parsed.getTime())) {
+    return parsed;
+  }
+  return new Date(); // Fallback to current date
+};
+
 // Helper to convert HH:MM to minutes
 const timeToMins = (timeStr: string): number => {
   if (!timeStr) return 0;
@@ -25,15 +41,16 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
 
   try {
     // 1. Water logs & settings
-    const waterLogsRows = await db.getAllAsync<{ amount: number; timestamp: number; caffeine: number | null }>(
-      'SELECT amount, timestamp, caffeine FROM water_logs ORDER BY timestamp ASC'
+    const waterLogsRows = await db.getAllAsync<{ amount: number; timestamp: number; date: string; caffeine: number | null }>(
+      'SELECT amount, timestamp, date, caffeine FROM water_logs ORDER BY timestamp ASC'
     );
-    data['hydration_data_v1'] = waterLogsRows.map((row) => ({
+    data['hydration_data_v1'] = JSON.stringify(waterLogsRows.map((row) => ({
       id: row.timestamp,
-      timestamp: new Date(row.timestamp).toISOString(),
+      timestamp: row.timestamp,
       amount: row.amount,
       caffeine: row.caffeine || 0,
-    }));
+      date: row.date,
+    })));
 
     const waterSettingsRow = await db.getFirstAsync<{ value: string }>(
       "SELECT value FROM settings WHERE key = 'hydration_settings_v1'"
@@ -150,20 +167,27 @@ export const handleWebViewMessage = async (
 
   try {
     if (key === 'hydration_data_v1') {
-      const logs = JSON.parse(value) as Array<{ id: number; timestamp: string; amount: number; caffeine?: number }>;
+      console.log(`[SyncService] Received hydration_data_v1. Value length: ${value.length}`);
+      const logs = JSON.parse(value) as Array<{ id: number; timestamp: number; amount: number; date: string; caffeine?: number }>;
+      console.log(`[SyncService] Parsed logs count: ${logs.length}. Logs:`, JSON.stringify(logs));
 
       await db.withTransactionAsync(async () => {
+        console.log('[SyncService] Starting transaction to delete and insert water logs');
         await db.runAsync('DELETE FROM water_logs');
         for (const log of logs) {
-          const dateStr = formatDate(new Date(log.timestamp));
+          const dateStr = log.date || formatDate(parseTimestampToDate(log.timestamp));
+          console.log(`[SyncService] Inserting log: amount=${log.amount}, timestamp=${log.id}, date=${dateStr}`);
           await db.runAsync(
             'INSERT INTO water_logs (amount, timestamp, date, caffeine) VALUES (?, ?, ?, ?)',
             [log.amount, log.id, dateStr, log.caffeine || 0]
           );
         }
+        console.log('[SyncService] Transaction queries completed successfully');
       });
 
+      console.log(`[SyncService] Transaction committed. Reloading water data for date: ${currentDate}`);
       await useLifelogStore.getState().loadWaterData(currentDate);
+      console.log('[SyncService] Water data reloaded in lifelogStore');
     } 
     
     else if (key === 'hydration_settings_v1') {
@@ -284,7 +308,7 @@ export const handleWebViewMessage = async (
       await db.withTransactionAsync(async () => {
         await db.runAsync('DELETE FROM habit_logs');
         for (const log of logs) {
-          const dateStr = formatDate(new Date(log.timestamp));
+          const dateStr = formatDate(parseTimestampToDate(log.timestamp));
           const habitItemId = parseInt(log.itemId, 10);
           if (!isNaN(habitItemId)) {
             await db.runAsync(
