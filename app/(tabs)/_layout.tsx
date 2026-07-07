@@ -72,7 +72,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          headerTitle: t('ui.tabs.home'),
+          headerTitle: t('ui.home.home_header_title') || 'ワークアウト',
           title: t('ui.tabs.workout'),
           tabBarIcon: ({ color }) => <Ionicons name="barbell" size={26} color={color} />,
         }}
