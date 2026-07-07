@@ -25,13 +25,14 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
 
   try {
     // 1. Water logs & settings
-    const waterLogsRows = await db.getAllAsync<{ amount: number; timestamp: number }>(
-      'SELECT amount, timestamp FROM water_logs ORDER BY timestamp ASC'
+    const waterLogsRows = await db.getAllAsync<{ amount: number; timestamp: number; caffeine: number | null }>(
+      'SELECT amount, timestamp, caffeine FROM water_logs ORDER BY timestamp ASC'
     );
     data['hydration_data_v1'] = waterLogsRows.map((row) => ({
       id: row.timestamp,
       timestamp: new Date(row.timestamp).toISOString(),
       amount: row.amount,
+      caffeine: row.caffeine || 0,
     }));
 
     const waterSettingsRow = await db.getFirstAsync<{ value: string }>(
@@ -149,15 +150,15 @@ export const handleWebViewMessage = async (
 
   try {
     if (key === 'hydration_data_v1') {
-      const logs = JSON.parse(value) as Array<{ id: number; timestamp: string; amount: number }>;
+      const logs = JSON.parse(value) as Array<{ id: number; timestamp: string; amount: number; caffeine?: number }>;
 
       await db.withTransactionAsync(async () => {
         await db.runAsync('DELETE FROM water_logs');
         for (const log of logs) {
           const dateStr = formatDate(new Date(log.timestamp));
           await db.runAsync(
-            'INSERT INTO water_logs (amount, timestamp, date) VALUES (?, ?, ?)',
-            [log.amount, log.id, dateStr]
+            'INSERT INTO water_logs (amount, timestamp, date, caffeine) VALUES (?, ?, ?, ?)',
+            [log.amount, log.id, dateStr, log.caffeine || 0]
           );
         }
       });

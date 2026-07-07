@@ -79,6 +79,7 @@ export interface WaterLog {
   amount: number;
   timestamp: number;
   date: string;
+  caffeine?: number;
 }
 
 export interface TimeLog {
@@ -365,7 +366,8 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       amount INTEGER NOT NULL,
       timestamp INTEGER NOT NULL,
-      date TEXT NOT NULL
+      date TEXT NOT NULL,
+      caffeine INTEGER DEFAULT 0
     );
     CREATE INDEX IF NOT EXISTS idx_water_logs_date ON water_logs(date);
 
@@ -495,6 +497,16 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
     }
   } catch (e) {
     console.warn('Migration: Failed to add columns to exercises', e);
+  }
+
+  // Migration: Add caffeine to water_logs if missing
+  try {
+    const tableInfoWater = await _db.getAllAsync<{ name: string }>(`PRAGMA table_info(water_logs)`);
+    if (!tableInfoWater.find(c => c.name === 'caffeine')) {
+      await _db.execAsync(`ALTER TABLE water_logs ADD COLUMN caffeine INTEGER DEFAULT 0`);
+    }
+  } catch (e) {
+    console.warn('Migration: Failed to add caffeine column to water_logs', e);
   }
 
   // Migration: Rename exercises to remove parenthetical suffixes
@@ -1621,11 +1633,11 @@ export const getWaterLogs = async (date: string): Promise<WaterLog[]> => {
   );
 };
 
-export const addWaterLog = async (amount: number, timestamp: number, date: string): Promise<number> => {
+export const addWaterLog = async (amount: number, timestamp: number, date: string, caffeine: number = 0): Promise<number> => {
   const conn = getDB();
   const res = await conn.runAsync(
-    'INSERT INTO water_logs (amount, timestamp, date) VALUES (?, ?, ?)',
-    [amount, timestamp, date]
+    'INSERT INTO water_logs (amount, timestamp, date, caffeine) VALUES (?, ?, ?, ?)',
+    [amount, timestamp, date, caffeine]
   );
   return res.lastInsertRowId;
 };

@@ -36,6 +36,7 @@ export interface WaterSummary {
   goal: number;
   progress: number;
   percentage: number;
+  caffeine: number;
 }
 
 export interface TimeSummaryItem {
@@ -70,7 +71,7 @@ interface LifelogState {
   
   // Water actions
   loadWaterData: (date: string) => Promise<void>;
-  addWater: (amount: number, date: string) => Promise<void>;
+  addWater: (amount: number, date: string, caffeine?: number) => Promise<void>;
   deleteWater: (id: number, date: string) => Promise<void>;
   updateWaterGoal: (goal: number) => Promise<void>;
 
@@ -122,12 +123,14 @@ const calculateSummary = (
 ): DaySummary => {
   // 1. Water summary
   const todayWaterAmount = waterLogs.reduce((sum, log) => sum + log.amount, 0);
+  const todayCaffeineAmount = waterLogs.reduce((sum, log) => sum + (log.caffeine || 0), 0);
   const waterProgress = waterGoal > 0 ? todayWaterAmount / waterGoal : 0;
   const water: WaterSummary = {
     amount: todayWaterAmount,
     goal: waterGoal,
     progress: Math.min(1, waterProgress),
     percentage: Math.round(waterProgress * 100),
+    caffeine: todayCaffeineAmount,
   };
 
   // 2. Time summary
@@ -260,9 +263,9 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
     }
   },
 
-  addWater: async (amount: number, date: string) => {
+  addWater: async (amount: number, date: string, caffeine?: number) => {
     try {
-      await addWaterLog(amount, Date.now(), date);
+      await addWaterLog(amount, Date.now(), date, caffeine);
       await get().loadWaterData(date);
     } catch (e) {
       console.warn('Failed to add water log:', e);

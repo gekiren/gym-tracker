@@ -647,6 +647,9 @@ input {
                 <div class="progress-text">
                     <div class="current-amount"><span id="currentAmount">0</span><span class="unit">ml</span></div>
                     <div class="goal-amount">目標: <span id="goalAmount">2000</span>ml</div>
+                    <div class="caffeine-amount" id="caffeineAmount" style="font-size: 0.85rem; opacity: 0.9; margin-top: 4px; color: #ffa726; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        <span class="material-icons-round" style="font-size: 16px;">coffee</span>カフェイン: <span id="todayCaffeine">0</span>mg
+                    </div>
                     <div class="percentage" id="percentage">0%</div>
                 </div>
             </div>
@@ -709,6 +712,10 @@ input {
                 <input type="number" id="customAmountInput" placeholder="200" inputmode="numeric">
                 <span class="unit-label">ml</span>
             </div>
+            <div class="input-group" style="margin-top: 8px;">
+                <input type="number" id="customCaffeineInput" placeholder="0 (オプション)" inputmode="numeric">
+                <span class="unit-label">mg</span>
+            </div>
             <div class="modal-actions">
                 <button id="closeCustomModal" class="text-button">キャンセル</button>
                 <button id="confirmCustomAdd" class="primary-button">追加</button>
@@ -747,9 +754,13 @@ input {
                 <!-- Log items injected by JS -->
             </ul>
 
-            <div class="input-group" style="margin-bottom: 16px;">
+            <div class="input-group" style="margin-bottom: 8px;">
                 <input type="number" id="manualAddInput" placeholder="200" inputmode="numeric">
                 <span class="unit-label">ml</span>
+            </div>
+            <div class="input-group" style="margin-bottom: 16px;">
+                <input type="number" id="manualAddCaffeineInput" placeholder="0 (オプション)" inputmode="numeric">
+                <span class="unit-label">mg</span>
             </div>
 
             <div class="modal-actions">
@@ -810,6 +821,7 @@ const els = {
 
     // Inputs
     customInput: document.getElementById('customAmountInput'),
+    customCaffeineInput: document.getElementById('customCaffeineInput'),
     goalInput: document.getElementById('goalInput'),
     presetInputs: [
         document.getElementById('preset1'),
@@ -822,6 +834,7 @@ const els = {
     confirmCustom: document.getElementById('confirmCustomAdd'),
     closeSettings: document.getElementById('closeSettingsModal'),
     saveSettings: document.getElementById('saveSettings'),
+    todayCaffeine: document.getElementById('todayCaffeine'),
 };
 
 // --- Initialization ---
@@ -871,7 +884,7 @@ function saveSettings() {
 }
 
 // --- Logic ---
-function addIntake(amount, dateOverride = null) {
+function addIntake(amount, dateOverride = null, caffeine = 0) {
     if (!amount || amount <= 0) return;
 
     // Use provided date or current time
@@ -880,7 +893,8 @@ function addIntake(amount, dateOverride = null) {
     const entry = {
         id: Date.now(),
         timestamp: timestamp,
-        amount: parseInt(amount)
+        amount: parseInt(amount),
+        caffeine: parseInt(caffeine) || 0
     };
 
     state.intakeHistory.push(entry);
@@ -908,6 +922,11 @@ function getTodayIntake() {
 function getTotalToday() {
     const todayEntries = getTodayIntake();
     return todayEntries.reduce((sum, item) => sum + item.amount, 0);
+}
+
+function getTotalCaffeineToday() {
+    const todayEntries = getTodayIntake();
+    return todayEntries.reduce((sum, item) => sum + (item.caffeine || 0), 0);
 }
 
 function getWeeklyData(offset = 0) {
@@ -961,7 +980,7 @@ function renderControlButtons() {
         btn.className = 'quick-btn';
         btn.innerHTML = \`
             <span class="material-icons-round icon">water_drop</span>
-            <span>\${amount}ml</span>
+            <span>\\\${amount}ml</span>
         \`;
         btn.onclick = () => addIntake(amount);
         els.quickAddContainer.appendChild(btn);
@@ -970,12 +989,16 @@ function renderControlButtons() {
 
 function updateUI() {
     const total = getTotalToday();
+    const totalCaffeine = getTotalCaffeineToday();
     const percent = Math.min(100, Math.round((total / settings.goal) * 100));
 
     // Update Header
     els.currentAmount.innerText = total.toLocaleString();
     els.goalAmount.innerText = settings.goal.toLocaleString();
-    els.percentage.innerText = \`\${percent}%\`;
+    els.percentage.innerText = \\\`\\\${percent}%\\\`;
+    if (els.todayCaffeine) {
+        els.todayCaffeine.innerText = totalCaffeine.toLocaleString();
+    }
 
     // Progress Ring
     const radius = els.progressCircle.r.baseVal.value;
@@ -1009,11 +1032,14 @@ function renderTodayLog() {
         li.innerHTML = \`
             <div class="time">
                 <span class="material-icons-round" style="font-size: 16px;">schedule</span>
-                \${timeStr}
+                \\\${timeStr}
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
-                <span class="amount">\${item.amount}ml</span>
-                <button class="delete-btn" onclick="deleteIntake(\${item.id})">
+                <div style="text-align: right;">
+                    <span class="amount">\\\${item.amount}ml</span>
+                    \\\${item.caffeine ? \\\`<br><span style="font-size: 0.75rem; color: #ffa726; font-weight: 500;">☕ \\\${item.caffeine}mg</span>\\\` : ''}
+                </div>
+                <button class="delete-btn" onclick="deleteIntake(\\\${item.id})">
                     <span class="material-icons-round" style="font-size: 20px;">close</span>
                 </button>
             </div>
@@ -1028,8 +1054,8 @@ function renderWeeklyChart() {
     // Update Range Label
     const start = data[0].date;
     const end = data[6].date;
-    const fmt = d => \`\${d.getFullYear()}/\${d.getMonth() + 1}/\${d.getDate()}\`;
-    els.weekRangeLabel.innerText = \`\${fmt(start)} - \${fmt(end)}\`;
+    const fmt = d => \\\`\\\${d.getFullYear()}/\\\${d.getMonth() + 1}/\\\${d.getDate()}\\\`;
+    els.weekRangeLabel.innerText = \\\`\\\${fmt(start)} - \\\${fmt(end)}\\\`;
 
     const maxVal = Math.max(...data.map(d => d.total), settings.goal);
 
@@ -1042,17 +1068,17 @@ function renderWeeklyChart() {
         // Pass ISO string to avoid issues, we'll parse it back
         const dateParam = day.date.toISOString();
 
-        chartHTML += \`
-            <div class="bar-col" onclick="openDailyDetail(new Date('\${dateParam}'))">
-                <div class="bar-value">\${day.total}</div>
+        chartHTML += \\\`
+            <div class="bar-col" onclick="openDailyDetail(new Date('\\\${dateParam}'))">
+                <div class="bar-value">\\\${day.total}</div>
                 <div class="bar-bg">
-                    <div class="bar-fill" style="height: \${heightPercent}%; background-color: \${color};"></div>
+                    <div class="bar-fill" style="height: \\\${heightPercent}%; background-color: \\\${color};"></div>
                 </div>
-                <div class="bar-date" style="\${isToday ? 'font-weight:bold; color:var(--primary-color)' : ''}">
-                    \${day.label}<br>\${day.dayName}
+                <div class="bar-date" style="\\\${isToday ? 'font-weight:bold; color:var(--primary-color)' : ''}">
+                    \\\${day.label}<br>\\\${day.dayName}
                 </div>
             </div>
-        \`;
+        \\\`;
     });
     chartHTML += '</div>';
 
@@ -1091,6 +1117,7 @@ function setupEventListeners() {
         dateTitle: document.getElementById('dailyDetailDate'),
         list: document.getElementById('dailyLogList'),
         input: document.getElementById('manualAddInput'),
+        caffeineInput: document.getElementById('manualAddCaffeineInput'),
         addBtn: document.getElementById('manualAddBtn'),
         closeBtn: document.getElementById('closeDailyDetail')
     };
@@ -1099,7 +1126,7 @@ function setupEventListeners() {
 
     window.openDailyDetail = (date) => {
         currentDetailDate = date;
-        detailEls.dateTitle.innerText = \`\${date.getFullYear()}/\${date.getMonth() + 1}/\${date.getDate()}\`;
+        detailEls.dateTitle.innerText = \\\`\\\${date.getFullYear()}/\\\${date.getMonth() + 1}/\\\${date.getDate()}\\\`;
 
         // Filter logs for this date
         const dayStr = date.toDateString();
@@ -1113,17 +1140,21 @@ function setupEventListeners() {
             logs.forEach(item => {
                 const li = document.createElement('li');
                 li.className = 'log-item';
-                li.innerHTML = \`
-                    <div style="font-weight:bold;">\${item.amount}ml</div>
-                    <button class="delete-btn" onclick="deleteHistoryItem(\${item.id})">
+                li.innerHTML = \\\`
+                    <div style="display: flex; flex-direction: column;">
+                        <div style="font-weight:bold;">\\\${item.amount}ml</div>
+                        \\\${item.caffeine ? \\\`<div style="font-size:0.75rem; color:#ffa726; font-weight: 500;">☕ \\\${item.caffeine}mg</div>\\\` : ''}
+                    </div>
+                    <button class="delete-btn" onclick="deleteHistoryItem(\\\${item.id})">
                         <span class="material-icons-round" style="font-size: 20px;">close</span>
                     </button>
-                \`;
+                \\\`;
                 detailEls.list.appendChild(li);
             });
         }
 
         detailEls.input.value = '';
+        if (detailEls.caffeineInput) detailEls.caffeineInput.value = '';
         toggleModal(detailEls.modal, true);
     };
 
@@ -1139,6 +1170,7 @@ function setupEventListeners() {
 
     detailEls.addBtn.addEventListener('click', () => {
         const val = parseInt(detailEls.input.value);
+        const caffeineVal = parseInt(detailEls.caffeineInput.value) || 0;
         if (val > 0 && currentDetailDate) {
             // Set time to current time but date to selected date
             // OR just set to noon to avoid timezone trickiness, but let's try to keep it simple
@@ -1147,13 +1179,14 @@ function setupEventListeners() {
             const now = new Date();
             newDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
 
-            addIntake(val, newDate);
+            addIntake(val, newDate, caffeineVal);
         }
     });
 
     // Custom Add Modal
     els.customAddBtn.addEventListener('click', () => {
         els.customInput.value = '';
+        if (els.customCaffeineInput) els.customCaffeineInput.value = '';
         toggleModal(els.customModal, true);
         els.customInput.focus();
     });
@@ -1162,8 +1195,9 @@ function setupEventListeners() {
 
     els.confirmCustom.addEventListener('click', () => {
         const val = parseInt(els.customInput.value);
+        const caffeineVal = parseInt(els.customCaffeineInput.value) || 0;
         if (val > 0) {
-            addIntake(val);
+            addIntake(val, null, caffeineVal);
             toggleModal(els.customModal, false);
         }
     });
