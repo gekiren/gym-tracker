@@ -11,19 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.6', // OTA識別用のバージョン文字列
+  version: '1.1.7', // OTA識別用のバージョン文字列
   title: {
-    ja: '入力欄の操作性向上',
-    en: 'Workout Input Improvements',
+    ja: '初期画面とレイアウトの調整',
+    en: 'Initial Screen & Layout Adjustments',
   },
   notes: {
     ja: [
-      '重量・回数・RPEの入力欄をタップした際、既存の数値が自動選択（ハイライト）され、削除の手間なく上書きできるようにしました。',
-      '数値入力せずにフォーカスアウトした場合は、変更前の元の数値を自動で復帰・維持するようにしました。',
+      'アプリ起動時の初期画面をライフログダッシュボードに変更しました。',
+      '筋トレ画面をタブバー内に戻し、以前と同様に下部ナビゲーションから履歴やプロフィールへ遷移できるようにしました。',
+      '筋トレ画面からダッシュボードに戻るための「戻る」ボタンをヘッダー左側に追加しました。',
     ],
     en: [
-      'Auto-select text when focusing on weight, reps, or RPE input fields for faster editing.',
-      'Automatically restore and maintain the previous value if the input field is left empty upon blurring.',
+      'Set the lifelog dashboard as the initial screen upon app startup.',
+      'Moved the workout screen back to the tab bar for standard navigation to history and profile.',
+      'Added a back button on the header of the workout screen to return to the dashboard.',
     ]
   }
 };
