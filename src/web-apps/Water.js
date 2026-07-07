@@ -638,6 +638,54 @@ input {
 .bar-date {
     font-size: 0.7rem;
 }
+
+/* Date Selector Header Styles */
+.date-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--card-bg);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+.date-header .icon-button {
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+.date-header .icon-button:active {
+    background: rgba(255, 255, 255, 0.15);
+}
+.date-text-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.date-text {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+.today-badge {
+    background: rgba(79, 172, 254, 0.2);
+    color: var(--primary-color);
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+.today-badge:active {
+    background: rgba(79, 172, 254, 0.35);
+}
+.today-badge.hidden {
+    display: none;
+}
 </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -648,6 +696,20 @@ input {
 
 <body>
     <div class="app-container">
+        <!-- Date Selector Header -->
+        <div class="date-header">
+            <button id="prevDayBtn" class="icon-button" aria-label="前日">
+                <span class="material-icons-round">chevron_left</span>
+            </button>
+            <div class="date-text-container">
+                <span id="dateText" class="date-text"></span>
+                <button id="todayBadge" class="today-badge hidden">今日に戻る</button>
+            </div>
+            <button id="nextDayBtn" class="icon-button" aria-label="翌日">
+                <span class="material-icons-round">chevron_right</span>
+            </button>
+        </div>
+
         <!-- Header / Progress Section -->
         <header class="header-section">
             <div class="progress-container">
@@ -798,7 +860,8 @@ const SETTINGS_KEY = 'hydration_settings_v1';
 // --- State ---
 let state = {
     intakeHistory: [], // Array of { id, timestamp, amount }
-    weekOffset: 0 // 0 = current week, -1 = previous week
+    weekOffset: 0, // 0 = current week, -1 = previous week
+    currentDate: ''
 };
 
 let settings = {
@@ -822,6 +885,12 @@ const els = {
     weeklyView: document.getElementById('weeklyView'),
     todayLogList: document.getElementById('todayLogList'),
     weeklyChart: document.getElementById('weeklyChart'),
+
+    // Date Selector
+    prevDayBtn: document.getElementById('prevDayBtn'),
+    nextDayBtn: document.getElementById('nextDayBtn'),
+    dateText: document.getElementById('dateText'),
+    todayBadge: document.getElementById('todayBadge'),
 
     // Week Nav
     prevWeekBtn: document.getElementById('prevWeekBtn'),
@@ -852,6 +921,7 @@ const els = {
 
 // --- Initialization ---
 function init() {
+    state.currentDate = window.__TARGET_DATE__ || formatDateLocal(new Date());
     loadData();
     renderControlButtons(); // Render presets
     updateUI();
@@ -930,9 +1000,19 @@ function formatDateLocal(d) {
 function addIntake(amount, dateOverride = null, caffeine = 0) {
     if (!amount || amount <= 0) return;
 
-    // Use provided date or current time (as milliseconds)
-    const timestamp = dateOverride ? dateOverride.getTime() : Date.now();
-    const dateStr = formatDateLocal(dateOverride ? dateOverride : new Date());
+    let timestamp;
+    let dateStr;
+
+    if (dateOverride) {
+        timestamp = dateOverride.getTime();
+        dateStr = formatDateLocal(dateOverride);
+    } else {
+        const parts = state.currentDate.split('/').map(Number);
+        const now = new Date();
+        const dateObj = new Date(parts[0], parts[1] - 1, parts[2], now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+        timestamp = dateObj.getTime();
+        dateStr = state.currentDate;
+    }
 
     const entry = {
         id: timestamp,
@@ -959,8 +1039,7 @@ function deleteIntake(id) {
 }
 
 function getTodayIntake() {
-    const today = formatDateLocal(new Date());
-    return state.intakeHistory.filter(item => item.date === today);
+    return state.intakeHistory.filter(item => item.date === state.currentDate);
 }
 
 function getTotalToday() {
@@ -975,8 +1054,9 @@ function getTotalCaffeineToday() {
 
 function getWeeklyData(offset = 0) {
     // Determine the "end date" of the requested week.
-    // Logic: Current date + (offset * 7 days)
-    const anchorDate = new Date();
+    // Logic: Anchor date + (offset * 7 days)
+    const parts = state.currentDate.split('/').map(Number);
+    const anchorDate = new Date(parts[0], parts[1] - 1, parts[2]);
     anchorDate.setDate(anchorDate.getDate() + (offset * 7));
 
     const days = [];
@@ -989,7 +1069,7 @@ function getWeeklyData(offset = 0) {
 
     // Let's implement Sunday-Saturday logic based on offset.
     // 1. Find current week's Last Day (Saturday)
-    const current = new Date();
+    const current = new Date(parts[0], parts[1] - 1, parts[2]);
     const dayOfWeek = current.getDay(); // 0(Sun) - 6(Sat)
     const diffToSat = 6 - dayOfWeek;
 
@@ -1042,6 +1122,21 @@ function updateUI() {
     els.percentage.innerText = \`\${percent}%\`;
     if (els.todayCaffeine) {
         els.todayCaffeine.innerText = totalCaffeine.toLocaleString();
+    }
+
+    // Update Date Selector
+    els.dateText.innerText = state.currentDate;
+    const todayStr = formatDateLocal(new Date());
+    if (state.currentDate === todayStr) {
+        els.todayBadge.classList.add('hidden');
+    } else {
+        els.todayBadge.classList.remove('hidden');
+    }
+
+    // Update Tab Text based on selected date
+    const todayTab = document.querySelector('.tab-btn[data-tab="today"]');
+    if (todayTab) {
+        todayTab.innerText = (state.currentDate === todayStr) ? '今日の記録' : '選択日の記録';
     }
 
     // Progress Ring
@@ -1143,7 +1238,41 @@ const toggleModal = (modal, show) => {
     }
 };
 
+// --- Date Navigation Functions ---
+function changeDay(offset) {
+    const parts = state.currentDate.split('/').map(Number);
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    d.setDate(d.getDate() + offset);
+    state.currentDate = formatDateLocal(d);
+    notifyDateChanged();
+    updateUI();
+}
+
+function goToday() {
+    state.currentDate = formatDateLocal(new Date());
+    notifyDateChanged();
+    updateUI();
+}
+
+function notifyDateChanged() {
+    try {
+        if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'DATE_CHANGED',
+                date: state.currentDate
+            }));
+        }
+    } catch (e) {
+        console.error("Failed to post DATE_CHANGED message", e);
+    }
+}
+
 function setupEventListeners() {
+    // Date Selector Events
+    els.prevDayBtn.addEventListener('click', () => changeDay(-1));
+    els.nextDayBtn.addEventListener('click', () => changeDay(1));
+    els.todayBadge.addEventListener('click', () => goToday());
+
     // Week Nav
     els.prevWeekBtn.addEventListener('click', () => {
         state.weekOffset--;

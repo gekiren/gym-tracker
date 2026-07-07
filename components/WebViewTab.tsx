@@ -3,6 +3,7 @@ import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getInitialDataForWebView, handleWebViewMessage } from '../src/services/lifelogSyncService';
+import { useLifelogStore } from '../src/store/lifelogStore';
 
 interface WebViewTabProps {
   html: string;
@@ -53,6 +54,7 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
       <script>
         (function() {
           window.__INITIAL_WEBVIEW_DATA__ = ${JSON.stringify(initialStorage)};
+          window.__TARGET_DATE__ = "${currentDate}";
         })();
       </script>
     `;
@@ -71,6 +73,13 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
 
       if (message.type === 'WEB_ERROR') {
         console.error(`[WebView JS Error]: ${message.message}`);
+        return;
+      }
+
+      if (message.type === 'DATE_CHANGED') {
+        const { date } = message;
+        console.log(`[WebViewTab] DATE_CHANGED date=${date}`);
+        await useLifelogStore.getState().setCurrentDate(date);
         return;
       }
 
