@@ -49,6 +49,21 @@ export default function DashboardScreen() {
     return `${y}/${m}/${d}`;
   };
 
+  const parseDateStr = (dateStr: string): Date => {
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const parsed = new Date(year, month, day);
+      if (!isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    }
+    const parsed = new Date(dateStr);
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
+  };
+
   useFocusEffect(
     useCallback(() => {
       const today = getTodayStr();
@@ -59,13 +74,13 @@ export default function DashboardScreen() {
 
   // Date navigation
   const handlePrevDay = () => {
-    const date = new Date(currentDate || getTodayStr());
+    const date = parseDateStr(currentDate || getTodayStr());
     date.setDate(date.getDate() - 1);
     setCurrentDate(formatDate(date));
   };
 
   const handleNextDay = () => {
-    const date = new Date(currentDate || getTodayStr());
+    const date = parseDateStr(currentDate || getTodayStr());
     date.setDate(date.getDate() + 1);
     setCurrentDate(formatDate(date));
   };
