@@ -25,7 +25,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 registerGlobalErrorHandler();
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  initialRouteName: 'index',
 };
 
 export default function RootLayout() {
@@ -327,6 +327,7 @@ export default function RootLayout() {
       <KeyboardProvider statusBarTranslucent={true}>
         <ThemeProvider value={DarkTheme}>
           <Stack>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="select-exercise" options={{ presentation: 'modal', title: i18n.t('ui.profile.screen_title_select_exercise') }} />
             <Stack.Screen name="active-workout" options={{ presentation: 'fullScreenModal' }} />

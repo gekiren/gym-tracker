@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.19', // OTA識別用のバージョン文字列
+  version: '1.1.20', // OTA識別用のバージョン文字列
   title: {
-    ja: '水分補給画面のキーボード挙動改善',
-    en: 'Hydration Keyboard Behavior Improvements',
+    ja: 'ダッシュボードの初期画面化とバグ修正',
+    en: 'Dashboard as Initial Screen and Bug Fix',
   },
   notes: {
     ja: [
-      'クイック追加ボタンの3つ目の設定で確定キーを押した際に、キーボードが閉じるようにしました。',
-      '任意入力のカフェイン入力欄で確定キーを押した際に、キーボードが閉じるようにしました。',
+      'アプリ起動時の初期画面をダッシュボード画面に変更しました。',
+      'ダッシュボード画面上部に表示されていた不要なヘッダー（INDEXと戻るボタン）を非表示にしました。',
     ],
     en: [
-      'Dismiss software keyboard when pressing Enter on the 3rd quick add preset input.',
-      'Dismiss software keyboard when pressing Enter on the caffeine input field.',
+      'Configured the dashboard as the initial application screen on startup.',
+      'Hidden the unnecessary default navigation header at the top of the dashboard screen.',
     ]
   }
 };
