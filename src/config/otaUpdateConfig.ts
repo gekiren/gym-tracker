@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.20', // OTA識別用のバージョン文字列
+  version: '1.1.21', // OTA識別用のバージョン文字列
   title: {
-    ja: 'ダッシュボードの初期画面化とバグ修正',
-    en: 'Dashboard as Initial Screen and Bug Fix',
+    ja: 'ダッシュボードヘッダーの調整',
+    en: 'Dashboard Header Adjustments',
   },
   notes: {
     ja: [
-      'アプリ起動時の初期画面をダッシュボード画面に変更しました。',
-      'ダッシュボード画面上部に表示されていた不要なヘッダー（INDEXと戻るボタン）を非表示にしました。',
+      'ダッシュボードヘッダーの幅を調整し、ステータスバーやカメラとの重なりを解消しました。',
+      '日付切り替えボタンのタップ操作性を改善しました。',
     ],
     en: [
-      'Configured the dashboard as the initial application screen on startup.',
-      'Hidden the unnecessary default navigation header at the top of the dashboard screen.',
+      'Adjusted the dashboard header height to resolve overlap with the status bar and camera notch.',
+      'Improved touch usability for the date switcher buttons.',
     ]
   }
 };

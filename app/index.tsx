@@ -8,11 +8,13 @@ import { useWorkoutStore } from '../src/store/workoutStore';
 import { useLifelogStore } from '../src/store/lifelogStore';
 import { saveSetting } from '../src/db/database';
 import { readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../src/services/crashReporterService';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
 export default function DashboardScreen() {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   
   // Workout Store
   const isActive = useWorkoutStore(state => state.isActive);
@@ -178,7 +180,7 @@ export default function DashboardScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
       {/* Date Switcher Header */}
-      <View style={styles.dateHeader}>
+      <View style={[styles.dateHeader, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
         <TouchableOpacity onPress={handlePrevDay} style={styles.dateNavBtn}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
