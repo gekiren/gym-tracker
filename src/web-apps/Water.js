@@ -1405,6 +1405,33 @@ function setupEventListeners() {
         }
     });
 
+    // Dismiss software keyboard on Enter key for preset3
+    if (els.presetInputs[2]) {
+        els.presetInputs[2].addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                els.presetInputs[2].blur();
+            }
+        });
+    }
+
+    // Dismiss software keyboard on Enter key for custom caffeine input
+    if (els.customCaffeineInput) {
+        els.customCaffeineInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                els.customCaffeineInput.blur();
+            }
+        });
+    }
+
+    // Dismiss software keyboard on Enter key for manual add caffeine input
+    if (detailEls.caffeineInput) {
+        detailEls.caffeineInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                detailEls.caffeineInput.blur();
+            }
+        });
+    }
+
     // Tabs
     els.tabs.forEach(tab => {
         tab.addEventListener('click', () => {

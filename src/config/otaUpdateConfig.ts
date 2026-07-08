@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.18', // OTA識別用のバージョン文字列
+  version: '1.1.19', // OTA識別用のバージョン文字列
   title: {
-    ja: '水分補給画面のレイアウト改善',
-    en: 'Water Intake Layout Improvements',
+    ja: '水分補給画面のキーボード挙動改善',
+    en: 'Hydration Keyboard Behavior Improvements',
   },
   notes: {
     ja: [
-      '水分実績が2000mlを超えた際の円と文字の被りを解消するため、表示円のサイズを拡大しました。',
-      'カフェイン入力欄の文字サイズを下げて見切れを解消し、入力欄の上にラベルを追加しました。',
+      'クイック追加ボタンの3つ目の設定で確定キーを押した際に、キーボードが閉じるようにしました。',
+      '任意入力のカフェイン入力欄で確定キーを押した際に、キーボードが閉じるようにしました。',
     ],
     en: [
-      'Enlarged the progress circle size to prevent overlapping with text when intake exceeds 2000ml.',
-      'Adjusted caffeine input font size to prevent layout cut-off and added a label above the field.',
+      'Dismiss software keyboard when pressing Enter on the 3rd quick add preset input.',
+      'Dismiss software keyboard when pressing Enter on the caffeine input field.',
     ]
   }
 };
