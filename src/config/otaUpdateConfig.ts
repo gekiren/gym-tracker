@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.27', // OTA識別用のバージョン文字列
+  version: '1.1.28', // OTA識別用のバージョン文字列
   title: {
-    ja: '24時間管理画面の日付表示不具合の修正',
-    en: 'Fix Date Display in 24-Hour Manager',
+    ja: '24時間管理の記録機能の改善',
+    en: 'Improvements to 24-Hour Manager',
   },
   notes: {
     ja: [
-      '24時間管理画面を開いた際に日付が空欄になってしまう不具合を修正しました。',
-      'ダッシュボード上のクイック追加ボタンを水分補給のカスタムプリセット（最大6個）と同期し、カフェイン量を正しく記録できるようにしました。',
+      '24時間管理において、活動内容（活動名）を入力せずに時間のみで記録できるようになりました。',
+      '活動名が空欄で記録された場合、詳細ログや集計に「(未設定)」として表示されます。',
     ],
     en: [
-      'Fixed an issue where the date was blank when opening the 24-hour manager screen.',
-      'Synchronized dashboard quick add buttons with custom presets (up to 6) and fixed caffeine recording.',
+      'You can now record logs with only a time range, leaving the activity name blank in the 24-hour manager.',
+      'Blank activity names will be displayed as "(Not Set)" in logs and summaries.',
     ]
   }
 };

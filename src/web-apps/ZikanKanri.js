@@ -659,23 +659,16 @@ saveBtn.addEventListener('click', () => {
     if (isSimultaneousMode) {
         const rows = document.querySelectorAll('.simultaneous-row');
         rows.forEach(row => {
-            const name = row.querySelector('.sim-name').value;
+            const name = row.querySelector('.sim-name').value.trim();
             const percent = parseInt(row.querySelector('.sim-percent').value) || 0;
-            if (name) {
-                newItems.push({ name, percent });
-            }
+            newItems.push({ name: name || "", percent });
         });
         if (newItems.length === 0) {
-            alert('活動を入力してください。');
-            return;
+            newItems.push({ name: "", percent: 100 });
         }
     } else {
-        const name = activityNameInput.value;
-        if (!name) {
-            alert('活動名を入力してください。');
-            return;
-        }
-        newItems.push({ name, percent: 100 });
+        const name = activityNameInput.value.trim();
+        newItems.push({ name: name || "", percent: 100 });
     }
 
     // Check for Overlaps
@@ -926,7 +919,8 @@ if (exportMdBtn) {
 
         sortedTotals.forEach(([name, mins]) => {
             const percent = totalMins > 0 ? Math.round((mins / totalMins) * 100) : 0;
-            md += \`| \${name} | \${Math.round(mins)} | \${percent}% |\\n\`;
+            const displayName = name.trim() ? name : '(未設定)';
+            md += \`| \${displayName} | \${Math.round(mins)} | \${percent}% |\\n\`;
         });
 
         md += \`\\n## 詳細ログ\\n\`;
@@ -934,9 +928,12 @@ if (exportMdBtn) {
             const duration = calculateDuration(log.start, log.end);
             let content = '';
             if (log.items.length === 1) {
-                content = log.items[0].name;
+                content = log.items[0].name.trim() || '(未設定)';
             } else {
-                content = log.items.map(i => \`\${i.name}(\${i.percent}%)\`).join(', ');
+                content = log.items.map(i => {
+                    const itemName = i.name.trim();
+                    return \`\${itemName || '(未設定)'}(\${i.percent}%)\`;
+                }).join(', ');
             }
             md += \`- **\${log.start} - \${log.end}** (\${duration}分): \${content}\\n\`;
         });
@@ -1016,10 +1013,15 @@ function renderLogs() {
 
         let content = '';
         if (log.items.length === 1) {
-            content = \`<strong>\${log.items[0].name}</strong>\`;
+            const name = log.items[0].name.trim();
+            content = name ? \`<strong>\${name}</strong>\` : \`<span style="color: var(--text-secondary); font-style: italic;">(未設定)</span>\`;
         } else {
             content = '<div style="font-size:0.9rem;">' +
-                log.items.map(i => \`\${i.name} (\${i.percent}%)\`).join(' / ') +
+                log.items.map(i => {
+                    const name = i.name.trim();
+                    const displayName = name ? name : '(未設定)';
+                    return \`\${displayName} (\${i.percent}%)\`;
+                }).join(' / ') +
                 '</div>';
         }
 
@@ -1081,7 +1083,8 @@ function renderSummary(targetLogs) {
         row.className = 'flex-row justify-between';
         row.style.padding = '8px 0';
         row.style.borderBottom = '1px solid #333';
-        row.innerHTML = \`<span style="display:flex; align-items:center; gap:8px;">\${name}</span><span>\${Math.round(mins)}分</span>\`;
+        const displayName = name.trim() ? name : \`<span style="color: var(--text-secondary); font-style: italic;">(未設定)</span>\`;
+        row.innerHTML = \`<span style="display:flex; align-items:center; gap:8px;">\${displayName}</span><span>\${Math.round(mins)}分</span>\`;
         summaryList.appendChild(row);
     });
 
@@ -1195,10 +1198,12 @@ function renderSummary(targetLogs) {
         label.setAttribute("pointer-events", "none");
 
         if ((endMins - startMins) > 15) {
-            let textContent = log.items.map(i => i.name).join('/');
+            let textContent = log.items.map(i => i.name.trim()).filter(n => n !== '').join('/');
             if (textContent.length > 5) textContent = textContent.substring(0, 4) + '..';
-            label.textContent = textContent;
-            svg.appendChild(label);
+            if (textContent) {
+                label.textContent = textContent;
+                svg.appendChild(label);
+            }
         }
     });
 
