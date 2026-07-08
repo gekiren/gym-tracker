@@ -63,6 +63,7 @@ interface LifelogState {
   waterLogs: WaterLog[];
   waterGoal: number;
   caffeineLimit: number;
+  waterPresets: Array<{ amount: number; caffeine: number }>;
   timeLogs: TimeLog[];
   habitItems: HabitItem[];
   habitLogs: HabitLog[];
@@ -209,6 +210,14 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
   waterLogs: [],
   waterGoal: 2000,
   caffeineLimit: 400,
+  waterPresets: [
+    { amount: 150, caffeine: 0 },
+    { amount: 250, caffeine: 0 },
+    { amount: 500, caffeine: 0 },
+    { amount: 150, caffeine: 80 },
+    { amount: 350, caffeine: 40 },
+    { amount: 250, caffeine: 100 }
+  ],
   timeLogs: [],
   habitItems: [],
   habitLogs: [],
@@ -219,7 +228,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
   setCurrentDate: async (date: string) => {
     set({ currentDate: date, isLoading: true });
     try {
-      const [waterLogs, waterGoal, caffeineLimit, timeLogs, habitItems, habitLogs, routineVal] = await Promise.all([
+      const [waterLogs, waterGoal, caffeineLimit, timeLogs, habitItems, habitLogs, routineVal, waterSettingsVal] = await Promise.all([
         getWaterLogs(date),
         getWaterGoal(),
         getCaffeineLimit(),
@@ -227,9 +236,36 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
         getHabitItems(),
         getHabitLogs(date),
         getSettingValue('routine_tracker_data'),
+        getSettingValue('hydration_settings_v1'),
       ]);
 
       const routineData = routineVal ? JSON.parse(routineVal) : [];
+
+      // Parse water presets
+      let waterPresets = [
+        { amount: 150, caffeine: 0 },
+        { amount: 250, caffeine: 0 },
+        { amount: 500, caffeine: 0 },
+        { amount: 150, caffeine: 80 },
+        { amount: 350, caffeine: 40 },
+        { amount: 250, caffeine: 100 }
+      ];
+      if (waterSettingsVal) {
+        try {
+          const parsed = JSON.parse(waterSettingsVal);
+          let parsedPresets = parsed.presets || [];
+          if (parsedPresets.length > 0 && typeof parsedPresets[0] === 'number') {
+            parsedPresets = parsedPresets.map((val: number) => ({ amount: val, caffeine: 0 }));
+          }
+          while (parsedPresets.length < 6) {
+            const idx = parsedPresets.length;
+            parsedPresets.push(waterPresets[idx] || { amount: 200, caffeine: 0 });
+          }
+          waterPresets = parsedPresets.slice(0, 6);
+        } catch (e) {
+          console.warn('Failed to parse hydration settings in setCurrentDate:', e);
+        }
+      }
 
       const daySummary = calculateSummary(
         date,
@@ -246,6 +282,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
         waterLogs,
         waterGoal,
         caffeineLimit,
+        waterPresets,
         timeLogs,
         habitItems,
         habitLogs,
@@ -261,12 +298,32 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
 
   loadWaterData: async (date: string) => {
     try {
-      const [waterLogs, waterGoal, caffeineLimit] = await Promise.all([
+      const [waterLogs, waterGoal, caffeineLimit, waterSettingsVal] = await Promise.all([
         getWaterLogs(date),
         getWaterGoal(),
         getCaffeineLimit(),
+        getSettingValue('hydration_settings_v1'),
       ]);
-      set({ waterLogs, waterGoal, caffeineLimit });
+
+      let waterPresets = get().waterPresets;
+      if (waterSettingsVal) {
+        try {
+          const parsed = JSON.parse(waterSettingsVal);
+          let parsedPresets = parsed.presets || [];
+          if (parsedPresets.length > 0 && typeof parsedPresets[0] === 'number') {
+            parsedPresets = parsedPresets.map((val: number) => ({ amount: val, caffeine: 0 }));
+          }
+          while (parsedPresets.length < 6) {
+            const idx = parsedPresets.length;
+            parsedPresets.push({ amount: 200, caffeine: 0 });
+          }
+          waterPresets = parsedPresets.slice(0, 6);
+        } catch (e) {
+          console.warn('Failed to parse hydration settings in loadWaterData:', e);
+        }
+      }
+
+      set({ waterLogs, waterGoal, caffeineLimit, waterPresets });
       if (get().currentDate === date) {
         get().refreshSummary(date);
       }

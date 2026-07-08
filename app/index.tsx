@@ -30,6 +30,7 @@ export default function DashboardScreen() {
   const setCurrentDate = useLifelogStore(state => state.setCurrentDate);
   const addWater = useLifelogStore(state => state.addWater);
   const addHabitLog = useLifelogStore(state => state.addHabitLog);
+  const waterPresets = useLifelogStore(state => state.waterPresets);
 
   // Local state for onboarding/modals
   const [isSendingCrash, setIsSendingCrash] = useState(false);
@@ -92,9 +93,9 @@ export default function DashboardScreen() {
   };
 
   // Quick actions
-  const handleAddWaterAmount = async (amount: number) => {
+  const handleAddWaterAmount = async (amount: number, caffeine?: number) => {
     const today = currentDate || getTodayStr();
-    await addWater(amount, today);
+    await addWater(amount, today, caffeine);
   };
 
   const handleIncrementHabit = async (habitItemId: number) => {
@@ -289,27 +290,18 @@ export default function DashboardScreen() {
 
             {/* Quick Add Presets */}
             <View style={styles.presetsRow}>
-              <TouchableOpacity 
-                style={styles.presetBtn} 
-                onPress={() => handleAddWaterAmount(200)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.presetBtnText}>+200ml</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.presetBtn} 
-                onPress={() => handleAddWaterAmount(300)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.presetBtnText}>+300ml</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.presetBtn} 
-                onPress={() => handleAddWaterAmount(500)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.presetBtnText}>+500ml</Text>
-              </TouchableOpacity>
+              {waterPresets.map((preset, idx) => (
+                <TouchableOpacity 
+                  key={idx}
+                  style={styles.presetBtn} 
+                  onPress={() => handleAddWaterAmount(preset.amount, preset.caffeine)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.presetBtnText}>
+                    {preset.caffeine > 0 ? `☕${preset.amount}ml` : `${preset.amount}ml`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
         </TouchableOpacity>
@@ -701,10 +693,12 @@ const styles = StyleSheet.create({
   },
   presetsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
   presetBtn: {
-    flex: 1,
+    flexBasis: '30%',
+    flexGrow: 1,
     backgroundColor: 'rgba(255,255,255,0.05)',
     paddingVertical: 8,
     borderRadius: Theme.borderRadius.md,
