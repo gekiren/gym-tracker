@@ -476,9 +476,47 @@ let logs = JSON.parse(localStorage.getItem('zikankanri_logs')) || [];
 let templates = JSON.parse(localStorage.getItem('zikankanri_templates')) || [];
 let defaultTags = JSON.parse(localStorage.getItem('zikankanri_tags')) || ["睡眠", "仕事", "食事", "移動", "休憩", "家事", "運動", "学習"];
 
+// 共通の日付クレンジング関数
+function sanitizeDate(dateStr) {
+    if (!dateStr || typeof dateStr !== 'string') return null;
+    
+    // スラッシュをハイフンに統一し、余計な空白をトリム
+    const cleaned = dateStr.replace(/\//g, '-').trim();
+    
+    // YYYY-MM-DD 形式の正規表現チェック
+    if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
+        return cleaned;
+    }
+    
+    // YYYY-M-D 形式（1桁）の補正
+    const parts = cleaned.split('-');
+    if (parts.length === 3) {
+        const y = parts[0];
+        const m = parts[1].padStart(2, '0');
+        const d = parts[2].padStart(2, '0');
+        if (y.length === 4 && !isNaN(y) && !isNaN(m) && !isNaN(d)) {
+            const numM = parseInt(m, 10);
+            const numD = parseInt(d, 10);
+            if (numM >= 1 && numM <= 12 && numD >= 1 && numD <= 31) {
+                return y + '-' + m + '-' + d;
+            }
+        }
+    }
+    return null;
+}
+
 // Initialize
 function init() {
-    currentDateInput.valueAsDate = new Date();
+    let dateVal = sanitizeDate(window.__TARGET_DATE__);
+    if (dateVal) {
+        currentDateInput.value = dateVal;
+    } else {
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const d = String(today.getDate()).padStart(2, '0');
+        currentDateInput.value = y + '-' + m + '-' + d;
+    }
     initTags();
     setDefaultTimes();
     renderLogs();
@@ -495,7 +533,22 @@ if (document.readyState === 'loading') {
 // Date Change Listener
 currentDateInput.addEventListener('change', () => {
     renderLogs();
+    notifyDateChanged();
 });
+
+function notifyDateChanged() {
+    try {
+        if (window.ReactNativeWebView) {
+            const selectedDate = currentDateInput.value.replace(/-/g, '/');
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'DATE_CHANGED',
+                date: selectedDate
+            }));
+        }
+    } catch (e) {
+        console.error("Failed to post DATE_CHANGED message", e);
+    }
+}
 
 // Init Tags
 function initTags() {

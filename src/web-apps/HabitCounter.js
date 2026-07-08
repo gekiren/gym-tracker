@@ -619,7 +619,54 @@ input:focus {
 // State
 let items = [];
 let logs = [];
-let currentStatsDate = new Date();
+
+function getTodayStr() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dStr = String(d.getDate()).padStart(2, '0');
+    return \`\${y}/\${m}/\${dStr}\`;
+}
+
+function parseDateStr(str) {
+    const parts = str.split('/');
+    if (parts.length === 3) {
+        return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    }
+    return new Date();
+}
+
+// 共通の日付クレンジング関数
+function sanitizeDate(dateStr) {
+    if (!dateStr || typeof dateStr !== 'string') return null;
+    
+    // スラッシュをハイフンに統一し、余計な空白をトリム
+    const cleaned = dateStr.replace(/\\//g, '-').trim();
+    
+    // YYYY-MM-DD 形式の正規表現チェック
+    if (/^\\d{4}-\\d{2}-\\d{2}$/.test(cleaned)) {
+        return cleaned.replace(/-/g, '/');
+    }
+    
+    // YYYY-M-D 形式（1桁）の補正
+    const parts = cleaned.split('-');
+    if (parts.length === 3) {
+        const y = parts[0];
+        const m = parts[1].padStart(2, '0');
+        const d = parts[2].padStart(2, '0');
+        if (y.length === 4 && !isNaN(y) && !isNaN(m) && !isNaN(d)) {
+            const numM = parseInt(m, 10);
+            const numD = parseInt(d, 10);
+            if (numM >= 1 && numM <= 12 && numD >= 1 && numD <= 31) {
+                return y + '/' + m + '/' + d;
+            }
+        }
+    }
+    return null;
+}
+
+let currentDateStr = sanitizeDate(window.__TARGET_DATE__) || getTodayStr();
+let currentStatsDate = parseDateStr(currentDateStr);
 let longPressTimer;
 let isLongPress = false;
 let editingItemId = null;
@@ -724,7 +771,7 @@ function setupEventListeners() {
 
     // Stats
     statsBtn.addEventListener('click', () => {
-        currentStatsDate = new Date(); // Reset to today
+        currentStatsDate = parseDateStr(currentDateStr); // Use selected date
         showStats();
     });
     closeStatsBtn.addEventListener('click', () => {
@@ -736,10 +783,12 @@ function setupEventListeners() {
     // Date Navigation
     prevDayBtn.addEventListener('click', () => {
         currentStatsDate.setDate(currentStatsDate.getDate() - 1);
+        notifyDateChanged(currentStatsDate);
         showStats();
     });
     nextDayBtn.addEventListener('click', () => {
         currentStatsDate.setDate(currentStatsDate.getDate() + 1);
+        notifyDateChanged(currentStatsDate);
         showStats();
     });
 
@@ -748,6 +797,24 @@ function setupEventListeners() {
         statsViewDetail.classList.add('hidden');
         statsViewMain.classList.remove('hidden');
     });
+
+function notifyDateChanged(dateObj) {
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    currentDateStr = \`\${y}/\${m}/\${d}\`;
+    render();
+    try {
+        if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'DATE_CHANGED',
+                date: currentDateStr
+            }));
+        }
+    } catch (e) {
+        console.error("Failed to post DATE_CHANGED message", e);
+    }
+}
 
     // Trend View Navigation
     trendPrevBtn.addEventListener('click', () => {
@@ -806,9 +873,14 @@ function addItem() {
 function track(id, event) {
     if (isLongPress) return; // Prevent track after long press
 
+    const parts = currentDateStr.split('/').map(Number);
+    const now = new Date();
+    const dateObj = new Date(parts[0], parts[1] - 1, parts[2], now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+    const timestamp = dateObj.getTime();
+
     logs.push({
         itemId: id,
-        timestamp: Date.now()
+        timestamp: timestamp
     });
     saveData();
 
@@ -839,11 +911,12 @@ function openEditModal(id) {
     if (!item) return;
 
     editingItemId = id;
-    editingDate = new Date(); // Default edit for today
+    editingDate = parseDateStr(currentDateStr); // Default edit for selected date
 
     const count = getCountForDate(id, editingDate);
 
-    editItemName.textContent = \`\${item.name} (今日)\`;
+    const isToday = currentDateStr === getTodayStr();
+    editItemName.textContent = \`\${item.name} (\${isToday ? '今日' : currentDateStr})\`;
     editCountValue.textContent = count;
 
     editModal.classList.remove('hidden');
@@ -941,7 +1014,7 @@ function render() {
         card.className = 'habit-card';
         card.style.background = item.color;
 
-        const count = getCountForDate(item.id, new Date());
+        const count = getCountForDate(item.id, parseDateStr(currentDateStr));
 
         card.innerHTML = \`
             <div class="habit-name">\${item.name}</div>
