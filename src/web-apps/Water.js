@@ -218,9 +218,16 @@ input {
 }
 
 .progress-ring__circle {
-    stroke-dasharray: 660;
-    /* 2 * PI * 105 */
-    stroke-dashoffset: 660;
+    stroke-dasharray: 703.7;
+    /* 2 * PI * 112 */
+    stroke-dashoffset: 703.7;
+    transition: stroke-dashoffset 0.5s ease-out;
+}
+
+.progress-ring__caffeine {
+    stroke-dasharray: 578;
+    /* 2 * PI * 92 */
+    stroke-dashoffset: 578;
     transition: stroke-dashoffset 0.5s ease-out;
 }
 
@@ -714,10 +721,17 @@ input {
         <header class="header-section">
             <div class="progress-container">
                 <svg class="progress-ring" width="250" height="250">
-                    <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.2)" stroke-width="12"
-                        fill="transparent" r="105" cx="125" cy="125" />
-                    <circle class="progress-ring__circle" stroke="#ffffff" stroke-width="12" stroke-linecap="round"
-                        fill="transparent" r="105" cx="125" cy="125" />
+                    <!-- 水の円（外側） -->
+                    <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.2)" stroke-width="10"
+                        fill="transparent" r="112" cx="125" cy="125" />
+                    <circle class="progress-ring__circle" stroke="#ffffff" stroke-width="10" stroke-linecap="round"
+                        fill="transparent" r="112" cx="125" cy="125" />
+                    
+                    <!-- カフェインの円（内側） -->
+                    <circle class="progress-ring__caffeine-bg" stroke="rgba(255,255,255,0.15)" stroke-width="8"
+                        fill="transparent" r="92" cx="125" cy="125" />
+                    <circle class="progress-ring__caffeine" stroke="#ffb74d" stroke-width="8" stroke-linecap="round"
+                        fill="transparent" r="92" cx="125" cy="125" />
                 </svg>
                 <div class="progress-text">
                     <div class="current-amount"><span id="currentAmount">0</span><span class="unit">ml</span></div>
@@ -883,6 +897,7 @@ const els = {
     goalAmount: document.getElementById('goalAmount'),
     percentage: document.getElementById('percentage'),
     progressCircle: document.querySelector('.progress-ring__circle'),
+    caffeineCircle: document.querySelector('.progress-ring__caffeine'),
     quickAddContainer: document.getElementById('quickAddButtons'),
     customAddBtn: document.getElementById('customAddBtn'),
     settingsBtn: document.getElementById('settingsBtn'),
@@ -1153,11 +1168,21 @@ function updateUI() {
         todayTab.innerText = (state.currentDate === todayStr) ? '今日の記録' : '選択日の記録';
     }
 
-    // Progress Ring
+    // Progress Ring (Water)
     const radius = els.progressCircle.r.baseVal.value;
     const circumference = radius * 2 * Math.PI;
     const offset = circumference - (percent / 100) * circumference;
     els.progressCircle.style.strokeDashoffset = offset;
+
+    // Progress Ring (Caffeine)
+    if (els.caffeineCircle) {
+        const limit = settings.caffeineLimit || DEFAULT_CAFFEINE_LIMIT;
+        const caffeinePercent = Math.min(100, Math.round((totalCaffeine / limit) * 100));
+        const caffeineRadius = els.caffeineCircle.r.baseVal.value;
+        const caffeineCircumference = caffeineRadius * 2 * Math.PI;
+        const caffeineOffset = caffeineCircumference - (caffeinePercent / 100) * caffeineCircumference;
+        els.caffeineCircle.style.strokeDashoffset = caffeineOffset;
+    }
 
     // Render Lists based on active tab
     if (els.todayView.classList.contains('active')) {
