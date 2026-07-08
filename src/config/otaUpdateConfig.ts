@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.17', // OTA識別用のバージョン文字列
+  version: '1.1.18', // OTA識別用のバージョン文字列
   title: {
-    ja: '水分補給画面の日付選択・同期機能',
-    en: 'Date Selection and Sync on Water Intake Screen',
+    ja: '水分補給画面のレイアウト改善',
+    en: 'Water Intake Layout Improvements',
   },
   notes: {
     ja: [
-      'ダッシュボードの日付変更が水分補給画面にも自動で反映されるようになりました。',
-      '水分補給画面の上部で日付（前日・翌日・今日に戻る）を変更できるようになり、ダッシュボードにもその日付が同期されます。',
+      '水分実績が2000mlを超えた際の円と文字の被りを解消するため、表示円のサイズを拡大しました。',
+      'カフェイン入力欄の文字サイズを下げて見切れを解消し、入力欄の上にラベルを追加しました。',
     ],
     en: [
-      'Date changes on the dashboard now automatically sync with the water intake screen.',
-      'Added a date selector header on the water intake screen to switch dates, which also syncs back to the dashboard.',
+      'Enlarged the progress circle size to prevent overlapping with text when intake exceeds 2000ml.',
+      'Adjusted caffeine input font size to prevent layout cut-off and added a label above the field.',
     ]
   }
 };

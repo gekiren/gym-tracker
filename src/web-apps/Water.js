@@ -206,8 +206,8 @@ input {
 
 .progress-container {
     position: relative;
-    width: 220px;
-    height: 220px;
+    width: 250px;
+    height: 250px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -218,9 +218,9 @@ input {
 }
 
 .progress-ring__circle {
-    stroke-dasharray: 565;
-    /* 2 * PI * 90 */
-    stroke-dashoffset: 565;
+    stroke-dasharray: 660;
+    /* 2 * PI * 105 */
+    stroke-dashoffset: 660;
     transition: stroke-dashoffset 0.5s ease-out;
 }
 
@@ -713,11 +713,11 @@ input {
         <!-- Header / Progress Section -->
         <header class="header-section">
             <div class="progress-container">
-                <svg class="progress-ring" width="220" height="220">
+                <svg class="progress-ring" width="250" height="250">
                     <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.2)" stroke-width="12"
-                        fill="transparent" r="90" cx="110" cy="110" />
+                        fill="transparent" r="105" cx="125" cy="125" />
                     <circle class="progress-ring__circle" stroke="#ffffff" stroke-width="12" stroke-linecap="round"
-                        fill="transparent" r="90" cx="110" cy="110" />
+                        fill="transparent" r="105" cx="125" cy="125" />
                 </svg>
                 <div class="progress-text">
                     <div class="current-amount"><span id="currentAmount">0</span><span class="unit">ml</span></div>
@@ -787,8 +787,9 @@ input {
                 <input type="number" id="customAmountInput" placeholder="200" inputmode="numeric">
                 <span class="unit-label">ml</span>
             </div>
-            <div class="input-group" style="margin-top: 8px;">
-                <input type="number" id="customCaffeineInput" placeholder="0 (オプション)" inputmode="numeric">
+            <label for="customCaffeineInput" style="display: block; text-align: center; margin-bottom: 6px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">カフェイン入力欄</label>
+            <div class="input-group" style="margin-top: 0;">
+                <input type="number" id="customCaffeineInput" placeholder="0 (オプション)" inputmode="numeric" style="font-size: 1.2rem; width: 120px;">
                 <span class="unit-label">mg</span>
             </div>
             <div class="modal-actions">
@@ -833,8 +834,9 @@ input {
                 <input type="number" id="manualAddInput" placeholder="200" inputmode="numeric">
                 <span class="unit-label">ml</span>
             </div>
+            <label for="manualAddCaffeineInput" style="display: block; text-align: center; margin-bottom: 6px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">カフェイン入力欄</label>
             <div class="input-group" style="margin-bottom: 16px;">
-                <input type="number" id="manualAddCaffeineInput" placeholder="0 (オプション)" inputmode="numeric">
+                <input type="number" id="manualAddCaffeineInput" placeholder="0 (オプション)" inputmode="numeric" style="font-size: 1.2rem; width: 120px;">
                 <span class="unit-label">mg</span>
             </div>
 
