@@ -481,10 +481,10 @@ function sanitizeDate(dateStr) {
     if (!dateStr || typeof dateStr !== 'string') return null;
     
     // スラッシュをハイフンに統一し、余計な空白をトリム
-    const cleaned = dateStr.replace(/\//g, '-').trim();
+    const cleaned = dateStr.replace(/\\//g, '-').trim();
     
     // YYYY-MM-DD 形式の正規表現チェック
-    if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
+    if (/^\\d{4}-\\d{2}-\\d{2}$/.test(cleaned)) {
         return cleaned;
     }
     
