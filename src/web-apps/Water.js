@@ -722,8 +722,8 @@ input {
                 <div class="progress-text">
                     <div class="current-amount"><span id="currentAmount">0</span><span class="unit">ml</span></div>
                     <div class="goal-amount">目標: <span id="goalAmount">2000</span>ml</div>
-                    <div class="caffeine-amount" id="caffeineAmount" style="font-size: 0.85rem; opacity: 0.9; margin-top: 4px; color: #ffa726; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                        <span class="material-icons-round" style="font-size: 16px;">coffee</span>カフェイン: <span id="todayCaffeine">0</span>mg
+                    <div class="caffeine-amount" id="caffeineAmount" style="font-size: 0.85rem; opacity: 0.9; margin-top: 4px; color: #000000; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        <span class="material-icons-round" style="font-size: 16px;">coffee</span>カフェイン: <span id="todayCaffeine">0</span> / <span id="caffeineLimit">400</span>mg
                     </div>
                     <div class="percentage" id="percentage">0%</div>
                 </div>
@@ -815,6 +815,10 @@ input {
                     <input type="number" id="preset3" class="preset-input" inputmode="numeric">
                 </div>
             </div>
+            <div class="setting-item">
+                <label for="caffeineLimitInput">1日のカフェイン上限 (mg)</label>
+                <input type="number" id="caffeineLimitInput" value="400" inputmode="numeric">
+            </div>
             <div class="modal-actions">
                 <button id="closeSettingsModal" class="text-button">キャンセル</button>
                 <button id="saveSettings" class="primary-button">保存</button>
@@ -856,6 +860,7 @@ input {
 // --- Constants & Config ---
 const DEFAULT_GOAL = 2000;
 const DEFAULT_PRESETS = [150, 250, 500];
+const DEFAULT_CAFFEINE_LIMIT = 400;
 const STORAGE_KEY = 'hydration_data_v1';
 const SETTINGS_KEY = 'hydration_settings_v1';
 
@@ -868,7 +873,8 @@ let state = {
 
 let settings = {
     goal: DEFAULT_GOAL,
-    presets: [...DEFAULT_PRESETS]
+    presets: [...DEFAULT_PRESETS],
+    caffeineLimit: DEFAULT_CAFFEINE_LIMIT
 };
 
 // --- DOM Elements ---
@@ -906,6 +912,7 @@ const els = {
     // Inputs
     customInput: document.getElementById('customAmountInput'),
     customCaffeineInput: document.getElementById('customCaffeineInput'),
+    caffeineLimitInput: document.getElementById('caffeineLimitInput'),
     goalInput: document.getElementById('goalInput'),
     presetInputs: [
         document.getElementById('preset1'),
@@ -919,6 +926,7 @@ const els = {
     closeSettings: document.getElementById('closeSettingsModal'),
     saveSettings: document.getElementById('saveSettings'),
     todayCaffeine: document.getElementById('todayCaffeine'),
+    caffeineLimit: document.getElementById('caffeineLimit'),
 };
 
 // --- Initialization ---
@@ -941,7 +949,8 @@ function loadData() {
                 ...settings,
                 ...parsed,
                 // Ensure presets exist if merging from old data
-                presets: (parsed && parsed.presets) || [...DEFAULT_PRESETS]
+                presets: (parsed && parsed.presets) || [...DEFAULT_PRESETS],
+                caffeineLimit: (parsed && typeof parsed.caffeineLimit === 'number') ? parsed.caffeineLimit : DEFAULT_CAFFEINE_LIMIT
             };
         }
     } catch (e) {
@@ -1125,6 +1134,9 @@ function updateUI() {
     if (els.todayCaffeine) {
         els.todayCaffeine.innerText = totalCaffeine.toLocaleString();
     }
+    if (els.caffeineLimit) {
+        els.caffeineLimit.innerText = (settings.caffeineLimit || DEFAULT_CAFFEINE_LIMIT).toLocaleString();
+    }
 
     // Update Date Selector
     els.dateText.innerText = state.currentDate;
@@ -1178,7 +1190,7 @@ function renderTodayLog() {
             <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="text-align: right;">
                     <span class="amount">\${item.amount}ml</span>
-                    \${item.caffeine ? \`<br><span style="font-size: 0.75rem; color: #ffa726; font-weight: 500;">☕ \${item.caffeine}mg</span>\` : ''}
+                    \${item.caffeine ? \`<br><span style="font-size: 0.75rem; color: #ffffff; font-weight: 500;">☕ \${item.caffeine}mg</span>\` : ''}
                 </div>
                 <button class="delete-btn" onclick="deleteIntake(\${item.id})">
                     <span class="material-icons-round" style="font-size: 20px;">close</span>
@@ -1318,7 +1330,7 @@ function setupEventListeners() {
                 li.innerHTML = \`
                     <div style="display: flex; flex-direction: column;">
                         <div style="font-weight:bold;">\${item.amount}ml</div>
-                        \${item.caffeine ? \`<div style="font-size:0.75rem; color:#ffa726; font-weight: 500;">☕ \${item.caffeine}mg</div>\` : ''}
+                        \${item.caffeine ? \`<div style="font-size:0.75rem; color:#ffffff; font-weight: 500;">☕ \${item.caffeine}mg</div>\` : ''}
                     </div>
                     <button class="delete-btn" onclick="deleteHistoryItem(\${item.id})">
                         <span class="material-icons-round" style="font-size: 20px;">close</span>
@@ -1380,6 +1392,7 @@ function setupEventListeners() {
     // Settings Modal
     els.settingsBtn.addEventListener('click', () => {
         els.goalInput.value = settings.goal;
+        els.caffeineLimitInput.value = settings.caffeineLimit || DEFAULT_CAFFEINE_LIMIT;
         // Populate preset inputs
         settings.presets.forEach((val, idx) => {
             if (els.presetInputs[idx]) els.presetInputs[idx].value = val;
@@ -1391,12 +1404,14 @@ function setupEventListeners() {
 
     els.saveSettings.addEventListener('click', () => {
         const newGoal = parseInt(els.goalInput.value);
+        const newCaffeineLimit = parseInt(els.caffeineLimitInput.value);
 
         // Get new presets
         const newPresets = els.presetInputs.map(input => parseInt(input.value)).filter(v => v > 0);
 
-        if (newGoal > 0 && newPresets.length === 3) {
+        if (newGoal > 0 && newCaffeineLimit > 0 && newPresets.length === 3) {
             settings.goal = newGoal;
+            settings.caffeineLimit = newCaffeineLimit;
             settings.presets = newPresets;
             saveSettings();
             renderControlButtons(); // Re-render buttons with new values

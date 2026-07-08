@@ -1,4 +1,4 @@
-import { getDB } from '../db/database';
+import { getDB, getCaffeineLimit, setCaffeineLimit } from '../db/database';
 import { useLifelogStore } from '../store/lifelogStore';
 
 // Helper to format date as YYYY/MM/DD in local timezone
@@ -57,7 +57,12 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
     );
     if (waterSettingsRow) {
       try {
-        data['hydration_settings_v1'] = JSON.parse(waterSettingsRow.value);
+        const parsed = JSON.parse(waterSettingsRow.value);
+        if (parsed && typeof parsed.caffeineLimit !== 'number') {
+          const caffeineLimit = await getCaffeineLimit();
+          parsed.caffeineLimit = caffeineLimit;
+        }
+        data['hydration_settings_v1'] = parsed;
       } catch {
         data['hydration_settings_v1'] = null;
       }
@@ -66,7 +71,8 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
         "SELECT value FROM settings WHERE key = 'water_goal'"
       );
       const goal = waterGoalRow ? parseInt(waterGoalRow.value, 10) : 2000;
-      data['hydration_settings_v1'] = { goal, presets: [200, 300, 500] };
+      const caffeineLimit = await getCaffeineLimit();
+      data['hydration_settings_v1'] = { goal, presets: [200, 300, 500], caffeineLimit };
     }
 
     // 2. Time logs, templates, tags
@@ -203,6 +209,13 @@ export const handleWebViewMessage = async (
           [String(settings.goal)]
         );
         await useLifelogStore.getState().updateWaterGoal(settings.goal);
+      }
+      if (settings && typeof settings.caffeineLimit === 'number') {
+        await db.runAsync(
+          "INSERT OR REPLACE INTO settings (key, value) VALUES ('caffeine_limit', ?)",
+          [String(settings.caffeineLimit)]
+        );
+        await useLifelogStore.getState().updateCaffeineLimit(settings.caffeineLimit);
       }
     } 
     

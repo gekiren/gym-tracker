@@ -11,19 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.21', // OTA識別用のバージョン文字列
+  version: '1.1.22', // OTA識別用のバージョン文字列
   title: {
-    ja: 'ダッシュボードヘッダーの調整',
-    en: 'Dashboard Header Adjustments',
+    ja: 'カフェイン上限設定とUIの改善',
+    en: 'Caffeine Limit & UI Improvements',
   },
   notes: {
     ja: [
-      'ダッシュボードヘッダーの幅を調整し、ステータスバーやカメラとの重なりを解消しました。',
-      '日付切り替えボタンのタップ操作性を改善しました。',
+      '水分補給設定に「1日のカフェイン上限」設定を追加しました。',
+      '水分補給画面ヘッダーのカフェイン表示の文字色を黒に調整し、視認性を向上させました。',
+      '記録リストおよび履歴画面のカフェイン表示の文字色を白に調整し、視認性を向上させました。',
     ],
     en: [
-      'Adjusted the dashboard header height to resolve overlap with the status bar and camera notch.',
-      'Improved touch usability for the date switcher buttons.',
+      'Added a "Daily Caffeine Limit" setting in hydration settings.',
+      'Adjusted caffeine text color in the hydration header to black for better visibility.',
+      'Adjusted caffeine text color in the intake log list and history modal to white for better visibility.',
     ]
   }
 };

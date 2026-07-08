@@ -9,6 +9,8 @@ import {
   deleteWaterLog,
   getWaterGoal,
   setWaterGoal,
+  getCaffeineLimit,
+  setCaffeineLimit,
   getTimeLogs,
   addTimeLog,
   deleteTimeLog,
@@ -37,6 +39,7 @@ export interface WaterSummary {
   progress: number;
   percentage: number;
   caffeine: number;
+  caffeineLimit: number;
 }
 
 export interface TimeSummaryItem {
@@ -59,6 +62,7 @@ interface LifelogState {
   currentDate: string;
   waterLogs: WaterLog[];
   waterGoal: number;
+  caffeineLimit: number;
   timeLogs: TimeLog[];
   habitItems: HabitItem[];
   habitLogs: HabitLog[];
@@ -74,6 +78,7 @@ interface LifelogState {
   addWater: (amount: number, date: string, caffeine?: number) => Promise<void>;
   deleteWater: (id: number, date: string) => Promise<void>;
   updateWaterGoal: (goal: number) => Promise<void>;
+  updateCaffeineLimit: (limit: number) => Promise<void>;
 
   // Time actions
   loadTimeData: (date: string) => Promise<void>;
@@ -116,6 +121,7 @@ const calculateSummary = (
   dateStr: string,
   waterLogs: WaterLog[],
   waterGoal: number,
+  caffeineLimit: number,
   timeLogs: TimeLog[],
   habitItems: HabitItem[],
   habitLogs: HabitLog[],
@@ -131,6 +137,7 @@ const calculateSummary = (
     progress: Math.min(1, waterProgress),
     percentage: Math.round(waterProgress * 100),
     caffeine: todayCaffeineAmount,
+    caffeineLimit: caffeineLimit,
   };
 
   // 2. Time summary
@@ -201,6 +208,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
   currentDate: '',
   waterLogs: [],
   waterGoal: 2000,
+  caffeineLimit: 400,
   timeLogs: [],
   habitItems: [],
   habitLogs: [],
@@ -211,9 +219,10 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
   setCurrentDate: async (date: string) => {
     set({ currentDate: date, isLoading: true });
     try {
-      const [waterLogs, waterGoal, timeLogs, habitItems, habitLogs, routineVal] = await Promise.all([
+      const [waterLogs, waterGoal, caffeineLimit, timeLogs, habitItems, habitLogs, routineVal] = await Promise.all([
         getWaterLogs(date),
         getWaterGoal(),
+        getCaffeineLimit(),
         getTimeLogs(date),
         getHabitItems(),
         getHabitLogs(date),
@@ -226,6 +235,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
         date,
         waterLogs,
         waterGoal,
+        caffeineLimit,
         timeLogs,
         habitItems,
         habitLogs,
@@ -235,6 +245,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
       set({
         waterLogs,
         waterGoal,
+        caffeineLimit,
         timeLogs,
         habitItems,
         habitLogs,
@@ -250,11 +261,12 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
 
   loadWaterData: async (date: string) => {
     try {
-      const [waterLogs, waterGoal] = await Promise.all([
+      const [waterLogs, waterGoal, caffeineLimit] = await Promise.all([
         getWaterLogs(date),
         getWaterGoal(),
+        getCaffeineLimit(),
       ]);
-      set({ waterLogs, waterGoal });
+      set({ waterLogs, waterGoal, caffeineLimit });
       if (get().currentDate === date) {
         get().refreshSummary(date);
       }
@@ -290,6 +302,18 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
       }
     } catch (e) {
       console.warn('Failed to update water goal:', e);
+    }
+  },
+
+  updateCaffeineLimit: async (limit: number) => {
+    try {
+      await setCaffeineLimit(limit);
+      set({ caffeineLimit: limit });
+      if (get().currentDate) {
+        get().refreshSummary(get().currentDate);
+      }
+    } catch (e) {
+      console.warn('Failed to update caffeine limit:', e);
     }
   },
 
@@ -440,11 +464,12 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
   },
 
   refreshSummary: (date: string) => {
-    const { waterLogs, waterGoal, timeLogs, habitItems, habitLogs, routineData } = get();
+    const { waterLogs, waterGoal, caffeineLimit, timeLogs, habitItems, habitLogs, routineData } = get();
     const daySummary = calculateSummary(
       date,
       waterLogs,
       waterGoal,
+      caffeineLimit,
       timeLogs,
       habitItems,
       habitLogs,

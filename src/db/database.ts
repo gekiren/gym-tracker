@@ -1668,6 +1668,28 @@ export const setWaterGoal = async (goal: number): Promise<void> => {
   );
 };
 
+export const getCaffeineLimit = async (): Promise<number> => {
+  const conn = getDB();
+  try {
+    const row = await conn.getFirstAsync<{ value: string }>(
+      "SELECT value FROM settings WHERE key = 'caffeine_limit'"
+    );
+    return row ? parseInt(row.value, 10) : 400;
+  } catch (e) {
+    console.warn('Failed to get caffeine_limit setting', e);
+    return 400;
+  }
+};
+
+export const setCaffeineLimit = async (limit: number): Promise<void> => {
+  const conn = getDB();
+  await conn.runAsync(
+    "INSERT OR REPLACE INTO settings (key, value) VALUES ('caffeine_limit', ?)",
+    [String(limit)]
+  );
+};
+
+
 export const getSettingValue = async (key: string): Promise<string | null> => {
   const conn = getDB();
   try {
