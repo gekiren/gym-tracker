@@ -11,19 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.24', // OTA識別用のバージョン文字列
+  version: '1.1.25', // OTA識別用のバージョン文字列
   title: {
-    ja: '進捗円グラフの拡大と視認性の改善',
-    en: 'Enlarged Progress Chart & UI Improvements',
+    ja: 'クイック追加機能の拡張（登録数増加とカフェイン対応）',
+    en: 'Expanded Quick Add Feature (More Slots & Caffeine Support)',
   },
   notes: {
     ja: [
-      '進捗円グラフ全体のサイズを270pxに拡大し、水およびカフェインの円グラフの半径を広げました。',
-      '円グラフと中央のカフェイン摂取量テキストが重ならないように表示を調整しました。',
+      'クイック追加ボタンの登録枠を3個から6個に増やしました。',
+      'クイック追加ボタンに水分量だけでなく、カフェイン量も同時に登録できるようにしました。',
+      '登録データ構造の変更に伴い、設定データは自動的に移行されます。',
     ],
     en: [
-      'Enlarged the overall size of the progress rings to 270px and expanded the radii.',
-      'Adjusted layout to prevent overlap between the rings and the center caffeine text.',
+      'Increased the number of quick add button slots from 3 to 6.',
+      'You can now assign both water and caffeine amount to each quick add button.',
+      'Existing preset settings will be automatically migrated to the new data format.',
     ]
   }
 };

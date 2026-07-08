@@ -822,11 +822,50 @@ input {
                 <input type="number" id="goalInput" value="2000" inputmode="numeric">
             </div>
             <div class="setting-item">
-                <label>クイック追加ボタン (ml)</label>
-                <div class="preset-inputs" style="display: flex; gap: 8px;">
-                    <input type="number" id="preset1" class="preset-input" inputmode="numeric">
-                    <input type="number" id="preset2" class="preset-input" inputmode="numeric">
-                    <input type="number" id="preset3" class="preset-input" inputmode="numeric">
+                <label>クイック追加設定 (水分 ml / カフェイン mg)</label>
+                <div class="preset-inputs-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-height: 180px; overflow-y: auto; padding-right: 4px;">
+                    <div style="display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border-color); padding: 8px; border-radius: var(--radius-sm);">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">ボタン 1</span>
+                        <div style="display: flex; gap: 6px;">
+                            <input type="number" id="preset1_amount" placeholder="ml" inputmode="numeric" style="padding: 6px; font-size: 0.9rem; width: 50%;">
+                            <input type="number" id="preset1_caffeine" placeholder="mg" inputmode="numeric" style="padding: 6px; font-size: 0.9rem; width: 50%;">
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border-color); padding: 8px; border-radius: var(--radius-sm);">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">ボタン 2</span>
+                        <div style="display: flex; gap: 6px;">
+                            <input type="number" id="preset2_amount" placeholder="ml" inputmode="numeric" style="padding: 6px; font-size: 0.9rem; width: 50%;">
+                            <input type="number" id="preset2_caffeine" placeholder="mg" inputmode="numeric" style="padding: 6px; font-size: 0.9rem; width: 50%;">
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border-color); padding: 8px; border-radius: var(--radius-sm);">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">ボタン 3</span>
+                        <div style="display: flex; gap: 6px;">
+                            <input type="number" id="preset3_amount" placeholder="ml" inputmode="numeric" style="padding: 6px; font-size: 0.9rem; width: 50%;">
+                            <input type="number" id="preset3_caffeine" placeholder="mg" inputmode="numeric" style="padding: 6px; font-size: 0.9rem; width: 50%;">
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border-color); padding: 8px; border-radius: var(--radius-sm);">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">ボタン 4</span>
+                        <div style="display: flex; gap: 6px;">
+                            <input type="number" id="preset4_amount" placeholder="ml" inputmode="numeric" style="padding: 6px; font-size: 0.9rem; width: 50%;">
+                            <input type="number" id="preset4_caffeine" placeholder="mg" inputmode="numeric" style="padding: 6px; font-size: 0.9rem; width: 50%;">
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border-color); padding: 8px; border-radius: var(--radius-sm);">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">ボタン 5</span>
+                        <div style="display: flex; gap: 6px;">
+                            <input type="number" id="preset5_amount" placeholder="ml" inputmode="numeric" style="padding: 6px; font-size: 0.9rem; width: 50%;">
+                            <input type="number" id="preset5_caffeine" placeholder="mg" inputmode="numeric" style="padding: 6px; font-size: 0.9rem; width: 50%;">
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border-color); padding: 8px; border-radius: var(--radius-sm);">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">ボタン 6</span>
+                        <div style="display: flex; gap: 6px;">
+                            <input type="number" id="preset6_amount" placeholder="ml" inputmode="numeric" style="padding: 6px; font-size: 0.9rem; width: 50%;">
+                            <input type="number" id="preset6_caffeine" placeholder="mg" inputmode="numeric" style="padding: 6px; font-size: 0.9rem; width: 50%;">
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="setting-item">
@@ -873,7 +912,14 @@ input {
 
 // --- Constants & Config ---
 const DEFAULT_GOAL = 2000;
-const DEFAULT_PRESETS = [150, 250, 500];
+const DEFAULT_PRESETS = [
+    { amount: 150, caffeine: 0 },
+    { amount: 250, caffeine: 0 },
+    { amount: 500, caffeine: 0 },
+    { amount: 150, caffeine: 80 },
+    { amount: 350, caffeine: 40 },
+    { amount: 250, caffeine: 100 }
+];
 const DEFAULT_CAFFEINE_LIMIT = 400;
 const STORAGE_KEY = 'hydration_data_v1';
 const SETTINGS_KEY = 'hydration_settings_v1';
@@ -930,9 +976,12 @@ const els = {
     caffeineLimitInput: document.getElementById('caffeineLimitInput'),
     goalInput: document.getElementById('goalInput'),
     presetInputs: [
-        document.getElementById('preset1'),
-        document.getElementById('preset2'),
-        document.getElementById('preset3')
+        { amount: document.getElementById('preset1_amount'), caffeine: document.getElementById('preset1_caffeine') },
+        { amount: document.getElementById('preset2_amount'), caffeine: document.getElementById('preset2_caffeine') },
+        { amount: document.getElementById('preset3_amount'), caffeine: document.getElementById('preset3_caffeine') },
+        { amount: document.getElementById('preset4_amount'), caffeine: document.getElementById('preset4_caffeine') },
+        { amount: document.getElementById('preset5_amount'), caffeine: document.getElementById('preset5_caffeine') },
+        { amount: document.getElementById('preset6_amount'), caffeine: document.getElementById('preset6_caffeine') }
     ],
 
     // Modal Actions
@@ -960,11 +1009,21 @@ function loadData() {
         const savedSettings = localStorage.getItem(SETTINGS_KEY);
         if (savedSettings) {
             const parsed = JSON.parse(savedSettings);
+            let presets = (parsed && parsed.presets) || [...DEFAULT_PRESETS];
+            // 旧形式 (number[]) から新形式 ({amount, caffeine}[]) へのマイグレーション
+            if (presets.length > 0 && typeof presets[0] === 'number') {
+                presets = presets.map(val => ({ amount: val, caffeine: 0 }));
+            }
+            while (presets.length < 6) {
+                const idx = presets.length;
+                presets.push(DEFAULT_PRESETS[idx] || { amount: 200, caffeine: 0 });
+            }
+            presets = presets.slice(0, 6);
+
             settings = {
                 ...settings,
                 ...parsed,
-                // Ensure presets exist if merging from old data
-                presets: (parsed && parsed.presets) || [...DEFAULT_PRESETS],
+                presets: presets,
                 caffeineLimit: (parsed && typeof parsed.caffeineLimit === 'number') ? parsed.caffeineLimit : DEFAULT_CAFFEINE_LIMIT
             };
         }
@@ -1125,14 +1184,17 @@ function getWeeklyData(offset = 0) {
 // --- UI Rendering ---
 function renderControlButtons() {
     els.quickAddContainer.innerHTML = '';
-    settings.presets.forEach(amount => {
+    settings.presets.forEach(preset => {
         const btn = document.createElement('button');
         btn.className = 'quick-btn';
+        
+        const hasCaffeine = preset.caffeine > 0;
         btn.innerHTML = \`
-            <span class="material-icons-round icon">water_drop</span>
-            <span>\${amount}ml</span>
+            <span class="material-icons-round icon">\${hasCaffeine ? 'coffee' : 'water_drop'}</span>
+            <span style="font-size: 0.9rem;">\${preset.amount}ml</span>
+            \${hasCaffeine ? '<span style="font-size: 0.75rem; color: #ffb74d; font-weight: 500;">☕ ' + preset.caffeine + 'mg</span>' : ''}
         \`;
-        btn.onclick = () => addIntake(amount);
+        btn.onclick = () => addIntake(preset.amount, null, preset.caffeine);
         els.quickAddContainer.appendChild(btn);
     });
 }
@@ -1420,7 +1482,10 @@ function setupEventListeners() {
         els.caffeineLimitInput.value = settings.caffeineLimit || DEFAULT_CAFFEINE_LIMIT;
         // Populate preset inputs
         settings.presets.forEach((val, idx) => {
-            if (els.presetInputs[idx]) els.presetInputs[idx].value = val;
+            if (els.presetInputs[idx]) {
+                els.presetInputs[idx].amount.value = val.amount;
+                els.presetInputs[idx].caffeine.value = val.caffeine;
+            }
         });
         toggleModal(els.settingsModal, true);
     });
@@ -1432,9 +1497,16 @@ function setupEventListeners() {
         const newCaffeineLimit = parseInt(els.caffeineLimitInput.value);
 
         // Get new presets
-        const newPresets = els.presetInputs.map(input => parseInt(input.value)).filter(v => v > 0);
+        const newPresets = [];
+        for (let i = 0; i < 6; i++) {
+            const amtVal = parseInt(els.presetInputs[i].amount.value);
+            const cafVal = parseInt(els.presetInputs[i].caffeine.value) || 0;
+            if (amtVal > 0) {
+                newPresets.push({ amount: amtVal, caffeine: cafVal });
+            }
+        }
 
-        if (newGoal > 0 && newCaffeineLimit > 0 && newPresets.length === 3) {
+        if (newGoal > 0 && newCaffeineLimit > 0 && newPresets.length === 6) {
             settings.goal = newGoal;
             settings.caffeineLimit = newCaffeineLimit;
             settings.presets = newPresets;
@@ -1445,11 +1517,11 @@ function setupEventListeners() {
         }
     });
 
-    // Dismiss software keyboard on Enter key for preset3
-    if (els.presetInputs[2]) {
-        els.presetInputs[2].addEventListener('keydown', (e) => {
+    // Dismiss software keyboard on Enter key for preset6 caffeine
+    if (els.presetInputs[5] && els.presetInputs[5].caffeine) {
+        els.presetInputs[5].caffeine.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
-                els.presetInputs[2].blur();
+                els.presetInputs[5].caffeine.blur();
             }
         });
     }
