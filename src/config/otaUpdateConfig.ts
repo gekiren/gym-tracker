@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.23', // OTA識別用のバージョン文字列
+  version: '1.1.24', // OTA識別用のバージョン文字列
   title: {
-    ja: '水分・カフェインの二重円グラフ表示',
-    en: 'Dual Progress Chart for Water & Caffeine',
+    ja: '進捗円グラフの拡大と視認性の改善',
+    en: 'Enlarged Progress Chart & UI Improvements',
   },
   notes: {
     ja: [
-      '水分補給画面の進捗円グラフを二重化しました（外側：水分、内側：カフェイン）。',
-      '水分目標とカフェイン上限の進捗率を視覚的に同時に確認できるようになりました。',
+      '進捗円グラフ全体のサイズを270pxに拡大し、水およびカフェインの円グラフの半径を広げました。',
+      '円グラフと中央のカフェイン摂取量テキストが重ならないように表示を調整しました。',
     ],
     en: [
-      'Introduced dual progress rings in the hydration screen (Outer: Water, Inner: Caffeine).',
-      'Allows you to visually track progress for both water goal and caffeine limit at the same time.',
+      'Enlarged the overall size of the progress rings to 270px and expanded the radii.',
+      'Adjusted layout to prevent overlap between the rings and the center caffeine text.',
     ]
   }
 };

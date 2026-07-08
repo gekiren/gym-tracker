@@ -206,8 +206,8 @@ input {
 
 .progress-container {
     position: relative;
-    width: 250px;
-    height: 250px;
+    width: 270px;
+    height: 270px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -218,16 +218,16 @@ input {
 }
 
 .progress-ring__circle {
-    stroke-dasharray: 703.7;
-    /* 2 * PI * 112 */
-    stroke-dashoffset: 703.7;
+    stroke-dasharray: 766.5;
+    /* 2 * PI * 122 */
+    stroke-dashoffset: 766.5;
     transition: stroke-dashoffset 0.5s ease-out;
 }
 
 .progress-ring__caffeine {
-    stroke-dasharray: 578;
-    /* 2 * PI * 92 */
-    stroke-dashoffset: 578;
+    stroke-dasharray: 653.5;
+    /* 2 * PI * 104 */
+    stroke-dashoffset: 653.5;
     transition: stroke-dashoffset 0.5s ease-out;
 }
 
@@ -720,18 +720,18 @@ input {
         <!-- Header / Progress Section -->
         <header class="header-section">
             <div class="progress-container">
-                <svg class="progress-ring" width="250" height="250">
+                <svg class="progress-ring" width="270" height="270">
                     <!-- 水の円（外側） -->
                     <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.2)" stroke-width="10"
-                        fill="transparent" r="112" cx="125" cy="125" />
+                        fill="transparent" r="122" cx="135" cy="135" />
                     <circle class="progress-ring__circle" stroke="#ffffff" stroke-width="10" stroke-linecap="round"
-                        fill="transparent" r="112" cx="125" cy="125" />
+                        fill="transparent" r="122" cx="135" cy="135" />
                     
                     <!-- カフェインの円（内側） -->
                     <circle class="progress-ring__caffeine-bg" stroke="rgba(255,255,255,0.15)" stroke-width="8"
-                        fill="transparent" r="92" cx="125" cy="125" />
+                        fill="transparent" r="104" cx="135" cy="135" />
                     <circle class="progress-ring__caffeine" stroke="#ffb74d" stroke-width="8" stroke-linecap="round"
-                        fill="transparent" r="92" cx="125" cy="125" />
+                        fill="transparent" r="104" cx="135" cy="135" />
                 </svg>
                 <div class="progress-text">
                     <div class="current-amount"><span id="currentAmount">0</span><span class="unit">ml</span></div>
