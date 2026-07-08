@@ -30,7 +30,13 @@ export default function WorkoutHomeScreen() {
     navigation.setOptions({
       headerLeft: () => (
         <TouchableOpacity 
-          onPress={() => router.replace('/')} 
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.navigate('/');
+            }
+          }} 
           style={{ marginLeft: 16, padding: 8 }}
           activeOpacity={0.7}
         >
