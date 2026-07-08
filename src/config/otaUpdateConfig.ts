@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.26', // OTA識別用のバージョン文字列
+  version: '1.1.27', // OTA識別用のバージョン文字列
   title: {
-    ja: 'ダッシュボードのクイック追加同期対応',
-    en: 'Dashboard Quick Add Synchronization',
+    ja: '24時間管理画面の日付表示不具合の修正',
+    en: 'Fix Date Display in 24-Hour Manager',
   },
   notes: {
     ja: [
-      'ダッシュボード上のクイック追加ボタンを、水分補給画面で設定したカスタムプリセット（最大6個）と同期させました。',
-      'ダッシュボードから追加する際にもカフェイン量が正しく記録されるようになりました。',
+      '24時間管理画面を開いた際に日付が空欄になってしまう不具合を修正しました。',
+      'ダッシュボード上のクイック追加ボタンを水分補給のカスタムプリセット（最大6個）と同期し、カフェイン量を正しく記録できるようにしました。',
     ],
     en: [
-      'Synchronized dashboard quick add buttons with the custom presets (up to 6) configured in the water screen.',
-      'Caffeine intake is now correctly recorded when logging from the dashboard.',
+      'Fixed an issue where the date was blank when opening the 24-hour manager screen.',
+      'Synchronized dashboard quick add buttons with custom presets (up to 6) and fixed caffeine recording.',
     ]
   }
 };
