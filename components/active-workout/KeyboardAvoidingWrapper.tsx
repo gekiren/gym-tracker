@@ -40,7 +40,7 @@ export const KeyboardAvoidingWrapper: React.FC<KeyboardAvoidingWrapperProps> = (
     <KeyboardAvoidingView
       behavior={behavior}
       style={{ flex: 1 }}
-      keyboardVerticalOffset={100}
+      keyboardVerticalOffset={95}
     >
       {children}
     </KeyboardAvoidingView>
