@@ -302,12 +302,32 @@ label {
   border-radius: 16px;
   font-size: 0.9rem;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .tag-chip.selected {
   background-color: var(--primary-color);
   color: #000;
   border-color: var(--primary-color);
+}
+
+.tag-chip .delete-btn {
+  color: var(--text-secondary);
+  font-weight: bold;
+  font-size: 1.1rem;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.tag-chip .delete-btn:hover {
+  color: var(--error-color);
+}
+
+.no-margin {
+  margin-bottom: 0 !important;
 }
 
 /* Pie Chart */
@@ -364,11 +384,12 @@ label {
                 <!-- Toggle between Manual and List -->
                 <div class="tags" id="quick-list">
                     <!-- Javascript will populate this -->
-                    <span class="tag-chip" data-value="睡眠">睡眠</span>
-                    <span class="tag-chip" data-value="仕事">仕事</span>
-                    <span class="tag-chip" data-value="食事">食事</span>
-                    <span class="tag-chip" data-value="移動">移動</span>
-                    <span class="tag-chip" data-value="休憩">休憩</span>
+                </div>
+
+                <!-- Smart Tag Add Form -->
+                <div class="flex-row" style="margin-bottom: 12px;">
+                    <input type="text" id="new-tag-input" placeholder="新しいタグ名を入力" class="no-margin" style="flex: 1;">
+                    <button id="add-tag-btn" class="btn btn-secondary" style="width: auto; padding: 12px 20px; white-space: nowrap; margin-bottom: 0;">タグ追加</button>
                 </div>
 
                 <input type="text" id="activity-name" placeholder="内容を入力または上から選択">
@@ -389,6 +410,12 @@ label {
                     </div>
                 </div>
                 <button id="add-simultaneous-row" class="btn btn-secondary" style="margin-top: 8px;">+ 活動を追加</button>
+            </div>
+
+            <!-- Memo Input -->
+            <div style="margin-top: 16px;">
+                <label for="activity-memo">メモ（詳細）</label>
+                <input type="text" id="activity-memo" placeholder="例: 資料作成、会議、散歩など（省略可）" style="margin-bottom: 0;">
             </div>
 
             <!-- Time Input -->
@@ -459,6 +486,9 @@ label {
 
 // DOM Elements
 const activityNameInput = document.getElementById('activity-name');
+const activityMemoInput = document.getElementById('activity-memo');
+const newTagInput = document.getElementById('new-tag-input');
+const addTagBtn = document.getElementById('add-tag-btn');
 const startTimeInput = document.getElementById('start-time');
 const endTimeInput = document.getElementById('end-time');
 const saveBtn = document.getElementById('save-btn');
@@ -565,39 +595,69 @@ function notifyDateChanged() {
 function initTags() {
     quickListNodesContainer.innerHTML = '';
 
-    // Edit Button
-    const editBtn = document.createElement('span');
-    editBtn.className = 'tag-chip';
-    editBtn.style.borderStyle = 'dashed';
-    editBtn.textContent = '+ 編集';
-    editBtn.onclick = openTagEditor;
-    quickListNodesContainer.appendChild(editBtn);
-
     defaultTags.forEach(tag => {
         const chip = document.createElement('span');
         chip.className = 'tag-chip';
         chip.dataset.value = tag;
-        chip.textContent = tag;
-        chip.addEventListener('click', () => {
+
+        // Tag text element
+        const textSpan = document.createElement('span');
+        textSpan.textContent = tag;
+        textSpan.style.cursor = 'pointer';
+        textSpan.addEventListener('click', () => {
             document.querySelectorAll('#quick-list .tag-chip').forEach(c => c.classList.remove('selected'));
             chip.classList.add('selected');
             activityNameInput.value = tag;
         });
-        quickListNodesContainer.insertBefore(chip, editBtn);
+        chip.appendChild(textSpan);
+
+        // Delete button
+        const deleteBtn = document.createElement('span');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = '×';
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent triggering parent chip click
+            removeTag(tag);
+        });
+        chip.appendChild(deleteBtn);
+
+        quickListNodesContainer.appendChild(chip);
     });
 }
 
-function openTagEditor() {
-    const newTagsStr = prompt("活動リストをカンマ区切りで入力してください:", defaultTags.join(","));
-    if (newTagsStr !== null) {
-        const newTags = newTagsStr.split(',').map(t => t.trim()).filter(t => t);
-        if (newTags.length > 0) {
-            defaultTags = newTags;
-            localStorage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
-            initTags();
+function addNewTag() {
+    const val = newTagInput.value.trim();
+    if (!val) return;
+    if (defaultTags.includes(val)) {
+        alert('そのタグは既に存在します。');
+        return;
+    }
+    defaultTags.push(val);
+    localStorage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
+    initTags();
+    newTagInput.value = '';
+}
+
+function removeTag(tag) {
+    if (confirm(\`タグ「\${tag}」を削除しますか？\`)) {
+        defaultTags = defaultTags.filter(t => t !== tag);
+        localStorage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
+        initTags();
+        // If the deleted tag was in the input, clear it
+        if (activityNameInput.value === tag) {
+            activityNameInput.value = '';
         }
     }
 }
+
+// Bind tag events
+addTagBtn.addEventListener('click', addNewTag);
+newTagInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        addNewTag();
+    }
+});
 
 // Service Worker Registration
 function registerSW() {
@@ -681,6 +741,7 @@ saveBtn.addEventListener('click', () => {
     const start = startTimeInput.value;
     const end = endTimeInput.value;
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const memo = activityMemoInput.value.trim();
 
     if (!start || !end) {
         alert('開始時間と終了時間を入力してください。');
@@ -742,7 +803,7 @@ saveBtn.addEventListener('click', () => {
                 logs = logs.filter(l => l.id !== editingId);
             }
 
-            handleOverlapMerge(targetLog, { start, end, items: newItems }, selectedDate, existingRatio, newRatio);
+            handleOverlapMerge(targetLog, { start, end, items: newItems, memo: memo }, selectedDate, existingRatio, newRatio);
 
             // Clean up UI
             resetForm(isContinuousMode ? end : getCurrentTimeStr());
@@ -803,13 +864,13 @@ function handleOverlapMerge(existingLog, newLogObj, date, existingWeight, newWei
     // Before Overlap (Existing)
     if (eS < overlapStart) {
         segments.push({
-            start: eS, end: overlapStart, items: existingLog.items
+            start: eS, end: overlapStart, items: existingLog.items, memo: existingLog.memo
         });
     }
     // Before Overlap (New)
     if (nS < overlapStart) {
         segments.push({
-            start: nS, end: overlapStart, items: newLogObj.items
+            start: nS, end: overlapStart, items: newLogObj.items, memo: newLogObj.memo
         });
     }
 
@@ -829,21 +890,26 @@ function handleOverlapMerge(existingLog, newLogObj, date, existingWeight, newWei
             });
         });
 
+        // Merge memos if both exist
+        let mergedMemo = '';
+        const memos = [existingLog.memo, newLogObj.memo].filter(m => m && m.trim() !== '');
+        mergedMemo = memos.join(' / ');
+
         segments.push({
-            start: overlapStart, end: overlapEnd, items: mergedItems
+            start: overlapStart, end: overlapEnd, items: mergedItems, memo: mergedMemo
         });
     }
 
     // After Overlap (Existing)
     if (eE > overlapEnd) {
         segments.push({
-            start: overlapEnd, end: eE, items: existingLog.items
+            start: overlapEnd, end: eE, items: existingLog.items, memo: existingLog.memo
         });
     }
     // After Overlap (New)
     if (nE > overlapEnd) {
         segments.push({
-            start: overlapEnd, end: nE, items: newLogObj.items
+            start: overlapEnd, end: nE, items: newLogObj.items, memo: newLogObj.memo
         });
     }
 
@@ -855,7 +921,8 @@ function handleOverlapMerge(existingLog, newLogObj, date, existingWeight, newWei
                 date: date,
                 start: minsToTime(seg.start),
                 end: minsToTime(seg.end),
-                items: seg.items
+                items: seg.items,
+                memo: seg.memo || ""
             });
         }
     });
@@ -876,6 +943,7 @@ function startEdit(id) {
 
     startTimeInput.value = log.start;
     endTimeInput.value = log.end;
+    activityMemoInput.value = log.memo || "";
 
     // Determine Mode
     if (log.items.length > 1) {
@@ -905,6 +973,8 @@ function resetForm(nextStart) {
     }
     endTimeInput.value = "";
     activityNameInput.value = "";
+    activityMemoInput.value = "";
+    newTagInput.value = "";
     simultaneousList.innerHTML = ''; // Clear rows
     document.querySelectorAll('#quick-list .tag-chip').forEach(c => c.classList.remove('selected'));
 }
@@ -972,6 +1042,9 @@ if (exportMdBtn) {
                     const itemName = i.name.trim();
                     return \`\${itemName || '(未設定)'}(\${i.percent}%)\`;
                 }).join(', ');
+            }
+            if (log.memo && log.memo.trim() !== '') {
+                content += \` [\${log.memo.trim()}]\`;
             }
             md += \`- **\${log.start} - \${log.end}** (\${duration}分): \${content}\\n\`;
         });
@@ -1062,6 +1135,10 @@ function renderLogs() {
                     return \`\${displayName} (\${i.percent}%)\`;
                 }).join(' / ') +
                 '</div>';
+        }
+
+        if (log.memo && log.memo.trim() !== '') {
+            content += \`<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">📝 \${log.memo.trim()}</div>\`;
         }
 
         const duration = calculateDuration(log.start, log.end);
