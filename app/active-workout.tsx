@@ -566,7 +566,7 @@ export default function ActiveWorkoutScreen() {
         <TouchableOpacity style={styles.addExerciseBtn} onPress={handleAddExercise}>
           <Text style={styles.addExerciseBtnText}>{t('ui.active_workout.add_exercise_label')}</Text>
         </TouchableOpacity>
-        <View style={{ height: 180 }} />
+        <View style={{ height: 220 }} />
       </ScrollView>
       </KeyboardAvoidingWrapper>
 
