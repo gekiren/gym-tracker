@@ -128,6 +128,11 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
     );
     data['zikankanri_tags'] = tagsRow ? JSON.parse(tagsRow.value) : null;
 
+    const continuousModeRow = await db.getFirstAsync<{ value: string }>(
+      "SELECT value FROM settings WHERE key = 'zikankanri_continuous_mode'"
+    );
+    data['zikankanri_continuous_mode'] = continuousModeRow ? continuousModeRow.value : null;
+
     // 3. Habit items and logs
     const habitItemsRows = await db.getAllAsync<{ id: number; name: string; color: string; created_at: number }>(
       'SELECT * FROM habit_items ORDER BY sort_order ASC, created_at ASC'
@@ -259,6 +264,13 @@ export const handleWebViewMessage = async (
     else if (key === 'zikankanri_tags') {
       await db.runAsync(
         "INSERT OR REPLACE INTO settings (key, value) VALUES ('zikankanri_tags', ?)",
+        [value]
+      );
+    } 
+    
+    else if (key === 'zikankanri_continuous_mode') {
+      await db.runAsync(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES ('zikankanri_continuous_mode', ?)",
         [value]
       );
     } 

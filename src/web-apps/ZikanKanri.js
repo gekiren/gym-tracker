@@ -343,12 +343,18 @@ label {
     <div class="container">
         <!-- Input Section -->
         <section class="card" id="input-section">
-            <div class="flex-row justify-between" style="margin-bottom: 12px;">
+            <div class="flex-row justify-between" style="margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                 <h2>新しい活動</h2>
-                <button id="toggle-simultaneous" class="btn btn-secondary"
-                    style="width: auto; padding: 6px 12px; font-size: 0.8rem;">
-                    同時進行モード: <span id="simultaneous-status">OFF</span>
-                </button>
+                <div class="flex-row" style="gap: 8px; flex-wrap: wrap;">
+                    <button id="toggle-continuous" class="btn btn-secondary"
+                        style="width: auto; padding: 6px 12px; font-size: 0.8rem;">
+                        連続記録モード: <span id="continuous-status">OFF</span>
+                    </button>
+                    <button id="toggle-simultaneous" class="btn btn-secondary"
+                        style="width: auto; padding: 6px 12px; font-size: 0.8rem;">
+                        同時進行モード: <span id="simultaneous-status">OFF</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Single Mode Input -->
@@ -458,6 +464,8 @@ const endTimeInput = document.getElementById('end-time');
 const saveBtn = document.getElementById('save-btn');
 const logList = document.getElementById('log-list');
 const quickListNodesContainer = document.getElementById('quick-list');
+const toggleContinuousBtn = document.getElementById('toggle-continuous');
+const continuousStatusSpan = document.getElementById('continuous-status');
 const toggleSimultaneousBtn = document.getElementById('toggle-simultaneous');
 const simultaneousStatusSpan = document.getElementById('simultaneous-status');
 const singleModeInputs = document.getElementById('single-mode-inputs');
@@ -470,6 +478,7 @@ const clearDayBtn = document.getElementById('clear-day-btn');
 const currentDateInput = document.getElementById('current-date');
 
 // State
+let isContinuousMode = JSON.parse(localStorage.getItem('zikankanri_continuous_mode')) || false;
 let isSimultaneousMode = false;
 let editingId = null; // Track if we are editing an existing log
 let logs = JSON.parse(localStorage.getItem('zikankanri_logs')) || [];
@@ -518,7 +527,8 @@ function init() {
         currentDateInput.value = y + '-' + m + '-' + d;
     }
     initTags();
-    setDefaultTimes();
+    setContinuousMode(isContinuousMode);
+    updateDefaultStartTime();
     renderLogs();
     renderTemplates();
     registerSW();
@@ -532,6 +542,7 @@ if (document.readyState === 'loading') {
 
 // Date Change Listener
 currentDateInput.addEventListener('change', () => {
+    updateDefaultStartTime();
     renderLogs();
     notifyDateChanged();
 });
@@ -607,6 +618,26 @@ document.getElementById('set-now-end').addEventListener('click', () => {
 });
 
 
+// Toggle Continuous Mode
+toggleContinuousBtn.addEventListener('click', () => {
+    setContinuousMode(!isContinuousMode);
+    updateDefaultStartTime();
+});
+
+function setContinuousMode(enabled) {
+    isContinuousMode = enabled;
+    localStorage.setItem('zikankanri_continuous_mode', JSON.stringify(isContinuousMode));
+    if (isContinuousMode) {
+        continuousStatusSpan.textContent = "ON";
+        toggleContinuousBtn.classList.remove('btn-secondary');
+        toggleContinuousBtn.classList.add('btn-primary');
+    } else {
+        continuousStatusSpan.textContent = "OFF";
+        toggleContinuousBtn.classList.remove('btn-primary');
+        toggleContinuousBtn.classList.add('btn-secondary');
+    }
+}
+
 // Toggle Simultaneous Mode
 toggleSimultaneousBtn.addEventListener('click', () => {
     setSimultaneousMode(!isSimultaneousMode);
@@ -618,12 +649,14 @@ function setSimultaneousMode(enabled) {
         singleModeInputs.classList.add('hidden');
         simultaneousModeInputs.classList.remove('hidden');
         simultaneousStatusSpan.textContent = "ON";
-        toggleSimultaneousBtn.classList.replace('btn-primary', 'btn-primary');
+        toggleSimultaneousBtn.classList.remove('btn-secondary');
+        toggleSimultaneousBtn.classList.add('btn-primary');
     } else {
         singleModeInputs.classList.remove('hidden');
         simultaneousModeInputs.classList.add('hidden');
         simultaneousStatusSpan.textContent = "OFF";
-        toggleSimultaneousBtn.classList.replace('btn-primary', 'btn-secondary');
+        toggleSimultaneousBtn.classList.remove('btn-primary');
+        toggleSimultaneousBtn.classList.add('btn-secondary');
     }
 }
 
@@ -712,7 +745,7 @@ saveBtn.addEventListener('click', () => {
             handleOverlapMerge(targetLog, { start, end, items: newItems }, selectedDate, existingRatio, newRatio);
 
             // Clean up UI
-            resetForm(end);
+            resetForm(isContinuousMode ? end : getCurrentTimeStr());
             return;
         }
     }
@@ -743,7 +776,7 @@ saveBtn.addEventListener('click', () => {
 
     saveLogs();
     renderLogs();
-    resetForm(end);
+    resetForm(isContinuousMode ? end : getCurrentTimeStr());
 });
 
 function handleOverlapMerge(existingLog, newLogObj, date, existingWeight, newWeight) {
@@ -865,7 +898,11 @@ function resetForm(nextStart) {
     saveBtn.textContent = "記録する";
     saveBtn.style.border = "none";
 
-    startTimeInput.value = nextStart;
+    if (nextStart !== undefined) {
+        startTimeInput.value = nextStart;
+    } else {
+        updateDefaultStartTime();
+    }
     endTimeInput.value = "";
     activityNameInput.value = "";
     simultaneousList.innerHTML = ''; // Clear rows
@@ -879,6 +916,7 @@ clearDayBtn.addEventListener('click', () => {
         logs = logs.filter(log => log.date !== selectedDate);
         saveLogs();
         renderLogs();
+        resetForm();
     }
 });
 
@@ -992,6 +1030,7 @@ function loadTemplate(templateId) {
 
         saveLogs();
         renderLogs();
+        resetForm();
     }
 }
 
@@ -1228,13 +1267,15 @@ function saveLogs() {
 
 function deleteLog(id) {
     if (confirm('削除しますか？')) {
-        // If editing this one, reset form
-        if (editingId === id) {
-            resetForm(startTimeInput.value);
-        }
+        const wasEditing = (editingId === id);
         logs = logs.filter(l => l.id !== id);
         saveLogs();
         renderLogs();
+        if (wasEditing) {
+            resetForm();
+        } else {
+            updateDefaultStartTime();
+        }
     }
 }
 
@@ -1265,8 +1306,22 @@ function minsToTime(mins) {
     return \`\${String(h).padStart(2, '0')}:\${String(min).padStart(2, '0')}\`;
 }
 
-function setDefaultTimes() {
-    if (!startTimeInput.value) startTimeInput.value = getCurrentTimeStr();
+function updateDefaultStartTime() {
+    if (editingId !== null) return;
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const dayLogs = logs.filter(l => l.date === selectedDate);
+    
+    if (isContinuousMode) {
+        if (dayLogs.length > 0) {
+            dayLogs.sort((a, b) => a.start.localeCompare(b.start));
+            const lastLog = dayLogs[dayLogs.length - 1];
+            startTimeInput.value = lastLog.end;
+        } else {
+            startTimeInput.value = getCurrentTimeStr();
+        }
+    } else {
+        startTimeInput.value = getCurrentTimeStr();
+    }
 }
 
 </script>

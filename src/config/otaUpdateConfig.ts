@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.29', // OTA識別用のバージョン文字列
+  version: '1.1.30', // OTA識別用のバージョン文字列
   title: {
-    ja: '不具合修正と機能改善',
-    en: 'Bug Fixes and Improvements',
+    ja: '新機能追加のお知らせ',
+    en: 'New Feature Update',
   },
   notes: {
     ja: [
-      '24時間管理において、活動内容（活動名）を入力せずに時間のみで記録できるよう改善しました。',
-      '筋トレ画面の上部「＜」マーク（戻るボタン）でダッシュボードに戻れない不具合を修正しました。',
+      '24時間管理に「連続記録モード」を追加しました。',
+      '連続記録モードがONの際、自動で前回の終了時間が次の開始時間になります。（その日の最初の記録は現在時刻がデフォルトになります）',
     ],
     en: [
-      'Improved the 24-hour manager to allow recording logs with only a time range.',
-      'Fixed an issue where the back button on the workout screen did not return to the dashboard.',
+      'Added "Continuous Recording Mode" to the 24-hour activity manager.',
+      'When enabled, the start time is automatically populated with the previous log\'s end time (defaulting to current time for the first log of the day).',
     ]
   }
 };
