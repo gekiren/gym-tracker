@@ -1,9 +1,11 @@
 import React from 'react';
+import { View } from 'react-native';
 import { Stack } from 'expo-router';
 import { Theme } from '../../src/theme';
 import { WebViewTab } from '../../components/WebViewTab';
 import ZikanKanriHTML from '../../src/web-apps/ZikanKanri';
 import { useLifelogStore } from '../../src/store/lifelogStore';
+import { LifelogDateHeader } from '../../components/LifelogDateHeader';
 
 export default function ZikanScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
@@ -19,7 +21,7 @@ export default function ZikanScreen() {
   const targetDate = currentDate || getTodayStr();
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
       <Stack.Screen
         options={{
           title: '24時間管理',
@@ -28,7 +30,8 @@ export default function ZikanScreen() {
           headerTitleStyle: { fontWeight: 'bold' },
         }}
       />
+      <LifelogDateHeader />
       <WebViewTab html={ZikanKanriHTML} currentDate={targetDate} />
-    </>
+    </View>
   );
 }

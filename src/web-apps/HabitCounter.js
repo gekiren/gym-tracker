@@ -506,6 +506,15 @@ input:focus {
     font-weight: 700;
     min-width: 80px;
 }
+header h1 {
+    display: none !important;
+}
+header {
+    justify-content: flex-end !important;
+}
+#prev-day, #next-day {
+    display: none !important;
+}
 </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

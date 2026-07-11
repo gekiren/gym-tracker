@@ -648,7 +648,7 @@ input {
 
 /* Date Selector Header Styles */
 .date-header {
-    display: flex;
+    display: none !important;
     align-items: center;
     justify-content: space-between;
     background-color: var(--card-bg);

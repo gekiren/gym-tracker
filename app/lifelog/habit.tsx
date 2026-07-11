@@ -1,9 +1,11 @@
 import React from 'react';
+import { View } from 'react-native';
 import { Stack } from 'expo-router';
 import { Theme } from '../../src/theme';
 import { WebViewTab } from '../../components/WebViewTab';
 import HabitCounterHTML from '../../src/web-apps/HabitCounter';
 import { useLifelogStore } from '../../src/store/lifelogStore';
+import { LifelogDateHeader } from '../../components/LifelogDateHeader';
 
 export default function HabitScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
@@ -19,7 +21,7 @@ export default function HabitScreen() {
   const targetDate = currentDate || getTodayStr();
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
       <Stack.Screen
         options={{
           title: '習慣カウンター',
@@ -28,7 +30,8 @@ export default function HabitScreen() {
           headerTitleStyle: { fontWeight: 'bold' },
         }}
       />
+      <LifelogDateHeader />
       <WebViewTab html={HabitCounterHTML} currentDate={targetDate} />
-    </>
+    </View>
   );
 }

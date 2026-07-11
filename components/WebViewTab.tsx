@@ -116,6 +116,50 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
     }
   };
 
+  // Sync date changes from React Native to WebView
+  useEffect(() => {
+    if (webViewRef.current && !loading && initialData) {
+      const injectScript = `
+        (function() {
+          window.__TARGET_DATE__ = "${currentDate}";
+          
+          // 1. Water Intake (Water.js)
+          if (typeof state !== 'undefined' && state && typeof state.currentDate !== 'undefined') {
+            state.currentDate = "${currentDate}";
+            if (typeof updateUI === 'function') {
+              updateUI();
+            }
+          }
+          
+          // 2. 24h Activity (ZikanKanri.js)
+          var dateInput = document.getElementById('current-date');
+          if (dateInput) {
+            var formattedDate = "${currentDate}".replace(/\\//g, '-');
+            if (dateInput.value !== formattedDate) {
+              dateInput.value = formattedDate;
+              dateInput.dispatchEvent(new Event('change'));
+            }
+          }
+          
+          // 3. Habit Counter (HabitCounter.js)
+          if (typeof currentDateStr !== 'undefined') {
+            currentDateStr = "${currentDate}";
+            if (typeof render === 'function') {
+              render();
+            }
+            if (typeof currentStatsDate !== 'undefined' && typeof parseDateStr === 'function') {
+              currentStatsDate = parseDateStr(currentDateStr);
+              if (typeof showStats === 'function' && typeof statsModal !== 'undefined' && !statsModal.classList.contains('hidden')) {
+                showStats();
+              }
+            }
+          }
+        })();
+      `;
+      webViewRef.current.injectJavaScript(injectScript);
+    }
+  }, [currentDate, loading, initialData]);
+
   if (loading || !initialData) {
     return (
       <View style={styles.loadingContainer}>

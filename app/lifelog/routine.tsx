@@ -1,9 +1,11 @@
 import React from 'react';
+import { View } from 'react-native';
 import { Stack } from 'expo-router';
 import { Theme } from '../../src/theme';
 import { WebViewTab } from '../../components/WebViewTab';
 import RoutineTrackerHTML from '../../src/web-apps/RoutineTracker';
 import { useLifelogStore } from '../../src/store/lifelogStore';
+import { LifelogDateHeader } from '../../components/LifelogDateHeader';
 
 export default function RoutineScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
@@ -19,7 +21,7 @@ export default function RoutineScreen() {
   const targetDate = currentDate || getTodayStr();
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
       <Stack.Screen
         options={{
           title: 'ルーティン管理',
@@ -28,7 +30,8 @@ export default function RoutineScreen() {
           headerTitleStyle: { fontWeight: 'bold' },
         }}
       />
+      <LifelogDateHeader />
       <WebViewTab html={RoutineTrackerHTML} currentDate={targetDate} />
-    </>
+    </View>
   );
 }

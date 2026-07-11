@@ -1,9 +1,11 @@
 import React from 'react';
+import { View } from 'react-native';
 import { Stack } from 'expo-router';
 import { Theme } from '../../src/theme';
 import { WebViewTab } from '../../components/WebViewTab';
 import WaterHTML from '../../src/web-apps/Water';
 import { useLifelogStore } from '../../src/store/lifelogStore';
+import { LifelogDateHeader } from '../../components/LifelogDateHeader';
 
 export default function WaterScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
@@ -19,7 +21,7 @@ export default function WaterScreen() {
   const targetDate = currentDate || getTodayStr();
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
       <Stack.Screen
         options={{
           title: '水分補給',
@@ -28,7 +30,8 @@ export default function WaterScreen() {
           headerTitleStyle: { fontWeight: 'bold' },
         }}
       />
+      <LifelogDateHeader />
       <WebViewTab html={WaterHTML} currentDate={targetDate} />
-    </>
+    </View>
   );
 }
