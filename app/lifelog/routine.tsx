@@ -40,11 +40,13 @@ export default function RoutineScreen() {
           ),
         }}
       />
-      <LifelogDateHeader type="routine" />
       {showHistory ? (
         <LifelogHistoryTab type="routine" t={t} />
       ) : (
-        <WebViewTab html={RoutineTrackerHTML} currentDate={targetDate} />
+        <>
+          <LifelogDateHeader type="routine" />
+          <WebViewTab html={RoutineTrackerHTML} currentDate={targetDate} />
+        </>
       )}
     </View>
   );

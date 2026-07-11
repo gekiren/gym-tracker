@@ -40,11 +40,13 @@ export default function HabitScreen() {
           ),
         }}
       />
-      <LifelogDateHeader type="habit" />
       {showHistory ? (
         <LifelogHistoryTab type="habit" t={t} />
       ) : (
-        <WebViewTab html={HabitCounterHTML} currentDate={targetDate} />
+        <>
+          <LifelogDateHeader type="habit" />
+          <WebViewTab html={HabitCounterHTML} currentDate={targetDate} />
+        </>
       )}
     </View>
   );

@@ -40,11 +40,13 @@ export default function ZikanScreen() {
           ),
         }}
       />
-      <LifelogDateHeader type="zikan" />
       {showHistory ? (
         <LifelogHistoryTab type="time" t={t} />
       ) : (
-        <WebViewTab html={ZikanKanriHTML} currentDate={targetDate} />
+        <>
+          <LifelogDateHeader type="zikan" />
+          <WebViewTab html={ZikanKanriHTML} currentDate={targetDate} />
+        </>
       )}
     </View>
   );

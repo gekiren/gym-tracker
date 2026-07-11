@@ -40,11 +40,13 @@ export default function WaterScreen() {
           ),
         }}
       />
-      <LifelogDateHeader type="water" />
       {showHistory ? (
         <LifelogHistoryTab type="water" t={t} />
       ) : (
-        <WebViewTab html={WaterHTML} currentDate={targetDate} />
+        <>
+          <LifelogDateHeader type="water" />
+          <WebViewTab html={WaterHTML} currentDate={targetDate} />
+        </>
       )}
     </View>
   );
