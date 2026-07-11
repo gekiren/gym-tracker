@@ -1410,7 +1410,7 @@ function renderSummary(targetLogs) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("width", "100%");
     svg.setAttribute("height", "auto");
-    svg.setAttribute("viewBox", \`0 0 \${size} \${size}\`);
+    svg.setAttribute("viewBox", "0 0 " + size + " " + size);
     svg.style.maxWidth = "300px";
     svg.style.display = "block";
     svg.style.margin = "0 auto";
@@ -1445,7 +1445,6 @@ function renderSummary(targetLogs) {
     // 2. Draw Sectors
     const activityColorMap = {};
     let colorIdx = 0;
-    const renderedLabels = [];
 
     targetLogs.forEach(log => {
         const primName = log.items[0].name;
@@ -1483,15 +1482,28 @@ function renderSummary(targetLogs) {
             svg.appendChild(circle);
         } else {
             const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            const d = \`M \${cx} \${cy} L \${x1} \${y1} A \${radius} \${radius} 0 \${largeArcFlag} 1 \${x2} \${y2} Z\`;
+            const d = "M " + cx + " " + cy + " L " + x1 + " " + y1 + " A " + radius + " " + radius + " 0 " + largeArcFlag + " 1 " + x2 + " " + y2 + " Z";
             path.setAttribute("d", d);
             path.setAttribute("fill", color);
             path.setAttribute("stroke", "#121212"); // Separator color matching bg
             path.setAttribute("stroke-width", "1");
             svg.appendChild(path);
         }
+    });
 
-        // Label
+    // 3. Draw Labels (rendered after all sectors to prevent overlapping sectors from hiding text)
+    const renderedLabels = [];
+    targetLogs.forEach(log => {
+        const [sh, sm] = log.start.split(':').map(Number);
+        const [eh, em] = log.end.split(':').map(Number);
+
+        let startMins = sh * 60 + sm;
+        let endMins = eh * 60 + em;
+        if (endMins < startMins) endMins += 1440; // Cross midnight
+
+        const startAngle = (startMins / 1440) * 360 - 90;
+        const endAngle = (endMins / 1440) * 360 - 90;
+
         const midAngle = (startAngle + endAngle) / 2;
         const midRad = midAngle * (Math.PI / 180);
 
