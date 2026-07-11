@@ -1809,3 +1809,25 @@ export const deleteLastHabitLog = async (habitItemId: number, date: string): Pro
     [habitItemId, date]
   );
 };
+
+export const getAllWaterLogs = async (): Promise<WaterLog[]> => {
+  const conn = getDB();
+  return await conn.getAllAsync<WaterLog>(
+    'SELECT * FROM water_logs ORDER BY date ASC, timestamp ASC'
+  );
+};
+
+export const getAllTimeLogs = async (): Promise<TimeLog[]> => {
+  const conn = getDB();
+  return await conn.getAllAsync<TimeLog>(
+    'SELECT * FROM time_logs ORDER BY date ASC, start_time ASC'
+  );
+};
+
+export const getAllHabitLogs = async (): Promise<HabitLog[]> => {
+  const conn = getDB();
+  return await conn.getAllAsync<HabitLog>(
+    'SELECT * FROM habit_logs ORDER BY date ASC, timestamp ASC'
+  );
+};
+

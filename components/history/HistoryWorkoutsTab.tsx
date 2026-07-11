@@ -36,7 +36,7 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [highlightedWorkoutId, setHighlightedWorkoutId] = useState<number | null>(null);
 
-  const [chartScale, setChartScale] = useState<'day' | 'week' | 'month'>('day');
+  const [chartScale, setChartScale] = useState<'day' | 'week' | 'month' | 'year'>('day');
   const [chartMetric, setChartMetric] = useState<'volume' | 'calories'>('volume');
 
   // Calendar Helpers (Memoized)

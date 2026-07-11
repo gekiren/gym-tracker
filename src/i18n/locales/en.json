@@ -243,6 +243,7 @@
       "scale_day": "Day",
       "scale_week": "Week",
       "scale_month": "Month",
+      "scale_year": "Year",
       "chart_title_calories": "Recent Total Calories (kcal)"
     },
     "exercise_library": {

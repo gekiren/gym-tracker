@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { getDB, loadFullWorkoutData, deleteWorkout, getExercises, addCustomExercise, deleteExercise, getFavoriteIds, toggleFavorite, getCustomExercisesCount, saveSetting } from '../../src/db/database';
@@ -12,6 +12,7 @@ import WorkoutShareModal from '../../components/WorkoutShareModal';
 // Subcomponents
 import { HistoryWorkoutsTab } from '../../components/history/HistoryWorkoutsTab';
 import { HistoryExercisesTab } from '../../components/history/HistoryExercisesTab';
+import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
 
 type Exercise = {
   id: number;
@@ -29,7 +30,7 @@ export default function HistoryScreen() {
   const [workouts, setWorkouts] = useState<any[]>([]);
   const { t, i18n } = useTranslation();
 
-  const [activeTab, setActiveTab] = useState<'workouts' | 'exercises'>('workouts');
+  const [activeTab, setActiveTab] = useState<'workouts' | 'water' | 'time' | 'habit' | 'routine' | 'exercises'>('workouts');
   const [isCalendarVisible, setCalendarVisible] = useState(false);
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [selectedWorkoutForShare, setSelectedWorkoutForShare] = useState<any>(null);
@@ -214,24 +215,29 @@ export default function HistoryScreen() {
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {/* Top Tab Bar */}
-          <View style={[styles.tabContainer, { flex: 1 }]}>
-            <TouchableOpacity 
-              style={[styles.tabButton, activeTab === 'workouts' && styles.tabButtonActive]}
-              onPress={() => setActiveTab('workouts')}
-            >
-              <Text style={[styles.tabButtonText, activeTab === 'workouts' && styles.tabButtonTextActive]}>
-                {t('ui.tabs.workout') || 'ワークアウト'}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.tabButton, activeTab === 'exercises' && styles.tabButtonActive]}
-              onPress={() => setActiveTab('exercises')}
-            >
-              <Text style={[styles.tabButtonText, activeTab === 'exercises' && styles.tabButtonTextActive]}>
-                {t('ui.tabs.exercises') || '種目'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tabContainer}
+            style={{ flex: 1 }}
+          >
+            {(['workouts', 'water', 'time', 'habit', 'routine', 'exercises'] as const).map(tab => (
+              <TouchableOpacity
+                key={tab}
+                style={[styles.tabButton, activeTab === tab && styles.tabButtonActive]}
+                onPress={() => setActiveTab(tab)}
+              >
+                <Text style={[styles.tabButtonText, activeTab === tab && styles.tabButtonTextActive]}>
+                  {tab === 'workouts' ? (t('ui.tabs.workout') || 'ワークアウト') :
+                   tab === 'water' ? (t('ui.history.tab_water') || '水分') :
+                   tab === 'time' ? (t('ui.history.tab_time') || '24時間') :
+                   tab === 'habit' ? (t('ui.history.tab_habit') || '習慣') :
+                   tab === 'routine' ? (t('ui.history.tab_routine') || 'ルーティン') :
+                   (t('ui.tabs.exercises') || '種目')}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
           {activeTab === 'workouts' && (
             <TouchableOpacity 
               style={styles.calendarBtn}
@@ -256,7 +262,7 @@ export default function HistoryScreen() {
           t={t}
           i18n={i18n}
         />
-      ) : (
+      ) : activeTab === 'exercises' ? (
         <HistoryExercisesTab
           exercises={exercises}
           favoriteIds={favoriteIds}
@@ -264,6 +270,11 @@ export default function HistoryScreen() {
           onDeleteExercise={handleDeleteExercise}
           onAddCustomExercise={handleCreateExercise}
           isBasic={isBasic}
+          t={t}
+        />
+      ) : (
+        <LifelogHistoryTab
+          type={activeTab}
           t={t}
         />
       )}

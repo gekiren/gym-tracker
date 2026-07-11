@@ -6,8 +6,8 @@ import { Theme } from '../../src/theme';
 
 interface HistoryChartProps {
   workouts: any[];
-  chartScale: 'day' | 'week' | 'month';
-  setChartScale: (scale: 'day' | 'week' | 'month') => void;
+  chartScale: 'day' | 'week' | 'month' | 'year';
+  setChartScale: (scale: 'day' | 'week' | 'month' | 'year') => void;
   chartMetric: 'volume' | 'calories';
   setChartMetric: (metric: 'volume' | 'calories') => void;
   weightUnit: string;
@@ -98,6 +98,32 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
       };
     }
 
+    if (chartScale === 'year') {
+      const yearlyData: { [key: string]: { date: Date; value: number } } = {};
+      workouts.forEach(w => {
+        const date = new Date(w.start_time);
+        const yearStart = new Date(date.getFullYear(), 0, 1);
+        const key = yearStart.toISOString();
+        if (!yearlyData[key]) {
+          yearlyData[key] = { date: yearStart, value: 0 };
+        }
+        yearlyData[key].value += getValue(w);
+      });
+
+      const sortedYears = Object.values(yearlyData).sort((a, b) => a.date.getTime() - b.date.getTime());
+      if (sortedYears.length < 1) return null;
+
+      const recentYears = sortedYears.slice(-50);
+      return {
+        labels: recentYears.map(w => format(w.date, 'yyyy')),
+        datasets: [
+          {
+            data: recentYears.map(w => w.value)
+          }
+        ]
+      };
+    }
+
     return null;
   }, [workouts, chartScale, chartMetric]);
 
@@ -114,7 +140,7 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
       <View style={styles.selectorsRow}>
         {/* Period Selector */}
         <View style={styles.scaleContainer}>
-          {(['day', 'week', 'month'] as const).map(scale => (
+          {(['day', 'week', 'month', 'year'] as const).map(scale => (
             <TouchableOpacity
               key={scale}
               style={[styles.scaleButton, chartScale === scale && styles.scaleButtonActive]}
