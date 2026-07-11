@@ -1511,7 +1511,7 @@ function renderSummary(targetLogs) {
         label.setAttribute("font-weight", "bold");
         label.setAttribute("pointer-events", "none");
 
-        if ((endMins - startMins) > 15) {
+        if ((endMins - startMins) >= 5) {
             let textContent = log.items.map(i => i.name.trim()).filter(n => n !== '').join('/');
             if (textContent.length > 5) textContent = textContent.substring(0, 4) + '..';
             if (textContent) {

@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.37', // OTA識別用のバージョン文字列
+  version: '1.1.38', // OTA識別用のバージョン文字列
   title: {
     ja: '時間管理画面の改善',
     en: 'Time Management Improvements',
   },
   notes: {
     ja: [
-      '24時間管理の集計円グラフ内の項目名が背景と重なって読みにくくなる問題を改善しました。',
+      '5分などの短い活動でも、集計円グラフにラベル（項目名）が表示されるように改善しました。',
     ],
     en: [
-      'Improved readability of item names in the 24-hour summary chart by preventing them from blending into the background.',
+      'Fixed an issue where labels for short activities (e.g., 5 minutes) were not displayed on the chart.',
     ]
   }
 };
