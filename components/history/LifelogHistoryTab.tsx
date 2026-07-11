@@ -362,20 +362,20 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
   const getChartTitle = () => {
     if (type === 'water') {
       return chartMetric === 'amount'
-        ? t('ui.history.chart_title_water') || '水分摂取量 (ml)'
-        : t('ui.history.chart_title_caffeine') || 'カフェイン摂取量 (mg)';
+        ? t('ui.history.chart_title_water')
+        : t('ui.history.chart_title_caffeine');
     } else if (type === 'time') {
       return selectedFilter === 'all'
-        ? t('ui.history.chart_title_time') || '時間管理 - 合計記録時間 (時間)'
-        : `時間管理 - 「${selectedFilter}」の時間 (時間)`;
+        ? t('ui.history.chart_title_time')
+        : t('ui.history.chart_title_time_tag', { tag: selectedFilter });
     } else if (type === 'habit') {
       return selectedFilter === 'all'
-        ? t('ui.history.chart_title_habit') || '習慣 - 総達成回数 (回)'
-        : `習慣 - 「${selectedFilterName}」達成回数 (回)`;
+        ? t('ui.history.chart_title_habit')
+        : t('ui.history.chart_title_habit_item', { item: selectedFilterName });
     } else {
       return selectedFilter === 'all'
-        ? t('ui.history.chart_title_routine') || 'ルーティン - 総完了回数 (回)'
-        : `ルーティン - 「${selectedFilterName}」完了回数 (回)`;
+        ? t('ui.history.chart_title_routine')
+        : t('ui.history.chart_title_routine_item', { item: selectedFilterName });
     }
   };
 
@@ -490,13 +490,13 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
               </View>
             ) : (
               <View style={styles.emptyChart}>
-                <Text style={styles.emptyText}>データがありません</Text>
+                <Text style={styles.emptyText}>{t('ui.history.empty_state')}</Text>
               </View>
             )}
 
             {/* History List Header */}
             <Text style={styles.listSectionTitle}>
-              {t('ui.history.section_history') || '過去の履歴'}
+              {t('ui.history.section_history')}
             </Text>
           </>
         }
@@ -507,20 +507,20 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                 <Text style={styles.historyDateText}>{item.dateStr}</Text>
                 {type === 'water' && (
                   <Text style={styles.cardTotalText}>
-                    合計: {item.totalAmount}ml / {waterGoal}ml
+                    {t('ui.history.total_label')}: {item.totalAmount}ml / {waterGoal}ml
                     {item.totalCaffeine > 0 ? ` (☕ ${item.totalCaffeine}mg)` : ''}
                   </Text>
                 )}
                 {type === 'time' && (
                   <Text style={styles.cardTotalText}>
-                    記録時間: {item.totalHours.toFixed(1)}時間
+                    {t('ui.history.logged_time')}: {item.totalHours.toFixed(1)}{t('ui.history.unit_hours')}
                   </Text>
                 )}
                 {type === 'habit' && (
-                  <Text style={styles.cardTotalText}>回数: {item.items.length}回</Text>
+                  <Text style={styles.cardTotalText}>{t('ui.history.count_label_unit')}: {item.items.length}{t('ui.history.unit_times')}</Text>
                 )}
                 {type === 'routine' && (
-                  <Text style={styles.cardTotalText}>完了: {item.items.length}件</Text>
+                  <Text style={styles.cardTotalText}>{t('ui.history.completed_label')}: {item.items.length}{t('ui.history.unit_items')}</Text>
                 )}
               </View>
 
