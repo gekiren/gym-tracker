@@ -11,19 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.44', // OTA識別用のバージョン文字列
+  version: '1.1.45', // OTA識別用のバージョン文字列
   title: {
-    ja: '日付選択カレンダーの記録日マーク機能',
-    en: 'Calendar Date Picker Activity Highlight',
+    ja: 'ライフログ履歴の総量グラフ機能追加（日・週・月・年）',
+    en: 'Lifelog History Charts (Day/Week/Month/Year)',
   },
   notes: {
     ja: [
-      '日付選択カレンダーにおいて、データが記録されている日を薄い青色でハイライト表示する機能を追加しました。',
-      'ダッシュボード、水分補給、24時間管理、習慣カウンター、ルーティン管理の各カレンダーで動作します。',
+      '「履歴」画面に「水分」「24時間」「習慣」「ルーティン」の履歴タブを追加しました。',
+      'それぞれの履歴について、日・週・月・年ごとの総量グラフと詳細な履歴一覧を確認できます。',
+      'ワークアウト記録のグラフにも「年」スケールオプションを追加しました。',
     ],
     en: [
-      'Added visual highlights (blue markers) in the calendar date selector for days with recorded logs.',
-      'Works in Dashboard, Water, 24h Activity, Habit Counter, and Routine screens.',
+      'Added history tabs for "Water", "24-Hour", "Habits", and "Routines" in the History screen.',
+      'View daily, weekly, monthly, and yearly total charts and detailed history lists for each lifelog.',
+      'Added a "Year" scale option to the workout records history chart.',
     ]
   }
 };
