@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.40', // OTA識別用のバージョン文字列
+  version: '1.1.41', // OTA識別用のバージョン文字列
   title: {
-    ja: '時間管理画面の不具合修正',
-    en: 'Time Management Fix',
+    ja: '24時間管理画面の表示調整',
+    en: 'Time Management Layout Adjustment',
   },
   notes: {
     ja: [
-      '円グラフのラベルが隣のグラフ表示に隠れてしまう不具合を修正しました。',
+      '24時間管理画面から「Daily Tracker」のタイトルおよび「新しい活動」のテキスト表示を削除しました。',
     ],
     en: [
-      'Fixed an issue where chart labels were hidden behind neighboring chart sectors.',
+      'Removed the "Daily Tracker" title and "New Activity" header text from the 24-hour activity management screen.',
     ]
   }
 };

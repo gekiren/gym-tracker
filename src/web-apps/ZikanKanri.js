@@ -461,8 +461,7 @@ label {
 
 <body>
     <header>
-        <h1>Daily Tracker</h1>
-        <div style="text-align: center; margin-bottom: 16px;">
+        <div style="text-align: center; margin-bottom: 16px; padding-top: 16px;">
             <input type="date" id="current-date"
                 style="width: auto; padding: 8px; font-size: 1rem; color-scheme: dark;">
         </div>
@@ -472,7 +471,6 @@ label {
         <!-- Input Section -->
         <section class="card" id="input-section">
             <div class="flex-row justify-between" style="margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                <h2>新しい活動</h2>
                 <div class="flex-row" style="gap: 8px; flex-wrap: wrap;">
                     <button id="toggle-continuous" class="btn btn-secondary"
                         style="width: auto; padding: 6px 12px; font-size: 0.8rem;">
