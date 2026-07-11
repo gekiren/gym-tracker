@@ -1445,6 +1445,7 @@ function renderSummary(targetLogs) {
     // 2. Draw Sectors
     const activityColorMap = {};
     let colorIdx = 0;
+    const renderedLabels = [];
 
     targetLogs.forEach(log => {
         const primName = log.items[0].name;
@@ -1493,31 +1494,54 @@ function renderSummary(targetLogs) {
         // Label
         const midAngle = (startAngle + endAngle) / 2;
         const midRad = midAngle * (Math.PI / 180);
-        const labelR = radius * 0.6;
-        const lx = cx + labelR * Math.cos(midRad);
-        const ly = cy + labelR * Math.sin(midRad);
 
-        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        label.setAttribute("x", lx);
-        label.setAttribute("y", ly);
-        label.setAttribute("text-anchor", "middle");
-        label.setAttribute("dominant-baseline", "middle");
-        label.setAttribute("fill", "#333"); // Dark text for pastel colors
-        label.setAttribute("stroke", "#ffffff");
-        label.setAttribute("stroke-width", "2");
-        label.setAttribute("paint-order", "stroke fill");
-        label.setAttribute("stroke-linejoin", "round");
-        label.setAttribute("font-size", "12");
-        label.setAttribute("font-weight", "bold");
-        label.setAttribute("pointer-events", "none");
+        let labelR = radius * 0.65;
+        const rCandidates = [radius * 0.65, radius * 0.4, radius * 0.85, radius * 0.25];
+        let lx = cx + labelR * Math.cos(midRad);
+        let ly = cy + labelR * Math.sin(midRad);
 
-        if ((endMins - startMins) >= 5) {
-            let textContent = log.items.map(i => i.name.trim()).filter(n => n !== '').join('/');
+        const isVisible = (endMins - startMins) >= 5;
+        let textContent = '';
+        if (isVisible) {
+            textContent = log.items.map(i => i.name.trim()).filter(n => n !== '').join('/');
             if (textContent.length > 5) textContent = textContent.substring(0, 4) + '..';
-            if (textContent) {
-                label.textContent = textContent;
-                svg.appendChild(label);
+        }
+
+        if (isVisible && textContent) {
+            for (const rCand of rCandidates) {
+                labelR = rCand;
+                lx = cx + labelR * Math.cos(midRad);
+                ly = cy + labelR * Math.sin(midRad);
+
+                let hasCollision = false;
+                for (const pos of renderedLabels) {
+                    if (Math.abs(lx - pos.x) < 40 && Math.abs(ly - pos.y) < 15) {
+                        hasCollision = true;
+                        break;
+                    }
+                }
+                if (!hasCollision) {
+                    break;
+                }
             }
+
+            const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            label.setAttribute("x", lx);
+            label.setAttribute("y", ly);
+            label.setAttribute("text-anchor", "middle");
+            label.setAttribute("dominant-baseline", "middle");
+            label.setAttribute("fill", "#333"); // Dark text for pastel colors
+            label.setAttribute("stroke", "#ffffff");
+            label.setAttribute("stroke-width", "2");
+            label.setAttribute("paint-order", "stroke fill");
+            label.setAttribute("stroke-linejoin", "round");
+            label.setAttribute("font-size", "12");
+            label.setAttribute("font-weight", "bold");
+            label.setAttribute("pointer-events", "none");
+            label.textContent = textContent;
+
+            svg.appendChild(label);
+            renderedLabels.push({ x: lx, y: ly });
         }
     });
 
