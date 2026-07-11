@@ -9,6 +9,7 @@ import { useLifelogStore } from '../src/store/lifelogStore';
 import { saveSetting } from '../src/db/database';
 import { readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../src/services/crashReporterService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { DashboardCalendarModal } from '../components/DashboardCalendarModal';
 
 const { width } = Dimensions.get('window');
 
@@ -35,6 +36,7 @@ export default function DashboardScreen() {
   // Local state for onboarding/modals
   const [isSendingCrash, setIsSendingCrash] = useState(false);
   const [isNewUser, setIsNewUser] = useState(settings.needsStyleSelection);
+  const [isCalendarVisible, setCalendarVisible] = useState(false);
 
   // Date Formatting helper
   const getTodayStr = () => {
@@ -187,7 +189,14 @@ export default function DashboardScreen() {
         </TouchableOpacity>
         
         <View style={styles.dateTextContainer}>
-          <Text style={styles.dateText}>{currentDate || getTodayStr()}</Text>
+          <TouchableOpacity 
+            onPress={() => setCalendarVisible(true)} 
+            style={styles.dateSelectorTrigger}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.dateText}>{currentDate || getTodayStr()}</Text>
+            <Ionicons name="calendar-outline" size={16} color={Theme.colors.textMuted} />
+          </TouchableOpacity>
           {!isToday && (
             <TouchableOpacity onPress={handleGoToday} style={styles.todayBadge}>
               <Text style={styles.todayBadgeText}>今日に戻る</Text>
@@ -514,6 +523,13 @@ export default function DashboardScreen() {
           </View>
         </View>
       </Modal>
+
+      <DashboardCalendarModal
+        visible={isCalendarVisible}
+        selectedDate={currentDate || getTodayStr()}
+        onClose={() => setCalendarVisible(false)}
+        onSelectDate={(dateStr) => setCurrentDate(dateStr)}
+      />
     </View>
   );
 }
@@ -538,6 +554,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 8,
+  },
+  dateSelectorTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
   },
   dateText: {
     color: '#fff',

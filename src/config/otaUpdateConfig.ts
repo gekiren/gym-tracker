@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.41', // OTA識別用のバージョン文字列
+  version: '1.1.42', // OTA識別用のバージョン文字列
   title: {
-    ja: '24時間管理画面の表示調整',
-    en: 'Time Management Layout Adjustment',
+    ja: 'ダッシュボード日付選択カレンダー機能の追加',
+    en: 'Dashboard Date Selector Calendar',
   },
   notes: {
     ja: [
-      '24時間管理画面から「Daily Tracker」のタイトルおよび「新しい活動」のテキスト表示を削除しました。',
+      'ダッシュボードの日付表示部分をタップすることで、カレンダーから直接日付を選択できるようになりました。',
     ],
     en: [
-      'Removed the "Daily Tracker" title and "New Activity" header text from the 24-hour activity management screen.',
+      'You can now select dates directly from a calendar by tapping the date header on the Dashboard.',
     ]
   }
 };
