@@ -1503,6 +1503,10 @@ function renderSummary(targetLogs) {
         label.setAttribute("text-anchor", "middle");
         label.setAttribute("dominant-baseline", "middle");
         label.setAttribute("fill", "#333"); // Dark text for pastel colors
+        label.setAttribute("stroke", "#ffffff");
+        label.setAttribute("stroke-width", "2");
+        label.setAttribute("paint-order", "stroke fill");
+        label.setAttribute("stroke-linejoin", "round");
         label.setAttribute("font-size", "12");
         label.setAttribute("font-weight", "bold");
         label.setAttribute("pointer-events", "none");
