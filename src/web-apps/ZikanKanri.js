@@ -342,6 +342,114 @@ label {
   max-width: 300px;
   position: relative;
 }
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-content {
+  background-color: var(--surface-color);
+  border-radius: var(--border-radius);
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+}
+
+.modal-overlay.active .modal-content {
+  transform: scale(1);
+}
+
+.modal-header {
+  padding: 16px;
+  border-bottom: 1px solid #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #333;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.edit-tag-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.edit-tag-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+.edit-tag-name {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.edit-tag-delete-btn {
+  background: none;
+  border: none;
+  color: var(--error-color);
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-tag-delete-btn:hover {
+  opacity: 0.8;
+}
 </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -386,13 +494,7 @@ label {
                     <!-- Javascript will populate this -->
                 </div>
 
-                <!-- Smart Tag Add Form -->
-                <div class="flex-row" style="margin-bottom: 12px;">
-                    <input type="text" id="new-tag-input" placeholder="新しいタグ名を入力" class="no-margin" style="flex: 1;">
-                    <button id="add-tag-btn" class="btn btn-secondary" style="width: auto; padding: 12px 20px; white-space: nowrap; margin-bottom: 0;">タグ追加</button>
-                </div>
-
-                <input type="text" id="activity-name" placeholder="内容を入力または上から選択">
+                <input type="hidden" id="activity-name">
             </div>
 
             <!-- Simultaneous Mode Inputs (Hidden by default) -->
@@ -482,13 +584,36 @@ label {
         </section>
     </div>
 
+    <!-- Tag Edit Modal -->
+    <div id="tag-edit-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>タグの編集</h3>
+                <span id="close-modal-btn" style="cursor: pointer; font-size: 1.5rem; font-weight: bold; color: var(--text-secondary);">&times;</span>
+            </div>
+            <div class="modal-body">
+                <!-- Add Tag Input Form -->
+                <div class="flex-row" style="margin-bottom: 16px;">
+                    <input type="text" id="modal-new-tag-input" placeholder="新しいタグ名を入力" style="flex: 1; margin-bottom: 0;">
+                    <button id="modal-add-tag-btn" class="btn btn-secondary" style="width: auto; padding: 12px 20px; white-space: nowrap; margin-bottom: 0;">追加</button>
+                </div>
+                <!-- Current Tags List -->
+                <label>現在のタグ一覧 (クリックで削除)</label>
+                <div id="modal-tag-list" class="edit-tag-list">
+                    <!-- Javascript will populate this -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-close-btn" class="btn btn-primary" style="margin-bottom: 0; width: auto; padding: 8px 16px;">完了</button>
+            </div>
+        </div>
+    </div>
+
     <script>
 
 // DOM Elements
 const activityNameInput = document.getElementById('activity-name');
 const activityMemoInput = document.getElementById('activity-memo');
-const newTagInput = document.getElementById('new-tag-input');
-const addTagBtn = document.getElementById('add-tag-btn');
 const startTimeInput = document.getElementById('start-time');
 const endTimeInput = document.getElementById('end-time');
 const saveBtn = document.getElementById('save-btn');
@@ -506,6 +631,14 @@ const saveTemplateBtn = document.getElementById('save-template-btn');
 const templateList = document.getElementById('template-list');
 const clearDayBtn = document.getElementById('clear-day-btn');
 const currentDateInput = document.getElementById('current-date');
+
+// Modal Elements
+const tagEditModal = document.getElementById('tag-edit-modal');
+const closeModalBtn = document.getElementById('close-modal-btn');
+const modalNewTagInput = document.getElementById('modal-new-tag-input');
+const modalAddTagBtn = document.getElementById('modal-add-tag-btn');
+const modalTagList = document.getElementById('modal-tag-list');
+const modalCloseBtn = document.getElementById('modal-close-btn');
 
 // State
 let isContinuousMode = JSON.parse(localStorage.getItem('zikankanri_continuous_mode')) || false;
@@ -591,9 +724,28 @@ function notifyDateChanged() {
     }
 }
 
+function selectTag(tagName) {
+    document.querySelectorAll('#quick-list .tag-chip').forEach(c => {
+        if (c.dataset.value === tagName) {
+            c.classList.add('selected');
+        } else {
+            c.classList.remove('selected');
+        }
+    });
+    activityNameInput.value = tagName;
+}
+
 // Init Tags
 function initTags() {
     quickListNodesContainer.innerHTML = '';
+
+    // Edit Button
+    const editBtn = document.createElement('span');
+    editBtn.className = 'tag-chip';
+    editBtn.style.borderStyle = 'dashed';
+    editBtn.textContent = '+ タグ編集';
+    editBtn.onclick = openTagEditor;
+    quickListNodesContainer.appendChild(editBtn);
 
     defaultTags.forEach(tag => {
         const chip = document.createElement('span');
@@ -605,28 +757,64 @@ function initTags() {
         textSpan.textContent = tag;
         textSpan.style.cursor = 'pointer';
         textSpan.addEventListener('click', () => {
-            document.querySelectorAll('#quick-list .tag-chip').forEach(c => c.classList.remove('selected'));
-            chip.classList.add('selected');
-            activityNameInput.value = tag;
+            selectTag(tag);
         });
         chip.appendChild(textSpan);
 
-        // Delete button
-        const deleteBtn = document.createElement('span');
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.textContent = '×';
-        deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent triggering parent chip click
-            removeTag(tag);
-        });
-        chip.appendChild(deleteBtn);
+        quickListNodesContainer.insertBefore(chip, editBtn);
+    });
 
-        quickListNodesContainer.appendChild(chip);
+    // Restore selected state on render if active
+    if (activityNameInput.value) {
+        selectTag(activityNameInput.value);
+    }
+}
+
+function openTagEditor() {
+    tagEditModal.classList.add('active');
+    renderModalTags();
+    modalNewTagInput.value = '';
+    modalNewTagInput.focus();
+}
+
+function closeTagEditor() {
+    tagEditModal.classList.remove('active');
+    initTags();
+}
+
+function renderModalTags() {
+    modalTagList.innerHTML = '';
+    defaultTags.forEach(tag => {
+        const item = document.createElement('div');
+        item.className = 'edit-tag-item';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'edit-tag-name';
+        nameSpan.textContent = tag;
+        item.appendChild(nameSpan);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'edit-tag-delete-btn';
+        delBtn.innerHTML = '&times;';
+        delBtn.onclick = () => {
+            if (confirm(\`タグ「\${tag}」を削除しますか？\`)) {
+                defaultTags = defaultTags.filter(t => t !== tag);
+                localStorage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
+                renderModalTags();
+                // If the deleted tag was in the input, clear it
+                if (activityNameInput.value === tag) {
+                    activityNameInput.value = '';
+                }
+            }
+        };
+        item.appendChild(delBtn);
+
+        modalTagList.appendChild(item);
     });
 }
 
-function addNewTag() {
-    const val = newTagInput.value.trim();
+function addModalTag() {
+    const val = modalNewTagInput.value.trim();
     if (!val) return;
     if (defaultTags.includes(val)) {
         alert('そのタグは既に存在します。');
@@ -634,28 +822,23 @@ function addNewTag() {
     }
     defaultTags.push(val);
     localStorage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
-    initTags();
-    newTagInput.value = '';
+    renderModalTags();
+    modalNewTagInput.value = '';
 }
 
-function removeTag(tag) {
-    if (confirm(\`タグ「\${tag}」を削除しますか？\`)) {
-        defaultTags = defaultTags.filter(t => t !== tag);
-        localStorage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
-        initTags();
-        // If the deleted tag was in the input, clear it
-        if (activityNameInput.value === tag) {
-            activityNameInput.value = '';
-        }
-    }
-}
-
-// Bind tag events
-addTagBtn.addEventListener('click', addNewTag);
-newTagInput.addEventListener('keydown', (e) => {
+// Bind modal events
+closeModalBtn.addEventListener('click', closeTagEditor);
+modalCloseBtn.addEventListener('click', closeTagEditor);
+modalAddTagBtn.addEventListener('click', addModalTag);
+modalNewTagInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
         e.preventDefault();
-        addNewTag();
+        addModalTag();
+    }
+});
+tagEditModal.addEventListener('click', (e) => {
+    if (e.target === tagEditModal) {
+        closeTagEditor();
     }
 });
 
@@ -737,14 +920,15 @@ function addSimultaneousRow(name = '', percent = 0) {
 }
 
 // Save Entry
+// Save Entry
 saveBtn.addEventListener('click', () => {
     const start = startTimeInput.value;
     const end = endTimeInput.value;
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
     const memo = activityMemoInput.value.trim();
 
-    if (!start || !end) {
-        alert('開始時間と終了時間を入力してください。');
+    if (!start && !end) {
+        alert('開始時間または終了時間を入力してください。');
         return;
     }
 
@@ -765,49 +949,53 @@ saveBtn.addEventListener('click', () => {
         newItems.push({ name: name || "", percent: 100 });
     }
 
-    // Check for Overlaps
-    const newStartMins = timeToMins(start);
-    const newEndMins = timeToMins(end);
-    let effectiveEndMins = newEndMins;
-    if (effectiveEndMins < newStartMins) effectiveEndMins += 1440;
+    const hasTimeInterval = start && end;
 
-    // Find overlapping logs
-    const dayLogs = logs.filter(l => l.date === selectedDate && l.id !== editingId); // Exclude self if editing
-    const overlaps = dayLogs.filter(l => {
-        const lS = timeToMins(l.start);
-        let lE = timeToMins(l.end);
-        if (lE < lS) lE += 1440;
+    if (hasTimeInterval) {
+        // Check for Overlaps
+        const newStartMins = timeToMins(start);
+        const newEndMins = timeToMins(end);
+        let effectiveEndMins = newEndMins;
+        if (effectiveEndMins < newStartMins) effectiveEndMins += 1440;
 
-        return Math.max(lS, newStartMins) < Math.min(lE, effectiveEndMins);
-    });
+        // Find overlapping logs (only checking against logs that have both start and end times)
+        const dayLogs = logs.filter(l => l.date === selectedDate && l.id !== editingId && l.start && l.end);
+        const overlaps = dayLogs.filter(l => {
+            const lS = timeToMins(l.start);
+            let lE = timeToMins(l.end);
+            if (lE < lS) lE += 1440;
 
-    if (overlaps.length > 0) {
-        // Handle Overlap
-        const targetLog = overlaps[0];
+            return Math.max(lS, newStartMins) < Math.min(lE, effectiveEndMins);
+        });
 
-        const confirmMerge = confirm(\`「\${targetLog.items.map(i => i.name).join('/')}」(\${targetLog.start}-\${targetLog.end}) と時間が重なっています。\\n重なっている部分を同時進行として記録しますか？\\n（キャンセルすると通常通り追加・更新します）\`);
+        if (overlaps.length > 0) {
+            // Handle Overlap
+            const targetLog = overlaps[0];
 
-        if (confirmMerge) {
-            // Ask for ratio
-            const existingNames = targetLog.items.map(i => i.name).join('/');
-            const newNames = newItems.map(i => i.name).join('/');
+            const confirmMerge = confirm(\`「\${targetLog.items.map(i => i.name).join('/')}」(\${targetLog.start}-\${targetLog.end}) と時間が重なっています。\\n重なっている部分を同時進行として記録しますか？\\n（キャンセルすると通常通り追加・更新します）\`);
 
-            const ratioStr = prompt(\`重複区間の割合を設定してください。\\n既存「\${existingNames}」の割合(%):\`, "50");
-            if (ratioStr === null) return;
+            if (confirmMerge) {
+                // Ask for ratio
+                const existingNames = targetLog.items.map(i => i.name).join('/');
+                const newNames = newItems.map(i => i.name).join('/');
 
-            const existingRatio = parseInt(ratioStr) || 50;
-            const newRatio = 100 - existingRatio;
+                const ratioStr = prompt(\`重複区間の割合を設定してください。\\n既存「\${existingNames}」の割合(%):\`, "50");
+                if (ratioStr === null) return;
 
-            // If editing, we first remove the old entry since we are merging into a new split structure
-            if (editingId) {
-                logs = logs.filter(l => l.id !== editingId);
+                const existingRatio = parseInt(ratioStr) || 50;
+                const newRatio = 100 - existingRatio;
+
+                // If editing, we first remove the old entry since we are merging into a new split structure
+                if (editingId) {
+                    logs = logs.filter(l => l.id !== editingId);
+                }
+
+                handleOverlapMerge(targetLog, { start, end, items: newItems, memo: memo }, selectedDate, existingRatio, newRatio);
+
+                // Clean up UI
+                resetForm(isContinuousMode ? end : getCurrentTimeStr());
+                return;
             }
-
-            handleOverlapMerge(targetLog, { start, end, items: newItems, memo: memo }, selectedDate, existingRatio, newRatio);
-
-            // Clean up UI
-            resetForm(isContinuousMode ? end : getCurrentTimeStr());
-            return;
         }
     }
 
@@ -818,9 +1006,10 @@ saveBtn.addEventListener('click', () => {
             logs[index] = {
                 ...logs[index],
                 date: selectedDate,
-                start,
-                end,
-                items: newItems
+                start: start || "",
+                end: end || "",
+                items: newItems,
+                memo: memo
             };
         }
     } else {
@@ -828,16 +1017,17 @@ saveBtn.addEventListener('click', () => {
         const newEntry = {
             id: Date.now(),
             date: selectedDate,
-            start,
-            end,
-            items: newItems
+            start: start || "",
+            end: end || "",
+            items: newItems,
+            memo: memo
         };
         logs.push(newEntry);
     }
 
     saveLogs();
     renderLogs();
-    resetForm(isContinuousMode ? end : getCurrentTimeStr());
+    resetForm(isContinuousMode ? (end || start || getCurrentTimeStr()) : getCurrentTimeStr());
 });
 
 function handleOverlapMerge(existingLog, newLogObj, date, existingWeight, newWeight) {
@@ -954,7 +1144,7 @@ function startEdit(id) {
         });
     } else {
         setSimultaneousMode(false);
-        activityNameInput.value = log.items[0].name;
+        selectTag(log.items[0].name);
     }
 
     // Scroll top
@@ -1012,7 +1202,7 @@ if (exportMdBtn) {
                 const minutes = duration * (item.percent / 100);
                 if (!totals[item.name]) totals[item.name] = 0;
                 totals[item.name] += minutes;
-                totalMins += minutes; // Note: totalMins might exceed 1440 if overlapping? No, overlap handling splits them.
+                totalMins += minutes;
             });
         });
 
@@ -1046,7 +1236,9 @@ if (exportMdBtn) {
             if (log.memo && log.memo.trim() !== '') {
                 content += \` [\${log.memo.trim()}]\`;
             }
-            md += \`- **\${log.start} - \${log.end}** (\${duration}分): \${content}\\n\`;
+            const timeStr = (log.start || '?') + ' - ' + (log.end || '?');
+            const durationStr = duration > 0 ? \` (\${duration}分)\` : '';
+            md += \`- **\${timeStr}**\${durationStr}: \${content}\\n\`;
         });
 
         // Copy to clipboard
@@ -1142,6 +1334,8 @@ function renderLogs() {
         }
 
         const duration = calculateDuration(log.start, log.end);
+        const durationStr = duration > 0 ? \` (\${duration}分)\` : '';
+        const timeStr = (log.start || '?') + ' - ' + (log.end || '?');
 
         // Edit Button Logic
         const isEditing = (log.id === editingId);
@@ -1150,7 +1344,7 @@ function renderLogs() {
 
         el.innerHTML = \`
             <div>
-                <div class="time-badge">\${log.start} - \${log.end} (\${duration}分)</div>
+                <div class="time-badge">\${timeStr}\${durationStr}</div>
                 <div style="margin-top: 4px;">\${content}</div>
             </div>
             <div class="flex-row">
@@ -1362,6 +1556,7 @@ function getCurrentTimeStr() {
 }
 
 function calculateDuration(start, end) {
+    if (!start || !end) return 0;
     const [h1, m1] = start.split(':').map(Number);
     const [h2, m2] = end.split(':').map(Number);
     const min1 = h1 * 60 + m1;
@@ -1370,6 +1565,7 @@ function calculateDuration(start, end) {
 }
 
 function timeToMins(timeStr) {
+    if (!timeStr) return 0;
     const [h, m] = timeStr.split(':').map(Number);
     return h * 60 + m;
 }
