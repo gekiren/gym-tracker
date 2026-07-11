@@ -1,14 +1,19 @@
-import React from 'react';
-import { View } from 'react-native';
+import React, { useState } from 'react';
+import { View, TouchableOpacity } from 'react-native';
 import { Stack } from 'expo-router';
 import { Theme } from '../../src/theme';
 import { WebViewTab } from '../../components/WebViewTab';
 import WaterHTML from '../../src/web-apps/Water';
 import { useLifelogStore } from '../../src/store/lifelogStore';
 import { LifelogDateHeader } from '../../components/LifelogDateHeader';
+import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
+import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function WaterScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
+  const [showHistory, setShowHistory] = useState(false);
+  const { t } = useTranslation();
 
   const getTodayStr = () => {
     const date = new Date();
@@ -28,10 +33,19 @@ export default function WaterScreen() {
           headerStyle: { backgroundColor: Theme.colors.background },
           headerTintColor: Theme.colors.text,
           headerTitleStyle: { fontWeight: 'bold' },
+          headerRight: () => (
+            <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ marginRight: 16, padding: 4 }}>
+              <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
+            </TouchableOpacity>
+          ),
         }}
       />
       <LifelogDateHeader type="water" />
-      <WebViewTab html={WaterHTML} currentDate={targetDate} />
+      {showHistory ? (
+        <LifelogHistoryTab type="water" t={t} />
+      ) : (
+        <WebViewTab html={WaterHTML} currentDate={targetDate} />
+      )}
     </View>
   );
 }

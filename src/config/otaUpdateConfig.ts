@@ -18,13 +18,13 @@ export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
   },
   notes: {
     ja: [
-      '「履歴」画面に「水分」「24時間」「習慣」「ルーティン」の履歴タブを追加しました。',
-      'それぞれの履歴について、日・週・月・年ごとの総量グラフと詳細な履歴一覧を確認できます。',
+      '水分補給、24時間管理、習慣カウンター、ルーティン管理の各画面に履歴グラフ表示機能を追加しました。',
+      '画面右上のグラフアイコンから、日・週・月・年ごとの総量グラフと詳細履歴一覧を切り替えられます。',
       'ワークアウト記録のグラフにも「年」スケールオプションを追加しました。',
     ],
     en: [
-      'Added history tabs for "Water", "24-Hour", "Habits", and "Routines" in the History screen.',
-      'View daily, weekly, monthly, and yearly total charts and detailed history lists for each lifelog.',
+      'Added history charts to Water, 24-Hour, Habits, and Routines detail screens.',
+      'Toggle between logs and daily/weekly/monthly/yearly charts via the header chart icon.',
       'Added a "Year" scale option to the workout records history chart.',
     ]
   }
