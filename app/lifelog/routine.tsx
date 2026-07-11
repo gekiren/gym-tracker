@@ -30,7 +30,7 @@ export default function RoutineScreen() {
           headerTitleStyle: { fontWeight: 'bold' },
         }}
       />
-      <LifelogDateHeader />
+      <LifelogDateHeader type="routine" />
       <WebViewTab html={RoutineTrackerHTML} currentDate={targetDate} />
     </View>
   );

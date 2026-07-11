@@ -30,7 +30,7 @@ export default function WaterScreen() {
           headerTitleStyle: { fontWeight: 'bold' },
         }}
       />
-      <LifelogDateHeader />
+      <LifelogDateHeader type="water" />
       <WebViewTab html={WaterHTML} currentDate={targetDate} />
     </View>
   );

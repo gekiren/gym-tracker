@@ -30,7 +30,7 @@ export default function ZikanScreen() {
           headerTitleStyle: { fontWeight: 'bold' },
         }}
       />
-      <LifelogDateHeader />
+      <LifelogDateHeader type="zikan" />
       <WebViewTab html={ZikanKanriHTML} currentDate={targetDate} />
     </View>
   );

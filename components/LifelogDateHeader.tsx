@@ -7,9 +7,10 @@ import { DashboardCalendarModal } from './DashboardCalendarModal';
 
 interface LifelogDateHeaderProps {
   style?: StyleProp<ViewStyle>;
+  type?: 'workout' | 'water' | 'zikan' | 'habit' | 'routine';
 }
 
-export function LifelogDateHeader({ style }: LifelogDateHeaderProps) {
+export function LifelogDateHeader({ style, type }: LifelogDateHeaderProps) {
   const currentDate = useLifelogStore((state) => state.currentDate);
   const setCurrentDate = useLifelogStore((state) => state.setCurrentDate);
   const [isCalendarVisible, setCalendarVisible] = useState(false);
@@ -93,6 +94,7 @@ export function LifelogDateHeader({ style }: LifelogDateHeaderProps) {
         selectedDate={currentDate || getTodayStr()}
         onClose={() => setCalendarVisible(false)}
         onSelectDate={(dateStr) => setCurrentDate(dateStr)}
+        type={type}
       />
     </View>
   );

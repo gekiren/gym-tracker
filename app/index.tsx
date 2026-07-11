@@ -141,7 +141,7 @@ export default function DashboardScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
       {/* Date Switcher Header */}
-      <LifelogDateHeader style={{ paddingTop: insets.top + 16, paddingBottom: 16 }} />
+      <LifelogDateHeader style={{ paddingTop: insets.top + 16, paddingBottom: 16 }} type="workout" />
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         

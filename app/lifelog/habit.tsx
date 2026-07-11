@@ -30,7 +30,7 @@ export default function HabitScreen() {
           headerTitleStyle: { fontWeight: 'bold' },
         }}
       />
-      <LifelogDateHeader />
+      <LifelogDateHeader type="habit" />
       <WebViewTab html={HabitCounterHTML} currentDate={targetDate} />
     </View>
   );
