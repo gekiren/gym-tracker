@@ -597,6 +597,26 @@ header {
 .color-btn-mini.selected {
     transform: scale(1.1);
 }
+.manage-visibility-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+.manage-visibility-btn:active {
+    opacity: 1;
+}
+.manage-visibility-btn.is-hidden-item {
+    color: rgba(255, 255, 255, 0.3);
+}
+.manage-item-container.is-hidden-item .manage-input {
+    opacity: 0.5;
+}
 </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1030,10 +1050,15 @@ function renderManageList() {
     items.forEach((item, index) => {
         const isFirst = index === 0;
         const isLast = index === items.length - 1;
+        const isHidden = item.visible === false;
 
         const li = document.createElement('li');
-        li.className = 'manage-item-container';
+        li.className = 'manage-item-container' + (isHidden ? ' is-hidden-item' : '');
         li.id = \`manage-item-\${item.id}\`;
+
+        const eyeIcon = isHidden
+            ? \`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>\`
+            : \`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>\`;
 
         li.innerHTML = \`
             <div class="manage-item">
@@ -1043,6 +1068,7 @@ function renderManageList() {
                 </div>
                 <div class="manage-color-dot" style="background: \${item.color}" onclick="toggleColorPicker('\${item.id}')"></div>
                 <input type="text" class="manage-input" value="\${escapeHtml(item.name)}" onchange="renameItem('\${item.id}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" />
+                <button class="manage-visibility-btn \${isHidden ? 'is-hidden-item' : ''}" onclick="toggleItemVisibility('\${item.id}')" aria-label="表示・非表示">\${eyeIcon}</button>
                 <button class="manage-delete-btn" onclick="deleteItemFromManage('\${item.id}')" aria-label="削除">🗑</button>
             </div>
             <div id="color-picker-\${item.id}" class="manage-color-picker-inline hidden" style="padding-left: 40px; display: flex; gap: 8px; margin-top: 8px; margin-bottom: 8px;">
@@ -1113,6 +1139,16 @@ function deleteItemFromManage(id) {
     if (confirm('この習慣とこれまでの記録をすべて削除しますか？\\nこの操作は取り消せません。')) {
         items = items.filter(i => i.id !== id);
         logs = logs.filter(log => log.itemId !== id);
+        saveData();
+        render();
+        renderManageList();
+    }
+}
+
+function toggleItemVisibility(id) {
+    const item = items.find(i => i.id === id);
+    if (item) {
+        item.visible = (item.visible === undefined) ? false : !item.visible;
         saveData();
         render();
         renderManageList();
@@ -1274,8 +1310,9 @@ function render() {
     gridContainer.innerHTML = '';
 
     // We always use 2 columns for clear touch targets on mobile when scrolling.
+    const visibleItems = items.filter(item => item.visible !== false);
 
-    items.forEach(item => {
+    visibleItems.forEach(item => {
         const card = document.createElement('div');
         card.className = 'habit-card';
         card.style.background = item.color;
@@ -1312,20 +1349,35 @@ function showStats() {
 
     statsList.innerHTML = '';
 
-    if (items.length === 0) {
+    const itemsToShow = items.filter(item => {
+        const isVisible = item.visible !== false;
+        if (isVisible) return true;
+        const count = getCountForDate(item.id, currentStatsDate);
+        return count > 0;
+    });
+
+    if (itemsToShow.length === 0) {
         statsList.innerHTML = '<li class="stats-item" style="justify-content:center; opacity:0.5;">項目がありません</li>';
         statsModal.classList.remove('hidden');
         return;
     }
 
-    items.forEach(item => {
+    itemsToShow.forEach(item => {
         const count = getCountForDate(item.id, currentStatsDate);
         const li = document.createElement('li');
         li.className = 'stats-item';
+        
+        const isItemHidden = item.visible === false;
+        const displayName = isItemHidden ? \`\${item.name} <span style="font-size:0.8rem; opacity:0.5;">(非表示中)</span>\` : item.name;
+
         li.innerHTML = \`
-            <span>\${item.name}</span>
+            <span>\${displayName}</span>
             <span class="stats-count">\${count}回</span>
         \`;
+        if (isItemHidden) {
+            li.style.opacity = '0.7';
+        }
+
         li.addEventListener('click', () => showTrend(item.id));
         statsList.appendChild(li);
     });
