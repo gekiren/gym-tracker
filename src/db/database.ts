@@ -1831,3 +1831,52 @@ export const getAllHabitLogs = async (): Promise<HabitLog[]> => {
   );
 };
 
+export const getWorkoutsForDate = async (dateStr: string) => {
+  const db = getDB();
+  const dateISO = dateStr.replace(/\//g, '-');
+  
+  const workouts = await db.getAllAsync<WorkoutRow>(
+    "SELECT * FROM workouts WHERE date(start_time, 'localtime') = ? ORDER BY start_time ASC",
+    [dateISO]
+  );
+  
+  const workoutsWithDetails = [];
+  for (const w of workouts) {
+    const exercisesRows = await db.getAllAsync<WorkoutExerciseRow>(
+      'SELECT we.id as workout_exercise_id, e.id as exercise_id, e.name as exercise_name, we.notes FROM workout_exercises we JOIN exercises e ON we.exercise_id = e.id WHERE we.workout_id = ? ORDER BY we.sort_order',
+      [w.id]
+    );
+    
+    const exercisesData = [];
+    for (const ex of exercisesRows) {
+      const setsRows = await db.getAllAsync<WorkoutSetRow>(
+        'SELECT id, set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance, is_completed FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number ASC, id ASC',
+        [ex.workout_exercise_id]
+      );
+      exercisesData.push({
+        workout_exercise_id: ex.workout_exercise_id,
+        exercise_id: ex.exercise_id,
+        exercise_name: ex.exercise_name,
+        notes: ex.notes,
+        sets: setsRows.map(s => ({
+          ...s,
+          is_completed: s.is_completed === 1 || s.is_completed === true
+        }))
+      });
+    }
+    
+    workoutsWithDetails.push({
+      id: w.id,
+      title: w.title,
+      start_time: w.start_time,
+      end_time: w.end_time,
+      notes: w.notes,
+      calories: w.calories,
+      exercises: exercisesData
+    });
+  }
+  
+  return workoutsWithDetails;
+};
+
+

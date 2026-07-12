@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Dimensions, Alert } from 'react-native';
 import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
@@ -6,12 +6,125 @@ import { useTranslation } from 'react-i18next';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useLifelogStore } from '../src/store/lifelogStore';
-import { saveSetting } from '../src/db/database';
+import { saveSetting, getWorkoutsForDate } from '../src/db/database';
 import { readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../src/services/crashReporterService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LifelogDateHeader } from '../components/LifelogDateHeader';
+import * as Clipboard from 'expo-clipboard';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as WebBrowser from 'expo-web-browser';
 
 const { width } = Dimensions.get('window');
+
+const formatTime = (isoString: string): string => {
+  if (!isoString) return '';
+  try {
+    const d = new Date(isoString);
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    return `${h}:${m}`;
+  } catch (e) {
+    return '';
+  }
+};
+
+const generateDailySummaryMarkdown = (
+  dateStr: string,
+  daySummary: any,
+  workouts: any[]
+): string => {
+  let md = `# TreNote 本日のサマリー - ${dateStr}\n\n`;
+
+  // 1. Workouts
+  md += `## 🏋️ ワークアウト記録\n`;
+  if (workouts && workouts.length > 0) {
+    workouts.forEach((w) => {
+      let durationStr = '';
+      if (w.start_time && w.end_time) {
+        const start = new Date(w.start_time).getTime();
+        const end = new Date(w.end_time).getTime();
+        const mins = Math.max(1, Math.round((end - start) / 60000));
+        durationStr = ` | 時間: ${mins}分`;
+      }
+      const calStr = w.calories ? ` | 消費カロリー: ${Math.round(w.calories)} kcal` : '';
+      md += `### ■ ${w.title} (${formatTime(w.start_time)} 〜 ${formatTime(w.end_time)}${durationStr}${calStr})\n`;
+      if (w.notes) {
+        md += `全体メモ: "${w.notes}"\n`;
+      }
+      
+      if (w.exercises && w.exercises.length > 0) {
+        w.exercises.forEach((ex: any) => {
+          md += `- **${ex.exercise_name}**`;
+          if (ex.notes) {
+            md += ` (メモ: "${ex.notes}")`;
+          }
+          md += `\n`;
+          
+          if (ex.sets && ex.sets.length > 0) {
+            ex.sets.forEach((s: any) => {
+              const weightStr = s.weight !== null ? `${s.weight}kg` : '-';
+              const repsStr = s.reps !== null ? `${s.reps}回` : '-';
+              const rpeStr = s.rpe ? ` (RPE: ${s.rpe})` : '';
+              const stanceStr = s.stance ? ` (スタンス: ${s.stance})` : '';
+              const sideStr = s.side ? ` [${s.side === 'L' ? '左' : '右'}]` : '';
+              const compStr = s.is_completed ? ' [完了]' : ' [未完了]';
+              md += `  - セット ${s.set_number}:${sideStr} ${weightStr} x ${repsStr}${rpeStr}${stanceStr}${compStr}\n`;
+            });
+          }
+        });
+      }
+      md += `\n`;
+    });
+  } else {
+    md += `本日のワークアウト記録はありません。\n\n`;
+  }
+
+  // 2. Water
+  md += `## 💧 水分補給\n`;
+  if (daySummary?.water) {
+    const w = daySummary.water;
+    md += `- 総摂取量: ${w.amount} ml / 目標: ${w.goal} ml (${w.percentage}%)\n`;
+    md += `- カフェイン量: ${w.caffeine} mg / 上限: ${w.caffeineLimit} mg\n\n`;
+  } else {
+    md += `- 記録なし\n\n`;
+  }
+
+  // 3. 24h Activity
+  md += `## ⏱️ 24時間活動管理\n`;
+  const timeLogs = useLifelogStore.getState().timeLogs || [];
+  if (timeLogs && timeLogs.length > 0) {
+    const sortedLogs = [...timeLogs].sort((a, b) => a.start_time.localeCompare(b.start_time));
+    sortedLogs.forEach((log) => {
+      md += `- ${log.start_time} 〜 ${log.end_time} | **${log.activity_name}** (${log.duration_minutes}分)\n`;
+    });
+    const hours = (daySummary?.totalZikanMinutes / 60).toFixed(1);
+    md += `- **合計記録時間**: ${hours}時間 (${daySummary?.totalZikanMinutes || 0}分)\n\n`;
+  } else {
+    md += `本日の活動記録はありません。\n\n`;
+  }
+
+  // 4. Habits
+  md += `## 🎯 習慣カウンター\n`;
+  if (daySummary?.habits && daySummary.habits.length > 0) {
+    daySummary.habits.forEach((h: any) => {
+      md += `- **${h.name}**: ${h.count} 回\n`;
+    });
+    md += `\n`;
+  } else {
+    md += `登録されている習慣はありません。\n\n`;
+  }
+
+  // 5. Routines
+  md += `## 🔄 ルーティン管理\n`;
+  if (daySummary) {
+    md += `- 今日の完了ルーティン: ${daySummary.routinesCompletedToday} 件 / 登録数: ${daySummary.routinesCount} 件\n\n`;
+  } else {
+    md += `- 記録なし\n\n`;
+  }
+
+  return md;
+};
 
 export default function DashboardScreen() {
   const { t } = useTranslation();
@@ -63,6 +176,67 @@ export default function DashboardScreen() {
   const handleIncrementHabit = async (habitItemId: number) => {
     const today = currentDate || getTodayStr();
     await addHabitLog(habitItemId, today);
+  };
+
+  const handleSaveMarkdown = async () => {
+    try {
+      const today = currentDate || getTodayStr();
+      const workouts = await getWorkoutsForDate(today);
+      const markdown = generateDailySummaryMarkdown(today, daySummary, workouts);
+      
+      const safeDateStr = today.replace(/\//g, '-');
+      const filename = `trenote_summary_${safeDateStr}.md`;
+      const fileUri = FileSystem.cacheDirectory + filename;
+      
+      await FileSystem.writeAsStringAsync(fileUri, markdown, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+      
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (isAvailable) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'text/markdown',
+          dialogTitle: `${today} のデータを保存`,
+          UTI: 'net.daringfireball.markdown',
+        });
+      } else {
+        Alert.alert(t('ui.common.error') || 'エラー', 'このデバイスではファイルの共有がサポートされていません。');
+      }
+    } catch (error) {
+      console.error('Failed to save markdown file', error);
+      Alert.alert(t('ui.common.error') || 'エラー', 'Markdownファイルの作成に失敗しました。');
+    }
+  };
+
+  const handleOpenGemini = async () => {
+    try {
+      const today = currentDate || getTodayStr();
+      const workouts = await getWorkoutsForDate(today);
+      const markdown = generateDailySummaryMarkdown(today, daySummary, workouts);
+      
+      await Clipboard.setStringAsync(markdown);
+      
+      Alert.alert(
+        'データをコピーしました',
+        '本日のサマリーをクリップボードにコピーしました。Geminiにペーストして分析やアドバイスを受けましょう。',
+        [
+          {
+            text: 'Geminiを開く',
+            onPress: async () => {
+              const geminiUrl = 'https://gemini.google.com/';
+              await WebBrowser.openBrowserAsync(geminiUrl);
+            }
+          },
+          {
+            text: 'キャンセル',
+            style: 'cancel'
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Failed to open gemini', error);
+      Alert.alert(t('ui.common.error') || 'エラー', '処理中にエラーが発生しました。');
+    }
   };
 
   // Onboarding Handlers
@@ -149,6 +323,39 @@ export default function DashboardScreen() {
         {isLoadingLifelog && (
           <ActivityIndicator size="small" color={Theme.colors.primary} style={{ marginBottom: 12 }} />
         )}
+
+        {/* Gemini Integration & Data Export Card */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View style={[styles.iconContainer, { backgroundColor: 'rgba(156, 39, 176, 0.15)' }]}>
+              <Ionicons name="sparkles" size={24} color="#b388ff" />
+            </View>
+            <Text style={styles.cardTitle}>Gemini連携・データ出力</Text>
+          </View>
+          <View style={styles.cardBody}>
+            <Text style={styles.inactiveText}>
+              本日の記録（筋トレ・水分・時間・習慣・ルーティン）をMarkdownで書き出し、Geminiでの分析に利用できます。
+            </Text>
+            <View style={styles.exportBtnRow}>
+              <TouchableOpacity 
+                style={styles.exportBtn} 
+                onPress={handleSaveMarkdown}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="document-text-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
+                <Text style={styles.exportBtnText}>md保存</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.exportBtn, { backgroundColor: 'rgba(156, 39, 176, 0.25)', borderColor: 'rgba(156, 39, 176, 0.4)' }]} 
+                onPress={handleOpenGemini}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="sparkles-outline" size={18} color="#b388ff" style={{ marginRight: 6 }} />
+                <Text style={[styles.exportBtnText, { color: '#b388ff' }]}>Geminiへ渡す</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
 
         {/* 1. Workout Card */}
         <TouchableOpacity 
@@ -708,6 +915,27 @@ const styles = StyleSheet.create({
     color: '#4caf50',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  exportBtnRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+  },
+  exportBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingVertical: 10,
+    borderRadius: Theme.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  exportBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalCard: { backgroundColor: Theme.colors.card, width: '100%', borderRadius: Theme.borderRadius.lg, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: Theme.colors.border },
