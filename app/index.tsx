@@ -129,7 +129,10 @@ const generateDailySummaryMarkdown = (
   // 5. Routines
   md += `## 🔄 ルーティン管理\n`;
   if (daySummary) {
-    md += `- 今日の完了ルーティン: ${daySummary.routinesCompletedToday} 件 / 登録数: ${daySummary.routinesCount} 件\n\n`;
+    const completedRoutinesStr = daySummary.completedRoutineNames && daySummary.completedRoutineNames.length > 0
+      ? daySummary.completedRoutineNames.join(', ')
+      : 'なし';
+    md += `- 今日の完了ルーティン: ${completedRoutinesStr}\n\n`;
   } else {
     md += `- 記録なし\n\n`;
   }
@@ -646,18 +649,26 @@ export default function DashboardScreen() {
           </View>
 
           <View style={styles.cardBody}>
-            <View style={styles.statRow}>
-              <Text style={styles.statVal}>
-                {daySummary?.routinesCount ?? 0} <Text style={styles.statUnit}>件</Text>
-              </Text>
-              <Text style={styles.statGoal}>登録中</Text>
-            </View>
             <View style={styles.routineSummaryRow}>
               <Ionicons name="checkmark-done-circle-outline" size={20} color="#4caf50" style={{ marginRight: 6 }} />
               <Text style={styles.routineSummaryText}>
-                今日の完了ルーティン: <Text style={styles.routineCompletedCount}>{daySummary?.routinesCompletedToday ?? 0}</Text> 件
+                完了したルーティン:
               </Text>
             </View>
+            {daySummary?.completedRoutineNames && daySummary.completedRoutineNames.length > 0 ? (
+              <View style={{ marginTop: 8, paddingLeft: 26 }}>
+                {daySummary.completedRoutineNames.map((name, index) => (
+                  <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                    <Ionicons name="checkmark" size={14} color="#4caf50" style={{ marginRight: 6 }} />
+                    <Text style={{ color: Theme.colors.text, fontSize: 15 }}>{name}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={{ marginTop: 8, paddingLeft: 26 }}>
+                <Text style={{ color: Theme.colors.textMuted, fontSize: 14 }}>なし</Text>
+              </View>
+            )}
           </View>
         </TouchableOpacity>
 

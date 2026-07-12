@@ -55,6 +55,7 @@ export interface DaySummary {
   totalZikanMinutes: number;
   routinesCount: number;
   routinesCompletedToday: number;
+  completedRoutineNames?: string[];
   dateStr: string;
 }
 
@@ -173,6 +174,7 @@ export const calculateSummary = (
 
   // 4. Routines summary
   let routinesCompletedToday = 0;
+  const completedRoutineNames: string[] = [];
   const formatDateFromTimestamp = (ts: number): string => {
     const date = new Date(ts);
     const y = date.getFullYear();
@@ -189,6 +191,9 @@ export const calculateSummary = (
         );
         if (completedToday) {
           routinesCompletedToday++;
+          if (r.name) {
+            completedRoutineNames.push(r.name);
+          }
         }
       }
     });
@@ -201,6 +206,7 @@ export const calculateSummary = (
     totalZikanMinutes,
     routinesCount: Array.isArray(routineData) ? routineData.length : 0,
     routinesCompletedToday,
+    completedRoutineNames,
     dateStr,
   };
 };
