@@ -8,6 +8,7 @@ interface AchievementsSectionProps {
   achievements: {
     streakDays: number;
     streakWeeks: number;
+    weeklyWorkoutCount: number;
     is1RMUpdated: boolean;
     updated1RMs: { name: string; oldVal: number; newVal: number }[];
     isVolumeUpdated: boolean;
@@ -38,13 +39,13 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
       <Text style={styles.sectionTitle}>{t('ui.workout_completion.subtitle')}</Text>
       
       <View style={styles.achievementGrid}>
-        {/* Streak Days Card */}
+        {/* Weekly Workout Count Card */}
         <View style={styles.achievementCard}>
           <View style={[styles.cardIconCircle, { backgroundColor: 'rgba(255, 87, 34, 0.15)' }]}>
             <Ionicons name="flame" size={24} color="#ff5722" />
           </View>
           <Text style={styles.cardValue}>
-            {t('ui.workout_completion.streak_days', { count: achievements.streakDays })}
+            {t('ui.workout_completion.weekly_workout_count', { count: achievements.weeklyWorkoutCount })}
           </Text>
         </View>
 

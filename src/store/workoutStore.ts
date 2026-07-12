@@ -36,6 +36,7 @@ export type ActiveExercise = {
 export interface WorkoutCompletionAchievement {
   streakDays: number;
   streakWeeks: number;
+  weeklyWorkoutCount: number;
   is1RMUpdated: boolean;
   isVolumeUpdated: boolean;
   updated1RMs: { name: string; oldVal: number; newVal: number }[];

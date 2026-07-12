@@ -197,3 +197,47 @@ export const computeStreaks = (
 
   return { streakDays, streakWeeks };
 };
+
+/**
+ * 過去1週間（含む今日）のワークアウト実施回数を算出
+ */
+export const computeWeeklyWorkoutCount = (
+  dbWorkouts: DBWorkout[],
+  currentWorkoutStartTime: string
+): number => {
+  const getLocalDateString = (dateOrStr: Date | string) => {
+    const d = new Date(dateOrStr);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${date}`;
+  };
+
+  const currentLocalDateStr = getLocalDateString(currentWorkoutStartTime);
+  const baseDate = new Date(currentLocalDateStr + 'T00:00:00');
+
+  // 今日からさかのぼって6日前まで（合計7日間）のローカル日付のセットを作成
+  const last7DaysSet = new Set<string>();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(baseDate);
+    d.setDate(baseDate.getDate() - i);
+    last7DaysSet.add(getLocalDateString(d));
+  }
+
+  let count = 0;
+  // 今回完了したワークアウトも含めてカウント
+  const allWorkouts = [
+    { start_time: currentWorkoutStartTime },
+    ...dbWorkouts
+  ];
+
+  allWorkouts.forEach(w => {
+    const wDateStr = getLocalDateString(w.start_time);
+    if (last7DaysSet.has(wDateStr)) {
+      count++;
+    }
+  });
+
+  return count;
+};
+

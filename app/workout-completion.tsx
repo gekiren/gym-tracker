@@ -249,8 +249,8 @@ export default function WorkoutCompletionScreen() {
         }
       });
 
-      if (achievements.streakDays > 1) {
-        workoutDetailsStr += `継続日数: ${achievements.streakDays}日連続達成\n`;
+      if (achievements.weeklyWorkoutCount > 0) {
+        workoutDetailsStr += `1週間の実施回数: 週${achievements.weeklyWorkoutCount}回達成\n`;
       }
       if (achievements.streakWeeks > 1) {
         workoutDetailsStr += `継続週数: ${achievements.streakWeeks}週間継続中\n`;

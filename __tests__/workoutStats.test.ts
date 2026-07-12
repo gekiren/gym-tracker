@@ -3,6 +3,7 @@ import {
   computeCalories,
   computeAchievements,
   computeStreaks,
+  computeWeeklyWorkoutCount,
   WorkoutExercise,
   PastSet,
   DBWorkout
@@ -188,3 +189,41 @@ describe('workoutStats - computeStreaks', () => {
     expect(streakWeeks).toBe(1);
   });
 });
+
+describe('workoutStats - computeWeeklyWorkoutCount', () => {
+  it('calculates weekly workout count correctly', () => {
+    // base date is 2026-06-20 (Saturday)
+    const currentWorkoutStartTime = '2026-06-20T08:00:00';
+    const dbWorkouts: DBWorkout[] = [
+      { start_time: '2026-06-19T18:00:00' }, // yesterday (in window)
+      { start_time: '2026-06-18T09:00:00' }, // 2 days ago (in window)
+      { start_time: '2026-06-16T12:00:00' }, // 4 days ago (in window)
+      { start_time: '2026-06-14T10:00:00' }, // 6 days ago (in window)
+      { start_time: '2026-06-13T10:00:00' }, // 7 days ago (out of window: window is 2026-06-14 to 2026-06-20)
+      { start_time: '2026-06-10T10:00:00' }, // out of window
+    ];
+
+    // Current workout (1) + 4 in window = 5 workouts
+    const count = computeWeeklyWorkoutCount(dbWorkouts, currentWorkoutStartTime);
+    expect(count).toBe(5);
+  });
+
+  it('handles multiple workouts on the same day correctly', () => {
+    const currentWorkoutStartTime = '2026-06-20T18:00:00';
+    const dbWorkouts: DBWorkout[] = [
+      { start_time: '2026-06-20T08:00:00' }, // today, earlier workout
+      { start_time: '2026-06-19T10:00:00' }, // yesterday
+    ];
+
+    // Current workout (1) + 2 in window = 3 workouts
+    const count = computeWeeklyWorkoutCount(dbWorkouts, currentWorkoutStartTime);
+    expect(count).toBe(3);
+  });
+
+  it('returns 1 if there are no past workouts', () => {
+    const currentWorkoutStartTime = '2026-06-20T08:00:00';
+    const count = computeWeeklyWorkoutCount([], currentWorkoutStartTime);
+    expect(count).toBe(1);
+  });
+});
+

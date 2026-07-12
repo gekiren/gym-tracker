@@ -569,6 +569,7 @@
       "title": "Workout Complete!",
       "subtitle": "Today's Training Summary",
       "streak_days": "{{count}}-Day Streak!",
+      "weekly_workout_count": "{{count}} Workouts/Week!",
       "streak_weeks": "{{count}}-Week Streak!",
       "rm_updated": "1RM Updated!",
       "volume_updated": "Volume Updated!",

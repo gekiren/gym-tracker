@@ -20,7 +20,7 @@ import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimat
 import { KeyboardAvoidingWrapper } from '../components/active-workout/KeyboardAvoidingWrapper';
 import { PlateCalculatorModal } from '../components/active-workout/PlateCalculatorModal';
 import { StanceModal } from '../components/active-workout/StanceModal';
-import { calculateRM, computeCalories, computeAchievements, computeStreaks } from '../src/utils/workoutStats';
+import { calculateRM, computeCalories, computeAchievements, computeStreaks, computeWeeklyWorkoutCount } from '../src/utils/workoutStats';
 
 
 
@@ -305,12 +305,14 @@ export default function ActiveWorkoutScreen() {
               // 4. Calculate achievements (1RM & Volume updates)
               const { updated1RMs, updatedVolumes } = computeAchievements(exercises, pastSets, settings.bodyWeight || 70);
 
-              // Streak Calculations
-              const { streakDays, streakWeeks } = computeStreaks(dbWorkouts);
-
               // Save the workout to DB
               const savedTitle = title || t('ui.home.free_workout_title');
               const savedStartTime = startTime || et;
+
+              // Streak Calculations
+              const { streakDays, streakWeeks } = computeStreaks(dbWorkouts);
+              const weeklyWorkoutCount = computeWeeklyWorkoutCount(dbWorkouts, savedStartTime);
+
               const workoutId = await saveWorkout(savedTitle, savedStartTime, et, workoutNotes, exercises, roundedCalories);
 
               // Set store state for completed screen
@@ -327,6 +329,7 @@ export default function ActiveWorkoutScreen() {
                 achievements: {
                   streakDays,
                   streakWeeks,
+                  weeklyWorkoutCount,
                   is1RMUpdated: updated1RMs.length > 0,
                   isVolumeUpdated: updatedVolumes.length > 0,
                   updated1RMs,

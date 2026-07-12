@@ -564,6 +564,7 @@
       "title": "お疲れ様でした！",
       "subtitle": "今日のトレーニング完了記録",
       "streak_days": "{{count}}日連続達成！",
+      "weekly_workout_count": "週{{count}}回達成！",
       "streak_weeks": "{{count}}週間継続中！",
       "rm_updated": "1RM更新！",
       "volume_updated": "総重量更新！",
