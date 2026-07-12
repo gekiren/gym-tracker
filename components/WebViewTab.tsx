@@ -154,6 +154,11 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
               }
             }
           }
+          
+          // 4. Routine Tracker (RoutineTracker.js)
+          if (typeof loadRoutines === 'function') {
+            loadRoutines();
+          }
         })();
       `;
       webViewRef.current.injectJavaScript(injectScript);

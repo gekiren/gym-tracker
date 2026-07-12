@@ -704,7 +704,38 @@ function showManageScreen() {
 }
 
 // --- Routine List & Management ---
-// --- Routine List & Management ---
+function isRoutineCompletedOnTargetDate(routine, targetDateStr) {
+    if (!routine.history || routine.history.length === 0) return false;
+    if (!targetDateStr) {
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const d = String(today.getDate()).padStart(2, '0');
+        targetDateStr = y + '/' + m + '/' + d;
+    }
+    
+    const normalizedTarget = targetDateStr.replace(/-/g, '/');
+    
+    return routine.history.some(entry => {
+        const entryDate = new Date(entry.timestamp);
+        const y = entryDate.getFullYear();
+        const m = String(entryDate.getMonth() + 1).padStart(2, '0');
+        const d = String(entryDate.getDate()).padStart(2, '0');
+        const entryDateStr = y + '/' + m + '/' + d;
+        return entryDateStr === normalizedTarget;
+    });
+}
+
+function toggleVisibility(id) {
+    const routines = getRoutines();
+    const index = routines.findIndex(r => r.id === id);
+    if (index !== -1) {
+        routines[index].hidden = !routines[index].hidden;
+        saveRoutines(routines);
+        loadRoutines();
+    }
+}
+
 function loadRoutines() {
     const routines = getRoutines();
     
@@ -712,10 +743,12 @@ function loadRoutines() {
     const list = components.list;
     list.innerHTML = '';
 
-    if (routines.length === 0) {
+    const visibleRoutines = routines.filter(r => !r.hidden);
+
+    if (visibleRoutines.length === 0) {
         list.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">ルーティンがありません。</div>';
     } else {
-        routines.forEach(r => {
+        visibleRoutines.forEach(r => {
             const card = document.createElement('div');
             card.className = 'routine-card';
 
@@ -727,15 +760,35 @@ function loadRoutines() {
                 card.style.textShadow = '0 1px 3px rgba(0,0,0,0.8)';
             }
 
+            const targetDateStr = window.__TARGET_DATE__;
+            const isCompleted = isRoutineCompletedOnTargetDate(r, targetDateStr);
+            const checkmark = isCompleted ? '<span style="font-size: 24px; color: #51cf66; margin-left: 10px; flex-shrink: 0;">✅</span>' : '';
+            
+            // Format task list
+            const totalSeconds = r.tasks ? r.tasks.reduce((sum, t) => sum + t.estimated_seconds, 0) : 0;
+            const totalTimeStr = formatTime(totalSeconds);
+            const taskListHtml = r.tasks && r.tasks.length > 0 
+                ? \`<div style="font-size: 13px; color: #b0b0b0; margin-top: 6px; line-height: 1.4;">
+                     \${r.tasks.map((t, idx) => (idx + 1) + '. ' + t.name + ' (' + formatTime(t.estimated_seconds) + ')').join('<br>')}
+                   </div>\`
+                : '';
+
             card.innerHTML = \`
-                <span style="font-weight:bold; flex-grow:1; font-size:18px;">\${r.name}</span>
+                <div style="display: flex; flex-direction: column; flex-grow: 1; text-align: left;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-weight:bold; font-size:18px;">\${r.name}</span>
+                        <span style="font-size: 12px; color: #cecece; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">\${totalTimeStr}</span>
+                    </div>
+                    \${taskListHtml}
+                </div>
+                \${checkmark}
             \`;
             card.onclick = () => prepareRoutine(r.id);
             list.appendChild(card);
         });
     }
 
-    // 2. 管理画面のリスト生成
+    // 2. 管理画面 of リスト生成
     const manageList = document.getElementById('manage-routine-list');
     if (manageList) {
         manageList.innerHTML = '';
@@ -745,6 +798,9 @@ function loadRoutines() {
             routines.forEach(r => {
                 const card = document.createElement('div');
                 card.className = 'routine-card';
+                if (r.hidden) {
+                    card.style.opacity = '0.6';
+                }
 
                 // Image handling
                 if (r.image) {
@@ -754,11 +810,15 @@ function loadRoutines() {
                     card.style.textShadow = '0 1px 3px rgba(0,0,0,0.8)';
                 }
 
+                const isHidden = r.hidden === true;
+                const visibilityBtn = \`<button class="icon-btn" style="background: \${isHidden ? '#c53030' : '#444'};" onclick="event.stopPropagation(); toggleVisibility('\${r.id}')">\${isHidden ? '💤' : '💡'}</button>\`;
+
                 card.innerHTML = \`
-                    <span style="font-weight:bold; flex-grow:1; font-size:18px;">\${r.name}</span>
+                    <span style="font-weight:bold; flex-grow:1; font-size:18px;">\${r.name}\${isHidden ? ' <span style="font-size:12px; color:#ff6b6b; font-weight:normal;">(非表示)</span>' : ''}</span>
                     <div style="display:flex;">
                         <button class="icon-btn" onclick="event.stopPropagation(); showHistory('\${r.id}')">🕒</button>
                         <button class="icon-btn" onclick="event.stopPropagation(); openEditModal('\${r.id}')">✎</button>
+                        \${visibilityBtn}
                         <button class="icon-btn delete-btn" onclick="event.stopPropagation(); confirmDelete('\${r.id}')">🗑</button>
                     </div>
                 \`;

@@ -5,7 +5,6 @@ import { Theme } from '../../src/theme';
 import { WebViewTab } from '../../components/WebViewTab';
 import RoutineTrackerHTML from '../../src/web-apps/RoutineTracker';
 import { useLifelogStore } from '../../src/store/lifelogStore';
-import { LifelogDateHeader } from '../../components/LifelogDateHeader';
 import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -43,10 +42,7 @@ export default function RoutineScreen() {
       {showHistory ? (
         <LifelogHistoryTab type="routine" t={t} />
       ) : (
-        <>
-          <LifelogDateHeader type="routine" />
-          <WebViewTab html={RoutineTrackerHTML} currentDate={targetDate} />
-        </>
+        <WebViewTab html={RoutineTrackerHTML} currentDate={targetDate} />
       )}
     </View>
   );

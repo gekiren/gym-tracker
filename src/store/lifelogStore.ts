@@ -185,6 +185,7 @@ export const calculateSummary = (
 
   if (Array.isArray(routineData)) {
     routineData.forEach((r) => {
+      if (r.hidden) return; // Skip hidden routines
       if (r.history && Array.isArray(r.history)) {
         const completedToday = r.history.some(
           (h: any) => formatDateFromTimestamp(h.timestamp) === dateStr
@@ -204,7 +205,7 @@ export const calculateSummary = (
     water,
     zikan,
     totalZikanMinutes,
-    routinesCount: Array.isArray(routineData) ? routineData.length : 0,
+    routinesCount: Array.isArray(routineData) ? routineData.filter((r: any) => !r.hidden).length : 0,
     routinesCompletedToday,
     completedRoutineNames,
     dateStr,
