@@ -199,6 +199,13 @@
       "current_pr": "自己ベスト",
       "improvement_value": "総向上値"
     },
+    "active_routine": {
+      "alert_pause_title": "ルーティンの中断",
+      "alert_pause_message": "ルーティンを中止して終了しますか？\n中止せずに離れる場合はバックグラウンドで継続します。",
+      "alert_pause_cancel": "キャンセル",
+      "alert_pause_leave": "中止せずに離れる",
+      "alert_pause_discard": "中止して終了する"
+    },
     "build_routine": {
       "title": "ルーティンの作成",
       "error_no_title": "ルーティン名を入力してください。",

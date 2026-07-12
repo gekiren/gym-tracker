@@ -204,6 +204,13 @@
       "current_pr": "Personal Record",
       "improvement_value": "Total Improvement"
     },
+    "active_routine": {
+      "alert_pause_title": "Pause Routine",
+      "alert_pause_message": "Discard routine and exit?\nYou can leave without discarding to continue in the background.",
+      "alert_pause_cancel": "Cancel",
+      "alert_pause_leave": "Leave without discarding",
+      "alert_pause_discard": "Discard & Exit"
+    },
     "build_routine": {
       "title": "Create Routine",
       "error_no_title": "Please enter a routine name.",

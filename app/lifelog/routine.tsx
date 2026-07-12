@@ -20,22 +20,22 @@ export default function RoutineScreen() {
   const handleBack = useCallback(() => {
     if (isExecuting) {
       Alert.alert(
-        t('ui.active_workout.alert_pause_title') || 'ワークアウトを一時停止',
-        t('ui.active_workout.alert_pause_message') || 'この画面を離れますか？',
+        t('ui.active_routine.alert_pause_title') || 'ルーティンの中断',
+        t('ui.active_routine.alert_pause_message') || 'この画面を離れますか？',
         [
           {
-            text: t('ui.active_workout.alert_pause_cancel') || 'キャンセル',
+            text: t('ui.active_routine.alert_pause_cancel') || 'キャンセル',
             style: 'cancel',
           },
           {
-            text: t('ui.active_workout.alert_pause_leave') || '中断せず戻る',
+            text: t('ui.active_routine.alert_pause_leave') || '中断せず戻る',
             style: 'default',
             onPress: () => {
               router.back();
             }
           },
           {
-            text: t('ui.active_workout.alert_pause_discard') || '中断して戻る',
+            text: t('ui.active_routine.alert_pause_discard') || '中断して戻る',
             style: 'destructive',
             onPress: () => {
               useLifelogStore.getState().clearActiveRoutineState();
