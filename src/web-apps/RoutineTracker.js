@@ -506,7 +506,6 @@ h2 {
             <div id="result-list">
                 <!-- 結果詳細 -->
             </div>
-            <button onclick="goHome()" class="btn-large-secondary">Back to Home</button>
         </div>
 
         <!-- 履歴画面 -->
@@ -515,7 +514,6 @@ h2 {
             <div id="history-list" class="history-list-container">
                 <!-- 履歴リスト -->
             </div>
-            <button onclick="goHome()" class="btn-large-secondary" style="margin-top:20px;">Back to Home</button>
         </div>
 
         <!-- 汎用確認・アラートモーダル -->
