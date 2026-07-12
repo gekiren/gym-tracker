@@ -114,6 +114,17 @@ interface LifelogState {
   // Routine actions
   loadRoutineData: () => Promise<void>;
 
+  // Active Routine State for tracking execution
+  activeRoutineState: {
+    isExecuting: boolean;
+    currentRoutine: any;
+    currentTaskIndex: number;
+    taskStartTime: number;
+    taskLogs: any[];
+  } | null;
+  setActiveRoutineState: (state: any) => void;
+  clearActiveRoutineState: () => void;
+
   // Helper to trigger summary recalculation
   refreshSummary: (date: string) => void;
 }
@@ -231,6 +242,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
   routineData: [],
   daySummary: null,
   isLoading: false,
+  activeRoutineState: null,
 
   setCurrentDate: async (date: string) => {
     set({ currentDate: date, isLoading: true });
@@ -540,5 +552,12 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
       routineData
     );
     set({ daySummary });
+  },
+
+  setActiveRoutineState: (state: any) => {
+    set({ activeRoutineState: state });
+  },
+  clearActiveRoutineState: () => {
+    set({ activeRoutineState: null });
   },
 }));

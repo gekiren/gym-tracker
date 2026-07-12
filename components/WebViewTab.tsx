@@ -50,11 +50,13 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
       }
     });
 
+    const activeRoutineState = useLifelogStore.getState().activeRoutineState;
     const injectScript = `
       <script>
         (function() {
           window.__INITIAL_WEBVIEW_DATA__ = ${JSON.stringify(initialStorage)};
           window.__TARGET_DATE__ = "${currentDate}";
+          window.__ACTIVE_ROUTINE_STATE__ = ${JSON.stringify(activeRoutineState)};
         })();
       </script>
     `;
@@ -80,6 +82,13 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
         const { date } = message;
         console.log(`[WebViewTab] DATE_CHANGED date=${date}`);
         await useLifelogStore.getState().setCurrentDate(date);
+        return;
+      }
+
+      if (message.type === 'ROUTINE_STATE_CHANGE') {
+        const { state } = message;
+        console.log('[WebViewTab] ROUTINE_STATE_CHANGE state:', state);
+        useLifelogStore.getState().setActiveRoutineState(state);
         return;
       }
 

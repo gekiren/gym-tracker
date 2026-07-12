@@ -11,19 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.55', // OTA識別用のバージョン文字列
+  version: '1.1.56', // OTA識別用のバージョン文字列
   title: {
-    ja: 'ルーティン開始前詳細と進捗表示の追加',
-    en: 'Routine Detail and Progress Display',
+    ja: 'ルーティン実行中の戻る確認ダイアログの追加',
+    en: 'Confirmation Dialog when exiting Active Routine',
   },
   notes: {
     ja: [
-      'ルーティン開始前に、タスク一覧と合計想定時間を表示する詳細エリアを追加しました。',
-      'ルーティン開始後に、次のタスク、現在の進捗（現在のタスク/全体）、残りのタスク数と想定合計時間を表示するようにしました。',
+      'ルーティン実行中に戻るボタン（←）やデバイスの戻るボタンを押した際、誤タップによる中断を防ぐ確認ダイアログを追加しました。',
+      '「中断せず戻る」を選択すると実行状態が維持され、再度開いたときにタイマーが途中から再開されます。',
+      '「中断して戻る」を選択すると実行状態を破棄して戻ります。',
     ],
     en: [
-      'Added a detail area to show the task list and estimated total time before starting a routine.',
-      'Added display for the next task, current progress (current/total), remaining tasks, and remaining estimated time after starting a routine.',
+      'Added a confirmation dialog when pressing the back button during routine execution to prevent accidental exits.',
+      'Choosing "Leave without stopping" will keep the execution state, resuming the timer when reopened.',
+      'Choosing "Discard and exit" will discard the routine progress.',
     ]
   }
 };

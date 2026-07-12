@@ -680,6 +680,26 @@ let taskTimerInterval = null;
 let taskLogs = [];
 let chartInstance = null;
 let confirmCallback = null;
+let isExecuting = false;
+
+function sendRoutineStateToRN() {
+    try {
+        if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'ROUTINE_STATE_CHANGE',
+                state: {
+                    isExecuting: isExecuting,
+                    currentRoutine: currentRoutine,
+                    currentTaskIndex: currentTaskIndex,
+                    taskStartTime: taskStartTime,
+                    taskLogs: taskLogs
+                }
+            }));
+        }
+    } catch (e) {
+        console.error("Failed to send routine state to RN:", e);
+    }
+}
 
 // --- DOM Elements ---
 const screens = {
@@ -707,6 +727,8 @@ function showScreen(screenName) {
 }
 
 function goHome() {
+    isExecuting = false;
+    sendRoutineStateToRN();
     showScreen('home');
     loadRoutines();
 }
@@ -1186,6 +1208,8 @@ function prepareRoutine(id) {
 
 function startRoutine() {
     if (!currentRoutine) return;
+    isExecuting = true;
+    sendRoutineStateToRN();
     document.getElementById('prepare-container').classList.add('hidden');
     document.getElementById('running-container').classList.remove('hidden');
     startTask();
@@ -1235,6 +1259,8 @@ function startTask() {
     clearInterval(taskTimerInterval);
     taskTimerInterval = setInterval(updateTimer, 1000);
     updateTimer();
+
+    sendRoutineStateToRN();
 }
 
 function nextTask() {
@@ -1276,6 +1302,9 @@ components.nextBtn.onclick = nextTask;
 function finishRoutine() {
     clearInterval(taskTimerInterval);
     const result = updateRoutineEstimates(currentRoutine.id, taskLogs);
+
+    isExecuting = false;
+    sendRoutineStateToRN();
 
     showScreen('result');
     renderResultList(result.updates);
@@ -1353,6 +1382,64 @@ document.getElementById('confirm-cancel-btn').onclick = () => {
 // Start
 document.getElementById('start-routine-btn').onclick = startRoutine;
 loadRoutines();
+
+// Restore active state if any
+(function() {
+    try {
+        const activeState = window.__ACTIVE_ROUTINE_STATE__;
+        if (activeState && activeState.isExecuting) {
+            isExecuting = true;
+            currentRoutine = activeState.currentRoutine;
+            currentTaskIndex = activeState.currentTaskIndex;
+            taskStartTime = activeState.taskStartTime;
+            taskLogs = activeState.taskLogs;
+
+            // UIを復元
+            document.getElementById('prepare-container').classList.add('hidden');
+            document.getElementById('running-container').classList.remove('hidden');
+            showScreen('active');
+
+            // タスク開始
+            const task = currentRoutine.tasks[currentTaskIndex];
+            components.taskName.innerText = task.name + ' (' + formatTime(task.estimated_seconds) + ')';
+
+            const imgEl = document.getElementById('current-task-image');
+            if (task.image) {
+                imgEl.src = task.image;
+                imgEl.style.display = 'block';
+            } else {
+                imgEl.style.display = 'none';
+                imgEl.src = "";
+            }
+
+            // 進行状況の更新
+            const nextTaskEl = document.getElementById('running-next-task');
+            const remainingTasksEl = document.getElementById('running-remaining-tasks');
+            if (nextTaskEl && remainingTasksEl) {
+                const totalTasks = currentRoutine.tasks.length;
+                if (currentTaskIndex + 1 < totalTasks) {
+                    const nextTask = currentRoutine.tasks[currentTaskIndex + 1];
+                    nextTaskEl.innerHTML = '次のタスク: <strong style="color: #fff;">' + nextTask.name + '</strong> (' + formatTime(nextTask.estimated_seconds) + ')';
+                } else {
+                    nextTaskEl.innerHTML = '次のタスク: <strong style="color: #51cf66;">なし (最後のタスクです)</strong>';
+                }
+                const remainingCount = totalTasks - (currentTaskIndex + 1);
+                let remainingSeconds = 0;
+                for (let i = currentTaskIndex + 1; i < totalTasks; i++) {
+                    remainingSeconds += currentRoutine.tasks[i].estimated_seconds;
+                }
+                remainingTasksEl.innerHTML = '進捗: <strong style="color: #fff;">' + (currentTaskIndex + 1) + '</strong> / ' + totalTasks + ' | 残り: <strong style="color: #fff;">' + remainingCount + '</strong>個 (約' + formatTime(remainingSeconds) + ')';
+            }
+
+            // タイマーの復元
+            clearInterval(taskTimerInterval);
+            taskTimerInterval = setInterval(updateTimer, 1000);
+            updateTimer();
+        }
+    } catch (e) {
+        console.error("Failed to restore active routine state:", e);
+    }
+})();
 
 </script>
 </body>
