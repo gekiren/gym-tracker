@@ -133,6 +133,12 @@
        npx eas update -p android --branch <branch> --message "<message>"
        npx eas update -p ios --branch <branch> --message "<message>"
        ```
+   - **iOS版ステージングOTAの制限（個別指示優先ルール）:**
+
+     > [!CAUTION]
+     > **iOS版へのステージングOTA（`-p ios`）は、ユーザーから個別に明確な実行指示がない限り、絶対に実行しないでください。**
+     > - 通常のステージング配信は **Android のみ（`-p android`）** を実行してください。
+     > - iOS向けOTAを実行する際は、必ずユーザーに確認・承認を得てから行ってください。
 
 
 ---

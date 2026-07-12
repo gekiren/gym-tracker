@@ -523,6 +523,80 @@ header {
 #prev-day, #next-day {
     display: none !important;
 }
+.hidden {
+    display: none !important;
+}
+.manage-item-container {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 0;
+}
+.manage-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.manage-reorder {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.manage-reorder-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 24px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+.manage-reorder-btn:disabled {
+    opacity: 0.2;
+    cursor: not-allowed;
+}
+.manage-color-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    flex-shrink: 0;
+}
+.manage-input {
+    flex: 1;
+    background: transparent;
+    border: 1px solid transparent;
+    color: white;
+    font-family: inherit;
+    font-size: 1rem;
+    padding: 8px;
+    border-radius: 8px;
+    outline: none;
+    margin-bottom: 0 !important;
+}
+.manage-input:focus {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+.manage-delete-btn {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 8px;
+    opacity: 0.7;
+}
+.manage-delete-btn:active {
+    opacity: 1;
+}
+.color-btn-mini.selected {
+    transform: scale(1.1);
+}
 </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -534,6 +608,9 @@ header {
     <div class="app-container">
         <header>
             <h1>習慣カウンター</h1>
+            <button id="manage-btn" class="icon-btn" aria-label="管理" style="margin-right: 8px;">
+                ⚙️
+            </button>
             <button id="stats-btn" class="icon-btn" aria-label="統計">
                 📊
             </button>
@@ -629,6 +706,24 @@ header {
                 <button id="cancel-edit" class="text-btn">キャンセル</button>
                 <button id="save-edit" class="primary-btn">保存</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Manage Items Modal -->
+    <div id="manage-modal" class="modal hidden">
+        <div class="modal-content glass" style="max-width: 450px; width: 90%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; font-size: 1.2rem;">習慣の管理</h2>
+                <button id="close-manage-x" class="text-btn-small" style="font-size: 1.2rem; color: white;">✕</button>
+            </div>
+            
+            <div style="max-height: 60vh; overflow-y: auto; margin-bottom: 20px; text-align: left;">
+                <ul id="manage-list" style="list-style: none; padding: 0; margin: 0;">
+                    <!-- Manage items will be injected here -->
+                </ul>
+            </div>
+
+            <button id="close-manage" class="primary-btn" style="width: 100%;">閉じる</button>
         </div>
     </div>
 
@@ -730,6 +825,12 @@ const cancelEditBtn = document.getElementById('cancel-edit');
 const saveEditBtn = document.getElementById('save-edit');
 const deleteBtn = document.getElementById('delete-item');
 
+// Manage Modal Elements
+const manageBtn = document.getElementById('manage-btn');
+const manageModal = document.getElementById('manage-modal');
+const closeManageBtn = document.getElementById('close-manage');
+const closeManageXBtn = document.getElementById('close-manage-x');
+const manageList = document.getElementById('manage-list');
 
 // Selected Color State
 let selectedColor = 'linear-gradient(135deg, #FF6B6B, #EE5253)'; // default
@@ -862,11 +963,21 @@ function notifyDateChanged(dateObj) {
     saveEditBtn.addEventListener('click', saveEditCount);
     deleteBtn.addEventListener('click', deleteItem);
 
+    // Manage Modal Buttons
+    manageBtn.addEventListener('click', showManageModal);
+    closeManageBtn.addEventListener('click', () => {
+        manageModal.classList.add('hidden');
+    });
+    closeManageXBtn.addEventListener('click', () => {
+        manageModal.classList.add('hidden');
+    });
+
     // Close modals on outside click
     window.addEventListener('click', (e) => {
         if (e.target === addModal) addModal.classList.add('hidden');
         if (e.target === statsModal) statsModal.classList.add('hidden');
         if (e.target === editModal) editModal.classList.add('hidden');
+        if (e.target === manageModal) manageModal.classList.add('hidden');
     });
 }
 
@@ -885,6 +996,127 @@ function addItem() {
     saveData();
     render();
     addModal.classList.add('hidden');
+}
+
+const COLOR_OPTIONS = [
+    { name: 'red', value: 'linear-gradient(135deg, #FF6B6B, #EE5253)' },
+    { name: 'blue', value: 'linear-gradient(135deg, #48DBFB, #0ABDE3)' },
+    { name: 'green', value: 'linear-gradient(135deg, #1DD1A1, #10AC84)' },
+    { name: 'yellow', value: 'linear-gradient(135deg, #FECA57, #FF9F43)' },
+    { name: 'purple', value: 'linear-gradient(135deg, #A29BFE, #6C5CE7)' }
+];
+
+function escapeHtml(str) {
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function showManageModal() {
+    renderManageList();
+    manageModal.classList.remove('hidden');
+}
+
+function renderManageList() {
+    manageList.innerHTML = '';
+    if (items.length === 0) {
+        manageList.innerHTML = '<li style="text-align: center; opacity: 0.5; padding: 20px 0; color: white;">項目がありません</li>';
+        return;
+    }
+
+    items.forEach((item, index) => {
+        const isFirst = index === 0;
+        const isLast = index === items.length - 1;
+
+        const li = document.createElement('li');
+        li.className = 'manage-item-container';
+        li.id = \`manage-item-\${item.id}\`;
+
+        li.innerHTML = \`
+            <div class="manage-item">
+                <div class="manage-reorder">
+                    <button class="manage-reorder-btn" onclick="moveItemUp('\${item.id}')" \${isFirst ? 'disabled' : ''}>▲</button>
+                    <button class="manage-reorder-btn" onclick="moveItemDown('\${item.id}')" \${isLast ? 'disabled' : ''}>▼</button>
+                </div>
+                <div class="manage-color-dot" style="background: \${item.color}" onclick="toggleColorPicker('\${item.id}')"></div>
+                <input type="text" class="manage-input" value="\${escapeHtml(item.name)}" onchange="renameItem('\${item.id}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" />
+                <button class="manage-delete-btn" onclick="deleteItemFromManage('\${item.id}')" aria-label="削除">🗑</button>
+            </div>
+            <div id="color-picker-\${item.id}" class="manage-color-picker-inline hidden" style="padding-left: 40px; display: flex; gap: 8px; margin-top: 8px; margin-bottom: 8px;">
+                \${COLOR_OPTIONS.map(c => '<div class="color-btn-mini ' + (item.color === c.value ? "selected" : "") + '" style="background: ' + c.value + '; width: 24px; height: 24px; border-radius: 50%; border: 2px solid ' + (item.color === c.value ? "white" : "transparent") + '; cursor: pointer;" onclick="changeItemColor(\\\'' + item.id + '\\\', \\\'' + c.value + '\\\')"></div>').join('')}
+            </div>
+        \`;
+        manageList.appendChild(li);
+    });
+}
+
+function toggleColorPicker(id) {
+    const el = document.getElementById(\`color-picker-\${id}\`);
+    if (el) {
+        el.classList.toggle('hidden');
+    }
+}
+
+function changeItemColor(id, color) {
+    const item = items.find(i => i.id === id);
+    if (item) {
+        item.color = color;
+        saveData();
+        render();
+        renderManageList();
+    }
+}
+
+function renameItem(id, newName) {
+    const item = items.find(i => i.id === id);
+    const trimmed = newName.trim();
+    if (item && trimmed) {
+        item.name = trimmed;
+        saveData();
+        render();
+    } else {
+        renderManageList();
+    }
+}
+
+function moveItemUp(id) {
+    const idx = items.findIndex(i => i.id === id);
+    if (idx > 0) {
+        const temp = items[idx];
+        items[idx] = items[idx - 1];
+        items[idx - 1] = temp;
+        saveData();
+        render();
+        renderManageList();
+    }
+}
+
+function moveItemDown(id) {
+    const idx = items.findIndex(i => i.id === id);
+    if (idx !== -1 && idx < items.length - 1) {
+        const temp = items[idx];
+        items[idx] = items[idx + 1];
+        items[idx + 1] = temp;
+        saveData();
+        render();
+        renderManageList();
+    }
+}
+
+function deleteItemFromManage(id) {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+
+    if (confirm('この習慣とこれまでの記録をすべて削除しますか？\\nこの操作は取り消せません。')) {
+        items = items.filter(i => i.id !== id);
+        logs = logs.filter(log => log.itemId !== id);
+        saveData();
+        render();
+        renderManageList();
+    }
 }
 
 function track(id, event) {
