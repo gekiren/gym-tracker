@@ -11,21 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.57', // OTA識別用のバージョン文字列
+  version: '1.1.58', // OTA識別用のバージョン文字列
   title: {
-    ja: 'ルーティン戻る確認ダイアログの改善',
-    en: 'Improved Confirmation Dialog when Exiting Routine',
+    ja: 'ルーティンの並び替え機能の追加',
+    en: 'Routine Sorting Feature Added',
   },
   notes: {
     ja: [
-      'ルーティン実行中の戻る確認ダイアログにおける文言を、モードに合わせて「ルーティンの中断」などのルーティン仕様に最適化しました。',
-      '「中断せず戻る」を選択すると実行状態が維持され、再度開いたときにタイマーが途中から再開されます。',
-      '「中断して戻る」を選択すると実行状態を破棄して戻ります。',
+      'ルーティン管理の管理メニュー内に「▲」および「▼」ボタンを追加し、ルーティンの表示順序を入れ替えることができるようになりました。',
+      '並び替えた順序は即座に反映され、ホーム画面でのルーティン選択リストにも適用されます。',
     ],
     en: [
-      'Optimized the confirmation dialog text when exiting active routines to match the routine mode.',
-      'Choosing "Leave without stopping" will keep the execution state, resuming the timer when reopened.',
-      'Choosing "Discard and exit" will discard the routine progress.',
+      'Added "▲" and "▼" buttons in the Routine Management screen to sort the display order of routines.',
+      'The sorted order is instantly saved and applied to the routine selection list on the home screen.',
     ]
   }
 };
