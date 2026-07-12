@@ -452,11 +452,11 @@ h2 {
         <!-- 管理画面 (専用メニュー) -->
         <div id="manage-screen" class="hidden">
             <h1>Routine Management</h1>
+            <button id="create-routine-btn" class="btn-large-primary" style="margin-top: 20px;">+ New</button>
+            <button onclick="goHome()" class="btn-large-secondary" style="margin-top: 20px; margin-bottom: 20px;">Back to Home</button>
             <div id="manage-routine-list">
                 <!-- ここに管理用のルーティンリストが生成される -->
             </div>
-            <button id="create-routine-btn" class="btn-large-primary" style="margin-top: 20px;">+ New</button>
-            <button onclick="goHome()" class="btn-large-secondary" style="margin-top: 20px;">Back to Home</button>
         </div>
 
         <!-- ルーティン作成モーダル -->
