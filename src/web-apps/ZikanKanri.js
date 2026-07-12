@@ -415,7 +415,7 @@ label {
   flex-direction: column;
   gap: 8px;
   margin-top: 12px;
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
 }
 
@@ -432,6 +432,36 @@ label {
 .edit-tag-name {
   font-size: 0.95rem;
   color: var(--text-primary);
+  word-break: break-all;
+  padding-right: 8px;
+}
+
+.edit-tag-move-btn {
+  background: #2C2C2C;
+  border: 1px solid #444;
+  color: var(--text-primary);
+  width: 32px !important;
+  height: 32px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+  margin-bottom: 0 !important;
+}
+
+.edit-tag-move-btn:active {
+  background: #3D3D3D;
+}
+
+.edit-tag-move-btn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+  background: #1E1E1E;
+  border-color: #222;
 }
 
 .edit-tag-delete-btn {
@@ -785,7 +815,7 @@ function closeTagEditor() {
 
 function renderModalTags() {
     modalTagList.innerHTML = '';
-    defaultTags.forEach(tag => {
+    defaultTags.forEach((tag, index) => {
         const item = document.createElement('div');
         item.className = 'edit-tag-item';
 
@@ -794,8 +824,37 @@ function renderModalTags() {
         nameSpan.textContent = tag;
         item.appendChild(nameSpan);
 
+        const rightContainer = document.createElement('div');
+        rightContainer.className = 'flex-row';
+        rightContainer.style.gap = '6px';
+        rightContainer.style.marginBottom = '0';
+
+        // Up button
+        const upBtn = document.createElement('button');
+        upBtn.className = 'edit-tag-move-btn';
+        upBtn.innerHTML = '▲';
+        if (index === 0) {
+            upBtn.disabled = true;
+        } else {
+            upBtn.onclick = () => moveTag(index, -1);
+        }
+        rightContainer.appendChild(upBtn);
+
+        // Down button
+        const downBtn = document.createElement('button');
+        downBtn.className = 'edit-tag-move-btn';
+        downBtn.innerHTML = '▼';
+        if (index === defaultTags.length - 1) {
+            downBtn.disabled = true;
+        } else {
+            downBtn.onclick = () => moveTag(index, 1);
+        }
+        rightContainer.appendChild(downBtn);
+
+        // Delete button
         const delBtn = document.createElement('button');
         delBtn.className = 'edit-tag-delete-btn';
+        delBtn.style.marginLeft = '4px';
         delBtn.innerHTML = '&times;';
         delBtn.onclick = () => {
             if (confirm(\`タグ「\${tag}」を削除しますか？\`)) {
@@ -808,10 +867,24 @@ function renderModalTags() {
                 }
             }
         };
-        item.appendChild(delBtn);
+        rightContainer.appendChild(delBtn);
 
+        item.appendChild(rightContainer);
         modalTagList.appendChild(item);
     });
+}
+
+function moveTag(index, direction) {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= defaultTags.length) return;
+
+    // Swap tags
+    const temp = defaultTags[index];
+    defaultTags[index] = defaultTags[targetIndex];
+    defaultTags[targetIndex] = temp;
+
+    localStorage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
+    renderModalTags();
 }
 
 function addModalTag() {
