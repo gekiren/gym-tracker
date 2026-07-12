@@ -246,6 +246,10 @@ h2 {
     z-index: 1000;
 }
 
+.hidden {
+    display: none !important;
+}
+
 .modal.hidden {
     display: none !important;
 }
@@ -436,14 +440,23 @@ h2 {
     <div id="app">
         <!-- ホーム画面 -->
         <div id="home-screen">
-            <h1>Select Routine</h1>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h1 style="margin: 0; text-align: left;">Select Routine</h1>
+                <button onclick="showManageScreen()" class="icon-btn" style="font-size: 14px; padding: 8px 12px; background: #2563eb; font-weight: bold; border: none; color: white; border-radius: 6px;">⚙️ 管理メニュー</button>
+            </div>
             <div id="routine-list">
                 <!-- ここにルーティンリストが生成される -->
             </div>
+        </div>
 
+        <!-- 管理画面 (専用メニュー) -->
+        <div id="manage-screen" class="hidden">
+            <h1>Routine Management</h1>
+            <div id="manage-routine-list">
+                <!-- ここに管理用のルーティンリストが生成される -->
+            </div>
             <button id="create-routine-btn" class="floating-fab">+ New</button>
-
-
+            <button onclick="goHome()" class="btn-large-secondary" style="margin-top: 20px;">Back to Home</button>
         </div>
 
         <!-- ルーティン作成モーダル -->
@@ -490,11 +503,21 @@ h2 {
 
         <!-- アクティブ画面（実行中） -->
         <div id="active-screen" class="hidden">
-            <h2 id="current-task-name">Task Name</h2>
-            <img id="current-task-image" src="" alt="Task Image"
-                style="max-width: 100%; max-height: 300px; display: none; margin: 0 auto 20px auto; border-radius: 8px;">
-            <div id="timer">00:00</div>
-            <button id="next-btn" class="btn-large-primary">Next Task</button>
+            <!-- 開始準備コンテナ -->
+            <div id="prepare-container">
+                <h2 id="prepare-routine-name" style="text-align: center; margin-bottom: 30px;">Routine Name</h2>
+                <button id="start-routine-btn" class="btn-large-primary" style="background: #51cf66;">開始する</button>
+                <button onclick="goHome()" class="btn-large-secondary" style="margin-top: 20px;">キャンセル</button>
+            </div>
+
+            <!-- 実行中コンテナ -->
+            <div id="running-container" class="hidden">
+                <h2 id="current-task-name">Task Name</h2>
+                <img id="current-task-image" src="" alt="Task Image"
+                    style="max-width: 100%; max-height: 300px; display: none; margin: 0 auto 20px auto; border-radius: 8px;">
+                <div id="timer">00:00</div>
+                <button id="next-btn" class="btn-large-primary">Next Task</button>
+            </div>
         </div>
 
         <!-- 結果画面 -->
@@ -508,6 +531,7 @@ h2 {
             <div id="result-list">
                 <!-- 結果詳細 -->
             </div>
+            <button onclick="goHome()" class="btn-large-secondary" style="margin-top: 20px;">Back to Home</button>
         </div>
 
         <!-- 履歴画面 -->
@@ -516,6 +540,7 @@ h2 {
             <div id="history-list" class="history-list-container">
                 <!-- 履歴リスト -->
             </div>
+            <button onclick="showManageScreen()" class="btn-large-secondary" style="margin-top: 20px;">Back to Management</button>
         </div>
 
         <!-- 汎用確認・アラートモーダル -->
@@ -646,6 +671,7 @@ let confirmCallback = null;
 // --- DOM Elements ---
 const screens = {
     home: document.getElementById('home-screen'),
+    manage: document.getElementById('manage-screen'),
     active: document.getElementById('active-screen'),
     result: document.getElementById('result-screen'),
     history: document.getElementById('history-screen')
@@ -672,42 +698,77 @@ function goHome() {
     loadRoutines();
 }
 
+function showManageScreen() {
+    showScreen('manage');
+    loadRoutines();
+}
+
 // --- Routine List & Management ---
 // --- Routine List & Management ---
 function loadRoutines() {
     const routines = getRoutines();
+    
+    // 1. 通常ホーム画面のリスト生成
     const list = components.list;
     list.innerHTML = '';
 
     if (routines.length === 0) {
-        list.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">ルーティンがありません。<br>"+ New" を押して作成してください。</div>';
-        return;
+        list.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">ルーティンがありません。</div>';
+    } else {
+        routines.forEach(r => {
+            const card = document.createElement('div');
+            card.className = 'routine-card';
+
+            // Image handling
+            if (r.image) {
+                card.style.backgroundImage = \`linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(\${r.image})\`;
+                card.style.backgroundSize = 'cover';
+                card.style.backgroundPosition = 'center';
+                card.style.textShadow = '0 1px 3px rgba(0,0,0,0.8)';
+            }
+
+            card.innerHTML = \`
+                <span style="font-weight:bold; flex-grow:1; font-size:18px;">\${r.name}</span>
+            \`;
+            card.onclick = () => prepareRoutine(r.id);
+            list.appendChild(card);
+        });
     }
 
-    routines.forEach(r => {
-        const card = document.createElement('div');
-        card.className = 'routine-card';
+    // 2. 管理画面のリスト生成
+    const manageList = document.getElementById('manage-routine-list');
+    if (manageList) {
+        manageList.innerHTML = '';
+        if (routines.length === 0) {
+            manageList.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">ルーティンがありません。<br>"+ New" を押して作成してください。</div>';
+        } else {
+            routines.forEach(r => {
+                const card = document.createElement('div');
+                card.className = 'routine-card';
 
-        // Image handling
-        if (r.image) {
-            card.style.backgroundImage = \`linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(\${r.image})\`;
-            card.style.backgroundSize = 'cover';
-            card.style.backgroundPosition = 'center';
-            card.style.textShadow = '0 1px 3px rgba(0,0,0,0.8)';
+                // Image handling
+                if (r.image) {
+                    card.style.backgroundImage = \`linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(\${r.image})\`;
+                    card.style.backgroundSize = 'cover';
+                    card.style.backgroundPosition = 'center';
+                    card.style.textShadow = '0 1px 3px rgba(0,0,0,0.8)';
+                }
+
+                card.innerHTML = \`
+                    <span style="font-weight:bold; flex-grow:1; font-size:18px;">\${r.name}</span>
+                    <div style="display:flex;">
+                        <button class="icon-btn" onclick="event.stopPropagation(); showHistory('\${r.id}')">🕒</button>
+                        <button class="icon-btn" onclick="event.stopPropagation(); openEditModal('\${r.id}')">✎</button>
+                        <button class="icon-btn delete-btn" onclick="event.stopPropagation(); confirmDelete('\${r.id}')">🗑</button>
+                    </div>
+                \`;
+                card.onclick = () => openEditModal(r.id);
+                manageList.appendChild(card);
+            });
         }
-
-        card.innerHTML = \`
-            <span style="font-weight:bold; flex-grow:1; font-size:18px;">\${r.name}</span>
-            <div style="display:flex;">
-                <button class="icon-btn" onclick="event.stopPropagation(); showHistory('\${r.id}')">🕒</button>
-                <button class="icon-btn" onclick="event.stopPropagation(); openEditModal('\${r.id}')">✎</button>
-                <button class="icon-btn delete-btn" onclick="event.stopPropagation(); confirmDelete('\${r.id}')">🗑</button>
-            </div>
-        \`;
-        card.onclick = () => startRoutine(r.id);
-        list.appendChild(card);
-    });
+    }
 }
+
 
 // --- Create/Edit Modal ---
 const modal = document.getElementById('create-modal');
@@ -1005,16 +1066,29 @@ function toggleHistoryDetails(el) {
 }
 
 // --- Routine Execution ---
-function startRoutine(id) {
+function prepareRoutine(id) {
     const routines = getRoutines();
     currentRoutine = routines.find(r => r.id === id);
     if (!currentRoutine || !currentRoutine.tasks.length) return alert("Task error");
 
     currentTaskIndex = 0;
     taskLogs = [];
+
+    // 開始準備画面の表示設定
+    document.getElementById('prepare-routine-name').innerText = currentRoutine.name;
+    document.getElementById('prepare-container').classList.remove('hidden');
+    document.getElementById('running-container').classList.add('hidden');
+
     showScreen('active');
+}
+
+function startRoutine() {
+    if (!currentRoutine) return;
+    document.getElementById('prepare-container').classList.add('hidden');
+    document.getElementById('running-container').classList.remove('hidden');
     startTask();
 }
+
 
 function startTask() {
     const task = currentRoutine.tasks[currentTaskIndex];
@@ -1151,6 +1225,7 @@ document.getElementById('confirm-cancel-btn').onclick = () => {
 };
 
 // Start
+document.getElementById('start-routine-btn').onclick = startRoutine;
 loadRoutines();
 
 </script>

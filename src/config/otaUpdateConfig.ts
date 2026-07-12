@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.48', // OTA識別用のバージョン文字列
+  version: '1.1.50', // OTA識別用のバージョン文字列
   title: {
-    ja: '習慣カウンターの表示・操作改善',
-    en: 'Improved Habit Counter layout & touch handling',
+    ja: 'ルーティン管理画面の不具合修正',
+    en: 'Routine management screen bug fixes',
   },
   notes: {
     ja: [
-      '習慣カウンターで登録数が増えた場合に、画面スクロールできるように配置を改善しました。',
-      'スクロール中の誤タップや誤った長押し判定を防ぐよう、タッチイベントを改善しました。',
+      '管理メニューボタンが反応しない不具合を修正しました。',
+      '画面表示が崩れて最初から管理画面が表示されてしまう不具合を修正しました。',
     ],
     en: [
-      'Added vertical scrolling to the Habit Counter when there are many habits.',
-      'Improved touch handling to prevent accidental increments or edits while scrolling.',
+      'Fixed an issue where the management menu button was unresponsive.',
+      'Fixed layout issues where the management screen was rendered incorrectly at launch.',
     ]
   }
 };
