@@ -443,10 +443,7 @@ h2 {
 
             <button id="create-routine-btn" class="floating-fab">+ New</button>
 
-            <p style="color:#666; font-size:12px; margin-top:30px; text-align: center;">
-                データは端末内に保存されます。<br>
-                (Offline capable)
-            </p>
+
         </div>
 
         <!-- ルーティン作成モーダル -->
