@@ -139,14 +139,14 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     font-family: var(--font-main);
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     display: flex;
     flex-direction: column;
 }
 
 .app-container {
-    height: 100%;
     display: flex;
     flex-direction: column;
     padding: 20px;
@@ -157,10 +157,15 @@ body {
 }
 
 header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--bg-color);
+    padding: 10px 0;
+    margin-bottom: 10px;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
-    margin-bottom: 20px;
 }
 
 h1 {
@@ -187,14 +192,7 @@ h1 {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 15px;
-    overflow-y: auto;
     padding-bottom: 20px;
-    flex: 1;
-}
-
-.grid-container.grid-3-cols {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
 }
 
 /* Card Styles */
@@ -203,7 +201,7 @@ h1 {
     background: var(--card-bg);
     border: 1px solid var(--glass-border);
     border-radius: 20px;
-    padding: 20px;
+    padding: 16px 10px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -232,14 +230,24 @@ h1 {
 }
 
 .habit-count {
-    font-size: 3.5rem;
+    font-size: 2.8rem;
     font-weight: 700;
+    margin-top: auto;
+    margin-bottom: auto;
 }
 
 .habit-name {
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 300;
     opacity: 0.8;
+    text-align: center;
+    word-break: break-all;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.2;
+    height: 2.4em;
 }
 
 /* Ripple Animation */
@@ -880,7 +888,7 @@ function addItem() {
 }
 
 function track(id, event) {
-    if (isLongPress) return; // Prevent track after long press
+    if (isLongPress || isMoving) return; // Prevent track after long press or moving/scrolling
 
     const parts = currentDateStr.split('/').map(Number);
     const now = new Date();
@@ -901,14 +909,36 @@ function track(id, event) {
     render(); // Update counts
 }
 
+let touchStartX = 0;
+let touchStartY = 0;
+const MOVE_THRESHOLD = 10; // pixels
+let isMoving = false;
+
 // Long Press Handling
-function handleTouchStart(id) {
+function handleTouchStart(id, event) {
     isLongPress = false;
+    isMoving = false;
+    const touch = event.touches ? event.touches[0] : event;
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+
     longPressTimer = setTimeout(() => {
         isLongPress = true;
         openEditModal(id);
-        navigator.vibrate(50); // Haptic feedback
+        try {
+            if (navigator.vibrate) navigator.vibrate(50);
+        } catch (e) {}
     }, 800); // 800ms for long press
+}
+
+function handleTouchMove(event) {
+    const touch = event.touches ? event.touches[0] : event;
+    const diffX = Math.abs(touch.clientX - touchStartX);
+    const diffY = Math.abs(touch.clientY - touchStartY);
+    if (diffX > MOVE_THRESHOLD || diffY > MOVE_THRESHOLD) {
+        isMoving = true;
+        clearTimeout(longPressTimer);
+    }
 }
 
 function handleTouchEnd() {
@@ -1011,12 +1041,7 @@ function getCountForDate(itemId, date) {
 function render() {
     gridContainer.innerHTML = '';
 
-    // Dynamic Grid Sizing
-    if (items.length >= 7) {
-        gridContainer.classList.add('grid-3-cols');
-    } else {
-        gridContainer.classList.remove('grid-3-cols');
-    }
+    // We always use 2 columns for clear touch targets on mobile when scrolling.
 
     items.forEach(item => {
         const card = document.createElement('div');
@@ -1030,12 +1055,16 @@ function render() {
             <div class="habit-count">\${count}</div>
         \`;
 
-        // Touch events for long press
-        card.addEventListener('mousedown', () => handleTouchStart(item.id));
-        card.addEventListener('touchstart', () => handleTouchStart(item.id), { passive: true });
+        // Touch events for long press and scrolling
+        card.addEventListener('mousedown', (e) => handleTouchStart(item.id, e));
+        card.addEventListener('touchstart', (e) => handleTouchStart(item.id, e), { passive: true });
+
+        card.addEventListener('mousemove', handleTouchMove);
+        card.addEventListener('touchmove', handleTouchMove, { passive: true });
 
         card.addEventListener('mouseup', handleTouchEnd);
         card.addEventListener('touchend', handleTouchEnd);
+        card.addEventListener('touchcancel', handleTouchEnd);
 
         card.addEventListener('click', (e) => track(item.id, e));
 
