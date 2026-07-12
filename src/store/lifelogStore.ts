@@ -118,7 +118,7 @@ interface LifelogState {
 }
 
 // Helper function to calculate summary from state
-const calculateSummary = (
+export const calculateSummary = (
   dateStr: string,
   waterLogs: WaterLog[],
   waterGoal: number,
