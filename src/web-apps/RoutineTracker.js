@@ -771,6 +771,27 @@ function toggleVisibility(id) {
     }
 }
 
+function moveRoutine(id, direction) {
+    const routines = getRoutines();
+    const index = routines.findIndex(r => r.id === id);
+    if (index === -1) return;
+
+    if (direction === 'up' && index > 0) {
+        const temp = routines[index];
+        routines[index] = routines[index - 1];
+        routines[index - 1] = temp;
+    } else if (direction === 'down' && index < routines.length - 1) {
+        const temp = routines[index];
+        routines[index] = routines[index + 1];
+        routines[index + 1] = temp;
+    } else {
+        return;
+    }
+
+    saveRoutines(routines);
+    loadRoutines();
+}
+
 function loadRoutines() {
     const routines = getRoutines();
     
@@ -830,7 +851,7 @@ function loadRoutines() {
         if (routines.length === 0) {
             manageList.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">ルーティンがありません。<br>"+ New" を押して作成してください。</div>';
         } else {
-            routines.forEach(r => {
+            routines.forEach((r, idx) => {
                 const card = document.createElement('div');
                 card.className = 'routine-card';
                 if (r.hidden) {
@@ -848,9 +869,16 @@ function loadRoutines() {
                 const isHidden = r.hidden === true;
                 const visibilityBtn = \`<button class="icon-btn" style="background: \${isHidden ? '#c53030' : '#444'};" onclick="event.stopPropagation(); toggleVisibility('\${r.id}')">\${isHidden ? '💤' : '💡'}</button>\`;
 
+                const isFirst = idx === 0;
+                const isLast = idx === routines.length - 1;
+                const upBtn = \`<button class="icon-btn" \${isFirst ? 'disabled style="opacity:0.3; cursor:default;"' : ''} onclick="event.stopPropagation(); moveRoutine('\${r.id}', 'up')">▲</button>\`;
+                const downBtn = \`<button class="icon-btn" \${isLast ? 'disabled style="opacity:0.3; cursor:default;"' : ''} onclick="event.stopPropagation(); moveRoutine('\${r.id}', 'down')">▼</button>\`;
+
                 card.innerHTML = \`
                     <span style="font-weight:bold; flex-grow:1; font-size:18px;">\${r.name}\${isHidden ? ' <span style="font-size:12px; color:#ff6b6b; font-weight:normal;">(非表示)</span>' : ''}</span>
-                    <div style="display:flex;">
+                    <div style="display:flex; align-items:center;">
+                        \${upBtn}
+                        \${downBtn}
                         <button class="icon-btn" onclick="event.stopPropagation(); showHistory('\${r.id}')">🕒</button>
                         <button class="icon-btn" onclick="event.stopPropagation(); openEditModal('\${r.id}')">✎</button>
                         \${visibilityBtn}
