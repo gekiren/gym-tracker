@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.50', // OTA識別用のバージョン文字列
+  version: '1.1.51', // OTA識別用のバージョン文字列
   title: {
-    ja: 'ルーティン管理画面の不具合修正',
-    en: 'Routine management screen bug fixes',
+    ja: 'ルーティン管理画面のレイアウト調整',
+    en: 'Routine Management UI adjustments',
   },
   notes: {
     ja: [
-      '管理メニューボタンが反応しない不具合を修正しました。',
-      '画面表示が崩れて最初から管理画面が表示されてしまう不具合を修正しました。',
+      '管理画面の「+ New」ボタンを画面最下部の「Back to Home」の上にバーボタン形式で配置するよう変更しました。',
     ],
     en: [
-      'Fixed an issue where the management menu button was unresponsive.',
-      'Fixed layout issues where the management screen was rendered incorrectly at launch.',
+      'Changed "+ New" button in Routine Management to a bar button above "Back to Home".',
     ]
   }
 };
