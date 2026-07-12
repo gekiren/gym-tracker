@@ -473,6 +473,11 @@ h2 {
                     <label for="auto-update-estimates" style="font-size: 14px;">完了後に時間を自動更新する</label>
                 </div>
 
+                <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px; color: #ccc;">
+                    <input type="checkbox" id="auto-advance" style="width: auto; margin: 0;">
+                    <label for="auto-advance" style="font-size: 14px;">時間になったら自動で次のタスクに移る</label>
+                </div>
+
                 <div id="new-task-list" class="task-list-container">
                     <!-- タスク入力欄 -->
                 </div>
@@ -806,6 +811,7 @@ function openModal(isEdit = false) {
         document.getElementById('edit-routine-id').value = "";
         document.getElementById('new-routine-name').value = "";
         document.getElementById('auto-update-estimates').checked = true; // Default ON
+        document.getElementById('auto-advance').checked = false; // Default OFF
         newTaskList.innerHTML = "";
         addTaskInput();
     }
@@ -827,6 +833,8 @@ function openEditModal(id) {
     document.getElementById('new-routine-name').value = routine.name;
     // Default to true if the property doesn't exist
     document.getElementById('auto-update-estimates').checked = (routine.auto_update_estimates !== false);
+    // Default to false if the property doesn't exist
+    document.getElementById('auto-advance').checked = (routine.auto_advance === true);
 
     // Set existing image
     if (routine.image) {
@@ -878,6 +886,7 @@ function saveNewRoutine() {
     const name = document.getElementById('new-routine-name').value;
     const editId = document.getElementById('edit-routine-id').value;
     const autoUpdate = document.getElementById('auto-update-estimates').checked;
+    const autoAdvance = document.getElementById('auto-advance').checked;
 
     if (!name) return alert("名前は必須です");
 
@@ -911,6 +920,7 @@ function saveNewRoutine() {
             routines[index].name = name;
             routines[index].tasks = tasks;
             routines[index].auto_update_estimates = autoUpdate;
+            routines[index].auto_advance = autoAdvance;
             routines[index].image = currentImageBase64; // Update image
         }
     } else {
@@ -919,6 +929,7 @@ function saveNewRoutine() {
             name: name,
             tasks: tasks,
             auto_update_estimates: autoUpdate,
+            auto_advance: autoAdvance,
             image: currentImageBase64 // Save image
         });
     }
@@ -1029,6 +1040,21 @@ function startTask() {
     updateTimer();
 }
 
+function nextTask() {
+    const elapsed = Math.floor((Date.now() - taskStartTime) / 1000);
+    taskLogs.push({
+        task_id: currentRoutine.tasks[currentTaskIndex].id,
+        actual_seconds: elapsed
+    });
+
+    currentTaskIndex++;
+    if (currentTaskIndex < currentRoutine.tasks.length) {
+        startTask();
+    } else {
+        finishRoutine();
+    }
+}
+
 function updateTimer() {
     const elapsed = Math.floor((Date.now() - taskStartTime) / 1000);
     const task = currentRoutine.tasks[currentTaskIndex];
@@ -1042,22 +1068,13 @@ function updateTimer() {
     } else {
         components.timer.style.color = '#51cf66';
     }
+
+    if (remaining <= 0 && currentRoutine.auto_advance) {
+        nextTask();
+    }
 }
 
-components.nextBtn.onclick = () => {
-    const elapsed = Math.floor((Date.now() - taskStartTime) / 1000);
-    taskLogs.push({
-        task_id: currentRoutine.tasks[currentTaskIndex].id,
-        actual_seconds: elapsed
-    });
-
-    currentTaskIndex++;
-    if (currentTaskIndex < currentRoutine.tasks.length) {
-        startTask();
-    } else {
-        finishRoutine();
-    }
-};
+components.nextBtn.onclick = nextTask;
 
 function finishRoutine() {
     clearInterval(taskTimerInterval);
