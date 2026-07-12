@@ -505,7 +505,13 @@ h2 {
         <div id="active-screen" class="hidden">
             <!-- 開始準備コンテナ -->
             <div id="prepare-container">
-                <h2 id="prepare-routine-name" style="text-align: center; margin-bottom: 30px;">Routine Name</h2>
+                <h2 id="prepare-routine-name" style="text-align: center; margin-bottom: 20px;">Routine Name</h2>
+                
+                <!-- ルーティン詳細表示エリア -->
+                <div id="prepare-routine-details" style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-bottom: 25px; font-size: 14px; color: #b0b0b0; max-height: 250px; overflow-y: auto;">
+                    <!-- ここにタスク一覧が生成される -->
+                </div>
+
                 <button id="start-routine-btn" class="btn-large-primary" style="background: #51cf66;">開始する</button>
                 <button onclick="goHome()" class="btn-large-secondary" style="margin-top: 20px;">キャンセル</button>
             </div>
@@ -516,6 +522,13 @@ h2 {
                 <img id="current-task-image" src="" alt="Task Image"
                     style="max-width: 100%; max-height: 300px; display: none; margin: 0 auto 20px auto; border-radius: 8px;">
                 <div id="timer">00:00</div>
+
+                <!-- 進行状況および次のタスク情報表示エリア -->
+                <div id="running-progress-info" style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; text-align: left;">
+                    <div id="running-next-task" style="color: #cecece; margin-bottom: 8px; line-height: 1.4;">次のタスク: -</div>
+                    <div id="running-remaining-tasks" style="color: #888; font-size: 12px; line-height: 1.4;">残りタスク: -</div>
+                </div>
+
                 <button id="next-btn" class="btn-large-primary">Next Task</button>
             </div>
         </div>
@@ -1136,6 +1149,35 @@ function prepareRoutine(id) {
 
     // 開始準備画面の表示設定
     document.getElementById('prepare-routine-name').innerText = currentRoutine.name;
+
+    // ルーティン詳細（タスク一覧）の生成
+    const detailsContainer = document.getElementById('prepare-routine-details');
+    if (detailsContainer) {
+        const totalSeconds = currentRoutine.tasks.reduce((sum, t) => sum + t.estimated_seconds, 0);
+        const totalTimeStr = formatTime(totalSeconds);
+        
+        let html = '<div style="font-weight: bold; color: #fff; margin-bottom: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding-bottom: 8px;">';
+        html += '<span>タスク一覧 (' + currentRoutine.tasks.length + '件)</span>';
+        html += '<span style="color: #51cf66;">想定時間: ' + totalTimeStr + '</span>';
+        html += '</div>';
+        html += '<div style="display: flex; flex-direction: column; gap: 8px;">';
+        currentRoutine.tasks.forEach((t, idx) => {
+            html += '<div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">';
+            html += '<div style="display: flex; align-items: center; gap: 8px; text-align: left; flex: 1; min-width: 0;">';
+            if (t.image) {
+                html += '<img src="' + t.image + '" style="width: 28px; height: 28px; object-fit: cover; border-radius: 4px; flex-shrink: 0;">';
+            } else {
+                html += '<div style="width: 28px; height: 28px; background: #333; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666; flex-shrink: 0;">No Image</div>';
+            }
+            html += '<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e0e0e0;">' + (idx + 1) + '. ' + t.name + '</span>';
+            html += '</div>';
+            html += '<span style="color: #888; font-size: 13px; margin-left: 8px; flex-shrink: 0;">' + formatTime(t.estimated_seconds) + '</span>';
+            html += '</div>';
+        });
+        html += '</div>';
+        detailsContainer.innerHTML = html;
+    }
+
     document.getElementById('prepare-container').classList.remove('hidden');
     document.getElementById('running-container').classList.add('hidden');
 
@@ -1162,6 +1204,30 @@ function startTask() {
     } else {
         imgEl.style.display = 'none';
         imgEl.src = "";
+    }
+
+    // 進行状況および次のタスク情報の表示更新
+    const nextTaskEl = document.getElementById('running-next-task');
+    const remainingTasksEl = document.getElementById('running-remaining-tasks');
+    if (nextTaskEl && remainingTasksEl) {
+        const totalTasks = currentRoutine.tasks.length;
+        
+        // 次のタスク
+        if (currentTaskIndex + 1 < totalTasks) {
+            const nextTask = currentRoutine.tasks[currentTaskIndex + 1];
+            nextTaskEl.innerHTML = '次のタスク: <strong style="color: #fff;">' + nextTask.name + '</strong> (' + formatTime(nextTask.estimated_seconds) + ')';
+        } else {
+            nextTaskEl.innerHTML = '次のタスク: <strong style="color: #51cf66;">なし (最後のタスクです)</strong>';
+        }
+        
+        // 残りタスク数と合計想定時間
+        const remainingCount = totalTasks - (currentTaskIndex + 1);
+        let remainingSeconds = 0;
+        for (let i = currentTaskIndex + 1; i < totalTasks; i++) {
+            remainingSeconds += currentRoutine.tasks[i].estimated_seconds;
+        }
+        
+        remainingTasksEl.innerHTML = '進捗: <strong style="color: #fff;">' + (currentTaskIndex + 1) + '</strong> / ' + totalTasks + ' | 残り: <strong style="color: #fff;">' + remainingCount + '</strong>個 (約' + formatTime(remainingSeconds) + ')';
     }
 
     taskStartTime = Date.now();
