@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.58', // OTA識別用のバージョン文字列
+  version: '1.1.59', // OTA識別用のバージョン文字列
   title: {
-    ja: 'ルーティンの並び替え機能の追加',
-    en: 'Routine Sorting Feature Added',
+    ja: '習慣カウンター管理機能の追加',
+    en: 'Habit Counter Management Added',
   },
   notes: {
     ja: [
-      'ルーティン管理の管理メニュー内に「▲」および「▼」ボタンを追加し、ルーティンの表示順序を入れ替えることができるようになりました。',
-      '並び替えた順序は即座に反映され、ホーム画面でのルーティン選択リストにも適用されます。',
+      '習慣カウンター画面に「⚙️管理」ボタンを追加し、習慣項目の一覧管理ができるようになりました。',
+      '管理画面では、項目の並べ替え（▲▼ボタン）、名前のインライン編集、カラーの変更、および項目の削除が可能です。',
     ],
     en: [
-      'Added "▲" and "▼" buttons in the Routine Management screen to sort the display order of routines.',
-      'The sorted order is instantly saved and applied to the routine selection list on the home screen.',
+      'Added a "⚙️ Manage" button to the Habit Counter screen for comprehensive habit item management.',
+      'In the management screen, you can reorder items (using ▲▼), edit names inline, change colors, and delete items.',
     ]
   }
 };
