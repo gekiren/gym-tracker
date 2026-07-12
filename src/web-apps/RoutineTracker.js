@@ -455,7 +455,7 @@ h2 {
             <div id="manage-routine-list">
                 <!-- ここに管理用のルーティンリストが生成される -->
             </div>
-            <button id="create-routine-btn" class="floating-fab">+ New</button>
+            <button id="create-routine-btn" class="btn-large-primary" style="margin-top: 20px;">+ New</button>
             <button onclick="goHome()" class="btn-large-secondary" style="margin-top: 20px;">Back to Home</button>
         </div>
 
