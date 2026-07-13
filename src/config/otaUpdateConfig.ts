@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.62', // OTA識別用のバージョン文字列
+  version: '1.1.63', // OTA識別用のバージョン文字列
   title: {
-    ja: '24時間管理の機能改善（同時進行モード時のタグ選択）',
-    en: '24-hour Lifelog Enhanced (Tags in Simultaneous Mode)',
+    ja: '24時間管理の機能改善（同時進行の割合スライダー調整）',
+    en: '24-hour Lifelog Enhanced (Simultaneous ratio slider)',
   },
   notes: {
     ja: [
-      '同時進行モードのときにも活動タグをタップで選択・入力できるようになりました。',
-      '入力中の行がハイライト（紫枠と●表示）され、どのタスクにタグが入力されるかが分かりやすくなりました。',
+      '同時進行モードにおける時間割合の入力を、スワイプで動かせるスライダー形式に変更しました。',
+      '10%単位でスムーズに調整でき、操作中の行をタップ・ドラッグした際にも自動的にアクティブ行に切り替わります。',
     ],
     en: [
-      'You can now tap and select activity tags even in simultaneous progress mode.',
-      'The row being edited is now highlighted with a border and indicator, making it clear where the tag is entered.',
+      'Changed the time ratio input in simultaneous mode to a swipeable slider format.',
+      'Adjust smoothly in 10% steps, and the row automatically becomes active when you tap or drag the slider.',
     ]
   }
 };

@@ -1061,14 +1061,25 @@ addSimultaneousRowBtn.addEventListener('click', () => {
     addSimultaneousRow();
 });
 
-function addSimultaneousRow(name = '', percent = 0) {
+function addSimultaneousRow(name = '', percent = 50) {
     const div = document.createElement('div');
     div.className = 'simultaneous-row flex-row';
+    div.style.flexDirection = 'column';
+    div.style.alignItems = 'stretch';
+    div.style.gap = '6px';
     div.innerHTML = \`
-        <span class="sim-active-indicator">○</span>
-        <input type="text" placeholder="活動名" class="sim-name" value="\${name}" style="flex: 2; margin-bottom: 0;">
-        <input type="number" placeholder="%" class="sim-percent" value="\${percent}" style="flex: 1; margin-bottom: 0;">
-        <button class="btn btn-secondary sim-delete-btn" style="width: auto; padding: 12px 14px; margin-bottom: 0;">×</button>
+        <!-- 1段目: 活動名と削除ボタン -->
+        <div class="flex-row" style="width: 100%; align-items: center;">
+            <span class="sim-active-indicator">○</span>
+            <input type="text" placeholder="活動名" class="sim-name" value="\${name}" style="flex: 1; margin-bottom: 0;">
+            <button class="btn btn-secondary sim-delete-btn" style="width: auto; padding: 12px 14px; margin-bottom: 0; margin-left: 8px;">×</button>
+        </div>
+        <!-- 2段目: 割合スライダー -->
+        <div class="flex-row" style="width: 100%; align-items: center; padding-left: 24px; gap: 12px;">
+            <span style="font-size: 0.85rem; color: var(--text-secondary); min-width: 35px;">割合:</span>
+            <input type="range" class="sim-percent" min="0" max="100" step="10" value="\${percent}" style="flex: 1; margin-bottom: 0; accent-color: var(--primary-color);">
+            <span class="sim-percent-text" style="min-width: 45px; text-align: right; font-family: monospace; font-size: 0.95rem; font-weight: 600; color: var(--primary-color);">\${percent}%</span>
+        </div>
     \`;
 
     // Click on row to set active
@@ -1088,7 +1099,12 @@ function addSimultaneousRow(name = '', percent = 0) {
     });
 
     const percentInput = div.querySelector('.sim-percent');
+    const percentText = div.querySelector('.sim-percent-text');
     percentInput.addEventListener('focus', () => {
+        setActiveSimRow(div);
+    });
+    percentInput.addEventListener('input', (e) => {
+        percentText.textContent = e.target.value + '%';
         setActiveSimRow(div);
     });
 
