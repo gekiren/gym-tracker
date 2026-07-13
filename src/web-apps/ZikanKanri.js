@@ -330,6 +330,36 @@ label {
   margin-bottom: 0 !important;
 }
 
+/* Simultaneous rows */
+.simultaneous-row {
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+  background-color: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  align-items: center;
+}
+
+.simultaneous-row.active {
+  border-color: var(--primary-color);
+  background-color: rgba(187, 134, 252, 0.08);
+  box-shadow: 0 0 8px rgba(187, 134, 252, 0.15);
+}
+
+.sim-active-indicator {
+  font-size: 1.1rem;
+  margin-right: 8px;
+  color: var(--text-secondary);
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.simultaneous-row.active .sim-active-indicator {
+  color: var(--primary-color);
+}
+
 /* Pie Chart */
 .pie-chart-container {
   display: flex;
@@ -516,31 +546,24 @@ header {
                 </div>
             </div>
 
-            <!-- Single Mode Input -->
-            <div id="single-mode-inputs">
-                <label>活動内容</label>
-
-                <!-- Toggle between Manual and List -->
+            <!-- Tag list (Visible in both modes) -->
+            <div id="tag-selection-container" style="margin-bottom: 16px;">
+                <label id="tag-selection-label">活動内容</label>
                 <div class="tags" id="quick-list">
                     <!-- Javascript will populate this -->
                 </div>
+            </div>
 
+            <!-- Single Mode Input -->
+            <div id="single-mode-inputs">
                 <input type="hidden" id="activity-name">
             </div>
 
             <!-- Simultaneous Mode Inputs (Hidden by default) -->
             <div id="simultaneous-mode-inputs" class="hidden">
                 <label>同時進行する活動を追加</label>
-                <div id="simultaneous-list">
-                    <!-- Javascript will add rows here -->
-                    <div class="simultaneous-row flex-row">
-                        <input type="text" placeholder="活動A" class="sim-name">
-                        <input type="number" placeholder="%" class="sim-percent" value="50">
-                    </div>
-                    <div class="simultaneous-row flex-row">
-                        <input type="text" placeholder="活動B" class="sim-name">
-                        <input type="number" placeholder="%" class="sim-percent" value="50">
-                    </div>
+                <div id="simultaneous-list" style="margin-bottom: 12px;">
+                    <!-- Javascript will add rows dynamically here -->
                 </div>
                 <button id="add-simultaneous-row" class="btn btn-secondary" style="margin-top: 8px;">+ 活動を追加</button>
             </div>
@@ -755,15 +778,52 @@ function notifyDateChanged() {
     }
 }
 
-function selectTag(tagName) {
+function highlightTag(tagName) {
     document.querySelectorAll('#quick-list .tag-chip').forEach(c => {
-        if (c.dataset.value === tagName) {
+        if (tagName && c.dataset.value === tagName) {
             c.classList.add('selected');
         } else {
             c.classList.remove('selected');
         }
     });
-    activityNameInput.value = tagName;
+}
+
+function setActiveSimRow(rowElement) {
+    document.querySelectorAll('.simultaneous-row').forEach(row => {
+        row.classList.remove('active');
+        const indicator = row.querySelector('.sim-active-indicator');
+        if (indicator) {
+            indicator.innerHTML = '○';
+        }
+    });
+
+    if (rowElement) {
+        rowElement.classList.add('active');
+        const indicator = rowElement.querySelector('.sim-active-indicator');
+        if (indicator) {
+            indicator.innerHTML = '●';
+        }
+        const nameVal = rowElement.querySelector('.sim-name').value;
+        highlightTag(nameVal);
+    } else {
+        highlightTag(null);
+    }
+}
+
+function selectTag(tagName) {
+    if (isSimultaneousMode) {
+        const activeRow = document.querySelector('.simultaneous-row.active');
+        if (activeRow) {
+            const input = activeRow.querySelector('.sim-name');
+            if (input) {
+                input.value = tagName;
+                highlightTag(tagName);
+            }
+        }
+    } else {
+        highlightTag(tagName);
+        activityNameInput.value = tagName;
+    }
 }
 
 // Init Tags
@@ -958,22 +1018,41 @@ function setContinuousMode(enabled) {
 // Toggle Simultaneous Mode
 toggleSimultaneousBtn.addEventListener('click', () => {
     setSimultaneousMode(!isSimultaneousMode);
+    if (isSimultaneousMode && simultaneousList.children.length === 0) {
+        addSimultaneousRow('', 50);
+        addSimultaneousRow('', 50);
+    }
 });
 
 function setSimultaneousMode(enabled) {
     isSimultaneousMode = enabled;
+    const tagLabel = document.getElementById('tag-selection-label');
     if (isSimultaneousMode) {
         singleModeInputs.classList.add('hidden');
         simultaneousModeInputs.classList.remove('hidden');
         simultaneousStatusSpan.textContent = "ON";
         toggleSimultaneousBtn.classList.remove('btn-secondary');
         toggleSimultaneousBtn.classList.add('btn-primary');
+        if (tagLabel) tagLabel.textContent = "活動内容タグ (選択中の行に入力されます)";
+        
+        const activeRow = simultaneousList.querySelector('.simultaneous-row.active');
+        if (!activeRow) {
+            const firstRow = simultaneousList.querySelector('.simultaneous-row');
+            if (firstRow) {
+                setActiveSimRow(firstRow);
+            } else {
+                setActiveSimRow(null);
+            }
+        }
     } else {
         singleModeInputs.classList.remove('hidden');
         simultaneousModeInputs.classList.add('hidden');
         simultaneousStatusSpan.textContent = "OFF";
         toggleSimultaneousBtn.classList.remove('btn-primary');
         toggleSimultaneousBtn.classList.add('btn-secondary');
+        if (tagLabel) tagLabel.textContent = "活動内容";
+        
+        highlightTag(activityNameInput.value);
     }
 }
 
@@ -986,11 +1065,50 @@ function addSimultaneousRow(name = '', percent = 0) {
     const div = document.createElement('div');
     div.className = 'simultaneous-row flex-row';
     div.innerHTML = \`
-        <input type="text" placeholder="活動名" class="sim-name" value="\${name}">
-        <input type="number" placeholder="%" class="sim-percent" value="\${percent}">
-        <button class="btn btn-secondary" style="width: auto; padding: 4px 8px;" onclick="this.parentElement.remove()">×</button>
+        <span class="sim-active-indicator">○</span>
+        <input type="text" placeholder="活動名" class="sim-name" value="\${name}" style="flex: 2; margin-bottom: 0;">
+        <input type="number" placeholder="%" class="sim-percent" value="\${percent}" style="flex: 1; margin-bottom: 0;">
+        <button class="btn btn-secondary sim-delete-btn" style="width: auto; padding: 12px 14px; margin-bottom: 0;">×</button>
     \`;
+
+    // Click on row to set active
+    div.addEventListener('click', (e) => {
+        if (e.target.classList.contains('sim-delete-btn')) {
+            return;
+        }
+        setActiveSimRow(div);
+    });
+
+    const nameInput = div.querySelector('.sim-name');
+    nameInput.addEventListener('focus', () => {
+        setActiveSimRow(div);
+    });
+    nameInput.addEventListener('input', (e) => {
+        highlightTag(e.target.value);
+    });
+
+    const percentInput = div.querySelector('.sim-percent');
+    percentInput.addEventListener('focus', () => {
+        setActiveSimRow(div);
+    });
+
+    const deleteBtn = div.querySelector('.sim-delete-btn');
+    deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isActive = div.classList.contains('active');
+        div.remove();
+        if (isActive) {
+            const firstRow = simultaneousList.querySelector('.simultaneous-row');
+            if (firstRow) {
+                setActiveSimRow(firstRow);
+            } else {
+                setActiveSimRow(null);
+            }
+        }
+    });
+
     simultaneousList.appendChild(div);
+    setActiveSimRow(div);
 }
 
 // Save Entry
@@ -1216,6 +1334,10 @@ function startEdit(id) {
         log.items.forEach(item => {
             addSimultaneousRow(item.name, item.percent);
         });
+        const firstRow = simultaneousList.querySelector('.simultaneous-row');
+        if (firstRow) {
+            setActiveSimRow(firstRow);
+        }
     } else {
         setSimultaneousMode(false);
         selectTag(log.items[0].name);
@@ -1238,8 +1360,12 @@ function resetForm(nextStart) {
     endTimeInput.value = "";
     activityNameInput.value = "";
     activityMemoInput.value = "";
-    newTagInput.value = "";
+    if (typeof newTagInput !== 'undefined') newTagInput.value = "";
     simultaneousList.innerHTML = ''; // Clear rows
+    if (isSimultaneousMode) {
+        addSimultaneousRow('', 50);
+        addSimultaneousRow('', 50);
+    }
     document.querySelectorAll('#quick-list .tag-chip').forEach(c => c.classList.remove('selected'));
 }
 
