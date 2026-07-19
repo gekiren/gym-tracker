@@ -256,21 +256,32 @@ const withAndroidWidget = (config) => {
         }
       } else {
         console.warn('[withAndroidWidget] strings.xml not found.');
-      }
-
-      // --- Patch MainActivity.kt: trigger widget updates on app resume/pause (idempotent) ---
+      }      // --- Patch MainActivity.kt: trigger widget updates and watch DB file with FileObserver (idempotent) ---
       if (fs.existsSync(mainActivityPath)) {
         let content = fs.readFileSync(mainActivityPath, 'utf8');
 
-        if (content.includes('updateWidgets()')) {
-          console.log('[withAndroidWidget] MainActivity.kt already patched with updateWidgets(). Skipping.');
+        if (content.includes('dbObserver: FileObserver?')) {
+          console.log('[withAndroidWidget] MainActivity.kt already patched with FileObserver. Skipping.');
         } else {
-          // Add necessary imports right after package statement
-          const imports = `\nimport android.appwidget.AppWidgetManager\nimport android.content.ComponentName\nimport android.content.Intent`;
+          // Remove old updateWidgets patch if present
+          content = content.replace(/\n\s*override fun onResume\(\)[\s\S]*?private fun updateWidgets\(\)[\s\S]*?\}\s*\}\s*$/, '\n}');
+          content = content.replace(/import android\.appwidget\.AppWidgetManager[\s\S]*?import android\.content\.Intent\n/, '');
+
+          // Add imports
+          const imports = `\nimport android.appwidget.AppWidgetManager\nimport android.content.ComponentName\nimport android.content.Intent\nimport android.os.FileObserver\nimport java.io.File`;
           content = content.replace('package com.gekirennomad.trenote', `package com.gekirennomad.trenote${imports}`);
 
-          // Define lifecycle override methods
-          const lifecycleMethods = `
+          // Add startDatabaseObserver call inside onCreate
+          if (content.includes('super.onCreate(null)')) {
+            content = content.replace('super.onCreate(null)', 'super.onCreate(null)\n    startDatabaseObserver()');
+          } else if (content.includes('super.onCreate(savedInstanceState)')) {
+            content = content.replace('super.onCreate(savedInstanceState)', 'super.onCreate(savedInstanceState)\n    startDatabaseObserver()');
+          }
+
+          // Define modern observer + widget updater code
+          const injectedCode = `
+  private var dbObserver: FileObserver? = null
+
   override fun onResume() {
     super.onResume()
     updateWidgets()
@@ -279,6 +290,43 @@ const withAndroidWidget = (config) => {
   override fun onPause() {
     super.onPause()
     updateWidgets()
+  }
+
+  override fun onDestroy() {
+    dbObserver?.stopWatching()
+    super.onDestroy()
+  }
+
+  private fun startDatabaseObserver() {
+    try {
+      val dbFile = findDatabaseFile()
+      if (dbFile != null) {
+        dbObserver = object : FileObserver(dbFile.parentFile?.absolutePath, FileObserver.CLOSE_WRITE or FileObserver.MODIFY) {
+          override fun onEvent(event: Int, path: String?) {
+            if (path != null && (path == dbFile.name || path.startsWith(dbFile.name))) {
+              updateWidgets()
+            }
+          }
+        }
+        dbObserver?.startWatching()
+      }
+    } catch (e: Exception) {
+      e.printStackTrace()
+    }
+  }
+
+  private fun findDatabaseFile(): File? {
+    val dbName = "gymtracker.db"
+    val noBackupFile = File(noBackupFilesDir, "SQLite/$dbName")
+    if (noBackupFile.exists()) return noBackupFile
+
+    val filesFile = File(filesDir, "SQLite/$dbName")
+    if (filesFile.exists()) return filesFile
+
+    val dbDirFile = getDatabasePath(dbName)
+    if (dbDirFile.exists()) return dbDirFile
+
+    return null
   }
 
   private fun updateWidgets() {
@@ -293,14 +341,15 @@ const withAndroidWidget = (config) => {
     } catch (e: Exception) {
       e.printStackTrace()
     }
-  }`;
+  }
+`;
 
           // Inject methods just before the final enclosing brace of the class
           const lastBraceIdx = content.lastIndexOf('}');
           if (lastBraceIdx !== -1) {
-            content = content.substring(0, lastBraceIdx) + lifecycleMethods + "\n}" + content.substring(lastBraceIdx + 1);
+            content = content.substring(0, lastBraceIdx) + injectedCode + "\n}" + content.substring(lastBraceIdx + 1);
             fs.writeFileSync(mainActivityPath, content, 'utf8');
-            console.log('[withAndroidWidget] Patched MainActivity.kt to update widgets on app resume and pause.');
+            console.log('[withAndroidWidget] Patched MainActivity.kt with FileObserver and updateWidgets.');
           } else {
             console.warn('[withAndroidWidget] Could not find closing brace in MainActivity.kt.');
           }
@@ -308,7 +357,6 @@ const withAndroidWidget = (config) => {
       } else {
         console.warn('[withAndroidWidget] MainActivity.kt not found.');
       }
-
       return config;
     },
   ]);
