@@ -26,7 +26,7 @@ class GymTrackerWidget : AppWidgetProvider() {
         appWidgetId: Int
     ) {
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("gymtracker://")
+            data = Uri.parse("gymtracker:///start-workout")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
 
