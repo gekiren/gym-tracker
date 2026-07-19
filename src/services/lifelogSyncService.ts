@@ -87,6 +87,61 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
     }
 
     // 2. Time logs, templates, tags
+    // --- Widget punches integration (Directly save to SQLite first) ---
+    try {
+      const punchesRow = await db.getFirstAsync<{ value: string }>(
+        "SELECT value FROM settings WHERE key = 'widget_time_punches'"
+      );
+      if (punchesRow && punchesRow.value) {
+        const punches = JSON.parse(punchesRow.value) as Array<{
+          start: string;
+          end: string;
+          date: string;
+          status: 'open' | 'closed';
+        }>;
+
+        const closedPunches = punches.filter(p => p.status === 'closed');
+        const openPunches = punches.filter(p => p.status === 'open');
+
+        if (closedPunches.length > 0) {
+          for (const punch of closedPunches) {
+            const punchDate = punch.date.replace(/-/g, '/');
+            const exists = await db.getFirstAsync<{ id: number }>(
+              "SELECT id FROM time_logs WHERE date = ? AND start_time = ? AND end_time = ?",
+              [punchDate, punch.start, punch.end]
+            );
+
+            if (!exists) {
+              const startMins = timeToMins(punch.start);
+              let endMins = timeToMins(punch.end);
+              if (endMins < startMins) endMins += 1440;
+              const duration = endMins - startMins;
+
+              await db.runAsync(
+                'INSERT INTO time_logs (activity_name, start_time, end_time, date, duration_minutes) VALUES (?, ?, ?, ?, ?)',
+                ['', punch.start, punch.end, punchDate, duration]
+              );
+            }
+          }
+
+          // Save remaining open punches
+          await db.runAsync(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES ('widget_time_punches', ?)",
+            [JSON.stringify(openPunches)]
+          );
+
+          // Update Zustand store
+          const currentDate = useLifelogStore.getState().currentDate;
+          if (currentDate) {
+            await useLifelogStore.getState().loadTimeData(currentDate);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to integrate widget time punches directly:', e);
+    }
+
+    // 2. Time logs, templates, tags
     const timeLogsRows = await db.getAllAsync<{
       id: number;
       activity_name: string;
@@ -128,58 +183,6 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
         items,
       };
     });
-
-    // --- Widget punches integration ---
-    try {
-      const punchesRow = await db.getFirstAsync<{ value: string }>(
-        "SELECT value FROM settings WHERE key = 'widget_time_punches'"
-      );
-      if (punchesRow && punchesRow.value) {
-        const punches = JSON.parse(punchesRow.value) as Array<{
-          start: string;
-          end: string;
-          date: string;
-          status: 'open' | 'closed';
-        }>;
-
-        const closedPunches = punches.filter(p => p.status === 'closed');
-        const openPunches = punches.filter(p => p.status === 'open');
-
-        if (closedPunches.length > 0) {
-          const existingLogs = data['zikankanri_logs'] || [];
-
-          closedPunches.forEach((punch) => {
-            const punchDate = punch.date.replace(/-/g, '/');
-            const exists = existingLogs.some(
-              (log: any) =>
-                log.date.replace(/-/g, '/') === punchDate &&
-                log.start === punch.start &&
-                log.end === punch.end
-            );
-
-            if (!exists) {
-              existingLogs.push({
-                id: Date.now() + Math.floor(Math.random() * 1000),
-                date: punchDate,
-                start: punch.start,
-                end: punch.end,
-                items: [{ name: '', percent: 100 }],
-              });
-            }
-          });
-
-          data['zikankanri_logs'] = existingLogs;
-
-          // Save remaining open punches
-          await db.runAsync(
-            "INSERT OR REPLACE INTO settings (key, value) VALUES ('widget_time_punches', ?)",
-            [JSON.stringify(openPunches)]
-          );
-        }
-      }
-    } catch (e) {
-      console.error('Failed to integrate widget time punches:', e);
-    }
 
     const templatesRow = await db.getFirstAsync<{ value: string }>(
       "SELECT value FROM settings WHERE key = 'zikankanri_templates'"
