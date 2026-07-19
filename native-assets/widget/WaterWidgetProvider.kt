@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.database.sqlite.SQLiteDatabase
+import android.net.Uri
 import android.widget.RemoteViews
 import java.io.File
 import java.text.SimpleDateFormat
@@ -71,6 +72,19 @@ class WaterWidgetProvider : AppWidgetProvider() {
     private fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
         val views = RemoteViews(context.packageName, R.layout.water_widget)
 
+        // 背景/全体タップ時のPendingIntent設定 (アプリ起動)
+        val clickIntent = Intent(Intent.ACTION_VIEW).apply {
+            data = Uri.parse("gymtracker://")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        val clickFlag = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            PendingIntent.FLAG_ACTIVITY_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        } else {
+            PendingIntent.FLAG_ACTIVITY_UPDATE_CURRENT
+        }
+        val clickPendingIntent = PendingIntent.getActivity(context, 1, clickIntent, clickFlag)
+        views.setOnClickPendingIntent(R.id.widget_root, clickPendingIntent)
+
         thread {
             val db = getDatabase(context, writable = false)
             var todayTotal = 0
@@ -127,7 +141,8 @@ class WaterWidgetProvider : AppWidgetProvider() {
     }
 
     private fun getDatabase(context: Context, writable: Boolean): SQLiteDatabase? {
-        val dbFile = context.getDatabasePath(DB_NAME)
+        // files/SQLite/gymtracker.db にアクセス
+        val dbFile = File(context.filesDir, "SQLite/$DB_NAME")
         if (!dbFile.exists()) return null
         val flags = if (writable) SQLiteDatabase.OPEN_READWRITE else SQLiteDatabase.OPEN_READONLY
         return try {

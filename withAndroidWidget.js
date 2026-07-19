@@ -5,7 +5,7 @@ const path = require('path');
 const RECEIVER_TAG = '<receiver android:name=".GymTrackerWidget"';
 
 const RECEIVER_XML = `
-        <receiver android:name=".GymTrackerWidget" android:exported="true">
+        <receiver android:name=".GymTrackerWidget" android:exported="true" android:label="@string/gym_widget_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
             </intent-filter>
@@ -15,7 +15,7 @@ const RECEIVER_XML = `
 const WATER_RECEIVER_TAG = '<receiver android:name=".WaterWidgetProvider"';
 
 const WATER_RECEIVER_XML = `
-        <receiver android:name=".WaterWidgetProvider" android:exported="true">
+        <receiver android:name=".WaterWidgetProvider" android:exported="true" android:label="@string/water_widget_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
                 <action android:name="com.gekirennomad.trenote.ACTION_QUICK_ADD"/>
@@ -23,8 +23,15 @@ const WATER_RECEIVER_XML = `
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/water_widget_info"/>
         </receiver>`;
 
-const WIDGET_DESCRIPTION_TAG = 'name="widget_description"';
-const WIDGET_DESCRIPTION_STRING = '  <string name="widget_description">TreNote - \u7b4b\u30c8\u30ec\u3092\u59cb\u3081\u308b</string>';
+// Strings XML tags and strings
+const STRINGS_RESOURCE_MARKER = '</resources>';
+
+const STRINGS_PATCHES = [
+  { tag: 'name="widget_description"', value: '  <string name="widget_description">TreNote - \u7b4b\u30c8\u30ec\u3092\u59cb\u3081\u308b</string>' },
+  { tag: 'name="water_widget_description"', value: '  <string name="water_widget_description">TreNote - \u6c34\u5206\u88dc\u7d66\u3092\u8a18\u9332\u3059\u308b</string>' },
+  { tag: 'name="gym_widget_label"', value: '  <string name="gym_widget_label">TreNote - \u7b4b\u30c8\u30ec\u958b\u59cb</string>' },
+  { tag: 'name="water_widget_label"', value: '  <string name="water_widget_label">TreNote - \u6c34\u5206\u88dc\u7d66</string>' }
+];
 
 /**
  * Expo Config Plugin: withAndroidWidget
@@ -41,7 +48,8 @@ const WIDGET_DESCRIPTION_STRING = '  <string name="widget_description">TreNote -
  *
  * Also patches:
  *   - AndroidManifest.xml: adds <receiver> elements for the widgets (idempotent)
- *   - strings.xml: adds widget_description string resource (idempotent)
+ *   - strings.xml: adds widget strings (idempotent)
+ *   - MainActivity.kt: adds lifecycle listeners to force widget updates on app resume/pause (idempotent)
  */
 const withAndroidWidget = (config) => {
   return withDangerousMod(config, [
@@ -101,6 +109,12 @@ const withAndroidWidget = (config) => {
       const stringsPath = path.join(
         androidRoot,
         'app', 'src', 'main', 'res', 'values', 'strings.xml'
+      );
+      const mainActivityPath = path.join(
+        androidRoot,
+        'app', 'src', 'main', 'java',
+        'com', 'gekirennomad', 'trenote',
+        'MainActivity.kt'
       );
 
       // --- Source paths ---
@@ -184,8 +198,17 @@ const withAndroidWidget = (config) => {
         let manifest = fs.readFileSync(manifestPath, 'utf8');
         let modified = false;
 
+        // Apply GymTrackerWidget patch first (clean existing first if present without label to allow update)
         if (manifest.includes(RECEIVER_TAG)) {
-          console.log('[withAndroidWidget] GymTrackerWidget <receiver> already present in AndroidManifest.xml. Skipping.');
+          if (!manifest.includes('android:label="@string/gym_widget_label"')) {
+            // Remove old receiver and apply new one with label
+            console.log('[withAndroidWidget] Replacing old GymTrackerWidget receiver to add label.');
+            const oldReceiverPattern = /<receiver\s+android:name="\.GymTrackerWidget"[\s\S]*?<\/receiver>/;
+            manifest = manifest.replace(oldReceiverPattern, RECEIVER_XML.trim());
+            modified = true;
+          } else {
+            console.log('[withAndroidWidget] GymTrackerWidget <receiver> already present in AndroidManifest.xml. Skipping.');
+          }
         } else if (!manifest.includes('</application>')) {
           console.warn('[withAndroidWidget] </application> not found. Cannot patch AndroidManifest.xml.');
         } else {
@@ -194,12 +217,10 @@ const withAndroidWidget = (config) => {
           console.log('[withAndroidWidget] Patched AndroidManifest.xml with GymTrackerWidget <receiver>.');
         }
 
-        // Apply GymTrackerWidget patch first to update the search cache for the next tag
+        // Apply WaterWidgetProvider patch
         if (manifest.includes(WATER_RECEIVER_TAG)) {
           console.log('[withAndroidWidget] WaterWidgetProvider <receiver> already present in AndroidManifest.xml. Skipping.');
-        } else if (!manifest.includes('</application>')) {
-          console.warn('[withAndroidWidget] </application> not found. Cannot patch AndroidManifest.xml.');
-        } else {
+        } else if (manifest.includes('</application>')) {
           manifest = manifest.replace('</application>', `${WATER_RECEIVER_XML}\n    </application>`);
           modified = true;
           console.log('[withAndroidWidget] Patched AndroidManifest.xml with WaterWidgetProvider <receiver>.');
@@ -212,21 +233,80 @@ const withAndroidWidget = (config) => {
         console.warn('[withAndroidWidget] AndroidManifest.xml not found.');
       }
 
-      // --- Patch strings.xml: add widget_description (idempotent) ---
+      // --- Patch strings.xml: add widget description and labels (idempotent) ---
       if (fs.existsSync(stringsPath)) {
         let strings = fs.readFileSync(stringsPath, 'utf8');
+        let modified = false;
 
-        if (strings.includes(WIDGET_DESCRIPTION_TAG)) {
-          console.log('[withAndroidWidget] widget_description already in strings.xml. Skipping.');
-        } else if (!strings.includes('</resources>')) {
-          console.warn('[withAndroidWidget] </resources> not found in strings.xml. Cannot patch.');
-        } else {
-          strings = strings.replace('</resources>', `${WIDGET_DESCRIPTION_STRING}\n</resources>`);
+        for (const patch of STRINGS_PATCHES) {
+          if (strings.includes(patch.tag)) {
+            console.log(`[withAndroidWidget] string ${patch.tag} already in strings.xml. Skipping.`);
+          } else if (!strings.includes(STRINGS_RESOURCE_MARKER)) {
+            console.warn(`[withAndroidWidget] ${STRINGS_RESOURCE_MARKER} not found in strings.xml. Cannot patch.`);
+            break;
+          } else {
+            strings = strings.replace(STRINGS_RESOURCE_MARKER, `${patch.value}\n${STRINGS_RESOURCE_MARKER}`);
+            modified = true;
+            console.log(`[withAndroidWidget] Patched strings.xml with ${patch.tag}.`);
+          }
+        }
+
+        if (modified) {
           fs.writeFileSync(stringsPath, strings, 'utf8');
-          console.log('[withAndroidWidget] Patched strings.xml with widget_description.');
         }
       } else {
         console.warn('[withAndroidWidget] strings.xml not found.');
+      }
+
+      // --- Patch MainActivity.kt: trigger widget updates on app resume/pause (idempotent) ---
+      if (fs.existsSync(mainActivityPath)) {
+        let content = fs.readFileSync(mainActivityPath, 'utf8');
+
+        if (content.includes('updateWidgets()')) {
+          console.log('[withAndroidWidget] MainActivity.kt already patched with updateWidgets(). Skipping.');
+        } else {
+          // Add necessary imports right after package statement
+          const imports = `\nimport android.appwidget.AppWidgetManager\nimport android.content.ComponentName\nimport android.content.Intent`;
+          content = content.replace('package com.gekirennomad.trenote', `package com.gekirennomad.trenote${imports}`);
+
+          // Define lifecycle override methods
+          const lifecycleMethods = `
+  override fun onResume() {
+    super.onResume()
+    updateWidgets()
+  }
+
+  override fun onPause() {
+    super.onPause()
+    updateWidgets()
+  }
+
+  private fun updateWidgets() {
+    try {
+      val intent = Intent(this, WaterWidgetProvider::class.java).apply {
+        action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+      }
+      val ids = AppWidgetManager.getInstance(application)
+        .getAppWidgetIds(ComponentName(application, WaterWidgetProvider::class.java))
+      intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+      sendBroadcast(intent)
+    } catch (e: Exception) {
+      e.printStackTrace()
+    }
+  }`;
+
+          // Inject methods just before the final enclosing brace of the class
+          const lastBraceIdx = content.lastIndexOf('}');
+          if (lastBraceIdx !== -1) {
+            content = content.substring(0, lastBraceIdx) + lifecycleMethods + "\n}" + content.substring(lastBraceIdx + 1);
+            fs.writeFileSync(mainActivityPath, content, 'utf8');
+            console.log('[withAndroidWidget] Patched MainActivity.kt to update widgets on app resume and pause.');
+          } else {
+            console.warn('[withAndroidWidget] Could not find closing brace in MainActivity.kt.');
+          }
+        }
+      } else {
+        console.warn('[withAndroidWidget] MainActivity.kt not found.');
       }
 
       return config;
