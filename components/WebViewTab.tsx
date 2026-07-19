@@ -14,6 +14,7 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
   const webViewRef = useRef<WebView>(null);
   const [initialData, setInitialData] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
+  const waterLogs = useLifelogStore((state) => state.waterLogs);
 
   // Load all initial data from SQLite
   useEffect(() => {
@@ -173,6 +174,33 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
       webViewRef.current.injectJavaScript(injectScript);
     }
   }, [currentDate, loading, initialData]);
+
+  // Sync database updates from React Native to WebView when waterLogs change
+  useEffect(() => {
+    if (webViewRef.current && !loading) {
+      const formattedLogs = waterLogs.map((log) => ({
+        id: log.timestamp,
+        timestamp: log.timestamp,
+        amount: log.amount,
+        caffeine: log.caffeine || 0,
+        date: log.date,
+      }));
+      const injectScript = `
+        (function() {
+          if (typeof localStorage !== 'undefined') {
+            window.isInitialSync = true;
+            localStorage.setItem('hydration_data_v1', ${JSON.stringify(JSON.stringify(formattedLogs))});
+            if (typeof loadData === 'function' && typeof updateUI === 'function') {
+              loadData();
+              updateUI();
+            }
+            window.isInitialSync = false;
+          }
+        })();
+      `;
+      webViewRef.current.injectJavaScript(injectScript);
+    }
+  }, [waterLogs, loading]);
 
   if (loading || !initialData) {
     return (

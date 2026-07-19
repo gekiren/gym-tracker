@@ -822,6 +822,10 @@ input {
                 <input type="number" id="goalInput" value="2000" inputmode="numeric">
             </div>
             <div class="setting-item">
+                <label for="widgetQuickAddInput">ウィジェットのクイック追加量 (ml)</label>
+                <input type="number" id="widgetQuickAddInput" value="200" inputmode="numeric">
+            </div>
+            <div class="setting-item">
                 <label>クイック追加設定 (水分 ml / カフェイン mg)</label>
                 <div class="preset-inputs-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-height: 180px; overflow-y: auto; padding-right: 4px;">
                     <div style="display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border-color); padding: 8px; border-radius: var(--radius-sm);">
@@ -934,7 +938,8 @@ let state = {
 let settings = {
     goal: DEFAULT_GOAL,
     presets: [...DEFAULT_PRESETS],
-    caffeineLimit: DEFAULT_CAFFEINE_LIMIT
+    caffeineLimit: DEFAULT_CAFFEINE_LIMIT,
+    widgetQuickAddAmount: 200
 };
 
 // --- DOM Elements ---
@@ -969,6 +974,7 @@ const els = {
     // Modals
     customModal: document.getElementById('customModal'),
     settingsModal: document.getElementById('settingsModal'),
+    widgetQuickAddInput: document.getElementById('widgetQuickAddInput'),
 
     // Inputs
     customInput: document.getElementById('customAmountInput'),
@@ -1045,32 +1051,10 @@ function loadData() {
 
 function saveData() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state.intakeHistory));
-    try {
-        if (window.ReactNativeWebView) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'LOCAL_STORAGE_SET',
-                key: STORAGE_KEY,
-                value: JSON.stringify(state.intakeHistory)
-            }));
-        }
-    } catch (e) {
-        console.error("Failed to post message directly", e);
-    }
 }
 
 function saveSettings() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    try {
-        if (window.ReactNativeWebView) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'LOCAL_STORAGE_SET',
-                key: SETTINGS_KEY,
-                value: JSON.stringify(settings)
-            }));
-        }
-    } catch (e) {
-        console.error("Failed to post settings message directly", e);
-    }
 }
 
 // --- Logic ---
@@ -1480,6 +1464,7 @@ function setupEventListeners() {
     els.settingsBtn.addEventListener('click', () => {
         els.goalInput.value = settings.goal;
         els.caffeineLimitInput.value = settings.caffeineLimit || DEFAULT_CAFFEINE_LIMIT;
+        els.widgetQuickAddInput.value = settings.widgetQuickAddAmount || 200;
         // Populate preset inputs
         settings.presets.forEach((val, idx) => {
             if (els.presetInputs[idx]) {
@@ -1495,6 +1480,7 @@ function setupEventListeners() {
     els.saveSettings.addEventListener('click', () => {
         const newGoal = parseInt(els.goalInput.value);
         const newCaffeineLimit = parseInt(els.caffeineLimitInput.value);
+        const widgetQuickAdd = parseInt(els.widgetQuickAddInput.value) || 200;
 
         // Get new presets
         const newPresets = [];
@@ -1506,10 +1492,11 @@ function setupEventListeners() {
             }
         }
 
-        if (newGoal > 0 && newCaffeineLimit > 0 && newPresets.length === 6) {
+        if (newGoal > 0 && newCaffeineLimit > 0 && newPresets.length === 6 && widgetQuickAdd > 0) {
             settings.goal = newGoal;
             settings.caffeineLimit = newCaffeineLimit;
             settings.presets = newPresets;
+            settings.widgetQuickAddAmount = widgetQuickAdd;
             saveSettings();
             renderControlButtons(); // Re-render buttons with new values
             updateUI();

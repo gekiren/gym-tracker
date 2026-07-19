@@ -62,6 +62,13 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
           const caffeineLimit = await getCaffeineLimit();
           parsed.caffeineLimit = caffeineLimit;
         }
+        if (parsed && typeof parsed.widgetQuickAddAmount !== 'number') {
+          // Check if we have individual key, else default 200
+          const widgetAmountRow = await db.getFirstAsync<{ value: string }>(
+            "SELECT value FROM settings WHERE key = 'widget_quick_add_amount'"
+          );
+          parsed.widgetQuickAddAmount = widgetAmountRow ? parseInt(widgetAmountRow.value, 10) : 200;
+        }
         data['hydration_settings_v1'] = parsed;
       } catch {
         data['hydration_settings_v1'] = null;
@@ -72,7 +79,11 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
       );
       const goal = waterGoalRow ? parseInt(waterGoalRow.value, 10) : 2000;
       const caffeineLimit = await getCaffeineLimit();
-      data['hydration_settings_v1'] = { goal, presets: [200, 300, 500], caffeineLimit };
+      const widgetAmountRow = await db.getFirstAsync<{ value: string }>(
+        "SELECT value FROM settings WHERE key = 'widget_quick_add_amount'"
+      );
+      const widgetQuickAddAmount = widgetAmountRow ? parseInt(widgetAmountRow.value, 10) : 200;
+      data['hydration_settings_v1'] = { goal, presets: [200, 300, 500], caffeineLimit, widgetQuickAddAmount };
     }
 
     // 2. Time logs, templates, tags
@@ -208,6 +219,12 @@ export const handleWebViewMessage = async (
       );
 
       const settings = JSON.parse(value);
+      if (settings && typeof settings.widgetQuickAddAmount === 'number') {
+        await db.runAsync(
+          "INSERT OR REPLACE INTO settings (key, value) VALUES ('widget_quick_add_amount', ?)",
+          [String(settings.widgetQuickAddAmount)]
+        );
+      }
       if (settings && typeof settings.goal === 'number') {
         await db.runAsync(
           "INSERT OR REPLACE INTO settings (key, value) VALUES ('water_goal', ?)",
