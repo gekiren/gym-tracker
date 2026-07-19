@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { View, TouchableOpacity } from 'react-native';
-import { Stack } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { View, TouchableOpacity, AppState, AppStateStatus } from 'react-native';
+import { Stack, useNavigation } from 'expo-router';
 import { Theme } from '../../src/theme';
 import { WebViewTab } from '../../components/WebViewTab';
 import WaterHTML from '../../src/web-apps/Water';
@@ -12,8 +12,10 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function WaterScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
+  const loadWaterData = useLifelogStore((state) => state.loadWaterData);
   const [showHistory, setShowHistory] = useState(false);
   const { t } = useTranslation();
+  const navigation = useNavigation();
 
   const getTodayStr = () => {
     const date = new Date();
@@ -24,6 +26,28 @@ export default function WaterScreen() {
   };
 
   const targetDate = currentDate || getTodayStr();
+
+  // 1. 画面フォーカス時にDBから最新データを読み直す
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (targetDate) {
+        loadWaterData(targetDate);
+      }
+    });
+    return unsubscribe;
+  }, [navigation, targetDate]);
+
+  // 2. アプリがバックグラウンドから復帰した（Activeになった）時に同期
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active' && targetDate) {
+        loadWaterData(targetDate);
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription.remove();
+  }, [targetDate]);
 
   return (
     <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>

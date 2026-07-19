@@ -12,19 +12,35 @@ const RECEIVER_XML = `
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/gym_tracker_widget_info"/>
         </receiver>`;
 
+const WATER_RECEIVER_TAG = '<receiver android:name=".WaterWidgetProvider"';
+
+const WATER_RECEIVER_XML = `
+        <receiver android:name=".WaterWidgetProvider" android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="com.gekirennomad.trenote.ACTION_QUICK_ADD"/>
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/water_widget_info"/>
+        </receiver>`;
+
 const WIDGET_DESCRIPTION_TAG = 'name="widget_description"';
 const WIDGET_DESCRIPTION_STRING = '  <string name="widget_description">TreNote - \u7b4b\u30c8\u30ec\u3092\u59cb\u3081\u308b</string>';
 
 /**
  * Expo Config Plugin: withAndroidWidget
  *
- * Copies the following native widget files into the Android project during prebuild:
+ * Copies the native widget files into the Android project during prebuild:
  *   - GymTrackerWidget.kt   -> android/app/src/main/java/com/gekirennomad/trenote/
+ *   - WaterWidgetProvider.kt -> android/app/src/main/java/com/gekirennomad/trenote/
  *   - widget_gym_tracker.xml -> android/app/src/main/res/layout/
+ *   - water_widget.xml       -> android/app/src/main/res/layout/
  *   - gym_tracker_widget_info.xml -> android/app/src/main/res/xml/
+ *   - water_widget_info.xml       -> android/app/src/main/res/xml/
+ *   - widget_background.xml       -> android/app/src/main/res/drawable/
+ *   - widget_button_round.xml     -> android/app/src/main/res/drawable/
  *
  * Also patches:
- *   - AndroidManifest.xml: adds <receiver> for the widget (idempotent)
+ *   - AndroidManifest.xml: adds <receiver> elements for the widgets (idempotent)
  *   - strings.xml: adds widget_description string resource (idempotent)
  */
 const withAndroidWidget = (config) => {
@@ -50,16 +66,34 @@ const withAndroidWidget = (config) => {
         'com', 'gekirennomad', 'trenote',
         'GymTrackerWidget.kt'
       );
+      const waterKtDest = path.join(
+        androidRoot,
+        'app', 'src', 'main', 'java',
+        'com', 'gekirennomad', 'trenote',
+        'WaterWidgetProvider.kt'
+      );
       const layoutDest = path.join(
         androidRoot,
         'app', 'src', 'main', 'res', 'layout',
         'widget_gym_tracker.xml'
+      );
+      const waterLayoutDest = path.join(
+        androidRoot,
+        'app', 'src', 'main', 'res', 'layout',
+        'water_widget.xml'
       );
       const xmlDir = path.join(
         androidRoot,
         'app', 'src', 'main', 'res', 'xml'
       );
       const xmlDest = path.join(xmlDir, 'gym_tracker_widget_info.xml');
+      const waterXmlDest = path.join(xmlDir, 'water_widget_info.xml');
+      const drawableDir = path.join(
+        androidRoot,
+        'app', 'src', 'main', 'res', 'drawable'
+      );
+      const bgDrawableDest = path.join(drawableDir, 'widget_background.xml');
+      const btnDrawableDest = path.join(drawableDir, 'widget_button_round.xml');
       const manifestPath = path.join(
         androidRoot,
         'app', 'src', 'main', 'AndroidManifest.xml'
@@ -71,8 +105,13 @@ const withAndroidWidget = (config) => {
 
       // --- Source paths ---
       const ktSrc = path.join(sourceDir, 'GymTrackerWidget.kt');
+      const waterKtSrc = path.join(sourceDir, 'WaterWidgetProvider.kt');
       const layoutSrc = path.join(sourceDir, 'widget_gym_tracker.xml');
+      const waterLayoutSrc = path.join(sourceDir, 'water_widget.xml');
       const xmlSrc = path.join(sourceDir, 'gym_tracker_widget_info.xml');
+      const waterXmlSrc = path.join(sourceDir, 'water_widget_info.xml');
+      const bgDrawableSrc = path.join(sourceDir, 'widget_background.xml');
+      const btnDrawableSrc = path.join(sourceDir, 'widget_button_round.xml');
 
       // --- Copy GymTrackerWidget.kt ---
       if (fs.existsSync(ktSrc)) {
@@ -81,6 +120,15 @@ const withAndroidWidget = (config) => {
         console.log('[withAndroidWidget] Copied GymTrackerWidget.kt');
       } else {
         console.warn(`[withAndroidWidget] Source not found: ${ktSrc}`);
+      }
+
+      // --- Copy WaterWidgetProvider.kt ---
+      if (fs.existsSync(waterKtSrc)) {
+        fs.mkdirSync(path.dirname(waterKtDest), { recursive: true });
+        fs.copyFileSync(waterKtSrc, waterKtDest);
+        console.log('[withAndroidWidget] Copied WaterWidgetProvider.kt');
+      } else {
+        console.warn(`[withAndroidWidget] Source not found: ${waterKtSrc}`);
       }
 
       // --- Copy widget_gym_tracker.xml ---
@@ -92,6 +140,15 @@ const withAndroidWidget = (config) => {
         console.warn(`[withAndroidWidget] Source not found: ${layoutSrc}`);
       }
 
+      // --- Copy water_widget.xml ---
+      if (fs.existsSync(waterLayoutSrc)) {
+        fs.mkdirSync(path.dirname(waterLayoutDest), { recursive: true });
+        fs.copyFileSync(waterLayoutSrc, waterLayoutDest);
+        console.log('[withAndroidWidget] Copied water_widget.xml');
+      } else {
+        console.warn(`[withAndroidWidget] Source not found: ${waterLayoutSrc}`);
+      }
+
       // --- Copy gym_tracker_widget_info.xml ---
       if (fs.existsSync(xmlSrc)) {
         fs.mkdirSync(xmlDir, { recursive: true });
@@ -101,18 +158,55 @@ const withAndroidWidget = (config) => {
         console.warn(`[withAndroidWidget] Source not found: ${xmlSrc}`);
       }
 
-      // --- Patch AndroidManifest.xml: add <receiver> (idempotent) ---
+      // --- Copy water_widget_info.xml ---
+      if (fs.existsSync(waterXmlSrc)) {
+        fs.mkdirSync(xmlDir, { recursive: true });
+        fs.copyFileSync(waterXmlSrc, waterXmlDest);
+        console.log('[withAndroidWidget] Copied water_widget_info.xml');
+      } else {
+        console.warn(`[withAndroidWidget] Source not found: ${waterXmlSrc}`);
+      }
+
+      // --- Copy widget drawables ---
+      if (fs.existsSync(bgDrawableSrc)) {
+        fs.mkdirSync(drawableDir, { recursive: true });
+        fs.copyFileSync(bgDrawableSrc, bgDrawableDest);
+        console.log('[withAndroidWidget] Copied widget_background.xml');
+      }
+      if (fs.existsSync(btnDrawableSrc)) {
+        fs.mkdirSync(drawableDir, { recursive: true });
+        fs.copyFileSync(btnDrawableSrc, btnDrawableDest);
+        console.log('[withAndroidWidget] Copied widget_button_round.xml');
+      }
+
+      // --- Patch AndroidManifest.xml: add <receiver>s (idempotent) ---
       if (fs.existsSync(manifestPath)) {
         let manifest = fs.readFileSync(manifestPath, 'utf8');
+        let modified = false;
 
         if (manifest.includes(RECEIVER_TAG)) {
-          console.log('[withAndroidWidget] <receiver> already present in AndroidManifest.xml. Skipping.');
+          console.log('[withAndroidWidget] GymTrackerWidget <receiver> already present in AndroidManifest.xml. Skipping.');
         } else if (!manifest.includes('</application>')) {
           console.warn('[withAndroidWidget] </application> not found. Cannot patch AndroidManifest.xml.');
         } else {
           manifest = manifest.replace('</application>', `${RECEIVER_XML}\n    </application>`);
+          modified = true;
+          console.log('[withAndroidWidget] Patched AndroidManifest.xml with GymTrackerWidget <receiver>.');
+        }
+
+        // Apply GymTrackerWidget patch first to update the search cache for the next tag
+        if (manifest.includes(WATER_RECEIVER_TAG)) {
+          console.log('[withAndroidWidget] WaterWidgetProvider <receiver> already present in AndroidManifest.xml. Skipping.');
+        } else if (!manifest.includes('</application>')) {
+          console.warn('[withAndroidWidget] </application> not found. Cannot patch AndroidManifest.xml.');
+        } else {
+          manifest = manifest.replace('</application>', `${WATER_RECEIVER_XML}\n    </application>`);
+          modified = true;
+          console.log('[withAndroidWidget] Patched AndroidManifest.xml with WaterWidgetProvider <receiver>.');
+        }
+
+        if (modified) {
           fs.writeFileSync(manifestPath, manifest, 'utf8');
-          console.log('[withAndroidWidget] Patched AndroidManifest.xml with widget <receiver>.');
         }
       } else {
         console.warn('[withAndroidWidget] AndroidManifest.xml not found.');
