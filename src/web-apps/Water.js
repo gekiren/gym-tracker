@@ -1051,32 +1051,10 @@ function loadData() {
 
 function saveData() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state.intakeHistory));
-    try {
-        if (window.ReactNativeWebView) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'LOCAL_STORAGE_SET',
-                key: STORAGE_KEY,
-                value: JSON.stringify(state.intakeHistory)
-            }));
-        }
-    } catch (e) {
-        console.error("Failed to post message directly", e);
-    }
 }
 
 function saveSettings() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    try {
-        if (window.ReactNativeWebView) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'LOCAL_STORAGE_SET',
-                key: SETTINGS_KEY,
-                value: JSON.stringify(settings)
-            }));
-        }
-    } catch (e) {
-        console.error("Failed to post settings message directly", e);
-    }
 }
 
 // --- Logic ---
