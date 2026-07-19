@@ -141,9 +141,7 @@ class WaterWidgetProvider : AppWidgetProvider() {
     }
 
     private fun getDatabase(context: Context, writable: Boolean): SQLiteDatabase? {
-        // files/SQLite/gymtracker.db にアクセス
-        val dbFile = File(context.filesDir, "SQLite/$DB_NAME")
-        if (!dbFile.exists()) return null
+        val dbFile = findDatabaseFile(context) ?: return null
         val flags = if (writable) SQLiteDatabase.OPEN_READWRITE else SQLiteDatabase.OPEN_READONLY
         return try {
             SQLiteDatabase.openDatabase(dbFile.absolutePath, null, flags)
@@ -151,6 +149,29 @@ class WaterWidgetProvider : AppWidgetProvider() {
             e.printStackTrace()
             null
         }
+    }
+
+    private fun findDatabaseFile(context: Context): File? {
+        // 候補1: noBackupFilesDir/SQLite/gymtracker.db (Expo SDK 50+ 新しいSQLiteの保存先)
+        val noBackupFile = File(context.noBackupFilesDir, "SQLite/$DB_NAME")
+        if (noBackupFile.exists()) {
+            return noBackupFile
+        }
+
+        // 候補2: filesDir/SQLite/gymtracker.db (古い形式または一部のプラットフォーム)
+        val filesFile = File(context.filesDir, "SQLite/$DB_NAME")
+        if (filesFile.exists()) {
+            return filesFile
+        }
+
+        // 候補3: databases/gymtracker.db (Android標準のデータベースディレクトリ)
+        val dbDirFile = context.getDatabasePath(DB_NAME)
+        if (dbDirFile.exists()) {
+            return dbDirFile
+        }
+
+        // アプリ初回起動前などでDBファイルがまだ存在しない場合
+        return null
     }
 
     private fun getQuickAddAmount(db: SQLiteDatabase): Int {
