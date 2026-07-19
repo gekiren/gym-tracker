@@ -188,11 +188,13 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
       const injectScript = `
         (function() {
           if (typeof localStorage !== 'undefined') {
+            window.isInitialSync = true;
             localStorage.setItem('hydration_data_v1', ${JSON.stringify(JSON.stringify(formattedLogs))});
             if (typeof loadData === 'function' && typeof updateUI === 'function') {
               loadData();
               updateUI();
             }
+            window.isInitialSync = false;
           }
         })();
       `;
