@@ -24,7 +24,7 @@
     },
     "android": {
       "package": "com.gekirennomad.trenote",
-      "versionCode": 32,
+      "versionCode": 33,
       "permissions": [
         "com.android.vending.BILLING",
         "android.permission.SCHEDULE_EXACT_ALARM"
@@ -44,6 +44,7 @@
     },
     "plugins": [
       "./withAndroidAssets",
+      "./withAndroidWidget",
       "expo-router",
       [
         "expo-splash-screen",
