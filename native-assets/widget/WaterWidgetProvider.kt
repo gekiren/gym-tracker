@@ -78,9 +78,9 @@ class WaterWidgetProvider : AppWidgetProvider() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
         val clickFlag = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            PendingIntent.FLAG_ACTIVITY_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         } else {
-            PendingIntent.FLAG_ACTIVITY_UPDATE_CURRENT
+            PendingIntent.FLAG_UPDATE_CURRENT
         }
         val clickPendingIntent = PendingIntent.getActivity(context, 1, clickIntent, clickFlag)
         views.setOnClickPendingIntent(R.id.widget_root, clickPendingIntent)
