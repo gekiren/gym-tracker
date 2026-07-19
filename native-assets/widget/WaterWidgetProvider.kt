@@ -72,9 +72,9 @@ class WaterWidgetProvider : AppWidgetProvider() {
     private fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
         val views = RemoteViews(context.packageName, R.layout.water_widget)
 
-        // 背景/全体タップ時のPendingIntent設定 (アプリ起動)
+        // 背景/全体タップ時のPendingIntent設定 (アプリ起動 -> 水分補給画面へ)
         val clickIntent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("gymtracker://")
+            data = Uri.parse("gymtracker://lifelog/water")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
         val clickFlag = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
