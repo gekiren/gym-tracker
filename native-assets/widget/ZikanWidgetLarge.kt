@@ -56,14 +56,12 @@ class ZikanWidgetLarge : AppWidgetProvider() {
                         cursor.close()
 
                         if (intent.action == ACTION_START_LARGE) {
-                            // 既に進行中のものがあれば重複しないようにチェックするのもよいが、上書きか追加する
-                            // 基本は新しい記録をopenで追加
-                            // 既存の進行中のものがあればそれを一旦閉じるか、そのままにする
-                            // ここではシンプルに、既存の進行中があれば閉じてから新しく開始する
+                            // 終了が打刻されずに開始ボタンが再び打刻された場合は
+                            // 最初の開始ボタン打刻は開始時間のみ記録し、終了時間を打刻しない
                             for (i in 0 until punchesArray.length()) {
                                 val obj = punchesArray.getJSONObject(i)
                                 if (obj.optString("status") == "open") {
-                                    obj.put("end", timeStr)
+                                    // endは変更せず空のままstatusをclosedにする
                                     obj.put("status", "closed")
                                 }
                             }
@@ -87,7 +85,16 @@ class ZikanWidgetLarge : AppWidgetProvider() {
                                     break
                                 }
                             }
-                            // 進行中がない場合は、何も記録しない（または直近に何もないためスルー）
+                            // 開始ボタンが押されていない状態で終了ボタンが押された場合も終了時間のみ打刻する
+                            if (!foundOpen) {
+                                val newObj = JSONObject().apply {
+                                    put("start", "")
+                                    put("end", timeStr)
+                                    put("date", todayStr)
+                                    put("status", "closed")
+                                }
+                                punchesArray.put(newObj)
+                            }
                         }
 
                         // データを保存

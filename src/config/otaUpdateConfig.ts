@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.63', // OTA識別用のバージョン文字列
+  version: '1.1.64', // OTA識別用のバージョン文字列
   title: {
-    ja: '24時間管理の機能改善（同時進行の割合スライダー調整）',
-    en: '24-hour Lifelog Enhanced (Simultaneous ratio slider)',
+    ja: 'ウィジェット記録の即時反映・打刻仕様の改善',
+    en: 'Widget Instant Data Sync & Lifelog Improvements',
   },
   notes: {
     ja: [
-      '同時進行モードにおける時間割合の入力を、スワイプで動かせるスライダー形式に変更しました。',
-      '10%単位でスムーズに調整でき、操作中の行をタップ・ドラッグした際にも自動的にアクティブ行に切り替わります。',
+      'アプリが起動中（バックグラウンド含む）であっても、ウィジェットから記録したデータが即座にアプリ画面へ反映されるように改善しました。',
+      '時間管理ウィジェットで開始ボタンの連続タップや終了ボタンの単独タップ時にも正常に打刻が記録されるように改善しました。',
     ],
     en: [
-      'Changed the time ratio input in simultaneous mode to a swipeable slider format.',
-      'Adjust smoothly in 10% steps, and the row automatically becomes active when you tap or drag the slider.',
+      'Improved data recorded from home screen widgets to instantly sync and reflect when app comes to foreground.',
+      'Enhanced time management widget to correctly record timestamps when start/end buttons are tapped independently.',
     ]
   }
 };

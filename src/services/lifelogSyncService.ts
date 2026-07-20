@@ -33,6 +33,78 @@ const timeToMins = (timeStr: string): number => {
 };
 
 /**
+ * Synchronizes widget time punches (from 'widget_time_punches' setting) to SQLite 'time_logs' table,
+ * and reloads water/time data in useLifelogStore.
+ * Returns true if new widget punches or water logs were updated.
+ */
+export const syncWidgetPunches = async (currentDate?: string): Promise<boolean> => {
+  const db = getDB();
+  let updated = false;
+
+  try {
+    const punchesRow = await db.getFirstAsync<{ value: string }>(
+      "SELECT value FROM settings WHERE key = 'widget_time_punches'"
+    );
+    if (punchesRow && punchesRow.value) {
+      const punches = JSON.parse(punchesRow.value) as Array<{
+        start: string;
+        end: string;
+        date: string;
+        status: 'open' | 'closed';
+      }>;
+
+      const closedPunches = punches.filter(p => p.status === 'closed');
+      const openPunches = punches.filter(p => p.status === 'open');
+
+      if (closedPunches.length > 0) {
+        for (const punch of closedPunches) {
+          const punchDate = punch.date.replace(/-/g, '/');
+          const startTime = punch.start || '';
+          const endTime = punch.end || '';
+          const exists = await db.getFirstAsync<{ id: number }>(
+            "SELECT id FROM time_logs WHERE date = ? AND start_time = ? AND end_time = ?",
+            [punchDate, startTime, endTime]
+          );
+
+          if (!exists) {
+            let duration = 0;
+            if (startTime && endTime) {
+              const startMins = timeToMins(startTime);
+              let endMins = timeToMins(endTime);
+              if (endMins < startMins) endMins += 1440;
+              duration = endMins - startMins;
+            }
+
+            await db.runAsync(
+              'INSERT INTO time_logs (activity_name, start_time, end_time, date, duration_minutes) VALUES (?, ?, ?, ?, ?)',
+              ['', startTime, endTime, punchDate, duration]
+            );
+          }
+        }
+
+        // Save remaining open punches
+        await db.runAsync(
+          "INSERT OR REPLACE INTO settings (key, value) VALUES ('widget_time_punches', ?)",
+          [JSON.stringify(openPunches)]
+        );
+
+        updated = true;
+      }
+    }
+
+    const targetDate = currentDate || useLifelogStore.getState().currentDate;
+    if (targetDate) {
+      await useLifelogStore.getState().loadTimeData(targetDate);
+      await useLifelogStore.getState().loadWaterData(targetDate);
+    }
+  } catch (e) {
+    console.error('Failed to sync widget punches:', e);
+  }
+
+  return updated;
+};
+
+/**
  * Loads all lifelog data from SQLite database and formats it for WebView localStorage injection.
  */
 export const getInitialDataForWebView = async (): Promise<Record<string, any>> => {
@@ -88,58 +160,7 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
 
     // 2. Time logs, templates, tags
     // --- Widget punches integration (Directly save to SQLite first) ---
-    try {
-      const punchesRow = await db.getFirstAsync<{ value: string }>(
-        "SELECT value FROM settings WHERE key = 'widget_time_punches'"
-      );
-      if (punchesRow && punchesRow.value) {
-        const punches = JSON.parse(punchesRow.value) as Array<{
-          start: string;
-          end: string;
-          date: string;
-          status: 'open' | 'closed';
-        }>;
-
-        const closedPunches = punches.filter(p => p.status === 'closed');
-        const openPunches = punches.filter(p => p.status === 'open');
-
-        if (closedPunches.length > 0) {
-          for (const punch of closedPunches) {
-            const punchDate = punch.date.replace(/-/g, '/');
-            const exists = await db.getFirstAsync<{ id: number }>(
-              "SELECT id FROM time_logs WHERE date = ? AND start_time = ? AND end_time = ?",
-              [punchDate, punch.start, punch.end]
-            );
-
-            if (!exists) {
-              const startMins = timeToMins(punch.start);
-              let endMins = timeToMins(punch.end);
-              if (endMins < startMins) endMins += 1440;
-              const duration = endMins - startMins;
-
-              await db.runAsync(
-                'INSERT INTO time_logs (activity_name, start_time, end_time, date, duration_minutes) VALUES (?, ?, ?, ?, ?)',
-                ['', punch.start, punch.end, punchDate, duration]
-              );
-            }
-          }
-
-          // Save remaining open punches
-          await db.runAsync(
-            "INSERT OR REPLACE INTO settings (key, value) VALUES ('widget_time_punches', ?)",
-            [JSON.stringify(openPunches)]
-          );
-
-          // Update Zustand store
-          const currentDate = useLifelogStore.getState().currentDate;
-          if (currentDate) {
-            await useLifelogStore.getState().loadTimeData(currentDate);
-          }
-        }
-      }
-    } catch (e) {
-      console.error('Failed to integrate widget time punches directly:', e);
-    }
+    await syncWidgetPunches();
 
     // 2. Time logs, templates, tags
     const timeLogsRows = await db.getAllAsync<{

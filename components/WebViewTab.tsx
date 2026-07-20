@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Text, AppState, AppStateStatus } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getInitialDataForWebView, handleWebViewMessage } from '../src/services/lifelogSyncService';
+import { getInitialDataForWebView, handleWebViewMessage, syncWidgetPunches } from '../src/services/lifelogSyncService';
 import { useLifelogStore } from '../src/store/lifelogStore';
 
 interface WebViewTabProps {
@@ -15,6 +15,7 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
   const [initialData, setInitialData] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
   const waterLogs = useLifelogStore((state) => state.waterLogs);
+  const timeLogs = useLifelogStore((state) => state.timeLogs);
 
   // Load all initial data from SQLite
   useEffect(() => {
@@ -201,6 +202,74 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
       webViewRef.current.injectJavaScript(injectScript);
     }
   }, [waterLogs, loading]);
+
+  // Sync database updates from React Native to WebView when timeLogs change
+  useEffect(() => {
+    if (webViewRef.current && !loading) {
+      const timeLogsMap: Record<string, any> = {};
+      timeLogs.forEach((row) => {
+        const key = `${row.date}_${row.start_time}_${row.end_time}`;
+        if (!timeLogsMap[key]) {
+          timeLogsMap[key] = {
+            id: row.id,
+            date: row.date,
+            start: row.start_time,
+            end: row.end_time,
+            rows: [],
+          };
+        }
+        timeLogsMap[key].rows.push(row);
+      });
+
+      const formattedLogs = Object.values(timeLogsMap).map((group: any) => {
+        const totalDuration = group.rows.reduce((sum: number, r: any) => sum + r.duration_minutes, 0);
+        const items = group.rows.map((r: any) => {
+          const percent = totalDuration > 0 ? Math.round((r.duration_minutes / totalDuration) * 100) : 100;
+          return {
+            name: r.activity_name,
+            percent,
+          };
+        });
+        return {
+          id: group.id,
+          date: group.date,
+          start: group.start,
+          end: group.end,
+          items,
+        };
+      });
+
+      const injectScript = `
+        (function() {
+          if (typeof localStorage !== 'undefined') {
+            window.isInitialSync = true;
+            localStorage.setItem('zikankanri_logs', ${JSON.stringify(JSON.stringify(formattedLogs))});
+            if (typeof loadLogs === 'function' && typeof render === 'function') {
+              loadLogs();
+              render();
+            }
+            window.isInitialSync = false;
+          }
+        })();
+      `;
+      webViewRef.current.injectJavaScript(injectScript);
+    }
+  }, [timeLogs, loading]);
+
+  // Handle AppState changes to sync widget punches automatically when app comes to foreground
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        console.log('[WebViewTab] App came to foreground, syncing widget punches...');
+        await syncWidgetPunches(currentDate);
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => {
+      subscription.remove();
+    };
+  }, [currentDate]);
 
   if (loading || !initialData) {
     return (
