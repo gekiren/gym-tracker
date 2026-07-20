@@ -22,7 +22,6 @@ class ZikanWidgetLarge : AppWidgetProvider() {
 
     companion object {
         const val ACTION_START_LARGE = "com.gekirennomad.trenote.ACTION_START_LARGE"
-        const val ACTION_END_LARGE = "com.gekirennomad.trenote.ACTION_END_LARGE"
         private const val DB_NAME = "gymtracker.db"
     }
 
@@ -35,7 +34,7 @@ class ZikanWidgetLarge : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
 
-        if (intent.action == ACTION_START_LARGE || intent.action == ACTION_END_LARGE) {
+        if (intent.action == ACTION_START_LARGE) {
             thread {
                 val db = getDatabase(context, writable = true) ?: return@thread
                 try {
@@ -55,47 +54,14 @@ class ZikanWidgetLarge : AppWidgetProvider() {
                         }
                         cursor.close()
 
-                        if (intent.action == ACTION_START_LARGE) {
-                            // 終了が打刻されずに開始ボタンが再び打刻された場合は
-                            // 最初の開始ボタン打刻は開始時間のみ記録し、終了時間を打刻しない
-                            for (i in 0 until punchesArray.length()) {
-                                val obj = punchesArray.getJSONObject(i)
-                                if (obj.optString("status") == "open") {
-                                    // endは変更せず空のままstatusをclosedにする
-                                    obj.put("status", "closed")
-                                }
-                            }
-
-                            val newObj = JSONObject().apply {
-                                put("start", timeStr)
-                                put("end", "")
-                                put("date", todayStr)
-                                put("status", "open")
-                            }
-                            punchesArray.put(newObj)
-                        } else if (intent.action == ACTION_END_LARGE) {
-                            // 進行中の記録を探して終了(closed)にする
-                            var foundOpen = false
-                            for (i in 0 until punchesArray.length()) {
-                                val obj = punchesArray.getJSONObject(i)
-                                if (obj.optString("status") == "open") {
-                                    obj.put("end", timeStr)
-                                    obj.put("status", "closed")
-                                    foundOpen = true
-                                    break
-                                }
-                            }
-                            // 開始ボタンが押されていない状態で終了ボタンが押された場合も終了時間のみ打刻する
-                            if (!foundOpen) {
-                                val newObj = JSONObject().apply {
-                                    put("start", "")
-                                    put("end", timeStr)
-                                    put("date", todayStr)
-                                    put("status", "closed")
-                                }
-                                punchesArray.put(newObj)
-                            }
+                        // 開始が押されたら開始時刻のみをstatus="closed"として即時打刻保存
+                        val newObj = JSONObject().apply {
+                            put("start", timeStr)
+                            put("end", "")
+                            put("date", todayStr)
+                            put("status", "closed")
                         }
+                        punchesArray.put(newObj)
 
                         // データを保存
                         val sql = "INSERT OR REPLACE INTO settings (key, value) VALUES ('widget_time_punches', ?)"
@@ -161,50 +127,7 @@ class ZikanWidgetLarge : AppWidgetProvider() {
         val startPendingIntent = PendingIntent.getBroadcast(context, 21, startIntent, flag)
         views.setOnClickPendingIntent(R.id.widget_start_btn, startPendingIntent)
 
-        // 終了ボタンPendingIntentの設定
-        val endIntent = Intent(context, ZikanWidgetLarge::class.java).apply {
-            action = ACTION_END_LARGE
-        }
-        val endPendingIntent = PendingIntent.getBroadcast(context, 22, endIntent, flag)
-        views.setOnClickPendingIntent(R.id.widget_end_btn, endPendingIntent)
-
-        thread {
-            val db = getDatabase(context, writable = false)
-            var isOpen = false
-            var latestStart = ""
-
-            if (db != null) {
-                try {
-                    val cursor = db.rawQuery("SELECT value FROM settings WHERE key = 'widget_time_punches'", null)
-                    if (cursor.moveToFirst()) {
-                        val jsonStr = cursor.getString(0)
-                        val array = JSONArray(jsonStr)
-                        for (i in 0 until array.length()) {
-                            val obj = array.getJSONObject(i)
-                            if (obj.optString("status") == "open") {
-                                isOpen = true
-                                latestStart = obj.optString("start")
-                                break
-                            }
-                        }
-                    }
-                    cursor.close()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                } finally {
-                    db.close()
-                }
-            }
-
-            // UIへの表示適用
-            if (isOpen) {
-                views.setTextViewText(R.id.widget_status_text, "記録中 ($latestStart～)")
-            } else {
-                views.setTextViewText(R.id.widget_status_text, "停止中")
-            }
-
-            appWidgetManager.updateAppWidget(appWidgetId, views)
-        }
+        appWidgetManager.updateAppWidget(appWidgetId, views)
     }
 
     private fun getDatabase(context: Context, writable: Boolean): SQLiteDatabase? {

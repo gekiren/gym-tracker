@@ -4,67 +4,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
-    android:padding="12dp"
+    android:padding="6dp"
     android:background="@drawable/widget_background"
-    android:gravity="center_vertical"
+    android:gravity="center"
     android:clickable="true"
     android:focusable="true">
 
-    <!-- 左側：情報エリア -->
-    <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1.2"
-        android:orientation="vertical"
-        android:layout_marginStart="8dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="24時間管理"
-            android:textColor="#A0A0A0"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/widget_status_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="停止中"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginTop="4dp" />
-    </LinearLayout>
-
-    <!-- 右側：ボタンエリア -->
-    <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1.8"
-        android:orientation="horizontal"
-        android:gravity="end"
-        android:layout_marginEnd="4dp">
-
-        <Button
-            android:id="@+id/widget_start_btn"
-            android:layout_width="60dp"
-            android:layout_height="40dp"
-            android:background="@drawable/widget_btn_start"
-            android:text="開始"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:layout_marginEnd="6dp" />
-
-        <Button
-            android:id="@+id/widget_end_btn"
-            android:layout_width="60dp"
-            android:layout_height="40dp"
-            android:background="@drawable/widget_btn_end"
-            android:text="終了"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+    <Button
+        android:id="@+id/widget_start_btn"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_btn_start"
+        android:text="開始"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold" />
 </LinearLayout>
