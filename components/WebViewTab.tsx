@@ -244,9 +244,16 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
           if (typeof localStorage !== 'undefined') {
             window.isInitialSync = true;
             localStorage.setItem('zikankanri_logs', ${JSON.stringify(JSON.stringify(formattedLogs))});
-            if (typeof loadLogs === 'function' && typeof render === 'function') {
-              loadLogs();
-              render();
+            if (typeof logs !== 'undefined') {
+              try {
+                logs = JSON.parse(localStorage.getItem('zikankanri_logs')) || [];
+              } catch (e) {}
+            }
+            if (typeof renderLogs === 'function') {
+              renderLogs();
+            }
+            if (typeof updateDefaultStartTime === 'function') {
+              updateDefaultStartTime();
             }
             window.isInitialSync = false;
           }
@@ -262,6 +269,10 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
       if (nextAppState === 'active') {
         console.log('[WebViewTab] App came to foreground, syncing widget punches...');
         await syncWidgetPunches(currentDate);
+        if (currentDate) {
+          await useLifelogStore.getState().loadTimeData(currentDate);
+          await useLifelogStore.getState().loadWaterData(currentDate);
+        }
       }
     };
 
