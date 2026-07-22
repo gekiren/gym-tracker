@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.66', // OTA識別用のバージョン文字列
+  version: '1.1.67', // OTA識別用のバージョン文字列
   title: {
-    ja: 'ウィジェット水分設定の反映改善およびキーボード挙動の修正',
-    en: 'Improved Widget Sync and Hydration Keyboard Fixes',
+    ja: '水分補給設定のキーボード挙動改善',
+    en: 'Improved Keyboard Behavior in Hydration Settings',
   },
   notes: {
     ja: [
-      '設定からウィジェットのクイック追加水分量を変更した際、確実にウィジェットに反映されるように同期処理を改善しました。',
-      '水分補給設定画面の入力欄で、キーボードの「完了/Enter」を押した際にキーボードが閉じるように挙動を修正しました。',
+      '水分補給設定画面のすべての入力欄において、Enterキー（完了/改行）を押した際にソフトウェアキーボードが閉じるように改善しました。',
     ],
     en: [
-      'Improved widget synchronization to ensure changes to quick-add amount are applied to the widget correctly.',
-      'Fixed the keyboard behavior in hydration settings to dismiss upon pressing Enter/Done.',
+      'Improved the keyboard behavior in the hydration settings screen to dismiss the software keyboard when pressing Enter on all input fields.',
     ]
   }
 };

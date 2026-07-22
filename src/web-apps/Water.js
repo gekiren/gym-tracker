@@ -1504,12 +1504,13 @@ function setupEventListeners() {
         }
     });
 
-    // Dismiss software keyboard on Enter key for all numeric inputs in settings modal
+    // Dismiss software keyboard on Enter key for all inputs in settings modal
     if (els.settingsModal) {
-        const settingsInputs = els.settingsModal.querySelectorAll('input[type="number"]');
+        const settingsInputs = els.settingsModal.querySelectorAll('input');
         settingsInputs.forEach(input => {
             input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' || e.keyCode === 13) {
+                    e.preventDefault();
                     input.blur();
                 }
             });
