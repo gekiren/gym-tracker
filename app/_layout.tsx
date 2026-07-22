@@ -20,6 +20,7 @@ import * as Updates from 'expo-updates';
 import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import { OTAUpdateModal } from '../components/OTAUpdateModal';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { syncLifelogToObsidian } from '../src/services/obsidianService';
 
 // アプリの起動時にグローバルエラーハンドラを登録
 registerGlobalErrorHandler();
@@ -225,6 +226,11 @@ export default function RootLayout() {
 
       console.log('Database initialized successfully with settings', storedSettings);
       setDbReady(true);
+
+      // Obsidian Vault へのライフログ自動同期（起動時・定時チェック）
+      syncLifelogToObsidian().catch(syncErr => {
+        console.warn('Obsidian lifelog sync failed on launch:', syncErr);
+      });
       if (expired) {
         setTimeout(() => {
           Alert.alert(

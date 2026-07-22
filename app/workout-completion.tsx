@@ -16,6 +16,7 @@ import type ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { generateShareText, copyShareTextToClipboard } from '../src/services/shareService';
 import { ShareCardView } from '../components/active-workout/ShareCardView';
+import { exportWorkoutToObsidian } from '../src/services/obsidianService';
 
 // Subcomponents
 import { AchievementsSection } from '../components/workout-completion/AchievementsSection';
@@ -87,9 +88,16 @@ export default function WorkoutCompletionScreen() {
     }
   }, []);
 
+
+
   useEffect(() => {
     if (!completionData) {
       router.replace('/(tabs)/history');
+    } else if (completionData.workout && completionData.workout.id) {
+      // Obsidian Vault への自動エクスポート（設定がONの場合のみ背景実行）
+      exportWorkoutToObsidian(completionData.workout.id).catch(err => {
+        console.warn('Obsidian export failed in background:', err);
+      });
     }
   }, [completionData]);
 

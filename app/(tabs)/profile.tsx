@@ -24,6 +24,7 @@ import { DisplayFieldsSection } from '../../components/profile/DisplayFieldsSect
 import { TimerSection } from '../../components/profile/TimerSection';
 import { PreferenceSection } from '../../components/profile/PreferenceSection';
 import { BackupSection } from '../../components/profile/BackupSection';
+import { ObsidianSection } from '../../components/profile/ObsidianSection';
 import { AppInfoSection } from '../../components/profile/AppInfoSection';
 import { DangerZoneSection } from '../../components/profile/DangerZoneSection';
 import { RestorePresetsModal } from '../../components/profile/RestorePresetsModal';
@@ -676,6 +677,9 @@ export default function ProfileScreen() {
         onOpenPaywall={() => setIsPaywallVisible(true)}
         t={t}
       />
+
+      {/* 7. Obsidian Vault 自動連携 */}
+      <ObsidianSection t={t} />
 
       {/* 7. アプリ情報 */}
       <AppInfoSection

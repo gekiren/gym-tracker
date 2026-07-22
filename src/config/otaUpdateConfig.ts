@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.67', // OTA識別用のバージョン文字列
+  version: '1.1.68', // OTA識別用のバージョン文字列
   title: {
-    ja: '水分補給設定のキーボード挙動改善',
-    en: 'Improved Keyboard Behavior in Hydration Settings',
+    ja: 'Obsidian Vault 自動連携機能の追加',
+    en: 'Added Obsidian Vault Auto-Sync Integration',
   },
   notes: {
     ja: [
-      '水分補給設定画面のすべての入力欄において、Enterキー（完了/改行）を押した際にソフトウェアキーボードが閉じるように改善しました。',
+      'マイページから Obsidian Vault フォルダを指定し、筋トレ記録やライフログ（水分・時間管理・習慣）を自動的に Markdown ファイルへ蓄積・同期できる機能を追加しました。',
     ],
     en: [
-      'Improved the keyboard behavior in the hydration settings screen to dismiss the software keyboard when pressing Enter on all input fields.',
+      'Added the ability to select your Obsidian Vault folder from Profile settings and automatically sync workout and lifelog data into Markdown files.',
     ]
   }
 };
