@@ -500,18 +500,18 @@ export default function DashboardScreen() {
         </TouchableOpacity>
 
         {/* 2. Water Intake Card */}
-        <TouchableOpacity 
-          style={styles.card} 
-          activeOpacity={0.9}
-          onPress={() => router.push('/lifelog/water')}
-        >
-          <View style={styles.cardHeader}>
+        <View style={styles.card}>
+          <TouchableOpacity 
+            style={styles.cardHeader}
+            activeOpacity={0.7}
+            onPress={() => router.push('/lifelog/water')}
+          >
             <View style={[styles.iconContainer, { backgroundColor: 'rgba(0, 210, 255, 0.15)' }]}>
               <Ionicons name="water" size={24} color="#00d2ff" />
             </View>
             <Text style={styles.cardTitle}>水分補給</Text>
             <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.cardBody}>
             <View style={styles.statRow}>
@@ -551,7 +551,7 @@ export default function DashboardScreen() {
               ))}
             </View>
           </View>
-        </TouchableOpacity>
+        </View>
 
         {/* 3. 24h Time Breakdown Card */}
         <TouchableOpacity 
@@ -593,18 +593,18 @@ export default function DashboardScreen() {
         </TouchableOpacity>
 
         {/* 4. Habits Card */}
-        <TouchableOpacity 
-          style={styles.card} 
-          activeOpacity={0.9}
-          onPress={() => router.push('/lifelog/habit')}
-        >
-          <View style={styles.cardHeader}>
+        <View style={styles.card}>
+          <TouchableOpacity 
+            style={styles.cardHeader}
+            activeOpacity={0.7}
+            onPress={() => router.push('/lifelog/habit')}
+          >
             <View style={[styles.iconContainer, { backgroundColor: 'rgba(233, 30, 99, 0.15)' }]}>
               <Ionicons name="checkmark-circle" size={24} color="#e91e63" />
             </View>
             <Text style={styles.cardTitle}>習慣カウンター</Text>
             <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.cardBody}>
             {daySummary?.habits && daySummary.habits.length > 0 ? (
@@ -632,7 +632,7 @@ export default function DashboardScreen() {
               <Text style={styles.emptyText}>習慣が登録されていません</Text>
             )}
           </View>
-        </TouchableOpacity>
+        </View>
 
         {/* 5. Routine Tracker Card */}
         <TouchableOpacity 

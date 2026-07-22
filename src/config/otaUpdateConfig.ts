@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.63', // OTA識別用のバージョン文字列
+  version: '1.1.67', // OTA識別用のバージョン文字列
   title: {
-    ja: '24時間管理の機能改善（同時進行の割合スライダー調整）',
-    en: '24-hour Lifelog Enhanced (Simultaneous ratio slider)',
+    ja: '水分補給設定のキーボード挙動改善',
+    en: 'Improved Keyboard Behavior in Hydration Settings',
   },
   notes: {
     ja: [
-      '同時進行モードにおける時間割合の入力を、スワイプで動かせるスライダー形式に変更しました。',
-      '10%単位でスムーズに調整でき、操作中の行をタップ・ドラッグした際にも自動的にアクティブ行に切り替わります。',
+      '水分補給設定画面のすべての入力欄において、Enterキー（完了/改行）を押した際にソフトウェアキーボードが閉じるように改善しました。',
     ],
     en: [
-      'Changed the time ratio input in simultaneous mode to a swipeable slider format.',
-      'Adjust smoothly in 10% steps, and the row automatically becomes active when you tap or drag the slider.',
+      'Improved the keyboard behavior in the hydration settings screen to dismiss the software keyboard when pressing Enter on all input fields.',
     ]
   }
 };

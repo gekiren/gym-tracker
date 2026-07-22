@@ -23,6 +23,29 @@ const WATER_RECEIVER_XML = `
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/water_widget_info"/>
         </receiver>`;
 
+const ZIKAN_SMALL_RECEIVER_TAG = '<receiver android:name=".ZikanWidgetSmall"';
+
+const ZIKAN_SMALL_RECEIVER_XML = `
+        <receiver android:name=".ZikanWidgetSmall" android:exported="true" android:label="@string/zikan_widget_small_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="com.gekirennomad.trenote.ACTION_PUNCH_SMALL"/>
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/zikan_widget_small_info"/>
+        </receiver>`;
+
+const ZIKAN_LARGE_RECEIVER_TAG = '<receiver android:name=".ZikanWidgetLarge"';
+
+const ZIKAN_LARGE_RECEIVER_XML = `
+        <receiver android:name=".ZikanWidgetLarge" android:exported="true" android:label="@string/zikan_widget_large_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="com.gekirennomad.trenote.ACTION_START_LARGE"/>
+                <action android:name="com.gekirennomad.trenote.ACTION_END_LARGE"/>
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/zikan_widget_large_info"/>
+        </receiver>`;
+
 // Strings XML tags and strings
 const STRINGS_RESOURCE_MARKER = '</resources>';
 
@@ -30,7 +53,11 @@ const STRINGS_PATCHES = [
   { tag: 'name="widget_description"', value: '  <string name="widget_description">TreNote - \u7b4b\u30c8\u30ec\u3092\u59cb\u3081\u308b</string>' },
   { tag: 'name="water_widget_description"', value: '  <string name="water_widget_description">TreNote - \u6c34\u5206\u88dc\u7d66\u3092\u8a18\u9332\u3059\u308b</string>' },
   { tag: 'name="gym_widget_label"', value: '  <string name="gym_widget_label">TreNote - \u7b4b\u30c8\u30ec\u958b\u59cb</string>' },
-  { tag: 'name="water_widget_label"', value: '  <string name="water_widget_label">TreNote - \u6c34\u5206\u88dc\u7d66</string>' }
+  { tag: 'name="water_widget_label"', value: '  <string name="water_widget_label">TreNote - \u6c34\u5206\u88dc\u7d66</string>' },
+  { tag: 'name="zikan_widget_small_description"', value: '  <string name="zikan_widget_small_description">TreNote - 24\u6642\u9593\u9023\u7d9a\u8a18\u9332\u3092\u6253\u523b\u3059\u308b</string>' },
+  { tag: 'name="zikan_widget_small_label"', value: '  <string name="zikan_widget_small_label">TreNote - 24H\u9023\u7d9a\u8a18\u9332</string>' },
+  { tag: 'name="zikan_widget_large_description"', value: '  <string name="zikan_widget_large_description">TreNote - 24\u6642\u9593\u8a18\u9332\u306e\u958b\u59cb\u30fb\u7d42\u4e86</string>' },
+  { tag: 'name="zikan_widget_large_label"', value: '  <string name="zikan_widget_large_label">TreNote - 24H\u901a\u5e38\u8a18\u9332</string>' }
 ];
 
 /**
@@ -80,6 +107,18 @@ const withAndroidWidget = (config) => {
         'com', 'gekirennomad', 'trenote',
         'WaterWidgetProvider.kt'
       );
+      const zikanSmallKtDest = path.join(
+        androidRoot,
+        'app', 'src', 'main', 'java',
+        'com', 'gekirennomad', 'trenote',
+        'ZikanWidgetSmall.kt'
+      );
+      const zikanLargeKtDest = path.join(
+        androidRoot,
+        'app', 'src', 'main', 'java',
+        'com', 'gekirennomad', 'trenote',
+        'ZikanWidgetLarge.kt'
+      );
       const layoutDest = path.join(
         androidRoot,
         'app', 'src', 'main', 'res', 'layout',
@@ -90,18 +129,32 @@ const withAndroidWidget = (config) => {
         'app', 'src', 'main', 'res', 'layout',
         'water_widget.xml'
       );
+      const zikanSmallLayoutDest = path.join(
+        androidRoot,
+        'app', 'src', 'main', 'res', 'layout',
+        'widget_zikan_small.xml'
+      );
+      const zikanLargeLayoutDest = path.join(
+        androidRoot,
+        'app', 'src', 'main', 'res', 'layout',
+        'widget_zikan_large.xml'
+      );
       const xmlDir = path.join(
         androidRoot,
         'app', 'src', 'main', 'res', 'xml'
       );
       const xmlDest = path.join(xmlDir, 'gym_tracker_widget_info.xml');
       const waterXmlDest = path.join(xmlDir, 'water_widget_info.xml');
+      const zikanSmallXmlDest = path.join(xmlDir, 'zikan_widget_small_info.xml');
+      const zikanLargeXmlDest = path.join(xmlDir, 'zikan_widget_large_info.xml');
       const drawableDir = path.join(
         androidRoot,
         'app', 'src', 'main', 'res', 'drawable'
       );
       const bgDrawableDest = path.join(drawableDir, 'widget_background.xml');
       const btnDrawableDest = path.join(drawableDir, 'widget_button_round.xml');
+      const btnStartDrawableDest = path.join(drawableDir, 'widget_btn_start.xml');
+      const btnEndDrawableDest = path.join(drawableDir, 'widget_btn_end.xml');
       const manifestPath = path.join(
         androidRoot,
         'app', 'src', 'main', 'AndroidManifest.xml'
@@ -120,12 +173,20 @@ const withAndroidWidget = (config) => {
       // --- Source paths ---
       const ktSrc = path.join(sourceDir, 'GymTrackerWidget.kt');
       const waterKtSrc = path.join(sourceDir, 'WaterWidgetProvider.kt');
+      const zikanSmallKtSrc = path.join(sourceDir, 'ZikanWidgetSmall.kt');
+      const zikanLargeKtSrc = path.join(sourceDir, 'ZikanWidgetLarge.kt');
       const layoutSrc = path.join(sourceDir, 'widget_gym_tracker.xml');
       const waterLayoutSrc = path.join(sourceDir, 'water_widget.xml');
+      const zikanSmallLayoutSrc = path.join(sourceDir, 'widget_zikan_small.xml');
+      const zikanLargeLayoutSrc = path.join(sourceDir, 'widget_zikan_large.xml');
       const xmlSrc = path.join(sourceDir, 'gym_tracker_widget_info.xml');
       const waterXmlSrc = path.join(sourceDir, 'water_widget_info.xml');
+      const zikanSmallXmlSrc = path.join(sourceDir, 'zikan_widget_small_info.xml');
+      const zikanLargeXmlSrc = path.join(sourceDir, 'zikan_widget_large_info.xml');
       const bgDrawableSrc = path.join(sourceDir, 'widget_background.xml');
       const btnDrawableSrc = path.join(sourceDir, 'widget_button_round.xml');
+      const btnStartDrawableSrc = path.join(sourceDir, 'widget_btn_start.xml');
+      const btnEndDrawableSrc = path.join(sourceDir, 'widget_btn_end.xml');
 
       // --- Copy GymTrackerWidget.kt ---
       if (fs.existsSync(ktSrc)) {
@@ -143,6 +204,24 @@ const withAndroidWidget = (config) => {
         console.log('[withAndroidWidget] Copied WaterWidgetProvider.kt');
       } else {
         console.warn(`[withAndroidWidget] Source not found: ${waterKtSrc}`);
+      }
+
+      // --- Copy ZikanWidgetSmall.kt ---
+      if (fs.existsSync(zikanSmallKtSrc)) {
+        fs.mkdirSync(path.dirname(zikanSmallKtDest), { recursive: true });
+        fs.copyFileSync(zikanSmallKtSrc, zikanSmallKtDest);
+        console.log('[withAndroidWidget] Copied ZikanWidgetSmall.kt');
+      } else {
+        console.warn(`[withAndroidWidget] Source not found: ${zikanSmallKtSrc}`);
+      }
+
+      // --- Copy ZikanWidgetLarge.kt ---
+      if (fs.existsSync(zikanLargeKtSrc)) {
+        fs.mkdirSync(path.dirname(zikanLargeKtDest), { recursive: true });
+        fs.copyFileSync(zikanLargeKtSrc, zikanLargeKtDest);
+        console.log('[withAndroidWidget] Copied ZikanWidgetLarge.kt');
+      } else {
+        console.warn(`[withAndroidWidget] Source not found: ${zikanLargeKtSrc}`);
       }
 
       // --- Copy widget_gym_tracker.xml ---
@@ -163,6 +242,24 @@ const withAndroidWidget = (config) => {
         console.warn(`[withAndroidWidget] Source not found: ${waterLayoutSrc}`);
       }
 
+      // --- Copy widget_zikan_small.xml ---
+      if (fs.existsSync(zikanSmallLayoutSrc)) {
+        fs.mkdirSync(path.dirname(zikanSmallLayoutDest), { recursive: true });
+        fs.copyFileSync(zikanSmallLayoutSrc, zikanSmallLayoutDest);
+        console.log('[withAndroidWidget] Copied widget_zikan_small.xml');
+      } else {
+        console.warn(`[withAndroidWidget] Source not found: ${zikanSmallLayoutSrc}`);
+      }
+
+      // --- Copy widget_zikan_large.xml ---
+      if (fs.existsSync(zikanLargeLayoutSrc)) {
+        fs.mkdirSync(path.dirname(zikanLargeLayoutDest), { recursive: true });
+        fs.copyFileSync(zikanLargeLayoutSrc, zikanLargeLayoutDest);
+        console.log('[withAndroidWidget] Copied widget_zikan_large.xml');
+      } else {
+        console.warn(`[withAndroidWidget] Source not found: ${zikanLargeLayoutSrc}`);
+      }
+
       // --- Copy gym_tracker_widget_info.xml ---
       if (fs.existsSync(xmlSrc)) {
         fs.mkdirSync(xmlDir, { recursive: true });
@@ -181,6 +278,24 @@ const withAndroidWidget = (config) => {
         console.warn(`[withAndroidWidget] Source not found: ${waterXmlSrc}`);
       }
 
+      // --- Copy zikan_widget_small_info.xml ---
+      if (fs.existsSync(zikanSmallXmlSrc)) {
+        fs.mkdirSync(xmlDir, { recursive: true });
+        fs.copyFileSync(zikanSmallXmlSrc, zikanSmallXmlDest);
+        console.log('[withAndroidWidget] Copied zikan_widget_small_info.xml');
+      } else {
+        console.warn(`[withAndroidWidget] Source not found: ${zikanSmallXmlSrc}`);
+      }
+
+      // --- Copy zikan_widget_large_info.xml ---
+      if (fs.existsSync(zikanLargeXmlSrc)) {
+        fs.mkdirSync(xmlDir, { recursive: true });
+        fs.copyFileSync(zikanLargeXmlSrc, zikanLargeXmlDest);
+        console.log('[withAndroidWidget] Copied zikan_widget_large_info.xml');
+      } else {
+        console.warn(`[withAndroidWidget] Source not found: ${zikanLargeXmlSrc}`);
+      }
+
       // --- Copy widget drawables ---
       if (fs.existsSync(bgDrawableSrc)) {
         fs.mkdirSync(drawableDir, { recursive: true });
@@ -191,6 +306,16 @@ const withAndroidWidget = (config) => {
         fs.mkdirSync(drawableDir, { recursive: true });
         fs.copyFileSync(btnDrawableSrc, btnDrawableDest);
         console.log('[withAndroidWidget] Copied widget_button_round.xml');
+      }
+      if (fs.existsSync(btnStartDrawableSrc)) {
+        fs.mkdirSync(drawableDir, { recursive: true });
+        fs.copyFileSync(btnStartDrawableSrc, btnStartDrawableDest);
+        console.log('[withAndroidWidget] Copied widget_btn_start.xml');
+      }
+      if (fs.existsSync(btnEndDrawableSrc)) {
+        fs.mkdirSync(drawableDir, { recursive: true });
+        fs.copyFileSync(btnEndDrawableSrc, btnEndDrawableDest);
+        console.log('[withAndroidWidget] Copied widget_btn_end.xml');
       }
 
       // --- Patch AndroidManifest.xml: add <receiver>s (idempotent) ---
@@ -226,6 +351,24 @@ const withAndroidWidget = (config) => {
           console.log('[withAndroidWidget] Patched AndroidManifest.xml with WaterWidgetProvider <receiver>.');
         }
 
+        // Apply ZikanWidgetSmall patch
+        if (manifest.includes(ZIKAN_SMALL_RECEIVER_TAG)) {
+          console.log('[withAndroidWidget] ZikanWidgetSmall <receiver> already present in AndroidManifest.xml. Skipping.');
+        } else if (manifest.includes('</application>')) {
+          manifest = manifest.replace('</application>', `${ZIKAN_SMALL_RECEIVER_XML}\n    </application>`);
+          modified = true;
+          console.log('[withAndroidWidget] Patched AndroidManifest.xml with ZikanWidgetSmall <receiver>.');
+        }
+
+        // Apply ZikanWidgetLarge patch
+        if (manifest.includes(ZIKAN_LARGE_RECEIVER_TAG)) {
+          console.log('[withAndroidWidget] ZikanWidgetLarge <receiver> already present in AndroidManifest.xml. Skipping.');
+        } else if (manifest.includes('</application>')) {
+          manifest = manifest.replace('</application>', `${ZIKAN_LARGE_RECEIVER_XML}\n    </application>`);
+          modified = true;
+          console.log('[withAndroidWidget] Patched AndroidManifest.xml with ZikanWidgetLarge <receiver>.');
+        }
+
         if (modified) {
           fs.writeFileSync(manifestPath, manifest, 'utf8');
         }
@@ -256,32 +399,30 @@ const withAndroidWidget = (config) => {
         }
       } else {
         console.warn('[withAndroidWidget] strings.xml not found.');
-      }      // --- Patch MainActivity.kt: trigger widget updates and watch DB file with FileObserver (idempotent) ---
+      }      // --- Patch MainActivity.kt: trigger widget updates on app resume/pause (idempotent) ---
       if (fs.existsSync(mainActivityPath)) {
         let content = fs.readFileSync(mainActivityPath, 'utf8');
 
-        if (content.includes('dbObserver: FileObserver?')) {
-          console.log('[withAndroidWidget] MainActivity.kt already patched with FileObserver. Skipping.');
+        if (content.includes('ACTION_UPDATE_WATER_WIDGET')) {
+          console.log('[withAndroidWidget] MainActivity.kt already patched with ACTION_UPDATE_WATER_WIDGET. Skipping.');
         } else {
-          // Remove old updateWidgets patch if present
+          // Remove old FileObserver patch if present to ensure clean transition
+          content = content.replace(/\n\s*private var dbObserver: FileObserver\? = null[\s\S]*?\}\s*\}\s*$/, '\n}');
+          content = content.replace(/import android\.os\.FileObserver\n/, '');
+          content = content.replace(/import java\.io\.File\n/, '');
+          content = content.replace(/\s*startDatabaseObserver\(\)/, '');
+          content = content.replace(/\n\s*override fun onDestroy\(\)[\s\S]*?super\.onDestroy\(\)\n\s*\}/, '');
+
+          // Remove old simple updateWidgets patch if present
           content = content.replace(/\n\s*override fun onResume\(\)[\s\S]*?private fun updateWidgets\(\)[\s\S]*?\}\s*\}\s*$/, '\n}');
           content = content.replace(/import android\.appwidget\.AppWidgetManager[\s\S]*?import android\.content\.Intent\n/, '');
 
           // Add imports
-          const imports = `\nimport android.appwidget.AppWidgetManager\nimport android.content.ComponentName\nimport android.content.Intent\nimport android.os.FileObserver\nimport java.io.File`;
+          const imports = `\nimport android.appwidget.AppWidgetManager\nimport android.content.ComponentName\nimport android.content.Intent`;
           content = content.replace('package com.gekirennomad.trenote', `package com.gekirennomad.trenote${imports}`);
 
-          // Add startDatabaseObserver call inside onCreate
-          if (content.includes('super.onCreate(null)')) {
-            content = content.replace('super.onCreate(null)', 'super.onCreate(null)\n    startDatabaseObserver()');
-          } else if (content.includes('super.onCreate(savedInstanceState)')) {
-            content = content.replace('super.onCreate(savedInstanceState)', 'super.onCreate(savedInstanceState)\n    startDatabaseObserver()');
-          }
-
-          // Define modern observer + widget updater code
+          // Define widget updater code
           const injectedCode = `
-  private var dbObserver: FileObserver? = null
-
   override fun onResume() {
     super.onResume()
     updateWidgets()
@@ -292,52 +433,25 @@ const withAndroidWidget = (config) => {
     updateWidgets()
   }
 
-  override fun onDestroy() {
-    dbObserver?.stopWatching()
-    super.onDestroy()
-  }
-
-  private fun startDatabaseObserver() {
-    try {
-      val dbFile = findDatabaseFile()
-      if (dbFile != null) {
-        dbObserver = object : FileObserver(dbFile.parentFile?.absolutePath, FileObserver.CLOSE_WRITE or FileObserver.MODIFY) {
-          override fun onEvent(event: Int, path: String?) {
-            if (path != null && (path == dbFile.name || path.startsWith(dbFile.name))) {
-              updateWidgets()
-            }
-          }
-        }
-        dbObserver?.startWatching()
-      }
-    } catch (e: Exception) {
-      e.printStackTrace()
-    }
-  }
-
-  private fun findDatabaseFile(): File? {
-    val dbName = "gymtracker.db"
-    val noBackupFile = File(noBackupFilesDir, "SQLite/$dbName")
-    if (noBackupFile.exists()) return noBackupFile
-
-    val filesFile = File(filesDir, "SQLite/$dbName")
-    if (filesFile.exists()) return filesFile
-
-    val dbDirFile = getDatabasePath(dbName)
-    if (dbDirFile.exists()) return dbDirFile
-
-    return null
-  }
-
   private fun updateWidgets() {
     try {
-      val intent = Intent(this, WaterWidgetProvider::class.java).apply {
-        action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+      // Water
+      val intentWater = Intent("com.gekirennomad.trenote.ACTION_UPDATE_WATER_WIDGET").apply {
+        component = ComponentName(this@MainActivity, WaterWidgetProvider::class.java)
       }
-      val ids = AppWidgetManager.getInstance(application)
-        .getAppWidgetIds(ComponentName(application, WaterWidgetProvider::class.java))
-      intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
-      sendBroadcast(intent)
+      sendBroadcast(intentWater)
+
+      // Zikan Small
+      val intentSmall = Intent("com.gekirennomad.trenote.ACTION_UPDATE_ZIKAN_SMALL_WIDGET").apply {
+        component = ComponentName(this@MainActivity, ZikanWidgetSmall::class.java)
+      }
+      sendBroadcast(intentSmall)
+
+      // Zikan Large
+      val intentLarge = Intent("com.gekirennomad.trenote.ACTION_UPDATE_ZIKAN_LARGE_WIDGET").apply {
+        component = ComponentName(this@MainActivity, ZikanWidgetLarge::class.java)
+      }
+      sendBroadcast(intentLarge)
     } catch (e: Exception) {
       e.printStackTrace()
     }
@@ -349,7 +463,7 @@ const withAndroidWidget = (config) => {
           if (lastBraceIdx !== -1) {
             content = content.substring(0, lastBraceIdx) + injectedCode + "\n}" + content.substring(lastBraceIdx + 1);
             fs.writeFileSync(mainActivityPath, content, 'utf8');
-            console.log('[withAndroidWidget] Patched MainActivity.kt with FileObserver and updateWidgets.');
+            console.log('[withAndroidWidget] Patched MainActivity.kt with simple updateWidgets.');
           } else {
             console.warn('[withAndroidWidget] Could not find closing brace in MainActivity.kt.');
           }

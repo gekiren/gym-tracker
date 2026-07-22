@@ -19,6 +19,7 @@ class WaterWidgetProvider : AppWidgetProvider() {
 
     companion object {
         const val ACTION_QUICK_ADD = "com.gekirennomad.trenote.ACTION_QUICK_ADD"
+        const val ACTION_UPDATE_WATER_WIDGET = "com.gekirennomad.trenote.ACTION_UPDATE_WATER_WIDGET"
         private const val DB_NAME = "gymtracker.db"
     }
 
@@ -59,6 +60,15 @@ class WaterWidgetProvider : AppWidgetProvider() {
                 }
 
                 // 登録完了後に自身を更新
+                val appWidgetManager = AppWidgetManager.getInstance(context)
+                val thisWidget = ComponentName(context, WaterWidgetProvider::class.java)
+                val allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget)
+                for (widgetId in allWidgetIds) {
+                    updateAppWidget(context, appWidgetManager, widgetId)
+                }
+            }
+        } else if (intent.action == ACTION_UPDATE_WATER_WIDGET || intent.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE) {
+            thread {
                 val appWidgetManager = AppWidgetManager.getInstance(context)
                 val thisWidget = ComponentName(context, WaterWidgetProvider::class.java)
                 val allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget)
