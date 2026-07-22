@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.64', // OTA識別用のバージョン文字列
+  version: '1.1.65', // OTA識別用のバージョン文字列
   title: {
-    ja: 'ウィジェット記録の即時反映・打刻仕様の改善',
-    en: 'Widget Instant Data Sync & Lifelog Improvements',
+    ja: 'ダッシュボードの水分補給ボタンおよびデータ同期の不具合修正',
+    en: 'Fix Hydration Presets and Data Sync Bug',
   },
   notes: {
     ja: [
-      'アプリが起動中（バックグラウンド含む）であっても、ウィジェットから記録したデータが即座にアプリ画面へ反映されるように改善しました。',
-      '時間管理ウィジェットで開始ボタンの連続タップや終了ボタンの単独タップ時にも正常に打刻が記録されるように改善しました。',
+      'ダッシュボード上の水分補給・習慣カウンターのクイック追加ボタンが正常にタップできるようにUI構造を改善しました。',
+      '詳細画面で水分を追加した際、他日程の過去履歴データが消去されてしまう同期処理のバグを修正しました。',
     ],
     en: [
-      'Improved data recorded from home screen widgets to instantly sync and reflect when app comes to foreground.',
-      'Enhanced time management widget to correctly record timestamps when start/end buttons are tapped independently.',
+      'Fixed an issue where quick-add buttons for Hydration and Habits on the dashboard were unresponsive.',
+      'Fixed a data sync bug that caused past hydration history to be deleted when adding new logs.',
     ]
   }
 };

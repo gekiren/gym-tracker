@@ -190,7 +190,25 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
         (function() {
           if (typeof localStorage !== 'undefined') {
             window.isInitialSync = true;
-            localStorage.setItem('hydration_data_v1', ${JSON.stringify(JSON.stringify(formattedLogs))});
+            var existing = [];
+            try {
+              var saved = localStorage.getItem('hydration_data_v1');
+              if (saved) {
+                existing = JSON.parse(saved) || [];
+              }
+            } catch (e) {
+              console.warn('Failed to parse existing hydration data in sync:', e);
+            }
+            
+            var targetDate = "${currentDate}";
+            var filtered = existing.filter(function(item) {
+              return item.date !== targetDate;
+            });
+            
+            var newLogs = ${JSON.stringify(formattedLogs)};
+            var merged = filtered.concat(newLogs);
+            
+            localStorage.setItem('hydration_data_v1', JSON.stringify(merged));
             if (typeof loadData === 'function' && typeof updateUI === 'function') {
               loadData();
               updateUI();
@@ -201,7 +219,7 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
       `;
       webViewRef.current.injectJavaScript(injectScript);
     }
-  }, [waterLogs, loading]);
+  }, [waterLogs, loading, currentDate]);
 
   // Sync database updates from React Native to WebView when timeLogs change
   useEffect(() => {
