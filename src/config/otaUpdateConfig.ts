@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.65', // OTA識別用のバージョン文字列
+  version: '1.1.66', // OTA識別用のバージョン文字列
   title: {
-    ja: 'ダッシュボードの水分補給ボタンおよびデータ同期の不具合修正',
-    en: 'Fix Hydration Presets and Data Sync Bug',
+    ja: 'ウィジェット水分設定の反映改善およびキーボード挙動の修正',
+    en: 'Improved Widget Sync and Hydration Keyboard Fixes',
   },
   notes: {
     ja: [
-      'ダッシュボード上の水分補給・習慣カウンターのクイック追加ボタンが正常にタップできるようにUI構造を改善しました。',
-      '詳細画面で水分を追加した際、他日程の過去履歴データが消去されてしまう同期処理のバグを修正しました。',
+      '設定からウィジェットのクイック追加水分量を変更した際、確実にウィジェットに反映されるように同期処理を改善しました。',
+      '水分補給設定画面の入力欄で、キーボードの「完了/Enter」を押した際にキーボードが閉じるように挙動を修正しました。',
     ],
     en: [
-      'Fixed an issue where quick-add buttons for Hydration and Habits on the dashboard were unresponsive.',
-      'Fixed a data sync bug that caused past hydration history to be deleted when adding new logs.',
+      'Improved widget synchronization to ensure changes to quick-add amount are applied to the widget correctly.',
+      'Fixed the keyboard behavior in hydration settings to dismiss upon pressing Enter/Done.',
     ]
   }
 };

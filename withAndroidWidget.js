@@ -403,8 +403,8 @@ const withAndroidWidget = (config) => {
       if (fs.existsSync(mainActivityPath)) {
         let content = fs.readFileSync(mainActivityPath, 'utf8');
 
-        if (content.includes('updateWidgets()') && !content.includes('dbObserver: FileObserver?')) {
-          console.log('[withAndroidWidget] MainActivity.kt already patched with simple updateWidgets(). Skipping.');
+        if (content.includes('ACTION_UPDATE_WATER_WIDGET')) {
+          console.log('[withAndroidWidget] MainActivity.kt already patched with ACTION_UPDATE_WATER_WIDGET. Skipping.');
         } else {
           // Remove old FileObserver patch if present to ensure clean transition
           content = content.replace(/\n\s*private var dbObserver: FileObserver\? = null[\s\S]*?\}\s*\}\s*$/, '\n}');
@@ -436,30 +436,21 @@ const withAndroidWidget = (config) => {
   private fun updateWidgets() {
     try {
       // Water
-      val intentWater = Intent(this, WaterWidgetProvider::class.java).apply {
-        action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+      val intentWater = Intent("com.gekirennomad.trenote.ACTION_UPDATE_WATER_WIDGET").apply {
+        component = ComponentName(this@MainActivity, WaterWidgetProvider::class.java)
       }
-      val idsWater = AppWidgetManager.getInstance(application)
-        .getAppWidgetIds(ComponentName(application, WaterWidgetProvider::class.java))
-      intentWater.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, idsWater)
       sendBroadcast(intentWater)
 
       // Zikan Small
-      val intentSmall = Intent(this, ZikanWidgetSmall::class.java).apply {
-        action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+      val intentSmall = Intent("com.gekirennomad.trenote.ACTION_UPDATE_ZIKAN_SMALL_WIDGET").apply {
+        component = ComponentName(this@MainActivity, ZikanWidgetSmall::class.java)
       }
-      val idsSmall = AppWidgetManager.getInstance(application)
-        .getAppWidgetIds(ComponentName(application, ZikanWidgetSmall::class.java))
-      intentSmall.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, idsSmall)
       sendBroadcast(intentSmall)
 
       // Zikan Large
-      val intentLarge = Intent(this, ZikanWidgetLarge::class.java).apply {
-        action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+      val intentLarge = Intent("com.gekirennomad.trenote.ACTION_UPDATE_ZIKAN_LARGE_WIDGET").apply {
+        component = ComponentName(this@MainActivity, ZikanWidgetLarge::class.java)
       }
-      val idsLarge = AppWidgetManager.getInstance(application)
-        .getAppWidgetIds(ComponentName(application, ZikanWidgetLarge::class.java))
-      intentLarge.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, idsLarge)
       sendBroadcast(intentLarge)
     } catch (e: Exception) {
       e.printStackTrace()

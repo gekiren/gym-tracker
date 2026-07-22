@@ -1504,6 +1504,18 @@ function setupEventListeners() {
         }
     });
 
+    // Dismiss software keyboard on Enter key for all numeric inputs in settings modal
+    if (els.settingsModal) {
+        const settingsInputs = els.settingsModal.querySelectorAll('input[type="number"]');
+        settingsInputs.forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    input.blur();
+                }
+            });
+        });
+    }
+
     // Dismiss software keyboard on Enter key for preset6 caffeine
     if (els.presetInputs[5] && els.presetInputs[5].caffeine) {
         els.presetInputs[5].caffeine.addEventListener('keydown', (e) => {

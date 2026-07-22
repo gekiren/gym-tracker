@@ -22,6 +22,7 @@ class ZikanWidgetSmall : AppWidgetProvider() {
 
     companion object {
         const val ACTION_PUNCH_SMALL = "com.gekirennomad.trenote.ACTION_PUNCH_SMALL"
+        const val ACTION_UPDATE_ZIKAN_SMALL_WIDGET = "com.gekirennomad.trenote.ACTION_UPDATE_ZIKAN_SMALL_WIDGET"
         private const val DB_NAME = "gymtracker.db"
     }
 
@@ -95,6 +96,15 @@ class ZikanWidgetSmall : AppWidgetProvider() {
 
                 // 画面表示を更新
                 updateAllWidgets(context)
+            }
+        } else if (intent.action == ACTION_UPDATE_ZIKAN_SMALL_WIDGET || intent.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE) {
+            thread {
+                val appWidgetManager = AppWidgetManager.getInstance(context)
+                val thisWidget = ComponentName(context, ZikanWidgetSmall::class.java)
+                val allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget)
+                for (widgetId in allWidgetIds) {
+                    updateAppWidget(context, appWidgetManager, widgetId)
+                }
             }
         }
     }
