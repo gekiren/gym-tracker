@@ -89,7 +89,7 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
   };
 
   const handleUpdateFolder = async (
-    folderKey: 'folderWorkouts' | 'folderExercises' | 'folderWater' | 'folderTime' | 'folderHabits' | 'folderRoutines',
+    folderKey: 'folderWorkouts' | 'folderExercises' | 'folderWater' | 'folderTime' | 'folderHabits' | 'folderRoutines' | 'folderDaily',
     val: string
   ) => {
     if (!settings) return;
@@ -135,7 +135,20 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
             setIsExporting(true);
             try {
               const res = await exportAllDataToObsidian();
-              Alert.alert('完了', `一括エクスポートが完了しました。\n成功: ${res.successCount}件\n失敗: ${res.failCount}件`);
+              const d = res.details;
+              const msg =
+                `一括エクスポートが完了しました！\n\n` +
+                `【出力フォルダ別内訳】\n` +
+                `📅 デイリー (${settings.folderDaily}): ${d.dailyCount}件\n` +
+                `🏋️ 筋トレ (${settings.folderWorkouts}): ${d.workoutsCount}件\n` +
+                `💪 種目 (${settings.folderExercises}): ${d.exercisesCount}件\n` +
+                `💧 水分 (${settings.folderWater}): ${d.waterCount}件\n` +
+                `⏱ 時間 (${settings.folderTime}): ${d.timeCount}件\n` +
+                `✅ 習慣 (${settings.folderHabits}): ${d.habitsCount}件\n` +
+                `🔄 ルーティン (${settings.folderRoutines}): ${d.routinesCount}件\n\n` +
+                `総出力ファイル数: ${res.successCount}件` +
+                (res.failCount > 0 ? ` (失敗: ${res.failCount}件)` : '');
+              Alert.alert('完了', msg);
             } catch (e: any) {
               Alert.alert('エラー', e.message);
             } finally {
@@ -307,6 +320,17 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
 
           {isFoldersExpanded && (
             <View style={styles.folderInputsContainer}>
+              <View style={styles.folderInputRow}>
+                <Text style={styles.folderInputLabel}>📅 デイリーノート</Text>
+                <TextInput
+                  style={styles.folderTextInput}
+                  value={settings.folderDaily}
+                  onChangeText={(val) => handleUpdateFolder('folderDaily', val)}
+                  placeholder="Daily"
+                  placeholderTextColor="#666"
+                />
+              </View>
+
               <View style={styles.folderInputRow}>
                 <Text style={styles.folderInputLabel}>🏋️ 筋トレ（ワークアウト）</Text>
                 <TextInput

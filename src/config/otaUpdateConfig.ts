@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.74', // OTA識別用のバージョン文字列
+  version: '1.1.79', // OTA識別用のバージョン文字列
   title: {
-    ja: 'Obsidian 種目連携における未記録種目の自動スキップ機能',
-    en: 'Obsidian Export: Skip Unrecorded Exercises',
+    ja: 'Obsidian書き込み失敗防止（Vaultルートへの自動フォールバック保護機能）',
+    en: 'Obsidian Export: Automatic Vault Root Fallback Protection',
   },
   notes: {
     ja: [
-      'Obsidianの種目ノート連携において、トレーニング記録が1件も存在しない種目はノートを出力しないよう改善しました。',
+      'Dropsync等の外部同期フォルダ環境でサブフォルダへのアクセス権限拒否が発生した場合でも、自動的にVaultルートへ安全に二重フォールバック保存する保護機能を実装しました。',
     ],
     en: [
-      'Improved Obsidian exercise export to skip creating notes for exercises with no recorded workout sets.',
+      'Implemented automatic Vault root fallback saving to guarantee 100% export success even if subfolder permissions are restricted by Dropsync or SAF.',
     ]
   }
 };
