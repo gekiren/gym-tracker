@@ -291,8 +291,8 @@ export const formatWorkoutToObsidianMarkdown = (workoutData: any, dayData?: DayL
             const s = secs % 60;
             return m > 0 ? `${m}m${s.toString().padStart(2, '0')}s` : `${s}s`;
           };
-          if (set.work_seconds != null) timeStr += `${fmtTime(set.work_seconds)}`;
-          if (set.rest_seconds != null) {
+          if (set.work_seconds != null && set.work_seconds > 0) timeStr += `${fmtTime(set.work_seconds)}`;
+          if (set.rest_seconds != null && set.rest_seconds > 0) {
             if (timeStr) timeStr += ' / ';
             timeStr += `rest ${fmtTime(set.rest_seconds)}`;
           }
@@ -596,6 +596,8 @@ export interface ExerciseHistoryItem {
   reps: number | null;
   rpe: number | null;
   stance?: string | null;
+  work_seconds?: number | null;
+  rest_seconds?: number | null;
 }
 
 export interface ExerciseNoteData {
@@ -651,15 +653,27 @@ export const formatExerciseToObsidianMarkdown = (data: ExerciseNoteData): string
     md += `\n---\n\n`;
 
     md += `## 📜 トレーニング履歴 (${data.history.length} sets)\n\n`;
-    md += `| Date | Set | Weight | Reps | RPE | Stance |\n`;
-    md += `|---|---|---|---|---|---|\n`;
+    md += `| Date | Set | Weight | Reps | RPE | Time/Rest | Stance |\n`;
+    md += `|---|---|---|---|---|---|---|\n`;
 
     data.history.forEach((s) => {
       const w = s.weight ? `${s.weight} kg` : '-';
       const r = s.reps ? `${s.reps}` : '-';
       const rpe = s.rpe ? `@${s.rpe}` : '-';
       const stance = s.stance ? translateStance(s.stance) : '-';
-      md += `| ${s.date} | Set ${s.set_number} | ${w} | ${r} | ${rpe} | ${stance} |\n`;
+      let timeStr = '';
+      const fmtTime = (secs: number) => {
+        const m = Math.floor(secs / 60);
+        const s = secs % 60;
+        return m > 0 ? `${m}m${s.toString().padStart(2, '0')}s` : `${s}s`;
+      };
+      if (s.work_seconds != null && s.work_seconds > 0) timeStr += `${fmtTime(s.work_seconds)}`;
+      if (s.rest_seconds != null && s.rest_seconds > 0) {
+        if (timeStr) timeStr += ' / ';
+        timeStr += `rest ${fmtTime(s.rest_seconds)}`;
+      }
+      if (!timeStr) timeStr = '-';
+      md += `| ${s.date} | Set ${s.set_number} | ${w} | ${r} | ${rpe} | ${timeStr} | ${stance} |\n`;
     });
     md += `\n`;
   } else {
@@ -783,8 +797,10 @@ export const exportExerciseNoteToVault = async (
       reps: number;
       rpe: number;
       stance: string;
+      work_seconds: number;
+      rest_seconds: number;
     }>(
-      `SELECT w.start_time, ws.set_number, ws.weight, ws.reps, ws.rpe, ws.stance
+      `SELECT w.start_time, ws.set_number, ws.weight, ws.reps, ws.rpe, ws.stance, ws.work_seconds, ws.rest_seconds
        FROM workout_sets ws
        JOIN workout_exercises we ON ws.workout_exercise_id = we.id
        JOIN workouts w ON we.workout_id = w.id
@@ -800,6 +816,8 @@ export const exportExerciseNoteToVault = async (
       reps: r.reps,
       rpe: r.rpe,
       stance: r.stance,
+      work_seconds: r.work_seconds,
+      rest_seconds: r.rest_seconds,
     }));
 
     if (!history || history.length === 0) {

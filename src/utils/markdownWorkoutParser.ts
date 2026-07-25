@@ -25,17 +25,40 @@ export interface ParsedWorkoutData {
 }
 
 /**
- * 時間文字列 (例: "1m30s", "90s", "1m") を秒数にパース
+ * 時間文字列 (例: "1m30s", "90s", "1m", "30:00", "15分30秒") を秒数にパース
  */
 const parseSeconds = (str: string): number | null => {
   if (!str || str === '-') return null;
+  const s = str.trim();
+
+  // 1. "hh:mm:ss" または "mm:ss" フォーマット
+  const colonMatch = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (colonMatch) {
+    if (colonMatch[3] !== undefined) {
+      const h = parseInt(colonMatch[1], 10);
+      const m = parseInt(colonMatch[2], 10);
+      const sec = parseInt(colonMatch[3], 10);
+      return h * 3600 + m * 60 + sec;
+    } else {
+      const m = parseInt(colonMatch[1], 10);
+      const sec = parseInt(colonMatch[2], 10);
+      return m * 60 + sec;
+    }
+  }
+
+  // 2. "XmYs" / "X分Y秒" / "Xh" / "Xm" / "Ys"
   let total = 0;
-  const minMatch = str.match(/(\d+)\s*m/i);
-  const secMatch = str.match(/(\d+)\s*s/i);
-  if (minMatch) total += parseInt(minMatch[1], 10) * 60;
-  if (secMatch) total += parseInt(secMatch[1], 10);
-  if (!minMatch && !secMatch) {
-    const rawSec = parseInt(str, 10);
+  let matched = false;
+  const hourMatch = s.match(/(\d+)\s*(?:h|時間)/i);
+  const minMatch = s.match(/(\d+)\s*(?:m|分)/i);
+  const secMatch = s.match(/(\d+)\s*(?:s|秒)/i);
+
+  if (hourMatch) { total += parseInt(hourMatch[1], 10) * 3600; matched = true; }
+  if (minMatch) { total += parseInt(minMatch[1], 10) * 60; matched = true; }
+  if (secMatch) { total += parseInt(secMatch[1], 10); matched = true; }
+
+  if (!matched) {
+    const rawSec = parseInt(s, 10);
     if (!isNaN(rawSec)) total = rawSec;
   }
   return total > 0 ? total : null;

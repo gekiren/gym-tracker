@@ -56,8 +56,8 @@ export const formatWorkoutToMarkdown = (workout: WorkoutData): string => {
         const s = secs % 60;
         return m > 0 ? `${m}m${s.toString().padStart(2, '0')}s` : `${s}s`;
       };
-      if (set.work_seconds != null) timeStr += `${fmtTime(set.work_seconds)}`;
-      if (set.rest_seconds != null) {
+      if (set.work_seconds != null && set.work_seconds > 0) timeStr += `${fmtTime(set.work_seconds)}`;
+      if (set.rest_seconds != null && set.rest_seconds > 0) {
          if (timeStr) timeStr += ' / ';
          timeStr += `rest ${fmtTime(set.rest_seconds)}`;
       }
