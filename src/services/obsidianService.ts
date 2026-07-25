@@ -661,6 +661,11 @@ export const exportExerciseNoteToVault = async (
       stance: r.stance,
     }));
 
+    if (!history || history.length === 0) {
+      // 記録が存在しない種目は出力スキップ
+      return true;
+    }
+
     const exData: ExerciseNoteData = {
       name: exInfo?.name || exerciseName,
       muscle_group: exInfo?.muscle_group,
@@ -941,11 +946,16 @@ export const exportAllDataToObsidian = async (): Promise<{ successCount: number;
   let successCount = 0;
   let failCount = 0;
 
-  // 1. 種目ノートを一括出力
+  // 1. トレーニング記録が存在する種目ノートのみ一括出力
   if (settings.exportExercises) {
     try {
-      const allExercises = await conn.getAllAsync<{ id: number; name: string }>('SELECT id, name FROM exercises');
-      for (const ex of allExercises) {
+      const activeExercises = await conn.getAllAsync<{ id: number; name: string }>(
+        `SELECT DISTINCT e.id, e.name
+         FROM exercises e
+         JOIN workout_exercises we ON e.id = we.exercise_id
+         JOIN workout_sets ws ON we.id = ws.workout_exercise_id`
+      );
+      for (const ex of activeExercises) {
         const ok = await exportExerciseNoteToVault(ex.id, ex.name, exercisesFolderUri);
         if (ok) successCount++;
         else failCount++;
