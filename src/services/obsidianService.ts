@@ -97,6 +97,24 @@ export const requestVaultDirectoryPermission = async (): Promise<string | null> 
 };
 
 /**
+ * SAF URI からデコード済みの純粋なファイル名（basename）を取り出すヘルパー
+ */
+const getBasenameFromUri = (uri: string): string => {
+  try {
+    const decoded = decodeURIComponent(uri);
+    const lastSlash = decoded.lastIndexOf('/');
+    const lastColon = decoded.lastIndexOf(':');
+    const cutIdx = Math.max(lastSlash, lastColon);
+    if (cutIdx !== -1) {
+      return decoded.substring(cutIdx + 1);
+    }
+    return decoded;
+  } catch (_) {
+    return uri;
+  }
+};
+
+/**
  * ディレクトリ内にファイルを書き出し・追記する内部ヘルパー
  */
 const writeOrAppendFileToVault = async (
@@ -111,10 +129,10 @@ const writeOrAppendFileToVault = async (
     const files = await FileSystem.StorageAccessFramework.readDirectoryAsync(parentUri);
     let targetFileUri: string | null = null;
 
-    // 同名ファイルを検索
+    // 同名ファイルを完全一致で検索
     for (const fUri of files) {
-      const decodedName = decodeURIComponent(fUri);
-      if (decodedName.endsWith('/' + fileName) || decodedName.endsWith('%2F' + fileName) || decodedName.endsWith(fileName)) {
+      const base = getBasenameFromUri(fUri);
+      if (base === fileName) {
         targetFileUri = fUri;
         break;
       }
@@ -147,9 +165,9 @@ const writeOrAppendFileToVault = async (
 };
 
 /**
- * 筋トレ詳細ノート用の Markdown を生成
+ * 筋トレ詳細ノート用の Markdown を生成 (オプションで同日のライフログも付与)
  */
-export const formatWorkoutToObsidianMarkdown = (workoutData: any): string => {
+export const formatWorkoutToObsidianMarkdown = (workoutData: any, dayData?: DayLifelogData): string => {
   const dateStr = format(new Date(workoutData.start_time), 'yyyy-MM-dd HH:mm');
   const dateOnly = format(new Date(workoutData.start_time), 'yyyy-MM-dd');
   
@@ -199,8 +217,53 @@ export const formatWorkoutToObsidianMarkdown = (workoutData: any): string => {
       md += `\n`;
     });
   }
+
+  // もし同日のライフログデータが渡されていれば末尾に追加出力
+  if (dayData) {
+    const { waterLogs, timeLogs, habitLogs } = dayData;
+    if ((waterLogs && waterLogs.length > 0) || (timeLogs && timeLogs.length > 0) || (habitLogs && habitLogs.length > 0)) {
+      md += `---\n\n## 📊 本日のライフログサマリー\n\n`;
+
+      if (waterLogs && waterLogs.length > 0) {
+        const totalWater = waterLogs.reduce((sum, item) => sum + (item.amount || 0), 0);
+        const totalCaffeine = waterLogs.reduce((sum, item) => sum + (item.caffeine || 0), 0);
+        md += `### 💧 水分補給 (${totalWater} ml${totalCaffeine > 0 ? `, カフェイン ${totalCaffeine}mg` : ''})\n`;
+        waterLogs.forEach((item) => {
+          const time = item.timestamp ? format(new Date(item.timestamp), 'HH:mm') : '';
+          const cafStr = item.caffeine ? ` (カフェイン ${item.caffeine}mg)` : '';
+          md += `- ${time ? time + ' - ' : ''}${item.amount} ml${cafStr}\n`;
+        });
+        md += `\n`;
+      }
+
+      if (timeLogs && timeLogs.length > 0) {
+        const totalMins = timeLogs.reduce((sum, item) => sum + (item.duration_minutes != null ? item.duration_minutes : (item.duration_seconds ? Math.floor(item.duration_seconds / 60) : 0)), 0);
+        md += `### ⏱ 時間管理 (集中 ${totalMins}分)\n`;
+        timeLogs.forEach((item) => {
+          const mins = item.duration_minutes != null ? item.duration_minutes : (item.duration_seconds ? Math.floor(item.duration_seconds / 60) : 0);
+          const name = item.activity_name || item.category || item.name || '作業';
+          const notesStr = item.notes ? ` (${item.notes})` : '';
+          md += `- ${name}: ${mins}分${notesStr}\n`;
+        });
+        md += `\n`;
+      }
+
+      if (habitLogs && habitLogs.length > 0) {
+        md += `### ✅ 習慣カウンター\n`;
+        habitLogs.forEach((h) => {
+          const isCompleted = h.completed || h.count >= (h.target_count || 1);
+          const check = isCompleted ? '[x]' : '[ ]';
+          const countStr = h.target_count && h.target_count > 1 ? ` (${h.count}/${h.target_count})` : '';
+          md += `- ${check} ${h.name}${countStr}\n`;
+        });
+        md += `\n`;
+      }
+    }
+  }
+
   return md;
 };
+
 
 /**
  * 統合デイリーノート用の Markdown を生成
@@ -348,7 +411,7 @@ export const exportWorkoutToObsidian = async (workoutId: number): Promise<boolea
 
     // 個別筋トレノートのエクスポート (exportWorkouts が true かつ append 以外)
     if (settings.exportWorkouts && settings.exportMode !== 'append') {
-      const workoutMd = formatWorkoutToObsidianMarkdown(workoutData);
+      const workoutMd = formatWorkoutToObsidianMarkdown(workoutData, dayData);
       const fileName = `${dateOnly}_${(workoutData.title || 'workout').replace(/[\/\\?%*:|"<>]/g, '_')}.md`;
       await writeOrAppendFileToVault(settings.vaultUri, fileName, workoutMd, false);
     }
@@ -489,7 +552,7 @@ export const exportAllDataToObsidian = async (): Promise<{ successCount: number;
 
       if (settings.exportWorkouts && settings.exportMode !== 'append') {
         for (const workoutData of dayData.workouts) {
-          const workoutMd = formatWorkoutToObsidianMarkdown(workoutData);
+          const workoutMd = formatWorkoutToObsidianMarkdown(workoutData, dayData);
           const fileName = `${dateStr}_${(workoutData.title || 'workout').replace(/[\/\\?%*:|"<>]/g, '_')}.md`;
           await writeOrAppendFileToVault(settings.vaultUri, fileName, workoutMd, false);
         }

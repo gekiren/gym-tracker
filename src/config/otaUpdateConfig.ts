@@ -11,19 +11,20 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.70', // OTA識別用のバージョン文字列
+  version: '1.1.71', // OTA識別用のバージョン文字列
   title: {
-    ja: 'Obsidian連携の水分量・ライフログ出力修正',
-    en: 'Fixed Obsidian Sync for Hydration & Lifelogs',
+    ja: 'Obsidian Vault ファイル同期バグの修正',
+    en: 'Fixed Obsidian Vault File Match & Export Issue',
   },
   notes: {
     ja: [
-      'Obsidian への連携機能において、日付フォーマットおよびデータ取得クエリを修正し、水分補給量・カフェイン量・時間管理・習慣が確実にデイリーノートへ出力されるよう不具合を解消しました。',
+      'Obsidian への自動連携機能において、Vault 内の既存ノート名の完全一致検索ロジックを修正し、水分補給量・時間管理・習慣が正しいノートファイルへ確実に書き込まれるよう不具合を完全解消しました。',
     ],
     en: [
-      'Fixed an issue in Obsidian sync where hydration, caffeine, time logs, and habits were not correctly exported to daily notes due to date formatting.',
+      'Fixed an exact filename matching issue in Obsidian Vault export, ensuring hydration, time logs, and habits are accurately updated in the correct daily and workout notes.',
     ]
   }
 };
+
 
 
