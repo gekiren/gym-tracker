@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, TextInput, Modal, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../src/theme';
@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useRef } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
 import { pickAndImportCSV } from '../src/utils/csvImporter';
+import { importWorkoutFromSelectedFile, importWorkoutFromMarkdownText } from '../src/services/workoutImportService';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Updates from 'expo-updates';
@@ -482,6 +483,54 @@ export default function DeveloperMenuScreen() {
   };
 
   const [isImportingCSV, setIsImportingCSV] = useState(false);
+  const [isImportingMD, setIsImportingMD] = useState(false);
+  const [showMDTextModal, setShowMDTextModal] = useState(false);
+  const [mdInputText, setMdInputText] = useState('');
+
+  const handleImportMDFile = async () => {
+    if (isImportingMD) return;
+    setIsImportingMD(true);
+    try {
+      const result = await importWorkoutFromSelectedFile();
+      if (result.success) {
+        Alert.alert(
+          'MDインポート成功',
+          `Markdown ワークアウト記録を取り込みました！\n\n・タイトル: ${result.title}\n・日付: ${result.date}\n・種目数: ${result.exerciseCount}\n・総セット数: ${result.setCount}`
+        );
+      } else if (result.error !== 'ファイル選択がキャンセルされました。') {
+        Alert.alert('インポート失敗', result.error || 'エラーが発生しました。');
+      }
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    } finally {
+      setIsImportingMD(false);
+    }
+  };
+
+  const handleImportMDTextSubmit = async () => {
+    if (!mdInputText.trim()) {
+      Alert.alert('入力エラー', 'Markdown テキストを入力してください。');
+      return;
+    }
+    setIsImportingMD(true);
+    try {
+      const result = await importWorkoutFromMarkdownText(mdInputText);
+      if (result.success) {
+        setShowMDTextModal(false);
+        setMdInputText('');
+        Alert.alert(
+          'MDインポート成功',
+          `Markdown ワークアウト記録を取り込みました！\n\n・タイトル: ${result.title}\n・日付: ${result.date}\n・種目数: ${result.exerciseCount}\n・総セット数: ${result.setCount}`
+        );
+      } else {
+        Alert.alert('インポート失敗', result.error || 'パースに失敗しました。');
+      }
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    } finally {
+      setIsImportingMD(false);
+    }
+  };
 
   const handleImportCSV = async () => {
     if (isImportingCSV) return;
@@ -845,6 +894,78 @@ export default function DeveloperMenuScreen() {
             </View>
           </View>
         </View>
+
+        {/* Maintenance: Markdown Workout Importer */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="document-text-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>🛠️ メンテナンス: MDワークアウト復元</Text>
+          </View>
+          <Text style={styles.cardDesc}>
+            Obsidian等で保存されたワークアウト記録の Markdown (.md) ファイル、または MDテキストから SQLite DB へワークアウトを追加・復元します。
+          </Text>
+          <View style={{ flexDirection: 'column', gap: 10 }}>
+            <TouchableOpacity style={styles.btnPrimary} onPress={handleImportMDFile} disabled={isImportingMD}>
+              <Ionicons name="document-attach-outline" size={20} color="#000" style={{ marginRight: 8 }} />
+              <Text style={styles.btnPrimaryText}>{isImportingMD ? '処理中...' : 'MDファイルを選択してインポート'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.btnOutline} onPress={() => setShowMDTextModal(true)}>
+              <Ionicons name="create-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.btnOutlineText}>MDテキストを貼り付けてインポート</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Modal for MD Text Input */}
+        <Modal
+          visible={showMDTextModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowMDTextModal(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 20 }}>
+            <View style={{ backgroundColor: Theme.colors.card, borderRadius: 12, padding: 20, maxHeight: '80%', borderWidth: 1, borderColor: Theme.colors.border }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: Theme.colors.text }}>MDテキストからの取り込み</Text>
+                <TouchableOpacity onPress={() => setShowMDTextModal(false)}>
+                  <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+              <Text style={{ fontSize: 13, color: Theme.colors.textMuted, marginBottom: 10 }}>
+                ワークアウト記録の Markdown 本言（Frontmatter、見出し、セットテーブル等）を下に貼り付けてください。
+              </Text>
+              <TextInput
+                style={{
+                  backgroundColor: 'rgba(0,0,0,0.3)',
+                  color: '#fff',
+                  borderRadius: 8,
+                  padding: 12,
+                  height: 220,
+                  textAlignVertical: 'top',
+                  fontSize: 13,
+                  fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+                  borderWidth: 1,
+                  borderColor: Theme.colors.border,
+                  marginBottom: 16
+                }}
+                multiline={true}
+                placeholder={`# 🏋️ ベンチプレスDay (2026-07-23)\n- **日付**: 2026-07-23 18:30\n\n### 1. [[ベンチプレス]]\n| Set | Stance | Weight | Reps | RPE | Time/Rest |\n|---|---|---|---|---|---|\n| 1 | Normal | 80 kg | 10 | @8 | 60s / rest 90s |`}
+                placeholderTextColor="rgba(255,255,255,0.25)"
+                value={mdInputText}
+                onChangeText={setMdInputText}
+              />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <TouchableOpacity style={[styles.btnOutline, { flex: 1 }]} onPress={() => setShowMDTextModal(false)}>
+                  <Text style={styles.btnOutlineText}>キャンセル</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.btnPrimary, { flex: 1 }]} onPress={handleImportMDTextSubmit} disabled={isImportingMD}>
+                  <Text style={styles.btnPrimaryText}>{isImportingMD ? '処理中...' : 'インポート実行'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         {/* Export Section */}
         <View style={styles.card}>
