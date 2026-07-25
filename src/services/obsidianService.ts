@@ -338,7 +338,34 @@ export const formatDailyLogToObsidianMarkdown = (
 };
 
 /**
- * 指定された日付 (YYYY-MM-DD または YYYY/MM/DD) のライフログ（筋トレ・水分・時間・習慣）をDBから一括取得するヘルパー
+ * 日付文字列やタイムスタンプを安全に標準 ISO 日付 (YYYY-MM-DD) に正規化するヘルパー
+ */
+export const normalizeToDateISO = (dateVal: string | number | null | undefined): string | null => {
+  if (dateVal == null) return null;
+  if (typeof dateVal === 'number' || !isNaN(Number(dateVal))) {
+    const num = Number(dateVal);
+    if (num > 0) {
+      const d = new Date(num);
+      if (!isNaN(d.getTime())) return format(d, 'yyyy-MM-dd');
+    }
+  }
+  const str = String(dateVal).trim();
+  const match = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (match) {
+    const y = match[1];
+    const m = match[2].padStart(2, '0');
+    const d = match[3].padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    return format(parsed, 'yyyy-MM-dd');
+  }
+  return null;
+};
+
+/**
+ * 指定された日付 (YYYY-MM-DD) のライフログ（筋トレ・水分・時間・習慣）をDBから一括取得するヘルパー
  */
 export interface DayLifelogData {
   workouts: any[];
@@ -348,43 +375,51 @@ export interface DayLifelogData {
 }
 
 export const fetchDayLifelogData = async (
-  dateStr: string,
+  targetDateStr: string,
   settings: ObsidianSettings
 ): Promise<DayLifelogData> => {
   const conn = getDB();
-  const dateHyphen = dateStr.replace(/\//g, '-');
-  const dateSlash = dateStr.replace(/-/g, '/');
+  const targetDateISO = normalizeToDateISO(targetDateStr) || targetDateStr;
 
-  const waterLogs = settings.exportWater
-    ? await conn.getAllAsync<any>(
-        'SELECT * FROM water_logs WHERE date = ? OR date = ? ORDER BY timestamp ASC',
-        [dateSlash, dateHyphen]
-      )
-    : [];
+  let waterLogs: any[] = [];
+  if (settings.exportWater) {
+    const allWater = await conn.getAllAsync<any>('SELECT * FROM water_logs ORDER BY timestamp ASC');
+    waterLogs = allWater.filter((item) => {
+      const itemDateISO = normalizeToDateISO(item.date) || normalizeToDateISO(item.timestamp);
+      return itemDateISO === targetDateISO;
+    });
+  }
 
-  const timeLogs = settings.exportTime
-    ? await conn.getAllAsync<any>(
-        'SELECT * FROM time_logs WHERE date = ? OR date = ? ORDER BY start_time ASC',
-        [dateSlash, dateHyphen]
-      )
-    : [];
+  let timeLogs: any[] = [];
+  if (settings.exportTime) {
+    const allTime = await conn.getAllAsync<any>('SELECT * FROM time_logs ORDER BY start_time ASC');
+    timeLogs = allTime.filter((item) => {
+      const itemDateISO = normalizeToDateISO(item.date) || normalizeToDateISO(item.start_time);
+      return itemDateISO === targetDateISO;
+    });
+  }
 
-  const habitLogs = settings.exportHabits
-    ? await conn.getAllAsync<any>(
-        'SELECT h.name, h.target_count, hl.count, hl.completed FROM habit_items h LEFT JOIN habit_logs hl ON h.id = hl.item_id AND (hl.date = ? OR hl.date = ?)',
-        [dateSlash, dateHyphen]
-      )
-    : [];
+  let habitLogs: any[] = [];
+  if (settings.exportHabits) {
+    const allHabits = await conn.getAllAsync<any>(
+      'SELECT h.name, h.target_count, hl.count, hl.completed, hl.date, hl.timestamp FROM habit_items h LEFT JOIN habit_logs hl ON h.id = hl.item_id'
+    );
+    habitLogs = allHabits.filter((item) => {
+      if (!item.date && !item.timestamp) return false;
+      const itemDateISO = normalizeToDateISO(item.date) || normalizeToDateISO(item.timestamp);
+      return itemDateISO === targetDateISO;
+    });
+  }
 
   let workouts: any[] = [];
   if (settings.exportWorkouts) {
-    const workoutRows = await conn.getAllAsync<{ id: number }>(
-      "SELECT id FROM workouts WHERE DATE(start_time, 'localtime') = ? OR DATE(start_time) = ?",
-      [dateHyphen, dateHyphen]
-    );
-    for (const w of workoutRows) {
-      const fullData = await loadFullWorkoutData(w.id);
-      if (fullData) workouts.push(fullData);
+    const allWorkoutRows = await conn.getAllAsync<{ id: number; start_time: string }>('SELECT id, start_time FROM workouts');
+    for (const w of allWorkoutRows) {
+      const wDateISO = normalizeToDateISO(w.start_time);
+      if (wDateISO === targetDateISO) {
+        const fullData = await loadFullWorkoutData(w.id);
+        if (fullData) workouts.push(fullData);
+      }
     }
   }
 
@@ -514,31 +549,35 @@ export const exportAllDataToObsidian = async (): Promise<{ successCount: number;
   const datesSet = new Set<string>();
 
   if (settings.exportWorkouts) {
-    const workoutDates = await conn.getAllAsync<{ d: string }>(
-      "SELECT DISTINCT DATE(start_time) as d FROM workouts WHERE start_time IS NOT NULL"
-    );
-    workoutDates.forEach(r => { if (r.d) datesSet.add(r.d.replace(/\//g, '-')); });
+    const rows = await conn.getAllAsync<{ start_time: string }>('SELECT start_time FROM workouts WHERE start_time IS NOT NULL');
+    rows.forEach((r) => {
+      const dISO = normalizeToDateISO(r.start_time);
+      if (dISO) datesSet.add(dISO);
+    });
   }
 
   if (settings.exportWater) {
-    const waterDates = await conn.getAllAsync<{ d: string }>(
-      "SELECT DISTINCT date as d FROM water_logs WHERE date IS NOT NULL"
-    );
-    waterDates.forEach(r => { if (r.d) datesSet.add(r.d.replace(/\//g, '-')); });
+    const rows = await conn.getAllAsync<{ date: string; timestamp: number }>('SELECT date, timestamp FROM water_logs');
+    rows.forEach((r) => {
+      const dISO = normalizeToDateISO(r.date) || normalizeToDateISO(r.timestamp);
+      if (dISO) datesSet.add(dISO);
+    });
   }
 
   if (settings.exportTime) {
-    const timeDates = await conn.getAllAsync<{ d: string }>(
-      "SELECT DISTINCT date as d FROM time_logs WHERE date IS NOT NULL"
-    );
-    timeDates.forEach(r => { if (r.d) datesSet.add(r.d.replace(/\//g, '-')); });
+    const rows = await conn.getAllAsync<{ date: string; start_time: string }>('SELECT date, start_time FROM time_logs');
+    rows.forEach((r) => {
+      const dISO = normalizeToDateISO(r.date) || normalizeToDateISO(r.start_time);
+      if (dISO) datesSet.add(dISO);
+    });
   }
 
   if (settings.exportHabits) {
-    const habitDates = await conn.getAllAsync<{ d: string }>(
-      "SELECT DISTINCT date as d FROM habit_logs WHERE date IS NOT NULL"
-    );
-    habitDates.forEach(r => { if (r.d) datesSet.add(r.d.replace(/\//g, '-')); });
+    const rows = await conn.getAllAsync<{ date: string; timestamp: number }>('SELECT date, timestamp FROM habit_logs');
+    rows.forEach((r) => {
+      const dISO = normalizeToDateISO(r.date) || normalizeToDateISO(r.timestamp);
+      if (dISO) datesSet.add(dISO);
+    });
   }
 
   const sortedDates = Array.from(datesSet).sort();
@@ -587,4 +626,5 @@ export const exportAllDataToObsidian = async (): Promise<{ successCount: number;
 
   return { successCount, failCount };
 };
+
 
