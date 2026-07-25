@@ -247,13 +247,14 @@ export const formatDailyLogToObsidianMarkdown = (
 
   // 3. 時間管理 (Time Log)
   if (timeLogs && timeLogs.length > 0) {
-    const totalSecs = timeLogs.reduce((sum, item) => sum + (item.duration_seconds || 0), 0);
-    const totalMins = Math.floor(totalSecs / 60);
+    const totalMins = timeLogs.reduce((sum, item) => sum + (item.duration_minutes != null ? item.duration_minutes : (item.duration_seconds ? Math.floor(item.duration_seconds / 60) : 0)), 0);
     md += `### ⏱ 時間管理 (集中タイマー)\n`;
     md += `- **総集中時間**: ${totalMins} 分\n`;
     timeLogs.forEach((item) => {
-      const mins = Math.floor((item.duration_seconds || 0) / 60);
-      md += `  - ${item.category || '作業'}: ${mins}分 (${item.notes || ''})\n`;
+      const mins = item.duration_minutes != null ? item.duration_minutes : (item.duration_seconds ? Math.floor(item.duration_seconds / 60) : 0);
+      const name = item.activity_name || item.category || item.name || '作業';
+      const notesStr = item.notes ? ` (${item.notes})` : '';
+      md += `  - ${name}: ${mins}分${notesStr}\n`;
     });
     md += `\n`;
   }
@@ -274,7 +275,7 @@ export const formatDailyLogToObsidianMarkdown = (
 };
 
 /**
- * 指定された日付 (YYYY-MM-DD) のライフログ（筋トレ・水分・時間・習慣）をDBから一括取得するヘルパー
+ * 指定された日付 (YYYY-MM-DD または YYYY/MM/DD) のライフログ（筋トレ・水分・時間・習慣）をDBから一括取得するヘルパー
  */
 export interface DayLifelogData {
   workouts: any[];
@@ -288,24 +289,35 @@ export const fetchDayLifelogData = async (
   settings: ObsidianSettings
 ): Promise<DayLifelogData> => {
   const conn = getDB();
+  const dateHyphen = dateStr.replace(/\//g, '-');
+  const dateSlash = dateStr.replace(/-/g, '/');
 
-  const waterLogs = settings.exportWater ? await getWaterLogs(dateStr) : [];
+  const waterLogs = settings.exportWater
+    ? await conn.getAllAsync<any>(
+        'SELECT * FROM water_logs WHERE date = ? OR date = ? ORDER BY timestamp ASC',
+        [dateSlash, dateHyphen]
+      )
+    : [];
 
-  const timeLogs = settings.exportTime ? await conn.getAllAsync<any>(
-    'SELECT * FROM time_logs WHERE date = ? ORDER BY timestamp DESC',
-    [dateStr]
-  ) : [];
+  const timeLogs = settings.exportTime
+    ? await conn.getAllAsync<any>(
+        'SELECT * FROM time_logs WHERE date = ? OR date = ? ORDER BY start_time ASC',
+        [dateSlash, dateHyphen]
+      )
+    : [];
 
-  const habitLogs = settings.exportHabits ? await conn.getAllAsync<any>(
-    'SELECT h.name, h.target_count, hl.count, hl.completed FROM habit_items h LEFT JOIN habit_logs hl ON h.id = hl.item_id AND hl.date = ?',
-    [dateStr]
-  ) : [];
+  const habitLogs = settings.exportHabits
+    ? await conn.getAllAsync<any>(
+        'SELECT h.name, h.target_count, hl.count, hl.completed FROM habit_items h LEFT JOIN habit_logs hl ON h.id = hl.item_id AND (hl.date = ? OR hl.date = ?)',
+        [dateSlash, dateHyphen]
+      )
+    : [];
 
   let workouts: any[] = [];
   if (settings.exportWorkouts) {
     const workoutRows = await conn.getAllAsync<{ id: number }>(
-      'SELECT id FROM workouts WHERE DATE(start_time) = ?',
-      [dateStr]
+      "SELECT id FROM workouts WHERE DATE(start_time, 'localtime') = ? OR DATE(start_time) = ?",
+      [dateHyphen, dateHyphen]
     );
     for (const w of workoutRows) {
       const fullData = await loadFullWorkoutData(w.id);
@@ -442,28 +454,28 @@ export const exportAllDataToObsidian = async (): Promise<{ successCount: number;
     const workoutDates = await conn.getAllAsync<{ d: string }>(
       "SELECT DISTINCT DATE(start_time) as d FROM workouts WHERE start_time IS NOT NULL"
     );
-    workoutDates.forEach(r => { if (r.d) datesSet.add(r.d); });
+    workoutDates.forEach(r => { if (r.d) datesSet.add(r.d.replace(/\//g, '-')); });
   }
 
   if (settings.exportWater) {
     const waterDates = await conn.getAllAsync<{ d: string }>(
       "SELECT DISTINCT date as d FROM water_logs WHERE date IS NOT NULL"
     );
-    waterDates.forEach(r => { if (r.d) datesSet.add(r.d); });
+    waterDates.forEach(r => { if (r.d) datesSet.add(r.d.replace(/\//g, '-')); });
   }
 
   if (settings.exportTime) {
     const timeDates = await conn.getAllAsync<{ d: string }>(
       "SELECT DISTINCT date as d FROM time_logs WHERE date IS NOT NULL"
     );
-    timeDates.forEach(r => { if (r.d) datesSet.add(r.d); });
+    timeDates.forEach(r => { if (r.d) datesSet.add(r.d.replace(/\//g, '-')); });
   }
 
   if (settings.exportHabits) {
     const habitDates = await conn.getAllAsync<{ d: string }>(
       "SELECT DISTINCT date as d FROM habit_logs WHERE date IS NOT NULL"
     );
-    habitDates.forEach(r => { if (r.d) datesSet.add(r.d); });
+    habitDates.forEach(r => { if (r.d) datesSet.add(r.d.replace(/\//g, '-')); });
   }
 
   const sortedDates = Array.from(datesSet).sort();
