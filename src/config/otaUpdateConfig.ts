@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.72', // OTA識別用のバージョン文字列
+  version: '1.1.73', // OTA識別用のバージョン文字列
   title: {
-    ja: 'Obsidian ライフログ同期ロジックの抜本改善',
-    en: 'Overhauled Obsidian Lifelog Sync Logic',
+    ja: 'Obsidian カテゴリ別保存先フォルダ設定 ＆ 種目・ルーティン分離連携',
+    en: 'Obsidian Custom Subfolder Settings & Exercise/Routine Export',
   },
   notes: {
     ja: [
-      'Obsidian への自動連携機能において、DB内の不揃いな日付形式を完全に正規化するフィルタリングロジックを導入し、水分補給量・時間管理・習慣が100%確実にノートへ出力されるよう不具合を抜本修正しました。',
+      'Obsidian連携において筋トレ（ワークアウト/種目）、水分、時間管理、習慣、ルーティン管理の各保存先サブフォルダを個別に自由設定できるようになりました。',
+      '筋トレのワークアウトログと各種目ノート（自己ベスト・全セット履歴付き）を分離し、相互リンク連携する機能を追加しました。',
     ],
     en: [
-      'Overhauled date filtering for Obsidian export, ensuring hydration, caffeine, time logs, and habits are 100% reliably exported regardless of raw DB date formats.',
+      'Added support for configuring custom subfolders for Workouts, Exercises, Hydration, Time, Habits, and Routines in Obsidian export.',
+      'Separated Workout logs and Exercise notes (with PRs & full set histories) with seamless WikiLink navigation.',
     ]
   }
 };

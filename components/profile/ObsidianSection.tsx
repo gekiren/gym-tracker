@@ -20,6 +20,7 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
   const [settings, setSettings] = useState<ObsidianSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [isFoldersExpanded, setIsFoldersExpanded] = useState(true);
 
   useEffect(() => {
     loadSettings();
@@ -77,11 +78,24 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
     await saveObsidianSettings({ scheduleTime: val });
   };
 
-  const handleToggleExportItem = async (itemKey: 'exportWorkouts' | 'exportWater' | 'exportTime' | 'exportHabits', val: boolean) => {
+  const handleToggleExportItem = async (
+    itemKey: 'exportWorkouts' | 'exportExercises' | 'exportWater' | 'exportTime' | 'exportHabits' | 'exportRoutines',
+    val: boolean
+  ) => {
     if (!settings) return;
     const updated = { ...settings, [itemKey]: val };
     setSettings(updated);
     await saveObsidianSettings({ [itemKey]: val });
+  };
+
+  const handleUpdateFolder = async (
+    folderKey: 'folderWorkouts' | 'folderExercises' | 'folderWater' | 'folderTime' | 'folderHabits' | 'folderRoutines',
+    val: string
+  ) => {
+    if (!settings) return;
+    const updated = { ...settings, [folderKey]: val };
+    setSettings(updated);
+    await saveObsidianSettings({ [folderKey]: val });
   };
 
   const handleManualSyncNow = async () => {
@@ -112,7 +126,7 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
 
     Alert.alert(
       '一括エクスポート確認',
-      'これまでのすべての筋トレログおよびライフログを Obsidian Vault へエクスポートします。実行しますか？',
+      'これまでのすべての筋トレログ、種目ノート、ライフログ、ルーティンを Obsidian Vault へエクスポートします。実行しますか？',
       [
         { text: 'キャンセル', style: 'cancel' },
         {
@@ -176,7 +190,7 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
         <View style={styles.folderInfo}>
           <Ionicons name="folder-open-outline" size={20} color={Theme.colors.textMuted} />
           <View style={styles.folderTextContainer}>
-            <Text style={styles.folderLabel}>保存先 Obsidian Vault</Text>
+            <Text style={styles.folderLabel}>保存先 Obsidian Vault (ルート)</Text>
             <Text style={styles.folderValue} numberOfLines={1}>
               {decodeUriName(settings.vaultUri)}
             </Text>
@@ -244,6 +258,13 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
             </TouchableOpacity>
 
             <TouchableOpacity
+              style={[styles.chip, settings.exportExercises && styles.chipActive]}
+              onPress={() => handleToggleExportItem('exportExercises', !settings.exportExercises)}
+            >
+              <Text style={[styles.chipText, settings.exportExercises && styles.chipTextActive]}>💪 種目</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={[styles.chip, settings.exportWater && styles.chipActive]}
               onPress={() => handleToggleExportItem('exportWater', !settings.exportWater)}
             >
@@ -263,7 +284,96 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
             >
               <Text style={[styles.chipText, settings.exportHabits && styles.chipTextActive]}>✅ 習慣</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.chip, settings.exportRoutines && styles.chipActive]}
+              onPress={() => handleToggleExportItem('exportRoutines', !settings.exportRoutines)}
+            >
+              <Text style={[styles.chipText, settings.exportRoutines && styles.chipTextActive]}>🔄 ルーティン</Text>
+            </TouchableOpacity>
           </View>
+
+          {/* Category Custom Folder Paths */}
+          <TouchableOpacity
+            style={styles.folderSectionHeader}
+            onPress={() => setIsFoldersExpanded(!isFoldersExpanded)}
+          >
+            <View style={styles.folderHeaderLeft}>
+              <Ionicons name="folder-outline" size={16} color={Theme.colors.primary} />
+              <Text style={styles.folderHeaderTitle}>カテゴリ別保存先フォルダ設定</Text>
+            </View>
+            <Ionicons name={isFoldersExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={Theme.colors.textMuted} />
+          </TouchableOpacity>
+
+          {isFoldersExpanded && (
+            <View style={styles.folderInputsContainer}>
+              <View style={styles.folderInputRow}>
+                <Text style={styles.folderInputLabel}>🏋️ 筋トレ（ワークアウト）</Text>
+                <TextInput
+                  style={styles.folderTextInput}
+                  value={settings.folderWorkouts}
+                  onChangeText={(val) => handleUpdateFolder('folderWorkouts', val)}
+                  placeholder="Workouts"
+                  placeholderTextColor="#666"
+                />
+              </View>
+
+              <View style={styles.folderInputRow}>
+                <Text style={styles.folderInputLabel}>💪 筋トレ（種目）</Text>
+                <TextInput
+                  style={styles.folderTextInput}
+                  value={settings.folderExercises}
+                  onChangeText={(val) => handleUpdateFolder('folderExercises', val)}
+                  placeholder="Exercises"
+                  placeholderTextColor="#666"
+                />
+              </View>
+
+              <View style={styles.folderInputRow}>
+                <Text style={styles.folderInputLabel}>💧 水分補給</Text>
+                <TextInput
+                  style={styles.folderTextInput}
+                  value={settings.folderWater}
+                  onChangeText={(val) => handleUpdateFolder('folderWater', val)}
+                  placeholder="Water"
+                  placeholderTextColor="#666"
+                />
+              </View>
+
+              <View style={styles.folderInputRow}>
+                <Text style={styles.folderInputLabel}>⏱ 時間管理</Text>
+                <TextInput
+                  style={styles.folderTextInput}
+                  value={settings.folderTime}
+                  onChangeText={(val) => handleUpdateFolder('folderTime', val)}
+                  placeholder="Time"
+                  placeholderTextColor="#666"
+                />
+              </View>
+
+              <View style={styles.folderInputRow}>
+                <Text style={styles.folderInputLabel}>✅ 習慣</Text>
+                <TextInput
+                  style={styles.folderTextInput}
+                  value={settings.folderHabits}
+                  onChangeText={(val) => handleUpdateFolder('folderHabits', val)}
+                  placeholder="Habits"
+                  placeholderTextColor="#666"
+                />
+              </View>
+
+              <View style={styles.folderInputRow}>
+                <Text style={styles.folderInputLabel}>🔄 ルーティン</Text>
+                <TextInput
+                  style={styles.folderTextInput}
+                  value={settings.folderRoutines}
+                  onChangeText={(val) => handleUpdateFolder('folderRoutines', val)}
+                  placeholder="Routines"
+                  placeholderTextColor="#666"
+                />
+              </View>
+            </View>
+          )}
 
           {/* Actions */}
           <View style={styles.actionButtonsContainer}>
@@ -457,5 +567,53 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 13,
     fontWeight: 'bold',
+  },
+  folderSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: Theme.spacing.md,
+    marginBottom: Theme.spacing.xs,
+    paddingVertical: 4,
+  },
+  folderHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  folderHeaderTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: Theme.colors.text,
+  },
+  folderInputsContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: Theme.borderRadius.md,
+    padding: Theme.spacing.sm,
+    gap: 8,
+    marginTop: 4,
+    marginBottom: Theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  folderInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  folderInputLabel: {
+    fontSize: 12,
+    color: Theme.colors.text,
+    flex: 1,
+  },
+  folderTextInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    color: Theme.colors.text,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    fontSize: 13,
+    width: 140,
   },
 });

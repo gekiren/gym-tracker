@@ -13,9 +13,17 @@ export interface ObsidianSettings {
   syncOnLaunch: boolean;
   scheduleTime: string; // e.g. "22:00"
   exportWorkouts: boolean;
+  exportExercises: boolean;
   exportWater: boolean;
   exportTime: boolean;
   exportHabits: boolean;
+  exportRoutines: boolean;
+  folderWorkouts: string;
+  folderExercises: string;
+  folderWater: string;
+  folderTime: string;
+  folderHabits: string;
+  folderRoutines: string;
   lastSyncTimestamp: number;
 }
 
@@ -27,9 +35,17 @@ const DEFAULT_SETTINGS: ObsidianSettings = {
   syncOnLaunch: true,
   scheduleTime: '22:00',
   exportWorkouts: true,
+  exportExercises: true,
   exportWater: true,
   exportTime: true,
   exportHabits: true,
+  exportRoutines: true,
+  folderWorkouts: 'Workouts',
+  folderExercises: 'Exercises',
+  folderWater: 'Water',
+  folderTime: 'Time',
+  folderHabits: 'Habits',
+  folderRoutines: 'Routines',
   lastSyncTimestamp: 0,
 };
 
@@ -47,9 +63,17 @@ export const getObsidianSettings = async (): Promise<ObsidianSettings> => {
       syncOnLaunch: dbSettings['obsidian_sync_on_launch'] !== '0', // デフォルト true
       scheduleTime: dbSettings['obsidian_schedule_time'] || '22:00',
       exportWorkouts: dbSettings['obsidian_export_workouts'] !== '0',
+      exportExercises: dbSettings['obsidian_export_exercises'] !== '0',
       exportWater: dbSettings['obsidian_export_water'] !== '0',
       exportTime: dbSettings['obsidian_export_time'] !== '0',
       exportHabits: dbSettings['obsidian_export_habits'] !== '0',
+      exportRoutines: dbSettings['obsidian_export_routines'] !== '0',
+      folderWorkouts: dbSettings['obsidian_folder_workouts'] ?? 'Workouts',
+      folderExercises: dbSettings['obsidian_folder_exercises'] ?? 'Exercises',
+      folderWater: dbSettings['obsidian_folder_water'] ?? 'Water',
+      folderTime: dbSettings['obsidian_folder_time'] ?? 'Time',
+      folderHabits: dbSettings['obsidian_folder_habits'] ?? 'Habits',
+      folderRoutines: dbSettings['obsidian_folder_routines'] ?? 'Routines',
       lastSyncTimestamp: parseInt(dbSettings['obsidian_last_sync_timestamp'] || '0', 10),
     };
   } catch (e) {
@@ -70,9 +94,17 @@ export const saveObsidianSettings = async (settings: Partial<ObsidianSettings>):
     if (settings.syncOnLaunch !== undefined) await saveSetting('obsidian_sync_on_launch', settings.syncOnLaunch ? '1' : '0');
     if (settings.scheduleTime !== undefined) await saveSetting('obsidian_schedule_time', settings.scheduleTime);
     if (settings.exportWorkouts !== undefined) await saveSetting('obsidian_export_workouts', settings.exportWorkouts ? '1' : '0');
+    if (settings.exportExercises !== undefined) await saveSetting('obsidian_export_exercises', settings.exportExercises ? '1' : '0');
     if (settings.exportWater !== undefined) await saveSetting('obsidian_export_water', settings.exportWater ? '1' : '0');
     if (settings.exportTime !== undefined) await saveSetting('obsidian_export_time', settings.exportTime ? '1' : '0');
     if (settings.exportHabits !== undefined) await saveSetting('obsidian_export_habits', settings.exportHabits ? '1' : '0');
+    if (settings.exportRoutines !== undefined) await saveSetting('obsidian_export_routines', settings.exportRoutines ? '1' : '0');
+    if (settings.folderWorkouts !== undefined) await saveSetting('obsidian_folder_workouts', settings.folderWorkouts);
+    if (settings.folderExercises !== undefined) await saveSetting('obsidian_folder_exercises', settings.folderExercises);
+    if (settings.folderWater !== undefined) await saveSetting('obsidian_folder_water', settings.folderWater);
+    if (settings.folderTime !== undefined) await saveSetting('obsidian_folder_time', settings.folderTime);
+    if (settings.folderHabits !== undefined) await saveSetting('obsidian_folder_habits', settings.folderHabits);
+    if (settings.folderRoutines !== undefined) await saveSetting('obsidian_folder_routines', settings.folderRoutines);
     if (settings.lastSyncTimestamp !== undefined) await saveSetting('obsidian_last_sync_timestamp', settings.lastSyncTimestamp.toString());
   } catch (e) {
     console.error('Failed to save obsidian settings:', e);
@@ -111,6 +143,34 @@ const getBasenameFromUri = (uri: string): string => {
     return decoded;
   } catch (_) {
     return uri;
+  }
+};
+
+/**
+ * Vaultルート内の指定サブフォルダURIを取得、無ければ自動作成してそのURIを返す
+ */
+export const getOrCreateSubfolderUri = async (
+  parentUri: string,
+  folderName: string
+): Promise<string> => {
+  if (!parentUri) return '';
+  const cleanName = (folderName || '').trim().replace(/[\/\\?%*:|"<>]/g, '');
+  if (!cleanName) return parentUri;
+
+  try {
+    const files = await FileSystem.StorageAccessFramework.readDirectoryAsync(parentUri);
+    for (const fUri of files) {
+      const base = getBasenameFromUri(fUri);
+      if (base === cleanName) {
+        return fUri;
+      }
+    }
+    // 存在しない場合は新規作成
+    const newDirectoryUri = await FileSystem.StorageAccessFramework.makeDirectoryAsync(parentUri, cleanName);
+    return newDirectoryUri;
+  } catch (e) {
+    console.error(`Failed to get or create subfolder '${folderName}':`, e);
+    return parentUri;
   }
 };
 
@@ -187,7 +247,8 @@ export const formatWorkoutToObsidianMarkdown = (workoutData: any, dayData?: DayL
 
   if (workoutData.exercises && workoutData.exercises.length > 0) {
     workoutData.exercises.forEach((ex: any, idx: number) => {
-      md += `### ${idx + 1}. ${translateExercise(ex.exercise_name || ex.name)}\n`;
+      const exTranslated = translateExercise(ex.exercise_name || ex.name);
+      md += `### ${idx + 1}. [[${exTranslated}]]\n`;
       if (ex.notes) md += `*メモ: ${ex.notes}*\n\n`;
 
       md += `| Set | Stance | Weight | Reps | RPE | Time/Rest |\n`;
@@ -439,6 +500,228 @@ export const fetchDayLifelogData = async (
   return { workouts, waterLogs, timeLogs, habitLogs };
 };
 
+export interface ExerciseHistoryItem {
+  date: string;
+  set_number: number;
+  weight: number | null;
+  reps: number | null;
+  rpe: number | null;
+  stance?: string | null;
+}
+
+export interface ExerciseNoteData {
+  name: string;
+  muscle_group?: string | null;
+  equipment?: string | null;
+  history: ExerciseHistoryItem[];
+}
+
+/**
+ * 種目ノート用の Markdown を生成
+ */
+export const formatExerciseToObsidianMarkdown = (data: ExerciseNoteData): string => {
+  const exName = translateExercise(data.name);
+  let md = `---\n`;
+  md += `title: "${exName}"\n`;
+  md += `type: exercise\n`;
+  md += `tags:\n  - trenote\n  - exercise\n`;
+  if (data.muscle_group) md += `muscle_group: "${data.muscle_group}"\n`;
+  if (data.equipment) md += `equipment: "${data.equipment}"\n`;
+  md += `---\n\n`;
+
+  md += `# 💪 ${exName}\n\n`;
+  if (data.muscle_group) md += `- **対象部位**: ${data.muscle_group}\n`;
+  if (data.equipment) md += `- **使用器具**: ${data.equipment}\n`;
+  md += `\n---\n\n`;
+
+  let maxWeight = 0;
+  let maxRepsAtMaxWeight = 0;
+  let maxVolumeSet = 0;
+
+  if (data.history && data.history.length > 0) {
+    data.history.forEach((s) => {
+      const w = s.weight || 0;
+      const r = s.reps || 0;
+      if (w > maxWeight) {
+        maxWeight = w;
+        maxRepsAtMaxWeight = r;
+      } else if (w === maxWeight && r > maxRepsAtMaxWeight) {
+        maxRepsAtMaxWeight = r;
+      }
+      const vol = w * r;
+      if (vol > maxVolumeSet) maxVolumeSet = vol;
+    });
+
+    md += `## 🏆 自己ベスト (Personal Records)\n\n`;
+    if (maxWeight > 0) {
+      md += `- **MAX重量**: ${maxWeight} kg (${maxRepsAtMaxWeight} reps)\n`;
+    }
+    if (maxVolumeSet > 0) {
+      md += `- **MAX 1セットボリューム**: ${maxVolumeSet} kg\n`;
+    }
+    md += `\n---\n\n`;
+
+    md += `## 📜 トレーニング履歴 (${data.history.length} sets)\n\n`;
+    md += `| Date | Set | Weight | Reps | RPE | Stance |\n`;
+    md += `|---|---|---|---|---|---|\n`;
+
+    data.history.forEach((s) => {
+      const w = s.weight ? `${s.weight} kg` : '-';
+      const r = s.reps ? `${s.reps}` : '-';
+      const rpe = s.rpe ? `@${s.rpe}` : '-';
+      const stance = s.stance ? translateStance(s.stance) : '-';
+      md += `| ${s.date} | Set ${s.set_number} | ${w} | ${r} | ${rpe} | ${stance} |\n`;
+    });
+    md += `\n`;
+  } else {
+    md += `*まだトレーニング記録がありません。*\n`;
+  }
+
+  return md;
+};
+
+/**
+ * ルーティン詳細ノート用の Markdown を生成
+ */
+export const formatRoutineToObsidianMarkdown = (routine: { title: string; description?: string; exercises: any[] }): string => {
+  let md = `---\n`;
+  md += `title: "${routine.title}"\n`;
+  md += `type: routine\n`;
+  md += `tags:\n  - trenote\n  - routine\n`;
+  md += `---\n\n`;
+
+  md += `# 🔄 ${routine.title}\n\n`;
+  if (routine.description) {
+    md += `- **説明**: ${routine.description}\n\n`;
+  }
+  md += `---\n\n`;
+
+  md += `## 🏋️ 構成種目 (${routine.exercises ? routine.exercises.length : 0}件)\n\n`;
+  if (routine.exercises && routine.exercises.length > 0) {
+    routine.exercises.forEach((ex, idx) => {
+      const exName = translateExercise(ex.name || ex.exercise_name);
+      md += `### ${idx + 1}. [[${exName}]]\n`;
+      if (ex.sets && ex.sets.length > 0) {
+        md += `| Set | Weight | Reps | RPE |\n`;
+        md += `|---|---|---|---|\n`;
+        ex.sets.forEach((s: any) => {
+          const w = s.weight ? `${s.weight} kg` : '-';
+          const r = s.reps ? `${s.reps}` : '-';
+          const rpe = s.rpe ? `@${s.rpe}` : '-';
+          md += `| ${s.set_number} | ${w} | ${r} | ${rpe} |\n`;
+        });
+      } else {
+        md += `*セット未設定*\n`;
+      }
+      md += `\n`;
+    });
+  }
+
+  return md;
+};
+
+/**
+ * 特定種目のノートを生成・更新してVaultの種目フォルダに書き出す
+ */
+export const exportExerciseNoteToVault = async (
+  exerciseId: number,
+  exerciseName: string,
+  exerciseFolderUri: string
+): Promise<boolean> => {
+  try {
+    const conn = getDB();
+    const exInfo = await conn.getFirstAsync<{ name: string; muscle_group: string; equipment: string }>(
+      'SELECT name, muscle_group, equipment FROM exercises WHERE id = ?',
+      [exerciseId]
+    );
+
+    const rows = await conn.getAllAsync<{
+      start_time: string;
+      set_number: number;
+      weight: number;
+      reps: number;
+      rpe: number;
+      stance: string;
+    }>(
+      `SELECT w.start_time, ws.set_number, ws.weight, ws.reps, ws.rpe, ws.stance
+       FROM workout_sets ws
+       JOIN workout_exercises we ON ws.workout_exercise_id = we.id
+       JOIN workouts w ON we.workout_id = w.id
+       WHERE we.exercise_id = ?
+       ORDER BY w.start_time DESC, ws.set_number ASC`,
+      [exerciseId]
+    );
+
+    const history: ExerciseHistoryItem[] = rows.map((r) => ({
+      date: normalizeToDateISO(r.start_time) || r.start_time,
+      set_number: r.set_number,
+      weight: r.weight,
+      reps: r.reps,
+      rpe: r.rpe,
+      stance: r.stance,
+    }));
+
+    const exData: ExerciseNoteData = {
+      name: exInfo?.name || exerciseName,
+      muscle_group: exInfo?.muscle_group,
+      equipment: exInfo?.equipment,
+      history,
+    };
+
+    const md = formatExerciseToObsidianMarkdown(exData);
+    const cleanFileName = `${(translateExercise(exData.name)).replace(/[\/\\?%*:|"<>]/g, '_')}.md`;
+    return await writeOrAppendFileToVault(exerciseFolderUri, cleanFileName, md, false);
+  } catch (e) {
+    console.error(`Failed to export exercise note for ${exerciseName}:`, e);
+    return false;
+  }
+};
+
+/**
+ * 登録されている全ルーティンを Vault のルーティンフォルダへ書き出す
+ */
+export const exportAllRoutinesToVault = async (routineFolderUri: string): Promise<boolean> => {
+  try {
+    const conn = getDB();
+    const routines = await conn.getAllAsync<{ id: number; title: string; description: string }>('SELECT id, title, description FROM routines');
+    if (!routines || routines.length === 0) return true;
+
+    for (const r of routines) {
+      const exRows = await conn.getAllAsync<{ id: number; exercise_id: number; name: string }>(
+        `SELECT re.id, re.exercise_id, e.name
+         FROM routine_exercises re
+         JOIN exercises e ON re.exercise_id = e.id
+         WHERE re.routine_id = ?
+         ORDER BY re.sort_order ASC`,
+        [r.id]
+      );
+
+      const exercises: any[] = [];
+      for (const ex of exRows) {
+        const sets = await conn.getAllAsync<any>(
+          'SELECT set_number, weight, reps, rpe FROM routine_sets WHERE routine_exercise_id = ? ORDER BY set_number ASC',
+          [ex.id]
+        );
+        exercises.push({ ...ex, sets });
+      }
+
+      const routineData = {
+        title: r.title,
+        description: r.description,
+        exercises,
+      };
+
+      const md = formatRoutineToObsidianMarkdown(routineData);
+      const fileName = `${(r.title || 'routine').replace(/[\/\\?%*:|"<>]/g, '_')}.md`;
+      await writeOrAppendFileToVault(routineFolderUri, fileName, md, false);
+    }
+    return true;
+  } catch (e) {
+    console.error('Failed to export routines to Vault:', e);
+    return false;
+  }
+};
+
 /**
  * 筋トレ完了時に即時エクスポート
  */
@@ -457,14 +740,31 @@ export const exportWorkoutToObsidian = async (workoutId: number): Promise<boolea
 
     let success = false;
 
-    // 個別筋トレノートのエクスポート (exportWorkouts が true かつ append 以外)
+    // 保存先フォルダURIの解決
+    const workoutsFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderWorkouts);
+    const exercisesFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderExercises);
+    const routinesFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderRoutines);
+
+    // 1. 個別筋トレノートのエクスポート (exportWorkouts が true かつ append 以外)
     if (settings.exportWorkouts && settings.exportMode !== 'append') {
       const workoutMd = formatWorkoutToObsidianMarkdown(workoutData, dayData);
       const fileName = `${dateOnly}_${(workoutData.title || 'workout').replace(/[\/\\?%*:|"<>]/g, '_')}.md`;
-      await writeOrAppendFileToVault(settings.vaultUri, fileName, workoutMd, false);
+      success = await writeOrAppendFileToVault(workoutsFolderUri, fileName, workoutMd, false);
     }
 
-    // 統合デイリーノートのエクスポート (筋トレ＋水分＋時間＋習慣)
+    // 2. 種目ノートのエクスポート (exportExercises が true)
+    if (settings.exportExercises && workoutData.exercises && workoutData.exercises.length > 0) {
+      for (const ex of workoutData.exercises) {
+        await exportExerciseNoteToVault(ex.exercise_id, ex.exercise_name || (ex as any).name, exercisesFolderUri);
+      }
+    }
+
+    // 3. ルーティンノートのエクスポート (exportRoutines が true)
+    if (settings.exportRoutines) {
+      await exportAllRoutinesToVault(routinesFolderUri);
+    }
+
+    // 4. 統合デイリーノートのエクスポート (筋トレ＋水分＋時間＋習慣)
     const dailyMd = formatDailyLogToObsidianMarkdown(
       dateOnly,
       dayData.workouts.length > 0 ? dayData.workouts : [workoutData],
@@ -513,12 +813,50 @@ export const syncLifelogToObsidian = async (force: boolean = false): Promise<boo
   try {
     const dayData = await fetchDayLifelogData(todayStr, settings);
 
-    if (
-      dayData.waterLogs.length === 0 &&
-      dayData.timeLogs.length === 0 &&
-      dayData.habitLogs.length === 0 &&
-      dayData.workouts.length === 0
-    ) {
+    const waterFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderWater);
+    const timeFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderTime);
+    const habitsFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderHabits);
+
+    let hasAnyData = false;
+
+    // 個別カテゴリフォルダへの保存 (水・時間・習慣)
+    if (settings.exportWater && dayData.waterLogs.length > 0) {
+      hasAnyData = true;
+      const totalWater = dayData.waterLogs.reduce((sum, item) => sum + (item.amount || 0), 0);
+      let waterMd = `# 💧 水分補給ログ (${todayStr})\n\n- **合計**: ${totalWater} ml\n\n| Time | Amount | Caffeine |\n|---|---|---|\n`;
+      dayData.waterLogs.forEach((item) => {
+        const time = item.timestamp ? format(new Date(item.timestamp), 'HH:mm') : '-';
+        waterMd += `| ${time} | ${item.amount} ml | ${item.caffeine || 0} mg |\n`;
+      });
+      await writeOrAppendFileToVault(waterFolderUri, `${todayStr}_water.md`, waterMd, false);
+    }
+
+    if (settings.exportTime && dayData.timeLogs.length > 0) {
+      hasAnyData = true;
+      const totalMins = dayData.timeLogs.reduce((sum, item) => sum + (item.duration_minutes != null ? item.duration_minutes : (item.duration_seconds ? Math.floor(item.duration_seconds / 60) : 0)), 0);
+      let timeMd = `# ⏱ 時間管理ログ (${todayStr})\n\n- **総集中時間**: ${totalMins} 分\n\n| Activity | Duration | Notes |\n|---|---|---|\n`;
+      dayData.timeLogs.forEach((item) => {
+        const mins = item.duration_minutes != null ? item.duration_minutes : (item.duration_seconds ? Math.floor(item.duration_seconds / 60) : 0);
+        const name = item.activity_name || item.category || item.name || '作業';
+        timeMd += `| ${name} | ${mins} 分 | ${item.notes || '-'} |\n`;
+      });
+      await writeOrAppendFileToVault(timeFolderUri, `${todayStr}_time.md`, timeMd, false);
+    }
+
+    if (settings.exportHabits && dayData.habitLogs.length > 0) {
+      hasAnyData = true;
+      let habitMd = `# ✅ 習慣カウンターログ (${todayStr})\n\n| Habit | Count |\n|---|---|\n`;
+      dayData.habitLogs.forEach((h) => {
+        habitMd += `| ${h.name} | ${h.count} 回 |\n`;
+      });
+      await writeOrAppendFileToVault(habitsFolderUri, `${todayStr}_habits.md`, habitMd, false);
+    }
+
+    if (dayData.workouts.length > 0) {
+      hasAnyData = true;
+    }
+
+    if (!hasAnyData) {
       return false;
     }
 
@@ -550,7 +888,7 @@ export const syncLifelogToObsidian = async (force: boolean = false): Promise<boo
 };
 
 /**
- * 全過去ログ（筋トレ・水分・時間・習慣）の一括エクスポート
+ * 全過去ログ（筋トレ・種目・水分・時間・習慣・ルーティン）の一括エクスポート
  */
 export const exportAllDataToObsidian = async (): Promise<{ successCount: number; failCount: number }> => {
   const settings = await getObsidianSettings();
@@ -560,6 +898,13 @@ export const exportAllDataToObsidian = async (): Promise<{ successCount: number;
 
   const conn = getDB();
   const datesSet = new Set<string>();
+
+  const workoutsFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderWorkouts);
+  const exercisesFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderExercises);
+  const waterFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderWater);
+  const timeFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderTime);
+  const habitsFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderHabits);
+  const routinesFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderRoutines);
 
   if (settings.exportWorkouts) {
     const rows = await conn.getAllAsync<{ start_time: string }>('SELECT start_time FROM workouts WHERE start_time IS NOT NULL');
@@ -593,10 +938,38 @@ export const exportAllDataToObsidian = async (): Promise<{ successCount: number;
     });
   }
 
-  const sortedDates = Array.from(datesSet).sort();
-
   let successCount = 0;
   let failCount = 0;
+
+  // 1. 種目ノートを一括出力
+  if (settings.exportExercises) {
+    try {
+      const allExercises = await conn.getAllAsync<{ id: number; name: string }>('SELECT id, name FROM exercises');
+      for (const ex of allExercises) {
+        const ok = await exportExerciseNoteToVault(ex.id, ex.name, exercisesFolderUri);
+        if (ok) successCount++;
+        else failCount++;
+      }
+    } catch (e) {
+      console.error('Failed to export all exercises:', e);
+      failCount++;
+    }
+  }
+
+  // 2. ルーティンノートを一括出力
+  if (settings.exportRoutines) {
+    try {
+      const ok = await exportAllRoutinesToVault(routinesFolderUri);
+      if (ok) successCount++;
+      else failCount++;
+    } catch (e) {
+      console.error('Failed to export all routines:', e);
+      failCount++;
+    }
+  }
+
+  // 3. 日付ごとのログを出力
+  const sortedDates = Array.from(datesSet).sort();
 
   for (const dateStr of sortedDates) {
     try {
@@ -606,8 +979,37 @@ export const exportAllDataToObsidian = async (): Promise<{ successCount: number;
         for (const workoutData of dayData.workouts) {
           const workoutMd = formatWorkoutToObsidianMarkdown(workoutData, dayData);
           const fileName = `${dateStr}_${(workoutData.title || 'workout').replace(/[\/\\?%*:|"<>]/g, '_')}.md`;
-          await writeOrAppendFileToVault(settings.vaultUri, fileName, workoutMd, false);
+          await writeOrAppendFileToVault(workoutsFolderUri, fileName, workoutMd, false);
         }
+      }
+
+      if (settings.exportWater && dayData.waterLogs.length > 0) {
+        const totalWater = dayData.waterLogs.reduce((sum, item) => sum + (item.amount || 0), 0);
+        let waterMd = `# 💧 水分補給ログ (${dateStr})\n\n- **合計**: ${totalWater} ml\n\n| Time | Amount | Caffeine |\n|---|---|---|\n`;
+        dayData.waterLogs.forEach((item) => {
+          const time = item.timestamp ? format(new Date(item.timestamp), 'HH:mm') : '-';
+          waterMd += `| ${time} | ${item.amount} ml | ${item.caffeine || 0} mg |\n`;
+        });
+        await writeOrAppendFileToVault(waterFolderUri, `${dateStr}_water.md`, waterMd, false);
+      }
+
+      if (settings.exportTime && dayData.timeLogs.length > 0) {
+        const totalMins = dayData.timeLogs.reduce((sum, item) => sum + (item.duration_minutes != null ? item.duration_minutes : (item.duration_seconds ? Math.floor(item.duration_seconds / 60) : 0)), 0);
+        let timeMd = `# ⏱ 時間管理ログ (${dateStr})\n\n- **総集中時間**: ${totalMins} 分\n\n| Activity | Duration | Notes |\n|---|---|---|\n`;
+        dayData.timeLogs.forEach((item) => {
+          const mins = item.duration_minutes != null ? item.duration_minutes : (item.duration_seconds ? Math.floor(item.duration_seconds / 60) : 0);
+          const name = item.activity_name || item.category || item.name || '作業';
+          timeMd += `| ${name} | ${mins} 分 | ${item.notes || '-'} |\n`;
+        });
+        await writeOrAppendFileToVault(timeFolderUri, `${dateStr}_time.md`, timeMd, false);
+      }
+
+      if (settings.exportHabits && dayData.habitLogs.length > 0) {
+        let habitMd = `# ✅ 習慣カウンターログ (${dateStr})\n\n| Habit | Count |\n|---|---|\n`;
+        dayData.habitLogs.forEach((h) => {
+          habitMd += `| ${h.name} | ${h.count} 回 |\n`;
+        });
+        await writeOrAppendFileToVault(habitsFolderUri, `${dateStr}_habits.md`, habitMd, false);
       }
 
       const dailyMd = formatDailyLogToObsidianMarkdown(
