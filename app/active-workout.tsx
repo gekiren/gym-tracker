@@ -295,23 +295,53 @@ export default function ActiveWorkoutScreen() {
                 .map(ex => ex.exercise_id)
                 .filter((id): id is number => typeof id === 'number');
 
-              // 2. Prefetch historical data to prevent deadlocks
-              const { workouts: dbWorkouts, pastSets } = await prefetchWorkoutCompletionData(exerciseIds);
+              // 2. Prefetch historical data safely
+              let dbWorkouts: any[] = [];
+              let pastSets: any[] = [];
+              try {
+                const res = await prefetchWorkoutCompletionData(exerciseIds);
+                dbWorkouts = res.workouts || [];
+                pastSets = res.pastSets || [];
+              } catch (e) {
+                console.warn('Failed to prefetch workout completion data', e);
+              }
 
-              // 3. Compute calorie stats
-              const roundedCalories = computeCalories(exercises, settings.bodyWeight || 70, settings.weightUnit);
+              // 3. Compute calorie stats safely
+              let roundedCalories = 0;
+              try {
+                roundedCalories = computeCalories(exercises, settings.bodyWeight || 70, settings.weightUnit);
+              } catch (e) {
+                console.warn('Failed to compute calories', e);
+              }
               const et = new Date().toISOString();
 
-              // 4. Calculate achievements (1RM & Volume updates)
-              const { updated1RMs, updatedVolumes } = computeAchievements(exercises, pastSets, settings.bodyWeight || 70);
+              // 4. Calculate achievements safely
+              let updated1RMs: any[] = [];
+              let updatedVolumes: any[] = [];
+              try {
+                const achRes = computeAchievements(exercises, pastSets, settings.bodyWeight || 70);
+                updated1RMs = achRes.updated1RMs || [];
+                updatedVolumes = achRes.updatedVolumes || [];
+              } catch (e) {
+                console.warn('Failed to compute achievements', e);
+              }
 
               // Save the workout to DB
               const savedTitle = title || t('ui.home.free_workout_title');
               const savedStartTime = startTime || et;
 
-              // Streak Calculations
-              const { streakDays, streakWeeks } = computeStreaks(dbWorkouts);
-              const weeklyWorkoutCount = computeWeeklyWorkoutCount(dbWorkouts, savedStartTime);
+              // Streak Calculations safely
+              let streakDays = 1;
+              let streakWeeks = 1;
+              let weeklyWorkoutCount = 1;
+              try {
+                const streaks = computeStreaks(dbWorkouts);
+                streakDays = streaks.streakDays;
+                streakWeeks = streaks.streakWeeks;
+                weeklyWorkoutCount = computeWeeklyWorkoutCount(dbWorkouts, savedStartTime);
+              } catch (e) {
+                console.warn('Failed to compute streaks', e);
+              }
 
               const workoutId = await saveWorkout(savedTitle, savedStartTime, et, workoutNotes, exercises, roundedCalories);
 

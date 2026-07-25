@@ -142,60 +142,124 @@ export const computeAchievements = (
 /**
  * 継続日数・継続週数（Streak）の算出
  */
+/**
+ * Hermes 互換の安全な Date パース関数
+ */
+const parseDateSafe = (dateOrStr: Date | string | null | undefined): Date => {
+  if (!dateOrStr) return new Date();
+  if (dateOrStr instanceof Date) return isNaN(dateOrStr.getTime()) ? new Date() : dateOrStr;
+
+  const str = String(dateOrStr).trim();
+
+  // YYYY-MM-DD 形式
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  // YYYY/MM/DD 形式
+  if (/^\d{4}\/\d{2}\/\d{2}$/.test(str)) {
+    const [y, m, d] = str.split('/').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    return parsed;
+  }
+
+  // フォールバック: ISO文字列から数値抽出
+  const match = str.match(/^(\d{4})[-/](\d{2})[-/](\d{2})(?:[T ](\d{2}):(\d{2}):(\d{2}))?/);
+  if (match) {
+    const [, y, m, d, hh, mm, ss] = match;
+    return new Date(
+      Number(y),
+      Number(m) - 1,
+      Number(d),
+      hh ? Number(hh) : 0,
+      mm ? Number(mm) : 0,
+      ss ? Number(ss) : 0
+    );
+  }
+
+  return new Date();
+};
+
+const getLocalDateStringSafe = (dateOrStr: Date | string | null | undefined): string => {
+  const d = parseDateSafe(dateOrStr);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const date = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${date}`;
+};
+
+/**
+ * 継続日数・継続週数（Streak）の算出
+ */
 export const computeStreaks = (
   dbWorkouts: DBWorkout[]
 ): { streakDays: number; streakWeeks: number } => {
-  const getLocalDateString = (dateOrStr: Date | string) => {
-    const d = new Date(dateOrStr);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const date = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${date}`;
-  };
+  try {
+    const localDates = new Set<string>();
+    const todayStr = getLocalDateStringSafe(new Date());
+    localDates.add(todayStr);
 
-  const localDates = new Set<string>();
-  const todayStr = getLocalDateString(new Date());
-  localDates.add(todayStr);
-  dbWorkouts.forEach(w => {
-    localDates.add(getLocalDateString(w.start_time));
-  });
-
-  const sortedDatesStr = Array.from(localDates).sort((a, b) => b.localeCompare(a));
-
-  // 1) Streak Days
-  let streakDays = 1;
-  let currentDate = new Date(todayStr + 'T00:00:00');
-  while (true) {
-    const yesterday = new Date(currentDate);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = getLocalDateString(yesterday);
-    if (localDates.has(yesterdayStr)) {
-      streakDays++;
-      currentDate = yesterday;
-    } else {
-      break;
+    if (Array.isArray(dbWorkouts)) {
+      dbWorkouts.forEach(w => {
+        if (w && w.start_time) {
+          localDates.add(getLocalDateStringSafe(w.start_time));
+        }
+      });
     }
-  }
 
-  // 2) Streak Weeks
-  const datesParsed = sortedDatesStr.map(dStr => new Date(dStr + 'T00:00:00')).sort((a, b) => b.getTime() - a.getTime());
-  let continuousEarliestDate = datesParsed[0];
-  for (let i = 1; i < datesParsed.length; i++) {
-    const prevDate = datesParsed[i - 1];
-    const currDate = datesParsed[i];
-    const diffTime = prevDate.getTime() - currDate.getTime();
-    const diffDays = diffTime / (1000 * 60 * 60 * 24);
-    if (diffDays <= 7) {
-      continuousEarliestDate = currDate;
-    } else {
-      break;
+    const sortedDatesStr = Array.from(localDates).sort((a, b) => b.localeCompare(a));
+
+    // 1) Streak Days
+    let streakDays = 1;
+    let currentDate = parseDateSafe(todayStr);
+    while (true) {
+      const yesterday = new Date(currentDate);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = getLocalDateStringSafe(yesterday);
+      if (localDates.has(yesterdayStr)) {
+        streakDays++;
+        currentDate = yesterday;
+      } else {
+        break;
+      }
     }
-  }
-  const totalSpanTime = datesParsed[0].getTime() - continuousEarliestDate.getTime();
-  const totalSpanDays = Math.round(totalSpanTime / (1000 * 60 * 60 * 24));
-  const streakWeeks = Math.floor(totalSpanDays / 7) + 1;
 
-  return { streakDays, streakWeeks };
+    // 2) Streak Weeks
+    const datesParsed = sortedDatesStr
+      .map(dStr => parseDateSafe(dStr))
+      .filter(d => !isNaN(d.getTime()))
+      .sort((a, b) => b.getTime() - a.getTime());
+
+    if (datesParsed.length === 0) {
+      return { streakDays: 1, streakWeeks: 1 };
+    }
+
+    let continuousEarliestDate = datesParsed[0];
+    for (let i = 1; i < datesParsed.length; i++) {
+      const prevDate = datesParsed[i - 1];
+      const currDate = datesParsed[i];
+      const diffTime = prevDate.getTime() - currDate.getTime();
+      const diffDays = diffTime / (1000 * 60 * 60 * 24);
+      if (diffDays <= 7) {
+        continuousEarliestDate = currDate;
+      } else {
+        break;
+      }
+    }
+    const totalSpanTime = datesParsed[0].getTime() - continuousEarliestDate.getTime();
+    const totalSpanDays = Math.round(totalSpanTime / (1000 * 60 * 60 * 24));
+    const streakWeeks = Math.max(1, Math.floor(totalSpanDays / 7) + 1);
+
+    return { streakDays, streakWeeks };
+  } catch (e) {
+    console.warn('Failed to compute streaks safely', e);
+    return { streakDays: 1, streakWeeks: 1 };
+  }
 };
 
 /**
@@ -205,39 +269,39 @@ export const computeWeeklyWorkoutCount = (
   dbWorkouts: DBWorkout[],
   currentWorkoutStartTime: string
 ): number => {
-  const getLocalDateString = (dateOrStr: Date | string) => {
-    const d = new Date(dateOrStr);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const date = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${date}`;
-  };
+  try {
+    const currentLocalDateStr = getLocalDateStringSafe(currentWorkoutStartTime);
+    const baseDate = parseDateSafe(currentLocalDateStr);
 
-  const currentLocalDateStr = getLocalDateString(currentWorkoutStartTime);
-  const baseDate = new Date(currentLocalDateStr + 'T00:00:00');
-
-  // 今日からさかのぼって6日前まで（合計7日間）のローカル日付のセットを作成
-  const last7DaysSet = new Set<string>();
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(baseDate);
-    d.setDate(baseDate.getDate() - i);
-    last7DaysSet.add(getLocalDateString(d));
-  }
-
-  let count = 0;
-  // 今回完了したワークアウトも含めてカウント
-  const allWorkouts = [
-    { start_time: currentWorkoutStartTime },
-    ...dbWorkouts
-  ];
-
-  allWorkouts.forEach(w => {
-    const wDateStr = getLocalDateString(w.start_time);
-    if (last7DaysSet.has(wDateStr)) {
-      count++;
+    // 今日からさかのぼって6日前まで（合計7日間）のローカル日付のセットを作成
+    const last7DaysSet = new Set<string>();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(baseDate);
+      d.setDate(baseDate.getDate() - i);
+      last7DaysSet.add(getLocalDateStringSafe(d));
     }
-  });
 
-  return count;
+    let count = 0;
+    // 今回完了したワークアウトも含めてカウント
+    const allWorkouts = [
+      { start_time: currentWorkoutStartTime },
+      ...(Array.isArray(dbWorkouts) ? dbWorkouts : [])
+    ];
+
+    allWorkouts.forEach(w => {
+      if (w && w.start_time) {
+        const wDateStr = getLocalDateStringSafe(w.start_time);
+        if (last7DaysSet.has(wDateStr)) {
+          count++;
+        }
+      }
+    });
+
+    return count;
+  } catch (e) {
+    console.warn('Failed to compute weekly workout count safely', e);
+    return 1;
+  }
 };
+
 

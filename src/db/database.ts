@@ -793,10 +793,19 @@ export const saveWorkout = async (title: string, startTime: string, endTime: str
   const conn = getDB();
   let workoutId = 0;
 
+  // NaN ガードヘルパー
+  const sanitizeNum = (val: any): number | null => {
+    if (val === null || val === undefined || val === '') return null;
+    const num = Number(val);
+    return isNaN(num) ? null : num;
+  };
+
+  const safeCalories = sanitizeNum(calories);
+
   await conn.withTransactionAsync(async () => {
     const wResult = await conn.runAsync(
       'INSERT INTO workouts (title, start_time, end_time, notes, calories) VALUES (?, ?, ?, ?, ?)',
-      [title, startTime, endTime, notes, calories]
+      [title, startTime, endTime, notes, safeCalories]
     );
     
     workoutId = wResult.lastInsertRowId;
@@ -812,10 +821,31 @@ export const saveWorkout = async (title: string, startTime: string, endTime: str
 
       // Save sets
       for (const set of ex.sets) {
-        if (set.weight != null || set.reps != null) { // only save valid sets
+        const safeWeight = sanitizeNum(set.weight);
+        const safeReps = sanitizeNum(set.reps);
+        const safeRpe = sanitizeNum(set.rpe);
+        const safeRestSecs = sanitizeNum(set.rest_seconds);
+        const safeWorkSecs = sanitizeNum(set.work_seconds);
+
+        // 完了チェックがあるセット、または有効な重量・レップ数・作業時間があるセットを保存
+        const shouldSave = set.is_completed || safeWeight != null || safeReps != null || safeWorkSecs != null;
+
+        if (shouldSave) {
           await conn.runAsync(
             'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [weId, set.set_number, set.reps, set.weight, set.rpe, set.is_completed ? 1 : 0, set.rest_seconds || null, set.work_seconds || null, set.side || null, set.variation || null, set.stance || null]
+            [
+              weId, 
+              set.set_number, 
+              safeReps, 
+              safeWeight, 
+              safeRpe, 
+              set.is_completed ? 1 : 0, 
+              safeRestSecs, 
+              safeWorkSecs, 
+              set.side || null, 
+              set.variation || null, 
+              set.stance || null
+            ]
           );
         }
       }

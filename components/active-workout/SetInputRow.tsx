@@ -102,12 +102,23 @@ export function SetInputRow({
     }
   }, [set.rpe]);
 
+const safeParseFloat = (val: string): number | null => {
+  if (!val || val === '.' || val === ',') return null;
+  const num = parseFloat(val.replace(',', '.'));
+  return isNaN(num) ? null : num;
+};
+
+const safeParseInt = (val: string): number | null => {
+  if (!val) return null;
+  const num = parseInt(val, 10);
+  return isNaN(num) ? null : num;
+};
+
   const handleWeightChange = (val: string) => {
     if (val === '' || /^\d{0,3}([.,]\d{0,1})?$/.test(val)) {
       setLocalWeight(val);
       setWeightSel(undefined);
-      const parsedVal = val.replace(',', '.');
-      updateSet(ex.id, set.id, { weight: parsedVal !== '' && parsedVal !== '.' ? parseFloat(parsedVal) : null });
+      updateSet(ex.id, set.id, { weight: safeParseFloat(val) });
     }
   };
 
@@ -115,7 +126,7 @@ export function SetInputRow({
     if (val === '' || /^\d{0,2}$/.test(val)) {
       setLocalReps(val);
       setRepsSel(undefined);
-      updateSet(ex.id, set.id, { reps: val !== '' ? parseInt(val, 10) : null });
+      updateSet(ex.id, set.id, { reps: safeParseInt(val) });
     }
   };
 
@@ -293,8 +304,7 @@ export function SetInputRow({
                   if (trimmed === '' || trimmed === '.' || trimmed === ',') {
                     const restored = originalWeightRef.current;
                     setLocalWeight(restored);
-                    const parsedVal = restored.replace(',', '.');
-                    updateSet(ex.id, set.id, { weight: parsedVal !== '' && parsedVal !== '.' ? parseFloat(parsedVal) : null });
+                    updateSet(ex.id, set.id, { weight: safeParseFloat(restored) });
                   }
                 }}
                 returnKeyType="next"
@@ -330,7 +340,7 @@ export function SetInputRow({
                     if (trimmed === '') {
                       const restored = originalRepsRef.current;
                       setLocalReps(restored);
-                      updateSet(ex.id, set.id, { reps: restored !== '' ? parseInt(restored, 10) : null });
+                      updateSet(ex.id, set.id, { reps: safeParseInt(restored) });
                     }
                   }}
                   returnKeyType="done"
@@ -363,7 +373,7 @@ export function SetInputRow({
                   if (trimmed === '') {
                     const restored = originalRepsRef.current;
                     setLocalReps(restored);
-                    updateSet(ex.id, set.id, { reps: restored !== '' ? parseInt(restored, 10) : null });
+                    updateSet(ex.id, set.id, { reps: safeParseInt(restored) });
                   }
                 }}
                 returnKeyType="done"
@@ -403,8 +413,7 @@ export function SetInputRow({
                     if (val === '' || /^\d{0,2}([.,]\d{0,1})?$/.test(val)) {
                       setLocalRpe(val);
                       setRpeSel(undefined);
-                      const parsedVal = val.replace(',', '.');
-                      updateSet(ex.id, set.id, { rpe: parsedVal !== '' && parsedVal !== '.' ? parseFloat(parsedVal) : null });
+                      updateSet(ex.id, set.id, { rpe: safeParseFloat(val) });
                     }
                   }}
                   selectTextOnFocus={true}
@@ -418,8 +427,7 @@ export function SetInputRow({
                     if (trimmed === '' || trimmed === '.' || trimmed === ',') {
                       const restored = originalRpeRef.current;
                       setLocalRpe(restored);
-                      const parsedVal = restored.replace(',', '.');
-                      updateSet(ex.id, set.id, { rpe: parsedVal !== '' && parsedVal !== '.' ? parseFloat(parsedVal) : null });
+                      updateSet(ex.id, set.id, { rpe: safeParseFloat(restored) });
                     }
                   }}
                 />

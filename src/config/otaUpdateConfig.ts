@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.79', // OTA識別用のバージョン文字列
+  version: '1.1.80', // OTA識別用のバージョン文字列
   title: {
-    ja: 'Obsidian書き込み失敗防止（Vaultルートへの自動フォールバック保護機能）',
-    en: 'Obsidian Export: Automatic Vault Root Fallback Protection',
+    ja: 'ワークアウト記録保存の堅牢化・消失防止パッチ',
+    en: 'Workout Saving Robustness & Data Protection Patch',
   },
   notes: {
     ja: [
-      'Dropsync等の外部同期フォルダ環境でサブフォルダへのアクセス権限拒否が発生した場合でも、自動的にVaultルートへ安全に二重フォールバック保存する保護機能を実装しました。',
+      'Hermesエンジンでの日付パース処理を堅牢化し、ワークアウト完了時の保存失敗・データ消失を防ぐ保護機能を実装しました。',
+      '数値入力欄でのNaN（不正値）によるデータベース保存エラーを防止し、自重種目や各種記録が確実に保存されるよう修正しました。',
     ],
     en: [
-      'Implemented automatic Vault root fallback saving to guarantee 100% export success even if subfolder permissions are restricted by Dropsync or SAF.',
+      'Hardened date parsing logic in Hermes Engine to eliminate saving failures and prevent workout record loss.',
+      'Added NaN validation guards to prevent database transaction rollbacks and ensure all workout sets are safely saved.',
     ]
   }
 };
