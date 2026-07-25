@@ -251,10 +251,7 @@ export const formatWorkoutToObsidianMarkdown = (workoutData: any, dayData?: DayL
       if (habitLogs && habitLogs.length > 0) {
         md += `### ✅ 習慣カウンター\n`;
         habitLogs.forEach((h) => {
-          const isCompleted = h.completed || h.count >= (h.target_count || 1);
-          const check = isCompleted ? '[x]' : '[ ]';
-          const countStr = h.target_count && h.target_count > 1 ? ` (${h.count}/${h.target_count})` : '';
-          md += `- ${check} ${h.name}${countStr}\n`;
+          md += `- ✅ ${h.name}: ${h.count}回\n`;
         });
         md += `\n`;
       }
@@ -326,10 +323,7 @@ export const formatDailyLogToObsidianMarkdown = (
   if (habitLogs && habitLogs.length > 0) {
     md += `### ✅ 習慣カウンター\n`;
     habitLogs.forEach((h) => {
-      const isCompleted = h.completed || h.count >= (h.target_count || 1);
-      const check = isCompleted ? '[x]' : '[ ]';
-      const countStr = h.target_count && h.target_count > 1 ? ` (${h.count}/${h.target_count})` : '';
-      md += `- ${check} ${h.name}${countStr}\n`;
+      md += `- ✅ ${h.name}: ${h.count}回\n`;
     });
     md += `\n`;
   }
@@ -401,14 +395,33 @@ export const fetchDayLifelogData = async (
 
   let habitLogs: any[] = [];
   if (settings.exportHabits) {
-    const allHabits = await conn.getAllAsync<any>(
-      'SELECT h.name, h.target_count, hl.count, hl.completed, hl.date, hl.timestamp FROM habit_items h LEFT JOIN habit_logs hl ON h.id = hl.item_id'
+    // habit_logs スキーマ: { id, habit_item_id, timestamp, date } のみ
+    // habit_items スキーマ: { id, name, color, created_at, sort_order } のみ
+    const allHabitLogs = await conn.getAllAsync<{ habit_item_id: number; timestamp: number; date: string }>(
+      'SELECT habit_item_id, timestamp, date FROM habit_logs'
     );
-    habitLogs = allHabits.filter((item) => {
-      if (!item.date && !item.timestamp) return false;
+    const allHabitItems = await conn.getAllAsync<{ id: number; name: string }>(
+      'SELECT id, name FROM habit_items ORDER BY sort_order ASC, created_at ASC'
+    );
+    const habitItemMap = new Map<number, string>(allHabitItems.map((h) => [h.id, h.name]));
+
+    // 対象日のログを絞り込み
+    const dayHabitLogs = allHabitLogs.filter((item) => {
       const itemDateISO = normalizeToDateISO(item.date) || normalizeToDateISO(item.timestamp);
       return itemDateISO === targetDateISO;
     });
+
+    // habit_item_id ごとにタップ回数を集計
+    const countMap = new Map<number, number>();
+    dayHabitLogs.forEach((item) => {
+      countMap.set(item.habit_item_id, (countMap.get(item.habit_item_id) || 0) + 1);
+    });
+
+    // 表示用の配列に変換 (名前 + タップ数)
+    habitLogs = Array.from(countMap.entries()).map(([itemId, count]) => ({
+      name: habitItemMap.get(itemId) || `習慣 ${itemId}`,
+      count,
+    }));
   }
 
   let workouts: any[] = [];
