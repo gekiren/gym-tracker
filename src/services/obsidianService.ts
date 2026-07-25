@@ -274,11 +274,54 @@ export const formatDailyLogToObsidianMarkdown = (
 };
 
 /**
+ * 指定された日付 (YYYY-MM-DD) のライフログ（筋トレ・水分・時間・習慣）をDBから一括取得するヘルパー
+ */
+export interface DayLifelogData {
+  workouts: any[];
+  waterLogs: any[];
+  timeLogs: any[];
+  habitLogs: any[];
+}
+
+export const fetchDayLifelogData = async (
+  dateStr: string,
+  settings: ObsidianSettings
+): Promise<DayLifelogData> => {
+  const conn = getDB();
+
+  const waterLogs = settings.exportWater ? await getWaterLogs(dateStr) : [];
+
+  const timeLogs = settings.exportTime ? await conn.getAllAsync<any>(
+    'SELECT * FROM time_logs WHERE date = ? ORDER BY timestamp DESC',
+    [dateStr]
+  ) : [];
+
+  const habitLogs = settings.exportHabits ? await conn.getAllAsync<any>(
+    'SELECT h.name, h.target_count, hl.count, hl.completed FROM habit_items h LEFT JOIN habit_logs hl ON h.id = hl.item_id AND hl.date = ?',
+    [dateStr]
+  ) : [];
+
+  let workouts: any[] = [];
+  if (settings.exportWorkouts) {
+    const workoutRows = await conn.getAllAsync<{ id: number }>(
+      'SELECT id FROM workouts WHERE DATE(start_time) = ?',
+      [dateStr]
+    );
+    for (const w of workoutRows) {
+      const fullData = await loadFullWorkoutData(w.id);
+      if (fullData) workouts.push(fullData);
+    }
+  }
+
+  return { workouts, waterLogs, timeLogs, habitLogs };
+};
+
+/**
  * 筋トレ完了時に即時エクスポート
  */
 export const exportWorkoutToObsidian = async (workoutId: number): Promise<boolean> => {
   const settings = await getObsidianSettings();
-  if (!settings.enabled || !settings.vaultUri || !settings.exportWorkouts) {
+  if (!settings.enabled || !settings.vaultUri) {
     return false;
   }
 
@@ -287,21 +330,32 @@ export const exportWorkoutToObsidian = async (workoutId: number): Promise<boolea
     if (!workoutData) return false;
 
     const dateOnly = format(new Date(workoutData.start_time), 'yyyy-MM-dd');
-    const workoutMd = formatWorkoutToObsidianMarkdown(workoutData);
+    const dayData = await fetchDayLifelogData(dateOnly, settings);
 
     let success = false;
 
+    // 個別筋トレノートのエクスポート (exportWorkouts が true かつ append 以外)
+    if (settings.exportWorkouts && settings.exportMode !== 'append') {
+      const workoutMd = formatWorkoutToObsidianMarkdown(workoutData);
+      const fileName = `${dateOnly}_${(workoutData.title || 'workout').replace(/[\/\\?%*:|"<>]/g, '_')}.md`;
+      await writeOrAppendFileToVault(settings.vaultUri, fileName, workoutMd, false);
+    }
+
+    // 統合デイリーノートのエクスポート (筋トレ＋水分＋時間＋習慣)
+    const dailyMd = formatDailyLogToObsidianMarkdown(
+      dateOnly,
+      dayData.workouts.length > 0 ? dayData.workouts : [workoutData],
+      dayData.waterLogs,
+      dayData.timeLogs,
+      dayData.habitLogs
+    );
+
     if (settings.exportMode === 'append') {
       const dailyFileName = `${dateOnly}.md`;
-      const dailyMd = formatDailyLogToObsidianMarkdown(dateOnly, [workoutData], [], [], []);
       success = await writeOrAppendFileToVault(settings.vaultUri, dailyFileName, dailyMd, true);
     } else {
-      const fileName = `${dateOnly}_${(workoutData.title || 'workout').replace(/[\/\\?%*:|"<>]/g, '_')}.md`;
-      success = await writeOrAppendFileToVault(settings.vaultUri, fileName, workoutMd, false);
-
       const dailyFileName = `TreNote_${dateOnly}.md`;
-      const dailyMd = formatDailyLogToObsidianMarkdown(dateOnly, [workoutData], [], [], []);
-      await writeOrAppendFileToVault(settings.vaultUri, dailyFileName, dailyMd, false);
+      success = await writeOrAppendFileToVault(settings.vaultUri, dailyFileName, dailyMd, false);
     }
 
     return success;
@@ -334,30 +388,24 @@ export const syncLifelogToObsidian = async (force: boolean = false): Promise<boo
   }
 
   try {
-    const conn = getDB();
+    const dayData = await fetchDayLifelogData(todayStr, settings);
 
-    const waterLogs = settings.exportWater ? await getWaterLogs(todayStr) : [];
-
-    const timeLogs = settings.exportTime ? await conn.getAllAsync<any>(
-      'SELECT * FROM time_logs WHERE date = ? ORDER BY timestamp DESC',
-      [todayStr]
-    ) : [];
-
-    const habitLogs = settings.exportHabits ? await conn.getAllAsync<any>(
-      'SELECT h.name, h.target_count, hl.count, hl.completed FROM habit_items h LEFT JOIN habit_logs hl ON h.id = hl.item_id AND hl.date = ?',
-      [todayStr]
-    ) : [];
-
-    const workouts = settings.exportWorkouts ? await conn.getAllAsync<any>(
-      'SELECT id, title, start_time FROM workouts WHERE DATE(start_time) = ?',
-      [todayStr]
-    ) : [];
-
-    if (waterLogs.length === 0 && timeLogs.length === 0 && habitLogs.length === 0 && workouts.length === 0) {
+    if (
+      dayData.waterLogs.length === 0 &&
+      dayData.timeLogs.length === 0 &&
+      dayData.habitLogs.length === 0 &&
+      dayData.workouts.length === 0
+    ) {
       return false;
     }
 
-    const dailyMd = formatDailyLogToObsidianMarkdown(todayStr, workouts, waterLogs, timeLogs, habitLogs);
+    const dailyMd = formatDailyLogToObsidianMarkdown(
+      todayStr,
+      dayData.workouts,
+      dayData.waterLogs,
+      dayData.timeLogs,
+      dayData.habitLogs
+    );
     let success = false;
 
     if (settings.exportMode === 'append') {
@@ -379,7 +427,7 @@ export const syncLifelogToObsidian = async (force: boolean = false): Promise<boo
 };
 
 /**
- * 全過去ログの一括エクスポート
+ * 全過去ログ（筋トレ・水分・時間・習慣）の一括エクスポート
  */
 export const exportAllDataToObsidian = async (): Promise<{ successCount: number; failCount: number }> => {
   const settings = await getObsidianSettings();
@@ -388,18 +436,80 @@ export const exportAllDataToObsidian = async (): Promise<{ successCount: number;
   }
 
   const conn = getDB();
-  const allWorkouts = await conn.getAllAsync<{ id: number }>('SELECT id FROM workouts ORDER BY start_time ASC');
+  const datesSet = new Set<string>();
+
+  if (settings.exportWorkouts) {
+    const workoutDates = await conn.getAllAsync<{ d: string }>(
+      "SELECT DISTINCT DATE(start_time) as d FROM workouts WHERE start_time IS NOT NULL"
+    );
+    workoutDates.forEach(r => { if (r.d) datesSet.add(r.d); });
+  }
+
+  if (settings.exportWater) {
+    const waterDates = await conn.getAllAsync<{ d: string }>(
+      "SELECT DISTINCT date as d FROM water_logs WHERE date IS NOT NULL"
+    );
+    waterDates.forEach(r => { if (r.d) datesSet.add(r.d); });
+  }
+
+  if (settings.exportTime) {
+    const timeDates = await conn.getAllAsync<{ d: string }>(
+      "SELECT DISTINCT date as d FROM time_logs WHERE date IS NOT NULL"
+    );
+    timeDates.forEach(r => { if (r.d) datesSet.add(r.d); });
+  }
+
+  if (settings.exportHabits) {
+    const habitDates = await conn.getAllAsync<{ d: string }>(
+      "SELECT DISTINCT date as d FROM habit_logs WHERE date IS NOT NULL"
+    );
+    habitDates.forEach(r => { if (r.d) datesSet.add(r.d); });
+  }
+
+  const sortedDates = Array.from(datesSet).sort();
 
   let successCount = 0;
   let failCount = 0;
 
-  for (const w of allWorkouts) {
-    const res = await exportWorkoutToObsidian(w.id);
-    if (res) successCount++;
-    else failCount++;
+  for (const dateStr of sortedDates) {
+    try {
+      const dayData = await fetchDayLifelogData(dateStr, settings);
+
+      if (settings.exportWorkouts && settings.exportMode !== 'append') {
+        for (const workoutData of dayData.workouts) {
+          const workoutMd = formatWorkoutToObsidianMarkdown(workoutData);
+          const fileName = `${dateStr}_${(workoutData.title || 'workout').replace(/[\/\\?%*:|"<>]/g, '_')}.md`;
+          await writeOrAppendFileToVault(settings.vaultUri, fileName, workoutMd, false);
+        }
+      }
+
+      const dailyMd = formatDailyLogToObsidianMarkdown(
+        dateStr,
+        dayData.workouts,
+        dayData.waterLogs,
+        dayData.timeLogs,
+        dayData.habitLogs
+      );
+
+      let success = false;
+      if (settings.exportMode === 'append') {
+        const dailyFileName = `${dateStr}.md`;
+        success = await writeOrAppendFileToVault(settings.vaultUri, dailyFileName, dailyMd, true);
+      } else {
+        const dailyFileName = `TreNote_${dateStr}.md`;
+        success = await writeOrAppendFileToVault(settings.vaultUri, dailyFileName, dailyMd, false);
+      }
+
+      if (success) successCount++;
+      else failCount++;
+    } catch (e) {
+      console.error(`Failed to export data for date ${dateStr}:`, e);
+      failCount++;
+    }
   }
 
-  await syncLifelogToObsidian(true);
+  await saveObsidianSettings({ lastSyncTimestamp: Date.now() });
 
   return { successCount, failCount };
 };
+
