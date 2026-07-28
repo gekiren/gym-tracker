@@ -234,10 +234,10 @@
 
 ## 5. AIパーソナルトレーナー（AI Trainer）および Gemini API の仕様
 
-### ① 使用する最新モデルの絶対的な指定
-- 最新の軽量・高速な公式モデルは **`gemini-3.5-flash`** です。過去の誤った思い込みや以前のバージョン（`gemini-1.5-flash`など）への書き換えは**厳禁**です。
-- サーバー（Cloudflare Workers プロキシ）およびドキュメントのモデル名は、常に `gemini-3.5-flash` を指定・維持してください。
-- **公式リリース情報＆移行ガイド**: [Whats new with Gemini 3.5](https://ai.google.dev/gemini-api/docs/whats-new-gemini-3.5?hl=ja)
+### ① 使用する最新モデルの絶対的な指定およびDeepSeek APIフォールバック
+- 使用する公式プライマリモデルは **`gemini-3.6-flash`** です。過去のバージョン（`gemini-1.5-flash`や`gemini-3.5-flash`など）への意図しない変更は禁止です。
+- サーバー（Cloudflare Workers プロキシ）およびドキュメントのモデル名は、常に `gemini-3.6-flash` を指定・維持してください。
+- Gemini APIが混雑・障害等で利用できない場合、自動的に **DeepSeek API (`deepseek-chat`)** へフォールバック（自動切り替え）を行う冗長化仕様となっています。
 
 ### ② サーバー（Worker）接続仕様
 - クライアント側（`aiCoachService.ts`）の接続先は、必ず実際に稼働しているユーザー様のプロキシアドレス `https://gym-tracker-ai-proxy.toshi-diyil.workers.dev/api/chat` を参照・維持してください。テスト用のプレースホルダーへの変更は絶対に行わないでください。

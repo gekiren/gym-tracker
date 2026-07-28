@@ -1,14 +1,16 @@
 /**
- * Cloudflare Worker Proxy for Gemini 3.5 Flash (gym-tracker AI Coach)
+ * Cloudflare Worker Proxy for Gemini 3.6 Flash & DeepSeek Fallback (gym-tracker AI Coach)
  *
  * Place this file inside your Cloudflare Workers dashboard.
  *
- * SECURES: Your Gemini API Key from APK extraction.
+ * SECURES: Your Gemini API Key & DeepSeek API Key from APK extraction.
  * ENFORCES: 1,400 global requests per day limit completely free.
  * GUARDRAILS: Rejects non-fitness questions natively at the proxy level.
+ * FALLBACK: Seamlessly falls back to DeepSeek API (deepseek-chat) if Gemini is busy/down.
  *
  * ENV VARIABLES REQUIRED:
  * - GEMINI_API_KEY: Secure Secret containing your Google Gemini API Key.
+ * - DEEPSEEK_API_KEY: (Optional) Secure Secret containing your DeepSeek API Key for failover.
  *
  * KV NAMESPACE BINDING REQUIRED:
  * - AI_LIMIT_KV: A KV namespace bound to this Worker to track daily counts.
@@ -92,9 +94,9 @@ export default {
       }
 
       // 7. Verify API Key exists
-      if (!env.GEMINI_API_KEY) {
-        console.error("Missing GEMINI_API_KEY environment variable");
-        return new Response(JSON.stringify({ success: false, error: "AI Service is misconfigured on server side (missing API Key)" }), {
+      if (!env.GEMINI_API_KEY && !env.DEEPSEEK_API_KEY) {
+        console.error("Missing AI API Keys environment variables");
+        return new Response(JSON.stringify({ success: false, error: "AI Service is misconfigured on server side (missing API Keys)" }), {
           status: 500,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
         });
@@ -109,88 +111,114 @@ export default {
         ? `[User Context]\n- Body Weight: ${user_weight || "Not set"}\n- Unit: ${weight_unit || "kg"}\n\n[Recent Workout History]\n${workout_history || "No history available"}\n\n[User Message]\n${message}`
         : `【ユーザー情報】\n- 体重: ${user_weight || "未設定"}\n- 単位: ${weight_unit || "kg"}\n\n【最近のワークアウト履歴】\n${workout_history || "履歴なし"}\n\n【ユーザーの質問】\n${message}`;
 
-      // 9. Call Gemini API securely (Using Gemini 3.5 Flash) with retry logic for transient errors (503, 429)
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
-      
-      let response;
-      const maxRetries = 3;
-      let delayMs = 1000; // Initial wait: 1 second
-      
-      for (let attempt = 0; attempt < maxRetries; attempt++) {
-        response = await fetch(geminiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [{ text: promptContext }]
-              }
-            ],
-            systemInstruction: {
-              parts: [{ text: systemInstruction }]
-            },
-            generationConfig: {
-              maxOutputTokens: 2048,
-              temperature: 0.7
+      let reply = null;
+
+      // 9. Call Gemini API securely (Using Gemini 3.6 Flash) with retry logic for transient errors (503, 429)
+      if (env.GEMINI_API_KEY) {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${env.GEMINI_API_KEY}`;
+        
+        let response;
+        const maxRetries = 3;
+        let delayMs = 1000; // Initial wait: 1 second
+        
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+          try {
+            response = await fetch(geminiUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    role: "user",
+                    parts: [{ text: promptContext }]
+                  }
+                ],
+                systemInstruction: {
+                  parts: [{ text: systemInstruction }]
+                },
+                generationConfig: {
+                  maxOutputTokens: 2048,
+                  temperature: 0.7
+                }
+              }),
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              reply = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (reply) break;
+            } else if (response.status !== 503 && response.status !== 429) {
+              console.warn(`Gemini API non-retryable error status: ${response.status}`);
+              break;
             }
-          }),
-        });
+          } catch (fetchErr) {
+            console.warn(`Gemini API fetch error on attempt ${attempt + 1}:`, fetchErr);
+          }
 
-        // Break loop if response is OK, or if it is a non-retryable error (e.g. 400 Bad Request, 401 Unauthorized, etc.)
-        if (response.ok || (response.status !== 503 && response.status !== 429)) {
-          break;
-        }
-
-        // Wait before retrying (exponential backoff)
-        if (attempt < maxRetries - 1) {
-          console.warn(`Gemini API returned status ${response.status}. Retrying in ${delayMs}ms (Attempt ${attempt + 1}/${maxRetries})...`);
-          await new Promise(resolve => setTimeout(resolve, delayMs));
-          delayMs *= 2; // Double the delay time
+          // Wait before retrying (exponential backoff)
+          if (attempt < maxRetries - 1) {
+            console.warn(`Gemini API unavailable/busy. Retrying in ${delayMs}ms (Attempt ${attempt + 1}/${maxRetries})...`);
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+            delayMs *= 2;
+          }
         }
       }
 
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error("Gemini API error status:", response.status, errorData);
-        
-        let errorDetails = errorData;
+      // 10. Fallback to DeepSeek API if Gemini failed/busy and DEEPSEEK_API_KEY is configured
+      if (!reply && env.DEEPSEEK_API_KEY) {
+        console.warn("Gemini API failed or returned empty response. Attempting DeepSeek API fallback...");
         try {
-          const parsed = JSON.parse(errorData);
-          if (parsed && parsed.error && parsed.error.message) {
-            errorDetails = parsed.error.message;
-          }
-        } catch (_) {}
+          const deepseekUrl = "https://api.deepseek.com/chat/completions";
+          const dsResponse = await fetch(deepseekUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${env.DEEPSEEK_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: "deepseek-chat",
+              messages: [
+                { role: "system", content: systemInstruction },
+                { role: "user", content: promptContext }
+              ],
+              max_tokens: 2048,
+              temperature: 0.7
+            })
+          });
 
+          if (dsResponse.ok) {
+            const dsResult = await dsResponse.json();
+            reply = dsResult?.choices?.[0]?.message?.content;
+            if (reply) {
+              console.log("Successfully retrieved response from DeepSeek API fallback.");
+            }
+          } else {
+            console.error("DeepSeek API fallback failed status:", dsResponse.status, await dsResponse.text());
+          }
+        } catch (dsErr) {
+          console.error("Error during DeepSeek API fallback execution:", dsErr);
+        }
+      }
+
+      if (!reply) {
         return new Response(JSON.stringify({ 
           success: false, 
-          error: `Failed to communicate with AI model: ${errorDetails} (Status: ${response.status})`,
-          status: response.status
+          error: "Failed to communicate with AI models (Gemini & DeepSeek fallback failed)",
+          status: 503
         }), {
           status: 502,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
         });
       }
 
-      const result = await response.json();
-      const reply = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!reply) {
-        console.error("Invalid response structure from Gemini API:", JSON.stringify(result));
-        return new Response(JSON.stringify({ success: false, error: "Invalid AI response structure" }), {
-          status: 502,
-          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-        });
-      }
-
-      // 10. Increment Daily Rate Limit Counter in KV
+      // 11. Increment Daily Rate Limit Counter in KV
       if (env.AI_LIMIT_KV) {
         await env.AI_LIMIT_KV.put(today, (dailyCount + 1).toString(), { expirationTtl: 86400 * 2 });
       }
 
-      // 11. Return clean output
+      // 12. Return clean output
       return new Response(JSON.stringify({ success: true, reply }), {
         status: 200,
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
