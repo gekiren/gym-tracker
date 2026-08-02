@@ -335,6 +335,7 @@ export default function RootLayout() {
           <Stack>
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="settings" options={{ headerShown: false }} />
             <Stack.Screen name="select-exercise" options={{ presentation: 'modal', title: i18n.t('ui.profile.screen_title_select_exercise') }} />
             <Stack.Screen name="active-workout" options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="workout-completion" options={{ presentation: 'fullScreenModal', headerShown: false }} />
