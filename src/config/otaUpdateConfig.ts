@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.83', // OTA識別用のバージョン文字列
+  version: '1.1.84', // OTA識別用のバージョン文字列
   title: {
-    ja: 'ダッシュボードからの直接設定アクセス追加',
-    en: 'Direct Settings Access Added to Dashboard',
+    ja: '設定画面ヘッダーの表示最適化',
+    en: 'Settings Header Display Fix',
   },
   notes: {
     ja: [
-      'ダッシュボード画面から直接「アプリ設定」へ移動できるアクセスカードを追加しました。',
-      '各種連携機能やバックアップ、タイマー設定などの管理画面にスムーズにアクセスできます。',
+      '各設定画面でヘッダーが二重（階層）表示される問題を修正しました。',
+      '統一された「＜」戻るボタン付きカスタムヘッダーのみを表示するよう最適化しました。',
     ],
     en: [
-      'Added a direct Settings access card to the main dashboard.',
-      'Easily manage AI coach, data export, backup, and app preferences in one place.',
+      'Fixed duplicate navigation headers in settings screens.',
+      'Optimized layout to consistently display the unified back button header.',
     ]
   }
 };
