@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.84', // OTA識別用のバージョン文字列
+  version: '1.1.85', // OTA識別用のバージョン文字列
   title: {
-    ja: '設定画面ヘッダーの表示最適化',
-    en: 'Settings Header Display Fix',
+    ja: 'AIモデル選択機能の追加',
+    en: 'AI Model Selection Added',
   },
   notes: {
     ja: [
-      '各設定画面でヘッダーが二重（階層）表示される問題を修正しました。',
-      '統一された「＜」戻るボタン付きカスタムヘッダーのみを表示するよう最適化しました。',
+      'AIコーチで使用する優先モデル（Gemini 3.6 Flash / DeepSeek V3）を設定画面から選択できるようになりました。',
+      '接続エラー発生時に自動的にもう一方のモデルへ切り替わる相互フォールバック機能を実装しました。',
     ],
     en: [
-      'Fixed duplicate navigation headers in settings screens.',
-      'Optimized layout to consistently display the unified back button header.',
+      'Added option to select preferred AI model (Gemini 3.6 Flash / DeepSeek V3) in settings.',
+      'Implemented mutual automatic fallback in case of connection errors.',
     ]
   }
 };

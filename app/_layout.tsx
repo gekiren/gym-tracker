@@ -157,6 +157,8 @@ export default function RootLayout() {
         }
       }
 
+      const preferredAiModel = (storedSettings['preferred_ai_model'] === 'deepseek' ? 'deepseek' : 'gemini') as 'gemini' | 'deepseek';
+
       useWorkoutStore.getState().loadSettings({
         defaultRest,
         autoRest,
@@ -170,7 +172,8 @@ export default function RootLayout() {
         premiumUntil: finalPremiumUntil,
         isEarlyAdopter,
         keepAwake,
-        alwaysOneSet
+        alwaysOneSet,
+        preferredAiModel
       });
       if (expired) {
         useWorkoutStore.getState().setShouldShowPaywall(true);

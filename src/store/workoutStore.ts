@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Vibration } from 'react-native';
 import { scheduleRestTimer, cancelRestTimer } from '../utils/timer';
+import { saveSetting } from '../db/database';
 
 export type SetRecord = {
   id: string; // temp id for UI
@@ -70,6 +71,7 @@ export interface LoadSettingsPayload {
   isEarlyAdopter?: boolean;
   keepAwake?: boolean;
   alwaysOneSet?: boolean;
+  preferredAiModel?: 'gemini' | 'deepseek';
 }
 
 interface WorkoutState {
@@ -135,10 +137,12 @@ interface WorkoutState {
     crashConsent: 'agreed' | 'declined' | 'unset';
     keepAwake: boolean;
     alwaysOneSet: boolean;
+    preferredAiModel: 'gemini' | 'deepseek';
   };
   loadSettings: (payload: LoadSettingsPayload) => void;
   setKeepAwake: (keepAwake: boolean) => void;
   setAlwaysOneSet: (alwaysOneSet: boolean) => void;
+  setPreferredAiModel: (model: 'gemini' | 'deepseek') => void;
   setPremiumUntil: (premiumUntil: string) => void;
   updatePremiumStatus: (premiumUntil: string) => void;
   setIsEarlyAdopter: (isEarly: boolean) => void;
@@ -220,7 +224,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     },
     crashConsent: 'unset',
     keepAwake: true,
-    alwaysOneSet: false
+    alwaysOneSet: false,
+    preferredAiModel: 'gemini',
   },
 
   loadSettings: (payload: LoadSettingsPayload) => set((state) => {
@@ -237,7 +242,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       premiumUntil,
       isEarlyAdopter,
       keepAwake,
-      alwaysOneSet
+      alwaysOneSet,
+      preferredAiModel
     } = payload;
     const finalNeedsUnitSelection = needsUnitSelection !== undefined ? needsUnitSelection : state.settings.needsUnitSelection;
     const finalBodyWeight = bodyWeight !== undefined ? bodyWeight : state.settings.bodyWeight;
@@ -248,6 +254,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     const finalIsEarlyAdopter = isEarlyAdopter !== undefined ? isEarlyAdopter : state.settings.isEarlyAdopter;
     const finalKeepAwake = keepAwake !== undefined ? keepAwake : state.settings.keepAwake;
     const finalAlwaysOneSet = alwaysOneSet !== undefined ? alwaysOneSet : state.settings.alwaysOneSet;
+    const finalPreferredAiModel = preferredAiModel !== undefined ? preferredAiModel : state.settings.preferredAiModel;
 
     const isPremium = finalIsEarlyAdopter || finalPremiumUntil === 'perpetual' || (finalPremiumUntil !== '' && !isNaN(Date.parse(finalPremiumUntil)) && Date.parse(finalPremiumUntil) > Date.now());
     return {
@@ -266,10 +273,18 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         isEarlyAdopter: finalIsEarlyAdopter, 
         isPremium,
         keepAwake: finalKeepAwake,
-        alwaysOneSet: finalAlwaysOneSet
+        alwaysOneSet: finalAlwaysOneSet,
+        preferredAiModel: finalPreferredAiModel
       }
     };
   }),
+
+  setPreferredAiModel: (model: 'gemini' | 'deepseek') => {
+    saveSetting('preferred_ai_model', model).catch(e => console.warn('Failed to save preferred_ai_model setting', e));
+    set((state) => ({
+      settings: { ...state.settings, preferredAiModel: model }
+    }));
+  },
 
   setPremiumUntil: (premiumUntil) => set((state) => {
     const isEarlyAdopter = state.settings.isEarlyAdopter;
@@ -869,7 +884,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         },
         crashConsent: 'unset',
         keepAwake: true,
-        alwaysOneSet: false
+        alwaysOneSet: false,
+        preferredAiModel: 'gemini'
       },
       draftRoutine: { title: '', exercises: [] }
     });

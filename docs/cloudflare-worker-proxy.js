@@ -40,7 +40,8 @@ export default {
     try {
       // 2. Parse Incoming Payload
       const payload = await request.json();
-      const { message, workout_history, user_weight, weight_unit, language } = payload;
+      const { message, workout_history, user_weight, weight_unit, language, preferred_model } = payload;
+      const primaryModel = preferred_model === "deepseek" ? "deepseek" : "gemini";
 
       // 3. Security check: Protect from empty or invalid requests
       if (!message) {
@@ -111,64 +112,44 @@ export default {
         ? `[User Context]\n- Body Weight: ${user_weight || "Not set"}\n- Unit: ${weight_unit || "kg"}\n\n[Recent Workout History]\n${workout_history || "No history available"}\n\n[User Message]\n${message}`
         : `【ユーザー情報】\n- 体重: ${user_weight || "未設定"}\n- 単位: ${weight_unit || "kg"}\n\n【最近のワークアウト履歴】\n${workout_history || "履歴なし"}\n\n【ユーザーの質問】\n${message}`;
 
-      let reply = null;
-
-      // 9. Call Gemini API securely (Using Gemini 3.6 Flash) with retry logic for transient errors (503, 429)
-      if (env.GEMINI_API_KEY) {
+      // Helper for calling Gemini API
+      const callGemini = async () => {
+        if (!env.GEMINI_API_KEY) return null;
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${env.GEMINI_API_KEY}`;
-        
-        let response;
-        const maxRetries = 3;
-        let delayMs = 1000; // Initial wait: 1 second
-        
+        const maxRetries = 2;
+        let delayMs = 1000;
+
         for (let attempt = 0; attempt < maxRetries; attempt++) {
           try {
-            response = await fetch(geminiUrl, {
+            const response = await fetch(geminiUrl, {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                contents: [
-                  {
-                    role: "user",
-                    parts: [{ text: promptContext }]
-                  }
-                ],
-                systemInstruction: {
-                  parts: [{ text: systemInstruction }]
-                },
-                generationConfig: {
-                  maxOutputTokens: 2048,
-                  temperature: 0.7
-                }
+                contents: [{ role: "user", parts: [{ text: promptContext }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] },
+                generationConfig: { maxOutputTokens: 2048, temperature: 0.7 }
               }),
             });
 
             if (response.ok) {
               const result = await response.json();
-              reply = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (reply) break;
-            } else if (response.status !== 503 && response.status !== 429) {
-              console.warn(`Gemini API non-retryable error status: ${response.status}`);
-              break;
+              const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (text) return text;
             }
           } catch (fetchErr) {
-            console.warn(`Gemini API fetch error on attempt ${attempt + 1}:`, fetchErr);
+            console.warn(`Gemini API fetch error (attempt ${attempt + 1}):`, fetchErr);
           }
-
-          // Wait before retrying (exponential backoff)
           if (attempt < maxRetries - 1) {
-            console.warn(`Gemini API unavailable/busy. Retrying in ${delayMs}ms (Attempt ${attempt + 1}/${maxRetries})...`);
             await new Promise(resolve => setTimeout(resolve, delayMs));
             delayMs *= 2;
           }
         }
-      }
+        return null;
+      };
 
-      // 10. Fallback to DeepSeek API if Gemini failed/busy and DEEPSEEK_API_KEY is configured
-      if (!reply && env.DEEPSEEK_API_KEY) {
-        console.warn("Gemini API failed or returned empty response. Attempting DeepSeek API fallback...");
+      // Helper for calling DeepSeek API
+      const callDeepSeek = async () => {
+        if (!env.DEEPSEEK_API_KEY) return null;
         try {
           const deepseekUrl = "https://api.deepseek.com/chat/completions";
           const dsResponse = await fetch(deepseekUrl, {
@@ -190,15 +171,31 @@ export default {
 
           if (dsResponse.ok) {
             const dsResult = await dsResponse.json();
-            reply = dsResult?.choices?.[0]?.message?.content;
-            if (reply) {
-              console.log("Successfully retrieved response from DeepSeek API fallback.");
-            }
+            return dsResult?.choices?.[0]?.message?.content || null;
           } else {
-            console.error("DeepSeek API fallback failed status:", dsResponse.status, await dsResponse.text());
+            console.error("DeepSeek API error status:", dsResponse.status, await dsResponse.text());
           }
         } catch (dsErr) {
-          console.error("Error during DeepSeek API fallback execution:", dsErr);
+          console.error("Error during DeepSeek API call:", dsErr);
+        }
+        return null;
+      };
+
+      let reply = null;
+
+      if (primaryModel === "deepseek") {
+        console.log("Primary AI model: DeepSeek requested.");
+        reply = await callDeepSeek();
+        if (!reply) {
+          console.warn("DeepSeek API failed or unavailable. Attempting Gemini 3.6 Flash fallback...");
+          reply = await callGemini();
+        }
+      } else {
+        console.log("Primary AI model: Gemini 3.6 Flash requested.");
+        reply = await callGemini();
+        if (!reply) {
+          console.warn("Gemini API failed or unavailable. Attempting DeepSeek API fallback...");
+          reply = await callDeepSeek();
         }
       }
 

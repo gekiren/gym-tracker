@@ -756,6 +756,7 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       has_shown_review_prompt: '0',
       keep_awake: '1',
       always_one_set: '0',
+      preferred_ai_model: 'gemini',
     };
 
     for (const [key, defaultValue] of Object.entries(preAllocations)) {
