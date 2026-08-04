@@ -40,8 +40,9 @@ export default {
     try {
       // 2. Parse Incoming Payload
       const payload = await request.json();
-      const { message, workout_history, user_weight, weight_unit, language, preferred_model } = payload;
+      const { message, workout_history, user_weight, weight_unit, language, preferred_model, ai_mode } = payload;
       const primaryModel = preferred_model === "deepseek" ? "deepseek" : "gemini";
+      const isThinkingMode = ai_mode === "thinking";
 
       // 3. Security check: Protect from empty or invalid requests
       if (!message) {
@@ -103,14 +104,21 @@ export default {
         });
       }
 
-      // 8. Construct prompts based on language
-      const systemInstruction = isEnglish
-        ? "You are TreNote's elite professional strength and fitness coach. Your mission is to help the user optimize their weightlifting logs, adjust sets/reps/weight based on progressive overload & RPE, suggest routines, and explain exercise physiology. Be direct, encouraging, analytical, and professional. Keep your response extremely concise, under 150 words."
-        : "あなたは筋トレ記録アプリ「TreNote」専属の超一流プロフィットネス・筋トレコーチです。ユーザーのトレーニングログを分析し、漸進性過負荷（プログレッシブ・オーバーロード）やRPE（自覚的運動強度）に基づいて、適切なセット数、レップ数、重量の調整案を提案します。親身かつプロフェッショナルで、論理的なアドバイスを提供してください。回答は必ず簡潔にし、最大でも300文字程度を目安に要点をわかりやすく回答してください。";
+      // 8. Construct prompts based on language and AI Mode (Quick vs Thinking)
+      let systemInstruction = "";
+      if (isEnglish) {
+        systemInstruction = isThinkingMode
+          ? "You are TreNote's elite strength and fitness coach operating in THINKING MODE. Thoroughly analyze the user's workout logs, fatigue levels, progressive overload, and RPE. Provide deep, logical reasoning and detailed exercise physiology advice with actionable steps."
+          : "You are TreNote's elite strength and fitness coach operating in QUICK MODE. Provide extremely fast, direct, and concise answers focusing purely on conclusion and immediate next steps without long explanations. Keep response under 100 words.";
+      } else {
+        systemInstruction = isThinkingMode
+          ? "あなたは筋トレ記録アプリ「TreNote」専属のプロコーチです。【シンキングモード（思考あり）】として動作しています。ユーザーのトレーニング履歴、RPE、疲労度、重量推移を多角的に熟考・分析した上で、運動生理学的根拠と具体的な調整案を論理的かつ丁寧に解説してください。"
+          : "あなたは筋トレ記録アプリ「TreNote」専属のプロコーチです。【クイックモード（思考なし・スピード重視）】として動作しています。前置きや冗長な解説は排除し、結論・推奨する重量レップ数・アドバイスのみを非常に迅速かつ短文で簡潔に回答してください（200文字以内目安）。";
+      }
 
       const promptContext = isEnglish
-        ? `[User Context]\n- Body Weight: ${user_weight || "Not set"}\n- Unit: ${weight_unit || "kg"}\n\n[Recent Workout History]\n${workout_history || "No history available"}\n\n[User Message]\n${message}`
-        : `【ユーザー情報】\n- 体重: ${user_weight || "未設定"}\n- 単位: ${weight_unit || "kg"}\n\n【最近のワークアウト履歴】\n${workout_history || "履歴なし"}\n\n【ユーザーの質問】\n${message}`;
+        ? `[Mode: ${isThinkingMode ? "Thinking (Deep Analysis)" : "Quick (Fast Response)"}]\n[User Context]\n- Body Weight: ${user_weight || "Not set"}\n- Unit: ${weight_unit || "kg"}\n\n[Recent Workout History]\n${workout_history || "No history available"}\n\n[User Message]\n${message}`
+        : `【動作モード: ${isThinkingMode ? "シンキングモード（思考あり）" : "クイックモード（思考なし）"}】\n【ユーザー情報】\n- 体重: ${user_weight || "未設定"}\n- 単位: ${weight_unit || "kg"}\n\n【最近のワークアウト履歴】\n${workout_history || "履歴なし"}\n\n【ユーザーの質問】\n${message}`;
 
       // Helper for calling Gemini API
       const callGemini = async () => {
@@ -118,6 +126,11 @@ export default {
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${env.GEMINI_API_KEY}`;
         const maxRetries = 2;
         let delayMs = 1000;
+
+        // Configure thinking behavior for Gemini 3.6 Flash
+        const thinkingConfig = isThinkingMode
+          ? { thinkingBudget: 2048 }
+          : { thinkingBudget: 0 };
 
         for (let attempt = 0; attempt < maxRetries; attempt++) {
           try {
@@ -127,7 +140,11 @@ export default {
               body: JSON.stringify({
                 contents: [{ role: "user", parts: [{ text: promptContext }] }],
                 systemInstruction: { parts: [{ text: systemInstruction }] },
-                generationConfig: { maxOutputTokens: 2048, temperature: 0.7 }
+                generationConfig: {
+                  maxOutputTokens: isThinkingMode ? 3072 : 1024,
+                  temperature: isThinkingMode ? 0.7 : 0.3,
+                  thinkingConfig
+                }
               }),
             });
 
@@ -152,6 +169,7 @@ export default {
         if (!env.DEEPSEEK_API_KEY) return null;
         try {
           const deepseekUrl = "https://api.deepseek.com/chat/completions";
+          const modelName = isThinkingMode ? "deepseek-reasoner" : "deepseek-chat";
           const dsResponse = await fetch(deepseekUrl, {
             method: "POST",
             headers: {
@@ -159,13 +177,13 @@ export default {
               "Authorization": `Bearer ${env.DEEPSEEK_API_KEY}`
             },
             body: JSON.stringify({
-              model: "deepseek-chat",
+              model: modelName,
               messages: [
                 { role: "system", content: systemInstruction },
                 { role: "user", content: promptContext }
               ],
-              max_tokens: 2048,
-              temperature: 0.7
+              max_tokens: isThinkingMode ? 3072 : 1024,
+              temperature: isThinkingMode ? 0.7 : 0.3
             })
           });
 

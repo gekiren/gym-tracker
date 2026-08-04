@@ -31,6 +31,9 @@ export default function CoachScreen() {
   const { t } = useTranslation();
   const settings = useWorkoutStore(state => state.settings);
   const setAITokensBalance = useWorkoutStore(state => state.setAITokensBalance);
+  const setAiChatMode = useWorkoutStore(state => state.setAiChatMode);
+  
+  const currentAiChatMode = settings.aiChatMode || 'quick';
   
   const isPremium = settings.premiumUntil === 'perpetual' || (settings.premiumUntil !== '' && !isNaN(Date.parse(settings.premiumUntil)) && Date.parse(settings.premiumUntil) > Date.now());
   const isEarly = settings.isEarlyAdopter;
@@ -146,12 +149,13 @@ export default function CoachScreen() {
     scrollToBottom();
 
     try {
-      // Call service to get advice
+      // Call service to get advice with current AI chat mode
       const response = await sendMessageToAICoach(
         textToSend,
         activeContext || undefined,
         settings.bodyWeight,
-        settings.weightUnit
+        settings.weightUnit,
+        currentAiChatMode
       );
 
       // If failed, refund token
@@ -323,11 +327,76 @@ export default function CoachScreen() {
             <View style={[styles.bubble, styles.bubbleAI, styles.loadingBubble]}>
               <View style={styles.aiSideAccent} />
               <ActivityIndicator size="small" color={Theme.colors.primary} style={{ marginRight: 10 }} />
-              <Text style={styles.loadingText}>{t('ui.coach.analyzing') || 'AIトレーナーが分析中...'}</Text>
+              <Text style={styles.loadingText}>
+                {currentAiChatMode === 'thinking'
+                  ? (t('ui.coach.analyzing_thinking') || '🧠 AIトレーナーが熟考・分析中...')
+                  : (t('ui.coach.analyzing_quick') || '⚡ AIトレーナーが回答を作成中...')
+                }
+              </Text>
             </View>
           </View>
         )}
       </ScrollView>
+
+      {/* Mode Selector Toggle Bar */}
+      {!isQuotaExhausted && (
+        <View style={styles.modeToggleContainer}>
+          <Text style={styles.modeLabelText}>
+            {t('ui.coach.mode_label') || 'モード:'}
+          </Text>
+          <View style={styles.modeToggleGroup}>
+            <TouchableOpacity
+              style={[
+                styles.modeBtn,
+                currentAiChatMode === 'quick' && styles.modeBtnActiveQuick,
+              ]}
+              onPress={() => setAiChatMode('quick')}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="flash"
+                size={13}
+                color={currentAiChatMode === 'quick' ? '#FFD700' : Theme.colors.textMuted}
+                style={{ marginRight: 4 }}
+              />
+              <Text
+                style={[
+                  styles.modeBtnText,
+                  currentAiChatMode === 'quick' && styles.modeBtnTextActive,
+                ]}
+              >
+                {t('ui.coach.mode_quick') || '⚡ クイック'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.modeBtn,
+                currentAiChatMode === 'thinking' && styles.modeBtnActiveThinking,
+              ]}
+              onPress={() => setAiChatMode('thinking')}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="bulb"
+                size={13}
+                color={currentAiChatMode === 'thinking' ? '#BB86FC' : Theme.colors.textMuted}
+                style={{ marginRight: 4 }}
+              />
+              <Text
+                style={[
+                  styles.modeBtnText,
+                  currentAiChatMode === 'thinking' && styles.modeBtnTextActive,
+                ]}
+              >
+                {t('ui.coach.mode_thinking') || '🧠 シンキング'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* Horizontal Suggestions Chips (Hidden if quota exhausted) */}
       {!isQuotaExhausted && !loading && (
@@ -489,6 +558,56 @@ const styles = StyleSheet.create({
     borderColor: Theme.colors.border,
   },
   chipText: { color: Theme.colors.text, fontSize: 13, fontWeight: '600' },
+
+  // Mode Selector Toggle Bar
+  modeToggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Theme.spacing.md,
+    paddingTop: 8,
+    paddingBottom: 4,
+    backgroundColor: Theme.colors.background,
+  },
+  modeLabelText: {
+    color: Theme.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  modeToggleGroup: {
+    flexDirection: 'row',
+    backgroundColor: '#1a1a1c',
+    borderRadius: 16,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
+  },
+  modeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 13,
+  },
+  modeBtnActiveQuick: {
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.4)',
+  },
+  modeBtnActiveThinking: {
+    backgroundColor: 'rgba(187, 134, 252, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(187, 134, 252, 0.4)',
+  },
+  modeBtnText: {
+    color: Theme.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  modeBtnTextActive: {
+    color: Theme.colors.text,
+    fontWeight: 'bold',
+  },
 
   // Footer Input Form
   inputForm: {

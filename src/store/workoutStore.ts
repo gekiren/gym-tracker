@@ -72,6 +72,7 @@ export interface LoadSettingsPayload {
   keepAwake?: boolean;
   alwaysOneSet?: boolean;
   preferredAiModel?: 'gemini' | 'deepseek';
+  aiChatMode?: 'quick' | 'thinking';
 }
 
 interface WorkoutState {
@@ -138,11 +139,13 @@ interface WorkoutState {
     keepAwake: boolean;
     alwaysOneSet: boolean;
     preferredAiModel: 'gemini' | 'deepseek';
+    aiChatMode: 'quick' | 'thinking';
   };
   loadSettings: (payload: LoadSettingsPayload) => void;
   setKeepAwake: (keepAwake: boolean) => void;
   setAlwaysOneSet: (alwaysOneSet: boolean) => void;
   setPreferredAiModel: (model: 'gemini' | 'deepseek') => void;
+  setAiChatMode: (mode: 'quick' | 'thinking') => void;
   setPremiumUntil: (premiumUntil: string) => void;
   updatePremiumStatus: (premiumUntil: string) => void;
   setIsEarlyAdopter: (isEarly: boolean) => void;
@@ -226,6 +229,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     keepAwake: true,
     alwaysOneSet: false,
     preferredAiModel: 'gemini',
+    aiChatMode: 'quick',
   },
 
   loadSettings: (payload: LoadSettingsPayload) => set((state) => {
@@ -243,7 +247,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       isEarlyAdopter,
       keepAwake,
       alwaysOneSet,
-      preferredAiModel
+      preferredAiModel,
+      aiChatMode
     } = payload;
     const finalNeedsUnitSelection = needsUnitSelection !== undefined ? needsUnitSelection : state.settings.needsUnitSelection;
     const finalBodyWeight = bodyWeight !== undefined ? bodyWeight : state.settings.bodyWeight;
@@ -255,6 +260,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     const finalKeepAwake = keepAwake !== undefined ? keepAwake : state.settings.keepAwake;
     const finalAlwaysOneSet = alwaysOneSet !== undefined ? alwaysOneSet : state.settings.alwaysOneSet;
     const finalPreferredAiModel = preferredAiModel !== undefined ? preferredAiModel : state.settings.preferredAiModel;
+    const finalAiChatMode = aiChatMode !== undefined ? aiChatMode : state.settings.aiChatMode;
 
     const isPremium = finalIsEarlyAdopter || finalPremiumUntil === 'perpetual' || (finalPremiumUntil !== '' && !isNaN(Date.parse(finalPremiumUntil)) && Date.parse(finalPremiumUntil) > Date.now());
     return {
@@ -274,7 +280,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         isPremium,
         keepAwake: finalKeepAwake,
         alwaysOneSet: finalAlwaysOneSet,
-        preferredAiModel: finalPreferredAiModel
+        preferredAiModel: finalPreferredAiModel,
+        aiChatMode: finalAiChatMode
       }
     };
   }),
@@ -283,6 +290,13 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     saveSetting('preferred_ai_model', model).catch(e => console.warn('Failed to save preferred_ai_model setting', e));
     set((state) => ({
       settings: { ...state.settings, preferredAiModel: model }
+    }));
+  },
+
+  setAiChatMode: (mode: 'quick' | 'thinking') => {
+    saveSetting('ai_chat_mode', mode).catch(e => console.warn('Failed to save ai_chat_mode setting', e));
+    set((state) => ({
+      settings: { ...state.settings, aiChatMode: mode }
     }));
   },
 
@@ -885,7 +899,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         crashConsent: 'unset',
         keepAwake: true,
         alwaysOneSet: false,
-        preferredAiModel: 'gemini'
+        preferredAiModel: 'gemini',
+        aiChatMode: 'quick'
       },
       draftRoutine: { title: '', exercises: [] }
     });

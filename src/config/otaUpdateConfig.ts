@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.85', // OTA識別用のバージョン文字列
+  version: '1.1.86', // OTA識別用のバージョン文字列
   title: {
-    ja: 'AIモデル選択機能の追加',
-    en: 'AI Model Selection Added',
+    ja: 'AIチャットに思考モード切替機能を追加',
+    en: 'Added AI Chat Mode Toggle (Quick & Thinking)',
   },
   notes: {
     ja: [
-      'AIコーチで使用する優先モデル（Gemini 3.6 Flash / DeepSeek V3）を設定画面から選択できるようになりました。',
-      '接続エラー発生時に自動的にもう一方のモデルへ切り替わる相互フォールバック機能を実装しました。',
+      'AIチャット画面に「⚡ クイック（思考なし・スピード重視）」と「🧠 シンキング（思考あり・深層分析）」の切替モードを追加しました。',
+      '質問の用途や相談内容に合わせて、AIの回答スタイルをワンタップで簡単に切り替えられます。',
     ],
     en: [
-      'Added option to select preferred AI model (Gemini 3.6 Flash / DeepSeek V3) in settings.',
-      'Implemented mutual automatic fallback in case of connection errors.',
+      'Added Quick Mode (fast, non-thinking) and Thinking Mode (deep analysis) toggles to AI Chat.',
+      'Switch AI response style instantly according to your training needs.',
     ]
   }
 };

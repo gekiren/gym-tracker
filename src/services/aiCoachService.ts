@@ -18,15 +18,18 @@ export interface AICoachResponse {
  * @param customContext Optional specific context (e.g., active workout sets or exercise history)
  * @param userWeight Current body weight from settings
  * @param weightUnit Selected weight unit ('kg' or 'lbs')
+ * @param aiMode Selected AI chat mode ('quick' or 'thinking')
  */
 export const sendMessageToAICoach = async (
   message: string,
   customContext?: string,
   userWeight?: number | null,
-  weightUnit?: string
+  weightUnit?: string,
+  aiMode: 'quick' | 'thinking' = 'quick'
 ): Promise<AICoachResponse> => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 seconds timeout
+  const timeoutSeconds = aiMode === 'thinking' ? 45000 : 25000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutSeconds); // 25s for quick, 45s for thinking
 
   try {
     // 1. Gather context: use customContext if provided (from direct page sparkles buttons),
@@ -65,6 +68,7 @@ export const sendMessageToAICoach = async (
         weight_unit: weightUnit || 'kg',
         language: lang,
         preferred_model: preferredModel,
+        ai_mode: aiMode,
       }),
       signal: controller.signal,
     });

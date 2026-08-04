@@ -158,6 +158,7 @@ export default function RootLayout() {
       }
 
       const preferredAiModel = (storedSettings['preferred_ai_model'] === 'deepseek' ? 'deepseek' : 'gemini') as 'gemini' | 'deepseek';
+      const aiChatMode = (storedSettings['ai_chat_mode'] === 'thinking' ? 'thinking' : 'quick') as 'quick' | 'thinking';
 
       useWorkoutStore.getState().loadSettings({
         defaultRest,
@@ -173,7 +174,8 @@ export default function RootLayout() {
         isEarlyAdopter,
         keepAwake,
         alwaysOneSet,
-        preferredAiModel
+        preferredAiModel,
+        aiChatMode
       });
       if (expired) {
         useWorkoutStore.getState().setShouldShowPaywall(true);
