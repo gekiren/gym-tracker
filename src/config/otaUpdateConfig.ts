@@ -11,21 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.87', // OTA識別用のバージョン文字列
+  version: '1.1.88', // OTA識別用のバージョン文字列
   title: {
-    ja: 'データベース処理およびアプリ安定性の向上',
-    en: 'Database & App Stability Improvements',
+    ja: '画面描画の最適化とアプリの安定性向上',
+    en: 'UI Performance & Stability Improvements',
   },
   notes: {
     ja: [
-      'データベース構造の分離・モジュール化を行い、アプリの動作安定性を向上させました。',
-      'データ読み込み時の処理を最適化し、フリーズを防止しました。',
+      '筋トレ記録画面、完了結果画面、設定画面の描画パフォーマンスを最適化しました。',
+      '不要な再描画を軽減し、より軽快でスムーズな操作性を実現しました。',
     ],
     en: [
-      'Refactored database layer for improved application stability.',
-      'Optimized data loading mechanisms to ensure smooth operation.',
-    ]
-  }
+      'Optimized rendering performance across key application screens.',
+      'Reduced unnecessary re-renders for a smoother user experience.',
+    ],
+  },
 };
 
 
