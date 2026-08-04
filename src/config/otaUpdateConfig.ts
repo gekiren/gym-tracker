@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.86', // OTA識別用のバージョン文字列
+  version: '1.1.87', // OTA識別用のバージョン文字列
   title: {
-    ja: 'AIチャットに思考モード切替機能を追加',
-    en: 'Added AI Chat Mode Toggle (Quick & Thinking)',
+    ja: 'データベース処理およびアプリ安定性の向上',
+    en: 'Database & App Stability Improvements',
   },
   notes: {
     ja: [
-      'AIチャット画面に「⚡ クイック（思考なし・スピード重視）」と「🧠 シンキング（思考あり・深層分析）」の切替モードを追加しました。',
-      '質問の用途や相談内容に合わせて、AIの回答スタイルをワンタップで簡単に切り替えられます。',
+      'データベース構造の分離・モジュール化を行い、アプリの動作安定性を向上させました。',
+      'データ読み込み時の処理を最適化し、フリーズを防止しました。',
     ],
     en: [
-      'Added Quick Mode (fast, non-thinking) and Thinking Mode (deep analysis) toggles to AI Chat.',
-      'Switch AI response style instantly according to your training needs.',
+      'Refactored database layer for improved application stability.',
+      'Optimized data loading mechanisms to ensure smooth operation.',
     ]
   }
 };

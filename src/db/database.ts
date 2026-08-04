@@ -1,275 +1,32 @@
 import * as SQLite from 'expo-sqlite';
-import { addMonths } from 'date-fns';
+import { PRESET_EXERCISES, PRESET_ROUTINES } from './constants';
+import { setDB, setDBPromise, getDBPromise, getDB, closeDB } from './connection';
 
-// ワークアウトセットの型定義
-export interface WorkoutSet {
-  id?: number | string;
-  set_number: number;
-  reps: number | null;
-  weight: number | null;
-  rpe: number | null;
-  is_completed?: boolean | number;
-  rest_seconds?: number | null;
-  work_seconds?: number | null;
-  side?: string | null;
-  variation?: string | null;
-  stance?: string | null;
-}
+// Export all types and constants for 100% backwards compatibility
+export * from './types';
+export * from './constants';
+export * from './connection';
 
-// ワークアウトエクササイズの型定義
-export interface WorkoutExercise {
-  exercise_id: number;
-  notes?: string | null;
-  sets: WorkoutSet[];
-}
-
-// ルーティンセットの型定義
-export interface RoutineSet {
-  set_number: number;
-  reps: number | null;
-  weight: number | null;
-  rpe: number | null;
-  side?: string | null;
-  variation?: string | null;
-  stance?: string | null;
-}
-
-// ルーティンエクササイズの型定義
-export interface RoutineExercise {
-  id: number;
-  name: string;
-  sets: RoutineSet[];
-}
-
-// DB レコード（workoutsテーブル）の型定義
-export interface WorkoutRow {
-  id: number;
-  title: string;
-  start_time: string;
-  end_time: string;
-  notes: string | null;
-  calories: number | null;
-}
-
-// DB レコード（workout_exercisesテーブル等結合）の型定義
-export interface WorkoutExerciseRow {
-  workout_exercise_id: number;
-  exercise_id: number;
-  exercise_name: string;
-  notes: string | null;
-}
-
-// DB レコード（workout_setsテーブル）の型定義
-export interface WorkoutSetRow {
-  id: number;
-  set_number: number;
-  weight: number | null;
-  reps: number | null;
-  rpe: number | null;
-  rest_seconds: number | null;
-  work_seconds: number | null;
-  side: string | null;
-  variation: string | null;
-  stance: string | null;
-  is_completed: number | boolean;
-}
-
-export interface WaterLog {
-  id: number;
-  amount: number;
-  timestamp: number;
-  date: string;
-  caffeine?: number;
-}
-
-export interface TimeLog {
-  id: number;
-  activity_name: string;
-  start_time: string;
-  end_time: string;
-  date: string;
-  duration_minutes: number;
-}
-
-export interface HabitItem {
-  id: number;
-  name: string;
-  color: string;
-  created_at: number;
-  sort_order: number;
-}
-
-export interface HabitLog {
-  id: number;
-  habit_item_id: number;
-  timestamp: number;
-  date: string;
-}
-
-// Initialize the database connection
-let db: SQLite.SQLiteDatabase | null = null;
-let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
-
-export const PRESET_EXERCISES = [
-    // Chest
-    { name: 'ベンチプレス', group: '胸', equip: 'バーベル' },
-    { name: 'インクラインベンチプレス', group: '胸', equip: 'バーベル' },
-    { name: 'デクラインベンチプレス', group: '胸', equip: 'バーベル' },
-    { name: 'ダンベルプレス', group: '胸', equip: 'ダンベル' },
-    { name: 'インクラインダンベルプレス', group: '胸', equip: 'ダンベル' },
-    { name: 'デクラインダンベルプレス', group: '胸', equip: 'ダンベル' },
-    { name: 'ダンベルフライ', group: '胸', equip: 'ダンベル' },
-    { name: 'インクラインダンベルフライ', group: '胸', equip: 'ダンベル' },
-    { name: 'ケーブルクロスオーバー', group: '胸', equip: 'ケーブル' },
-    { name: 'ペックデックフライ', group: '胸', equip: 'マシン' },
-    { name: 'チェストプレス', group: '胸', equip: 'マシン' },
-    { name: 'スミスマシン ベンチプレス', group: '胸', equip: 'スミスマシン' },
-    { name: 'スミスマシン インクラインプレス', group: '胸', equip: 'スミスマシン' },
-    { name: 'プッシュアップ', group: '胸', equip: '自重' },
-    { name: 'ディップス', group: '胸', equip: '自重' },
-    
-    // Back
-    { name: 'デッドリフト', group: '背中', equip: 'バーベル' },
-    { name: 'ルーマニアンデッドリフト', group: '背中', equip: 'バーベル' },
-    { name: 'ハーフデッドリフト', group: '背中', equip: 'バーベル' },
-    { name: '懸垂', group: '背中', equip: '自重' },
-    { name: 'ラットプルダウン', group: '背中', equip: 'ケーブル' },
-    { name: 'ベントオーバーロウ', group: '背中', equip: 'バーベル' },
-    { name: 'ペンレイロウ', group: '背中', equip: 'バーベル' },
-    { name: 'ワンアームダンベルロウ', group: '背中', equip: 'ダンベル', is_unilateral: 1 },
-    { name: 'シーテッドロウ', group: '背中', equip: 'ケーブル' },
-    { name: 'Tバーロウ', group: '背中', equip: 'マシン' },
-    { name: 'シュラッグ', group: '背中', equip: 'バーベル' },
-    { name: 'ダンベルシュラッグ', group: '背中', equip: 'ダンベル' },
-    { name: 'プルオーバー', group: '背中', equip: 'ダンベル' },
-    { name: 'ストレートアームプルダウン', group: '背中', equip: 'ケーブル' },
-    { name: 'バックエクステンション', group: '背中', equip: '自重' },
-    
-    // Shoulders
-    { name: 'オーバーヘッドプレス', group: '肩', equip: 'バーベル' },
-    { name: 'ダンベルショルダープレス', group: '肩', equip: 'ダンベル' },
-    { name: 'アーノルドプレス', group: '肩', equip: 'ダンベル' },
-    { name: 'スミスマシン ショルダープレス', group: '肩', equip: 'スミスマシン' },
-    { name: 'マシンショルダープレス', group: '肩', equip: 'マシン' },
-    { name: 'サイドレイズ', group: '肩', equip: 'ダンベル' },
-    { name: 'ケーブルサイドレイズ', group: '肩', equip: 'ケーブル' },
-    { name: 'フロントレイズ', group: '肩', equip: 'ダンベル' },
-    { name: 'ケーブルフロントレイズ', group: '肩', equip: 'ケーブル' },
-    { name: 'リアデルトフライ', group: '肩', equip: 'マシン' },
-    { name: 'ダンベルリアレイズ', group: '肩', equip: 'ダンベル' },
-    { name: 'フェイスプル', group: '肩', equip: 'ケーブル' },
-    { name: 'アップライトロウ', group: '肩', equip: 'バーベル' },
-    { name: 'ケーブルアップライトロウ', group: '肩', equip: 'ケーブル' },
-
-    // Arms
-    { name: 'バーベルカール', group: '腕', equip: 'バーベル' },
-    { name: 'EZバーカール', group: '腕', equip: 'EZバー' },
-    { name: 'ダンベルカール', group: '腕', equip: 'ダンベル' },
-    { name: 'インクラインダンベルカール', group: '腕', equip: 'ダンベル' },
-    { name: 'ハンマーカール', group: '腕', equip: 'ダンベル' },
-    { name: 'プリーチャーカール', group: '腕', equip: 'EZバー' },
-    { name: 'ケーブルカール', group: '腕', equip: 'ケーブル' },
-    { name: 'コンセントレーションカール', group: '腕', equip: 'ダンベル', is_unilateral: 1 },
-    { name: 'リバースカール', group: '腕', equip: 'EZバー' },
-    { name: 'ナローグリップ ベンチプレス', group: '腕', equip: 'バーベル' },
-    { name: 'トライセップスエクステンション', group: '腕', equip: 'EZバー' },
-    { name: 'ダンベル トライセップスエクステンション', group: '腕', equip: 'ダンベル' },
-    { name: 'ケーブルプッシュダウン', group: '腕', equip: 'ケーブル' },
-    { name: 'スカルクラッシャー', group: '腕', equip: 'EZバー' },
-    { name: 'キックバック', group: '腕', equip: 'ダンベル', is_unilateral: 1 },
-    { name: 'リストカール', group: '腕', equip: 'ダンベル' },
-
-    // Legs
-    { name: 'スクワット', group: '脚', equip: 'バーベル' },
-    { name: 'フロントスクワット', group: '脚', equip: 'バーベル' },
-    { name: 'ゴブレットスクワット', group: '脚', equip: 'ダンベル' },
-    { name: 'スミスマシン スクワット', group: '脚', equip: 'スミスマシン' },
-    { name: 'レッグプレス', group: '脚', equip: 'マシン' },
-    { name: 'ハックスクワット', group: '脚', equip: 'マシン' },
-    { name: 'ブルガリアンスプリットスクワット', group: '脚', equip: 'ダンベル', is_unilateral: 1 },
-    { name: 'ランジ', group: '脚', equip: 'ダンベル', is_unilateral: 1 },
-    { name: 'ウォーキングランジ', group: '脚', equip: 'ダンベル', is_unilateral: 1 },
-    { name: 'レッグエクステンション', group: '脚', equip: 'マシン' },
-    { name: 'レッグカール', group: '脚', equip: 'マシン' },
-    { name: 'シーテッドレッグカール', group: '脚', equip: 'マシン' },
-    { name: 'スタンディングカーフレイズ', group: '脚', equip: 'マシン' },
-    { name: 'シーテッドカーフレイズ', group: '脚', equip: 'マシン' },
-    { name: 'ヒップスラスト', group: '脚', equip: 'バーベル' },
-    { name: 'マシンアブダクター', group: '脚', equip: 'マシン' },
-    { name: 'マシンアダクター', group: '脚', equip: 'マシン' },
-    { name: 'グッドモーニング', group: '脚', equip: 'バーベル' },
-
-    // Core
-    { name: 'クランチ', group: '腹筋', equip: '自重' },
-    { name: 'シットアップ', group: '腹筋', equip: '自重' },
-    { name: 'プランク', group: '腹筋', equip: '自重' },
-    { name: 'レッグレイズ', group: '腹筋', equip: '自重' },
-    { name: 'ハンギングレッグレイズ', group: '腹筋', equip: '自重' },
-    { name: 'アブローラー', group: '腹筋', equip: 'その他' },
-    { name: 'ケーブルクランチ', group: '腹筋', equip: 'ケーブル' },
-    { name: 'ロシアンツイスト', group: '腹筋', equip: 'ウエイト' },
-    { name: 'マウンテンクライマー', group: '腹筋', equip: '自重' },
-    { name: 'アブドミナルマシン', group: '腹筋', equip: 'マシン' },
-
-    // Aerobic
-    { name: 'エアロバイク', group: '有酸素', equip: 'マシン' },
-    { name: 'トレッドミル', group: '有酸素', equip: 'マシン' },
-    { name: 'ランニング', group: '有酸素', equip: '自重' },
-    { name: 'ウォーキング', group: '有酸素', equip: '自重' },
-    { name: 'ローイングマシン', group: '有酸素', equip: 'マシン' },
-    { name: 'クロストレーナー', group: '有酸素', equip: 'マシン' },
-    { name: '縄跳び', group: '有酸素', equip: '自重' }
-  ];
-
-export const PRESET_EXERCISE_NAMES = new Set(PRESET_EXERCISES.map(e => e.name));
-
-export interface PresetRoutine {
-  title: string;
-  description: string;
-  exerciseNames: string[];
-}
-
-export const PRESET_ROUTINES: PresetRoutine[] = [
-  {
-    title: '全身の日 (Full Body)',
-    description: 'マシンと自重を組み合わせた、全身をバランス良く鍛える初心者向けメニュー（約45分〜1時間）',
-    exerciseNames: ['チェストプレス', 'ラットプルダウン', 'レッグプレス', 'プランク']
-  },
-  {
-    title: '上半身の日 (Upper Body)',
-    description: 'マシンとダンベルで上半身の主要な筋肉を効果的に刺激するメニュー（約45分〜1時間）',
-    exerciseNames: ['チェストプレス', 'シーテッドロウ', 'ダンベルショルダープレス', 'ダンベルカール']
-  },
-  {
-    title: '下半身の日 (Lower Body)',
-    description: '安全なマシンを中心に、太ももとお尻を完璧に鍛え上げるメニュー（約45分〜1時間）',
-    exerciseNames: ['レッグプレス', 'レッグエクステンション', 'レッグカール', 'マシンアブダクター']
-  },
-  {
-    title: '自重の日 (Bodyweight)',
-    description: '器具を一切使わず、自宅や旅行先でも畳1畳分で行える自重メニュー（約30分〜45分）',
-    exerciseNames: ['プッシュアップ', 'バックエクステンション', 'クランチ', 'プランク']
-  }
-];
-
-export const getCustomExercisesCount = async (): Promise<number> => {
-  try {
-    const conn = await initDB();
-    const rows = await conn.getAllAsync<{ name: string }>('SELECT name FROM exercises');
-    return rows.filter(r => !PRESET_EXERCISE_NAMES.has(r.name)).length;
-  } catch (e) {
-    console.warn('Failed to retrieve custom exercises count in getCustomExercisesCount', e);
-    return 0;
-  }
-};
-
+// Export repositories for 100% backwards compatibility
+export * from './repositories/exerciseRepository';
+export * from './repositories/workoutRepository';
+export * from './repositories/routineRepository';
+export * from './repositories/settingsRepository';
+export * from './repositories/lifelogRepository';
 
 export const initDB = async (): Promise<SQLite.SQLiteDatabase> => {
-  if (db) return db;
-  if (!dbPromise) {
-    dbPromise = _initDBInternal();
+  try {
+    return getDB();
+  } catch (_) {
+    // If getDB() throws because db is null, proceed to initialize
   }
-  return dbPromise;
+
+  const existingPromise = getDBPromise();
+  if (existingPromise) return existingPromise;
+
+  const promise = _initDBInternal();
+  setDBPromise(promise);
+  return promise;
 };
 
 const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
@@ -454,8 +211,6 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
     if (!tableInfoSets.find(c => c.name === 'variation')) {
       await _db.execAsync(`ALTER TABLE workout_sets ADD COLUMN variation TEXT;`);
     }
-    
-    // Migration: Add stance to workout_sets if missing
     if (!tableInfoSets.find(c => c.name === 'stance')) {
       await _db.execAsync(`ALTER TABLE workout_sets ADD COLUMN stance TEXT;`);
       await _db.runAsync(`UPDATE workout_sets SET stance = variation WHERE variation IS NOT NULL`);
@@ -512,51 +267,43 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
   // Migration: Rename exercises to remove parenthetical suffixes
   try {
     const renames = [
-      { from: '\u30d7\u30c3\u30b7\u30e5\u30a2\u30c3\u30d7 (\u8155\u7acb\u3066\u4f0f\u305b)', to: '\u30d7\u30c3\u30b7\u30e5\u30a2\u30c3\u30d7' },
-      { from: '\u61f8\u5782 (\u30c1\u30f3\u30cb\u30f3\u30b0)', to: '\u61f8\u5782' },
-      { from: '\u30aa\u30fc\u30d0\u30fc\u30d8\u30c3\u30c9\u30d7\u30ec\u30b9 (\u30df\u30ea\u30bf\u30ea\u30fc\u30d7\u30ec\u30b9)', to: '\u30aa\u30fc\u30d0\u30fc\u30d8\u30c3\u30c9\u30d7\u30ec\u30b9' },
-      { from: '\u30de\u30b7\u30f3\u30a2\u30d6\u30c0\u30af\u30bf\u30fc (\u5916\u8ee2)', to: '\u30de\u30b7\u30f3\u30a2\u30d6\u30c0\u30af\u30bf\u30fc' },
-      { from: '\u30de\u30b7\u30f3\u30a2\u30c0\u30af\u30bf\u30fc (\u5185\u8ee2)', to: '\u30de\u30b7\u30f3\u30a2\u30c0\u30af\u30bf\u30fc' },
-      { from: '\u30a2\u30fc\u30e0\u30ab\u30fc\u30eb\uff08\u30c0\u30f3\u30d9\u30eb\uff09', to: '\u30a2\u30fc\u30e0\u30ab\u30fc\u30eb' },
-      { from: '\u30a2\u30fc\u30e0\u30ab\u30fc\u30eb (\u30c0\u30f3\u30d9\u30eb)', to: '\u30a2\u30fc\u30e0\u30ab\u30fc\u30eb' },
-      { from: '\u30a2\u30fc\u30e0\u30ab\u30fc\u30eb(Dumbbell)', to: '\u30a2\u30fc\u30e0\u30ab\u30fc\u30eb' },
-      { from: '\u30a2\u30fc\u30e0\u30ab\u30fc\u30eb (Dumbbell)', to: '\u30a2\u30fc\u30e0\u30ab\u30fc\u30eb' },
-      // (Barbell) suffix patterns
-      { from: '\u30d9\u30f3\u30c1\u30d7\u30ec\u30b9 (Barbell)', to: '\u30d9\u30f3\u30c1\u30d7\u30ec\u30b9' },
-      { from: '\u30c7\u30c3\u30c9\u30ea\u30d5\u30c8 (Barbell)', to: '\u30c7\u30c3\u30c9\u30ea\u30d5\u30c8' },
-      { from: '\u30b9\u30af\u30ef\u30c3\u30c8 (Barbell)', to: '\u30b9\u30af\u30ef\u30c3\u30c8' },
-      { from: '\u30b7\u30e5\u30e9\u30c3\u30b0 (Barbell)', to: '\u30b7\u30e5\u30e9\u30c3\u30b0' },
-      { from: '\u30d2\u30c3\u30d7\u30b9\u30e9\u30b9\u30c8 (Barbell)', to: '\u30d2\u30c3\u30d7\u30b9\u30e9\u30b9\u30c8' },
-      { from: '\u30d9\u30f3\u30c8\u30aa\u30fc\u30d0\u30fc\u30ed\u30a6 (Barbell)', to: '\u30d9\u30f3\u30c8\u30aa\u30fc\u30d0\u30fc\u30ed\u30a6' },
-      { from: '\u30d5\u30ed\u30f3\u30c8\u30b9\u30af\u30ef\u30c3\u30c8 (Barbell)', to: '\u30d5\u30ed\u30f3\u30c8\u30b9\u30af\u30ef\u30c3\u30c8' },
-      { from: '\u30aa\u30fc\u30d0\u30fc\u30d8\u30c3\u30c9\u30d7\u30ec\u30b9 (Barbell)', to: '\u30aa\u30fc\u30d0\u30fc\u30d8\u30c3\u30c9\u30d7\u30ec\u30b9' },
-      { from: '\u30a4\u30f3\u30af\u30e9\u30a4\u30f3\u30d9\u30f3\u30c1\u30d7\u30ec\u30b9 (Barbell)', to: '\u30a4\u30f3\u30af\u30e9\u30a4\u30f3\u30d9\u30f3\u30c1\u30d7\u30ec\u30b9' },
-      { from: '\u30c7\u30af\u30e9\u30a4\u30f3\u30d9\u30f3\u30c1\u30d7\u30ec\u30b9 (Barbell)', to: '\u30c7\u30af\u30e9\u30a4\u30f3\u30d9\u30f3\u30c1\u30d7\u30ec\u30b9' },
-      // (Dumbbell) suffix patterns
-      { from: '\u30c0\u30f3\u30d9\u30eb\u30d7\u30ec\u30b9 (Dumbbell)', to: '\u30c0\u30f3\u30d9\u30eb\u30d7\u30ec\u30b9' },
-      { from: '\u30c0\u30f3\u30d9\u30eb\u30d5\u30e9\u30a4 (Dumbbell)', to: '\u30c0\u30f3\u30d9\u30eb\u30d5\u30e9\u30a4' },
-      { from: '\u30c0\u30f3\u30d9\u30eb\u30b7\u30e5\u30e9\u30c3\u30b0 (Dumbbell)', to: '\u30c0\u30f3\u30d9\u30eb\u30b7\u30e5\u30e9\u30c3\u30b0' },
-      { from: '\u30c0\u30f3\u30d9\u30eb\u30ab\u30fc\u30eb (Dumbbell)', to: '\u30c0\u30f3\u30d9\u30eb\u30ab\u30fc\u30eb' },
-      { from: '\u30aa\u30fc\u30d0\u30fc\u30d8\u30c3\u30c9\u30d7\u30ec\u30b9 (Dumbbell)', to: '\u30aa\u30fc\u30d0\u30fc\u30d8\u30c3\u30c9\u30d7\u30ec\u30b9' },
-      // (Pull-up) - delete handled separately
+      { from: 'プッシュアップ (腕立て伏せ)', to: 'プッシュアップ' },
+      { from: '懸垂 (チンニング)', to: '懸垂' },
+      { from: 'オーバーヘッドプレス (ミリタリープレス)', to: 'オーバーヘッドプレス' },
+      { from: 'マシンアブダクター (外転)', to: 'マシンアブダクター' },
+      { from: 'マシンアダクター (内転)', to: 'マシンアダクター' },
+      { from: 'アームカール（ダンベル）', to: 'アームカール' },
+      { from: 'アームカール (ダンベル)', to: 'アームカール' },
+      { from: 'アームカール(Dumbbell)', to: 'アームカール' },
+      { from: 'アームカール (Dumbbell)', to: 'アームカール' },
+      { from: 'ベンチプレス (Barbell)', to: 'ベンチプレス' },
+      { from: 'デッドリフト (Barbell)', to: 'デッドリフト' },
+      { from: 'スクワット (Barbell)', to: 'スクワット' },
+      { from: 'シュラッグ (Barbell)', to: 'シュラッグ' },
+      { from: 'ヒップスラスト (Barbell)', to: 'ヒップスラスト' },
+      { from: 'ベントオーバーロウ (Barbell)', to: 'ベントオーバーロウ' },
+      { from: 'フロントスクワット (Barbell)', to: 'フロントスクワット' },
+      { from: 'オーバーヘッドプレス (Barbell)', to: 'オーバーヘッドプレス' },
+      { from: 'インクラインベンチプレス (Barbell)', to: 'インクラインベンチプレス' },
+      { from: 'デクラインベンチプレス (Barbell)', to: 'デクラインベンチプレス' },
+      { from: 'ダンベルプレス (Dumbbell)', to: 'ダンベルプレス' },
+      { from: 'ダンベルフライ (Dumbbell)', to: 'ダンベルフライ' },
+      { from: 'ダンベルシュラッグ (Dumbbell)', to: 'ダンベルシュラッグ' },
+      { from: 'ダンベルカール (Dumbbell)', to: 'ダンベルカール' },
+      { from: 'オーバーヘッドプレス (Dumbbell)', to: 'オーバーヘッドプレス' },
     ];
     for (const r of renames) {
       await _db.runAsync('UPDATE exercises SET name = ? WHERE name = ?', [r.to, r.from]);
     }
-    // Delete 懸垂 (Pull-up) as duplicate of 懸垂
     await _db.runAsync('DELETE FROM exercises WHERE name = ?', ['懸垂 (Pull-up)']);
 
-    // Migration: Rename default routines
     await _db.runAsync('UPDATE routines SET title = "Push Day", description = "Bench Press, Overhead Press, Push-Up..." WHERE title = "Push Day (押す日)"');
     await _db.runAsync('UPDATE routines SET title = "Pull Day", description = "Deadlift, Pull-Up, Lat Pulldown..." WHERE title = "Pull Day (引く日)"');
-    // Migration: Remove weighted bodyweight exercises and reverse grip lat pulldown as requested
     await _db.runAsync('DELETE FROM exercises WHERE name IN (?, ?, ?, ?)', ['加重懸垂', '加重プッシュアップ', '加重ディップス', 'リバースグリップ ラットプルダウン']);
     
-    // Migration: Set is_unilateral = 1 for specific exercises
     const unilateralExercises = ['ワンアームダンベルロウ', 'コンセントレーションカール', 'キックバック', 'ブルガリアンスプリットスクワット', 'ランジ', 'ウォーキングランジ'];
     await _db.runAsync(`UPDATE exercises SET is_unilateral = 1 WHERE name IN (${unilateralExercises.map(() => '?').join(',')})`, unilateralExercises);
 
-    // Migration: Add new aerobic exercises if they do not exist
     const aerobicEx = [
       { name: 'エアロバイク', group: '有酸素', equip: 'マシン' },
       { name: 'トレッドミル', group: '有酸素', equip: 'マシン' },
@@ -611,22 +358,15 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       });
     }
 
-    // Seed default routines (Updated to Lite User friendly menus)
     const routineCountRow = await _db.getFirstAsync<{count: number}>('SELECT count(*) as count FROM routines');
-    
-    // If empty or only contains the old 2 default routines (Push/Pull Day), upgrade them to the new 4 Lite Routines
     const oldRoutines = await _db.getAllAsync<{ title: string }>('SELECT title FROM routines');
     const isOldDefaultOnly = oldRoutines.length === 0 || 
       (oldRoutines.length <= 2 && oldRoutines.every(r => r.title === 'Push Day' || r.title === 'Pull Day'));
 
     if (routineCountRow && (routineCountRow.count === 0 || isOldDefaultOnly)) {
-      // Clear old default routines if they exist
       await _db.runAsync('DELETE FROM routines WHERE title IN ("Push Day", "Pull Day")');
       
       const defaultRoutines = PRESET_ROUTINES;
-
-      // Fetch all exercises beforehand to create a name->id mapping memory cache,
-      // fully eliminating async nested SELECT queries inside SQLite transactions
       const allExercises = await _db.getAllAsync<{ id: number; name: string }>('SELECT id, name FROM exercises');
       const exerciseMap = new Map<string, number>(allExercises.map(e => [e.name, e.id]));
 
@@ -644,7 +384,6 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
               );
               const reid = rxRes.lastInsertRowId;
 
-              // Determine beginner friendly default weight/reps for each set
               const isPlank = ename === 'プランク';
               const isDumbbell = ename.includes('ダンベル');
               const isExtensionCurl = ename === 'レッグエクステンション' || ename === 'レッグカール' || ename === 'マシンアブダクター';
@@ -654,22 +393,21 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
               let reps = 10;
 
               if (isPlank) {
-                reps = 1; // 1 hold
+                reps = 1;
                 weight = 0;
               } else if (ename === 'プッシュアップ' || ename === 'バックエクステンション' || ename === 'クランチ') {
                 reps = ename === 'バックエクステンション' ? 12 : (ename === 'クランチ' ? 15 : 10);
                 weight = 0;
               } else if (isDumbbell) {
-                weight = 5; // 5kg for dumbbells
+                weight = 5;
               } else if (isExtensionCurl || isSeatedRow) {
-                weight = 15; // 15kg for lighter machines (leg extension/curl/abductor/seated row)
+                weight = 15;
               } else if (ename === 'レッグプレス') {
-                weight = 40; // 40kg for leg press
+                weight = 40;
               } else if (ename === 'ラットプルダウン') {
-                weight = 25; // 25kg for lat pulldown
+                weight = 25;
               }
 
-              // Insert exactly 3 sets for each exercise
               for (let sn = 1; sn <= 3; sn++) {
                 await _db.runAsync(
                   'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe) VALUES (?, ?, ?, ?, ?)',
@@ -682,7 +420,6 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       });
     }
 
-    // Seed default settings
     const settingsCountRow = await _db.getFirstAsync<{count: number}>('SELECT count(*) as count FROM settings');
     if (settingsCountRow && settingsCountRow.count === 0) {
       await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['default_rest_timer', '90']);
@@ -692,20 +429,17 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
     await _db.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['initial_seeding_done', 'true']);
   }
 
-  // Ensure Campaign & Referral keys exist in settings for future monetization
   try {
     const allRows = await _db.getAllAsync<{ key: string }>('SELECT key FROM settings');
     const existingKeys = new Set(allRows.map(row => row.key));
 
-    // Standard JS UUID v4 generator utilizing cryptographically secure API if available, with date/random fallback
     const generateUUID = () => {
       if (typeof global !== 'undefined' && global.crypto && typeof global.crypto.getRandomValues === 'function') {
         try {
           const typedArray = new Uint8Array(16);
           global.crypto.getRandomValues(typedArray);
-          // RFC4122 version 4 requirements
-          typedArray[6] = (typedArray[6] & 0x0f) | 0x40; // version 4
-          typedArray[8] = (typedArray[8] & 0x3f) | 0x80; // variant 10
+          typedArray[6] = (typedArray[6] & 0x0f) | 0x40;
+          typedArray[8] = (typedArray[8] & 0x3f) | 0x80;
           const hex = Array.from(typedArray).map(b => b.toString(16).padStart(2, '0'));
           return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`;
         } catch (e) {
@@ -775,323 +509,8 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
     console.warn('Migration/Campaign Init: Failed to pre-allocate settings keys', e);
   }
 
-  db = _db;
-  return db;
-};
-export const getDB = () => {
-  if (!db) throw new Error('Database not initialized! Call initDB() first.');
-  return db;
-};
-
-export const closeDB = async () => {
-  if (db) {
-    await db.closeAsync();
-    db = null;
-  }
-  dbPromise = null;
-};
-
-export const saveWorkout = async (title: string, startTime: string, endTime: string, notes: string | null, exercises: WorkoutExercise[], calories: number | null = null): Promise<number> => {
-  const conn = getDB();
-  let workoutId = 0;
-
-  // NaN ガードヘルパー
-  const sanitizeNum = (val: any): number | null => {
-    if (val === null || val === undefined || val === '') return null;
-    const num = Number(val);
-    return isNaN(num) ? null : num;
-  };
-
-  const safeCalories = sanitizeNum(calories);
-
-  await conn.withTransactionAsync(async () => {
-    const wResult = await conn.runAsync(
-      'INSERT INTO workouts (title, start_time, end_time, notes, calories) VALUES (?, ?, ?, ?, ?)',
-      [title, startTime, endTime, notes, safeCalories]
-    );
-    
-    workoutId = wResult.lastInsertRowId;
-    let order = 0;
-
-    for (const ex of exercises) {
-      // Save mapping
-      const waResult = await conn.runAsync(
-        'INSERT INTO workout_exercises (workout_id, exercise_id, sort_order, notes) VALUES (?, ?, ?, ?)',
-        [workoutId, ex.exercise_id, order++, ex.notes || null]
-      );
-      const weId = waResult.lastInsertRowId;
-
-      // Save sets
-      for (const set of ex.sets) {
-        const safeWeight = sanitizeNum(set.weight);
-        const safeReps = sanitizeNum(set.reps);
-        const safeRpe = sanitizeNum(set.rpe);
-        const safeRestSecs = sanitizeNum(set.rest_seconds);
-        const safeWorkSecs = sanitizeNum(set.work_seconds);
-
-        // 完了チェックがあるセット、または有効な重量・レップ数・作業時間があるセットを保存
-        const shouldSave = set.is_completed || safeWeight != null || safeReps != null || safeWorkSecs != null;
-
-        if (shouldSave) {
-          await conn.runAsync(
-            'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [
-              weId, 
-              set.set_number, 
-              safeReps, 
-              safeWeight, 
-              safeRpe, 
-              set.is_completed ? 1 : 0, 
-              safeRestSecs, 
-              safeWorkSecs, 
-              set.side || null, 
-              set.variation || null, 
-              set.stance || null
-            ]
-          );
-        }
-      }
-    }
-  });
-
-  return workoutId;
-};
-
-export const prefetchWorkoutCompletionData = async (exerciseIds: number[]) => {
-  const conn = getDB();
-  
-  // 1. Fetch all past workout start times
-  const workouts = await conn.getAllAsync<{ start_time: string }>(
-    'SELECT start_time FROM workouts ORDER BY start_time DESC'
-  );
-  
-  // 2. Fetch past completed sets for the given exercises
-  let pastSets: { workout_id: number; start_time: string; exercise_id: number; reps: number | null; weight: number | null; variation: string | null }[] = [];
-  if (exerciseIds.length > 0) {
-    const placeholders = exerciseIds.map(() => '?').join(',');
-    pastSets = await conn.getAllAsync<typeof pastSets[0]>(
-      `SELECT w.id as workout_id, w.start_time, we.exercise_id, ws.reps, ws.weight, ws.variation
-       FROM workout_sets ws
-       JOIN workout_exercises we ON ws.workout_exercise_id = we.id
-       JOIN workouts w ON we.workout_id = w.id
-       WHERE we.exercise_id IN (${placeholders}) AND ws.is_completed = 1 AND ws.reps IS NOT NULL AND ws.weight IS NOT NULL`,
-      exerciseIds
-    );
-  }
-  
-  return { workouts, pastSets };
-};
-
-export const getExercises = async () => {
-  const conn = getDB();
-  return await conn.getAllAsync('SELECT * FROM exercises ORDER BY name');
-};
-
-export const getExerciseById = async (id: number) => {
-  const conn = getDB();
-  return await conn.getFirstAsync('SELECT * FROM exercises WHERE id = ?', [id]);
-};
-
-export const getExerciseHistory = async (exerciseId: number) => {
-  const conn = getDB();
-  const rows = await conn.getAllAsync<{
-    workout_id: number;
-    start_time: string;
-    set_number: number;
-    reps: number | null;
-    weight: number | null;
-    rpe: number | null;
-    rest_seconds: number | null;
-    work_seconds: number | null;
-    side: string | null;
-    variation: string | null;
-    stance: string | null;
-  }>(`
-    SELECT w.id as workout_id, w.start_time, ws.set_number, ws.reps, ws.weight, ws.rpe, ws.rest_seconds, ws.work_seconds, ws.side, ws.variation, ws.stance
-    FROM workout_sets ws
-    JOIN workout_exercises we ON ws.workout_exercise_id = we.id
-    JOIN workouts w ON we.workout_id = w.id
-    WHERE we.exercise_id = ? AND ws.is_completed = 1
-    ORDER BY w.start_time DESC, ws.set_number ASC
-  `, [exerciseId]);
-
-  // Group by workout
-  const historyMap = new Map<number, { workout_id: number, start_time: string, sets: Omit<WorkoutSet, 'id' | 'is_completed'>[] }>();
-  
-  for (const row of rows) {
-    if (!historyMap.has(row.workout_id)) {
-      historyMap.set(row.workout_id, {
-        workout_id: row.workout_id,
-        start_time: row.start_time,
-        sets: []
-      });
-    }
-    historyMap.get(row.workout_id)!.sets.push({
-      set_number: row.set_number,
-      reps: row.reps,
-      weight: row.weight,
-      rpe: row.rpe,
-      rest_seconds: row.rest_seconds,
-      work_seconds: row.work_seconds,
-      side: row.side,
-      variation: row.variation,
-      stance: row.stance
-    });
-  }
-
-  return Array.from(historyMap.values());
-};
-
-export const addCustomExercise = async (name: string, group: string, equip: string, isUnilateral: boolean = false, defaultVariation: string | null = null, defaultStance: string | null = null) => {
-  const conn = getDB();
-  const res = await conn.runAsync(
-    'INSERT INTO exercises (name, muscle_group, equipment, is_unilateral, default_variation, default_stance) VALUES (?, ?, ?, ?, ?, ?)',
-    [name, group, equip, isUnilateral ? 1 : 0, defaultVariation, defaultStance]
-  );
-  return res.lastInsertRowId;
-};
-
-export const getPreviousWorkoutSets = async (exerciseId: number) => {
-  const conn = getDB();
-  // Find the most recent workout_exercise_id for this exercise where sets exist
-  const recentEx = await conn.getFirstAsync<{ id: number }>(`
-    SELECT we.id 
-    FROM workout_exercises we
-    JOIN workouts w ON we.workout_id = w.id
-    WHERE we.exercise_id = ?
-    ORDER BY w.start_time DESC
-    LIMIT 1
-  `, [exerciseId]);
-
-  if (!recentEx) return [];
-
-  // Fetch the sets for that specific execution
-  const sets = await conn.getAllAsync<WorkoutSet>(`
-    SELECT set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance
-    FROM workout_sets 
-    WHERE workout_exercise_id = ?
-    ORDER BY set_number ASC, id ASC
-  `, [recentEx.id]);
-
-  return sets;
-};
-
-export const getPersonalRecords = async (exerciseId: number) => {
-  const conn = getDB();
-  const rows = await conn.getAllAsync<{ reps: number, max_weight: number, variation: string | null }>(`
-    SELECT ws.reps, MAX(ws.weight) as max_weight, ws.variation
-    FROM workout_sets ws
-    JOIN workout_exercises we ON ws.workout_exercise_id = we.id
-    WHERE we.exercise_id = ? AND ws.is_completed = 1 AND ws.reps IS NOT NULL AND ws.weight IS NOT NULL
-    GROUP BY ws.variation, ws.reps
-    ORDER BY ws.variation ASC, ws.reps ASC
-  `, [exerciseId]);
-  
-  const prMap: Record<string, Record<number, number>> = {};
-  for (const row of rows) {
-    if (row.reps > 0) {
-      const varKey = row.variation || 'default';
-      if (!prMap[varKey]) {
-        prMap[varKey] = {};
-      }
-      prMap[varKey][row.reps] = row.max_weight;
-    }
-  }
-  return prMap;
-};
-
-export const getRoutines = async () => {
-  const conn = getDB();
-  const routines = await conn.getAllAsync<{id: number, title: string, description: string, sort_order?: number}>('SELECT * FROM routines ORDER BY sort_order ASC, id ASC');
-  
-  const result = [];
-  for (const r of routines) {
-    const exercises = await conn.getAllAsync<{id: number, name: string, muscle_group: string, equipment: string, is_unilateral: number, routine_exercise_id: number, default_variation?: string | null, default_stance?: string | null}>(`
-      SELECT e.id, e.name, e.muscle_group, e.equipment, e.is_unilateral, e.default_variation, e.default_stance, re.id as routine_exercise_id
-      FROM routine_exercises re
-      JOIN exercises e ON re.exercise_id = e.id
-      WHERE re.routine_id = ?
-      ORDER BY re.sort_order ASC
-    `, [r.id]);
-    
-    const exercisesWithSets = [];
-    for (const ex of exercises) {
-      const sets = await conn.getAllAsync(`
-        SELECT set_number, reps, weight, rpe, side, variation, stance
-        FROM routine_sets
-        WHERE routine_exercise_id = ?
-        ORDER BY set_number ASC, id ASC
-      `, [ex.routine_exercise_id]);
-      exercisesWithSets.push({ ...ex, sets });
-    }
-    
-    result.push({ ...r, exercises: exercisesWithSets });
-  }
-  return result;
-};
-
-export const addRoutine = async (title: string, description: string, exercises: RoutineExercise[]) => {
-  const conn = getDB();
-  
-  await conn.withTransactionAsync(async () => {
-    const res = await conn.runAsync('INSERT INTO routines (title, description) VALUES (?, ?)', [title, description]);
-    const routineId = res.lastInsertRowId;
-    
-    let order = 0;
-    for (const ex of exercises) {
-      const rxRes = await conn.runAsync(
-        'INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)', 
-        [routineId, ex.id, order++]
-      );
-      const routineExerciseId = rxRes.lastInsertRowId;
-      
-      for (const s of ex.sets) {
-        await conn.runAsync(
-          'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [routineExerciseId, s.set_number, s.reps, s.weight, s.rpe, s.side || null, s.variation || null, s.stance || null]
-        );
-      }
-    }
-  });
-};
-
-export const updateRoutine = async (id: number, title: string, description: string, exercises: RoutineExercise[]) => {
-  const conn = getDB();
-  
-  await conn.withTransactionAsync(async () => {
-    await conn.runAsync('UPDATE routines SET title = ?, description = ? WHERE id = ?', [title, description, id]);
-    await conn.runAsync('DELETE FROM routine_exercises WHERE routine_id = ?', [id]);
-    
-    let order = 0;
-    for (const ex of exercises) {
-      const rxRes = await conn.runAsync(
-        'INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)', 
-        [id, ex.id, order++]
-      );
-      const routineExerciseId = rxRes.lastInsertRowId;
-      
-      for (const s of ex.sets) {
-        await conn.runAsync(
-          'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [routineExerciseId, s.set_number, s.reps, s.weight, s.rpe, s.side || null, s.variation || null, s.stance || null]
-        );
-      }
-    }
-  });
-};
-
-export const deleteRoutine = async (id: number) => {
-  const conn = getDB();
-  await conn.runAsync('DELETE FROM routines WHERE id = ?', [id]);
-};
-
-export const updateRoutineOrders = async (orders: { id: number, sort_order: number }[]) => {
-  const conn = getDB();
-  await conn.withTransactionAsync(async () => {
-    for (const item of orders) {
-      await conn.runAsync('UPDATE routines SET sort_order = ? WHERE id = ?', [item.sort_order, item.id]);
-    }
-  });
+  setDB(_db);
+  return _db;
 };
 
 export const resetDatabase = async () => {
@@ -1108,807 +527,8 @@ export const resetDatabase = async () => {
     await conn.runAsync('DELETE FROM exercises');
   });
 
-  db = null;
-  dbPromise = null;
+  setDB(null);
+  setDBPromise(null);
   await initDB();
 };
-
-export const getSettings = async () => {
-  const conn = getDB();
-  const rows = await conn.getAllAsync<{key: string, value: string}>('SELECT * FROM settings');
-  const settings: Record<string, string> = {};
-  for (const r of rows) {
-    settings[r.key] = r.value;
-  }
-  return settings;
-};
-
-export const saveSetting = async (key: string, value: string) => {
-  const conn = getDB();
-  await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value]);
-};
-
-export const getPremiumStatusFromDB = async (): Promise<{ isPremium: boolean; premiumUntil: string; isEarlyAdopter: boolean }> => {
-  const conn = getDB();
-  const rows = await conn.getAllAsync<{ key: string; value: string }>(
-    'SELECT key, value FROM settings WHERE key IN ("is_early_adopter", "premium_until")'
-  );
-  const stored: Record<string, string> = {};
-  for (const r of rows) {
-    stored[r.key] = r.value;
-  }
-  const premiumUntil = stored['premium_until'] || '';
-  const isEarlyAdopter = stored['is_early_adopter'] === 'true';
-  const isPremium = isEarlyAdopter || premiumUntil === 'perpetual' || (
-    premiumUntil !== '' && !isNaN(Date.parse(premiumUntil)) && Date.parse(premiumUntil) > Date.now()
-  );
-  return {
-    isPremium,
-    premiumUntil,
-    isEarlyAdopter
-  };
-};
-
-export const activatePremiumFromPromo = async (): Promise<string> => {
-  const conn = getDB();
-  const oneMonthFromNow = addMonths(new Date(), 1);
-  const premiumUntilStr = oneMonthFromNow.toISOString();
-  
-  // Deadlock prevention: perform only INSERT OR REPLACE operations
-  await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("premium_until", ?)', [premiumUntilStr]);
-  await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("ai_tokens_balance", "20")', []);
-  return premiumUntilStr;
-};
-
-export const deleteWorkout = async (id: number) => {
-  const conn = getDB();
-  await conn.runAsync('DELETE FROM workouts WHERE id = ?', [id]);
-};
-
-export const loadFullWorkoutData = async (workoutId: number) => {
-  const db = getDB();
-  const workoutRow = await db.getFirstAsync<WorkoutRow>('SELECT * FROM workouts WHERE id = ?', [workoutId]);
-  if (!workoutRow) return null;
-
-  const exercisesRows = await db.getAllAsync<WorkoutExerciseRow>('SELECT we.id as workout_exercise_id, e.id as exercise_id, e.name as exercise_name, we.notes FROM workout_exercises we JOIN exercises e ON we.exercise_id = e.id WHERE we.workout_id = ? ORDER BY we.sort_order', [workoutId]);
-  
-  const exercisesData = [];
-  for (const ex of exercisesRows) {
-    const setsRows = await db.getAllAsync<WorkoutSetRow>('SELECT id, set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance, is_completed FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number ASC, id ASC', [ex.workout_exercise_id]);
-    const sets = setsRows.map(s => ({
-      ...s,
-      is_completed: s.is_completed === 1 || s.is_completed === true
-    }));
-    exercisesData.push({
-      workout_exercise_id: ex.workout_exercise_id,
-      exercise_id: ex.exercise_id,
-      exercise_name: ex.exercise_name,
-      notes: ex.notes,
-      sets: sets
-    });
-  }
-
-  return {
-    id: workoutRow.id,
-    title: workoutRow.title,
-    start_time: workoutRow.start_time,
-    end_time: workoutRow.end_time,
-    notes: workoutRow.notes,
-    calories: workoutRow.calories,
-    exercises: exercisesData
-  };
-};
-
-export const updateWorkoutSet = async (setId: number, weight: number | null, reps: number | null, rpe: number | null, variation?: string | null, stance?: string | null) => {
-  const conn = getDB();
-  if (stance !== undefined && variation !== undefined) {
-    await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ?, rpe = ?, variation = ?, stance = ? WHERE id = ?', [weight, reps, rpe, variation, stance, setId]);
-  } else if (stance !== undefined) {
-    await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ?, rpe = ?, stance = ? WHERE id = ?', [weight, reps, rpe, stance, setId]);
-  } else if (variation !== undefined) {
-    await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ?, rpe = ?, variation = ? WHERE id = ?', [weight, reps, rpe, variation, setId]);
-  } else {
-    await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ?, rpe = ? WHERE id = ?', [weight, reps, rpe, setId]);
-  }
-};
-
-export const deleteWorkoutSet = async (setId: number) => {
-  const conn = getDB();
-  await conn.runAsync('DELETE FROM workout_sets WHERE id = ?', [setId]);
-};
-
-export const updateWorkoutTitle = async (workoutId: number, title: string) => {
-  const conn = getDB();
-  await conn.runAsync('UPDATE workouts SET title = ? WHERE id = ?', [title, workoutId]);
-};
-
-export const updateWorkoutOverallNotes = async (workoutId: number, notes: string | null) => {
-  const conn = getDB();
-  await conn.runAsync('UPDATE workouts SET notes = ? WHERE id = ?', [notes, workoutId]);
-};
-
-export const updateWorkoutExerciseNotes = async (weId: number, notes: string | null) => {
-  const conn = getDB();
-  await conn.runAsync('UPDATE workout_exercises SET notes = ? WHERE id = ?', [notes, weId]);
-};
-
-export const getFavoriteIds = async (): Promise<Set<number>> => {
-  const conn = getDB();
-  const rows = await conn.getAllAsync<{ exercise_id: number }>('SELECT exercise_id FROM favorite_exercises');
-  return new Set(rows.map(r => r.exercise_id));
-};
-
-export const toggleFavorite = async (exerciseId: number, isFav: boolean): Promise<void> => {
-  const conn = getDB();
-  if (isFav) {
-    await conn.runAsync('DELETE FROM favorite_exercises WHERE exercise_id = ?', [exerciseId]);
-  } else {
-    await conn.runAsync('INSERT OR IGNORE INTO favorite_exercises (exercise_id) VALUES (?)', [exerciseId]);
-  }
-};
-
-export const deleteExercise = async (id: number) => {
-  const conn = getDB();
-  await conn.runAsync('DELETE FROM exercises WHERE id = ?', [id]);
-};
-
-export const updateExerciseDefaultVariation = async (exerciseId: number, variation: string | null) => {
-  const conn = getDB();
-  await conn.runAsync('UPDATE exercises SET default_variation = ? WHERE id = ?', [variation, exerciseId]);
-};
-
-export const updateExerciseDefaultStance = async (exerciseId: number, stance: string | null) => {
-  const conn = getDB();
-  await conn.runAsync('UPDATE exercises SET default_stance = ? WHERE id = ?', [stance, exerciseId]);
-};
-
-export const getMaxAITokens = async (conn: SQLite.SQLiteDatabase): Promise<number> => {
-  // Fetch settings for early adopter and premium status
-  const settingsRows = await conn.getAllAsync<{key: string, value: string}>('SELECT * FROM settings WHERE key IN ("is_early_adopter", "premium_until")');
-  const stored: Record<string, string> = {};
-  for (const r of settingsRows) {
-    stored[r.key] = r.value;
-  }
-  const isEarly = stored['is_early_adopter'] === 'true';
-  const isPremium = stored['premium_until'] === 'perpetual' || (stored['premium_until'] !== '' && !isNaN(Date.parse(stored['premium_until'] || '')) && Date.parse(stored['premium_until'] || '') > Date.now());
-
-  return (isPremium || isEarly) ? 20 : 5;
-};
-
-export const getAITokensBalance = async (): Promise<number> => {
-  const conn = getDB();
-  const balanceRow = await conn.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "ai_tokens_balance"');
-  const lastResetRow = await conn.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = "ai_tokens_last_reset"');
-
-  const maxTokens = await getMaxAITokens(conn);
-
-  let balance = balanceRow ? parseInt(balanceRow.value, 10) : maxTokens;
-  if (balance > maxTokens) {
-    balance = maxTokens; // Cap at the tier's maximum monthly tokens
-  }
-  const lastReset = lastResetRow ? lastResetRow.value : new Date().toISOString();
-
-  // Calendar month boundary check (月ごとの管理: 毎月1日リセット)
-  const lastResetDate = new Date(lastReset);
-  const now = new Date();
-  
-  const isDifferentMonth = 
-    now.getFullYear() !== lastResetDate.getFullYear() || 
-    now.getMonth() !== lastResetDate.getMonth();
-
-  if (isDifferentMonth) {
-    balance = maxTokens;
-    const nowISO = now.toISOString();
-    await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("ai_tokens_balance", ?)', [maxTokens.toString()]);
-    await conn.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("ai_tokens_last_reset", ?)', [nowISO]);
-  }
-
-  return balance;
-};
-
-export const consumeAIToken = async (): Promise<boolean> => {
-  // Ensure that month-boundary resetting has run before decrementing
-  await getAITokensBalance();
-
-  const conn = getDB();
-  // Perform atomic decrement, ensuring the balance doesn't drop below 0
-  // Returns true if the decrement succeeded (balance > 0), false otherwise
-  const result = await conn.runAsync(`
-    UPDATE settings 
-    SET value = CAST(CAST(value AS INTEGER) - 1 AS TEXT)
-    WHERE key = 'ai_tokens_balance' AND CAST(value AS INTEGER) > 0
-  `);
-
-  return result.changes > 0;
-};
-
-export const refundAIToken = async (): Promise<void> => {
-  const conn = getDB();
-  const maxTokens = await getMaxAITokens(conn);
-
-  // Increment the balance, ensuring it doesn't exceed the user's monthly maximum
-  await conn.runAsync(`
-    UPDATE settings 
-    SET value = CAST(
-      CASE 
-        WHEN CAST(value AS INTEGER) < ? THEN CAST(value AS INTEGER) + 1 
-        ELSE ? 
-      END AS TEXT
-    ) 
-    WHERE key = 'ai_tokens_balance'
-  `, [maxTokens, maxTokens]);
-};
-
-export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<string> => {
-  const conn = getDB();
-  
-  interface FlatRow {
-    workout_id: number;
-    workout_title: string;
-    workout_start_time: string;
-    workout_end_time: string | null;
-    workout_notes: string | null;
-    workout_exercise_id: number | null;
-    exercise_notes: string | null;
-    exercise_name: string | null;
-    set_number: number | null;
-    weight: number | null;
-    reps: number | null;
-    rpe: number | null;
-    side: string | null;
-    variation: string | null;
-    stance: string | null;
-  }
-
-  const rows = await conn.getAllAsync<FlatRow>(`
-    SELECT 
-      w.id AS workout_id,
-      w.title AS workout_title,
-      w.start_time AS workout_start_time,
-      w.end_time AS workout_end_time,
-      w.notes AS workout_notes,
-      we.id AS workout_exercise_id,
-      we.notes AS exercise_notes,
-      e.name AS exercise_name,
-      ws.set_number,
-      ws.weight,
-      ws.reps,
-      ws.rpe,
-      ws.side,
-      ws.variation,
-      ws.stance
-    FROM (
-      SELECT id, title, start_time, end_time, notes
-      FROM workouts
-      ORDER BY start_time DESC
-      LIMIT ?
-    ) w
-    LEFT JOIN workout_exercises we ON we.workout_id = w.id
-    LEFT JOIN exercises e ON we.exercise_id = e.id
-    LEFT JOIN workout_sets ws ON ws.workout_exercise_id = we.id
-    ORDER BY w.start_time DESC, we.sort_order ASC, ws.set_number ASC
-  `, [limit]);
-
-  if (rows.length === 0) {
-    return "過去のワークアウト履歴はありません。";
-  }
-
-  interface SetData {
-    set_number: number;
-    weight: number | null;
-    reps: number | null;
-    rpe: number | null;
-    side: string | null;
-    variation: string | null;
-    stance: string | null;
-  }
-
-  interface ExerciseData {
-    workout_exercise_id: number;
-    exercise_name: string;
-    notes: string | null;
-    sets: SetData[];
-  }
-
-  interface WorkoutData {
-    id: number;
-    title: string;
-    start_time: string;
-    end_time: string | null;
-    notes: string | null;
-    exercises: ExerciseData[];
-  }
-
-  const workoutsMap = new Map<number, WorkoutData>();
-  const workoutOrder: number[] = [];
-
-  for (const r of rows) {
-    if (!workoutsMap.has(r.workout_id)) {
-      workoutsMap.set(r.workout_id, {
-        id: r.workout_id,
-        title: r.workout_title,
-        start_time: r.workout_start_time,
-        end_time: r.workout_end_time,
-        notes: r.workout_notes,
-        exercises: []
-      });
-      workoutOrder.push(r.workout_id);
-    }
-
-    if (r.workout_exercise_id === null) {
-      continue;
-    }
-
-    const workout = workoutsMap.get(r.workout_id)!;
-    let exercise = workout.exercises.find(e => e.workout_exercise_id === r.workout_exercise_id);
-    if (!exercise) {
-      exercise = {
-        workout_exercise_id: r.workout_exercise_id,
-        exercise_name: r.exercise_name || '未定義の種目',
-        notes: r.exercise_notes,
-        sets: []
-      };
-      workout.exercises.push(exercise);
-    }
-
-    if (r.set_number === null) {
-      continue;
-    }
-
-    exercise.sets.push({
-      set_number: r.set_number,
-      weight: r.weight,
-      reps: r.reps,
-      rpe: r.rpe,
-      side: r.side,
-      variation: r.variation,
-      stance: r.stance
-    });
-  }
-
-  let summary = "";
-  for (const wid of workoutOrder) {
-    const w = workoutsMap.get(wid)!;
-    const dateStr = w.start_time.split('T')[0];
-    const duration = w.end_time 
-      ? `${Math.round((new Date(w.end_time).getTime() - new Date(w.start_time).getTime()) / 60000)}分`
-      : '時間未記録';
-    
-    summary += `\n■ 日時: ${dateStr} (${duration}) | タイトル: ${w.title}\n`;
-    if (w.notes) {
-      summary += `   全体メモ: "${w.notes}"\n`;
-    }
-
-    for (const ex of w.exercises) {
-      summary += `   - ${ex.exercise_name}`;
-      if (ex.notes) summary += ` (種目メモ: "${ex.notes}")`;
-      summary += `: `;
-
-      if (ex.sets.length === 0) {
-        summary += "セット記録なし\n";
-        continue;
-      }
-
-      interface SetGroup {
-        weight: number;
-        reps: number;
-        rpe: number | null;
-        side: string | null;
-        variation: string | null;
-        stance: string | null;
-        count: number;
-      }
-
-      const groups: SetGroup[] = [];
-      for (const s of ex.sets) {
-        const weight = s.weight ?? 0;
-        const reps = s.reps ?? 0;
-        const rpe = s.rpe;
-        const side = s.side;
-        const variation = s.variation;
-        const stance = s.stance || null;
-
-        const lastGroup = groups[groups.length - 1];
-        if (
-          lastGroup &&
-          lastGroup.weight === weight &&
-          lastGroup.reps === reps &&
-          lastGroup.rpe === rpe &&
-          lastGroup.side === side &&
-          lastGroup.variation === variation &&
-          lastGroup.stance === stance
-        ) {
-          lastGroup.count += 1;
-        } else {
-          groups.push({
-            weight,
-            reps,
-            rpe,
-            side,
-            variation,
-            stance,
-            count: 1
-          });
-        }
-      }
-
-      const setSummaries = groups.map(g => {
-        let sDesc = `${g.weight}kg x ${g.reps}回`;
-        if (g.count > 1) {
-          sDesc += ` (${g.count}セット)`;
-        }
-        if (g.side) sDesc = `[${g.side === 'L' ? '左' : '右'}] ` + sDesc;
-        if (g.variation) sDesc += ` (${g.variation})`;
-        if (g.stance) sDesc += ` (スタンス: ${g.stance})`;
-        if (g.rpe) sDesc += ` (RPE: ${g.rpe})`;
-        return sDesc;
-      });
-
-      summary += setSummaries.join(', ') + '\n';
-    }
-  }
-
-  return summary;
-};
-
-export const getMissingPresets = async () => {
-  const conn = getDB();
-  
-  // 1. Find missing exercises (by exact name matching)
-  const allExercises = await conn.getAllAsync<{ name: string }>('SELECT name FROM exercises');
-  const existingExerciseNames = new Set(allExercises.map(e => e.name));
-  const missingExercises = PRESET_EXERCISES.filter(ex => !existingExerciseNames.has(ex.name));
-
-  // 2. Find missing routines (by exact title matching)
-  const allRoutines = await conn.getAllAsync<{ title: string }>('SELECT title FROM routines');
-  const existingRoutineTitles = new Set(allRoutines.map(r => r.title));
-  const missingRoutines = PRESET_ROUTINES.filter(r => !existingRoutineTitles.has(r.title));
-
-  return {
-    missingExercises,
-    missingRoutines
-  };
-};
-
-export const restorePresets = async (exerciseNames: string[], routineTitles: string[]) => {
-  const conn = getDB();
-
-  await conn.withTransactionAsync(async () => {
-    // 1. Restore Selected Exercises
-    const exercisesToRestore = PRESET_EXERCISES.filter(ex => exerciseNames.includes(ex.name));
-    for (const ex of exercisesToRestore) {
-      const existing = await conn.getFirstAsync<{ id: number }>('SELECT id FROM exercises WHERE name = ?', [ex.name]);
-      if (!existing) {
-        await conn.runAsync(
-          'INSERT INTO exercises (name, muscle_group, equipment, is_unilateral) VALUES (?, ?, ?, ?)',
-          [ex.name, ex.group, ex.equip, ex.is_unilateral ? 1 : 0]
-        );
-      }
-    }
-
-    // 2. Restore Selected Routines
-    const routinesToRestore = PRESET_ROUTINES.filter(r => routineTitles.includes(r.title));
-    if (routinesToRestore.length > 0) {
-      // Re-fetch all exercises to get the mapping of name -> id (including newly restored ones)
-      const allExercises = await conn.getAllAsync<{ id: number; name: string }>('SELECT id, name FROM exercises');
-      const exerciseMap = new Map<string, number>(allExercises.map(e => [e.name, e.id]));
-
-      for (const r of routinesToRestore) {
-        // If a required exercise for this routine does not exist in the database, restore it automatically
-        for (const ename of r.exerciseNames) {
-          if (!exerciseMap.has(ename)) {
-            const presetEx = PRESET_EXERCISES.find(ex => ex.name === ename);
-            if (presetEx) {
-              const insRes = await conn.runAsync(
-                'INSERT INTO exercises (name, muscle_group, equipment, is_unilateral) VALUES (?, ?, ?, ?)',
-                [presetEx.name, presetEx.group, presetEx.equip, presetEx.is_unilateral ? 1 : 0]
-              );
-              exerciseMap.set(ename, insRes.lastInsertRowId);
-            }
-          }
-        }
-
-        const res = await conn.runAsync('INSERT INTO routines (title, description) VALUES (?, ?)', [r.title, r.description]);
-        const rid = res.lastInsertRowId;
-        let order = 0;
-
-        for (const ename of r.exerciseNames) {
-          const exerciseId = exerciseMap.get(ename);
-          if (exerciseId !== undefined) {
-            const rxRes = await conn.runAsync(
-              'INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES (?, ?, ?)',
-              [rid, exerciseId, order++]
-            );
-            const routineExerciseId = rxRes.lastInsertRowId;
-
-            // Seed beginner friendly sets (similar to initial seed logic)
-            const isPlank = ename === 'プランク';
-            const isDumbbell = ename.includes('ダンベル');
-            const isExtensionCurl = ename === 'レッグエクステンション' || ename === 'レッグカール' || ename === 'マシンアブダクター';
-            const isSeatedRow = ename === 'シーテッドロウ';
-
-            for (let setNum = 1; setNum <= 3; setNum++) {
-              let reps = 10;
-              let weight = 20;
-
-              if (isPlank) {
-                reps = 30; // seconds
-                weight = 0;
-              } else if (isDumbbell) {
-                weight = 5;
-              } else if (isExtensionCurl || isSeatedRow) {
-                weight = 15;
-              }
-
-              await conn.runAsync(
-                'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe) VALUES (?, ?, ?, ?, ?)',
-                [routineExerciseId, setNum, reps, weight, 7]
-              );
-            }
-          }
-        }
-      }
-    }
-  });
-};
-
-// ==========================================
-// ライフログ機能 CRUD ヘルパー (水分・時間・習慣)
-// ==========================================
-
-// 1. 水分補給 (Water Logs)
-export const getWaterLogs = async (date: string): Promise<WaterLog[]> => {
-  const conn = getDB();
-  return await conn.getAllAsync<WaterLog>(
-    'SELECT * FROM water_logs WHERE date = ? ORDER BY timestamp ASC',
-    [date]
-  );
-};
-
-export const addWaterLog = async (amount: number, timestamp: number, date: string, caffeine: number = 0): Promise<number> => {
-  const conn = getDB();
-  const res = await conn.runAsync(
-    'INSERT INTO water_logs (amount, timestamp, date, caffeine) VALUES (?, ?, ?, ?)',
-    [amount, timestamp, date, caffeine]
-  );
-  return res.lastInsertRowId;
-};
-
-export const deleteWaterLog = async (id: number): Promise<void> => {
-  const conn = getDB();
-  await conn.runAsync('DELETE FROM water_logs WHERE id = ?', [id]);
-};
-
-export const getWaterGoal = async (): Promise<number> => {
-  const conn = getDB();
-  try {
-    const row = await conn.getFirstAsync<{ value: string }>(
-      "SELECT value FROM settings WHERE key = 'water_goal'"
-    );
-    return row ? parseInt(row.value, 10) : 2000;
-  } catch (e) {
-    console.warn('Failed to get water_goal setting', e);
-    return 2000;
-  }
-};
-
-export const setWaterGoal = async (goal: number): Promise<void> => {
-  const conn = getDB();
-  await conn.runAsync(
-    "INSERT OR REPLACE INTO settings (key, value) VALUES ('water_goal', ?)",
-    [String(goal)]
-  );
-};
-
-export const getCaffeineLimit = async (): Promise<number> => {
-  const conn = getDB();
-  try {
-    const row = await conn.getFirstAsync<{ value: string }>(
-      "SELECT value FROM settings WHERE key = 'caffeine_limit'"
-    );
-    return row ? parseInt(row.value, 10) : 400;
-  } catch (e) {
-    console.warn('Failed to get caffeine_limit setting', e);
-    return 400;
-  }
-};
-
-export const setCaffeineLimit = async (limit: number): Promise<void> => {
-  const conn = getDB();
-  await conn.runAsync(
-    "INSERT OR REPLACE INTO settings (key, value) VALUES ('caffeine_limit', ?)",
-    [String(limit)]
-  );
-};
-
-
-export const getSettingValue = async (key: string): Promise<string | null> => {
-  const conn = getDB();
-  try {
-    const row = await conn.getFirstAsync<{ value: string }>(
-      'SELECT value FROM settings WHERE key = ?',
-      [key]
-    );
-    return row ? row.value : null;
-  } catch (e) {
-    console.warn(`Failed to get setting ${key}`, e);
-    return null;
-  }
-};
-
-// 2. 時間管理 (Time Logs)
-export const getTimeLogs = async (date: string): Promise<TimeLog[]> => {
-  const conn = getDB();
-  return await conn.getAllAsync<TimeLog>(
-    'SELECT * FROM time_logs WHERE date = ? ORDER BY start_time ASC',
-    [date]
-  );
-};
-
-export const addTimeLog = async (
-  activityName: string,
-  startTime: string,
-  endTime: string,
-  date: string,
-  durationMinutes: number
-): Promise<number> => {
-  const conn = getDB();
-  const res = await conn.runAsync(
-    'INSERT INTO time_logs (activity_name, start_time, end_time, date, duration_minutes) VALUES (?, ?, ?, ?, ?)',
-    [activityName, startTime, endTime, date, durationMinutes]
-  );
-  return res.lastInsertRowId;
-};
-
-export const deleteTimeLog = async (id: number): Promise<void> => {
-  const conn = getDB();
-  await conn.runAsync('DELETE FROM time_logs WHERE id = ?', [id]);
-};
-
-export const updateTimeLog = async (
-  id: number,
-  activityName: string,
-  startTime: string,
-  endTime: string,
-  date: string,
-  durationMinutes: number
-): Promise<void> => {
-  const conn = getDB();
-  await conn.runAsync(
-    'UPDATE time_logs SET activity_name = ?, start_time = ?, end_time = ?, date = ?, duration_minutes = ? WHERE id = ?',
-    [activityName, startTime, endTime, date, durationMinutes, id]
-  );
-};
-
-// 3. 習慣項目マスタ (Habit Items)
-export const getHabitItems = async (): Promise<HabitItem[]> => {
-  const conn = getDB();
-  return await conn.getAllAsync<HabitItem>(
-    'SELECT * FROM habit_items ORDER BY sort_order ASC, created_at ASC'
-  );
-};
-
-export const addHabitItem = async (name: string, color: string): Promise<number> => {
-  const conn = getDB();
-  const now = Date.now();
-  const res = await conn.runAsync(
-    'INSERT INTO habit_items (name, color, created_at, sort_order) VALUES (?, ?, ?, 0)',
-    [name, color, now]
-  );
-  return res.lastInsertRowId;
-};
-
-export const deleteHabitItem = async (id: number): Promise<void> => {
-  const conn = getDB();
-  await conn.runAsync('DELETE FROM habit_items WHERE id = ?', [id]);
-};
-
-export const updateHabitItem = async (id: number, name: string, color: string): Promise<void> => {
-  const conn = getDB();
-  await conn.runAsync(
-    'UPDATE habit_items SET name = ?, color = ? WHERE id = ?',
-    [name, color, id]
-  );
-};
-
-// 4. 習慣実行履歴 (Habit Logs)
-export const getHabitLogs = async (date: string): Promise<HabitLog[]> => {
-  const conn = getDB();
-  return await conn.getAllAsync<HabitLog>(
-    'SELECT * FROM habit_logs WHERE date = ?',
-    [date]
-  );
-};
-
-export const addHabitLog = async (habitItemId: number, timestamp: number, date: string): Promise<number> => {
-  const conn = getDB();
-  const res = await conn.runAsync(
-    'INSERT INTO habit_logs (habit_item_id, timestamp, date) VALUES (?, ?, ?)',
-    [habitItemId, timestamp, date]
-  );
-  return res.lastInsertRowId;
-};
-
-export const deleteHabitLog = async (id: number): Promise<void> => {
-  const conn = getDB();
-  await conn.runAsync('DELETE FROM habit_logs WHERE id = ?', [id]);
-};
-
-export const deleteLastHabitLog = async (habitItemId: number, date: string): Promise<void> => {
-  const conn = getDB();
-  await conn.runAsync(
-    'DELETE FROM habit_logs WHERE id = (SELECT id FROM habit_logs WHERE habit_item_id = ? AND date = ? ORDER BY timestamp DESC LIMIT 1)',
-    [habitItemId, date]
-  );
-};
-
-export const getAllWaterLogs = async (): Promise<WaterLog[]> => {
-  const conn = getDB();
-  return await conn.getAllAsync<WaterLog>(
-    'SELECT * FROM water_logs ORDER BY date ASC, timestamp ASC'
-  );
-};
-
-export const getAllTimeLogs = async (): Promise<TimeLog[]> => {
-  const conn = getDB();
-  return await conn.getAllAsync<TimeLog>(
-    'SELECT * FROM time_logs ORDER BY date ASC, start_time ASC'
-  );
-};
-
-export const getAllHabitLogs = async (): Promise<HabitLog[]> => {
-  const conn = getDB();
-  return await conn.getAllAsync<HabitLog>(
-    'SELECT * FROM habit_logs ORDER BY date ASC, timestamp ASC'
-  );
-};
-
-export const getWorkoutsForDate = async (dateStr: string) => {
-  const db = getDB();
-  const dateISO = dateStr.replace(/\//g, '-');
-  
-  const workouts = await db.getAllAsync<WorkoutRow>(
-    "SELECT * FROM workouts WHERE date(start_time, 'localtime') = ? ORDER BY start_time ASC",
-    [dateISO]
-  );
-  
-  const workoutsWithDetails = [];
-  for (const w of workouts) {
-    const exercisesRows = await db.getAllAsync<WorkoutExerciseRow>(
-      'SELECT we.id as workout_exercise_id, e.id as exercise_id, e.name as exercise_name, we.notes FROM workout_exercises we JOIN exercises e ON we.exercise_id = e.id WHERE we.workout_id = ? ORDER BY we.sort_order',
-      [w.id]
-    );
-    
-    const exercisesData = [];
-    for (const ex of exercisesRows) {
-      const setsRows = await db.getAllAsync<WorkoutSetRow>(
-        'SELECT id, set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance, is_completed FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number ASC, id ASC',
-        [ex.workout_exercise_id]
-      );
-      exercisesData.push({
-        workout_exercise_id: ex.workout_exercise_id,
-        exercise_id: ex.exercise_id,
-        exercise_name: ex.exercise_name,
-        notes: ex.notes,
-        sets: setsRows.map(s => ({
-          ...s,
-          is_completed: s.is_completed === 1 || s.is_completed === true
-        }))
-      });
-    }
-    
-    workoutsWithDetails.push({
-      id: w.id,
-      title: w.title,
-      start_time: w.start_time,
-      end_time: w.end_time,
-      notes: w.notes,
-      calories: w.calories,
-      exercises: exercisesData
-    });
-  }
-  
-  return workoutsWithDetails;
-};
-
 
