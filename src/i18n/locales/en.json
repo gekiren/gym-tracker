@@ -563,7 +563,12 @@
       "maintenance_body": "The AI Coach is currently undergoing maintenance to improve performance and quality.",
       "maintenance_footer": "We will be back shortly, thank you for your patience!",
       "default_context_title": "Context",
-      "default_workout_title": "Workout Details"
+      "default_workout_title": "Workout Details",
+      "analyzing_quick": "⚡ AI Coach is generating response...",
+      "analyzing_thinking": "🧠 AI Coach is thinking and analyzing...",
+      "mode_label": "Mode:",
+      "mode_quick": "Quick",
+      "mode_thinking": "Thinking"
     },
     "crash_report": {
       "title": "Help Improve the App",

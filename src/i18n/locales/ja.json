@@ -558,7 +558,12 @@
       "maintenance_body": "AIトレーナー機能は、より快適で質の高いアドバイスを提供するため、現在メンテナンス（調整）を実施しております。",
       "maintenance_footer": "まもなく再開いたしますので、今しばらくお待ちください！",
       "default_context_title": "コンテキスト",
-      "default_workout_title": "ワークアウト詳細"
+      "default_workout_title": "ワークアウト詳細",
+      "analyzing_quick": "⚡ AIトレーナーが回答を作成中...",
+      "analyzing_thinking": "🧠 AIトレーナーが熟考・分析中...",
+      "mode_label": "モード:",
+      "mode_quick": "クイック",
+      "mode_thinking": "思考あり"
     },
     "crash_report": {
       "title": "アプリ改善へのご協力のお願い",

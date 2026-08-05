@@ -366,7 +366,7 @@ export default function CoachScreen() {
                   currentAiChatMode === 'quick' && styles.modeBtnTextActive,
                 ]}
               >
-                {t('ui.coach.mode_quick') || '⚡ クイック'}
+                {t('ui.coach.mode_quick') || 'クイック'}
               </Text>
             </TouchableOpacity>
 
@@ -391,7 +391,7 @@ export default function CoachScreen() {
                   currentAiChatMode === 'thinking' && styles.modeBtnTextActive,
                 ]}
               >
-                {t('ui.coach.mode_thinking') || '🧠 シンキング'}
+                {t('ui.coach.mode_thinking') || '思考あり'}
               </Text>
             </TouchableOpacity>
           </View>
