@@ -46,6 +46,9 @@ export interface WorkoutRow {
   end_time: string;
   notes: string | null;
   calories: number | null;
+  avg_heart_rate?: number | null;
+  max_heart_rate?: number | null;
+  calories_burned?: number | null;
 }
 
 // DB レコード（workout_exercisesテーブル等結合）の型定義

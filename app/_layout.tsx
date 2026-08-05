@@ -21,6 +21,7 @@ import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import { OTAUpdateModal } from '../components/OTAUpdateModal';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { syncLifelogToObsidian } from '../src/services/obsidianService';
+import { initNotificationCategories, setupNotificationResponseListener } from '../src/services/notificationService';
 
 // アプリの起動時にグローバルエラーハンドラを登録
 registerGlobalErrorHandler();
@@ -271,6 +272,10 @@ export default function RootLayout() {
 
     setupDB();
 
+    // 通知アクションカテゴリ初期化＆リスナーセットアップ
+    initNotificationCategories();
+    const cleanupNotificationListener = setupNotificationResponseListener();
+
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
       if (nextAppState === 'active') {
         const settings = useWorkoutStore.getState().settings;
@@ -309,6 +314,7 @@ export default function RootLayout() {
 
     return () => {
       subscription.remove();
+      cleanupNotificationListener();
     };
   }, []);
 

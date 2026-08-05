@@ -7,7 +7,10 @@ export const saveWorkout = async (
   endTime: string,
   notes: string | null,
   exercises: WorkoutExercise[],
-  calories: number | null = null
+  calories: number | null = null,
+  avgHeartRate: number | null = null,
+  maxHeartRate: number | null = null,
+  caloriesBurned: number | null = null
 ): Promise<number> => {
   const conn = getDB();
   let workoutId = 0;
@@ -18,12 +21,15 @@ export const saveWorkout = async (
     return isNaN(num) ? null : num;
   };
 
-  const safeCalories = sanitizeNum(calories);
+  const safeCalories = sanitizeNum(calories ?? caloriesBurned);
+  const safeAvgHR = sanitizeNum(avgHeartRate);
+  const safeMaxHR = sanitizeNum(maxHeartRate);
+  const safeCalBurned = sanitizeNum(caloriesBurned ?? calories);
 
   await conn.withTransactionAsync(async () => {
     const wResult = await conn.runAsync(
-      'INSERT INTO workouts (title, start_time, end_time, notes, calories) VALUES (?, ?, ?, ?, ?)',
-      [title, startTime, endTime, notes, safeCalories]
+      'INSERT INTO workouts (title, start_time, end_time, notes, calories, avg_heart_rate, max_heart_rate, calories_burned) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [title, startTime, endTime, notes, safeCalories, safeAvgHR, safeMaxHR, safeCalBurned]
     );
     
     workoutId = wResult.lastInsertRowId;

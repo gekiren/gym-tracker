@@ -192,8 +192,15 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
     if (!tableInfoW.find(c => c.name === 'calories')) {
       await _db.execAsync(`ALTER TABLE workouts ADD COLUMN calories REAL`);
     }
+    if (!tableInfoW.find(c => c.name === 'avg_heart_rate')) {
+      await _db.execAsync(`
+        ALTER TABLE workouts ADD COLUMN avg_heart_rate INTEGER;
+        ALTER TABLE workouts ADD COLUMN max_heart_rate INTEGER;
+        ALTER TABLE workouts ADD COLUMN calories_burned INTEGER;
+      `);
+    }
   } catch (e) {
-    console.warn('Migration: Failed to add calories column', e);
+    console.warn('Migration: Failed to add calories/heart_rate columns', e);
   }
 
   // Migration: Add rest_seconds and work_seconds to workout_sets if missing

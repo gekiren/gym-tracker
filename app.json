@@ -20,14 +20,20 @@
       "policy": "appVersion"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "ワークアウト中の心拍数および消費カロリーデータを表示・記録するためにヘルスケアデータにアクセスします。",
+        "NSHealthUpdateUsageDescription": "ワークアウトデータをヘルスケアに記録するためにアクセスします。"
+      }
     },
     "android": {
       "package": "com.gekirennomad.trenote",
       "versionCode": 33,
       "permissions": [
         "com.android.vending.BILLING",
-        "android.permission.SCHEDULE_EXACT_ALARM"
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_ACTIVE_CALORIES_BURNED"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#000000",

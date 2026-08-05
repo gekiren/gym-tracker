@@ -143,3 +143,23 @@ export const sendMessageToAICoach = async (
     };
   }
 };
+
+/**
+ * ワークアウトデータと心拍数・カロリーからAI Coach用のコンテキスト文字列をビルドする
+ */
+export const buildWorkoutCoachPrompt = (workoutData: {
+  title?: string;
+  durationMin?: number | null;
+  calories?: number | null;
+  avgHeartRate?: number | null;
+  maxHeartRate?: number | null;
+  exercises?: any[];
+}): string => {
+  let prompt = `【今回完了したワークアウト情報】\n`;
+  if (workoutData.title) prompt += `タイトル: ${workoutData.title}\n`;
+  if (workoutData.durationMin) prompt += `運動時間: ${workoutData.durationMin}分\n`;
+  if (workoutData.calories) prompt += `消費カロリー: ${workoutData.calories} kcal\n`;
+  if (workoutData.avgHeartRate) prompt += `平均心拍数: ${workoutData.avgHeartRate} bpm\n`;
+  if (workoutData.maxHeartRate) prompt += `最高心拍数: ${workoutData.maxHeartRate} bpm\n`;
+  return prompt;
+};

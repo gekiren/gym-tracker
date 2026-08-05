@@ -57,6 +57,7 @@ export const scheduleRestTimer = async (seconds: number) => {
       body: i18n.t('ui.notifications.rest_finished_body'),
       sound: true, // Default notification sound
       priority: Notifications.AndroidNotificationPriority.MAX,
+      categoryIdentifier: 'WORKOUT_REST_TIMER',
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,

@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.1.88', // OTA識別用のバージョン文字列
+  version: '1.1.89', // OTA識別用のバージョン文字列
   title: {
-    ja: '画面描画の最適化とアプリの安定性向上',
-    en: 'UI Performance & Stability Improvements',
+    ja: '通知アクション機能およびヘルスケア連携の追加',
+    en: 'Notification Actions & Health Data Integration',
   },
   notes: {
     ja: [
-      '筋トレ記録画面、完了結果画面、設定画面の描画パフォーマンスを最適化しました。',
-      '不要な再描画を軽減し、より軽快でスムーズな操作性を実現しました。',
+      'インターバル通知からスマートウォッチやロック画面で「完了」「+30秒」等の操作が直接可能になりました。',
+      'Google Health Connect / Apple HealthKit と連携し、ワークアウト中の心拍数や消費カロリーの自動取得・記録に対応しました。',
     ],
     en: [
-      'Optimized rendering performance across key application screens.',
-      'Reduced unnecessary re-renders for a smoother user experience.',
+      'Added notification action buttons (Complete, +30s) directly accessible from lock screen/wearables.',
+      'Integrated Google Health Connect / Apple HealthKit to record heart rate and calories burned.',
     ],
   },
 };
