@@ -1,5 +1,5 @@
 import { getDB } from '../connection';
-import { WorkoutExercise, WorkoutRow, WorkoutExerciseRow, WorkoutSetRow, WorkoutSet } from '../types';
+import { WorkoutExercise, WorkoutRow, WorkoutExerciseRow, WorkoutSetRow, WorkoutSet, WorkoutWithStats } from '../types';
 
 export const saveWorkout = async (
   title: string,
@@ -481,3 +481,16 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
 
   return summary;
 };
+
+export const getWorkoutsWithStats = async (): Promise<WorkoutWithStats[]> => {
+  const conn = getDB();
+  const rows = await conn.getAllAsync<WorkoutWithStats>(`
+    SELECT w.*, 
+           (SELECT COUNT(*) FROM workout_exercises WHERE workout_id = w.id) as exercise_count,
+           (SELECT SUM(weight * reps) FROM workout_sets ws JOIN workout_exercises we ON ws.workout_exercise_id = we.id WHERE we.workout_id = w.id) as volume
+    FROM workouts w 
+    ORDER BY start_time DESC
+  `);
+  return rows;
+};
+

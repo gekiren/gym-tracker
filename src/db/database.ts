@@ -532,6 +532,10 @@ export const resetDatabase = async () => {
     await conn.runAsync('DELETE FROM settings');
     await conn.runAsync('DELETE FROM favorite_exercises');
     await conn.runAsync('DELETE FROM exercises');
+    await conn.runAsync('DELETE FROM habit_logs');
+    await conn.runAsync('DELETE FROM habit_items');
+    await conn.runAsync('DELETE FROM water_logs');
+    await conn.runAsync('DELETE FROM time_logs');
   });
 
   setDB(null);
