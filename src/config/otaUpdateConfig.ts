@@ -11,21 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.2.1', // OTA識別用のバージョン文字列
+  version: '1.2.2', // OTA識別用のバージョン文字列
   title: {
-    ja: 'ヘルスコネクト起動時・定時アクセスの追加',
-    en: 'Health Connect Launch & Periodic Sync',
+    ja: '全データ初期化時のライフログ削除修正',
+    en: 'Fix Lifelog Reset in Data Management',
   },
   notes: {
     ja: [
-      'ヘルスコネクトへのアプリ起動時・フォアグラウンド復帰時の自動アクセスに対応',
-      'ヘルスコネクトへの定時自動アクセス機能（アクセス間隔設定）の追加',
-      'ヘルスコネクト設定画面に自動アクセスの設定項目と最終アクセス日時表示を追加',
+      '「データ管理 → 全データ初期化」実行時にライフログデータ（水分・習慣・時間）が削除されない不具合を修正',
+      '初期化実行後にライフログのメモリキャッシュが正しくクリアされるように改善',
     ],
     en: [
-      'Added automatic Health Connect sync on app launch and foreground resume.',
-      'Added periodic Health Connect sync with customizable interval.',
-      'Added auto-sync controls and last sync timestamp display in settings.',
+      'Fixed an issue where lifelog data (water, habits, time) was not deleted during full data reset',
+      'Improved in-memory lifelog cache resetting after clearing data',
     ],
   },
 };
