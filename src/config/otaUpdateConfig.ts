@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.2.3', // OTA識別用のバージョン文字列
+  version: '1.2.4', // OTA識別用のバージョン文字列
   title: {
-    ja: '履歴画面のデータベースアクセスおよび型安全性の改善',
-    en: 'Improved History Database Queries & Type Safety',
+    ja: '全データ初期化機能の改善',
+    en: 'Database Reset Improvements',
   },
   notes: {
     ja: [
-      'ワークアウト履歴一覧のデータベースクエリ処理を最適化',
-      'コード内部の型定義を整理し、アプリ動作の安定性を向上',
+      '全データ初期化時に、ライフログ機能（習慣・水分・時間管理）のデータおよびメモリキャッシュが完全にリセットされるよう修正',
     ],
     en: [
-      'Optimized database queries for workout history',
-      'Refactored internal type definitions to improve stability',
+      'Ensured lifelog records (habits, water, time) and memory caches are fully reset during full database initialization',
     ],
   },
 };
