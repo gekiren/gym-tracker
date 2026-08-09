@@ -29,6 +29,7 @@
     "android": {
       "package": "com.gekirennomad.trenote",
       "versionCode": 33,
+      "minSdkVersion": 26,
       "permissions": [
         "com.android.vending.BILLING",
         "android.permission.SCHEDULE_EXACT_ALARM",
