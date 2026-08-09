@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert, ActivityIndicator, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { Theme } from '../../src/theme';
 import {
   getObsidianSettings,
@@ -79,7 +80,7 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
   };
 
   const handleToggleExportItem = async (
-    itemKey: 'exportWorkouts' | 'exportExercises' | 'exportWater' | 'exportTime' | 'exportHabits' | 'exportRoutines',
+    itemKey: 'exportWorkouts' | 'exportExercises' | 'exportWater' | 'exportTime' | 'exportHabits' | 'exportRoutines' | 'exportHealth',
     val: boolean
   ) => {
     if (!settings) return;
@@ -89,7 +90,7 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
   };
 
   const handleUpdateFolder = async (
-    folderKey: 'folderWorkouts' | 'folderExercises' | 'folderWater' | 'folderTime' | 'folderHabits' | 'folderRoutines' | 'folderDaily',
+    folderKey: 'folderWorkouts' | 'folderExercises' | 'folderWater' | 'folderTime' | 'folderHabits' | 'folderRoutines' | 'folderDaily' | 'folderHealth',
     val: string
   ) => {
     if (!settings) return;
@@ -212,6 +213,23 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
         <Ionicons name="chevron-forward" size={18} color={Theme.colors.textMuted} />
       </TouchableOpacity>
 
+      {/* Health Connect Button */}
+      <TouchableOpacity
+        style={[styles.folderButton, { marginTop: 10, borderColor: '#30d158' }]}
+        onPress={() => router.push('/settings/health-connect')}
+      >
+        <View style={styles.folderInfo}>
+          <Ionicons name="heart-circle-outline" size={22} color="#30d158" />
+          <View style={styles.folderTextContainer}>
+            <Text style={styles.folderLabel}>Health Connect 連携設定</Text>
+            <Text style={styles.folderValue} numberOfLines={1}>
+              歩数・睡眠・心拍・体組成の権限確認 ＆ 送信
+            </Text>
+          </View>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={Theme.colors.textMuted} />
+      </TouchableOpacity>
+
       {settings.enabled && (
         <View style={styles.settingsSection}>
           {/* Mode Selector */}
@@ -303,6 +321,13 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
               onPress={() => handleToggleExportItem('exportRoutines', !settings.exportRoutines)}
             >
               <Text style={[styles.chipText, settings.exportRoutines && styles.chipTextActive]}>🔄 ルーティン</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.chip, settings.exportHealth && styles.chipActive]}
+              onPress={() => handleToggleExportItem('exportHealth', !settings.exportHealth)}
+            >
+              <Text style={[styles.chipText, settings.exportHealth && styles.chipTextActive]}>📊 ヘルス</Text>
             </TouchableOpacity>
           </View>
 

@@ -2,6 +2,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { format } from 'date-fns';
 import { getDB, getSettings, saveSetting, loadFullWorkoutData, getWaterLogs } from '../db/database';
 import i18n, { translateExercise, translateStance } from '../i18n';
+import { DailyHealthData, formatHealthDataToMarkdown } from './healthService';
 
 export type ObsidianExportMode = 'dedicated' | 'append' | 'individual';
 
@@ -18,6 +19,7 @@ export interface ObsidianSettings {
   exportTime: boolean;
   exportHabits: boolean;
   exportRoutines: boolean;
+  exportHealth: boolean;
   folderWorkouts: string;
   folderExercises: string;
   folderWater: string;
@@ -25,6 +27,7 @@ export interface ObsidianSettings {
   folderHabits: string;
   folderRoutines: string;
   folderDaily: string;
+  folderHealth: string;
   lastSyncTimestamp: number;
 }
 
@@ -41,6 +44,7 @@ const DEFAULT_SETTINGS: ObsidianSettings = {
   exportTime: true,
   exportHabits: true,
   exportRoutines: true,
+  exportHealth: true,
   folderWorkouts: 'Workouts',
   folderExercises: 'Exercises',
   folderWater: 'Water',
@@ -48,6 +52,7 @@ const DEFAULT_SETTINGS: ObsidianSettings = {
   folderHabits: 'Habits',
   folderRoutines: 'Routines',
   folderDaily: 'Daily',
+  folderHealth: 'Health',
   lastSyncTimestamp: 0,
 };
 
@@ -70,6 +75,7 @@ export const getObsidianSettings = async (): Promise<ObsidianSettings> => {
       exportTime: dbSettings['obsidian_export_time'] !== '0',
       exportHabits: dbSettings['obsidian_export_habits'] !== '0',
       exportRoutines: dbSettings['obsidian_export_routines'] !== '0',
+      exportHealth: dbSettings['obsidian_export_health'] !== '0',
       folderWorkouts: dbSettings['obsidian_folder_workouts'] ?? 'Workouts',
       folderExercises: dbSettings['obsidian_folder_exercises'] ?? 'Exercises',
       folderWater: dbSettings['obsidian_folder_water'] ?? 'Water',
@@ -77,6 +83,7 @@ export const getObsidianSettings = async (): Promise<ObsidianSettings> => {
       folderHabits: dbSettings['obsidian_folder_habits'] ?? 'Habits',
       folderRoutines: dbSettings['obsidian_folder_routines'] ?? 'Routines',
       folderDaily: dbSettings['obsidian_folder_daily'] ?? 'Daily',
+      folderHealth: dbSettings['obsidian_folder_health'] ?? 'Health',
       lastSyncTimestamp: parseInt(dbSettings['obsidian_last_sync_timestamp'] || '0', 10),
     };
   } catch (e) {
@@ -102,6 +109,7 @@ export const saveObsidianSettings = async (settings: Partial<ObsidianSettings>):
     if (settings.exportTime !== undefined) await saveSetting('obsidian_export_time', settings.exportTime ? '1' : '0');
     if (settings.exportHabits !== undefined) await saveSetting('obsidian_export_habits', settings.exportHabits ? '1' : '0');
     if (settings.exportRoutines !== undefined) await saveSetting('obsidian_export_routines', settings.exportRoutines ? '1' : '0');
+    if (settings.exportHealth !== undefined) await saveSetting('obsidian_export_health', settings.exportHealth ? '1' : '0');
     if (settings.folderWorkouts !== undefined) await saveSetting('obsidian_folder_workouts', settings.folderWorkouts);
     if (settings.folderExercises !== undefined) await saveSetting('obsidian_folder_exercises', settings.folderExercises);
     if (settings.folderWater !== undefined) await saveSetting('obsidian_folder_water', settings.folderWater);
@@ -109,6 +117,7 @@ export const saveObsidianSettings = async (settings: Partial<ObsidianSettings>):
     if (settings.folderHabits !== undefined) await saveSetting('obsidian_folder_habits', settings.folderHabits);
     if (settings.folderRoutines !== undefined) await saveSetting('obsidian_folder_routines', settings.folderRoutines);
     if (settings.folderDaily !== undefined) await saveSetting('obsidian_folder_daily', settings.folderDaily);
+    if (settings.folderHealth !== undefined) await saveSetting('obsidian_folder_health', settings.folderHealth);
     if (settings.lastSyncTimestamp !== undefined) await saveSetting('obsidian_last_sync_timestamp', settings.lastSyncTimestamp.toString());
   } catch (e) {
     console.error('Failed to save obsidian settings:', e);
@@ -779,5 +788,84 @@ export const exportAllDataToObsidian = async (): Promise<ObsidianExportResult> =
     },
   };
 };
+
+/**
+ * セクションを結合・上書き更新するヘルパー関数
+ */
+const mergeSectionText = (existingText: string, sectionHeader: string, newSectionContent: string): string => {
+  const trimHeader = sectionHeader.trim();
+  if (!existingText.trim()) return newSectionContent;
+  const headerIndex = existingText.indexOf(trimHeader);
+  if (headerIndex === -1) return existingText.trimEnd() + '\n\n' + newSectionContent;
+
+  const headerLevel = Math.max(1, trimHeader.match(/^#+/)?.[0].length || 1);
+  const textAfterHeader = existingText.substring(headerIndex + trimHeader.length);
+  const lines = textAfterHeader.split('\n');
+  let nextHeaderOffset = textAfterHeader.length;
+  let currentOffset = 0;
+  for (const line of lines) {
+    const trimmedLine = line.trimStart();
+    if (trimmedLine.startsWith('#')) {
+      const currentLevel = trimmedLine.match(/^#+/)?.[0].length || 0;
+      if (currentLevel <= headerLevel && currentOffset > 0) {
+        nextHeaderOffset = currentOffset;
+        break;
+      }
+    }
+    currentOffset += line.length + 1;
+  }
+  const before = existingText.substring(0, headerIndex);
+  const after = textAfterHeader.substring(Math.min(nextHeaderOffset, textAfterHeader.length));
+  return (before.trimEnd() + '\n\n' + newSectionContent + '\n\n' + after.trimStart()).trim();
+};
+
+/**
+ * Health Connect のデータを Obsidian のデイリーノートへ保存
+ */
+export const exportHealthDataToObsidian = async (
+  healthData: DailyHealthData,
+  subFolderOverride?: string
+): Promise<boolean> => {
+  const settings = await getObsidianSettings();
+  if (!settings.enabled || !settings.vaultUri || !settings.exportHealth) {
+    return false;
+  }
+
+  try {
+    const targetFolder = subFolderOverride || settings.folderDaily;
+    const dailyFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, targetFolder);
+    const dateStr = healthData.date;
+    const fileName = settings.exportMode === 'append' ? `${dateStr}.md` : `TreNote_${dateStr}.md`;
+
+    const sectionHeader = '## 📊 ヘルスデータレポート';
+    const newContent = formatHealthDataToMarkdown(healthData);
+
+    const files = await FileSystem.StorageAccessFramework.readDirectoryAsync(dailyFolderUri);
+    let targetFileUri: string | null = null;
+
+    for (const fUri of files) {
+      const base = getBasenameFromUri(fUri);
+      if (base === fileName) {
+        targetFileUri = fUri;
+        break;
+      }
+    }
+
+    if (targetFileUri) {
+      const existingText = await FileSystem.StorageAccessFramework.readAsStringAsync(targetFileUri);
+      const updatedText = mergeSectionText(existingText, sectionHeader, newContent);
+      await FileSystem.StorageAccessFramework.writeAsStringAsync(targetFileUri, updatedText);
+    } else {
+      targetFileUri = await FileSystem.StorageAccessFramework.createFileAsync(dailyFolderUri, fileName, 'text/markdown');
+      await FileSystem.StorageAccessFramework.writeAsStringAsync(targetFileUri, newContent);
+    }
+
+    return true;
+  } catch (e) {
+    console.error('Failed to export health data to Obsidian:', e);
+    return false;
+  }
+};
+
 
 
