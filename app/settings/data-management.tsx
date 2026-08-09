@@ -8,6 +8,7 @@ import { DangerZoneSection } from '../../components/profile/DangerZoneSection';
 import { RestorePresetsModal } from '../../components/profile/RestorePresetsModal';
 import { resetDatabase, saveSetting } from '../../src/db/database';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useLifelogStore } from '../../src/store/lifelogStore';
 import * as Updates from 'expo-updates';
 
 export default function DataManagementSettingsScreen() {
@@ -30,6 +31,7 @@ export default function DataManagementSettingsScreen() {
     try {
       await resetDatabase();
       useWorkoutStore.getState().resetAllSettingsAndWorkout();
+      useLifelogStore.getState().resetAll();
 
       const activeLang = i18n.language || 'ja';
       await saveSetting('language', activeLang);

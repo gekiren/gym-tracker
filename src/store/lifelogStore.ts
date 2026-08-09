@@ -127,6 +127,9 @@ interface LifelogState {
 
   // Helper to trigger summary recalculation
   refreshSummary: (date: string) => void;
+
+  // Reset all state for database reset
+  resetAll: () => void;
 }
 
 // Helper function to calculate summary from state
@@ -559,5 +562,20 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
   },
   clearActiveRoutineState: () => {
     set({ activeRoutineState: null });
+  },
+
+  resetAll: () => {
+    set({
+      waterLogs: [],
+      waterGoal: 2000,
+      caffeineLimit: 400,
+      waterPresets: [],
+      timeLogs: [],
+      habitItems: [],
+      habitLogs: [],
+      routineData: [],
+      daySummary: null,
+      activeRoutineState: null,
+    });
   },
 }));
