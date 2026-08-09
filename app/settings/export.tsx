@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -7,16 +15,19 @@ import { Theme } from '../../src/theme';
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
-import { 
-  getWorkoutsForDate, 
-  getWaterLogs, 
-  getTimeLogs, 
-  getHabitLogs, 
-  getWaterGoal, 
-  getCaffeineLimit, 
-  getHabitItems 
+import {
+  getWorkoutsForDate,
+  getWaterLogs,
+  getTimeLogs,
+  getHabitLogs,
+  getWaterGoal,
+  getCaffeineLimit,
+  getHabitItems,
 } from '../../src/db/database';
 import { calculateSummary } from '../../src/store/lifelogStore';
+import { ObsidianSection } from '../../components/profile/ObsidianSection';
+
+type ActiveTab = 'export' | 'obsidian';
 
 const formatTime = (isoString: string): string => {
   if (!isoString) return '';
@@ -40,6 +51,7 @@ const getTodayDateStr = () => {
 
 export default function DataExportScreen() {
   const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<ActiveTab>('export');
   const [selectedDate, setSelectedDate] = useState(getTodayDateStr());
   const [loading, setLoading] = useState(false);
   const [exportedContent, setExportedContent] = useState('');
@@ -76,7 +88,7 @@ export default function DataExportScreen() {
           if (w.notes) {
             md += `全体メモ: "${w.notes}"\n`;
           }
-          
+
           if (w.exercises && w.exercises.length > 0) {
             w.exercises.forEach((ex: any) => {
               md += `- **${ex.exercise_name}**`;
@@ -84,7 +96,7 @@ export default function DataExportScreen() {
                 md += ` (メモ: "${ex.notes}")`;
               }
               md += `\n`;
-              
+
               if (ex.sets && ex.sets.length > 0) {
                 ex.sets.forEach((s: any) => {
                   const weightStr = s.weight !== null ? `${s.weight}kg` : '-';
@@ -148,8 +160,10 @@ export default function DataExportScreen() {
   };
 
   useEffect(() => {
-    loadAndGenerateSummary();
-  }, [selectedDate]);
+    if (activeTab === 'export') {
+      loadAndGenerateSummary();
+    }
+  }, [selectedDate, activeTab]);
 
   const handleCopyToClipboard = async () => {
     if (!exportedContent) return;
@@ -168,7 +182,7 @@ export default function DataExportScreen() {
         await Sharing.shareAsync(filePath, {
           mimeType: 'text/markdown',
           dialogTitle: 'Markdownサマリー共有',
-          UTI: 'net.daringfireball.markdown'
+          UTI: 'net.daringfireball.markdown',
         });
       } else {
         Alert.alert('エラー', 'この端末では共有機能が利用できません。');
@@ -181,57 +195,114 @@ export default function DataExportScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <Ionicons name="chevron-back" size={24} color={Theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>データ出力 (Markdown/データ共有)</Text>
+        <Text style={styles.headerTitle}>データ出力 & Obsidian連携</Text>
         <View style={{ width: 24 }} />
       </View>
 
+      {/* Tab Bar */}
+      <View style={styles.tabBar}>
+        <TouchableOpacity
+          id="tab-export"
+          style={[styles.tab, activeTab === 'export' && styles.tabActive]}
+          onPress={() => setActiveTab('export')}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="document-text-outline"
+            size={16}
+            color={activeTab === 'export' ? '#fff' : Theme.colors.textMuted}
+            style={{ marginRight: 5 }}
+          />
+          <Text style={[styles.tabText, activeTab === 'export' && styles.tabTextActive]}>
+            📄 データ出力
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          id="tab-obsidian"
+          style={[styles.tab, activeTab === 'obsidian' && styles.tabActive]}
+          onPress={() => setActiveTab('obsidian')}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="journal-outline"
+            size={16}
+            color={activeTab === 'obsidian' ? '#fff' : Theme.colors.textMuted}
+            style={{ marginRight: 5 }}
+          />
+          <Text style={[styles.tabText, activeTab === 'obsidian' && styles.tabTextActive]}>
+            🔮 Obsidian連携
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Tab Contents */}
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="document-text-outline" size={22} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>日次ログMarkdown出力</Text>
-        </View>
 
-        <Text style={styles.descText}>
-          筋トレ記録、水分補給、24時間活動、習慣カウンターのデータを統合したMarkdownサマリーを生成・出力します。
-        </Text>
+        {/* ── Tab 1: データ出力 ── */}
+        {activeTab === 'export' && (
+          <View>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="document-text-outline" size={22} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.sectionTitle}>日次ログ Markdown 出力</Text>
+            </View>
 
-        <View style={styles.actionRow}>
-          <TouchableOpacity 
-            style={[styles.button, styles.primaryButton]} 
-            onPress={handleCopyToClipboard}
-            disabled={loading || !exportedContent}
-          >
-            <Ionicons name="copy-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
-            <Text style={styles.primaryButtonText}>クリップボードへコピー</Text>
-          </TouchableOpacity>
+            <Text style={styles.descText}>
+              筋トレ記録、水分補給、24時間活動、習慣カウンターのデータを統合した Markdown サマリーを生成・出力します。
+            </Text>
 
-          <TouchableOpacity 
-            style={[styles.button, styles.secondaryButton]} 
-            onPress={handleShareFile}
-            disabled={loading || !exportedContent}
-          >
-            <Ionicons name="share-outline" size={18} color={Theme.colors.text} style={{ marginRight: 6 }} />
-            <Text style={styles.secondaryButtonText}>ファイル共有 (.md)</Text>
-          </TouchableOpacity>
-        </View>
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                id="btn-copy-clipboard"
+                style={[styles.button, styles.primaryButton]}
+                onPress={handleCopyToClipboard}
+                disabled={loading || !exportedContent}
+              >
+                <Ionicons name="copy-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
+                <Text style={styles.primaryButtonText}>クリップボードへコピー</Text>
+              </TouchableOpacity>
 
-        {loading ? (
-          <View style={styles.loadingBox}>
-            <ActivityIndicator size="large" color={Theme.colors.primary} />
-            <Text style={styles.loadingText}>Markdown生成中...</Text>
-          </View>
-        ) : (
-          <View style={styles.previewCard}>
-            <Text style={styles.previewTitle}>出力プレビュー</Text>
-            <ScrollView style={styles.previewScroll} nestedScrollEnabled>
-              <Text style={styles.previewCode}>{exportedContent}</Text>
-            </ScrollView>
+              <TouchableOpacity
+                id="btn-share-file"
+                style={[styles.button, styles.secondaryButton]}
+                onPress={handleShareFile}
+                disabled={loading || !exportedContent}
+              >
+                <Ionicons name="share-outline" size={18} color={Theme.colors.text} style={{ marginRight: 6 }} />
+                <Text style={styles.secondaryButtonText}>ファイル共有 (.md)</Text>
+              </TouchableOpacity>
+            </View>
+
+            {loading ? (
+              <View style={styles.loadingBox}>
+                <ActivityIndicator size="large" color={Theme.colors.primary} />
+                <Text style={styles.loadingText}>Markdown生成中...</Text>
+              </View>
+            ) : (
+              <View style={styles.previewCard}>
+                <Text style={styles.previewTitle}>出力プレビュー</Text>
+                <ScrollView style={styles.previewScroll} nestedScrollEnabled>
+                  <Text style={styles.previewCode}>{exportedContent}</Text>
+                </ScrollView>
+              </View>
+            )}
           </View>
         )}
+
+        {/* ── Tab 2: Obsidian連携 ── */}
+        {activeTab === 'obsidian' && (
+          <ObsidianSection t={t} />
+        )}
+
       </ScrollView>
     </View>
   );
@@ -239,28 +310,68 @@ export default function DataExportScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingHorizontal: Theme.spacing.md, 
-    paddingTop: 54, 
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Theme.spacing.md,
+    paddingTop: 54,
     paddingBottom: Theme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border
+    borderBottomColor: Theme.colors.border,
   },
   backButton: { padding: 4 },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
-  content: { padding: Theme.spacing.md, paddingBottom: 60 },
+
+  // Tab Bar
+  tabBar: {
+    flexDirection: 'row',
+    paddingHorizontal: Theme.spacing.md,
+    paddingVertical: Theme.spacing.sm,
+    gap: Theme.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Theme.colors.border,
+    backgroundColor: Theme.colors.background,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    borderRadius: Theme.borderRadius.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  tabActive: {
+    backgroundColor: Theme.colors.primary,
+    borderColor: Theme.colors.primary,
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Theme.colors.textMuted,
+  },
+  tabTextActive: {
+    color: '#ffffff',
+  },
+
+  // Content
+  content: { padding: Theme.spacing.md, paddingBottom: 80 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   sectionTitle: { fontSize: 18, color: Theme.colors.text, fontWeight: 'bold' },
   descText: { fontSize: 13, color: Theme.colors.textMuted, lineHeight: 18, marginBottom: Theme.spacing.md },
+
+  // Action Buttons
   actionRow: { flexDirection: 'row', gap: Theme.spacing.sm, marginBottom: Theme.spacing.lg },
   button: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: Theme.borderRadius.md },
   primaryButton: { backgroundColor: Theme.colors.primary },
   secondaryButton: { backgroundColor: Theme.colors.card, borderWidth: 1, borderColor: Theme.colors.border },
   primaryButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
   secondaryButtonText: { color: Theme.colors.text, fontWeight: '600', fontSize: 14 },
+
+  // Preview
   loadingBox: { padding: 30, alignItems: 'center' },
   loadingText: { color: Theme.colors.textMuted, marginTop: 8, fontSize: 13 },
   previewCard: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, borderWidth: 1, borderColor: Theme.colors.border, padding: Theme.spacing.md },
