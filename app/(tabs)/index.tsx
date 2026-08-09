@@ -62,8 +62,30 @@ export default function WorkoutHomeScreen() {
   };
 
   const handleStartEmpty = () => {
-    startWorkout(t('ui.home.free_workout_title'));
-    router.push('/active-workout');
+    const proceedWithEmpty = () => {
+      if (isActive) {
+        endWorkout();
+      }
+      startWorkout(t('ui.home.free_workout_title'));
+      router.push('/active-workout');
+    };
+
+    if (isActive) {
+      Alert.alert(
+        t('ui.routines.confirm_start_during_workout_title'),
+        t('ui.routines.confirm_start_during_workout_message'),
+        [
+          { text: t('ui.common.cancel'), style: 'cancel' },
+          {
+            text: t('ui.common.ok'),
+            style: 'destructive',
+            onPress: proceedWithEmpty
+          }
+        ]
+      );
+    } else {
+      proceedWithEmpty();
+    }
   };
 
   const handleStartRoutine = async (routine: any) => {

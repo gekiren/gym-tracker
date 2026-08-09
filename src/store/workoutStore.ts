@@ -365,16 +365,19 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
   draftRoutine: { title: '', exercises: [] },
 
-  startWorkout: (title) => set({
-    isActive: true,
-    isWorkoutStarted: false,
-    startTime: null,
-    title,
-    workoutNotes: '',
-    exercises: [],
-    lastRestFinishedAt: null,
-    restTimer: { isActive: false, remaining: 0, endTime: null }
-  }),
+  startWorkout: (title) => {
+    cancelRestTimer();
+    set({
+      isActive: true,
+      isWorkoutStarted: false,
+      startTime: null,
+      title,
+      workoutNotes: '',
+      exercises: [],
+      lastRestFinishedAt: null,
+      restTimer: { isActive: false, remaining: 0, endTime: null }
+    });
+  },
 
   beginWorkoutTimer: () => set({
     isWorkoutStarted: true,
