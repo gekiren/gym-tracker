@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -18,6 +19,10 @@ import {
   requestHealthPermissions,
   fetchTodayHealthData,
   DailyHealthData,
+  getHealthSyncSettings,
+  saveHealthSyncSettings,
+  syncHealthData,
+  HealthSyncSettings,
 } from '../../src/services/healthService';
 import { exportHealthDataToObsidian, getObsidianSettings } from '../../src/services/obsidianService';
 
@@ -28,6 +33,12 @@ export default function HealthConnectSettingsScreen() {
   const [isFetching, setIsFetching] = useState<boolean>(false);
   const [healthData, setHealthData] = useState<DailyHealthData | null>(null);
   const [obsidianConfigured, setObsidianConfigured] = useState<boolean>(false);
+  const [syncSettings, setSyncSettings] = useState<HealthSyncSettings>({
+    autoSyncOnLaunch: true,
+    autoSyncPeriodic: true,
+    periodicIntervalMinutes: 60,
+    lastSyncTimestamp: 0,
+  });
 
   useEffect(() => {
     checkStatus();
@@ -35,6 +46,9 @@ export default function HealthConnectSettingsScreen() {
 
   const checkStatus = async () => {
     setIsLoading(true);
+    const syncSt = await getHealthSyncSettings();
+    setSyncSettings(syncSt);
+
     if (Platform.OS !== 'android') {
       setIsAvailable(false);
       setHasPermissions(false);
@@ -55,6 +69,38 @@ export default function HealthConnectSettingsScreen() {
     const obsSettings = await getObsidianSettings();
     setObsidianConfigured(Boolean(obsSettings.enabled && obsSettings.vaultUri));
     setIsLoading(false);
+  };
+
+  const handleToggleLaunchSync = async (value: boolean) => {
+    const updated = { ...syncSettings, autoSyncOnLaunch: value };
+    setSyncSettings(updated);
+    await saveHealthSyncSettings({ autoSyncOnLaunch: value });
+  };
+
+  const handleTogglePeriodicSync = async (value: boolean) => {
+    const updated = { ...syncSettings, autoSyncPeriodic: value };
+    setSyncSettings(updated);
+    await saveHealthSyncSettings({ autoSyncPeriodic: value });
+  };
+
+  const handleSelectInterval = async (intervalMins: number) => {
+    const updated = { ...syncSettings, periodicIntervalMinutes: intervalMins };
+    setSyncSettings(updated);
+    await saveHealthSyncSettings({ periodicIntervalMinutes: intervalMins });
+  };
+
+  const handleManualSyncNow = async () => {
+    setIsFetching(true);
+    const result = await syncHealthData({ force: true, reason: 'manual' });
+    setIsFetching(false);
+    if (result.success && result.data) {
+      setHealthData(result.data);
+      const syncSt = await getHealthSyncSettings();
+      setSyncSettings(syncSt);
+      Alert.alert('アクセス成功', 'ヘルスコネクトへアクセスし最新データに更新しました。');
+    } else {
+      Alert.alert('アクセスエラー', result.message || '同期に失敗しました。');
+    }
   };
 
   const handleRequestPermissions = async () => {
@@ -196,6 +242,100 @@ export default function HealthConnectSettingsScreen() {
               </Text>
             </TouchableOpacity>
           )}
+        </View>
+
+        {/* Auto Sync Settings Card */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="time-outline" size={24} color={Theme.colors.primary} />
+            <Text style={styles.cardTitle}>自動アクセスの設定</Text>
+          </View>
+          <Text style={styles.description}>
+            アプリ起動時や定時に自動でヘルスコネクトへアクセスし、ヘルスデータを最新状態に更新・同期します。
+          </Text>
+
+          <View style={styles.settingRow}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={styles.settingTitle}>アプリ起動時にアクセス</Text>
+              <Text style={styles.settingSubtext}>アプリ起動時および画面復帰時に最新データを自動取得</Text>
+            </View>
+            <Switch
+              value={syncSettings.autoSyncOnLaunch}
+              onValueChange={handleToggleLaunchSync}
+              trackColor={{ false: '#3a3a3c', true: Theme.colors.primary }}
+              thumbColor="#ffffff"
+            />
+          </View>
+
+          <View style={[styles.settingRow, { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)', paddingTop: 12 }]}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={styles.settingTitle}>定時にアクセス</Text>
+              <Text style={styles.settingSubtext}>指定された間隔ごとに定時アクセス・自動更新</Text>
+            </View>
+            <Switch
+              value={syncSettings.autoSyncPeriodic}
+              onValueChange={handleTogglePeriodicSync}
+              trackColor={{ false: '#3a3a3c', true: Theme.colors.primary }}
+              thumbColor="#ffffff"
+            />
+          </View>
+
+          {syncSettings.autoSyncPeriodic && (
+            <View style={{ marginTop: 12 }}>
+              <Text style={styles.settingSubtext}>定時アクセス間隔:</Text>
+              <View style={styles.intervalButtonRow}>
+                {[
+                  { label: '1時間', value: 60 },
+                  { label: '3時間', value: 180 },
+                  { label: '6時間', value: 360 },
+                  { label: '12時間', value: 720 },
+                  { label: '24時間', value: 1440 },
+                ].map((item) => (
+                  <TouchableOpacity
+                    key={item.value}
+                    style={[
+                      styles.intervalChip,
+                      syncSettings.periodicIntervalMinutes === item.value && styles.intervalChipActive,
+                    ]}
+                    onPress={() => handleSelectInterval(item.value)}
+                  >
+                    <Text
+                      style={[
+                        styles.intervalChipText,
+                        syncSettings.periodicIntervalMinutes === item.value && styles.intervalChipTextActive,
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
+          <View style={styles.lastSyncContainer}>
+            <Text style={styles.lastSyncLabel}>最終アクセス日時:</Text>
+            <Text style={styles.lastSyncValue}>
+              {syncSettings.lastSyncTimestamp > 0
+                ? new Date(syncSettings.lastSyncTimestamp).toLocaleString()
+                : '未実施'}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.syncNowButton, isFetching && styles.disabledButton]}
+            onPress={handleManualSyncNow}
+            disabled={isFetching || Platform.OS !== 'android'}
+          >
+            {isFetching ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <>
+                <Ionicons name="refresh-outline" size={18} color="#ffffff" style={{ marginRight: 6 }} />
+                <Text style={styles.syncNowButtonText}>今すぐヘルスコネクトへアクセス</Text>
+              </>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Sync Action Card */}
@@ -385,4 +525,80 @@ const styles = StyleSheet.create({
   },
   gridValue: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.primary, marginBottom: 2 },
   gridLabel: { fontSize: 12, color: Theme.colors.textMuted },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+  },
+  settingTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Theme.colors.text,
+  },
+  settingSubtext: {
+    fontSize: 12,
+    color: Theme.colors.textMuted,
+    marginTop: 2,
+  },
+  intervalButtonRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+    gap: 8,
+  },
+  intervalChip: {
+    backgroundColor: '#1c1c1e',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#3a3a3c',
+  },
+  intervalChipActive: {
+    backgroundColor: Theme.colors.primary,
+    borderColor: Theme.colors.primary,
+  },
+  intervalChipText: {
+    fontSize: 12,
+    color: Theme.colors.textMuted,
+    fontWeight: '500',
+  },
+  intervalChipTextActive: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+  },
+  lastSyncContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#1c1c1e',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginTop: 14,
+    marginBottom: 12,
+  },
+  lastSyncLabel: {
+    fontSize: 12,
+    color: Theme.colors.textMuted,
+  },
+  lastSyncValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Theme.colors.primary,
+  },
+  syncNowButton: {
+    backgroundColor: Theme.colors.primary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  syncNowButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
 });

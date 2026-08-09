@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { saveSetting, getSettings } from '../db/database';
 import {
   initialize,
   getSdkStatus,
@@ -492,3 +493,120 @@ export const fetchWorkoutHealthData = async (
     return { avgHeartRate: null, maxHeartRate: null, caloriesBurned: null };
   }
 };
+
+export interface HealthSyncSettings {
+  autoSyncOnLaunch: boolean;
+  autoSyncPeriodic: boolean;
+  periodicIntervalMinutes: number;
+  lastSyncTimestamp: number;
+}
+
+/**
+ * ヘルスコネクト自動同期設定の取得
+ */
+export const getHealthSyncSettings = async (): Promise<HealthSyncSettings> => {
+  try {
+    const settings = await getSettings();
+    return {
+      autoSyncOnLaunch: settings['health_sync_on_launch'] !== '0',
+      autoSyncPeriodic: settings['health_sync_periodic'] !== '0',
+      periodicIntervalMinutes: settings['health_sync_interval_mins'] ? parseInt(settings['health_sync_interval_mins'], 10) : 60,
+      lastSyncTimestamp: settings['health_last_sync_timestamp'] ? parseInt(settings['health_last_sync_timestamp'], 10) : 0,
+    };
+  } catch (error) {
+    console.warn('Failed to load health sync settings:', error);
+    return {
+      autoSyncOnLaunch: true,
+      autoSyncPeriodic: true,
+      periodicIntervalMinutes: 60,
+      lastSyncTimestamp: 0,
+    };
+  }
+};
+
+/**
+ * ヘルスコネクト自動同期設定の保存
+ */
+export const saveHealthSyncSettings = async (settings: Partial<HealthSyncSettings>): Promise<void> => {
+  try {
+    if (settings.autoSyncOnLaunch !== undefined) {
+      await saveSetting('health_sync_on_launch', settings.autoSyncOnLaunch ? '1' : '0');
+    }
+    if (settings.autoSyncPeriodic !== undefined) {
+      await saveSetting('health_sync_periodic', settings.autoSyncPeriodic ? '1' : '0');
+    }
+    if (settings.periodicIntervalMinutes !== undefined) {
+      await saveSetting('health_sync_interval_mins', String(settings.periodicIntervalMinutes));
+    }
+    if (settings.lastSyncTimestamp !== undefined) {
+      await saveSetting('health_last_sync_timestamp', String(settings.lastSyncTimestamp));
+    }
+  } catch (error) {
+    console.warn('Failed to save health sync settings:', error);
+  }
+};
+
+/**
+ * ヘルスコネクトへアクセスしてヘルスデータを最新化（起動時・定時・手動共通）
+ */
+export const syncHealthData = async (options?: {
+  force?: boolean;
+  reason?: 'launch' | 'periodic' | 'manual';
+}): Promise<{ success: boolean; data?: DailyHealthData | null; message?: string }> => {
+  if (Platform.OS !== 'android') {
+    return { success: false, message: 'Android 端末でのみ Health Connect が利用可能です。' };
+  }
+
+  const syncSettings = await getHealthSyncSettings();
+  const reason = options?.reason || 'manual';
+
+  if (!options?.force) {
+    if (reason === 'launch' && !syncSettings.autoSyncOnLaunch) {
+      return { success: false, message: '起動時アクセスが無効になっています。' };
+    }
+    if (reason === 'periodic' && !syncSettings.autoSyncPeriodic) {
+      return { success: false, message: '定時アクセスが無効になっています。' };
+    }
+
+    // 重複アクセス防止（手動以外で、前回アクセスから1分以内の場合はスキップ）
+    const now = Date.now();
+    const minIntervalMs = 60 * 1000;
+    if (reason !== 'manual' && syncSettings.lastSyncTimestamp > 0 && now - syncSettings.lastSyncTimestamp < minIntervalMs) {
+      return { success: false, message: '前回のアクセスから十分な時間が経過していません。' };
+    }
+  }
+
+  try {
+    const hasPerms = await hasHealthPermissions();
+    if (!hasPerms) {
+      return { success: false, message: 'Health Connect のアクセス権限が与えられていません。' };
+    }
+
+    const { data, error } = await fetchTodayHealthData(false);
+    if (error || !data) {
+      return { success: false, message: error || 'ヘルスデータの取得に失敗しました。' };
+    }
+
+    // 最終取得タイムスタンプの更新
+    const now = Date.now();
+    await saveHealthSyncSettings({ lastSyncTimestamp: now });
+
+    // Obsidian 自動エクスポートとの連動（Obsidian連携とHealth Connectエクスポートが有効な場合）
+    try {
+      const { exportHealthDataToObsidian, getObsidianSettings } = await import('./obsidianService');
+      const obsidianSettings = await getObsidianSettings();
+      if (obsidianSettings.enabled && obsidianSettings.vaultUri && obsidianSettings.exportHealth) {
+        await exportHealthDataToObsidian(data);
+      }
+    } catch (obsidianErr) {
+      console.warn('Auto export to Obsidian failed during health sync:', obsidianErr);
+    }
+
+    console.log(`[HealthConnect] Successfully accessed and updated health data (reason: ${reason})`);
+    return { success: true, data };
+  } catch (e: any) {
+    console.error('Error during syncHealthData:', e);
+    return { success: false, message: e?.message || String(e) };
+  }
+};
+

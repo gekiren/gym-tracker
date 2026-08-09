@@ -21,6 +21,7 @@ import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import { OTAUpdateModal } from '../components/OTAUpdateModal';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { syncLifelogToObsidian } from '../src/services/obsidianService';
+import { syncHealthData } from '../src/services/healthService';
 import { initNotificationCategories, setupNotificationResponseListener } from '../src/services/notificationService';
 
 // アプリの起動時にグローバルエラーハンドラを登録
@@ -237,6 +238,11 @@ export default function RootLayout() {
       syncLifelogToObsidian().catch(syncErr => {
         console.warn('Obsidian lifelog sync failed on launch:', syncErr);
       });
+
+      // ヘルスコネクト自動アクセス（起動時）
+      syncHealthData({ reason: 'launch' }).catch(hErr => {
+        console.warn('Health Connect sync failed on launch:', hErr);
+      });
       if (expired) {
         setTimeout(() => {
           Alert.alert(
@@ -276,8 +282,16 @@ export default function RootLayout() {
     initNotificationCategories();
     const cleanupNotificationListener = setupNotificationResponseListener();
 
+    // ヘルスコネクトの定時アクセス監視タイマー (15分ごとにチェック)
+    const healthSyncInterval = setInterval(() => {
+      syncHealthData({ reason: 'periodic' }).catch(console.error);
+    }, 15 * 60 * 1000);
+
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
       if (nextAppState === 'active') {
+        // アプリフォアグラウンド復帰時にヘルスコネクトに自動アクセス
+        syncHealthData({ reason: 'launch' }).catch(console.error);
+
         const settings = useWorkoutStore.getState().settings;
         const premiumUntil = settings.premiumUntil;
         if (premiumUntil && premiumUntil !== 'perpetual') {
@@ -315,6 +329,7 @@ export default function RootLayout() {
     return () => {
       subscription.remove();
       cleanupNotificationListener();
+      clearInterval(healthSyncInterval);
     };
   }, []);
 

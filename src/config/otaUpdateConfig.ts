@@ -11,21 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.2.0', // OTA識別用のバージョン文字列
+  version: '1.2.1', // OTA識別用のバージョン文字列
   title: {
-    ja: 'Obsidian連携とHealth Connect連携の拡張',
-    en: 'Obsidian & Health Connect Integration',
+    ja: 'ヘルスコネクト起動時・定時アクセスの追加',
+    en: 'Health Connect Launch & Periodic Sync',
   },
   notes: {
     ja: [
-      'Android Health Connect 連携機能（歩数・睡眠・心拍・体組成）の追加',
-      'Obsidian デイリーノートへのヘルスケアデータ自動同期機能の追加',
-      'Obsidian カテゴリ別フォルダ設定への「ヘルスケア」項目追加',
+      'ヘルスコネクトへのアプリ起動時・フォアグラウンド復帰時の自動アクセスに対応',
+      'ヘルスコネクトへの定時自動アクセス機能（アクセス間隔設定）の追加',
+      'ヘルスコネクト設定画面に自動アクセスの設定項目と最終アクセス日時表示を追加',
     ],
     en: [
-      'Added Android Health Connect integration (Steps, Sleep, Heart rate, Weight).',
-      'Added auto-sync for health data to Obsidian Daily Notes.',
-      'Added Health folder option to Obsidian settings.',
+      'Added automatic Health Connect sync on app launch and foreground resume.',
+      'Added periodic Health Connect sync with customizable interval.',
+      'Added auto-sync controls and last sync timestamp display in settings.',
     ],
   },
 };
