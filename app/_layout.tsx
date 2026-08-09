@@ -7,22 +7,25 @@ import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet, Alert, App
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import mobileAds from 'react-native-google-mobile-ads';
-import { initDB, getSettings, saveSetting, getAITokensBalance } from '../src/db/database';
+import { initDB, getSettings, saveSetting } from '../src/db/database';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import '../src/i18n';
-import i18n, { getCurrentLanguage } from '../src/i18n';
-import * as Localization from 'expo-localization';
-import { DEFAULT_STANCES } from '../src/utils/stances';
-import { registerGlobalErrorHandler, checkHasCrashLog, readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../src/services/crashReporterService';
+import i18n from '../src/i18n';
+import { registerGlobalErrorHandler } from '../src/services/crashReporterService';
 import { ReviewPromptModal } from '../components/ReviewPromptModal';
-import * as Updates from 'expo-updates';
-import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import { OTAUpdateModal } from '../components/OTAUpdateModal';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { syncLifelogToObsidian } from '../src/services/obsidianService';
 import { syncHealthData } from '../src/services/healthService';
 import { initNotificationCategories, setupNotificationResponseListener } from '../src/services/notificationService';
+import {
+  initLanguageAndUnits,
+  initCrashReporting,
+  initOTAUpdateCheck,
+  initSubscriptionAndTokens,
+  initStanceSettings,
+  initBackgroundSyncServices,
+} from '../src/services/appInitializationService';
 
 // アプリの起動時にグローバルエラーハンドラを登録
 registerGlobalErrorHandler();
@@ -41,127 +44,30 @@ export default function RootLayout() {
     try {
       await initDB();
       const storedSettings = await getSettings();
+
       const defaultRest = storedSettings['default_rest_timer'] ? parseInt(storedSettings['default_rest_timer'], 10) : 90;
       const autoRest = storedSettings['auto_rest_timer'] ? storedSettings['auto_rest_timer'] === '1' : true;
       const timerVibrate = storedSettings['timer_vibrate'] ? storedSettings['timer_vibrate'] === '1' : true;
       const keepAwake = storedSettings['keep_awake'] ? storedSettings['keep_awake'] === '1' : true;
-      
-      // 言語設定を先に確定させる（後の単位判定で利用するため）
-      let currentLang = storedSettings['language'];
-      if (storedSettings['language']) {
-        // 2回目以降：DBに保存された言語を使用
-        i18n.changeLanguage(storedSettings['language']);
-      } else {
-        // 初回起動時のみ：端末の言語を検知して使用＆保存
-        const deviceLocale = Localization.getLocales()[0]?.languageCode ?? 'ja';
-        const initialLang = ['ja', 'en'].includes(deviceLocale) ? deviceLocale : 'ja';
-        i18n.changeLanguage(initialLang);
-        await saveSetting('language', initialLang);
-        currentLang = initialLang;
-      }
-
-      let needsUnitSelection = !storedSettings['weight_unit'];
-      let weightUnit = (storedSettings['weight_unit'] === 'lbs' ? 'lbs' : 'kg') as 'kg' | 'lbs';
-      const needsStyleSelection = !storedSettings['style_mode'];
-
-      // 日本語話者の場合は、初回起動時に自動で kg を設定し、選択モーダルをスキップする
-      if (needsUnitSelection && currentLang === 'ja') {
-        await saveSetting('weight_unit', 'kg');
-        weightUnit = 'kg';
-        needsUnitSelection = false;
-      }
-
-      // クラッシュレポート同意ステータスと未送信ログのチェック
-      const crashConsent = (storedSettings['crash_report_consent'] ?? 'unset') as 'agreed' | 'declined' | 'unset';
-      
-      if (crashConsent === 'agreed') {
-        initializeSentry();
-      }
-
-      const hasCrashLog = await checkHasCrashLog();
-      let hasUnsentLog = false;
-
-      if (hasCrashLog) {
-        if (crashConsent === 'agreed') {
-          // 同意済み：バックグラウンド送信して破棄
-          const log = await readCrashLog();
-          if (log) {
-            sendCrashReport(log).catch(console.error);
-          }
-          await deleteCrashLog();
-        } else if (crashConsent === 'declined') {
-          // 拒否済み：破棄のみ
-          await deleteCrashLog();
-        } else {
-          // 未設定：次回起動時の確認ポップアップ表示フラグを立てる
-          hasUnsentLog = true;
-        }
-      }
-
-      // OTAチャンネルのオーバーライド設定を読み込み・適用
-      const channelOverride = storedSettings['ota_channel_override'] || '';
-      if (channelOverride && Updates.isEnabled && !__DEV__) {
-        try {
-          await Updates.setUpdateRequestHeadersOverride({ 'expo-channel-name': channelOverride });
-          console.log('Successfully applied update request headers override on startup:', channelOverride);
-        } catch (e) {
-          console.warn('Failed to apply update request headers override on startup:', e);
-        }
-      }
-
-      // OTAアップデート後の初回起動検知
-      let showOTA = false;
-      const lastAckUpdateId = storedSettings['last_acknowledged_update_id'] || '';
-      const simulateOta = storedSettings['simulate_ota_popup'] === '1';
-      const isFirstInstall = needsStyleSelection || needsUnitSelection;
-
-      if (isFirstInstall) {
-        // 初インストール時はインフォメーションを非表示にし、次回起動時に備えて現在のupdateIdを承認済みにする
-        if (Updates.updateId) {
-          await saveSetting('last_acknowledged_update_id', Updates.updateId);
-        }
-      } else {
-        if (Updates.updateId && Updates.updateId !== lastAckUpdateId) {
-          showOTA = true;
-          await saveSetting('last_acknowledged_update_id', Updates.updateId);
-        } else if (simulateOta) {
-          showOTA = true;
-          await saveSetting('simulate_ota_popup', '0');
-        }
-      }
-
-      if (showOTA) {
-        setTimeout(() => {
-          useOTAUpdateStore.getState().showModal();
-        }, 500);
-      }
-
       const bodyWeight = storedSettings['body_weight'] ? parseFloat(storedSettings['body_weight']) : null;
       const alwaysOneSet = storedSettings['always_one_set'] === '1';
-      const tokensBalance = await getAITokensBalance();
-      const premiumUntil = storedSettings['premium_until'] || '';
-      const isEarlyAdopter = storedSettings['is_early_adopter'] === 'true';
-      
-      let finalPremiumUntil = premiumUntil;
-      let finalTokensBalance = tokensBalance;
-      let expired = false;
-
-      if (premiumUntil !== '' && premiumUntil !== 'perpetual') {
-        const expiry = Date.parse(premiumUntil);
-        if (!isNaN(expiry) && expiry <= Date.now()) {
-          expired = true;
-          finalPremiumUntil = '';
-          await saveSetting('premium_until', '');
-          if (!isEarlyAdopter) {
-            finalTokensBalance = 5;
-            await saveSetting('ai_tokens_balance', '5');
-          }
-        }
-      }
-
       const preferredAiModel = (storedSettings['preferred_ai_model'] === 'deepseek' ? 'deepseek' : 'gemini') as 'gemini' | 'deepseek';
       const aiChatMode = (storedSettings['ai_chat_mode'] === 'thinking' ? 'thinking' : 'quick') as 'quick' | 'thinking';
 
+      // 1. 言語および重量単位の設定
+      const { weightUnit, needsUnitSelection, needsStyleSelection } = await initLanguageAndUnits(storedSettings);
+
+      // 2. クラッシュレポート
+      const { crashConsent, hasUnsentLog } = await initCrashReporting(storedSettings);
+
+      // 3. OTAアップデートチェック
+      const isFirstInstall = needsStyleSelection || needsUnitSelection;
+      await initOTAUpdateCheck(storedSettings, isFirstInstall);
+
+      // 4. サブスク・プレミアム＆トークン判定
+      const { finalPremiumUntil, finalTokensBalance, expired, isEarlyAdopter } = await initSubscriptionAndTokens(storedSettings);
+
+      // 5. ストアへの設定ロード
       useWorkoutStore.getState().loadSettings({
         defaultRest,
         autoRest,
@@ -177,88 +83,29 @@ export default function RootLayout() {
         keepAwake,
         alwaysOneSet,
         preferredAiModel,
-        aiChatMode
+        aiChatMode,
       });
       if (expired) {
         useWorkoutStore.getState().setShouldShowPaywall(true);
       }
       useWorkoutStore.getState().setHasUnsentCrashLog(hasUnsentLog);
-      
-      // Display fields
+
+      // 表示フィールド設定
       const showRpe = storedSettings['display_rpe'] !== '0';
       const show1RM = storedSettings['display_1rm'] !== '0';
       const showVolume = storedSettings['display_volume'] !== '0';
       const showStance = storedSettings['display_stance'] !== '0';
       useWorkoutStore.getState().setDisplayFields({ showRpe, show1RM, showVolume, showStance });
-      
-      const customStancesStr = storedSettings['custom_stances'];
-      const stancesMigratedV3 = storedSettings['stances_migrated_v3'] === '1';
-      
-      let finalStances: string[] = [];
-      if (!customStancesStr) {
-        // 新規ユーザー：新デフォルト(v3)を設定
-        finalStances = DEFAULT_STANCES;
-        await saveSetting('custom_stances', JSON.stringify(finalStances));
-        await saveSetting('stances_migrated_v3', '1');
-      } else {
-        try {
-          let stored = JSON.parse(customStancesStr);
-          if (!stancesMigratedV3) {
-            // v3への移行：ユーザーのリストから不要なものを削除、新しいものを追加、リネーム
-            const toDelete = ['スモウ', 'コンベンショナル', 'オルタネイトグリップ', 'サムレスグリップ', 'フックグリップ', 'ポーズ', 'デッドストップ', 'ニュートラルグリップ'];
-            
-            // 削除
-            stored = stored.filter((s: string) => !toDelete.includes(s));
-            
-            // リバースグリップ -> 逆手 (すでにあれば統合)
-            if (stored.includes('リバースグリップ')) {
-              stored = stored.map((s: string) => s === 'リバースグリップ' ? '逆手' : s);
-            }
-            
-            // 新しいデフォルトを追加
-            const toAdd = ['順手', 'パラレル'];
-            finalStances = Array.from(new Set([...stored, ...DEFAULT_STANCES])); // DEFAULT_STANCESに含まれるものを確実に含める
-            
-            await saveSetting('custom_stances', JSON.stringify(finalStances));
-            await saveSetting('stances_migrated_v3', '1');
-          } else {
-            finalStances = stored;
-          }
-        } catch(e) {
-          console.warn('Failed to parse custom_stances', e);
-          finalStances = DEFAULT_STANCES;
-        }
-      }
+
+      // 6. スタンス設定の移行・読み込み
+      const finalStances = await initStanceSettings(storedSettings);
       useWorkoutStore.getState().loadCustomStances(finalStances);
 
       console.log('Database initialized successfully with settings', storedSettings);
       setDbReady(true);
 
-      // Obsidian Vault へのライフログ自動同期（起動時・定時チェック）
-      syncLifelogToObsidian().catch(syncErr => {
-        console.warn('Obsidian lifelog sync failed on launch:', syncErr);
-      });
-
-      // ヘルスコネクト自動アクセス（起動時）
-      syncHealthData({ reason: 'launch' }).catch(hErr => {
-        console.warn('Health Connect sync failed on launch:', hErr);
-      });
-      if (expired) {
-        setTimeout(() => {
-          Alert.alert(
-            i18n.t('ui.profile.promo_expired_title') || 'プレミアム期間の終了',
-            i18n.t('ui.profile.promo_expired_msg') || 'プレミアムプラン（お試し）の有効期限が終了したため、元のプランに戻りました。',
-            [
-              {
-                text: 'OK',
-                onPress: () => {
-                  router.navigate('/(tabs)/profile');
-                }
-              }
-            ]
-          );
-        }, 100);
-      }
+      // 7. バックグラウンド同期・アラート等の起動
+      initBackgroundSyncServices(expired);
     } catch (e: any) {
       console.error('Failed to initialize database', e);
       setDbError(e?.message || String(e));

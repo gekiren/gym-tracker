@@ -26,8 +26,8 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.title}>{t('ui.profile.title') || '設定'}</Text>
-        <Text style={styles.subtitle}>アプリの各種設定や連携機能を管理します</Text>
+        <Text style={styles.title}>{t('ui.profile.title')}</Text>
+        <Text style={styles.subtitle}>{t('ui.profile.subtitle')}</Text>
       </View>
 
       <View style={styles.menuGrid}>

@@ -312,6 +312,7 @@
     },
     "profile": {
       "title": "Settings & Tools",
+      "subtitle": "Manage app settings and integration features",
       "section_tools": "Tools",
       "section_timer": "Timer Settings",
       "section_preferences": "Preferences",
@@ -566,6 +567,7 @@
       "default_workout_title": "Workout Details",
       "analyzing_quick": "⚡ AI Coach is generating response...",
       "analyzing_thinking": "🧠 AI Coach is thinking and analyzing...",
+      "system_error": "A system error occurred. Please try again later.",
       "mode_label": "Mode:",
       "mode_quick": "Quick",
       "mode_thinking": "Thinking"

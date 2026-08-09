@@ -117,3 +117,36 @@ export interface WorkoutWithStats extends WorkoutRow {
   volume: number | null;
 }
 
+export interface FullWorkoutExerciseSet {
+  id: number;
+  set_number: number;
+  weight: number | null;
+  reps: number | null;
+  rpe: number | null;
+  rest_seconds: number | null;
+  work_seconds: number | null;
+  side: string | null;
+  variation: string | null;
+  stance: string | null;
+  is_completed: boolean;
+}
+
+export interface FullWorkoutExercise {
+  workout_exercise_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  notes: string | null;
+  sets: FullWorkoutExerciseSet[];
+}
+
+export interface FullWorkoutData {
+  id: number;
+  title: string;
+  start_time: string;
+  end_time: string | null;
+  notes: string | null;
+  calories: number | null;
+  exercises: FullWorkoutExercise[];
+}
+
+

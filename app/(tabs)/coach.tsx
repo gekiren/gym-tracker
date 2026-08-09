@@ -55,7 +55,7 @@ export default function CoachScreen() {
     setMessages([
       {
         id: 'welcome',
-        text: t('ui.coach.welcome_msg') || 'こんにちは！TreNote専属AIトレーナーです。あなたの筋トレログの分析、次のセットの重量調整、あるいはトレーニング理論の質問など、何でもお手伝いします！',
+        text: t('ui.coach.welcome_msg'),
         sender: 'ai',
         timestamp: new Date(),
       },
@@ -67,7 +67,7 @@ export default function CoachScreen() {
     if (params.contextPrompt) {
       setActiveContext(params.contextPrompt);
       const displayTitle = params.title ? translateExercise(params.title) : null;
-      setContextTitle(displayTitle || t('ui.coach.default_context_title') || 'コンテキスト');
+      setContextTitle(displayTitle || t('ui.coach.default_context_title'));
       
       if (params.prefillMessage) {
         setInputVal(params.prefillMessage);
@@ -76,7 +76,7 @@ export default function CoachScreen() {
       // Add system message into the chat showing context was linked
       const contextLinkedMsg: ChatMessage = {
         id: `system-context-${Date.now()}`,
-        text: t('ui.coach.context_loaded_msg', { title: displayTitle || t('ui.coach.default_workout_title') || 'ワークアウト詳細' }),
+        text: t('ui.coach.context_loaded_msg', { title: displayTitle || t('ui.coach.default_workout_title') }),
         sender: 'system',
         timestamp: new Date(),
       };
@@ -93,13 +93,13 @@ export default function CoachScreen() {
             <Ionicons name="build" size={42} color={Theme.colors.primary} />
           </View>
           <Text style={styles.maintenanceHeader}>
-            {t('ui.coach.maintenance_title') || 'AIトレーナー 調整中'}
+            {t('ui.coach.maintenance_title')}
           </Text>
           <Text style={styles.maintenanceBody}>
-            {t('ui.coach.maintenance_body') || 'AIトレーナー機能は、より快適で質の高いアドバイスを提供するため、現在メンテナンス（調整）を実施しております。'}
+            {t('ui.coach.maintenance_body')}
           </Text>
           <Text style={styles.maintenanceFooter}>
-            {t('ui.coach.maintenance_footer') || 'まもなく再開いたしますので、今しばらくお待ちください！'}
+            {t('ui.coach.maintenance_footer')}
           </Text>
         </View>
       </View>
@@ -190,7 +190,7 @@ export default function CoachScreen() {
       // Add error message to chat
       const errorMsg: ChatMessage = {
         id: `error-${Date.now()}`,
-        text: t('ui.coach.system_error') || 'システムエラーが発生しました。しばらく経ってから再度お試しください。',
+        text: t('ui.coach.system_error'),
         sender: 'ai',
         timestamp: new Date(),
       };
@@ -204,13 +204,13 @@ export default function CoachScreen() {
   const handleChipPress = (chipType: 'analysis' | 'proposal' | 'rpe' | 'stance') => {
     let prompt = '';
     if (chipType === 'analysis') {
-      prompt = t('ui.coach.chip_analysis_prompt') || '最近の筋トレログを分析して、成長や変化について教えてください。';
+      prompt = t('ui.coach.chip_analysis_prompt');
     } else if (chipType === 'proposal') {
-      prompt = t('ui.coach.chip_proposal_prompt') || '直近の記録を踏まえて、次回のトレーニングメニューの具体的な重量と回数の調整案を提案してください。';
+      prompt = t('ui.coach.chip_proposal_prompt');
     } else if (chipType === 'rpe') {
-      prompt = t('ui.coach.chip_rpe_prompt') || '筋トレにおけるRPE（自覚的運動強度）を活用した効率的なセット調整方法を教えて。';
+      prompt = t('ui.coach.chip_rpe_prompt');
     } else if (chipType === 'stance') {
-      prompt = t('ui.coach.chip_stance_prompt') || 'ベンチプレスやスクワットの足幅・グリップ幅（スタンス）を変えると、効く部位はどう変化する？';
+      prompt = t('ui.coach.chip_stance_prompt');
     }
 
     setInputVal(prompt);
@@ -226,7 +226,7 @@ export default function CoachScreen() {
       ...prev,
       {
         id: `system-clear-${Date.now()}`,
-        text: t('ui.coach.context_cleared_msg') || '🧹 連動していたコンテキストをクリアし、通常の履歴参照モードに戻しました。',
+        text: t('ui.coach.context_cleared_msg'),
         sender: 'system',
         timestamp: new Date(),
       }
@@ -252,8 +252,8 @@ export default function CoachScreen() {
           <Ionicons name="alert-circle" size={18} color="#fff" style={{ marginRight: 6 }} />
           <Text style={styles.warningText}>
             {isBasic 
-              ? (t('ui.coach.basic_quota_exhausted') || 'ベーシックプランの今月の利用枠（5回）が終了しました。プレミアムにアップグレードする')
-              : (t('ui.profile.quota_exhausted_alert') || '今月の利用枠が残っていません。')
+              ? t('ui.coach.basic_quota_exhausted')
+              : t('ui.profile.quota_exhausted_alert')
             }
           </Text>
           {isBasic && (
@@ -329,8 +329,8 @@ export default function CoachScreen() {
               <ActivityIndicator size="small" color={Theme.colors.primary} style={{ marginRight: 10 }} />
               <Text style={styles.loadingText}>
                 {currentAiChatMode === 'thinking'
-                  ? (t('ui.coach.analyzing_thinking') || '🧠 AIトレーナーが熟考・分析中...')
-                  : (t('ui.coach.analyzing_quick') || '⚡ AIトレーナーが回答を作成中...')
+                  ? t('ui.coach.analyzing_thinking')
+                  : t('ui.coach.analyzing_quick')
                 }
               </Text>
             </View>
@@ -342,7 +342,7 @@ export default function CoachScreen() {
       {!isQuotaExhausted && (
         <View style={styles.modeToggleContainer}>
           <Text style={styles.modeLabelText}>
-            {t('ui.coach.mode_label') || 'モード:'}
+            {t('ui.coach.mode_label')}
           </Text>
           <View style={styles.modeToggleGroup}>
             <TouchableOpacity
@@ -366,7 +366,7 @@ export default function CoachScreen() {
                   currentAiChatMode === 'quick' && styles.modeBtnTextActive,
                 ]}
               >
-                {t('ui.coach.mode_quick') || 'クイック'}
+                {t('ui.coach.mode_quick')}
               </Text>
             </TouchableOpacity>
 
@@ -391,7 +391,7 @@ export default function CoachScreen() {
                   currentAiChatMode === 'thinking' && styles.modeBtnTextActive,
                 ]}
               >
-                {t('ui.coach.mode_thinking') || '思考あり'}
+                {t('ui.coach.mode_thinking')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -407,16 +407,16 @@ export default function CoachScreen() {
             contentContainerStyle={styles.chipsContainer}
           >
             <TouchableOpacity style={styles.chip} onPress={() => handleChipPress('analysis')}>
-              <Text style={styles.chipText}>📊 {t('ui.coach.chip_analysis') || 'ログを分析して'}</Text>
+              <Text style={styles.chipText}>📊 {t('ui.coach.chip_analysis')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.chip} onPress={() => handleChipPress('proposal')}>
-              <Text style={styles.chipText}>🔥 {t('ui.coach.chip_proposal') || '次の重量調整案'}</Text>
+              <Text style={styles.chipText}>🔥 {t('ui.coach.chip_proposal')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.chip} onPress={() => handleChipPress('rpe')}>
-              <Text style={styles.chipText}>💡 {t('ui.coach.chip_rpe') || 'RPEの活用法'}</Text>
+              <Text style={styles.chipText}>💡 {t('ui.coach.chip_rpe')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.chip} onPress={() => handleChipPress('stance')}>
-              <Text style={styles.chipText}>📐 {t('ui.coach.chip_stance') || 'スタンスの影響'}</Text>
+              <Text style={styles.chipText}>📐 {t('ui.coach.chip_stance')}</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -433,8 +433,8 @@ export default function CoachScreen() {
           onChangeText={setInputVal}
           placeholder={
             isQuotaExhausted 
-              ? (isBasic ? '今月の利用枠（5回）が終了しました。アップグレードしてください' : (t('ui.profile.quota_exhausted_alert') || '今月の利用枠が残っていません。'))
-              : (t('ui.coach.input_placeholder') || 'トレーナーに質問してみる...')
+              ? (isBasic ? '今月の利用枠（5回）が終了しました。アップグレードしてください' : t('ui.profile.quota_exhausted_alert'))
+              : t('ui.coach.input_placeholder')
           }
           placeholderTextColor={isQuotaExhausted ? Theme.colors.danger : Theme.colors.textMuted}
           editable={!isQuotaExhausted && !loading}

@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { getWorkoutsWithStats, loadFullWorkoutData, deleteWorkout, getExercises, addCustomExercise, deleteExercise, getFavoriteIds, toggleFavorite, getCustomExercisesCount, saveSetting, WorkoutWithStats } from '../../src/db/database';
+import { getWorkoutsWithStats, loadFullWorkoutData, deleteWorkout, getExercises, addCustomExercise, deleteExercise, getFavoriteIds, toggleFavorite, getCustomExercisesCount, saveSetting, WorkoutWithStats, FullWorkoutData } from '../../src/db/database';
 import { Theme } from '../../src/theme';
 import { useFocusEffect, router } from 'expo-router';
 import { useWorkoutStore } from '../../src/store/workoutStore';
@@ -32,7 +32,7 @@ export default function HistoryScreen() {
   const [activeTab, setActiveTab] = useState<'workouts' | 'exercises'>('workouts');
   const [isCalendarVisible, setCalendarVisible] = useState(false);
   const [shareModalVisible, setShareModalVisible] = useState(false);
-  const [selectedWorkoutForShare, setSelectedWorkoutForShare] = useState<any>(null);
+  const [selectedWorkoutForShare, setSelectedWorkoutForShare] = useState<FullWorkoutData | null>(null);
 
   // Exercises State
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -107,7 +107,7 @@ export default function HistoryScreen() {
       if (ex.notes) contextStr += ` (種目メモ: "${ex.notes}")`;
       contextStr += `: `;
       
-      const setDescs = ex.sets.map((s: any) => {
+      const setDescs = ex.sets.map((s) => {
         let sd = `${s.weight ?? 0}${settings.weightUnit} x ${s.reps ?? 0}回`;
         if (s.side) sd = `[${s.side === 'L' ? '左' : '右'}] ` + sd;
         if (s.variation) sd += ` (${s.variation})`;

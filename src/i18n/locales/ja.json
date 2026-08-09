@@ -307,6 +307,7 @@
     },
     "profile": {
       "title": "設定・ツール",
+      "subtitle": "アプリの各種設定や連携機能を管理します",
       "section_tools": "ツール",
       "section_timer": "タイマー設定",
       "section_preferences": "環境設定",
@@ -561,6 +562,7 @@
       "default_workout_title": "ワークアウト詳細",
       "analyzing_quick": "⚡ AIトレーナーが回答を作成中...",
       "analyzing_thinking": "🧠 AIトレーナーが熟考・分析中...",
+      "system_error": "システムエラーが発生しました。しばらく経ってから再度お試しください。",
       "mode_label": "モード:",
       "mode_quick": "クイック",
       "mode_thinking": "思考あり"

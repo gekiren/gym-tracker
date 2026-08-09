@@ -1,5 +1,5 @@
 import { getDB } from '../connection';
-import { WorkoutExercise, WorkoutRow, WorkoutExerciseRow, WorkoutSetRow, WorkoutSet, WorkoutWithStats } from '../types';
+import { WorkoutExercise, WorkoutRow, WorkoutExerciseRow, WorkoutSetRow, WorkoutSet, WorkoutWithStats, FullWorkoutData } from '../types';
 
 export const saveWorkout = async (
   title: string,
@@ -203,7 +203,7 @@ export const deleteWorkout = async (id: number) => {
   await conn.runAsync('DELETE FROM workouts WHERE id = ?', [id]);
 };
 
-export const loadFullWorkoutData = async (workoutId: number) => {
+export const loadFullWorkoutData = async (workoutId: number): Promise<FullWorkoutData | null> => {
   const db = getDB();
   const workoutRow = await db.getFirstAsync<WorkoutRow>('SELECT * FROM workouts WHERE id = ?', [workoutId]);
   if (!workoutRow) return null;
