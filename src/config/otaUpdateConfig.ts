@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.2.5', // OTA識別用のバージョン文字列
+  version: '1.2.6', // OTA識別用のバージョン文字列
   title: {
-    ja: 'AIトレーナー機能の内部改善',
-    en: 'AI Trainer System Improvements',
+    ja: 'ワークアウト開始時の安全化改善',
+    en: 'Workout Safety & Reset Improvements',
   },
   notes: {
     ja: [
-      'AIトレーナー画面におけるシステムメッセージの処理と表示の安定性を向上',
+      '進行中のワークアウトがある状態から新規開始する際の確認ダイアログ追加',
+      'タイマー処理の安定化',
     ],
     en: [
-      'Improved stability of system message handling and display in the AI Trainer screen',
+      'Added confirmation dialog when starting a new workout while one is active',
+      'Improved rest timer stabilization',
     ],
   },
 };
