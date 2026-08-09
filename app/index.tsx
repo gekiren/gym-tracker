@@ -5,6 +5,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
+import { useSettingsStore } from '../src/store/settingsStore';
 import { useLifelogStore } from '../src/store/lifelogStore';
 import { saveSetting } from '../src/db/database';
 import { readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../src/services/crashReporterService';
@@ -22,8 +23,8 @@ export default function DashboardScreen() {
   // Workout Store
   const isActive = useWorkoutStore(state => state.isActive);
   const workoutTitle = useWorkoutStore(state => state.title);
-  const settings = useWorkoutStore(state => state.settings);
-  const loadSettings = useWorkoutStore(state => state.loadSettings);
+  const settings = useSettingsStore(state => state.settings);
+  const loadSettings = useSettingsStore(state => state.loadSettings);
   const hasUnsentCrashLog = useWorkoutStore(state => state.hasUnsentCrashLog);
 
   // Lifelog Store
@@ -92,7 +93,7 @@ export default function DashboardScreen() {
     await saveSetting('display_1rm', isAdvanced ? '1' : '0');
     await saveSetting('display_volume', isAdvanced ? '1' : '0');
 
-    useWorkoutStore.getState().setDisplayFields({
+    useSettingsStore.getState().setDisplayFields({
       showRpe: isAdvanced,
       showStance: isAdvanced,
       show1RM: isAdvanced,
@@ -117,7 +118,7 @@ export default function DashboardScreen() {
     setIsSendingCrash(true);
     try {
       await saveSetting('crash_report_consent', consent);
-      useWorkoutStore.getState().setCrashConsent(consent);
+      useSettingsStore.getState().setCrashConsent(consent);
 
       if (consent === 'agreed') {
         initializeSentry();

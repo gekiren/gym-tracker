@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import { Vibration } from 'react-native';
 import { scheduleRestTimer, cancelRestTimer } from '../utils/timer';
-import { saveSetting } from '../db/database';
-import { computeIsPremium } from '../utils/subscriptionUtils';
 import { buildInitialSetsForExercise } from '../utils/workoutSetBuilder';
+import { useSettingsStore } from './settingsStore';
+import { useRoutineDraftStore } from './routineDraftStore';
 
 export type SetRecord = {
   id: string; // temp id for UI
@@ -59,24 +59,6 @@ export interface WorkoutCompletionData {
   achievements: WorkoutCompletionAchievement;
 }
 
-export interface LoadSettingsPayload {
-  defaultRest: number;
-  autoRest: boolean;
-  timerVibrate: boolean;
-  weightUnit: 'kg' | 'lbs';
-  needsUnitSelection?: boolean;
-  bodyWeight?: number | null;
-  needsStyleSelection?: boolean;
-  aiTokensBalance?: number;
-  crashConsent?: 'agreed' | 'declined' | 'unset';
-  premiumUntil?: string;
-  isEarlyAdopter?: boolean;
-  keepAwake?: boolean;
-  alwaysOneSet?: boolean;
-  preferredAiModel?: 'gemini' | 'deepseek';
-  aiChatMode?: 'quick' | 'thinking';
-}
-
 interface WorkoutState {
   isActive: boolean;
   isWorkoutStarted: boolean;
@@ -91,7 +73,7 @@ interface WorkoutState {
   updateExerciseVariation: (exerciseId: string, variation: string | null) => void;
   updateExerciseStance: (exerciseId: string, stance: string | null) => void;
   endWorkout: () => void;
-  addExercise: (exercise: { id: number, name: string, previousSets?: any[], personalRecords?: Record<string, Record<number, number>>, is_unilateral?: number, default_variation?: string | null, default_stance?: string | null, equipment?: string, muscle_group?: string, routineSets?: any[] }) => void;
+  addExercise: (exercise: { id: number; name: string; previousSets?: any[]; personalRecords?: Record<string, Record<number, number>>; is_unilateral?: number; default_variation?: string | null; default_stance?: string | null; equipment?: string; muscle_group?: string; routineSets?: any[] }) => void;
   removeExercise: (exerciseId: string) => void;
   addSet: (exerciseId: string) => void;
   removeSet: (exerciseId: string, setId: string) => void;
@@ -117,75 +99,6 @@ interface WorkoutState {
   shouldShowPaywall: boolean;
   setShouldShowPaywall: (show: boolean) => void;
 
-  // Application Settings
-  settings: {
-    defaultRest: number;
-    autoRest: boolean;
-    timerVibrate: boolean;
-    weightUnit: 'kg' | 'lbs';
-    needsUnitSelection: boolean;
-    needsStyleSelection: boolean;
-    customStances: string[];
-    bodyWeight: number | null;
-    aiTokensBalance: number;
-    premiumUntil: string;
-    isEarlyAdopter: boolean;
-    isPremium: boolean;
-    displayFields: {
-      showRpe: boolean;
-      show1RM: boolean;
-      showVolume: boolean;
-      showStance: boolean;
-    };
-    crashConsent: 'agreed' | 'declined' | 'unset';
-    keepAwake: boolean;
-    alwaysOneSet: boolean;
-    preferredAiModel: 'gemini' | 'deepseek';
-    aiChatMode: 'quick' | 'thinking';
-  };
-  loadSettings: (payload: LoadSettingsPayload) => void;
-  setKeepAwake: (keepAwake: boolean) => void;
-  setAlwaysOneSet: (alwaysOneSet: boolean) => void;
-  setPreferredAiModel: (model: 'gemini' | 'deepseek') => void;
-  setAiChatMode: (mode: 'quick' | 'thinking') => void;
-  setPremiumUntil: (premiumUntil: string) => void;
-  updatePremiumStatus: (premiumUntil: string) => void;
-  setIsEarlyAdopter: (isEarly: boolean) => void;
-  setBodyWeight: (weight: number | null) => void;
-  setAITokensBalance: (balance: number) => void;
-  loadCustomStances: (stances: string[]) => void;
-  addCustomStance: (stance: string) => void;
-  removeCustomStance: (stance: string) => void;
-  setDisplayFields: (fields: Partial<{ showRpe: boolean; show1RM: boolean; showVolume: boolean; showStance: boolean }>) => void;
-  setCrashConsent: (consent: 'agreed' | 'declined' | 'unset') => void;
-
-  // Routine Draft Mode
-  draftRoutine: {
-    title: string;
-    exercises: {
-      id: number;
-      name: string;
-      is_unilateral?: number;
-      equipment?: string;
-      sets: {
-        id: string;
-        set_number: number;
-        weight: number | null;
-        reps: number | null;
-        rpe: number | null;
-        side?: 'L' | 'R' | null;
-        variation?: string | null;
-      }[];
-    }[];
-  };
-  updateDraftTitle: (title: string) => void;
-  addDraftExercise: (exercise: { id: number; name: string; is_unilateral?: number; equipment?: string }) => void;
-  removeDraftExercise: (index: number) => void;
-  addDraftSet: (exerciseIndex: number) => void;
-  removeDraftSet: (exerciseIndex: number, setIndex: number) => void;
-  updateDraftSet: (exerciseIndex: number, setIndex: number, changes: Partial<{ weight: number | null; reps: number | null; rpe: number | null; side?: 'L' | 'R' | null; variation?: string | null }>) => void;
-  setDraftRoutine: (title: string, exercises: any[]) => void;
-  clearDraft: () => void;
   resetAllSettingsAndWorkout: () => void;
   lastWorkoutCompletion: WorkoutCompletionData | null;
   setLastWorkoutCompletion: (data: WorkoutCompletionData | null) => void;
@@ -207,162 +120,6 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
   shouldShowPaywall: false,
   setShouldShowPaywall: (shouldShowPaywall) => set({ shouldShowPaywall }),
-
-  settings: {
-    defaultRest: 90,
-    autoRest: true,
-    timerVibrate: true,
-    weightUnit: 'kg',
-    needsUnitSelection: false,
-    needsStyleSelection: false,
-    customStances: [],
-    bodyWeight: null,
-    aiTokensBalance: 20,
-    premiumUntil: '',
-    isEarlyAdopter: false,
-    isPremium: false,
-    displayFields: {
-      showRpe: true,
-      show1RM: true,
-      showVolume: true,
-      showStance: true,
-    },
-    crashConsent: 'unset',
-    keepAwake: true,
-    alwaysOneSet: false,
-    preferredAiModel: 'gemini',
-    aiChatMode: 'quick',
-  },
-
-  loadSettings: (payload: LoadSettingsPayload) => set((state) => {
-    const {
-      defaultRest,
-      autoRest,
-      timerVibrate,
-      weightUnit,
-      needsUnitSelection,
-      bodyWeight,
-      needsStyleSelection,
-      aiTokensBalance,
-      crashConsent,
-      premiumUntil,
-      isEarlyAdopter,
-      keepAwake,
-      alwaysOneSet,
-      preferredAiModel,
-      aiChatMode
-    } = payload;
-    const finalNeedsUnitSelection = needsUnitSelection !== undefined ? needsUnitSelection : state.settings.needsUnitSelection;
-    const finalBodyWeight = bodyWeight !== undefined ? bodyWeight : state.settings.bodyWeight;
-    const finalNeedsStyleSelection = needsStyleSelection !== undefined ? needsStyleSelection : state.settings.needsStyleSelection;
-    const finalAiTokensBalance = aiTokensBalance !== undefined ? aiTokensBalance : state.settings.aiTokensBalance;
-    const finalCrashConsent = crashConsent !== undefined ? crashConsent : state.settings.crashConsent;
-    const finalPremiumUntil = premiumUntil !== undefined ? premiumUntil : state.settings.premiumUntil;
-    const finalIsEarlyAdopter = isEarlyAdopter !== undefined ? isEarlyAdopter : state.settings.isEarlyAdopter;
-    const finalKeepAwake = keepAwake !== undefined ? keepAwake : state.settings.keepAwake;
-    const finalAlwaysOneSet = alwaysOneSet !== undefined ? alwaysOneSet : state.settings.alwaysOneSet;
-    const finalPreferredAiModel = preferredAiModel !== undefined ? preferredAiModel : state.settings.preferredAiModel;
-    const finalAiChatMode = aiChatMode !== undefined ? aiChatMode : state.settings.aiChatMode;
-
-    const isPremium = computeIsPremium(finalPremiumUntil, finalIsEarlyAdopter);
-    return {
-      settings: { 
-        ...state.settings, 
-        defaultRest, 
-        autoRest, 
-        timerVibrate, 
-        weightUnit, 
-        needsUnitSelection: finalNeedsUnitSelection, 
-        bodyWeight: finalBodyWeight, 
-        needsStyleSelection: finalNeedsStyleSelection, 
-        aiTokensBalance: finalAiTokensBalance, 
-        crashConsent: finalCrashConsent, 
-        premiumUntil: finalPremiumUntil, 
-        isEarlyAdopter: finalIsEarlyAdopter, 
-        isPremium,
-        keepAwake: finalKeepAwake,
-        alwaysOneSet: finalAlwaysOneSet,
-        preferredAiModel: finalPreferredAiModel,
-        aiChatMode: finalAiChatMode
-      }
-    };
-  }),
-
-  setPreferredAiModel: (model: 'gemini' | 'deepseek') => {
-    saveSetting('preferred_ai_model', model).catch(e => console.warn('Failed to save preferred_ai_model setting', e));
-    set((state) => ({
-      settings: { ...state.settings, preferredAiModel: model }
-    }));
-  },
-
-  setAiChatMode: (mode: 'quick' | 'thinking') => {
-    saveSetting('ai_chat_mode', mode).catch(e => console.warn('Failed to save ai_chat_mode setting', e));
-    set((state) => ({
-      settings: { ...state.settings, aiChatMode: mode }
-    }));
-  },
-
-  setPremiumUntil: (premiumUntil) => set((state) => {
-    const isPremium = computeIsPremium(premiumUntil, state.settings.isEarlyAdopter);
-    return {
-      settings: { ...state.settings, premiumUntil, isPremium }
-    };
-  }),
-
-  updatePremiumStatus: (premiumUntil) => set((state) => {
-    const isPremium = computeIsPremium(premiumUntil, state.settings.isEarlyAdopter);
-    return {
-      settings: { ...state.settings, premiumUntil, aiTokensBalance: 20, isPremium }
-    };
-  }),
-
-  setIsEarlyAdopter: (isEarlyAdopter) => set((state) => {
-    const isPremium = computeIsPremium(state.settings.premiumUntil, isEarlyAdopter);
-    return {
-      settings: { ...state.settings, isEarlyAdopter, isPremium }
-    };
-  }),
-
-  setBodyWeight: (weight: number | null) => set((state) => ({
-    settings: { ...state.settings, bodyWeight: weight }
-  })),
-
-  setAITokensBalance: (balance: number) => set((state) => ({
-    settings: { ...state.settings, aiTokensBalance: balance }
-  })),
-
-  loadCustomStances: (stances: string[]) => set((state) => ({
-    settings: { ...state.settings, customStances: stances }
-  })),
-
-  addCustomStance: (stance: string) => set((state) => ({
-    settings: { ...state.settings, customStances: Array.from(new Set([...state.settings.customStances, stance])) }
-  })),
-
-  removeCustomStance: (stance: string) => set((state) => ({
-    settings: { ...state.settings, customStances: state.settings.customStances.filter(s => s !== stance) }
-  })),
-
-  setDisplayFields: (fields) => set((state) => ({
-    settings: {
-      ...state.settings,
-      displayFields: { ...state.settings.displayFields, ...fields }
-    }
-  })),
-
-  setCrashConsent: (crashConsent) => set((state) => ({
-    settings: { ...state.settings, crashConsent }
-  })),
-
-  setKeepAwake: (keepAwake) => set((state) => ({
-    settings: { ...state.settings, keepAwake }
-  })),
-
-  setAlwaysOneSet: (alwaysOneSet) => set((state) => ({
-    settings: { ...state.settings, alwaysOneSet }
-  })),
-
-  draftRoutine: { title: '', exercises: [] },
 
   startWorkout: (title) => {
     cancelRestTimer();
@@ -425,7 +182,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   },
 
   addExercise: (exercise) => set((state) => {
-    const initialSets = buildInitialSetsForExercise(exercise, state.settings.alwaysOneSet);
+    const alwaysOneSet = useSettingsStore.getState().settings.alwaysOneSet;
+    const initialSets = buildInitialSetsForExercise(exercise, alwaysOneSet);
 
     return {
       exercises: [
@@ -474,7 +232,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
             sets: [...ex.sets, {
               id: Math.random().toString(36).substring(7),
               set_number: newSetNum,
-              weight: lastSet ? lastSet.weight : null, // copy previous set weight optionally
+              weight: lastSet ? lastSet.weight : null,
               reps: lastSet ? lastSet.reps : null,
               rpe: null,
               is_completed: false,
@@ -600,8 +358,9 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     if (willBeCompleted && !state.isWorkoutStarted) {
       get().beginWorkoutTimer();
     }
-    if (willBeCompleted && get().settings.autoRest) {
-      get().startRestTimer(get().settings.defaultRest);
+    const settings = useSettingsStore.getState().settings;
+    if (willBeCompleted && settings.autoRest) {
+      get().startRestTimer(settings.defaultRest);
     }
     if (!willBeCompleted) {
       cancelRestTimer();
@@ -650,7 +409,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     const nextRemaining = Math.ceil((state.restTimer.endTime - now) / 1000);
     
     if (nextRemaining <= 0) {
-      if (state.settings.timerVibrate) {
+      const settings = useSettingsStore.getState().settings;
+      if (settings.timerVibrate) {
         Vibration.vibrate([0, 500, 200, 500]);
       }
       return { 
@@ -668,96 +428,10 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     });
   },
 
-  // Draft routine actions
-  updateDraftTitle: (title) => set((state) => ({
-    draftRoutine: { ...state.draftRoutine, title }
-  })),
-  addDraftExercise: (exercise) => set((state) => {
-    const defaultSet = {
-      id: Math.random().toString(36).substring(7),
-      set_number: 1,
-      weight: null,
-      reps: null,
-      rpe: null
-    };
-    const enrichedExercise = {
-      id: exercise.id,
-      name: exercise.name,
-      is_unilateral: exercise.is_unilateral,
-      equipment: exercise.equipment,
-      sets: [defaultSet]
-    };
-    return {
-      draftRoutine: { ...state.draftRoutine, exercises: [...state.draftRoutine.exercises, enrichedExercise] }
-    };
-  }),
-  removeDraftExercise: (index) => set((state) => ({
-    draftRoutine: { 
-      ...state.draftRoutine, 
-      exercises: state.draftRoutine.exercises.filter((_, i) => i !== index) 
-    }
-  })),
-  addDraftSet: (exerciseIndex) => set((state) => {
-    const nextExercises = state.draftRoutine.exercises.map((ex, idx) => {
-      if (idx === exerciseIndex) {
-        const lastSet = ex.sets[ex.sets.length - 1];
-        const nextNum = lastSet ? lastSet.set_number + 1 : 1;
-        const newSet = {
-          id: Math.random().toString(36).substring(7),
-          set_number: nextNum,
-          weight: lastSet ? lastSet.weight : null,
-          reps: lastSet ? lastSet.reps : null,
-          rpe: null
-        };
-        return { ...ex, sets: [...ex.sets, newSet] };
-      }
-      return ex;
-    });
-    return {
-      draftRoutine: { ...state.draftRoutine, exercises: nextExercises }
-    };
-  }),
-  removeDraftSet: (exerciseIndex, setIndex) => set((state) => {
-    const nextExercises = state.draftRoutine.exercises.map((ex, idx) => {
-      if (idx === exerciseIndex) {
-        const remainingSets = ex.sets.filter((_, sIdx) => sIdx !== setIndex);
-        const renumberedSets = remainingSets.map((s, sIdx) => ({
-          ...s,
-          set_number: sIdx + 1
-        }));
-        return { ...ex, sets: renumberedSets };
-      }
-      return ex;
-    });
-    return {
-      draftRoutine: { ...state.draftRoutine, exercises: nextExercises }
-    };
-  }),
-  updateDraftSet: (exerciseIndex, setIndex, changes) => set((state) => {
-    const nextExercises = state.draftRoutine.exercises.map((ex, idx) => {
-      if (idx === exerciseIndex) {
-        const nextSets = ex.sets.map((s, sIdx) => {
-          if (sIdx === setIndex) {
-            return { ...s, ...changes };
-          }
-          return s;
-        });
-        return { ...ex, sets: nextSets };
-      }
-      return ex;
-    });
-    return {
-      draftRoutine: { ...state.draftRoutine, exercises: nextExercises }
-    };
-  }),
-  setDraftRoutine: (title, exercises) => set({
-    draftRoutine: { title, exercises }
-  }),
-  clearDraft: () => set({
-    draftRoutine: { title: '', exercises: [] }
-  }),
   resetAllSettingsAndWorkout: () => {
     cancelRestTimer();
+    useSettingsStore.getState().resetSettings();
+    useRoutineDraftStore.getState().clearDraft();
     set({
       isActive: false,
       isWorkoutStarted: false,
@@ -767,32 +441,6 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       exercises: [],
       lastRestFinishedAt: null,
       hasUnsentCrashLog: false,
-      settings: {
-        defaultRest: 90,
-        autoRest: true,
-        timerVibrate: true,
-        weightUnit: 'kg',
-        needsUnitSelection: true,
-        needsStyleSelection: true,
-        customStances: [],
-        bodyWeight: null,
-        aiTokensBalance: 20,
-        premiumUntil: '',
-        isEarlyAdopter: false,
-        isPremium: false,
-        displayFields: {
-          showRpe: true,
-          show1RM: true,
-          showVolume: true,
-          showStance: true,
-        },
-        crashConsent: 'unset',
-        keepAwake: true,
-        alwaysOneSet: false,
-        preferredAiModel: 'gemini',
-        aiChatMode: 'quick'
-      },
-      draftRoutine: { title: '', exercises: [] }
     });
   }
 }));

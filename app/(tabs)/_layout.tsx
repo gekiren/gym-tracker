@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
 import { useTranslation } from 'react-i18next';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
 import { AI_CONFIG } from '../../src/config/aiConfig';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,9 +14,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function TabLayout() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const aiTokensBalance = useWorkoutStore(state => state.settings.aiTokensBalance);
-  const isPremium = useWorkoutStore(state => state.settings.isPremium);
-  const isEarly = useWorkoutStore(state => state.settings.isEarlyAdopter);
+  const aiTokensBalance = useSettingsStore(state => state.settings.aiTokensBalance);
+  const isPremium = useSettingsStore(state => state.settings.isPremium);
+  const isEarly = useSettingsStore(state => state.settings.isEarlyAdopter);
   const isPremiumOrEarly = isPremium || isEarly;
   const maxTokens = isPremiumOrEarly ? 20 : 5;
 

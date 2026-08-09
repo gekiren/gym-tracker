@@ -7,6 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { getDB, addCustomExercise, getPreviousWorkoutSets, getPersonalRecords, getFavoriteIds, toggleFavorite, deleteExercise, saveSetting, getCustomExercisesCount } from '../src/db/database';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
+import { useSettingsStore } from '../src/store/settingsStore';
+import { useRoutineDraftStore } from '../src/store/routineDraftStore';
 import { useTranslation } from 'react-i18next';
 import { translateExercise, translateMuscleGroup, translateEquipment, translateStance } from '../src/i18n';
 import { openYouTubeSearch } from '../src/utils/youtubeUtils';
@@ -62,9 +64,9 @@ export default function SelectExerciseScreen() {
   const [useDefaultStance, setUseDefaultStance] = useState(false);
   const [newDefaultStance, setNewDefaultStance] = useState('');
 
-  const settings = useWorkoutStore(state => state.settings);
+  const settings = useSettingsStore(state => state.settings);
   const addExercise = useWorkoutStore(state => state.addExercise);
-  const addDraftExercise = useWorkoutStore(state => state.addDraftExercise);
+  const addDraftExercise = useRoutineDraftStore(state => state.addDraftExercise);
   const customStances = settings.customStances;
   const { mode } = useLocalSearchParams<{ mode?: string }>();
 
@@ -150,7 +152,7 @@ export default function SelectExerciseScreen() {
     try {
       const defaultVar = useDefaultStance && newDefaultStance.trim() ? newDefaultStance.trim() : null;
       if (defaultVar) {
-        useWorkoutStore.getState().addCustomStance(defaultVar);
+        useSettingsStore.getState().addCustomStance(defaultVar);
         saveSetting('custom_stances', JSON.stringify(Array.from(new Set([...(customStances || []), defaultVar]))));
       }
       const newId = await addCustomExercise(
@@ -395,7 +397,7 @@ export default function SelectExerciseScreen() {
                 {useDefaultStance && (
                   <View style={{ marginTop: 8 }}>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-                      {presetStances.map(preset => (
+                      {presetStances.map((preset: string) => (
                         <TouchableOpacity
                           key={preset}
                           style={[styles.choiceChip, newDefaultStance === preset && styles.choiceChipActive]}

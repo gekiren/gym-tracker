@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
 import { saveSetting } from '../../src/db/database';
 import { changeLanguage, getCurrentLanguage } from '../../src/i18n';
 import { DisplayFieldsSection } from '../../components/profile/DisplayFieldsSection';
@@ -13,8 +14,8 @@ import { PreferenceSection } from '../../components/profile/PreferenceSection';
 
 export default function WorkoutTimerSettingsScreen() {
   const { t } = useTranslation();
-  const settings = useWorkoutStore(state => state.settings);
-  const loadSettings = useWorkoutStore(state => state.loadSettings);
+  const settings = useSettingsStore(state => state.settings);
+  const loadSettings = useSettingsStore(state => state.loadSettings);
 
   const [defaultRest, setDefaultRest] = useState(settings.defaultRest);
   const [autoRest, setAutoRest] = useState(settings.autoRest);
@@ -65,7 +66,7 @@ export default function WorkoutTimerSettingsScreen() {
 
   const handleUpdateKeepAwake = async (val: boolean) => {
     setKeepAwake(val);
-    useWorkoutStore.getState().setKeepAwake(val);
+    useSettingsStore.getState().setKeepAwake(val);
     await saveSetting('keep_awake', val ? '1' : '0');
   };
 
@@ -84,25 +85,25 @@ export default function WorkoutTimerSettingsScreen() {
   const handleUpdateCrashConsent = async (val: boolean) => {
     const consent = val ? 'agreed' : 'declined';
     setCrashConsent(consent);
-    useWorkoutStore.getState().setCrashConsent(consent);
+    useSettingsStore.getState().setCrashConsent(consent);
     await saveSetting('crash_report_consent', consent);
   };
 
   const handleUpdateAlwaysOneSet = async (val: boolean) => {
     setAlwaysOneSet(val);
-    useWorkoutStore.getState().setAlwaysOneSet(val);
+    useSettingsStore.getState().setAlwaysOneSet(val);
     await saveSetting('always_one_set', val ? '1' : '0');
   };
 
   const handleUpdateBodyWeight = async (val: string) => {
     setLocalBodyWeight(val);
     if (val === '') {
-      useWorkoutStore.getState().setBodyWeight(null);
+      useSettingsStore.getState().setBodyWeight(null);
       await saveSetting('body_weight', '');
     } else {
       const num = parseFloat(val.replace(',', '.'));
       if (!isNaN(num)) {
-        useWorkoutStore.getState().setBodyWeight(num);
+        useSettingsStore.getState().setBodyWeight(num);
         await saveSetting('body_weight', num.toString());
       }
     }
@@ -119,7 +120,7 @@ export default function WorkoutTimerSettingsScreen() {
     else if (field === 'show1RM') setShow1RM(val);
     else if (field === 'showVolume') setShowVolume(val);
     else if (field === 'showStance') setShowStance(val);
-    useWorkoutStore.getState().setDisplayFields({ [field]: val });
+    useSettingsStore.getState().setDisplayFields({ [field]: val });
     await saveSetting(keyMap[field], val ? '1' : '0');
   };
 

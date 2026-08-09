@@ -11,6 +11,7 @@ import {
 } from 'expo-iap';
 import { saveSetting } from '../db/database';
 import { useWorkoutStore } from '../store/workoutStore';
+import { useSettingsStore } from '../store/settingsStore';
 
 export const PREMIUM_PRODUCT_ID = 'com.gekirennomad.trenote.premium';
 
@@ -65,9 +66,9 @@ export const setupIAPListeners = (
         await saveSetting('ai_tokens_balance', '20'); // Reset AI tokens to 20 for premium
         
         // Update Zustand store
-        useWorkoutStore.getState().setPremiumUntil('perpetual');
-        useWorkoutStore.getState().setIsEarlyAdopter(false);
-        useWorkoutStore.getState().setAITokensBalance(20);
+        useSettingsStore.getState().setPremiumUntil('perpetual');
+        useSettingsStore.getState().setIsEarlyAdopter(false);
+        useSettingsStore.getState().setAITokensBalance(20);
         
         onSuccess();
       } catch (err) {
@@ -142,9 +143,9 @@ export const restorePurchases = async (): Promise<boolean> => {
       await saveSetting('premium_until', 'perpetual');
       await saveSetting('is_early_adopter', 'false');
       await saveSetting('ai_tokens_balance', '20');
-      useWorkoutStore.getState().setPremiumUntil('perpetual');
-      useWorkoutStore.getState().setIsEarlyAdopter(false);
-      useWorkoutStore.getState().setAITokensBalance(20);
+      useSettingsStore.getState().setPremiumUntil('perpetual');
+      useSettingsStore.getState().setIsEarlyAdopter(false);
+      useSettingsStore.getState().setAITokensBalance(20);
       return true;
     }
     return false;

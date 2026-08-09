@@ -8,9 +8,10 @@ import { Theme } from '../src/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AD_CONFIG } from '../src/config/adConfig';
 import { useWorkoutStore } from '../src/store/workoutStore';
+import { useSettingsStore } from '../src/store/settingsStore';
 
 function AdBannerInternal() {
-  const settings = useWorkoutStore(state => state.settings);
+  const settings = useSettingsStore(state => state.settings);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [adFailed, setAdFailed] = useState(false);

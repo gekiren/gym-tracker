@@ -8,6 +8,7 @@ import { DangerZoneSection } from '../../components/profile/DangerZoneSection';
 import { RestorePresetsModal } from '../../components/profile/RestorePresetsModal';
 import { resetDatabase, saveSetting } from '../../src/db/database';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
 import { useLifelogStore } from '../../src/store/lifelogStore';
 import * as Updates from 'expo-updates';
 
@@ -37,8 +38,8 @@ export default function DataManagementSettingsScreen() {
       await saveSetting('language', activeLang);
       if (activeLang === 'ja') {
         await saveSetting('weight_unit', 'kg');
-        useWorkoutStore.getState().loadSettings({
-          ...useWorkoutStore.getState().settings,
+        useSettingsStore.getState().loadSettings({
+          ...useSettingsStore.getState().settings,
           weightUnit: 'kg',
           needsUnitSelection: false
         });

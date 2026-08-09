@@ -1,6 +1,7 @@
 import { getRecentWorkoutSummaryForAI } from '../db/database';
 import i18next from 'i18next';
 import { useWorkoutStore } from '../store/workoutStore';
+import { useSettingsStore } from '../store/settingsStore';
 
 // Cloudflare Workers AI Proxy API Endpoint URL
 const WORKER_URL = 'https://gym-tracker-ai-proxy.toshi-diyil.workers.dev/api/chat';
@@ -46,7 +47,7 @@ export const sendMessageToAICoach = async (
 
     const bodyWeightStr = userWeight ? `${userWeight} ${weightUnit}` : '未設定';
     const lang = i18next.language || 'ja';
-    const preferredModel = useWorkoutStore.getState().settings.preferredAiModel || 'gemini';
+    const preferredModel = useSettingsStore.getState().settings.preferredAiModel || 'gemini';
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',

@@ -14,6 +14,7 @@ import { saveSetting, getDB, closeDB, initDB, getSettings } from '../src/db/data
 import { showReviewDialog } from '../src/services/reviewService';
 import { saveCrashLog, readCrashLog } from '../src/services/crashReporterService';
 import { useWorkoutStore } from '../src/store/workoutStore';
+import { useSettingsStore } from '../src/store/settingsStore';
 import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import * as Clipboard from 'expo-clipboard';
 import { useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
@@ -447,34 +448,34 @@ export default function DeveloperMenuScreen() {
         await saveSetting('is_early_adopter', 'false');
         await saveSetting('premium_until', '');
         await saveSetting('ai_tokens_balance', '5');
-        useWorkoutStore.getState().setIsEarlyAdopter(false);
-        useWorkoutStore.getState().setPremiumUntil('');
-        useWorkoutStore.getState().setAITokensBalance(5);
+        useSettingsStore.getState().setIsEarlyAdopter(false);
+        useSettingsStore.getState().setPremiumUntil('');
+        useSettingsStore.getState().setAITokensBalance(5);
         Alert.alert('プラン変更', 'ベーシックプランに変更しました。（AI Coachトークンを5に設定しました）');
       } else if (tier === 'early') {
         await saveSetting('is_early_adopter', 'true');
         await saveSetting('premium_until', '');
         await saveSetting('ai_tokens_balance', '20');
-        useWorkoutStore.getState().setIsEarlyAdopter(true);
-        useWorkoutStore.getState().setPremiumUntil('');
-        useWorkoutStore.getState().setAITokensBalance(20);
+        useSettingsStore.getState().setIsEarlyAdopter(true);
+        useSettingsStore.getState().setPremiumUntil('');
+        useSettingsStore.getState().setAITokensBalance(20);
         Alert.alert('プラン変更', 'アーリーアダプターに変更しました。（AI Coachトークンを20に設定しました）');
       } else if (tier === 'premium') {
         await saveSetting('is_early_adopter', 'false');
         await saveSetting('premium_until', 'perpetual');
         await saveSetting('ai_tokens_balance', '20');
-        useWorkoutStore.getState().setIsEarlyAdopter(false);
-        useWorkoutStore.getState().setPremiumUntil('perpetual');
-        useWorkoutStore.getState().setAITokensBalance(20);
+        useSettingsStore.getState().setIsEarlyAdopter(false);
+        useSettingsStore.getState().setPremiumUntil('perpetual');
+        useSettingsStore.getState().setAITokensBalance(20);
         Alert.alert('プラン変更', 'プレミアムプランに変更しました。（AI Coachトークンを20に設定しました）');
       } else if (tier === 'expired_limited') {
         const pastDate = new Date(Date.now() - 3600000).toISOString(); // 1 hour ago
         await saveSetting('is_early_adopter', 'false');
         await saveSetting('premium_until', pastDate);
         await saveSetting('ai_tokens_balance', '20');
-        useWorkoutStore.getState().setIsEarlyAdopter(false);
-        useWorkoutStore.getState().setPremiumUntil(pastDate);
-        useWorkoutStore.getState().setAITokensBalance(20);
+        useSettingsStore.getState().setIsEarlyAdopter(false);
+        useSettingsStore.getState().setPremiumUntil(pastDate);
+        useSettingsStore.getState().setAITokensBalance(20);
         Alert.alert('期限切れシミュレーション', '過去の期限を持つお試しプレミアムを設定しました。設定画面に移動するか、アプリを再起動すると期限切れ処理が実行されます。');
       }
     } catch (e: any) {
@@ -571,7 +572,7 @@ export default function DeveloperMenuScreen() {
   const handleResetCrashConsent = async () => {
     try {
       await saveSetting('crash_report_consent', 'unset');
-      useWorkoutStore.getState().setCrashConsent('unset');
+      useSettingsStore.getState().setCrashConsent('unset');
       Alert.alert('リセット完了', 'クラッシュレポート同意ステータスを未設定（unset）に戻しました。');
     } catch (e: any) {
       Alert.alert('エラー', e?.message || String(e));

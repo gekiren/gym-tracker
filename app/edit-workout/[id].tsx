@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
 import { loadFullWorkoutData, updateWorkoutTitle, updateWorkoutSet, deleteWorkoutSet, updateWorkoutOverallNotes, updateWorkoutExerciseNotes } from '../../src/db/database';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
 import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../../src/i18n';
 
@@ -54,7 +55,7 @@ export default function EditWorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const settings = useWorkoutStore(state => state.settings);
+  const settings = useSettingsStore(state => state.settings);
   const { t } = useTranslation();
 
   useEffect(() => {

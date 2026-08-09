@@ -3,6 +3,7 @@ import { Alert, AppState, BackHandler, Platform, Keyboard } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useWorkoutStore } from '../store/workoutStore';
+import { useSettingsStore } from '../store/settingsStore';
 import { saveWorkout, saveSetting, prefetchWorkoutCompletionData } from '../db/database';
 import { translateExercise } from '../i18n';
 import { computeCalories, computeAchievements, computeStreaks, computeWeeklyWorkoutCount } from '../utils/workoutStats';
@@ -33,7 +34,7 @@ export function useActiveWorkout() {
   const restTimerActive = useWorkoutStore(state => state.restTimer.isActive);
   const tickRestTimer = useWorkoutStore(state => state.tickRestTimer);
   const markWorkStart = useWorkoutStore(state => state.markWorkStart);
-  const settings = useWorkoutStore(state => state.settings);
+  const settings = useSettingsStore(state => state.settings);
   const isWorkoutStarted = useWorkoutStore(state => state.isWorkoutStarted);
   const beginWorkoutTimer = useWorkoutStore(state => state.beginWorkoutTimer);
   const lastRestFinishedAt = useWorkoutStore(state => state.lastRestFinishedAt);
@@ -222,7 +223,8 @@ export function useActiveWorkout() {
 
   // Manual timer launch
   const handleManualTimer = useCallback(() => {
-    const { settings: curSettings, startRestTimer } = useWorkoutStore.getState();
+    const { startRestTimer } = useWorkoutStore.getState();
+    const curSettings = useSettingsStore.getState().settings;
     startRestTimer(curSettings.defaultRest);
   }, []);
 
@@ -357,7 +359,7 @@ export function useActiveWorkout() {
 
   const handleAddCustomStance = useCallback(
     (val: string) => {
-      useWorkoutStore.getState().addCustomStance(val);
+      useSettingsStore.getState().addCustomStance(val);
       const updatedStances = Array.from(new Set([...(settings.customStances || []), val]));
       saveSetting('custom_stances', JSON.stringify(updatedStances));
     },
@@ -366,8 +368,8 @@ export function useActiveWorkout() {
 
   const handleRemoveCustomStance = useCallback(
     async (val: string) => {
-      const next = (settings.customStances || []).filter(s => s !== val);
-      useWorkoutStore.getState().removeCustomStance(val);
+      const next = (settings.customStances || []).filter((s: string) => s !== val);
+      useSettingsStore.getState().removeCustomStance(val);
       await saveSetting('custom_stances', JSON.stringify(next));
     },
     [settings.customStances]

@@ -116,6 +116,7 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
       Alert.alert('エラー', '同期中にエラーが発生しました: ' + e.message);
     } finally {
       setIsExporting(false);
+      await loadSettings();
     }
   };
 
@@ -155,6 +156,7 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
               Alert.alert('エラー', e.message);
             } finally {
               setIsExporting(false);
+              await loadSettings();
             }
           }
         }
@@ -199,6 +201,28 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
       <Text style={styles.description}>
         筋トレや水分、時間管理などのログを、お使いの Obsidian Vault に Markdown ノートとして自動連携・蓄積します。
       </Text>
+
+      {/* Sync Status Badge */}
+      {settings.enabled && settings.lastSyncStatus === 'error' && (
+        <View style={styles.errorStatusBadge}>
+          <Ionicons name="alert-circle" size={20} color="#ff453a" />
+          <View style={styles.statusTextContainer}>
+            <Text style={styles.errorStatusTitle}>直前の自動同期に失敗しました</Text>
+            <Text style={styles.errorStatusText} numberOfLines={2}>
+              {settings.lastSyncError || 'フォルダへのアクセス権限または設定を確認してください。'}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {settings.enabled && settings.lastSyncStatus === 'success' && settings.lastSyncTimestamp > 0 && (
+        <View style={styles.successStatusBadge}>
+          <Ionicons name="checkmark-circle" size={16} color="#30d158" />
+          <Text style={styles.successStatusText}>
+            最終同期成功: {new Date(settings.lastSyncTimestamp).toLocaleString('ja-JP')}
+          </Text>
+        </View>
+      )}
 
       {/* Vault Directory Selector */}
       <TouchableOpacity style={styles.folderButton} onPress={handleSelectFolder}>
@@ -676,5 +700,47 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     fontSize: 13,
     width: 140,
+  },
+  errorStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 69, 58, 0.15)',
+    borderWidth: 1,
+    borderColor: '#ff453a',
+    borderRadius: Theme.borderRadius.md,
+    padding: Theme.spacing.sm,
+    marginBottom: Theme.spacing.sm,
+  },
+  statusTextContainer: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  errorStatusTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#ff453a',
+    marginBottom: 2,
+  },
+  errorStatusText: {
+    fontSize: 12,
+    color: Theme.colors.text,
+    lineHeight: 16,
+  },
+  successStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(48, 209, 88, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(48, 209, 88, 0.3)',
+    borderRadius: Theme.borderRadius.md,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginBottom: Theme.spacing.sm,
+    gap: 6,
+  },
+  successStatusText: {
+    fontSize: 12,
+    color: '#30d158',
+    fontWeight: '600',
   },
 });

@@ -3,6 +3,7 @@ import { Alert, NativeModules, UIManager } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useWorkoutStore } from '../store/workoutStore';
+import { useSettingsStore } from '../store/settingsStore';
 import { checkAndTriggerReviewFlow } from '../services/reviewService';
 import { useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
 import { AD_CONFIG } from '../config/adConfig';
@@ -16,8 +17,8 @@ import { exportWorkoutToObsidian } from '../services/obsidianService';
 export function useWorkoutCompletion() {
   const { t, i18n } = useTranslation();
   const completionData = useWorkoutStore(state => state.lastWorkoutCompletion);
-  const settings = useWorkoutStore(state => state.settings);
-  const setAITokensBalance = useWorkoutStore(state => state.setAITokensBalance);
+  const settings = useSettingsStore(state => state.settings);
+  const setAITokensBalance = useSettingsStore(state => state.setAITokensBalance);
 
   // AdMob Hooks
   const adUnitId = AD_CONFIG.getRewardedInterstitialAdUnitId();

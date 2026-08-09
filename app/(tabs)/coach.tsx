@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
 import { consumeAIToken, getAITokensBalance, refundAIToken } from '../../src/db/database';
 import { sendMessageToAICoach } from '../../src/services/aiCoachService';
 import { useTranslation } from 'react-i18next';
@@ -29,9 +30,9 @@ interface ChatMessage {
 
 export default function CoachScreen() {
   const { t } = useTranslation();
-  const settings = useWorkoutStore(state => state.settings);
-  const setAITokensBalance = useWorkoutStore(state => state.setAITokensBalance);
-  const setAiChatMode = useWorkoutStore(state => state.setAiChatMode);
+  const settings = useSettingsStore(state => state.settings);
+  const setAITokensBalance = useSettingsStore(state => state.setAITokensBalance);
+  const setAiChatMode = useSettingsStore(state => state.setAiChatMode);
   
   const currentAiChatMode = settings.aiChatMode || 'quick';
   

@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getExerciseById, getExerciseHistory, getPersonalRecords } from '../../src/db/database';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
 import { useTranslation } from 'react-i18next';
 import { translateExercise, translateMuscleGroup, translateEquipment, translateStance } from '../../src/i18n';
 import { openYouTubeSearch } from '../../src/utils/youtubeUtils';
@@ -24,9 +25,9 @@ export default function ExerciseDetailScreen() {
   const [history, setHistory] = useState<any[]>([]);
   const [personalRecords, setPersonalRecords] = useState<Record<string, Record<number, number>>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const settings = useWorkoutStore(state => state.settings);
-  const addCustomStance = useWorkoutStore(state => state.addCustomStance);
-  const removeCustomStance = useWorkoutStore(state => state.removeCustomStance);
+  const settings = useSettingsStore(state => state.settings);
+  const addCustomStance = useSettingsStore(state => state.addCustomStance);
+  const removeCustomStance = useSettingsStore(state => state.removeCustomStance);
   const { t, i18n } = useTranslation();
   
   const [chartScale, setChartScale] = useState<'day' | 'week' | 'month'>('day');

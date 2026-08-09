@@ -4,6 +4,8 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
+import { useSettingsStore } from '../src/store/settingsStore';
+import { useRoutineDraftStore } from '../src/store/routineDraftStore';
 import { addRoutine, updateRoutine, getRoutines, loadFullWorkoutData, getDB } from '../src/db/database';
 import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../src/i18n';
@@ -15,9 +17,9 @@ export default function BuildRoutineScreen() {
   const isEditMode = routineId !== undefined;
   const { 
     draftRoutine, updateDraftTitle, removeDraftExercise, 
-    addDraftSet, removeDraftSet, updateDraftSet, setDraftRoutine, clearDraft,
-    settings
-  } = useWorkoutStore();
+    addDraftSet, removeDraftSet, updateDraftSet, setDraftRoutine, clearDraft
+  } = useRoutineDraftStore();
+  const settings = useSettingsStore(state => state.settings);
   const { t } = useTranslation();
 
   const isPremium = settings.isPremium;
@@ -190,13 +192,13 @@ export default function BuildRoutineScreen() {
         await updateRoutine(
           routineId,
           draftRoutine.title.trim(),
-          draftRoutine.exercises.map(e => e.name).join(', '),
+          draftRoutine.exercises.map((e: any) => e.name).join(', '),
           draftRoutine.exercises
         );
       } else {
         await addRoutine(
           draftRoutine.title.trim(),
-          draftRoutine.exercises.map(e => e.name).join(', '),
+          draftRoutine.exercises.map((e: any) => e.name).join(', '),
           draftRoutine.exercises
         );
       }
@@ -312,7 +314,7 @@ export default function BuildRoutineScreen() {
               <Text style={styles.label}>{t('ui.build_routine.exercises_count_label', { count: draftRoutine.exercises.length })}</Text>
             </View>
 
-            {draftRoutine.exercises.map((ex, exIdx) => (
+            {draftRoutine.exercises.map((ex: any, exIdx: number) => (
               <View key={`${ex.id}-${exIdx}`} style={styles.exerciseCard}>
                 <View style={styles.exerciseCardHeader}>
                   <View style={styles.badge}>
@@ -333,7 +335,7 @@ export default function BuildRoutineScreen() {
                     <Text style={[styles.setsHeaderTh, { width: 40 }]}></Text>
                   </View>
 
-                  {ex.sets.map((set, setIdx) => (
+                  {ex.sets.map((set: any, setIdx: number) => (
                     <RoutineSetRow
                       key={set.id}
                       exIdx={exIdx}

@@ -8,6 +8,7 @@ import { Theme } from '../../src/theme';
 import { useTranslation } from 'react-i18next';
 import { translateExercise, translateStance } from '../../src/i18n';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
 import * as Clipboard from 'expo-clipboard';
 import { formatWorkoutToMarkdown } from '../../src/utils/markdownExport';
 import WorkoutShareModal from '../../components/WorkoutShareModal';
@@ -16,7 +17,7 @@ export default function WorkoutDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, i18n } = useTranslation();
   const isJa = i18n.language === 'ja';
-  const settings = useWorkoutStore(state => state.settings);
+  const settings = useSettingsStore(state => state.settings);
   const [workout, setWorkout] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [shareModalVisible, setShareModalVisible] = useState(false);

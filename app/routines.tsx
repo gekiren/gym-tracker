@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Theme } from '../src/theme';
 import { getRoutines, deleteRoutine, updateRoutineOrders } from '../src/db/database';
 import { useWorkoutStore } from '../src/store/workoutStore';
+import { useSettingsStore } from '../src/store/settingsStore';
 import { translateExercise } from '../src/i18n';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -16,7 +17,7 @@ export default function RoutinesScreen() {
   const { t } = useTranslation();
   const [routines, setRoutines] = useState<any[]>([]);
   const [isReorderMode, setIsReorderMode] = useState(false);
-  const { settings } = useWorkoutStore();
+  const { settings } = useSettingsStore();
   const isPremium = settings.isPremium;
   const isEarly = settings.isEarlyAdopter;
   const isBasic = !isPremium && !isEarly;

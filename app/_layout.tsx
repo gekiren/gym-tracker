@@ -10,6 +10,7 @@ import mobileAds from 'react-native-google-mobile-ads';
 import { initDB, getSettings, saveSetting } from '../src/db/database';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
+import { useSettingsStore } from '../src/store/settingsStore';
 import '../src/i18n';
 import i18n from '../src/i18n';
 import { registerGlobalErrorHandler } from '../src/services/crashReporterService';
@@ -68,7 +69,7 @@ export default function RootLayout() {
       const { finalPremiumUntil, finalTokensBalance, expired, isEarlyAdopter } = await initSubscriptionAndTokens(storedSettings);
 
       // 5. ストアへの設定ロード
-      useWorkoutStore.getState().loadSettings({
+      useSettingsStore.getState().loadSettings({
         defaultRest,
         autoRest,
         timerVibrate,
@@ -95,11 +96,11 @@ export default function RootLayout() {
       const show1RM = storedSettings['display_1rm'] !== '0';
       const showVolume = storedSettings['display_volume'] !== '0';
       const showStance = storedSettings['display_stance'] !== '0';
-      useWorkoutStore.getState().setDisplayFields({ showRpe, show1RM, showVolume, showStance });
+      useSettingsStore.getState().setDisplayFields({ showRpe, show1RM, showVolume, showStance });
 
       // 6. スタンス設定の移行・読み込み
       const finalStances = await initStanceSettings(storedSettings);
-      useWorkoutStore.getState().loadCustomStances(finalStances);
+      useSettingsStore.getState().loadCustomStances(finalStances);
 
       console.log('Database initialized successfully with settings', storedSettings);
       setDbReady(true);
@@ -139,7 +140,7 @@ export default function RootLayout() {
         // アプリフォアグラウンド復帰時にヘルスコネクトに自動アクセス
         syncHealthData({ reason: 'launch' }).catch(console.error);
 
-        const settings = useWorkoutStore.getState().settings;
+        const settings = useSettingsStore.getState().settings;
         const premiumUntil = settings.premiumUntil;
         if (premiumUntil && premiumUntil !== 'perpetual') {
           const expiry = Date.parse(premiumUntil);
@@ -150,9 +151,9 @@ export default function RootLayout() {
               await saveSetting('ai_tokens_balance', '5');
             }
             
-            useWorkoutStore.getState().setPremiumUntil('');
+            useSettingsStore.getState().setPremiumUntil('');
             if (!isEarly) {
-              useWorkoutStore.getState().setAITokensBalance(5);
+              useSettingsStore.getState().setAITokensBalance(5);
             }
             useWorkoutStore.getState().setShouldShowPaywall(true);
             

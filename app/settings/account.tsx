@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
 import { AccountCard } from '../../components/profile/AccountCard';
 import { PromoCodeModal } from '../../components/profile/PromoCodeModal';
 import { PaywallModal } from '../../components/active-workout/PaywallModal';
@@ -18,7 +19,7 @@ import Constants from 'expo-constants';
 
 export default function AccountSettingsScreen() {
   const { t, i18n } = useTranslation();
-  const settings = useWorkoutStore(state => state.settings);
+  const settings = useSettingsStore(state => state.settings);
 
   const [accountType, setAccountType] = useState<'basic' | 'premium' | 'premium_limited' | 'early_adopter'>('basic');
   const [isPaywallVisible, setIsPaywallVisible] = useState(false);
@@ -116,7 +117,7 @@ export default function AccountSettingsScreen() {
         return;
       }
       const newExpiry = await activatePremiumFromPromo();
-      useWorkoutStore.getState().updatePremiumStatus(newExpiry);
+      useSettingsStore.getState().updatePremiumStatus(newExpiry);
       setIsPromoModalVisible(false);
       setPromoInputText('');
       Alert.alert('適用完了', 'プロモーションコードが適用されました！プレミアムプランが1ヶ月間有効になりました。');

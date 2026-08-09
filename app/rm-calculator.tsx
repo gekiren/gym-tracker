@@ -4,12 +4,13 @@ import { Stack } from 'expo-router';
 import { Theme } from '../src/theme';
 import { useTranslation } from 'react-i18next';
 import { useWorkoutStore } from '../src/store/workoutStore';
+import { useSettingsStore } from '../src/store/settingsStore';
 import SwipeableNumericInput from '../components/SwipeableNumericInput';
 import { saveSetting, getSettings } from '../src/db/database';
 
 export default function RMCalculatorScreen() {
   const { t } = useTranslation();
-  const settings = useWorkoutStore(state => state.settings);
+  const settings = useSettingsStore(state => state.settings);
   const [weight, setWeight] = useState('60');
   const [reps, setReps] = useState('10');
   const [isLoaded, setIsLoaded] = useState(false);

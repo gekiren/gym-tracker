@@ -5,6 +5,7 @@ import { getWorkoutsWithStats, loadFullWorkoutData, deleteWorkout, getExercises,
 import { Theme } from '../../src/theme';
 import { useFocusEffect, router } from 'expo-router';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
 import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../../src/i18n';
 import WorkoutShareModal from '../../components/WorkoutShareModal';
@@ -21,7 +22,7 @@ type Exercise = {
 };
 
 export default function HistoryScreen() {
-  const settings = useWorkoutStore(state => state.settings);
+  const settings = useSettingsStore(state => state.settings);
   const isPremium = settings.isPremium;
   const isEarly = settings.isEarlyAdopter;
   const isBasic = !isPremium && !isEarly;
@@ -162,7 +163,7 @@ export default function HistoryScreen() {
 
     try {
       if (defaultStance) {
-        useWorkoutStore.getState().addCustomStance(defaultStance);
+        useSettingsStore.getState().addCustomStance(defaultStance);
         saveSetting('custom_stances', JSON.stringify(Array.from(new Set([...(settings.customStances || []), defaultStance]))));
       }
       await addCustomExercise(

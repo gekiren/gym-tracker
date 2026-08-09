@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '../../src/theme';
-import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
 import { getDB, closeDB } from '../../src/db/database';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -13,7 +13,7 @@ import * as Updates from 'expo-updates';
 
 export default function BackupSettingsScreen() {
   const { t } = useTranslation();
-  const settings = useWorkoutStore(state => state.settings);
+  const settings = useSettingsStore(state => state.settings);
 
   const isPremium = settings.isPremium;
   const isEarly = settings.isEarlyAdopter;

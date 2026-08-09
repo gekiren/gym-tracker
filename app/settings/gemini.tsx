@@ -5,12 +5,13 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
 import { AiCoachSection } from '../../components/profile/AiCoachSection';
 
 export default function GeminiSettingsScreen() {
   const { t } = useTranslation();
-  const settings = useWorkoutStore(state => state.settings);
-  const setPreferredAiModel = useWorkoutStore(state => state.setPreferredAiModel);
+  const settings = useSettingsStore(state => state.settings);
+  const setPreferredAiModel = useSettingsStore(state => state.setPreferredAiModel);
 
   const isPremium = settings.isPremium;
   const isEarly = settings.isEarlyAdopter;

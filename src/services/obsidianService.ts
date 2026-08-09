@@ -29,6 +29,8 @@ export interface ObsidianSettings {
   folderDaily: string;
   folderHealth: string;
   lastSyncTimestamp: number;
+  lastSyncStatus: 'idle' | 'success' | 'error';
+  lastSyncError: string | null;
 }
 
 const DEFAULT_SETTINGS: ObsidianSettings = {
@@ -54,6 +56,8 @@ const DEFAULT_SETTINGS: ObsidianSettings = {
   folderDaily: 'Daily',
   folderHealth: 'Health',
   lastSyncTimestamp: 0,
+  lastSyncStatus: 'idle',
+  lastSyncError: null,
 };
 
 /**
@@ -85,6 +89,8 @@ export const getObsidianSettings = async (): Promise<ObsidianSettings> => {
       folderDaily: dbSettings['obsidian_folder_daily'] ?? 'Daily',
       folderHealth: dbSettings['obsidian_folder_health'] ?? 'Health',
       lastSyncTimestamp: parseInt(dbSettings['obsidian_last_sync_timestamp'] || '0', 10),
+      lastSyncStatus: (dbSettings['obsidian_last_sync_status'] as 'idle' | 'success' | 'error') || 'idle',
+      lastSyncError: dbSettings['obsidian_last_sync_error'] || null,
     };
   } catch (e) {
     console.warn('Failed to load obsidian settings:', e);
@@ -119,6 +125,8 @@ export const saveObsidianSettings = async (settings: Partial<ObsidianSettings>):
     if (settings.folderDaily !== undefined) await saveSetting('obsidian_folder_daily', settings.folderDaily);
     if (settings.folderHealth !== undefined) await saveSetting('obsidian_folder_health', settings.folderHealth);
     if (settings.lastSyncTimestamp !== undefined) await saveSetting('obsidian_last_sync_timestamp', settings.lastSyncTimestamp.toString());
+    if (settings.lastSyncStatus !== undefined) await saveSetting('obsidian_last_sync_status', settings.lastSyncStatus);
+    if (settings.lastSyncError !== undefined) await saveSetting('obsidian_last_sync_error', settings.lastSyncError || '');
   } catch (e) {
     console.error('Failed to save obsidian settings:', e);
   }
@@ -549,11 +557,20 @@ export const syncLifelogToObsidian = async (force: boolean = false): Promise<boo
     }
 
     if (success) {
-      await saveObsidianSettings({ lastSyncTimestamp: Date.now() });
+      await saveObsidianSettings({
+        lastSyncTimestamp: Date.now(),
+        lastSyncStatus: 'success',
+        lastSyncError: '',
+      });
     }
     return success;
-  } catch (e) {
+  } catch (e: any) {
     console.error('Failed to sync lifelog to Obsidian:', e);
+    const errMsg = e?.message || String(e) || '同期処理に失敗しました';
+    await saveObsidianSettings({
+      lastSyncStatus: 'error',
+      lastSyncError: errMsg,
+    });
     return false;
   }
 };
@@ -772,7 +789,11 @@ export const exportAllDataToObsidian = async (): Promise<ObsidianExportResult> =
 
   const successCount = dailyCount + workoutsCount + exercisesCount + waterCount + timeCount + habitsCount + routinesCount;
 
-  await saveObsidianSettings({ lastSyncTimestamp: Date.now() });
+  await saveObsidianSettings({
+    lastSyncTimestamp: Date.now(),
+    lastSyncStatus: 'success',
+    lastSyncError: '',
+  });
 
   return {
     successCount,

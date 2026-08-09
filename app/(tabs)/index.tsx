@@ -5,6 +5,7 @@ import { router, useFocusEffect, useNavigation } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
 import { getRoutines, getPreviousWorkoutSets, getPersonalRecords, saveSetting } from '../../src/db/database';
 import { translateExercise } from '../../src/i18n';
 import { readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../../src/services/crashReporterService';
@@ -17,8 +18,8 @@ export default function WorkoutHomeScreen() {
   const addExercise = useWorkoutStore(state => state.addExercise);
   const isActive = useWorkoutStore(state => state.isActive);
   const title = useWorkoutStore(state => state.title);
-  const settings = useWorkoutStore(state => state.settings);
-  const loadSettings = useWorkoutStore(state => state.loadSettings);
+  const settings = useSettingsStore(state => state.settings);
+  const loadSettings = useSettingsStore(state => state.loadSettings);
   const hasUnsentCrashLog = useWorkoutStore(state => state.hasUnsentCrashLog);
   const [routines, setRoutines] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -159,7 +160,7 @@ export default function WorkoutHomeScreen() {
     await saveSetting('display_1rm', isAdvanced ? '1' : '0');
     await saveSetting('display_volume', isAdvanced ? '1' : '0');
 
-    useWorkoutStore.getState().setDisplayFields({
+    useSettingsStore.getState().setDisplayFields({
       showRpe: isAdvanced,
       showStance: isAdvanced,
       show1RM: isAdvanced,
@@ -184,7 +185,7 @@ export default function WorkoutHomeScreen() {
     setIsSendingCrash(true);
     try {
       await saveSetting('crash_report_consent', consent);
-      useWorkoutStore.getState().setCrashConsent(consent);
+      useSettingsStore.getState().setCrashConsent(consent);
 
       if (consent === 'agreed') {
         initializeSentry();

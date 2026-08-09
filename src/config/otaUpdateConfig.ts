@@ -11,23 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.2.6', // OTA識別用のバージョン文字列
+  version: '1.2.7', // OTA識別用のバージョン文字列
   title: {
-    ja: 'ワークアウト開始時の安全化改善',
-    en: 'Workout Safety & Reset Improvements',
+    ja: 'アプリ設定・状態管理の最適化と軽量化',
+    en: 'App Settings & State Optimization',
   },
   notes: {
     ja: [
-      '進行中のワークアウトがある状態から新規開始する際の確認ダイアログ追加',
-      'タイマー処理の安定化',
+      'workoutStore の責任分離・軽量化によるアプリ動作の安定化とメモリ使用量の削減',
+      '設定およびルーティン下書き管理ストアの分離によるレスポンス向上',
     ],
     en: [
-      'Added confirmation dialog when starting a new workout while one is active',
-      'Improved rest timer stabilization',
+      'Optimized app memory and stability by refactoring store state management',
+      'Separated settings and routine draft stores for faster performance',
     ],
   },
 };
-
-
-
-

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWorkoutStore } from '../store/workoutStore';
+import { useSettingsStore } from '../store/settingsStore';
 import { getSettings } from '../db/database';
 import { Theme } from '../theme';
 import { purchasePremium, restorePurchases } from '../services/iapService';
@@ -18,7 +19,7 @@ export interface MenuItem {
 
 export function useProfile() {
   const { t } = useTranslation();
-  const settings = useWorkoutStore(state => state.settings);
+  const settings = useSettingsStore(state => state.settings);
   const shouldShowPaywall = useWorkoutStore(state => state.shouldShowPaywall);
   const setShouldShowPaywall = useWorkoutStore(state => state.setShouldShowPaywall);
 
