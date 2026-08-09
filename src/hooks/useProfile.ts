@@ -121,12 +121,12 @@ export function useProfile() {
         route: '/settings/workout-timer',
       },
       {
-        id: 'export',
+        id: 'obsidian',
         title: 'データ出力 & Obsidian連携',
         desc: 'Markdown出力・共有・Obsidian自動同期',
-        icon: 'document-text-outline',
-        iconColor: '#4caf50',
-        route: '/settings/export',
+        icon: 'journal-outline',
+        iconColor: '#9c27b0',
+        route: '/settings/obsidian',
       },
       {
         id: 'backup',
