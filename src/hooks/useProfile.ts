@@ -122,8 +122,8 @@ export function useProfile() {
       },
       {
         id: 'export',
-        title: 'データ出力 (Markdown/共有)',
-        desc: '筋トレ・ライフログのサマリー・ファイル出力',
+        title: 'データ出力 & Obsidian連携',
+        desc: 'Markdown出力・共有・Obsidian自動同期',
         icon: 'document-text-outline',
         iconColor: '#4caf50',
         route: '/settings/export',
@@ -136,14 +136,7 @@ export function useProfile() {
         iconColor: '#ff9800',
         route: '/settings/backup',
       },
-      {
-        id: 'obsidian',
-        title: 'Obsidian自動連携・蓄積',
-        desc: 'Vaultへの自動同期・出力フォルダ設定',
-        icon: 'journal-outline',
-        iconColor: '#9c27b0',
-        route: '/settings/obsidian',
-      },
+
       {
         id: 'app-info',
         title: 'アプリ情報',
