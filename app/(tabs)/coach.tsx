@@ -23,7 +23,7 @@ import { AI_CONFIG } from '../../src/config/aiConfig';
 interface ChatMessage {
   id: string;
   text: string;
-  sender: 'user' | 'ai';
+  sender: 'user' | 'ai' | 'system';
   timestamp: Date;
 }
 
@@ -77,7 +77,7 @@ export default function CoachScreen() {
       const contextLinkedMsg: ChatMessage = {
         id: `system-context-${Date.now()}`,
         text: t('ui.coach.context_loaded_msg', { title: displayTitle || t('ui.coach.default_workout_title') || 'ワークアウト詳細' }),
-        sender: 'ai',
+        sender: 'system',
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, contextLinkedMsg].slice(-100));
@@ -227,7 +227,7 @@ export default function CoachScreen() {
       {
         id: `system-clear-${Date.now()}`,
         text: t('ui.coach.context_cleared_msg') || '🧹 連動していたコンテキストをクリアし、通常の履歴参照モードに戻しました。',
-        sender: 'ai',
+        sender: 'system',
         timestamp: new Date(),
       }
     ]);
@@ -286,7 +286,7 @@ export default function CoachScreen() {
       >
         {messages.map(msg => {
           const isUser = msg.sender === 'user';
-          const isSystem = msg.text.startsWith('📌') || msg.text.startsWith('🧹');
+          const isSystem = msg.sender === 'system';
           
           if (isSystem) {
             return (
