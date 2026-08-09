@@ -93,13 +93,13 @@ export function useProfile() {
     () => [
       {
         id: 'account',
-        title: 'アカウント種類 & プラン',
+        title: 'アカウント & アプリ情報',
         desc:
           accountType === 'premium'
             ? 'プレミアム会員（永久）'
             : accountType === 'early_adopter'
             ? 'アーリーアダプター'
-            : 'フリープラン',
+            : 'フリープラン • バージョン情報',
         icon: 'person-circle-outline',
         iconColor: '#4facfe',
         route: '/settings/account',
@@ -137,14 +137,7 @@ export function useProfile() {
         route: '/settings/backup',
       },
 
-      {
-        id: 'app-info',
-        title: 'アプリ情報',
-        desc: 'バージョン情報、規約、デベロッパーメニュー',
-        icon: 'information-circle-outline',
-        iconColor: '#00bcd4',
-        route: '/settings/app-info',
-      },
+
       {
         id: 'data-management',
         title: 'データ管理',

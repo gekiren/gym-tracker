@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
 import { router } from 'expo-router';
@@ -7,16 +7,12 @@ import { router } from 'expo-router';
 interface AppInfoSectionProps {
   currentOtaVersion: string;
   nativeVersion: string;
-  isCheckingPromoWorkflow: boolean;
-  onPressPromoCode: () => void;
   t: (key: string, options?: any) => string;
 }
 
 export const AppInfoSection: React.FC<AppInfoSectionProps> = ({
   currentOtaVersion,
   nativeVersion,
-  isCheckingPromoWorkflow,
-  onPressPromoCode,
   t,
 }) => {
   return (
@@ -35,33 +31,6 @@ export const AppInfoSection: React.FC<AppInfoSectionProps> = ({
             </Text>
           </View>
         </View>
-        <TouchableOpacity 
-          style={styles.settingRow} 
-          onPress={onPressPromoCode}
-          disabled={isCheckingPromoWorkflow}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 8 }}>
-            <Ionicons 
-              name={isCheckingPromoWorkflow ? "sync" : "gift-outline"} 
-              size={20} 
-              color={Theme.colors.text} 
-              style={{ marginRight: 10 }} 
-            />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.settingLabel}>
-                {isCheckingPromoWorkflow ? t('ui.profile.app_version_checking') : t('ui.profile.promo_code')}
-              </Text>
-              <Text style={[styles.settingDesc, { paddingRight: 0 }]}>
-                {t('ui.profile.promo_code_desc')}
-              </Text>
-            </View>
-          </View>
-          {isCheckingPromoWorkflow ? (
-            <ActivityIndicator size="small" color={Theme.colors.textMuted} />
-          ) : (
-            <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
-          )}
-        </TouchableOpacity>
         <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/privacy-policy' as any)}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="shield-checkmark-outline" size={20} color={Theme.colors.text} style={{ marginRight: 10 }} />

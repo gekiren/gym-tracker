@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -8,9 +8,13 @@ import { useWorkoutStore } from '../../src/store/workoutStore';
 import { AccountCard } from '../../components/profile/AccountCard';
 import { PromoCodeModal } from '../../components/profile/PromoCodeModal';
 import { PaywallModal } from '../../components/active-workout/PaywallModal';
+import { AppInfoSection } from '../../components/profile/AppInfoSection';
 import { getSettings, activatePremiumFromPromo } from '../../src/db/database';
 import { checkNativeVersion, checkAndApplyOTAUpdate, verifyPromoCode } from '../../src/services/promoService';
 import { purchasePremium, restorePurchases } from '../../src/services/iapService';
+import { CURRENT_OTA_CONFIG } from '../../src/config/otaUpdateConfig';
+import * as Updates from 'expo-updates';
+import Constants from 'expo-constants';
 
 export default function AccountSettingsScreen() {
   const { t, i18n } = useTranslation();
@@ -23,6 +27,8 @@ export default function AccountSettingsScreen() {
   const [promoInputText, setPromoInputText] = useState('');
   const [isApplyingPromo, setIsApplyingPromo] = useState(false);
   const [isCheckingPromoWorkflow, setIsCheckingPromoWorkflow] = useState(false);
+
+  const nativeVersion = Updates.runtimeVersion || Constants.expoConfig?.version || Constants.nativeAppVersion || '1.0.0';
 
   const isPremium = settings.premiumUntil === 'perpetual' || (settings.premiumUntil !== '' && !isNaN(Date.parse(settings.premiumUntil)) && Date.parse(settings.premiumUntil) > Date.now());
   const isEarly = settings.isEarlyAdopter;
@@ -79,7 +85,6 @@ export default function AccountSettingsScreen() {
   const handlePromoPress = async () => {
     if (isCheckingPromoWorkflow) return;
     setIsCheckingPromoWorkflow(true);
-    
     try {
       const versionResult = checkNativeVersion();
       if (!versionResult.isUpToDate) {
@@ -90,10 +95,8 @@ export default function AccountSettingsScreen() {
         setIsCheckingPromoWorkflow(false);
         return;
       }
-      
       const otaResult = await checkAndApplyOTAUpdate();
       if (otaResult.isUpdateTriggered) return;
-      
       setIsPromoModalVisible(true);
     } catch (err) {
       Alert.alert(t('ui.common.error') || 'エラー', '検証中にエラーが発生しました。');
@@ -105,7 +108,6 @@ export default function AccountSettingsScreen() {
   const handleApplyPromo = async () => {
     if (isApplyingPromo || promoInputText.trim() === '') return;
     setIsApplyingPromo(true);
-    
     try {
       const isValid = await verifyPromoCode(promoInputText);
       if (!isValid) {
@@ -113,19 +115,11 @@ export default function AccountSettingsScreen() {
         setIsApplyingPromo(false);
         return;
       }
-      
       const newExpiry = await activatePremiumFromPromo();
       useWorkoutStore.getState().updatePremiumStatus(newExpiry);
       setIsPromoModalVisible(false);
       setPromoInputText('');
-      
-      const currentLang = i18n.language || 'ja';
-      const formattedDate = new Date(newExpiry).toLocaleDateString(
-        currentLang === 'ja' ? 'ja-JP' : 'en-US',
-        { year: 'numeric', month: 'long', day: 'numeric' }
-      );
-      
-      Alert.alert('適用完了', `プロモーションコードが適用されました！プレミアムプランが1ヶ月間有効になりました。`);
+      Alert.alert('適用完了', 'プロモーションコードが適用されました！プレミアムプランが1ヶ月間有効になりました。');
     } catch (err) {
       Alert.alert('エラー', 'プロモーションコードの適用に失敗しました。');
     } finally {
@@ -139,7 +133,7 @@ export default function AccountSettingsScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="chevron-back" size={24} color={Theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>アカウント種類 & プラン</Text>
+        <Text style={styles.headerTitle}>アカウント & アプリ情報</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -168,9 +162,16 @@ export default function AccountSettingsScreen() {
             <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
           </TouchableOpacity>
         </View>
+
+        <View style={styles.appInfoWrapper}>
+          <AppInfoSection
+            currentOtaVersion={CURRENT_OTA_CONFIG.version}
+            nativeVersion={nativeVersion}
+            t={t}
+          />
+        </View>
       </ScrollView>
 
-      {/* Paywall Modal */}
       <Modal visible={isPaywallVisible} animationType="slide" transparent={true}>
         <PaywallModal
           isPurchasing={isPurchasing}
@@ -183,7 +184,6 @@ export default function AccountSettingsScreen() {
         />
       </Modal>
 
-      {/* Promo Modal */}
       <PromoCodeModal
         visible={isPromoModalVisible}
         onClose={() => {
@@ -218,4 +218,5 @@ const styles = StyleSheet.create({
   card: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, borderWidth: 1, borderColor: Theme.colors.border, marginTop: Theme.spacing.md },
   menuRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: Theme.spacing.md, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
   menuTitle: { fontSize: 16, fontWeight: '600', color: Theme.colors.text },
+  appInfoWrapper: { marginTop: Theme.spacing.xl },
 });
