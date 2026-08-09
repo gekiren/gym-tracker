@@ -12,7 +12,7 @@ export default function GeminiSettingsScreen() {
   const settings = useWorkoutStore(state => state.settings);
   const setPreferredAiModel = useWorkoutStore(state => state.setPreferredAiModel);
 
-  const isPremium = settings.premiumUntil === 'perpetual' || (settings.premiumUntil !== '' && !isNaN(Date.parse(settings.premiumUntil)) && Date.parse(settings.premiumUntil) > Date.now());
+  const isPremium = settings.isPremium;
   const isEarly = settings.isEarlyAdopter;
   const isBasic = !isPremium && !isEarly;
   const maxTokens = (isPremium || isEarly) ? 20 : 5;

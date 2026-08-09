@@ -20,7 +20,7 @@ export default function BuildRoutineScreen() {
   } = useWorkoutStore();
   const { t } = useTranslation();
 
-  const isPremium = settings.premiumUntil === 'perpetual' || (settings.premiumUntil !== '' && !isNaN(Date.parse(settings.premiumUntil)) && Date.parse(settings.premiumUntil) > Date.now());
+  const isPremium = settings.isPremium;
   const isEarly = settings.isEarlyAdopter;
   const isBasic = !isPremium && !isEarly;
 

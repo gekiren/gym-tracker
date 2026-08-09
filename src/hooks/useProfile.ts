@@ -26,9 +26,7 @@ export function useProfile() {
   const [isPaywallVisible, setIsPaywallVisible] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
-  const isPremium =
-    settings.premiumUntil === 'perpetual' ||
-    (settings.premiumUntil !== '' && !isNaN(Date.parse(settings.premiumUntil)) && Date.parse(settings.premiumUntil) > Date.now());
+  const isPremium = settings.isPremium;
   const isEarly = settings.isEarlyAdopter;
 
   // Paywall display trigger

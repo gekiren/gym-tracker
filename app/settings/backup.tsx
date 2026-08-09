@@ -15,7 +15,7 @@ export default function BackupSettingsScreen() {
   const { t } = useTranslation();
   const settings = useWorkoutStore(state => state.settings);
 
-  const isPremium = settings.premiumUntil === 'perpetual' || (settings.premiumUntil !== '' && !isNaN(Date.parse(settings.premiumUntil)) && Date.parse(settings.premiumUntil) > Date.now());
+  const isPremium = settings.isPremium;
   const isEarly = settings.isEarlyAdopter;
   const isPaidPremium = isPremium && !isEarly;
 

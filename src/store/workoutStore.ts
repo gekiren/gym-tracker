@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Vibration } from 'react-native';
 import { scheduleRestTimer, cancelRestTimer } from '../utils/timer';
 import { saveSetting } from '../db/database';
+import { computeIsPremium } from '../utils/subscriptionUtils';
 
 export type SetRecord = {
   id: string; // temp id for UI
@@ -262,7 +263,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     const finalPreferredAiModel = preferredAiModel !== undefined ? preferredAiModel : state.settings.preferredAiModel;
     const finalAiChatMode = aiChatMode !== undefined ? aiChatMode : state.settings.aiChatMode;
 
-    const isPremium = finalIsEarlyAdopter || finalPremiumUntil === 'perpetual' || (finalPremiumUntil !== '' && !isNaN(Date.parse(finalPremiumUntil)) && Date.parse(finalPremiumUntil) > Date.now());
+    const isPremium = computeIsPremium(finalPremiumUntil, finalIsEarlyAdopter);
     return {
       settings: { 
         ...state.settings, 
@@ -301,24 +302,21 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   },
 
   setPremiumUntil: (premiumUntil) => set((state) => {
-    const isEarlyAdopter = state.settings.isEarlyAdopter;
-    const isPremium = isEarlyAdopter || premiumUntil === 'perpetual' || (premiumUntil !== '' && !isNaN(Date.parse(premiumUntil)) && Date.parse(premiumUntil) > Date.now());
+    const isPremium = computeIsPremium(premiumUntil, state.settings.isEarlyAdopter);
     return {
       settings: { ...state.settings, premiumUntil, isPremium }
     };
   }),
 
   updatePremiumStatus: (premiumUntil) => set((state) => {
-    const isEarlyAdopter = state.settings.isEarlyAdopter;
-    const isPremium = isEarlyAdopter || premiumUntil === 'perpetual' || (premiumUntil !== '' && !isNaN(Date.parse(premiumUntil)) && Date.parse(premiumUntil) > Date.now());
+    const isPremium = computeIsPremium(premiumUntil, state.settings.isEarlyAdopter);
     return {
       settings: { ...state.settings, premiumUntil, aiTokensBalance: 20, isPremium }
     };
   }),
 
   setIsEarlyAdopter: (isEarlyAdopter) => set((state) => {
-    const premiumUntil = state.settings.premiumUntil;
-    const isPremium = isEarlyAdopter || premiumUntil === 'perpetual' || (premiumUntil !== '' && !isNaN(Date.parse(premiumUntil)) && Date.parse(premiumUntil) > Date.now());
+    const isPremium = computeIsPremium(state.settings.premiumUntil, isEarlyAdopter);
     return {
       settings: { ...state.settings, isEarlyAdopter, isPremium }
     };

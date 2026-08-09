@@ -1,6 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 import { addMonths } from 'date-fns';
 import { getDB } from '../connection';
+import { computeIsPremium } from '../../utils/subscriptionUtils';
 
 export const getSettings = async () => {
   const conn = getDB();
@@ -28,9 +29,7 @@ export const getPremiumStatusFromDB = async (): Promise<{ isPremium: boolean; pr
   }
   const premiumUntil = stored['premium_until'] || '';
   const isEarlyAdopter = stored['is_early_adopter'] === 'true';
-  const isPremium = isEarlyAdopter || premiumUntil === 'perpetual' || (
-    premiumUntil !== '' && !isNaN(Date.parse(premiumUntil)) && Date.parse(premiumUntil) > Date.now()
-  );
+  const isPremium = computeIsPremium(premiumUntil, isEarlyAdopter);
   return {
     isPremium,
     premiumUntil,
@@ -55,9 +54,9 @@ export const getMaxAITokens = async (conn: SQLite.SQLiteDatabase): Promise<numbe
     stored[r.key] = r.value;
   }
   const isEarly = stored['is_early_adopter'] === 'true';
-  const isPremium = stored['premium_until'] === 'perpetual' || (stored['premium_until'] !== '' && !isNaN(Date.parse(stored['premium_until'] || '')) && Date.parse(stored['premium_until'] || '') > Date.now());
+  const isPremium = computeIsPremium(stored['premium_until'], isEarly);
 
-  return (isPremium || isEarly) ? 20 : 5;
+  return isPremium ? 20 : 5;
 };
 
 export const getAITokensBalance = async (): Promise<number> => {
