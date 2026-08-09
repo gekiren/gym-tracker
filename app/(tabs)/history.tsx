@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { getDB, loadFullWorkoutData, deleteWorkout, getExercises, addCustomExercise, deleteExercise, getFavoriteIds, toggleFavorite, getCustomExercisesCount, saveSetting } from '../../src/db/database';
+import { getWorkoutsWithStats, loadFullWorkoutData, deleteWorkout, getExercises, addCustomExercise, deleteExercise, getFavoriteIds, toggleFavorite, getCustomExercisesCount, saveSetting, WorkoutWithStats } from '../../src/db/database';
 import { Theme } from '../../src/theme';
 import { useFocusEffect, router } from 'expo-router';
 import { useWorkoutStore } from '../../src/store/workoutStore';
@@ -26,7 +26,7 @@ export default function HistoryScreen() {
   const isEarly = settings.isEarlyAdopter;
   const isBasic = !isPremium && !isEarly;
 
-  const [workouts, setWorkouts] = useState<any[]>([]);
+  const [workouts, setWorkouts] = useState<WorkoutWithStats[]>([]);
   const { t, i18n } = useTranslation();
 
   const [activeTab, setActiveTab] = useState<'workouts' | 'exercises'>('workouts');
@@ -47,15 +47,8 @@ export default function HistoryScreen() {
 
   const fetchWorkouts = async () => {
     try {
-      const db = getDB();
-      const rows = await db.getAllAsync(`
-        SELECT w.*, 
-               (SELECT COUNT(*) FROM workout_exercises WHERE workout_id = w.id) as exercise_count,
-               (SELECT SUM(weight * reps) FROM workout_sets ws JOIN workout_exercises we ON ws.workout_exercise_id = we.id WHERE we.workout_id = w.id) as volume
-        FROM workouts w 
-        ORDER BY start_time DESC
-      `);
-      setWorkouts(rows as any[]);
+      const data = await getWorkoutsWithStats();
+      setWorkouts(data);
     } catch (e) {
       console.warn('Failed to fetch workouts', e);
     }

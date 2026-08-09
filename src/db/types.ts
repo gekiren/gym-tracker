@@ -111,3 +111,9 @@ export interface PresetRoutine {
   description: string;
   exerciseNames: string[];
 }
+
+export interface WorkoutWithStats extends WorkoutRow {
+  exercise_count: number;
+  volume: number | null;
+}
+
