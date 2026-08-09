@@ -146,7 +146,8 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
                 `💧 水分 (${settings.folderWater}): ${d.waterCount}件\n` +
                 `⏱ 時間 (${settings.folderTime}): ${d.timeCount}件\n` +
                 `✅ 習慣 (${settings.folderHabits}): ${d.habitsCount}件\n` +
-                `🔄 ルーティン (${settings.folderRoutines}): ${d.routinesCount}件\n\n` +
+                `🔄 ルーティン (${settings.folderRoutines}): ${d.routinesCount}件\n` +
+                `📊 ヘルス (${settings.folderHealth})\n\n` +
                 `総出力ファイル数: ${res.successCount}件` +
                 (res.failCount > 0 ? ` (失敗: ${res.failCount}件)` : '');
               Alert.alert('完了', msg);
@@ -418,6 +419,17 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
                   value={settings.folderRoutines}
                   onChangeText={(val) => handleUpdateFolder('folderRoutines', val)}
                   placeholder="Routines"
+                  placeholderTextColor="#666"
+                />
+              </View>
+
+              <View style={styles.folderInputRow}>
+                <Text style={styles.folderInputLabel}>📊 ヘルスケア</Text>
+                <TextInput
+                  style={styles.folderTextInput}
+                  value={settings.folderHealth}
+                  onChangeText={(val) => handleUpdateFolder('folderHealth', val)}
+                  placeholder="Health"
                   placeholderTextColor="#666"
                 />
               </View>
