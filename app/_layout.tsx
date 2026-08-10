@@ -219,6 +219,7 @@ export default function RootLayout() {
             <Stack.Screen name="rm-calculator" options={{ presentation: 'card' }} />
             <Stack.Screen name="privacy-policy" options={{ presentation: 'card' }} />
             <Stack.Screen name="developer-menu" options={{ presentation: 'card' }} />
+            <Stack.Screen name="lifelog/nutrition" options={{ presentation: 'card' }} />
           </Stack>
           <ReviewPromptModal />
           <OTAUpdateModal />

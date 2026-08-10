@@ -14,6 +14,7 @@ export * from './repositories/workoutRepository';
 export * from './repositories/routineRepository';
 export * from './repositories/settingsRepository';
 export * from './repositories/lifelogRepository';
+export * from './repositories/nutritionRepository';
 
 export const initDB = async (): Promise<SQLite.SQLiteDatabase> => {
   try {
@@ -155,6 +156,47 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       FOREIGN KEY(habit_item_id) REFERENCES habit_items(id) ON DELETE CASCADE
     );
     CREATE INDEX IF NOT EXISTS idx_habit_logs_date ON habit_logs(date);
+
+    CREATE TABLE IF NOT EXISTS meal_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL,
+      meal_type TEXT,
+      meal_time TEXT,
+      name TEXT NOT NULL,
+      calories REAL DEFAULT 0,
+      protein REAL DEFAULT 0,
+      fat REAL DEFAULT 0,
+      carbs REAL DEFAULT 0,
+      sodium REAL DEFAULT 0,
+      fiber REAL DEFAULT 0,
+      photo_url TEXT,
+      memo TEXT,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_meal_logs_date ON meal_logs(date);
+
+    CREATE TABLE IF NOT EXISTS meal_favorites (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      meal_type TEXT,
+      calories REAL DEFAULT 0,
+      protein REAL DEFAULT 0,
+      fat REAL DEFAULT 0,
+      carbs REAL DEFAULT 0,
+      sodium REAL DEFAULT 0,
+      fiber REAL DEFAULT 0,
+      memo TEXT,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS autophagy_config (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      enabled INTEGER DEFAULT 1,
+      target_hours REAL DEFAULT 16,
+      start_time TEXT,
+      notified INTEGER DEFAULT 0,
+      auto_sync_with_last_meal INTEGER DEFAULT 1
+    );
   `);
 
   // Run schema migrations using PRAGMA user_version
@@ -353,10 +395,12 @@ export const resetDatabase = async () => {
     await conn.runAsync('DELETE FROM habit_items');
     await conn.runAsync('DELETE FROM water_logs');
     await conn.runAsync('DELETE FROM time_logs');
+    await conn.runAsync('DELETE FROM meal_logs');
+    await conn.runAsync('DELETE FROM meal_favorites');
+    await conn.runAsync('DELETE FROM autophagy_config');
   });
 
   setDB(null);
   setDBPromise(null);
   await initDB();
 };
-

@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 
-export const DATABASE_VERSION = 4;
+export const DATABASE_VERSION = 5;
 
 export interface Migration {
   version: number;
@@ -145,6 +145,54 @@ export const MIGRATIONS: Migration[] = [
           );
         }
       }
+    },
+  },
+  {
+    version: 5,
+    up: async (db) => {
+      // 栄養管理テーブル追加
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS meal_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          date TEXT NOT NULL,
+          meal_type TEXT,
+          meal_time TEXT,
+          name TEXT NOT NULL,
+          calories REAL DEFAULT 0,
+          protein REAL DEFAULT 0,
+          fat REAL DEFAULT 0,
+          carbs REAL DEFAULT 0,
+          sodium REAL DEFAULT 0,
+          fiber REAL DEFAULT 0,
+          photo_url TEXT,
+          memo TEXT,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_meal_logs_date ON meal_logs(date);
+
+        CREATE TABLE IF NOT EXISTS meal_favorites (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          meal_type TEXT,
+          calories REAL DEFAULT 0,
+          protein REAL DEFAULT 0,
+          fat REAL DEFAULT 0,
+          carbs REAL DEFAULT 0,
+          sodium REAL DEFAULT 0,
+          fiber REAL DEFAULT 0,
+          memo TEXT,
+          created_at INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS autophagy_config (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          enabled INTEGER DEFAULT 1,
+          target_hours REAL DEFAULT 16,
+          start_time TEXT,
+          notified INTEGER DEFAULT 0,
+          auto_sync_with_last_meal INTEGER DEFAULT 1
+        );
+      `);
     },
   },
 ];

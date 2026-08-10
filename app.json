@@ -5,7 +5,7 @@
       "ja": "./locales/ja.json"
     },
     "slug": "gym-tracker",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "gymtracker",
@@ -28,7 +28,7 @@
     },
     "android": {
       "package": "com.gekirennomad.trenote",
-      "versionCode": 34,
+      "versionCode": 35,
       "minSdkVersion": 26,
       "permissions": [
         "com.android.vending.BILLING",
@@ -49,7 +49,9 @@
         "android.permission.health.READ_BODY_TEMPERATURE",
         "android.permission.health.READ_RESPIRATORY_RATE",
         "android.permission.health.READ_HYDRATION",
-        "android.permission.health.READ_BASAL_METABOLIC_RATE"
+        "android.permission.health.READ_BASAL_METABOLIC_RATE",
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#000000",
@@ -108,6 +110,13 @@
         }
       ],
       "expo-iap",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "フォトライブラリから食事の写真を選択するためにアクセスします。",
+          "cameraPermission": "食事の写真を撮影してAI栄養解析するためにカメラを使用します。"
+        }
+      ],
       [
         "react-native-google-mobile-ads",
         {

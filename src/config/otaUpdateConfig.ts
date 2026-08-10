@@ -11,19 +11,23 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.2.7', // OTA識別用のバージョン文字列
+  version: '1.3.0',
   title: {
-    ja: 'アプリ設定・状態管理の最適化と軽量化',
-    en: 'App Settings & State Optimization',
+    ja: '栄養＆食事管理機能の統合',
+    en: 'Nutrition & Meal Management Integration',
   },
   notes: {
     ja: [
-      'workoutStore の責任分離・軽量化によるアプリ動作の安定化とメモリ使用量の削減',
-      '設定およびルーティン下書き管理ストアの分離によるレスポンス向上',
+      'AI写真解析・チャット解析による栄養成分の自動推定機能を追加',
+      '今日のカロリー・PFCバランス・塩分・食物繊維進捗カードを追加',
+      '16時間絶食オートファジータイマーと14日間の栄養グラフィック推移を追加',
+      'Gemini 3.6 Flash AIモデルへの最新化と最適化',
     ],
     en: [
-      'Optimized app memory and stability by refactoring store state management',
-      'Separated settings and routine draft stores for faster performance',
+      'Added AI photo & chat nutrition analysis',
+      'Added daily calories, PFC balance, sodium, and fiber progress card',
+      'Added 16-hour intermittent fasting timer & 14-day history chart',
+      'Updated to Gemini 3.6 Flash AI model',
     ],
   },
 };

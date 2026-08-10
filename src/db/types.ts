@@ -149,4 +149,56 @@ export interface FullWorkoutData {
   exercises: FullWorkoutExercise[];
 }
 
+// ===== 栄養管理 (Nutrition) =====
+
+export interface MealLog {
+  id: number;
+  date: string;
+  meal_type?: string;
+  meal_time?: string;
+  name: string;
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  sodium: number;
+  fiber: number;
+  photo_url?: string;
+  memo?: string;
+  created_at: number;
+}
+
+export interface MealFavorite {
+  id: number;
+  name: string;
+  meal_type?: string;
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  sodium: number;
+  fiber: number;
+  memo?: string;
+  created_at: number;
+}
+
+export interface NutritionGoals {
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  sodium: number;
+  fiber: number;
+}
+
+export interface AutophagyConfig {
+  id?: number;
+  enabled: boolean;
+  target_hours: number;
+  start_time?: string;
+  notified: boolean;
+  auto_sync_with_last_meal: boolean;
+}
+
+
 

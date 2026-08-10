@@ -256,6 +256,27 @@ export default function DashboardScreen() {
           </View>
         </View>
 
+        {/* 2.5 Nutrition & Meal Card */}
+        <TouchableOpacity 
+          style={styles.card} 
+          activeOpacity={0.8}
+          onPress={() => router.push('/lifelog/nutrition')}
+        >
+          <View style={styles.cardHeader}>
+            <View style={[styles.iconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+              <Ionicons name="restaurant" size={24} color="#10b981" />
+            </View>
+            <Text style={styles.cardTitle}>栄養＆食事管理</Text>
+            <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
+          </View>
+          <View style={styles.cardBody}>
+            <Text style={styles.inactiveText}>
+              AI写真・チャット解析、PFCバランスグラフ、オートファジー絶食タイマーなどを管理します。
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+
         {/* 3. 24h Time Breakdown Card */}
         <TouchableOpacity 
           style={styles.card} 

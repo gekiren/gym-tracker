@@ -6,6 +6,24 @@ import { useSettingsStore } from '../store/settingsStore';
 // Cloudflare Workers AI Proxy API Endpoint URL
 const WORKER_URL = 'https://gym-tracker-ai-proxy.toshi-diyil.workers.dev/api/chat';
 
+// 栄養解析エンドポイント
+const NUTRITION_TEXT_URL = 'https://gym-tracker-ai-proxy.toshi-diyil.workers.dev/api/nutrition';
+const NUTRITION_IMAGE_URL = 'https://gym-tracker-ai-proxy.toshi-diyil.workers.dev/api/nutrition-image';
+
+// 栄養AI解析の返却型
+export interface NutritionAIResult {
+  mealName: string;
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  sodium: number;
+  fiber: number;
+  advice?: string;
+  isFood?: boolean;
+}
+
+
 export interface AICoachResponse {
   reply: string;
   success: boolean;
@@ -163,4 +181,114 @@ export const buildWorkoutCoachPrompt = (workoutData: {
   if (workoutData.avgHeartRate) prompt += `平均心拍数: ${workoutData.avgHeartRate} bpm\n`;
   if (workoutData.maxHeartRate) prompt += `最高心拍数: ${workoutData.maxHeartRate} bpm\n`;
   return prompt;
+};
+
+// ─── 栄養解析 AI 関数 ────────────────────────────────────
+
+/**
+ * テキスト入力による食事栄養解析
+ * @param textInput 例: "ラーメン大盛りと餃子3個"
+ * @param preferredModel 'gemini' | 'deepseek'
+ */
+export const analyzeMealText = async (
+  textInput: string,
+  preferredModel: string = 'gemini'
+): Promise<NutritionAIResult> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const proxySecret = process.env.EXPO_PUBLIC_AI_PROXY_SECRET;
+    if (proxySecret) headers['Authorization'] = `Bearer ${proxySecret}`;
+
+    const response = await fetch(NUTRITION_TEXT_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ textInput, preferredModel }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Nutrition text API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      mealName: data.mealName || '不明な食事',
+      calories: Number(data.calories) || 0,
+      protein: Number(data.protein) || 0,
+      fat: Number(data.fat) || 0,
+      carbs: Number(data.carbs) || 0,
+      sodium: Number(data.sodium) || 0,
+      fiber: Number(data.fiber) || 0,
+      advice: data.advice,
+      isFood: true,
+    };
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    console.error('analyzeMealText failed:', err);
+    throw err;
+  }
+};
+
+/**
+ * 画像による食事栄養解析
+ * @param base64Image data:image/jpeg;base64,... 形式
+ * @param ocrHintText オンデバイスOCRで事前抽出したテキスト（任意）
+ * @param userMemo ユーザーが入力した補足メモ（任意）
+ * @param preferredModel 'gemini' | 'deepseek'
+ */
+export const analyzeMealImage = async (
+  base64Image: string,
+  ocrHintText: string = '',
+  userMemo: string = '',
+  preferredModel: string = 'gemini'
+): Promise<NutritionAIResult> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 45000); // 画像解析は時間がかかるため長めに
+
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const proxySecret = process.env.EXPO_PUBLIC_AI_PROXY_SECRET;
+    if (proxySecret) headers['Authorization'] = `Bearer ${proxySecret}`;
+
+    const response = await fetch(NUTRITION_IMAGE_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ image: base64Image, ocrHintText, userMemo, preferredModel }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Nutrition image API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // 食品以外の画像の場合
+    if (data.isFood === false) {
+      throw new Error('食品または栄養成分表示ラベルが検出できませんでした。');
+    }
+
+    return {
+      mealName: data.mealName || '不明な食事',
+      calories: Number(data.calories) || 0,
+      protein: Number(data.protein) || 0,
+      fat: Number(data.fat) || 0,
+      carbs: Number(data.carbs) || 0,
+      sodium: Number(data.sodium) || 0,
+      fiber: Number(data.fiber) || 0,
+      advice: data.advice,
+      isFood: data.isFood !== false,
+    };
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    console.error('analyzeMealImage failed:', err);
+    throw err;
+  }
 };
