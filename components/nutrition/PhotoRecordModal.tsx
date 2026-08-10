@@ -16,27 +16,59 @@ import {
   NativeModules,
 } from 'react-native';
 
-// ネイティブモジュール不在による画面遷移クラッシュを防ぐため NativeModules チェックを厳格化
+// ネイティブモジュール不在による画面遷移クラッシュを防ぐため Expo Modules & NativeModules チェックを判定
 const safeGetImagePicker = () => {
   try {
-    const hasNative = NativeModules.ExponentImagePicker || NativeModules.ExpoImagePicker;
-    if (!hasNative) return null;
+    // 1. Expo Modules (New Architecture / SDK 54) チェック
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    return require('expo-image-picker') as typeof import('expo-image-picker');
+    const { requireNativeModule } = require('expo-modules-core');
+    if (requireNativeModule('ExpoImagePicker')) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      return require('expo-image-picker') as typeof import('expo-image-picker');
+    }
   } catch {
-    return null;
+    // モジュール不在
   }
+
+  try {
+    // 2. 旧 NativeModules ブリッジチェック
+    const hasNative = NativeModules.ExponentImagePicker || NativeModules.ExpoImagePicker;
+    if (hasNative) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      return require('expo-image-picker') as typeof import('expo-image-picker');
+    }
+  } catch {
+    // モジュール不在
+  }
+
+  return null;
 };
 
 const safeGetImageManipulator = () => {
   try {
-    const hasNative = NativeModules.ExponentImageManipulator || NativeModules.ExpoImageManipulator;
-    if (!hasNative) return null;
+    // 1. Expo Modules (New Architecture / SDK 54) チェック
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    return require('expo-image-manipulator') as typeof import('expo-image-manipulator');
+    const { requireNativeModule } = require('expo-modules-core');
+    if (requireNativeModule('ExpoImageManipulator')) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      return require('expo-image-manipulator') as typeof import('expo-image-manipulator');
+    }
   } catch {
-    return null;
+    // モジュール不在
   }
+
+  try {
+    // 2. 旧 NativeModules ブリッジチェック
+    const hasNative = NativeModules.ExponentImageManipulator || NativeModules.ExpoImageManipulator;
+    if (hasNative) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      return require('expo-image-manipulator') as typeof import('expo-image-manipulator');
+    }
+  } catch {
+    // モジュール不在
+  }
+
+  return null;
 };
 
 import { analyzeMealImage, analyzeMealText, NutritionAIResult } from '../../src/services/aiCoachService';
