@@ -16,58 +16,30 @@ import {
   NativeModules,
 } from 'react-native';
 
-// ネイティブモジュール不在による画面遷移クラッシュを防ぐため Expo Modules & NativeModules チェックを判定
+// ネイティブモジュール取得（safeGetImagePicker / safeGetImageManipulator）
 const safeGetImagePicker = () => {
   try {
-    // 1. Expo Modules (New Architecture / SDK 54) チェック
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { requireNativeModule } = require('expo-modules-core');
-    if (requireNativeModule('ExpoImagePicker')) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      return require('expo-image-picker') as typeof import('expo-image-picker');
+    const picker = require('expo-image-picker');
+    if (picker && (picker.launchCameraAsync || picker.default?.launchCameraAsync)) {
+      return picker as typeof import('expo-image-picker');
     }
-  } catch {
-    // モジュール不在
+  } catch (err: any) {
+    console.warn('[PhotoRecordModal] safeGetImagePicker failed:', err?.message || err);
   }
-
-  try {
-    // 2. 旧 NativeModules ブリッジチェック
-    const hasNative = NativeModules.ExponentImagePicker || NativeModules.ExpoImagePicker;
-    if (hasNative) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      return require('expo-image-picker') as typeof import('expo-image-picker');
-    }
-  } catch {
-    // モジュール不在
-  }
-
   return null;
 };
 
 const safeGetImageManipulator = () => {
   try {
-    // 1. Expo Modules (New Architecture / SDK 54) チェック
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { requireNativeModule } = require('expo-modules-core');
-    if (requireNativeModule('ExpoImageManipulator')) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      return require('expo-image-manipulator') as typeof import('expo-image-manipulator');
+    const manipulator = require('expo-image-manipulator');
+    if (manipulator && (manipulator.manipulateAsync || manipulator.default?.manipulateAsync)) {
+      return manipulator as typeof import('expo-image-manipulator');
     }
-  } catch {
-    // モジュール不在
+  } catch (err: any) {
+    console.warn('[PhotoRecordModal] safeGetImageManipulator failed:', err?.message || err);
   }
-
-  try {
-    // 2. 旧 NativeModules ブリッジチェック
-    const hasNative = NativeModules.ExponentImageManipulator || NativeModules.ExpoImageManipulator;
-    if (hasNative) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      return require('expo-image-manipulator') as typeof import('expo-image-manipulator');
-    }
-  } catch {
-    // モジュール不在
-  }
-
   return null;
 };
 
