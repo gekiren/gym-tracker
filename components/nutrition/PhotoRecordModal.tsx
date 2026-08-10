@@ -13,11 +13,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
+  NativeModules,
 } from 'react-native';
 
-// ネイティブモジュール不在による画面遷移クラッシュを防ぐためトップレベルインポートを排除
+// ネイティブモジュール不在による画面遷移クラッシュを防ぐため NativeModules チェックを厳格化
 const safeGetImagePicker = () => {
   try {
+    const hasNative = NativeModules.ExponentImagePicker || NativeModules.ExpoImagePicker;
+    if (!hasNative) return null;
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     return require('expo-image-picker') as typeof import('expo-image-picker');
   } catch {
@@ -27,6 +30,8 @@ const safeGetImagePicker = () => {
 
 const safeGetImageManipulator = () => {
   try {
+    const hasNative = NativeModules.ExponentImageManipulator || NativeModules.ExpoImageManipulator;
+    if (!hasNative) return null;
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     return require('expo-image-manipulator') as typeof import('expo-image-manipulator');
   } catch {

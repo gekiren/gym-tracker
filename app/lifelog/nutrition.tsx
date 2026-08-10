@@ -286,12 +286,14 @@ export default function NutritionScreen() {
         selectedDate={selectedDate}
       />
 
-      <PhotoRecordModal
-        visible={showPhotoModal}
-        onClose={() => setShowPhotoModal(false)}
-        onSave={addMeal}
-        selectedDate={selectedDate}
-      />
+      {showPhotoModal && (
+        <PhotoRecordModal
+          visible={showPhotoModal}
+          onClose={() => setShowPhotoModal(false)}
+          onSave={addMeal}
+          selectedDate={selectedDate}
+        />
+      )}
 
       <ManualEntryModal
         visible={showManualModal}
