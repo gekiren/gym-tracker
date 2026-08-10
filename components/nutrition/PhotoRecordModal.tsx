@@ -23,9 +23,11 @@ const safeGetImagePicker = () => {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { requireOptionalNativeModule } = require('expo-modules-core');
-    const nativeMod = requireOptionalNativeModule('ExponentImagePicker');
+    const nativeMod =
+      requireOptionalNativeModule('ExpoImagePicker') ||
+      requireOptionalNativeModule('ExponentImagePicker');
     if (!nativeMod) {
-      console.warn('[PhotoRecordModal] ExponentImagePicker native module not found');
+      console.warn('[PhotoRecordModal] ExponentImagePicker / ExpoImagePicker native module not found');
       return null;
     }
     // ネイティブモジュール存在確認済み → 安全に require 可能
@@ -41,9 +43,11 @@ const safeGetImageManipulator = () => {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { requireOptionalNativeModule } = require('expo-modules-core');
-    const nativeMod = requireOptionalNativeModule('ExponentImageManipulator');
+    const nativeMod =
+      requireOptionalNativeModule('ExpoImageManipulator') ||
+      requireOptionalNativeModule('ExponentImageManipulator');
     if (!nativeMod) {
-      console.warn('[PhotoRecordModal] ExponentImageManipulator native module not found');
+      console.warn('[PhotoRecordModal] ExponentImageManipulator / ExpoImageManipulator native module not found');
       return null;
     }
     // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -114,31 +118,65 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
     onClose();
   };
 
-  // 画像圧縮＆Base64変換
+  // 画像圧縮＆Base64変換 (最大幅800pxにリサイズして軽量化)
   const processImage = async (uri: string) => {
-    const ImageManipulator = safeGetImageManipulator();
-    if (!ImageManipulator) {
-      Alert.alert('機能制限', '画像処理モジュールはこのビルドでは利用できません。');
-      return;
-    }
     try {
-      const manipResult = await ImageManipulator.manipulateAsync(
-        uri,
-        [{ resize: { width: 800 } }],
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true }
-      );
-      setSelectedImageUri(manipResult.uri);
-      const b64 = manipResult.base64 ? `data:image/jpeg;base64,${manipResult.base64}` : null;
-      setBase64Data(b64);
-      if (b64) {
-        await runAnalysis(b64);
+      setSelectedImageUri(uri);
+      let b64Str: string | null = null;
+
+      const ImageManipulator = safeGetImageManipulator();
+      if (ImageManipulator && ImageManipulator.manipulateAsync) {
+        try {
+          // カメラの超高画質写真を幅800px・圧縮率0.5にリサイズ（送信サイズを約80KBに軽量化）
+          const manipFormat = (ImageManipulator.SaveFormat?.JPEG || 'jpeg') as any;
+          const manipResult = await ImageManipulator.manipulateAsync(
+            uri,
+            [{ resize: { width: 800 } }],
+            { compress: 0.5, format: manipFormat, base64: true }
+          );
+          if (manipResult.uri) {
+            setSelectedImageUri(manipResult.uri);
+          }
+          if (manipResult.base64) {
+            b64Str = manipResult.base64;
+          }
+        } catch (manipErr) {
+          console.warn('[PhotoRecordModal] ImageManipulator resize failed, attempting FileSystem fallback', manipErr);
+        }
       }
+
+      // フォールバック: FileSystem で Base64 取得
+      if (!b64Str) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const FileSystem = require('expo-file-system');
+          if (FileSystem && FileSystem.readAsStringAsync) {
+            b64Str = await FileSystem.readAsStringAsync(uri, {
+              encoding: FileSystem.EncodingType ? FileSystem.EncodingType.Base64 : 'base64',
+            });
+          }
+        } catch (fsErr) {
+          console.warn('[PhotoRecordModal] FileSystem fallback failed:', fsErr);
+        }
+      }
+
+      if (!b64Str) {
+        Alert.alert('画像読込エラー', '画像のデータ変換に失敗しました。別の写真を試してください。');
+        return;
+      }
+
+      // MIME Base64 特有の改行コード (\r, \n, 空白) を完全にサニタイズ除去
+      const cleanB64Str = b64Str.replace(/[\r\n\s]/g, '');
+      const formattedB64 = cleanB64Str.startsWith('data:') ? cleanB64Str : `data:image/jpeg;base64,${cleanB64Str}`;
+      setBase64Data(formattedB64);
+      await runAnalysis(formattedB64);
     } catch (err: any) {
+      console.error('[PhotoRecordModal] processImage error:', err);
       Alert.alert('画像処理エラー', '画像の読み込みに失敗しました。');
     }
   };
 
-  // カメラで撮影
+  // カメラで撮影 (quality: 0.3 でメモリ消費を抑え Android OS によるメインアプリ強制終了・ダッシュボード戻りを防止)
   const handleTakePhoto = async () => {
     const ImagePicker = safeGetImagePicker();
     if (!ImagePicker) {
@@ -151,9 +189,11 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
         Alert.alert('権限エラー', 'カメラの使用を許可してください。');
         return;
       }
+      // quality: 0.3 & allowsEditing: true で軽量化し、OSによるアプリ再起動を防止
       const res = await ImagePicker.launchCameraAsync({
         mediaTypes: ['images'],
-        quality: 0.8,
+        allowsEditing: true,
+        quality: 0.3,
       });
       if (!res.canceled && res.assets[0]?.uri) {
         await processImage(res.assets[0].uri);
@@ -178,7 +218,7 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
       }
       const res = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        quality: 0.8,
+        quality: 0.7,
       });
       if (!res.canceled && res.assets[0]?.uri) {
         await processImage(res.assets[0].uri);

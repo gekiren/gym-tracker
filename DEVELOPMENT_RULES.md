@@ -230,6 +230,15 @@
 - 過去のデータ集計（過去1ヶ月の水分推移や時間内訳のパーセンテージ算出など）を行うSQLiteクエリは、必ず非同期API（`getFirstAsync`, `getAllAsync` 等）を `await` して実行し、UIスレッドを絶対にブロックしないでください。
 - また、一度集計した結果はZustandストア等のメモリ上にキャッシュし、画面が切り替わるたびに繰り返しSQLiteへ同じクエリを投げないように制御してください。
 
+### ⑨ Expo ネイティブモジュールの動的取得（`requireOptionalNativeModule`）における新旧互換ルール
+- Expo SDK 52〜54 以降の Expo Modules API（New Architecture）移行に伴い、ネイティブモジュールの内部識別名が `ExponentXXXX` から **`ExpoXXXX`** へ改名されているパッケージが存在します。（例: `ExponentImageManipulator` ➔ `ExpoImageManipulator`）
+- ネイティブモジュールの存在チェック（`requireOptionalNativeModule`）を行う際は、単一の識別名に依存せず、**必ず新名称（`ExpoXXXX`）と旧名称（`ExponentXXXX`）の双方を OR 条件（`||`）でフォールバックチェックする実装**を徹底してください。
+  ```typescript
+  // ⭕ 新旧両対応で堅牢な記述
+  const nativeMod = requireOptionalNativeModule('ExpoImageManipulator') || 
+                    requireOptionalNativeModule('ExponentImageManipulator');
+  ```
+
 ---
 
 ## 5. AIパーソナルトレーナー（AI Trainer）および Gemini API の仕様

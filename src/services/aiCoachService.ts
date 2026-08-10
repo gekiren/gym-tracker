@@ -255,10 +255,20 @@ export const analyzeMealImage = async (
     const proxySecret = process.env.EXPO_PUBLIC_AI_PROXY_SECRET;
     if (proxySecret) headers['Authorization'] = `Bearer ${proxySecret}`;
 
+    const promptMessage = userMemo.trim()
+      ? `【食事メモ】${userMemo}\nこの食事の写真から料理名、推定カロリー、PFC（タンパク質・脂質・炭水化物・塩分・食物繊維）のバランスを分析して回答してください。`
+      : 'この食事の写真から料理名、推定カロリー、PFC（タンパク質・脂質・炭水化物・塩分・食物繊維）のバランスを分析して回答してください。';
+
     const response = await fetch(NUTRITION_IMAGE_URL, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ image: base64Image, ocrHintText, userMemo, preferredModel }),
+      body: JSON.stringify({
+        message: promptMessage,
+        image: base64Image,
+        ocrHintText,
+        userMemo,
+        preferredModel,
+      }),
       signal: controller.signal,
     });
 
@@ -275,15 +285,17 @@ export const analyzeMealImage = async (
       throw new Error('食品または栄養成分表示ラベルが検出できませんでした。');
     }
 
+    const adviceText = data.advice || data.reply || undefined;
+
     return {
-      mealName: data.mealName || '不明な食事',
+      mealName: data.mealName || (userMemo.trim() ? userMemo.trim() : '食事写真'),
       calories: Number(data.calories) || 0,
       protein: Number(data.protein) || 0,
       fat: Number(data.fat) || 0,
       carbs: Number(data.carbs) || 0,
       sodium: Number(data.sodium) || 0,
       fiber: Number(data.fiber) || 0,
-      advice: data.advice,
+      advice: adviceText,
       isFood: data.isFood !== false,
     };
   } catch (err: any) {

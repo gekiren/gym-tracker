@@ -28,8 +28,7 @@
     },
     "android": {
       "package": "com.gekirennomad.trenote",
-      "versionCode": 37,
-      "minSdkVersion": 26,
+      "versionCode": 38,
       "permissions": [
         "com.android.vending.BILLING",
         "android.permission.SCHEDULE_EXACT_ALARM",
@@ -123,7 +122,8 @@
           "androidAppId": "ca-app-pub-3940256099942544~3347511713",
           "iosAppId": "ca-app-pub-3940256099942544~1458002511"
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,

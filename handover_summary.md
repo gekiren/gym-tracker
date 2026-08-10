@@ -1,27 +1,41 @@
-# 会話引き継ぎサマリー: ImagePicker 最適化 ＆ staging OTA 配信完了
+# 会話引き継ぎサマリー (Handover Summary)
 
-**作成日時:** 2026-08-10 13:26 JST  
-**対象リポジトリ:** `c:\TreNote`  
-**実機・ビルド環境:** `versionCode: 37` / `version: 1.3.2` / チャンネル `staging`
-
----
-
-## 1. 実施完了事項
-
-1. **ImagePicker モジュール安全読み込みのシンプル化**:
-   - `PhotoRecordModal.tsx` の `safeGetImagePicker` を直接 require 形式へ最適化し、新旧アーキテクチャ問わずモジュールを解禁。
-2. **staging OTA アップデートの配信**:
-   - **Update ID**: `019fe9ec-3ce6-7400-a53b-65b66ef83974`
-   - **Runtime Version**: `1.3.2`
+**作成日時:** 2026-08-10 14:06 JST  
+**対象プロジェクト:** TreNote (`C:/TreNote`)  
+**移行の理由:** versionCode 38 AAB ステージングビルドの正常完了に伴う、次フェーズ（実機確認・動作検証）へのセッション移行
 
 ---
 
-## 2. 変更済み主要ファイル
+## 1. 実施・完了済み事項 (Work Accomplished)
 
-- [`components/nutrition/PhotoRecordModal.tsx`](file:///C:/TreNote/components/nutrition/PhotoRecordModal.tsx): `safeGetImagePicker` 読み込みロジックのシンプル化。
+1. **Expo SDK 54 適合パッケージの一括更新**:
+   - `expo-image-picker` (`~17.0.11`), `expo-image-manipulator` (`~14.0.8`), `expo-build-properties` (`~1.0.10`), `expo-localization` (`~17.0.9`), `expo-updates` (`~29.0.19`), `expo` (`~54.0.36`), `@types/jest` (`29.5.14`) へ適合更新。
+2. **`app.json` の更新**:
+   - `android.versionCode`: `38` にインクリメント。
+   - `minSdkVersion` の重複記述を削除、`expo-localization` プラグインを追加。
+3. **静的検証・診断**:
+   - `npx tsc --noEmit`: エラー 0 件。
+   - `npx expo-doctor`: **18/18 checks passed. No issues detected!**
+4. **EAS クラウド AAB ステージングビルド成功**:
+   - `npx eas build -p android --profile staging` が正常完了。
+   - [EAS Build Details](https://expo.dev/accounts/gekirennomads-organization/projects/gym-tracker/builds/6ec05a7d-a67a-4fdb-98ef-7278ed0d7c9d)
 
 ---
 
-## 3. 次に行うこと / ユーザー動作確認
-1. アプリ再起動により OTA アップデートを反映。
-2. カメラ撮影・ギャラリー機能の動作確認。
+## 2. 次のセッションで行うべきアクション (Next Actions)
+
+1. **DEVELOPMENT_RULES.md の読み込み確認**
+2. **Google Play Console 内部テストへのアップロード**:
+   - 生成された `versionCode: 38` AAB ファイルを Google Play Console 内部テストトラックへ配布。
+3. **実機での動作確認**:
+   - 食事記録モーダルで「カメラ撮影」および「AI栄養解析」が正常に動作し、`ExponentImagePicker` のネイティブエラーが発生しないことを実機確認。
+
+---
+
+## 3. 参照ファイル (Key Files)
+
+- [`handover_summary.md`](file:///C:/TreNote/handover_summary.md)
+- [`walkthrough.md`](file:///C:/Users/toshi/.gemini/antigravity/brain/90f96d8e-3d51-4289-874a-200a3866d943/walkthrough.md)
+- [`DEVELOPMENT_RULES.md`](file:///c:/MCPKANRI/DEVELOPMENT_RULES.md)
+- [`components/nutrition/PhotoRecordModal.tsx`](file:///C:/TreNote/components/nutrition/PhotoRecordModal.tsx)
+- [`app.json`](file:///C:/TreNote/app.json)
