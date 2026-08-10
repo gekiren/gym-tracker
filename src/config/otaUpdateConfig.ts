@@ -11,7 +11,7 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.3.1',
+  version: '1.3.2',
   title: {
     ja: '栄養機能フォールバック＆AIテキスト栄養解析の改善',
     en: 'Nutrition Fallback & AI Text Analysis Update',
