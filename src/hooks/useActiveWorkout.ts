@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { saveWorkout, saveSetting, prefetchWorkoutCompletionData } from '../db/database';
-import { translateExercise } from '../i18n';
+import { translateExercise, translateStance } from '../i18n';
 import { computeCalories, computeAchievements, computeStreaks, computeWeeklyWorkoutCount } from '../utils/workoutStats';
 
 export interface StanceModalTarget {
@@ -170,14 +170,24 @@ export function useActiveWorkout() {
       Alert.alert(t('ui.common.info') || '情報', '現在記録中のエクササイズがありません。まずは種目を追加してください。');
       return;
     }
-    let contextStr = `【現在記録中のワークアウト】\n`;
+    let contextStr = `【重要指示: 記録中のリアルタイムデータ参照ルール】\n以下はユーザーが現在リアルタイムで実施中のワークアウトデータです。「データがない」「記録がない」と回答せず、以下の記録数値（重量、回数、セット数等）に基づいて回答してください。\n`;
     if (workoutNotes) contextStr += `全体メモ: "${workoutNotes}"\n`;
     for (const ex of exercises) {
-      contextStr += `- ${ex.name}: `;
-      const setDescs = ex.sets.map(s => {
-        let sd = `${s.weight ?? 0}${settings.weightUnit} x ${s.reps ?? 0}回`;
+      const translatedName = translateExercise(ex.name);
+      const nameStr = translatedName !== ex.name ? `${translatedName} (${ex.name})` : translatedName;
+      contextStr += `- ${nameStr}: `;
+      const validSets = ex.sets.filter((s: any) => s.weight != null || s.reps != null || s.is_completed || s.prev_weight != null || s.prev_reps != null);
+      if (validSets.length === 0) {
+        contextStr += '（セット未入力）\n';
+        continue;
+      }
+      const setDescs = validSets.map((s: any) => {
+        const weight = s.weight ?? s.prev_weight ?? 0;
+        const reps = s.reps ?? s.prev_reps ?? 0;
+        let sd = `${weight}${settings.weightUnit} x ${reps}回`;
+        if (s.is_completed) sd += ' [完了]';
         if (s.side) sd = `[${s.side === 'L' ? '左' : '右'}] ` + sd;
-        if (s.stance || s.variation) sd += ` (${s.stance || s.variation})`;
+        if (s.stance || s.variation) sd += ` (${translateStance(s.stance || s.variation)})`;
         if (s.rpe) sd += ` (RPE: ${s.rpe})`;
         return sd;
       });
@@ -197,24 +207,34 @@ export function useActiveWorkout() {
   // AI Coach for Exercise
   const handleAICoachExercise = useCallback(
     (ex: any) => {
-      let contextStr = `【現在記録中の種目データ】\n`;
-      contextStr += `- ${ex.name}: `;
+      const translatedName = translateExercise(ex.name);
+      const nameStr = translatedName !== ex.name ? `${translatedName} (${ex.name})` : translatedName;
+      let contextStr = `【重要指示: 記録中のリアルタイムデータ参照ルール】\n以下はユーザーが現在リアルタイムで実施中の「${nameStr}」のセットデータです。「データがない」「記録がない」と回答せず、以下の記録数値（重量、回数、セット数等）に基づいて回答してください。\n`;
+      contextStr += `- ${nameStr}: `;
       if (ex.notes) contextStr += `(種目メモ: "${ex.notes}") `;
-      const setDescs = ex.sets.map((s: any) => {
-        let sd = `${s.weight ?? 0}${settings.weightUnit} x ${s.reps ?? 0}回`;
-        if (s.side) sd = `[${s.side === 'L' ? '左' : '右'}] ` + sd;
-        if (s.stance || s.variation) sd += ` (${s.stance || s.variation})`;
-        if (s.rpe) sd += ` (RPE: ${s.rpe})`;
-        return sd;
-      });
-      contextStr += setDescs.join(', ') + '\n';
+      const validSets = ex.sets.filter((s: any) => s.weight != null || s.reps != null || s.is_completed || s.prev_weight != null || s.prev_reps != null);
+      if (validSets.length === 0) {
+        contextStr += '（セット未入力）\n';
+      } else {
+        const setDescs = validSets.map((s: any) => {
+          const weight = s.weight ?? s.prev_weight ?? 0;
+          const reps = s.reps ?? s.prev_reps ?? 0;
+          let sd = `${weight}${settings.weightUnit} x ${reps}回`;
+          if (s.is_completed) sd += ' [完了]';
+          if (s.side) sd = `[${s.side === 'L' ? '左' : '右'}] ` + sd;
+          if (s.stance || s.variation) sd += ` (${translateStance(s.stance || s.variation)})`;
+          if (s.rpe) sd += ` (RPE: ${s.rpe})`;
+          return sd;
+        });
+        contextStr += setDescs.join(', ') + '\n';
+      }
 
       router.push({
         pathname: '/(tabs)/coach',
         params: {
           contextPrompt: contextStr,
-          prefillMessage: t('ui.coach.prefill_active_set', { name: translateExercise(ex.name) }),
-          title: translateExercise(ex.name),
+          prefillMessage: t('ui.coach.prefill_active_set', { name: translatedName }),
+          title: translatedName,
         },
       });
     },

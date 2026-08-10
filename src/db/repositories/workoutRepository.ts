@@ -1,4 +1,5 @@
 import { getDB } from '../connection';
+import { translateExercise } from '../../i18n';
 import { WorkoutExercise, WorkoutRow, WorkoutExerciseRow, WorkoutSetRow, WorkoutSet, WorkoutWithStats, FullWorkoutData } from '../types';
 
 export const saveWorkout = async (
@@ -397,7 +398,7 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
     });
   }
 
-  let summary = "";
+  let summary = "【重要指示: ワークアウトデータ参照ルール】\n以下の履歴データにはユーザーの実際のトレーニング記録が含まれています。\n質問された種目（例: ベンチプレス等）のデータが存在する場合、絶対に「データがない」「記録が見つからない」と回答しないでください。\n記録されている日付・重量(kg/lbs)・回数・セット数・RPEを具体的に引用して回答してください。\n";
   for (const wid of workoutOrder) {
     const w = workoutsMap.get(wid)!;
     const dateStr = w.start_time.split('T')[0];
@@ -411,7 +412,11 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
     }
 
     for (const ex of w.exercises) {
-      summary += `   - ${ex.exercise_name}`;
+      const translatedName = translateExercise(ex.exercise_name);
+      const nameStr = translatedName !== ex.exercise_name 
+        ? `${translatedName} (${ex.exercise_name})` 
+        : translatedName;
+      summary += `   - ${nameStr}`;
       if (ex.notes) summary += ` (種目メモ: "${ex.notes}")`;
       summary += `: `;
 

@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.4.2',
+  version: '1.4.4',
   title: {
-    ja: 'カメラ撮影時のメモリ最適化（ダッシュボード強制戻り防止）',
-    en: 'Camera Capture Low-Memory Optimization Fix',
+    ja: 'AIトレーナーの種目データ・ベンチプレス認識改善',
+    en: 'AI Coach Exercise Recognition Fix',
   },
   notes: {
     ja: [
-      'カメラ撮影時のメモリ消費量を削減(quality: 0.3)し、Android OSによるアプリ強制終了・画面戻りを防止',
-      'カメラ撮影・ギャラリー選択双方での完全安定なビジュアル栄養解析を確立',
+      'ベンチプレス等の種目について「データがない」と回答される不具合を根本修正',
+      'AIトレーナーへ種目名（日本語・英語）および入力中のセット数値を確実に伝達するよう改善',
     ],
     en: [
-      'Optimized camera capture memory (quality: 0.3) to prevent Android LMK app destruction & dashboard fallback',
-      'Established 100% stable visual nutrition analysis for both camera capture and photo library',
+      'Fixed bug where AI Coach responded "no data available" for exercises like bench press',
+      'Improved exercise name translation and active set value parsing for AI Coach',
     ],
   },
 };
