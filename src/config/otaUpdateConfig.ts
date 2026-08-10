@@ -11,19 +11,23 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.4.5',
+  version: '1.5.0',
   title: {
-    ja: 'AIトレーナーのデータ統合 ＆ デバッグ表示機能',
-    en: 'AI Coach Data Integration & Debug Preview',
+    ja: '全テーマ総合アップデート (AIアドバイス強化・PFC機能拡張・タイマー高速化)',
+    en: 'Major Update v1.5.0 (AI Coach, PFC & Performance Optimization)',
   },
   notes: {
     ja: [
-      'ワークアウト中や特定種目からの相談時にも過去のトレーニング履歴を常に合体してAIへ送信するよう改善',
-      'ステージング環境にてAIへ実際に送信されたプロンプト（過去履歴・リアルタイム記録）を確認できるデバッグ表示機能を追加',
+      '⚡ パフォーマンス最適化: SQLiteデッドロック対策、一括クエリによる読み込み高速化、非表示画面の自動サスペンドを導入',
+      '🤖 AIコーチング最適化: 筋トレ履歴・食事PFC・水分・ライフログを統合したパーソナライズAIアドバイス機能を搭載',
+      '🍽️ 食事・ライフログ拡張: 食事ログ一覧へのフィルター＆キーワード検索バー追加、ダッシュボードへのリアルタイムPFCサマリーカード追加',
+      '🏋️ 筋トレ機能強化: 1RM計算機への公式切替（Epley/Brzycki）と目的別強度ゾーン表示、タイマー残り3・2・1秒予告バイブ演出を追加',
     ],
     en: [
-      'Combined active workout data with past history logs for AI Coach context',
-      'Added staging debug preview UI for inspecting compiled AI prompt',
+      '⚡ Performance Optimization: Batch SQL queries and background screen suspension for smooth FPS',
+      '🤖 AI Coach Upgrade: Personalised AI advice integrating workout history, PFC nutrition, hydration, and time logs',
+      '🍽️ Nutrition & Lifelog: Search & filter tabs in meal logs, live PFC summary widget on Dashboard',
+      '🏋️ Workout Expansion: 1RM formula selector (Epley/Brzycki), intensity zone badges, and 3-2-1 timer haptics',
     ],
   },
 };

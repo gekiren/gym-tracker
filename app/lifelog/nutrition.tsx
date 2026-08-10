@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Stack, useNavigation } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
 import { useNutritionStore } from '../../src/store/nutritionStore';
@@ -30,6 +31,7 @@ import NutritionSettingsModal from '../../components/nutrition/NutritionSettings
 
 export default function NutritionScreen() {
   const navigation = useNavigation();
+  const isFocused = useIsFocused();
 
   // Zustand selector 形式の徹底
   const mealLogs = useNutritionStore((state) => state.mealLogs);
@@ -72,7 +74,7 @@ export default function NutritionScreen() {
     setSelectedDate(d.toISOString().split('T')[0]);
   };
 
-  // 画面フォーカス時のデータ読み込み（SQLiteロック競合防止のため逐次実行）
+  // 画面フォーカス時のデータ読み込み（isFocusedでバックグラウンド時サスペンド）
   const reloadData = useCallback(async () => {
     try {
       await loadMealLogs(selectedDate);
@@ -86,12 +88,13 @@ export default function NutritionScreen() {
   }, [selectedDate]);
 
   useEffect(() => {
+    if (!isFocused) return;
     reloadData();
     const unsubscribe = navigation.addListener('focus', () => {
       reloadData();
     });
     return unsubscribe;
-  }, [navigation, selectedDate]);
+  }, [navigation, selectedDate, isFocused]);
 
   // お気に入りトグル処理
   const handleToggleFavorite = async (log: MealLog) => {

@@ -211,9 +211,11 @@ export default function CoachScreen() {
     }
   };
 
-  const handleChipPress = (chipType: 'analysis' | 'proposal' | 'rpe' | 'stance') => {
+  const handleChipPress = (chipType: 'full_analysis' | 'analysis' | 'proposal' | 'rpe' | 'stance') => {
     let prompt = '';
-    if (chipType === 'analysis') {
+    if (chipType === 'full_analysis') {
+      prompt = '本日の筋トレ実績、食事のPFCバランス、水分摂取量、時間管理などのログ全体を踏まえた総合的なアドバイスと改善フィードバックをお願いします。';
+    } else if (chipType === 'analysis') {
       prompt = t('ui.coach.chip_analysis_prompt');
     } else if (chipType === 'proposal') {
       prompt = t('ui.coach.chip_proposal_prompt');
@@ -449,6 +451,12 @@ export default function CoachScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chipsContainer}
           >
+            <TouchableOpacity
+              style={[styles.chip, { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: '#4facfe', borderWidth: 1 }]}
+              onPress={() => handleChipPress('full_analysis')}
+            >
+              <Text style={[styles.chipText, { color: '#4facfe', fontWeight: 'bold' }]}>🌟 本日の総合アドバイス（筋トレ・食事・ライフ）</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.chip} onPress={() => handleChipPress('analysis')}>
               <Text style={styles.chipText}>📊 {t('ui.coach.chip_analysis')}</Text>
             </TouchableOpacity>

@@ -209,23 +209,55 @@ export const loadFullWorkoutData = async (workoutId: number): Promise<FullWorkou
   const workoutRow = await db.getFirstAsync<WorkoutRow>('SELECT * FROM workouts WHERE id = ?', [workoutId]);
   if (!workoutRow) return null;
 
-  const exercisesRows = await db.getAllAsync<WorkoutExerciseRow>('SELECT we.id as workout_exercise_id, e.id as exercise_id, e.name as exercise_name, we.notes FROM workout_exercises we JOIN exercises e ON we.exercise_id = e.id WHERE we.workout_id = ? ORDER BY we.sort_order', [workoutId]);
+  const exercisesRows = await db.getAllAsync<WorkoutExerciseRow>(
+    'SELECT we.id as workout_exercise_id, e.id as exercise_id, e.name as exercise_name, we.notes FROM workout_exercises we JOIN exercises e ON we.exercise_id = e.id WHERE we.workout_id = ? ORDER BY we.sort_order',
+    [workoutId]
+  );
   
-  const exercisesData = [];
-  for (const ex of exercisesRows) {
-    const setsRows = await db.getAllAsync<WorkoutSetRow>('SELECT id, set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance, is_completed FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number ASC, id ASC', [ex.workout_exercise_id]);
+  if (exercisesRows.length === 0) {
+    return {
+      id: workoutRow.id,
+      title: workoutRow.title,
+      start_time: workoutRow.start_time,
+      end_time: workoutRow.end_time,
+      notes: workoutRow.notes,
+      calories: workoutRow.calories,
+      exercises: []
+    };
+  }
+
+  const weIds = exercisesRows.map(e => e.workout_exercise_id);
+  const placeholders = weIds.map(() => '?').join(',');
+  const allSetsRows = await db.getAllAsync<WorkoutSetRow & { workout_exercise_id: number }>(
+    `SELECT id, workout_exercise_id, set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance, is_completed 
+     FROM workout_sets 
+     WHERE workout_exercise_id IN (${placeholders}) 
+     ORDER BY set_number ASC, id ASC`,
+    weIds
+  );
+
+  const setsByWeId = new Map<number, WorkoutSetRow[]>();
+  for (const s of allSetsRows) {
+    if (!setsByWeId.has(s.workout_exercise_id)) {
+      setsByWeId.set(s.workout_exercise_id, []);
+    }
+    setsByWeId.get(s.workout_exercise_id)!.push(s);
+  }
+
+  const exercisesData = exercisesRows.map(ex => {
+    const setsRows = setsByWeId.get(ex.workout_exercise_id) || [];
     const sets = setsRows.map(s => ({
       ...s,
       is_completed: s.is_completed === 1 || s.is_completed === true
     }));
-    exercisesData.push({
+    return {
       workout_exercise_id: ex.workout_exercise_id,
       exercise_id: ex.exercise_id,
       exercise_name: ex.exercise_name,
       notes: ex.notes,
       sets: sets
-    });
-  }
+    };
+  });
 
   return {
     id: workoutRow.id,

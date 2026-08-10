@@ -7,6 +7,7 @@ import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useLifelogStore } from '../src/store/lifelogStore';
+import { useNutritionStore } from '../src/store/nutritionStore';
 import { saveSetting } from '../src/db/database';
 import { readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../src/services/crashReporterService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,6 +37,12 @@ export default function DashboardScreen() {
   const addHabitLog = useLifelogStore(state => state.addHabitLog);
   const waterPresets = useLifelogStore(state => state.waterPresets);
 
+  // Nutrition Store
+  const mealLogs = useNutritionStore(state => state.mealLogs);
+  const userNutritionGoals = useNutritionStore(state => state.userNutritionGoals);
+  const loadMealLogs = useNutritionStore(state => state.loadMealLogs);
+  const loadGoals = useNutritionStore(state => state.loadGoals);
+
   // Local state for onboarding/modals
   const [isSendingCrash, setIsSendingCrash] = useState(false);
   const [isNewUser, setIsNewUser] = useState(settings.needsStyleSelection);
@@ -54,6 +61,8 @@ export default function DashboardScreen() {
       const today = getTodayStr();
       const targetDate = currentDate || today;
       setCurrentDate(targetDate);
+      loadMealLogs(targetDate);
+      loadGoals();
     }, [currentDate])
   );
 
@@ -259,7 +268,7 @@ export default function DashboardScreen() {
         {/* 2.5 Nutrition & Meal Card */}
         <TouchableOpacity 
           style={styles.card} 
-          activeOpacity={0.8}
+          activeOpacity={0.85}
           onPress={() => router.push('/lifelog/nutrition')}
         >
           <View style={styles.cardHeader}>
@@ -270,9 +279,45 @@ export default function DashboardScreen() {
             <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
           </View>
           <View style={styles.cardBody}>
-            <Text style={styles.inactiveText}>
-              AI写真・チャット解析、PFCバランスグラフ、オートファジー絶食タイマーなどを管理します。
-            </Text>
+            {(() => {
+              const logs = mealLogs || [];
+              const goalCal = userNutritionGoals?.calories || 2000;
+              const totalCal = logs.reduce((acc, curr) => acc + (curr.calories || 0), 0);
+              const totalP = logs.reduce((acc, curr) => acc + (curr.protein || 0), 0);
+              const totalF = logs.reduce((acc, curr) => acc + (curr.fat || 0), 0);
+              const totalC = logs.reduce((acc, curr) => acc + (curr.carbs || 0), 0);
+              const calPercent = Math.min(100, Math.round((totalCal / goalCal) * 100));
+
+              return (
+                <>
+                  <View style={styles.statRow}>
+                    <Text style={styles.statVal}>{Math.round(totalCal)} <Text style={styles.statUnit}>kcal</Text></Text>
+                    <Text style={styles.statGoal}>/ {goalCal} kcal ({logs.length}件)</Text>
+                  </View>
+
+                  <View style={styles.progressContainer}>
+                    <View style={styles.progressBarBg}>
+                      <View 
+                        style={[
+                          styles.progressBarFill, 
+                          { 
+                            width: `${calPercent}%`,
+                            backgroundColor: '#10b981' 
+                          }
+                        ]} 
+                      />
+                    </View>
+                    <Text style={styles.progressPercent}>{calPercent}%</Text>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#334155' }}>
+                    <Text style={{ fontSize: 13, color: '#94a3b8' }}>P: <Text style={{ fontWeight: '700', color: '#06b6d4' }}>{totalP.toFixed(1)}g</Text></Text>
+                    <Text style={{ fontSize: 13, color: '#94a3b8' }}>F: <Text style={{ fontWeight: '700', color: '#f59e0b' }}>{totalF.toFixed(1)}g</Text></Text>
+                    <Text style={{ fontSize: 13, color: '#94a3b8' }}>C: <Text style={{ fontWeight: '700', color: '#a855f7' }}>{totalC.toFixed(1)}g</Text></Text>
+                  </View>
+                </>
+              );
+            })()}
           </View>
         </TouchableOpacity>
 

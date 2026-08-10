@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Stack } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { Theme } from '../../src/theme';
 import { WebViewTab } from '../../components/WebViewTab';
 import HabitCounterHTML from '../../src/web-apps/HabitCounter';
@@ -14,6 +15,7 @@ export default function HabitScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
   const [showHistory, setShowHistory] = useState(false);
   const { t } = useTranslation();
+  const isFocused = useIsFocused();
 
   const getTodayStr = () => {
     const date = new Date();
@@ -42,12 +44,12 @@ export default function HabitScreen() {
       />
       {showHistory ? (
         <LifelogHistoryTab type="habit" t={t} />
-      ) : (
+      ) : isFocused ? (
         <>
           <LifelogDateHeader type="habit" />
           <WebViewTab html={HabitCounterHTML} currentDate={targetDate} />
         </>
-      )}
+      ) : null}
     </View>
   );
 }

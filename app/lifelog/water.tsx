@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, AppState, AppStateStatus } from 'react-native';
 import { Stack, useNavigation } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { Theme } from '../../src/theme';
 import { WebViewTab } from '../../components/WebViewTab';
 import WaterHTML from '../../src/web-apps/Water';
@@ -16,6 +17,7 @@ export default function WaterScreen() {
   const [showHistory, setShowHistory] = useState(false);
   const { t } = useTranslation();
   const navigation = useNavigation();
+  const isFocused = useIsFocused();
 
   const getTodayStr = () => {
     const date = new Date();
@@ -27,18 +29,20 @@ export default function WaterScreen() {
 
   const targetDate = currentDate || getTodayStr();
 
-  // 1. 画面フォーカス時にDBから最新データを読み直す
+  // 1. 画面フォーカス時にDBから最新データを読み直す (isFocusedガード)
   useEffect(() => {
+    if (!isFocused) return;
     const unsubscribe = navigation.addListener('focus', () => {
       if (targetDate) {
         loadWaterData(targetDate);
       }
     });
     return unsubscribe;
-  }, [navigation, targetDate]);
+  }, [navigation, targetDate, isFocused]);
 
-  // 2. アプリがバックグラウンドから復帰した（Activeになった）時に同期
+  // 2. アプリがバックグラウンドから復帰した（Activeになった）時に同期 (isFocusedガード)
   useEffect(() => {
+    if (!isFocused) return;
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active' && targetDate) {
         loadWaterData(targetDate);
@@ -47,7 +51,7 @@ export default function WaterScreen() {
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     return () => subscription.remove();
-  }, [targetDate]);
+  }, [targetDate, isFocused]);
 
   return (
     <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>

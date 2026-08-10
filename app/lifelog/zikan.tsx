@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Stack } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { Theme } from '../../src/theme';
 import { WebViewTab } from '../../components/WebViewTab';
 import ZikanKanriHTML from '../../src/web-apps/ZikanKanri';
@@ -14,6 +15,7 @@ export default function ZikanScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
   const [showHistory, setShowHistory] = useState(false);
   const { t } = useTranslation();
+  const isFocused = useIsFocused();
 
   const getTodayStr = () => {
     const date = new Date();
@@ -42,12 +44,12 @@ export default function ZikanScreen() {
       />
       {showHistory ? (
         <LifelogHistoryTab type="time" t={t} />
-      ) : (
+      ) : isFocused ? (
         <>
           <LifelogDateHeader type="zikan" />
           <WebViewTab html={ZikanKanriHTML} currentDate={targetDate} />
         </>
-      )}
+      ) : null}
     </View>
   );
 }

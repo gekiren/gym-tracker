@@ -1,4 +1,11 @@
-import { getRecentWorkoutSummaryForAI } from '../db/database';
+import {
+  getRecentWorkoutSummaryForAI,
+  getMealLogsByDate,
+  getWaterLogs,
+  getWaterGoal,
+  getTimeLogs,
+  MealLog,
+} from '../db/database';
 import i18next from 'i18next';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useSettingsStore } from '../store/settingsStore';
@@ -23,13 +30,82 @@ export interface NutritionAIResult {
   isFood?: boolean;
 }
 
-
 export interface AICoachResponse {
   reply: string;
   success: boolean;
   errorType?: 'quota' | 'network' | 'unknown' | 'busy';
   compiledContext?: string;
 }
+
+/**
+ * 筋トレ履歴＋食事(PFC)＋ライフログ（水分・時間管理）の総合コンテキストを自動構築する
+ */
+export const compileFullUserContextForAI = async (customContext?: string): Promise<string> => {
+  const getTodayDateStr = () => new Date().toISOString().split('T')[0];
+  const today = getTodayDateStr();
+
+  let workoutContext = '';
+  try {
+    workoutContext = await getRecentWorkoutSummaryForAI(3);
+  } catch (e) {
+    workoutContext = '筋トレ履歴の取得に失敗しました。';
+  }
+
+  let nutritionContext = '';
+  try {
+    const mealLogs: MealLog[] = await getMealLogsByDate(today);
+    if (mealLogs && mealLogs.length > 0) {
+      let totalCal = 0;
+      let totalP = 0;
+      let totalF = 0;
+      let totalC = 0;
+      const mealNames = mealLogs.map((m: MealLog) => {
+        totalCal += m.calories || 0;
+        totalP += m.protein || 0;
+        totalF += m.fat || 0;
+        totalC += m.carbs || 0;
+        return `${m.name}(${m.calories || 0}kcal)`;
+      });
+      nutritionContext = `【本日の食事ログ (合計 ${totalCal}kcal / P:${Math.round(totalP)}g F:${Math.round(totalF)}g C:${Math.round(totalC)}g)】\n- 食べたもの: ${mealNames.join(', ')}`;
+    } else {
+      nutritionContext = '【本日の食事ログ】\n- まだ本日の食事は記録されていません。';
+    }
+  } catch (e) {
+    nutritionContext = '食事ログの取得に失敗しました。';
+  }
+
+  let lifelogContext = '';
+  try {
+    const waterLogs = await getWaterLogs(today);
+    const waterGoal = await getWaterGoal();
+    const totalWater = waterLogs.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+
+    const timeLogs = await getTimeLogs(today);
+    let timeSummary = '';
+    if (timeLogs && timeLogs.length > 0) {
+      const summaryMap = new Map<string, number>();
+      timeLogs.forEach(t => {
+        const current = summaryMap.get(t.activity_name) || 0;
+        summaryMap.set(t.activity_name, current + (t.duration_minutes || 0));
+      });
+      timeSummary = Array.from(summaryMap.entries())
+        .map(([name, mins]) => `${name}:${Math.round((mins / 60) * 10) / 10}時間`)
+        .join(', ');
+    }
+
+    lifelogContext = `【本日のライフログ】\n- 水分摂取: ${totalWater}ml / 目標${waterGoal}ml\n${timeSummary ? `- 時間管理: ${timeSummary}` : ''}`;
+  } catch (e) {
+    lifelogContext = 'ライフログの取得に失敗しました。';
+  }
+
+  let finalContext = `${workoutContext}\n\n${nutritionContext}\n\n${lifelogContext}`;
+
+  if (customContext && customContext.trim()) {
+    finalContext = `【リアルタイムアクティビティデータ】\n${customContext.trim()}\n\n${finalContext}`;
+  }
+
+  return finalContext;
+};
 
 /**
  * Sends a message to the AI Coach via the Cloudflare Workers Proxy, including compiled context.
@@ -49,30 +125,17 @@ export const sendMessageToAICoach = async (
 ): Promise<AICoachResponse> => {
   const controller = new AbortController();
   const timeoutSeconds = aiMode === 'thinking' ? 45000 : 25000;
-  const timeoutId = setTimeout(() => controller.abort(), timeoutSeconds); // 25s for quick, 45s for thinking
+  const timeoutId = setTimeout(() => controller.abort(), timeoutSeconds);
 
   try {
-    // 1. Gather context: Always load past workout history (3 recent sessions) AND combine with customContext (real-time data) if provided.
-    let pastHistory = '';
-    try {
-      pastHistory = await getRecentWorkoutSummaryForAI(3);
-    } catch (dbErr) {
-      console.warn('Failed to load recent workout logs for AI context', dbErr);
-      pastHistory = '過去の履歴を取得できませんでした。';
-    }
+    // 1. 総合コンテキスト（筋トレ＋食事PFC＋ライフログ）を自動生成
+    const fullContext = await compileFullUserContextForAI(customContext);
 
-    let workoutHistoryContext = '';
-    if (customContext && customContext.trim()) {
-      workoutHistoryContext = `【記録中のリアルタイムデータ】\n${customContext.trim()}\n\n【過去のワークアウト履歴 (直近3回分)】\n${pastHistory}`;
-    } else {
-      workoutHistoryContext = pastHistory;
-    }
-
-    console.log(`[AI Coach Service] Context length: ${workoutHistoryContext.length} chars (hasCustomContext: ${Boolean(customContext)})`);
+    console.log(`[AI Coach Service] Context length: ${fullContext.length} chars (hasCustomContext: ${Boolean(customContext)})`);
 
     const bodyWeightStr = userWeight ? `${userWeight} ${weightUnit}` : '未設定';
     const lang = i18next.language || 'ja';
-    const preferredModel = useSettingsStore.getState().settings.preferredAiModel || 'gemini';
+    const preferredModel = useSettingsStore.getState().settings.preferredAiModel || 'gemini-3.6-flash';
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -89,7 +152,7 @@ export const sendMessageToAICoach = async (
       headers,
       body: JSON.stringify({
         message,
-        workout_history: workoutHistoryContext,
+        workout_history: fullContext,
         user_weight: bodyWeightStr,
         weight_unit: weightUnit || 'kg',
         language: lang,
@@ -106,7 +169,7 @@ export const sendMessageToAICoach = async (
         reply: i18next.t('ui.coach.limit_reached_msg') || '今月の利用枠が残っていません。',
         success: false,
         errorType: 'quota',
-        compiledContext: workoutHistoryContext,
+        compiledContext: fullContext,
       };
     }
 
@@ -138,7 +201,7 @@ export const sendMessageToAICoach = async (
       return {
         reply: data.reply,
         success: true,
-        compiledContext: workoutHistoryContext,
+        compiledContext: fullContext,
       };
     } else {
       throw new Error('Invalid response structure from proxy');

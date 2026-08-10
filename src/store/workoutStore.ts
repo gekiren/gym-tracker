@@ -418,6 +418,15 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         restTimer: { isActive: false, remaining: 0, endTime: null } 
       };
     }
+
+    // 残り3秒、2秒、1秒のカウントダウン予告バイブレーション
+    const settings = useSettingsStore.getState().settings;
+    if (settings.timerVibrate && nextRemaining !== state.restTimer.remaining) {
+      if (nextRemaining === 3 || nextRemaining === 2 || nextRemaining === 1) {
+        Vibration.vibrate(60);
+      }
+    }
+
     return { restTimer: { isActive: true, remaining: nextRemaining, endTime: state.restTimer.endTime } };
   }),
   markWorkStart: () => {

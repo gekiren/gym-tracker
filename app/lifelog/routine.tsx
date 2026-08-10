@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, TouchableOpacity, Alert, BackHandler } from 'react-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { Theme } from '../../src/theme';
 import { WebViewTab } from '../../components/WebViewTab';
 import RoutineTrackerHTML from '../../src/web-apps/RoutineTracker';
@@ -14,6 +15,7 @@ export default function RoutineScreen() {
   const activeRoutineState = useLifelogStore((state) => state.activeRoutineState);
   const [showHistory, setShowHistory] = useState(false);
   const { t } = useTranslation();
+  const isFocused = useIsFocused();
 
   const isExecuting = activeRoutineState?.isExecuting || false;
 
@@ -89,9 +91,9 @@ export default function RoutineScreen() {
       />
       {showHistory ? (
         <LifelogHistoryTab type="routine" t={t} />
-      ) : (
+      ) : isFocused ? (
         <WebViewTab html={RoutineTrackerHTML} currentDate={targetDate} />
-      )}
+      ) : null}
     </View>
   );
 }
