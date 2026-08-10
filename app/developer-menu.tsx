@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, TextInput, Modal, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, TextInput, Modal, Platform, Switch } from 'react-native';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../src/theme';
@@ -27,6 +27,9 @@ export default function DeveloperMenuScreen() {
   }
 
   const { t } = useTranslation();
+  const enableAiDebugContext = useSettingsStore(state => state.settings.enableAiDebugContext);
+  const setEnableAiDebugContext = useSettingsStore(state => state.setEnableAiDebugContext);
+
   const [isChecking, setIsChecking] = useState(false);
   const [lastAckId, setLastAckId] = useState<string>('Loading...');
   const [channelOverride, setChannelOverride] = useState<string>('Loading...');
@@ -967,6 +970,26 @@ export default function DeveloperMenuScreen() {
             </View>
           </View>
         </Modal>
+
+        {/* AI Coach Debug Section */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="bug-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>AIコーチ 送信コンテキストデバッグ</Text>
+          </View>
+          <Text style={styles.cardDesc}>
+            AI Coach 画面上に、実際にAIへ送信されたプロンプト（リアルタイム記録・過去履歴）のプレビュー表示エリアを出力します。
+          </Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>デバッグ可視化UIを表示</Text>
+            <Switch
+              value={enableAiDebugContext}
+              onValueChange={(val) => setEnableAiDebugContext(val)}
+              trackColor={{ false: '#333', true: Theme.colors.primary }}
+              thumbColor="#fff"
+            />
+          </View>
+        </View>
 
         {/* Export Section */}
         <View style={styles.card}>

@@ -26,6 +26,7 @@ export interface ApplicationSettings {
   alwaysOneSet: boolean;
   preferredAiModel: 'gemini' | 'deepseek';
   aiChatMode: 'quick' | 'thinking';
+  enableAiDebugContext: boolean;
 }
 
 export interface LoadSettingsPayload {
@@ -44,6 +45,7 @@ export interface LoadSettingsPayload {
   alwaysOneSet?: boolean;
   preferredAiModel?: 'gemini' | 'deepseek';
   aiChatMode?: 'quick' | 'thinking';
+  enableAiDebugContext?: boolean;
 }
 
 export interface SettingsState {
@@ -53,6 +55,7 @@ export interface SettingsState {
   setAlwaysOneSet: (alwaysOneSet: boolean) => void;
   setPreferredAiModel: (model: 'gemini' | 'deepseek') => void;
   setAiChatMode: (mode: 'quick' | 'thinking') => void;
+  setEnableAiDebugContext: (enabled: boolean) => void;
   setPremiumUntil: (premiumUntil: string) => void;
   updatePremiumStatus: (premiumUntil: string) => void;
   setIsEarlyAdopter: (isEarly: boolean) => void;
@@ -90,6 +93,7 @@ export const initialSettings: ApplicationSettings = {
   alwaysOneSet: false,
   preferredAiModel: 'gemini',
   aiChatMode: 'quick',
+  enableAiDebugContext: true,
 };
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -111,7 +115,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       keepAwake,
       alwaysOneSet,
       preferredAiModel,
-      aiChatMode
+      aiChatMode,
+      enableAiDebugContext
     } = payload;
     const finalNeedsUnitSelection = needsUnitSelection !== undefined ? needsUnitSelection : state.settings.needsUnitSelection;
     const finalBodyWeight = bodyWeight !== undefined ? bodyWeight : state.settings.bodyWeight;
@@ -124,6 +129,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const finalAlwaysOneSet = alwaysOneSet !== undefined ? alwaysOneSet : state.settings.alwaysOneSet;
     const finalPreferredAiModel = preferredAiModel !== undefined ? preferredAiModel : state.settings.preferredAiModel;
     const finalAiChatMode = aiChatMode !== undefined ? aiChatMode : state.settings.aiChatMode;
+    const finalEnableAiDebugContext = enableAiDebugContext !== undefined ? enableAiDebugContext : state.settings.enableAiDebugContext;
 
     const isPremium = computeIsPremium(finalPremiumUntil, finalIsEarlyAdopter);
     return {
@@ -160,6 +166,13 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     saveSetting('ai_chat_mode', mode).catch(e => console.warn('Failed to save ai_chat_mode setting', e));
     set((state) => ({
       settings: { ...state.settings, aiChatMode: mode }
+    }));
+  },
+
+  setEnableAiDebugContext: (enabled: boolean) => {
+    saveSetting('enable_ai_debug_context', enabled ? 'true' : 'false').catch(e => console.warn('Failed to save enable_ai_debug_context setting', e));
+    set((state) => ({
+      settings: { ...state.settings, enableAiDebugContext: enabled }
     }));
   },
 

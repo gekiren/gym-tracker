@@ -104,7 +104,8 @@ export default function HistoryScreen() {
     if (data.notes) contextStr += `全体メモ: "${data.notes}"\n`;
     
     for (const ex of data.exercises) {
-      contextStr += `- ${ex.exercise_name}`;
+      const translatedExName = translateExercise(ex.exercise_name);
+      contextStr += `- ${translatedExName}`;
       if (ex.notes) contextStr += ` (種目メモ: "${ex.notes}")`;
       contextStr += `: `;
       

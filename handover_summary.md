@@ -20,19 +20,6 @@
    - `npx eas build -p android --profile staging` が正常完了。
    - [EAS Build Details](https://expo.dev/accounts/gekirennomads-organization/projects/gym-tracker/builds/6ec05a7d-a67a-4fdb-98ef-7278ed0d7c9d)
 
----
-
-## 2. 次のセッションで行うべきアクション (Next Actions)
-
-1. **DEVELOPMENT_RULES.md の読み込み確認**
-2. **Google Play Console 内部テストへのアップロード**:
-   - 生成された `versionCode: 38` AAB ファイルを Google Play Console 内部テストトラックへ配布。
-3. **実機での動作確認**:
-   - 食事記録モーダルで「カメラ撮影」および「AI栄養解析」が正常に動作し、`ExponentImagePicker` のネイティブエラーが発生しないことを実機確認。
-
----
-
-## 3. 参照ファイル (Key Files)
 
 - [`handover_summary.md`](file:///C:/TreNote/handover_summary.md)
 - [`walkthrough.md`](file:///C:/Users/toshi/.gemini/antigravity/brain/90f96d8e-3d51-4289-874a-200a3866d943/walkthrough.md)

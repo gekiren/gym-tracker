@@ -248,12 +248,16 @@ export default {
 
       // ─── C. 通常のAIコーチテキスト対話 (/api/chat) ───
       const systemInstruction = isEnglish
-        ? "You are TreNote's elite professional strength and fitness coach."
-        : "あなたは筋トレ記録アプリ「TreNote」専属の超一流プロフィットネス・筋トレコーチです。";
+        ? "You are TreNote's elite professional strength and fitness coach. If workout set details (weight, reps, RPE) are provided in the context, evaluate them as the user's active/historical session data and NEVER claim that data is missing. Provide clear, logical, and practical advice."
+        : "あなたは筋トレ記録アプリ「TreNote」専属の超一流プロフィットネス・筋トレコーチです。提示されたコンテキストにセット記録（重量・回数・RPE等）が含まれている場合はそれを現在の実施データとして直接参照し、絶対に『データが無い』とお断りせずに具体的な調整案やアドバイスを行ってください。";
+
+      const contextHeader = workout_history && (workout_history.includes("【重要:") || workout_history.includes("【現在"))
+        ? (isEnglish ? "【Active Workout Data】" : "【現在記録中のワークアウト/セットデータ】")
+        : (isEnglish ? "【Recent Workout History】" : "【最近のワークアウト履歴】");
 
       const promptContext = isEnglish
-        ? `[User Context]\n- Body Weight: ${user_weight || "Not set"}\n\n[Message]\n${message}`
-        : `【ユーザー情報】\n- 体重: ${user_weight || "未設定"}\n\n【ユーザーの質問】\n${message}`;
+        ? `[User Context]\n- Body Weight: ${user_weight || "Not set"}\n\n${contextHeader}\n${workout_history || "No history available"}\n\n[User Message]\n${message}`
+        : `【ユーザー情報】\n- 体重: ${user_weight || "未設定"}\n\n${contextHeader}\n${workout_history || "履歴なし"}\n\n【ユーザーの質問】\n${message}`;
 
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${env.GEMINI_API_KEY}`;
       const response = await fetch(geminiUrl, {

@@ -104,21 +104,55 @@ export default {
         });
       }
 
-      // 8. Construct prompts based on language and AI Mode (Quick vs Thinking)
+      // 8. Construct prompts: Inject workout_history directly into systemInstruction
+      const historyContent = (workout_history && workout_history.trim()) 
+        ? workout_history.trim() 
+        : (isEnglish ? "(No workout history logged)" : "（ワークアウト履歴はありません）");
+
       let systemInstruction = "";
       if (isEnglish) {
         systemInstruction = isThinkingMode
-          ? "You are TreNote's elite strength and fitness coach operating in THINKING MODE. Thoroughly analyze the user's workout logs, fatigue levels, progressive overload, and RPE. Provide deep, logical reasoning and detailed exercise physiology advice with actionable steps."
-          : "You are TreNote's elite strength and fitness coach operating in QUICK MODE. Provide extremely fast, direct, and concise answers focusing purely on conclusion and immediate next steps without long explanations. Keep response under 100 words.";
+          ? `You are TreNote's elite strength and fitness coach operating in THINKING MODE.
+[CRITICAL INSTRUCTION] You MUST treat the following "User Workout Database" as verified facts and active context. ALWAYS reference, quote, and analyze specific set data (exercises, dates, weights, reps, RPE). NEVER state "I cannot access your workout data" or "No data available" when data is present in the database below.
+
+=== USER WORKOUT DATABASE ===
+${historyContent}
+=============================
+
+Provide deep, logical reasoning and detailed exercise physiology advice with actionable steps.`
+          : `You are TreNote's elite strength and fitness coach operating in QUICK MODE.
+[CRITICAL INSTRUCTION] Reference the provided "User Workout Database" directly. ALWAYS use the set data below and NEVER claim that data is missing.
+
+=== USER WORKOUT DATABASE ===
+${historyContent}
+=============================
+
+Provide extremely fast, direct, and concise answers focusing purely on conclusion and immediate next steps without long explanations. Keep response under 100 words.`;
       } else {
         systemInstruction = isThinkingMode
-          ? "あなたは筋トレ記録アプリ「TreNote」専属のプロコーチです。【シンキングモード（思考あり）】として動作しています。ユーザーのトレーニング履歴、RPE、疲労度、重量推移を多角的に熟考・分析した上で、運動生理学的根拠と具体的な調整案を論理的かつ丁寧に解説してください。"
-          : "あなたは筋トレ記録アプリ「TreNote」専属のプロコーチです。【クイックモード（思考なし・スピード重視）】として動作しています。前置きや冗長な解説は排除し、結論・推奨する重量レップ数・アドバイスのみを非常に迅速かつ短文で簡潔に回答してください（200文字以内目安）。";
+          ? `あなたは筋トレ記録アプリ「TreNote」専属のプロコーチです。【シンキングモード（思考あり）】として動作しています。
+【最優先指令】以下に提示する「ユーザーのワークアウトデータベース」を既知の決定事実として100%参照・分析してください。
+ユーザーからログの分析、成長、次回重量の相談などを求められた場合、以下のデータベース内の日付・種目名・重量・回数・セット数・RPEを具体的に引用して解説してください。
+データベースに記録が存在するにもかかわらず『データが無い』『ログが確認できていない』『記録が届いていない』とお断りすることは絶対に厳禁とします。
+
+=== ユーザーのワークアウトデータベース ===
+${historyContent}
+==========================================
+
+上記データを基に、論理的かつ丁寧に具体的なアドバイスや調整案を回答してください。`
+          : `あなたは筋トレ記録アプリ「TreNote」専属のプロコーチです。【クイックモード（思考なし・スピード重視）】として動作しています。
+【最優先指令】以下の「ユーザーのワークアウトデータベース」を直接参照して回答してください。データが存在する場合、絶対に『データが無い』とお断りしないでください。
+
+=== ユーザーのワークアウトデータベース ===
+${historyContent}
+==========================================
+
+前置きや冗長な解説は排除し、提示されたデータをもとに結論・推奨する重量レップ数・アドバイスのみを非常に迅速かつ短文で簡潔に回答してください（200文字以内目安）。`;
       }
 
       const promptContext = isEnglish
-        ? `[Mode: ${isThinkingMode ? "Thinking (Deep Analysis)" : "Quick (Fast Response)"}]\n[User Context]\n- Body Weight: ${user_weight || "Not set"}\n- Unit: ${weight_unit || "kg"}\n\n[Recent Workout History]\n${workout_history || "No history available"}\n\n[User Message]\n${message}`
-        : `【動作モード: ${isThinkingMode ? "シンキングモード（思考あり）" : "クイックモード（思考なし）"}】\n【ユーザー情報】\n- 体重: ${user_weight || "未設定"}\n- 単位: ${weight_unit || "kg"}\n\n【最近のワークアウト履歴】\n${workout_history || "履歴なし"}\n\n【ユーザーの質問】\n${message}`;
+        ? `[User Info]\n- Body Weight: ${user_weight || "Not set"}\n- Unit: ${weight_unit || "kg"}\n\n[User Message]\n${message}`
+        : `【ユーザー情報】\n- 体重: ${user_weight || "未設定"}\n- 単位: ${weight_unit || "kg"}\n\n【ユーザーの質問】\n${message}`;
 
       // Helper for calling Gemini API
       const callGemini = async () => {

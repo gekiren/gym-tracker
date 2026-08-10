@@ -28,6 +28,7 @@ export interface AICoachResponse {
   reply: string;
   success: boolean;
   errorType?: 'quota' | 'network' | 'unknown' | 'busy';
+  compiledContext?: string;
 }
 
 /**
@@ -51,17 +52,23 @@ export const sendMessageToAICoach = async (
   const timeoutId = setTimeout(() => controller.abort(), timeoutSeconds); // 25s for quick, 45s for thinking
 
   try {
-    // 1. Gather context: use customContext if provided (from direct page sparkles buttons),
-    // otherwise load recent 3 workout logs from the SQLite database.
-    let workoutHistoryContext = customContext;
-    if (!workoutHistoryContext) {
-      try {
-        workoutHistoryContext = await getRecentWorkoutSummaryForAI(3);
-      } catch (dbErr) {
-        console.warn('Failed to load recent workout logs for AI context', dbErr);
-        workoutHistoryContext = '過去の履歴を取得できませんでした。';
-      }
+    // 1. Gather context: Always load past workout history (3 recent sessions) AND combine with customContext (real-time data) if provided.
+    let pastHistory = '';
+    try {
+      pastHistory = await getRecentWorkoutSummaryForAI(3);
+    } catch (dbErr) {
+      console.warn('Failed to load recent workout logs for AI context', dbErr);
+      pastHistory = '過去の履歴を取得できませんでした。';
     }
+
+    let workoutHistoryContext = '';
+    if (customContext && customContext.trim()) {
+      workoutHistoryContext = `【記録中のリアルタイムデータ】\n${customContext.trim()}\n\n【過去のワークアウト履歴 (直近3回分)】\n${pastHistory}`;
+    } else {
+      workoutHistoryContext = pastHistory;
+    }
+
+    console.log(`[AI Coach Service] Context length: ${workoutHistoryContext.length} chars (hasCustomContext: ${Boolean(customContext)})`);
 
     const bodyWeightStr = userWeight ? `${userWeight} ${weightUnit}` : '未設定';
     const lang = i18next.language || 'ja';
@@ -99,6 +106,7 @@ export const sendMessageToAICoach = async (
         reply: i18next.t('ui.coach.limit_reached_msg') || '今月の利用枠が残っていません。',
         success: false,
         errorType: 'quota',
+        compiledContext: workoutHistoryContext,
       };
     }
 
@@ -130,6 +138,7 @@ export const sendMessageToAICoach = async (
       return {
         reply: data.reply,
         success: true,
+        compiledContext: workoutHistoryContext,
       };
     } else {
       throw new Error('Invalid response structure from proxy');

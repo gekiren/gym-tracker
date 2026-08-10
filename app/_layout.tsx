@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet, Alert, AppState, ScrollView } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
+import * as Updates from 'expo-updates';
 import mobileAds from 'react-native-google-mobile-ads';
 import { initDB, getSettings, saveSetting } from '../src/db/database';
 import { Theme } from '../src/theme';
@@ -55,6 +56,15 @@ export default function RootLayout() {
       const preferredAiModel = (storedSettings['preferred_ai_model'] === 'deepseek' ? 'deepseek' : 'gemini') as 'gemini' | 'deepseek';
       const aiChatMode = (storedSettings['ai_chat_mode'] === 'thinking' ? 'thinking' : 'quick') as 'quick' | 'thinking';
 
+      const isProductionChannel = Updates.channel === 'production';
+      let enableAiDebugContext = !isProductionChannel;
+      if (!isProductionChannel && storedSettings['enable_ai_debug_context'] === 'false') {
+        enableAiDebugContext = false;
+      }
+      if (isProductionChannel) {
+        enableAiDebugContext = false;
+      }
+
       // 1. 言語および重量単位の設定
       const { weightUnit, needsUnitSelection, needsStyleSelection } = await initLanguageAndUnits(storedSettings);
 
@@ -85,6 +95,7 @@ export default function RootLayout() {
         alwaysOneSet,
         preferredAiModel,
         aiChatMode,
+        enableAiDebugContext,
       });
       if (expired) {
         useWorkoutStore.getState().setShouldShowPaywall(true);

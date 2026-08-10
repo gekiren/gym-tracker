@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../../src/i18n';
 import { useLocalSearchParams, router } from 'expo-router';
 import { AI_CONFIG } from '../../src/config/aiConfig';
+import * as Updates from 'expo-updates';
 
 interface ChatMessage {
   id: string;
@@ -47,6 +48,10 @@ export default function CoachScreen() {
   const [loading, setLoading] = useState(false);
   const [activeContext, setActiveContext] = useState<string | null>(null);
   const [contextTitle, setContextTitle] = useState<string | null>(null);
+  const [showDebugAccordion, setShowDebugAccordion] = useState(false);
+  const [lastCompiledContext, setLastCompiledContext] = useState<string | null>(null);
+
+  const showDebugContextUI = Updates.channel !== 'production' && settings.enableAiDebugContext;
 
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -158,6 +163,10 @@ export default function CoachScreen() {
         settings.weightUnit,
         currentAiChatMode
       );
+
+      if (response.compiledContext) {
+        setLastCompiledContext(response.compiledContext);
+      }
 
       // If failed, refund token
       if (!response.success) {
@@ -275,6 +284,39 @@ export default function CoachScreen() {
           <TouchableOpacity style={styles.clearContextBtn} onPress={handleClearContext}>
             <Ionicons name="close-circle" size={18} color={Theme.colors.textMuted} />
           </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Debug Context Preview Banner (Staging/Dev default) */}
+      {showDebugContextUI && (
+        <View style={styles.debugContextContainer}>
+          <TouchableOpacity
+            style={styles.debugContextHeader}
+            onPress={() => setShowDebugAccordion(!showDebugAccordion)}
+            activeOpacity={0.7}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+              <Ionicons name="bug-outline" size={15} color="#FFB74D" style={{ marginRight: 6 }} />
+              <Text style={styles.debugContextTitle}>
+                🔍 AI送信コンテキスト詳細 ({lastCompiledContext ? `${lastCompiledContext.length}文字` : '未送信'})
+              </Text>
+            </View>
+            <Ionicons
+              name={showDebugAccordion ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color="#FFB74D"
+            />
+          </TouchableOpacity>
+
+          {showDebugAccordion && (
+            <View style={styles.debugContextContent}>
+              <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled>
+                <Text style={styles.debugContextText}>
+                  {lastCompiledContext || activeContext || 'まだAIへの送信が行われていません。メッセージを送信すると実際に渡されたプロンプト全文が表示されます。'}
+                </Text>
+              </ScrollView>
+            </View>
+          )}
         </View>
       )}
 
@@ -704,5 +746,35 @@ const styles = StyleSheet.create({
     color: Theme.colors.primary,
     fontWeight: '600',
     textAlign: 'center',
+  },
+
+  // Debug Context Banner
+  debugContextContainer: {
+    backgroundColor: 'rgba(255, 183, 77, 0.08)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 183, 77, 0.25)',
+  },
+  debugContextHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  debugContextTitle: {
+    color: '#FFB74D',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  debugContextContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  debugContextText: {
+    color: '#E0E0E0',
+    fontSize: 11,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    lineHeight: 16,
   },
 });
