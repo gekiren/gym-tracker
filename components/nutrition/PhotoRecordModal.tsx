@@ -13,34 +13,45 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
-  NativeModules,
 } from 'react-native';
 
-// ネイティブモジュール取得（safeGetImagePicker / safeGetImageManipulator）
+// ネイティブモジュール取得（クラッシュ防止付き）
+// expo-image-picker 内部の ExponentImagePicker.js が requireNativeModule('ExponentImagePicker') を
+// トップレベルで実行するため、require('expo-image-picker') 自体がネイティブ不在時に致命例外をスローする。
+// そのため、require を呼ぶ前に requireOptionalNativeModule で安全に存在チェックを行う。
 const safeGetImagePicker = () => {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const picker = require('expo-image-picker');
-    if (picker && (picker.launchCameraAsync || picker.default?.launchCameraAsync)) {
-      return picker as typeof import('expo-image-picker');
+    const { requireOptionalNativeModule } = require('expo-modules-core');
+    const nativeMod = requireOptionalNativeModule('ExponentImagePicker');
+    if (!nativeMod) {
+      console.warn('[PhotoRecordModal] ExponentImagePicker native module not found');
+      return null;
     }
+    // ネイティブモジュール存在確認済み → 安全に require 可能
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require('expo-image-picker') as typeof import('expo-image-picker');
   } catch (err: any) {
     console.warn('[PhotoRecordModal] safeGetImagePicker failed:', err?.message || err);
+    return null;
   }
-  return null;
 };
 
 const safeGetImageManipulator = () => {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const manipulator = require('expo-image-manipulator');
-    if (manipulator && (manipulator.manipulateAsync || manipulator.default?.manipulateAsync)) {
-      return manipulator as typeof import('expo-image-manipulator');
+    const { requireOptionalNativeModule } = require('expo-modules-core');
+    const nativeMod = requireOptionalNativeModule('ExponentImageManipulator');
+    if (!nativeMod) {
+      console.warn('[PhotoRecordModal] ExponentImageManipulator native module not found');
+      return null;
     }
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require('expo-image-manipulator') as typeof import('expo-image-manipulator');
   } catch (err: any) {
     console.warn('[PhotoRecordModal] safeGetImageManipulator failed:', err?.message || err);
+    return null;
   }
-  return null;
 };
 
 import { analyzeMealImage, analyzeMealText, NutritionAIResult } from '../../src/services/aiCoachService';
