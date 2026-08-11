@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.6.5',
+  version: '1.6.8',
   title: {
-    ja: 'ヘッダーの日付表示＆カレンダーボタンデザイン改善',
-    en: 'Improved Header Date Selector & Calendar Button',
+    ja: 'フリーワークアウト開始ボタンのシンプル化',
+    en: 'Simplified Free Workout Button',
   },
   notes: {
     ja: [
-      '📅 カレンダーボタンの押しやすさ向上: 日付表示とカレンダーアイコンの間隔を広げ、視認性の高いボタンデザインに変更しました',
+      '✨ アイコン表示の最適化: フリーワークアウト開始ボタンからプラスアイコンを外し、スッキリと再生マークのみのシンプルな表記に修正しました',
     ],
     en: [
-      '📅 Better Calendar Button: Increased spacing between date text and icon, and updated to a rounded accent button for easier tapping',
+      '✨ Button Layout Polish: Removed plus icon from free workout button for a cleaner look with play-circle icon',
     ],
   },
 };

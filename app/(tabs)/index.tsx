@@ -213,11 +213,6 @@ export default function WorkoutHomeScreen() {
   return (
     <View style={{ flex: 1 }}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>{t('ui.home.home_header_title')}</Text>
-          <Text style={styles.subtitle}>{t('ui.home.home_header_subtitle')}</Text>
-        </View>
-
         {isActive ? (
           <TouchableOpacity style={[styles.primaryButton, { backgroundColor: Theme.colors.success || '#4caf50' }]} activeOpacity={0.8} onPress={() => router.push('/active-workout')}>
             <Ionicons name="play" size={24} color="#fff" style={{ marginRight: 8 }} />
@@ -228,8 +223,8 @@ export default function WorkoutHomeScreen() {
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8} onPress={handleStartEmpty}>
-            <Ionicons name="add-circle-outline" size={24} color="#fff" style={{ marginRight: 8 }} />
             <Text style={styles.primaryButtonText}>{t('ui.home.start_free_workout')}</Text>
+            <Ionicons name="play-circle" size={24} color="#fff" style={{ marginLeft: 8 }} />
           </TouchableOpacity>
         )}
 
