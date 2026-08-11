@@ -1,4 +1,4 @@
-import { getDB } from '../connection';
+import { getDB, getDBPromise, withDBQueue } from '../connection';
 import { translateExercise } from '../../i18n';
 import { WorkoutExercise, WorkoutRow, WorkoutExerciseRow, WorkoutSetRow, WorkoutSet, WorkoutWithStats, FullWorkoutData } from '../types';
 
@@ -530,4 +530,124 @@ export const getWorkoutsWithStats = async (): Promise<WorkoutWithStats[]> => {
   `);
   return rows;
 };
+
+export interface LastWorkoutSummary {
+  workoutId: number;
+  title: string;
+  dateStr: string;
+  totalSets: number;
+  muscleVolumes: { muscle: string; volumeKg: number }[];
+  debugInfo?: string;
+}
+
+export const getLastWorkoutSummary = async (): Promise<LastWorkoutSummary | null> => {
+  try {
+    const promise = getDBPromise();
+    if (promise) {
+      await promise;
+    }
+
+    return await withDBQueue(async (conn) => {
+      // デバッグ情報収集
+      let debugMsg = '';
+      try {
+        const totalWorkoutsCount = await conn.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM workouts');
+        const totalSetsCount = await conn.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM workout_sets');
+        const recentWorkouts = await conn.getAllAsync<{ id: number; title: string; start_time: string }>(
+          'SELECT id, title, start_time FROM workouts ORDER BY id DESC LIMIT 2'
+        );
+        debugMsg = `WCount:${totalWorkoutsCount?.count ?? 0}|SCount:${totalSetsCount?.count ?? 0}|List:${JSON.stringify(recentWorkouts)}`;
+        console.log('[DEBUG_SUMMARY]', debugMsg);
+      } catch (dErr: any) {
+        debugMsg = `DebugErr:${dErr?.message || String(dErr)}`;
+      }
+
+      // セット記録が存在する最新のワークアウトを取得
+      const lastWorkoutWithSets = await conn.getFirstAsync<{ id: number; title: string; start_time: string }>(`
+        SELECT DISTINCT w.id, w.title, w.start_time 
+        FROM workouts w
+        JOIN workout_exercises we ON we.workout_id = w.id
+        JOIN workout_sets ws ON ws.workout_exercise_id = we.id
+        WHERE (ws.is_completed = 1 OR (ws.reps IS NOT NULL AND ws.reps > 0) OR (ws.weight IS NOT NULL AND ws.weight > 0))
+        ORDER BY w.id DESC LIMIT 1
+      `);
+
+      // フォールバック: 最新のワークアウト
+      const targetWorkout = lastWorkoutWithSets || await conn.getFirstAsync<{ id: number; title: string; start_time: string }>(`
+        SELECT id, title, start_time FROM workouts ORDER BY id DESC LIMIT 1
+      `);
+
+      if (!targetWorkout) {
+        return {
+          workoutId: 0,
+          title: 'なし',
+          dateStr: '',
+          totalSets: 0,
+          muscleVolumes: [],
+          debugInfo: `[NoTarget] ${debugMsg}`,
+        };
+      }
+
+      const sets = await conn.getAllAsync<{ muscle_group: string | null; weight: number | null; reps: number | null }>(`
+        SELECT e.muscle_group, ws.weight, ws.reps
+        FROM workout_exercises we
+        JOIN exercises e ON we.exercise_id = e.id
+        JOIN workout_sets ws ON ws.workout_exercise_id = we.id
+        WHERE we.workout_id = ?
+      `, [targetWorkout.id]);
+
+      const muscleMap: { [key: string]: number } = {};
+      let totalSets = 0;
+
+      for (const s of sets) {
+        totalSets++;
+        const muscle = s.muscle_group || 'その他';
+        const vol = (s.weight || 0) * (s.reps || 0);
+        muscleMap[muscle] = (muscleMap[muscle] || 0) + vol;
+      }
+
+      const muscleVolumes = Object.keys(muscleMap).map(m => ({
+        muscle: m,
+        volumeKg: Math.round(muscleMap[m]),
+      })).sort((a, b) => b.volumeKg - a.volumeKg);
+
+      // 日付フォーマットの安全な変換
+      let dateStr = targetWorkout.start_time;
+      if (targetWorkout.start_time) {
+        const parts = targetWorkout.start_time.split('T')[0].split('-');
+        if (parts.length === 3) {
+          dateStr = `${parts[0]}/${parts[1]}/${parts[2]}`;
+        } else {
+          const dateObj = new Date(targetWorkout.start_time);
+          if (!isNaN(dateObj.getTime())) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            dateStr = `${y}/${m}/${d}`;
+          }
+        }
+      }
+
+      return {
+        workoutId: targetWorkout.id,
+        title: targetWorkout.title,
+        dateStr,
+        totalSets,
+        muscleVolumes,
+        debugInfo: `[Target:${targetWorkout.id}] Sets:${sets.length} | ${debugMsg}`,
+      };
+    });
+  } catch (err: any) {
+    console.error('Failed to get last workout summary:', err);
+    return {
+      workoutId: 0,
+      title: 'エラー',
+      dateStr: '',
+      totalSets: 0,
+      muscleVolumes: [],
+      debugInfo: `[CatchErr] ${err?.message || String(err)}`,
+    };
+  }
+};
+
 

@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.5.2',
+  version: '1.6.0',
   title: {
-    ja: 'AI通信バックデータ出力・解析デバッグ機能追加 ＆ 接続最適化',
-    en: 'AI Backdata Debug Logger & Connection Optimization',
+    ja: 'ステージング限定詳細デバッグログ ＆ DB計測機能の追加',
+    en: 'Add Staging-Only Detailed Debug Logging & DB Diagnostics',
   },
   notes: {
     ja: [
-      '🔍 AI通信バックデータ出力機能: ステージング環境にてAI食事解析の通信レスポンスRaw JSONおよびエラーログを直接確認・コピー可能にしました',
-      '⚡ サーバーレスポンス解析強化: Gemini 3.6 Flash解析エンジンの詳細レスポンス可視化とエラー自動記録を導入',
+      '🔍 ステージングデバッグ機能搭載: DB内のワークアウト数・セット数・直近履歴を可視化するステージング限定デバッグオーバーレイ ＆ ログ機能を追加',
     ],
     en: [
-      '🔍 AI Backdata Debug Logger: Added staging-only Raw JSON & error log inspector for AI meal analysis',
-      '⚡ Response Diagnostics: Enhanced server response logging and failure tracking for Gemini 3.6 Flash',
+      '🔍 Add Staging Debugging: Integrated staging-only debug overlay & log outputs to monitor DB counts, sets & recent workout logs',
     ],
   },
 };

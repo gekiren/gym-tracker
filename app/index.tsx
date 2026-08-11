@@ -8,7 +8,8 @@ import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useLifelogStore } from '../src/store/lifelogStore';
 import { useNutritionStore } from '../src/store/nutritionStore';
-import { saveSetting } from '../src/db/database';
+import { saveSetting, getLastWorkoutSummary, LastWorkoutSummary } from '../src/db/database';
+import * as Updates from 'expo-updates';
 import { readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../src/services/crashReporterService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LifelogDateHeader } from '../components/LifelogDateHeader';
@@ -46,6 +47,7 @@ export default function DashboardScreen() {
   // Local state for onboarding/modals
   const [isSendingCrash, setIsSendingCrash] = useState(false);
   const [isNewUser, setIsNewUser] = useState(settings.needsStyleSelection);
+  const [lastWorkoutSummary, setLastWorkoutSummary] = useState<LastWorkoutSummary | null>(null);
 
   // Date Formatting helper
   const getTodayStr = () => {
@@ -58,11 +60,32 @@ export default function DashboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      let isMounted = true;
       const today = getTodayStr();
       const targetDate = currentDate || today;
       setCurrentDate(targetDate);
       loadMealLogs(targetDate);
       loadGoals();
+
+      const fetchSummary = async () => {
+        try {
+          const summary = await getLastWorkoutSummary();
+          if (isMounted) {
+            setLastWorkoutSummary(summary);
+          }
+        } catch (err) {
+          console.error('Failed to load last workout summary:', err);
+        }
+      };
+
+      fetchSummary();
+      // 起動直後の初期化タイミングに備えた150ms遅延バックアップ実行
+      const timer = setTimeout(fetchSummary, 150);
+
+      return () => {
+        isMounted = false;
+        clearTimeout(timer);
+      };
     }, [currentDate])
   );
 
@@ -169,7 +192,7 @@ export default function DashboardScreen() {
         {/* 1. Workout Card */}
         <TouchableOpacity 
           style={styles.card} 
-          activeOpacity={0.9} 
+          activeOpacity={0.85} 
           onPress={() => router.push('/(tabs)')}
         >
           <View style={styles.cardHeader}>
@@ -199,13 +222,40 @@ export default function DashboardScreen() {
               </View>
             ) : (
               <View style={styles.inactiveWorkoutContainer}>
-                <Text style={styles.inactiveText}>今日の筋トレ記録を開始、またはルーティンを選択します。</Text>
-                <TouchableOpacity 
-                  style={styles.actionBtn}
-                  onPress={() => router.push('/(tabs)')}
-                >
-                  <Text style={styles.actionBtnText}>筋トレ画面を開く</Text>
-                </TouchableOpacity>
+                {lastWorkoutSummary ? (
+                  <>
+                    <View style={styles.statRow}>
+                      <Text style={styles.statVal}>
+                        直近: <Text style={{ color: Theme.colors.primary }}>{lastWorkoutSummary.dateStr}</Text>
+                      </Text>
+                      <Text style={styles.statGoal}>({lastWorkoutSummary.title || '筋トレ'})</Text>
+                    </View>
+
+                    {lastWorkoutSummary.muscleVolumes.length > 0 ? (
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+                        {lastWorkoutSummary.muscleVolumes.slice(0, 4).map((item, idx) => (
+                          <View key={idx} style={styles.muscleVolumeBadge}>
+                            <Text style={styles.muscleVolumeText}>
+                              {item.muscle}: <Text style={{ color: '#fff', fontWeight: 'bold' }}>{item.volumeKg.toLocaleString()} kg</Text>
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    ) : (
+                      <Text style={styles.inactiveText}>セット記録なし ({lastWorkoutSummary.totalSets}セット)</Text>
+                    )}
+
+                    {Updates.channel !== 'production' && lastWorkoutSummary?.debugInfo && (
+                      <View style={{ marginTop: 8, padding: 6, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 6 }}>
+                        <Text style={{ color: '#ffb74d', fontSize: 10 }} numberOfLines={3}>
+                          🔍 [Staging Debug] {lastWorkoutSummary.debugInfo}
+                        </Text>
+                      </View>
+                    )}
+                  </>
+                ) : (
+                  <Text style={styles.inactiveText}>過去のワークアウト記録がありません。タップして筋トレを開始しましょう。</Text>
+                )}
               </View>
             )}
           </View>
@@ -568,21 +618,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: Theme.spacing.md,
-    gap: 16,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    gap: 0,
     paddingBottom: 40,
   },
   card: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-    padding: Theme.spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: 'transparent',
+    borderRadius: 0,
+    borderWidth: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 16,
+    paddingVertical: 20,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -590,9 +638,9 @@ const styles = StyleSheet.create({
     marginBottom: Theme.spacing.md,
   },
   iconContainer: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Theme.spacing.sm,
@@ -646,7 +694,7 @@ const styles = StyleSheet.create({
   actionBtn: {
     backgroundColor: Theme.colors.primary,
     paddingVertical: 12,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
@@ -708,12 +756,13 @@ const styles = StyleSheet.create({
   presetBtn: {
     flexBasis: '30%',
     flexGrow: 1,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     paddingVertical: 8,
-    borderRadius: Theme.borderRadius.md,
+    paddingHorizontal: 12,
+    borderRadius: 20,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   presetBtnText: {
     color: '#fff',
@@ -747,12 +796,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: Theme.borderRadius.md,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.03)',
+    borderColor: 'rgba(255,255,255,0.05)',
   },
   habitInfo: {
     flexDirection: 'row',
@@ -797,7 +846,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(76, 175, 80, 0.08)',
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(76, 175, 80, 0.15)',
   },
@@ -809,6 +858,19 @@ const styles = StyleSheet.create({
     color: '#4caf50',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  muscleVolumeBadge: {
+    backgroundColor: 'rgba(79, 172, 254, 0.1)',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(79, 172, 254, 0.2)',
+  },
+  muscleVolumeText: {
+    color: '#94a3b8',
+    fontSize: 13,
+    fontWeight: '500',
   },
 
   modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 },
