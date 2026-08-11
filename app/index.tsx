@@ -48,6 +48,7 @@ export default function DashboardScreen() {
   const [isSendingCrash, setIsSendingCrash] = useState(false);
   const [isNewUser, setIsNewUser] = useState(settings.needsStyleSelection);
   const [lastWorkoutSummary, setLastWorkoutSummary] = useState<LastWorkoutSummary | null>(null);
+  const [isDebugExpanded, setIsDebugExpanded] = useState(false);
 
   // Date Formatting helper
   const getTodayStr = () => {
@@ -224,14 +225,14 @@ export default function DashboardScreen() {
               <View style={styles.inactiveWorkoutContainer}>
                 {lastWorkoutSummary ? (
                   <>
-                    <View style={styles.statRow}>
+                    <View style={[styles.statRow, { marginBottom: 2 }]}>
                       <Text style={[styles.statGoal, { color: Theme.colors.textMuted, fontSize: 14 }]}>
                         直近: <Text style={{ color: Theme.colors.textMuted, fontSize: 14 }}>{lastWorkoutSummary.dateStr}</Text> ({lastWorkoutSummary.title || '筋トレ'})
                       </Text>
                     </View>
 
                     {lastWorkoutSummary.muscleVolumes.filter(item => item.volumeKg > 0).length > 0 ? (
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 }}>
                         {lastWorkoutSummary.muscleVolumes.filter(item => item.volumeKg > 0).map((item, idx) => (
                           <View key={idx} style={styles.muscleVolumeBadge}>
                             <Text style={styles.muscleVolumeText}>
@@ -245,10 +246,36 @@ export default function DashboardScreen() {
                     )}
 
                     {Updates.channel !== 'production' && lastWorkoutSummary?.debugInfo && (
-                      <View style={{ marginTop: 8, padding: 6, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 6 }}>
-                        <Text style={{ color: '#ffb74d', fontSize: 10 }} numberOfLines={3}>
-                          🔍 [Staging Debug] {lastWorkoutSummary.debugInfo}
-                        </Text>
+                      <View style={{ marginTop: 8 }}>
+                        <TouchableOpacity
+                          activeOpacity={0.7}
+                          onPress={() => setIsDebugExpanded(prev => !prev)}
+                          style={{
+                            alignSelf: 'flex-start',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 4,
+                            paddingVertical: 3,
+                            paddingHorizontal: 8,
+                            backgroundColor: 'rgba(255, 183, 77, 0.12)',
+                            borderRadius: 12,
+                            borderWidth: 1,
+                            borderColor: 'rgba(255, 183, 77, 0.3)',
+                          }}
+                        >
+                          <Ionicons name="bug-outline" size={12} color="#ffb74d" />
+                          <Text style={{ color: '#ffb74d', fontSize: 10, fontWeight: 'bold' }}>
+                            {isDebugExpanded ? 'Debug 閉じる' : 'Debug'}
+                          </Text>
+                        </TouchableOpacity>
+
+                        {isDebugExpanded && (
+                          <View style={{ marginTop: 6, padding: 8, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,183,77,0.2)' }}>
+                            <Text style={{ color: '#ffb74d', fontSize: 10 }} numberOfLines={6}>
+                              🔍 [Staging Debug] {lastWorkoutSummary.debugInfo}
+                            </Text>
+                          </View>
+                        )}
                       </View>
                     )}
                   </>
