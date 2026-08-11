@@ -1,6 +1,6 @@
 /**
- * Cloudflare Worker Proxy for Gemini 3.6 Flash & DeepSeek Fallback
- * (gym-tracker AI Coach & Nutrition Vision Analysis - Plan B)
+ * Cloudflare Worker Proxy for Gemini 3.6 Flash & Multi-Model Fallback (Gemini 2.5/1.5 & DeepSeek)
+ * (gym-tracker AI Coach & Nutrition Vision Analysis - Plan B / v1.5.4)
  *
  * ENDPOINTS SUPPORTED:
  * - /api/chat : Fitness AI Coach text chat
@@ -36,7 +36,7 @@ export default {
 
       // 2. Parse Incoming Payload
       const payload = await request.json();
-      const { message, image, imageBase64, textInput, workout_history, user_weight, weight_unit, language } = payload;
+      const { message, image, imageBase64, textInput, workout_history, user_weight, weight_unit, language, ocrHintText, userMemo } = payload;
       const rawImageData = image || imageBase64;
 
       // 3. Security check: Protect from empty or invalid requests
@@ -75,7 +75,7 @@ export default {
         "real estate", "crypto", "stock investment", "dating", "casino", "gambling"
       ];
 
-      const checkText = `${message || ''} ${textInput || ''}`.toLowerCase();
+      const checkText = `${message || ''} ${textInput || ''} ${userMemo || ''}`.toLowerCase();
       const isOutOfScope = outOfScopeKeywords.some(keyword => checkText.includes(keyword));
 
       if (isOutOfScope) {
@@ -133,82 +133,139 @@ export default {
 
 ※写真が食品や栄養成分表でない場合は、"isFood": false にしてください。`;
 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${env.GEMINI_API_KEY}`;
-        
-        const response = await fetch(geminiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [
-                  { inlineData: { mimeType: mimeType, data: base64Content } },
-                  { text: message || "この写真の食事内容と栄養成分を解析してください。" }
-                ]
-              }
-            ],
-            systemInstruction: { parts: [{ text: visionSystemInstruction }] },
-            generationConfig: { maxOutputTokens: 2048 }
-          })
-        });
+        // 試行するモデルリスト (gemini-3.6-flash 優先 ➔ 2.5-flash ➔ 1.5-flash)
+        const geminiModels = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-1.5-flash"];
+        let lastErrorText = "";
+        let fallbackHistory = [];
 
-        if (response.ok) {
-          const result = await response.json();
-          let rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-          
-          // Clean JSON markdown code blocks if present
-          rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
-
-          try {
-            const parsedJson = JSON.parse(rawText);
+        if (env.GEMINI_API_KEY) {
+          for (const modelName of geminiModels) {
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
             
-            // Increment Daily Counter
-            if (env.AI_LIMIT_KV) {
-              await env.AI_LIMIT_KV.put(today, (dailyCount + 1).toString(), { expirationTtl: 86400 * 2 });
-            }
+            try {
+              const response = await fetch(geminiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [
+                    {
+                      role: "user",
+                      parts: [
+                        { inline_data: { mime_type: mimeType, data: base64Content } },
+                        { text: message || "この写真の食事内容と栄養成分を解析してください。" }
+                      ]
+                    }
+                  ],
+                  systemInstruction: { parts: [{ text: visionSystemInstruction }] },
+                  generationConfig: { maxOutputTokens: 2048 }
+                })
+              });
 
-            return new Response(JSON.stringify({ 
-              success: true, 
-              ...parsedJson,
-              debugInfo: { workerVersion: "v1.5.2", model: "gemini-3.6-flash", timestamp: new Date().toISOString() }
-            }), {
-              status: 200,
-              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-            });
-          } catch (jsonErr) {
-            console.error("JSON parse error from Gemini vision:", rawText);
-            // Fallback: Return text as reply if JSON parse fails
-            return new Response(JSON.stringify({ 
-              success: true, 
-              reply: rawText, 
-              mealName: "食事写真",
-              debugInfo: { workerVersion: "v1.5.2", parseError: true, rawSnippet: rawText.substring(0, 100) }
-            }), {
-              status: 200,
-              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-            });
+              if (response.ok) {
+                const result = await response.json();
+                let rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+
+                try {
+                  const parsedJson = JSON.parse(rawText);
+                  
+                  if (env.AI_LIMIT_KV) {
+                    await env.AI_LIMIT_KV.put(today, (dailyCount + 1).toString(), { expirationTtl: 86400 * 2 });
+                  }
+
+                  return new Response(JSON.stringify({ 
+                    success: true, 
+                    ...parsedJson,
+                    debugInfo: { workerVersion: "v1.5.4", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
+                  }), {
+                    status: 200,
+                    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+                  });
+                } catch (jsonErr) {
+                  console.error(`JSON parse error from Gemini vision (${modelName}):`, rawText);
+                  return new Response(JSON.stringify({ 
+                    success: true, 
+                    reply: rawText, 
+                    mealName: "食事写真",
+                    debugInfo: { workerVersion: "v1.5.4", modelUsed: modelName, parseError: true, rawSnippet: rawText.substring(0, 100) }
+                  }), {
+                    status: 200,
+                    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+                  });
+                }
+              } else {
+                lastErrorText = await response.text();
+                console.error(`Gemini Vision API error (${modelName}):`, response.status, lastErrorText);
+                fallbackHistory.push({ model: modelName, status: response.status, error: lastErrorText.substring(0, 150) });
+              }
+            } catch (fetchErr) {
+              console.error(`Fetch exception for ${modelName}:`, fetchErr);
+              fallbackHistory.push({ model: modelName, error: String(fetchErr) });
+            }
           }
-        } else {
-          const errText = await response.text();
-          console.error("Gemini Vision API error status:", response.status, errText);
-          return new Response(JSON.stringify({
-            success: false,
-            isFood: false,
-            mealName: "食事写真",
-            calories: 0,
-            protein: 0,
-            fat: 0,
-            carbs: 0,
-            sodium: 0,
-            fiber: 0,
-            advice: "AIによる画像解析時に一時的なエラーが発生しました。時間を置いて再実行してください。",
-            debugInfo: { workerVersion: "v1.5.2", httpStatus: response.status, geminiError: errText }
-          }), {
-            status: 200,
-            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-          });
         }
+
+        // DeepSeek へのテキストフォールバック（画像モデル全滅時でメモやテキストがある場合）
+        const fallbackText = userMemo || ocrHintText || message;
+        if (env.DEEPSEEK_API_KEY && fallbackText && fallbackText.trim()) {
+          try {
+            const deepseekResponse = await fetch("https://api.deepseek.com/chat/completions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${env.DEEPSEEK_API_KEY}`
+              },
+              body: JSON.stringify({
+                model: "deepseek-chat",
+                messages: [
+                  { role: "system", content: visionSystemInstruction },
+                  { role: "user", content: `【補足メモ/テキスト】${fallbackText}\nこの食事内容から料理名、推定カロリー、PFCバランスをJSONで回答してください。` }
+                ],
+                response_format: { type: "json_object" }
+              })
+            });
+
+            if (deepseekResponse.ok) {
+              const dsData = await deepseekResponse.json();
+              let dsText = dsData?.choices?.[0]?.message?.content || "";
+              dsText = dsText.replace(/```json/g, "").replace(/```/g, "").trim();
+              const parsedJson = JSON.parse(dsText);
+
+              if (env.AI_LIMIT_KV) {
+                await env.AI_LIMIT_KV.put(today, (dailyCount + 1).toString(), { expirationTtl: 86400 * 2 });
+              }
+
+              return new Response(JSON.stringify({
+                success: true,
+                ...parsedJson,
+                debugInfo: { workerVersion: "v1.5.4", modelUsed: "deepseek-chat (text fallback)", fallbackHistory }
+              }), {
+                status: 200,
+                headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+              });
+            }
+          } catch (dsErr) {
+            console.error("DeepSeek fallback error:", dsErr);
+          }
+        }
+
+        // すべてのフォールバックが失敗した場合のエラーレスポンス
+        return new Response(JSON.stringify({
+          success: false,
+          isFood: false,
+          mealName: "食事写真",
+          calories: 0,
+          protein: 0,
+          fat: 0,
+          carbs: 0,
+          sodium: 0,
+          fiber: 0,
+          advice: "AIによる画像解析時に一時的なエラーが発生しました。時間を置いて再実行してください。",
+          debugInfo: { workerVersion: "v1.5.4", fallbackHistory, lastError: lastErrorText }
+        }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
       }
 
       // ─── B. テキスト栄養解析処理 (/api/nutrition) ───
@@ -226,33 +283,94 @@ export default {
   "advice": "栄養アドバイス"
 }`;
 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${env.GEMINI_API_KEY}`;
-        const response = await fetch(geminiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ role: "user", parts: [{ text: textInput || message }] }],
-            systemInstruction: { parts: [{ text: textNutritionInstruction }] },
-            generationConfig: { maxOutputTokens: 1024 }
-          })
-        });
+        const geminiModels = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-1.5-flash"];
+        let fallbackHistory = [];
 
-        if (response.ok) {
-          const result = await response.json();
-          let rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-          rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+        if (env.GEMINI_API_KEY) {
+          for (const modelName of geminiModels) {
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
+            try {
+              const response = await fetch(geminiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{ role: "user", parts: [{ text: textInput || message }] }],
+                  systemInstruction: { parts: [{ text: textNutritionInstruction }] },
+                  generationConfig: { maxOutputTokens: 1024 }
+                })
+              });
 
-          try {
-            const parsedJson = JSON.parse(rawText);
-            if (env.AI_LIMIT_KV) {
-              await env.AI_LIMIT_KV.put(today, (dailyCount + 1).toString(), { expirationTtl: 86400 * 2 });
+              if (response.ok) {
+                const result = await response.json();
+                let rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+
+                try {
+                  const parsedJson = JSON.parse(rawText);
+                  if (env.AI_LIMIT_KV) {
+                    await env.AI_LIMIT_KV.put(today, (dailyCount + 1).toString(), { expirationTtl: 86400 * 2 });
+                  }
+                  return new Response(JSON.stringify({
+                    success: true,
+                    ...parsedJson,
+                    debugInfo: { workerVersion: "v1.5.4", modelUsed: modelName, fallbackHistory }
+                  }), {
+                    status: 200,
+                    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+                  });
+                } catch (e) {
+                  console.error(`Text nutrition JSON parse error (${modelName}):`, rawText);
+                }
+              } else {
+                const errTxt = await response.text();
+                fallbackHistory.push({ model: modelName, status: response.status, error: errTxt.substring(0, 100) });
+              }
+            } catch (err) {
+              fallbackHistory.push({ model: modelName, error: String(err) });
             }
-            return new Response(JSON.stringify({ success: true, ...parsedJson }), {
-              status: 200,
-              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+          }
+        }
+
+        // DeepSeek フォールバック
+        if (env.DEEPSEEK_API_KEY) {
+          try {
+            const dsResponse = await fetch("https://api.deepseek.com/chat/completions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${env.DEEPSEEK_API_KEY}`
+              },
+              body: JSON.stringify({
+                model: "deepseek-chat",
+                messages: [
+                  { role: "system", content: textNutritionInstruction },
+                  { role: "user", content: textInput || message }
+                ],
+                response_format: { type: "json_object" }
+              })
             });
-          } catch (e) {
-            console.error("Text nutrition JSON parse error:", rawText);
+
+            if (dsResponse.ok) {
+              const dsData = await dsResponse.json();
+              let dsText = dsData?.choices?.[0]?.message?.content || "";
+              dsText = dsText.replace(/```json/g, "").replace(/```/g, "").trim();
+              const parsedJson = JSON.parse(dsText);
+
+              if (env.AI_LIMIT_KV) {
+                await env.AI_LIMIT_KV.put(today, (dailyCount + 1).toString(), { expirationTtl: 86400 * 2 });
+              }
+
+              return new Response(JSON.stringify({
+                success: true,
+                ...parsedJson,
+                debugInfo: { workerVersion: "v1.5.4", modelUsed: "deepseek-chat", fallbackHistory }
+              }), {
+                status: 200,
+                headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+              });
+            }
+          } catch (dsErr) {
+            console.error("DeepSeek text nutrition error:", dsErr);
           }
         }
       }
@@ -270,28 +388,86 @@ export default {
         ? `[User Context]\n- Body Weight: ${user_weight || "Not set"}\n\n${contextHeader}\n${workout_history || "No history available"}\n\n[User Message]\n${message}`
         : `【ユーザー情報】\n- 体重: ${user_weight || "未設定"}\n\n${contextHeader}\n${workout_history || "履歴なし"}\n\n【ユーザーの質問】\n${message}`;
 
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${env.GEMINI_API_KEY}`;
-      const response = await fetch(geminiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: promptContext }] }],
-          systemInstruction: { parts: [{ text: systemInstruction }] },
-          generationConfig: { maxOutputTokens: 2048 }
-        })
-      });
+      const geminiModels = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-1.5-flash"];
+      let chatFallbackHistory = [];
 
-      if (response.ok) {
-        const result = await response.json();
-        const reply = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (reply) {
-          if (env.AI_LIMIT_KV) {
-            await env.AI_LIMIT_KV.put(today, (dailyCount + 1).toString(), { expirationTtl: 86400 * 2 });
+      if (env.GEMINI_API_KEY) {
+        for (const modelName of geminiModels) {
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
+          try {
+            const response = await fetch(geminiUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ role: "user", parts: [{ text: promptContext }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] },
+                generationConfig: { maxOutputTokens: 2048 }
+              })
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              const reply = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (reply) {
+                if (env.AI_LIMIT_KV) {
+                  await env.AI_LIMIT_KV.put(today, (dailyCount + 1).toString(), { expirationTtl: 86400 * 2 });
+                }
+                return new Response(JSON.stringify({
+                  success: true,
+                  reply,
+                  debugInfo: { workerVersion: "v1.5.4", modelUsed: modelName, chatFallbackHistory }
+                }), {
+                  status: 200,
+                  headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+                });
+              }
+            } else {
+              const errText = await response.text();
+              chatFallbackHistory.push({ model: modelName, status: response.status, error: errText.substring(0, 100) });
+            }
+          } catch (chatErr) {
+            chatFallbackHistory.push({ model: modelName, error: String(chatErr) });
           }
-          return new Response(JSON.stringify({ success: true, reply }), {
-            status: 200,
-            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        }
+      }
+
+      // DeepSeek チャットフォールバック
+      if (env.DEEPSEEK_API_KEY) {
+        try {
+          const dsResponse = await fetch("https://api.deepseek.com/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${env.DEEPSEEK_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: "deepseek-chat",
+              messages: [
+                { role: "system", content: systemInstruction },
+                { role: "user", content: promptContext }
+              ]
+            })
           });
+
+          if (dsResponse.ok) {
+            const dsData = await dsResponse.json();
+            const reply = dsData?.choices?.[0]?.message?.content;
+            if (reply) {
+              if (env.AI_LIMIT_KV) {
+                await env.AI_LIMIT_KV.put(today, (dailyCount + 1).toString(), { expirationTtl: 86400 * 2 });
+              }
+              return new Response(JSON.stringify({
+                success: true,
+                reply,
+                debugInfo: { workerVersion: "v1.5.4", modelUsed: "deepseek-chat", chatFallbackHistory }
+              }), {
+                status: 200,
+                headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+              });
+            }
+          }
+        } catch (dsErr) {
+          console.error("DeepSeek chat fallback error:", dsErr);
         }
       }
 
