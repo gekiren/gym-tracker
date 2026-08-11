@@ -611,19 +611,18 @@ export const getLastWorkoutSummary = async (): Promise<LastWorkoutSummary | null
         volumeKg: Math.round(muscleMap[m]),
       })).sort((a, b) => b.volumeKg - a.volumeKg);
 
-      // 日付フォーマットの安全な変換
+      // 日付フォーマットの安全な変換 (年なし MM/DD 形式)
       let dateStr = targetWorkout.start_time;
       if (targetWorkout.start_time) {
         const parts = targetWorkout.start_time.split('T')[0].split('-');
         if (parts.length === 3) {
-          dateStr = `${parts[0]}/${parts[1]}/${parts[2]}`;
+          dateStr = `${parts[1]}/${parts[2]}`;
         } else {
           const dateObj = new Date(targetWorkout.start_time);
           if (!isNaN(dateObj.getTime())) {
-            const y = dateObj.getFullYear();
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
             const d = String(dateObj.getDate()).padStart(2, '0');
-            dateStr = `${y}/${m}/${d}`;
+            dateStr = `${m}/${d}`;
           }
         }
       }

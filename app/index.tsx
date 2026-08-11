@@ -225,15 +225,14 @@ export default function DashboardScreen() {
                 {lastWorkoutSummary ? (
                   <>
                     <View style={styles.statRow}>
-                      <Text style={styles.statVal}>
-                        直近: <Text style={{ color: Theme.colors.primary }}>{lastWorkoutSummary.dateStr}</Text>
+                      <Text style={[styles.statGoal, { color: Theme.colors.textMuted, fontSize: 14 }]}>
+                        直近: <Text style={{ color: Theme.colors.textMuted, fontSize: 14 }}>{lastWorkoutSummary.dateStr}</Text> ({lastWorkoutSummary.title || '筋トレ'})
                       </Text>
-                      <Text style={styles.statGoal}>({lastWorkoutSummary.title || '筋トレ'})</Text>
                     </View>
 
-                    {lastWorkoutSummary.muscleVolumes.length > 0 ? (
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
-                        {lastWorkoutSummary.muscleVolumes.slice(0, 4).map((item, idx) => (
+                    {lastWorkoutSummary.muscleVolumes.filter(item => item.volumeKg > 0).length > 0 ? (
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                        {lastWorkoutSummary.muscleVolumes.filter(item => item.volumeKg > 0).map((item, idx) => (
                           <View key={idx} style={styles.muscleVolumeBadge}>
                             <Text style={styles.muscleVolumeText}>
                               {item.muscle}: <Text style={{ color: '#fff', fontWeight: 'bold' }}>{item.volumeKg.toLocaleString()} kg</Text>
@@ -860,12 +859,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   muscleVolumeBadge: {
-    backgroundColor: 'rgba(79, 172, 254, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
+    paddingHorizontal: 14,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(79, 172, 254, 0.2)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   muscleVolumeText: {
     color: '#94a3b8',

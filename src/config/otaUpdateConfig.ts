@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.6.0',
+  version: '1.6.1',
   title: {
-    ja: 'ステージング限定詳細デバッグログ ＆ DB計測機能の追加',
-    en: 'Add Staging-Only Detailed Debug Logging & DB Diagnostics',
+    ja: 'ワークアウト記録サマリーUIの洗練・デザイン統一',
+    en: 'Refine Workout Summary UI & Capsule Styling',
   },
   notes: {
     ja: [
-      '🔍 ステージングデバッグ機能搭載: DB内のワークアウト数・セット数・直近履歴を可視化するステージング限定デバッグオーバーレイ ＆ ログ機能を追加',
+      '🎨 直近サマリーUIの調整: 日付表示を年カット(MM/DD)・同文字サイズ＆色に統合し、0kg部位の非表示・全記録部位のカプセル表示(borderRadius 20)に統一',
     ],
     en: [
-      '🔍 Add Staging Debugging: Integrated staging-only debug overlay & log outputs to monitor DB counts, sets & recent workout logs',
+      '🎨 Summary UI Polish: Unified date typography (MM/DD, same text size/color), excluded 0kg badges, and applied smooth capsule pill styling for all trained muscles',
     ],
   },
 };
