@@ -231,17 +231,6 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
             ? t('ui.history.chart_title', { unit: weightUnit }) 
             : t('ui.history.chart_title_calories')}
         </Text>
-
-        {setCalendarVisible && (
-          <TouchableOpacity 
-            style={styles.calendarBtnInline}
-            onPress={() => setCalendarVisible(true)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="calendar-outline" size={15} color={Theme.colors.primary} style={{ marginRight: 4 }} />
-            <Text style={styles.calendarBtnText}>{t('ui.history.calendar_btn') || 'カレンダー'}</Text>
-          </TouchableOpacity>
-        )}
       </View>
 
       {/* Selectors Row */}
@@ -283,24 +272,37 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
         </View>
       </View>
 
-      {/* Active Selected Point Summary Card */}
+      {/* Active Selected Point Summary Card & Calendar Button */}
       {activePoint && (
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryDate}>{activePoint.dateStr}</Text>
-          <View style={styles.summaryValRow}>
-            <Text style={styles.summaryVal}>
-              {activePoint.value.toLocaleString()} 
-              <Text style={styles.summaryUnit}> {chartMetric === 'volume' ? weightUnit : 'kcal'}</Text>
-            </Text>
+          <View style={styles.summaryLeftContent}>
+            <Text style={styles.summaryDate}>{activePoint.dateStr}</Text>
+            <View style={styles.summaryValRow}>
+              <Text style={styles.summaryVal}>
+                {activePoint.value.toLocaleString()} 
+                <Text style={styles.summaryUnit}> {chartMetric === 'volume' ? weightUnit : 'kcal'}</Text>
+              </Text>
 
-            {chartMetric === 'volume' && (
-              <View style={[styles.badge, activePoint.isPR && styles.badgePR]}>
-                <Text style={[styles.badgeText, activePoint.isPR && styles.badgeTextPR]}>
-                  {activePoint.isPR ? `PR! (比 ${activePoint.ratio}%)` : `PR比 ${activePoint.ratio}%`}
-                </Text>
-              </View>
-            )}
+              {chartMetric === 'volume' && (
+                <View style={[styles.badge, activePoint.isPR && styles.badgePR]}>
+                  <Text style={[styles.badgeText, activePoint.isPR && styles.badgeTextPR]}>
+                    {activePoint.isPR ? `PR! (比 ${activePoint.ratio}%)` : `PR比 ${activePoint.ratio}%`}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
+
+          {setCalendarVisible && (
+            <TouchableOpacity 
+              style={styles.calendarBtnPanel}
+              onPress={() => setCalendarVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="calendar-outline" size={16} color={Theme.colors.primary} style={{ marginRight: 5 }} />
+              <Text style={styles.calendarBtnText}>{t('ui.history.calendar_btn') || 'カレンダー'}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
@@ -544,6 +546,13 @@ const styles = StyleSheet.create({
     marginBottom: Theme.spacing.md,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.06)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  summaryLeftContent: {
+    flex: 1,
+    marginRight: 10,
   },
   summaryDate: {
     color: Theme.colors.textMuted,
@@ -554,7 +563,7 @@ const styles = StyleSheet.create({
   summaryValRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 8,
   },
   summaryVal: {
     color: Theme.colors.text,
@@ -565,6 +574,17 @@ const styles = StyleSheet.create({
     color: Theme.colors.textMuted,
     fontSize: 14,
     fontWeight: '600',
+  },
+  calendarBtnPanel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(79, 172, 254, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(79, 172, 254, 0.35)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    flexShrink: 0,
   },
   badge: {
     backgroundColor: 'rgba(79, 172, 254, 0.12)',

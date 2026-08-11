@@ -269,9 +269,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
   header: { borderBottomWidth: 1, borderBottomColor: Theme.colors.border, backgroundColor: Theme.colors.background, paddingTop: 10, paddingBottom: 10 },
   tabContainer: { flexDirection: 'row', paddingHorizontal: Theme.spacing.md, gap: 12 },
-  tabButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'transparent' },
+  tabButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'transparent' },
   tabButtonActive: { backgroundColor: 'rgba(79, 172, 254, 0.1)', borderColor: Theme.colors.primary },
-  tabButtonText: { color: Theme.colors.textMuted, fontSize: 15, fontWeight: 'bold' },
+  tabButtonText: { color: Theme.colors.textMuted, fontSize: 15, fontWeight: 'bold', textAlign: 'center' },
   tabButtonTextActive: { color: Theme.colors.primary },
   calendarBtnHeader: {
     flexDirection: 'row',
