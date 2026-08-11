@@ -74,9 +74,12 @@ export function LifelogDateHeader({ style, type }: LifelogDateHeaderProps) {
           onPress={() => setCalendarVisible(true)} 
           style={styles.dateSelectorTrigger}
           activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Text style={styles.dateText}>{currentDate || getTodayStr()}</Text>
-          <Ionicons name="calendar-outline" size={16} color={Theme.colors.textMuted} />
+          <View style={styles.calendarIconBtn}>
+            <Ionicons name="calendar-outline" size={20} color={Theme.colors.primary} />
+          </View>
         </TouchableOpacity>
         {!isToday && (
           <TouchableOpacity onPress={handleGoToday} style={styles.todayBadge}>
@@ -124,16 +127,27 @@ const styles = StyleSheet.create({
   dateSelectorTrigger: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 14,
     paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    paddingHorizontal: 10,
+    borderRadius: Theme.borderRadius.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
   },
   dateText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  calendarIconBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(79, 172, 254, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(79, 172, 254, 0.3)',
   },
   todayBadge: {
     backgroundColor: 'rgba(79, 172, 254, 0.2)',
