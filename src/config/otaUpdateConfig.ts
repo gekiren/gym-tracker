@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.7.3',
+  version: '1.7.4',
   title: {
-    ja: '履歴画面レイアウトの最適化（見出し位置の調整）',
-    en: 'History Screen Layout Optimization',
+    ja: '履歴画面のレイアウト・操作性向上',
+    en: 'History Screen Layout & Usability Polish',
   },
   notes: {
     ja: [
-      '✨ レイアウト最適化: 「過去のワークアウト記録とMarkdown出力」のテキスト見出しを、グラフカードとワークアウト一覧の間に移動し、画面構成をより分かりやすく調整しました。',
+      '✨ タブ配置最適化: 「ワークアウト」と「種目」タブを50%:50%で中央均等配置し、操作性を高めました。',
+      '✨ カレンダーボタン統合: グラフ単日要約パネルの右側にカレンダーボタンを配置し、記録の確認とカレンダーアクセスをスムーズにしました。',
     ],
     en: [
-      '✨ Layout Polish: Moved section header between the history chart and workout items for a cleaner flow.',
+      '✨ Tab Layout Polish: Centered "Workouts" and "Exercises" tabs evenly across the header.',
+      '✨ Integrated Calendar Button: Placed the calendar button directly inside the daily summary card for smooth access.',
     ],
   },
 };
