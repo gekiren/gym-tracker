@@ -1,3 +1,4 @@
+import { recordAIDebugLog } from '../utils/debugLogStore';
 import {
   getRecentWorkoutSummaryForAI,
   getMealLogsByDate,
@@ -288,6 +289,15 @@ export const analyzeMealText = async (
     }
 
     const data = await response.json();
+    recordAIDebugLog({
+      type: 'text_analysis',
+      endpointUrl: NUTRITION_TEXT_URL,
+      status: response.status,
+      success: true,
+      requestSummary: { textInput, preferredModel },
+      responseRaw: data,
+    });
+
     return {
       mealName: data.mealName || '不明な食事',
       calories: Number(data.calories) || 0,
@@ -302,6 +312,13 @@ export const analyzeMealText = async (
   } catch (err: any) {
     clearTimeout(timeoutId);
     console.error('analyzeMealText failed:', err);
+    recordAIDebugLog({
+      type: 'text_analysis',
+      endpointUrl: NUTRITION_TEXT_URL,
+      success: false,
+      requestSummary: { textInput, preferredModel },
+      errorMessage: err?.message || String(err),
+    });
     throw err;
   }
 };
@@ -331,30 +348,51 @@ export const analyzeMealImage = async (
       ? `【食事メモ】${userMemo}\nこの食事の写真から料理名、推定カロリー、PFC（タンパク質・脂質・炭水化物・塩分・食物繊維）のバランスを分析して回答してください。`
       : 'この食事の写真から料理名、推定カロリー、PFC（タンパク質・脂質・炭水化物・塩分・食物繊維）のバランスを分析して回答してください。';
 
+    const requestPayload = {
+      message: promptMessage,
+      image: base64Image,
+      ocrHintText,
+      userMemo,
+      preferredModel,
+    };
+
     const response = await fetch(NUTRITION_IMAGE_URL, {
       method: 'POST',
       headers,
-      body: JSON.stringify({
-        message: promptMessage,
-        image: base64Image,
-        ocrHintText,
-        userMemo,
-        preferredModel,
-      }),
+      body: JSON.stringify(requestPayload),
       signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
 
     if (!response.ok) {
+      const errText = await response.text();
+      recordAIDebugLog({
+        type: 'image_analysis',
+        endpointUrl: NUTRITION_IMAGE_URL,
+        status: response.status,
+        success: false,
+        requestSummary: requestPayload,
+        responseRaw: errText,
+        errorMessage: `HTTP ${response.status}: ${errText}`,
+      });
       throw new Error(`Nutrition image API error: ${response.status}`);
     }
 
     const data = await response.json();
 
-    // 食品以外の画像の場合
-    if (data.isFood === false) {
-      throw new Error('食品または栄養成分表示ラベルが検出できませんでした。');
+    recordAIDebugLog({
+      type: 'image_analysis',
+      endpointUrl: NUTRITION_IMAGE_URL,
+      status: response.status,
+      success: data.success !== false && data.isFood !== false,
+      requestSummary: requestPayload,
+      responseRaw: data,
+      errorMessage: (data.success === false || data.isFood === false) ? (data.advice || data.reply || '不認識') : undefined,
+    });
+
+    if (data.success === false || data.isFood === false) {
+      throw new Error(data.advice || data.reply || '食品または栄養成分表示ラベルが検出できませんでした。');
     }
 
     const adviceText = data.advice || data.reply || undefined;
@@ -373,6 +411,13 @@ export const analyzeMealImage = async (
   } catch (err: any) {
     clearTimeout(timeoutId);
     console.error('analyzeMealImage failed:', err);
+    recordAIDebugLog({
+      type: 'image_analysis',
+      endpointUrl: NUTRITION_IMAGE_URL,
+      success: false,
+      requestSummary: { ocrHintText, userMemo, preferredModel, imageLength: base64Image?.length },
+      errorMessage: err?.message || String(err),
+    });
     throw err;
   }
 };

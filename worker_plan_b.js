@@ -104,14 +104,15 @@ export default {
         let mimeType = "image/jpeg";
         let base64Content = cleanImageData;
 
-        if (cleanImageData.startsWith("data:")) {
-          const matches = cleanImageData.match(/^data:(image\/[a-zA-Z]+);base64,(.+)$/);
-          if (matches) {
-            mimeType = matches[1];
-            base64Content = matches[2];
-          } else {
-            base64Content = cleanImageData.split(",")[1] || cleanImageData;
+        if (cleanImageData.includes(";base64,")) {
+          const parts = cleanImageData.split(";base64,");
+          if (parts[0].startsWith("data:")) {
+            mimeType = parts[0].replace("data:", "") || "image/jpeg";
           }
+          base64Content = parts[1] || parts[0];
+        } else if (cleanImageData.startsWith("data:")) {
+          const parts = cleanImageData.split(",");
+          base64Content = parts[1] || parts[0];
         }
 
         const visionSystemInstruction = `あなたは超一流のスポーツ栄養士・AIコーチです。
@@ -148,7 +149,7 @@ export default {
               }
             ],
             systemInstruction: { parts: [{ text: visionSystemInstruction }] },
-            generationConfig: { maxOutputTokens: 2048, temperature: 0.2 }
+            generationConfig: { maxOutputTokens: 2048 }
           })
         });
 
@@ -167,14 +168,23 @@ export default {
               await env.AI_LIMIT_KV.put(today, (dailyCount + 1).toString(), { expirationTtl: 86400 * 2 });
             }
 
-            return new Response(JSON.stringify({ success: true, ...parsedJson }), {
+            return new Response(JSON.stringify({ 
+              success: true, 
+              ...parsedJson,
+              debugInfo: { workerVersion: "v1.5.2", model: "gemini-3.6-flash", timestamp: new Date().toISOString() }
+            }), {
               status: 200,
               headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
             });
           } catch (jsonErr) {
             console.error("JSON parse error from Gemini vision:", rawText);
             // Fallback: Return text as reply if JSON parse fails
-            return new Response(JSON.stringify({ success: true, reply: rawText, mealName: "食事写真" }), {
+            return new Response(JSON.stringify({ 
+              success: true, 
+              reply: rawText, 
+              mealName: "食事写真",
+              debugInfo: { workerVersion: "v1.5.2", parseError: true, rawSnippet: rawText.substring(0, 100) }
+            }), {
               status: 200,
               headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
             });
@@ -183,16 +193,17 @@ export default {
           const errText = await response.text();
           console.error("Gemini Vision API error status:", response.status, errText);
           return new Response(JSON.stringify({
-            success: true,
+            success: false,
             isFood: false,
-            mealName: "",
+            mealName: "食事写真",
             calories: 0,
             protein: 0,
             fat: 0,
             carbs: 0,
             sodium: 0,
             fiber: 0,
-            advice: "AIによる画像解析時に一時的なエラーが発生しました。別の写真またはテキスト入力をお試しください。"
+            advice: "AIによる画像解析時に一時的なエラーが発生しました。時間を置いて再実行してください。",
+            debugInfo: { workerVersion: "v1.5.2", httpStatus: response.status, geminiError: errText }
           }), {
             status: 200,
             headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -222,7 +233,7 @@ export default {
           body: JSON.stringify({
             contents: [{ role: "user", parts: [{ text: textInput || message }] }],
             systemInstruction: { parts: [{ text: textNutritionInstruction }] },
-            generationConfig: { maxOutputTokens: 1024, temperature: 0.2 }
+            generationConfig: { maxOutputTokens: 1024 }
           })
         });
 
@@ -266,7 +277,7 @@ export default {
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: promptContext }] }],
           systemInstruction: { parts: [{ text: systemInstruction }] },
-          generationConfig: { maxOutputTokens: 2048, temperature: 0.7 }
+          generationConfig: { maxOutputTokens: 2048 }
         })
       });
 

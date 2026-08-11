@@ -17,6 +17,7 @@ import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import * as Clipboard from 'expo-clipboard';
+import { getAIDebugLogs, clearAIDebugLogs } from '../src/utils/debugLogStore';
 import { useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
 import { AD_CONFIG } from '../src/config/adConfig';
 
@@ -1014,6 +1015,45 @@ export default function DeveloperMenuScreen() {
           <TouchableOpacity style={styles.btnDanger} onPress={handleRestore}>
             <Ionicons name="download-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
             <Text style={styles.btnDangerText}>{t('ui.developer_menu.restore_btn')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* AI Debug Log Section (Staging / Dev Only) */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="analytics-outline" size={24} color="#38bdf8" style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>🤖 AI通信バックデータログ (Staging Debug)</Text>
+          </View>
+          <Text style={styles.cardDesc}>
+            AI解析（食事写真・テキスト・チャット）発生時のHTTP通信、Worker応答Raw JSON、エラーの直近ログを確認・コピーできます。
+          </Text>
+
+          <TouchableOpacity
+            style={styles.btnPrimary}
+            onPress={async () => {
+              const logs = getAIDebugLogs();
+              if (logs.length === 0) {
+                Alert.alert('AI通信ログ', 'まだ通信ログが記録されていません。食事解析やAIチャットを実行してください。');
+                return;
+              }
+              const jsonStr = JSON.stringify(logs, null, 2);
+              await Clipboard.setStringAsync(jsonStr);
+              Alert.alert('ログコピー完了', `${logs.length}件の通信バックデータログをクリップボードにコピーしました。`);
+            }}
+          >
+            <Ionicons name="copy-outline" size={20} color="#000" style={{ marginRight: 8 }} />
+            <Text style={styles.btnPrimaryText}>📋 全通信バックデータログを全コピー</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.btnDanger, { marginTop: 10, backgroundColor: '#334155' }]}
+            onPress={() => {
+              clearAIDebugLogs();
+              Alert.alert('クリア', 'AI通信ログをクリアしました。');
+            }}
+          >
+            <Ionicons name="trash-outline" size={18} color="#94a3b8" style={{ marginRight: 8 }} />
+            <Text style={[styles.btnDangerText, { color: '#94a3b8' }]}>ログメモリをクリア</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

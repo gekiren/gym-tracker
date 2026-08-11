@@ -176,7 +176,6 @@ ${historyContent}
                 systemInstruction: { parts: [{ text: systemInstruction }] },
                 generationConfig: {
                   maxOutputTokens: isThinkingMode ? 3072 : 1024,
-                  temperature: isThinkingMode ? 0.7 : 0.3,
                   thinkingConfig
                 }
               }),

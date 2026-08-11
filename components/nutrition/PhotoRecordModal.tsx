@@ -14,6 +14,7 @@ import {
   Platform,
   TouchableWithoutFeedback,
 } from 'react-native';
+import { isStagingOrDev, getLatestAIDebugLog, getAIDebugLogs } from '../../src/utils/debugLogStore';
 
 // ネイティブモジュール取得（クラッシュ防止付き）
 // expo-image-picker 内部の ExponentImagePicker.js が requireNativeModule('ExponentImagePicker') を
@@ -93,6 +94,7 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
   const [fiber, setFiber] = useState('');
   const [multiplier, setMultiplier] = useState(1.0);
   const [isSaving, setIsSaving] = useState(false);
+  const [showDebugModal, setShowDebugModal] = useState(false);
 
   const isImagePickerAvailable = safeGetImagePicker() !== null;
 
@@ -486,12 +488,82 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
                   <Text style={styles.saveBtnText}>💾 食事ログを保存する</Text>
                 )}
               </TouchableOpacity>
+
+              {/* ステージング環境（staging チャンネル / __DEV__）限定 バックデータ出力ボタン */}
+              {isStagingOrDev() && (
+                <TouchableOpacity
+                  style={styles.debugBtn}
+                  onPress={() => setShowDebugModal(true)}
+                >
+                  <Text style={styles.debugBtnText}>🔍 [Staging] AI通信バックデータログを確認</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             <View style={{ height: 32 }} />
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+
+      {/* ステージング限定 バックデータダイアログ */}
+      {isStagingOrDev() && (
+        <Modal visible={showDebugModal} animationType="slide" transparent={true} onRequestClose={() => setShowDebugModal(false)}>
+          <View style={styles.debugModalOverlay}>
+            <View style={styles.debugModalContent}>
+              <View style={styles.debugModalHeader}>
+                <Text style={styles.debugModalTitle}>🔍 AI通信 バックデータ（Raw Log）</Text>
+                <TouchableOpacity onPress={() => setShowDebugModal(false)} style={styles.closeBtn}>
+                  <Text style={styles.closeBtnText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView style={styles.debugModalBody}>
+                {getAIDebugLogs().length === 0 ? (
+                  <Text style={styles.debugTextEmpty}>まだ通信ログがありません。AI解析を実行してください。</Text>
+                ) : (
+                  getAIDebugLogs().map((log) => (
+                    <View key={log.id} style={styles.debugLogCard}>
+                      <View style={styles.debugLogHeader}>
+                        <Text style={styles.debugLogBadge}>
+                          {log.type === 'image_analysis' ? '📷 画像解析' : log.type === 'text_analysis' ? '✍️ テキスト解析' : '💬 チャット'}
+                        </Text>
+                        <Text style={styles.debugLogTime}>{log.timestamp}</Text>
+                        <Text style={[styles.debugLogStatus, { color: log.success ? '#10b981' : '#f43f5e' }]}>
+                          {log.status ? `HTTP ${log.status}` : log.success ? '成功' : 'エラー'}
+                        </Text>
+                      </View>
+
+                      {log.errorMessage && (
+                        <Text style={styles.debugLogErrorText}>❌ エラー: {log.errorMessage}</Text>
+                      )}
+
+                      <Text style={styles.debugSubLabel}>リクエスト概要:</Text>
+                      <TextInput
+                        style={styles.debugCodeInput}
+                        multiline
+                        editable={false}
+                        value={JSON.stringify(log.requestSummary, null, 2)}
+                      />
+
+                      <Text style={styles.debugSubLabel}>レスポンス (Raw JSON / Server Response):</Text>
+                      <TextInput
+                        style={styles.debugCodeInput}
+                        multiline
+                        editable={false}
+                        value={log.responseRaw ? (typeof log.responseRaw === 'string' ? log.responseRaw : JSON.stringify(log.responseRaw, null, 2)) : 'なし'}
+                      />
+                    </View>
+                  ))
+                )}
+              </ScrollView>
+
+              <TouchableOpacity style={styles.debugCloseActionBtn} onPress={() => setShowDebugModal(false)}>
+                <Text style={styles.debugCloseActionBtnText}>閉じる</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
     </Modal>
   );
 }
@@ -553,6 +625,31 @@ const styles = StyleSheet.create({
   cellInput: { backgroundColor: '#0f172a', borderRadius: 6, borderWidth: 1, borderColor: '#334155', color: '#f8fafc', fontSize: 14, paddingHorizontal: 10, paddingVertical: 6, textAlign: 'right' },
   saveBtn: { backgroundColor: '#10b981', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   saveBtnDisabled: { opacity: 0.5 },
-  saveBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  debugBtn: {
+    marginTop: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#3b82f622',
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+    alignItems: 'center',
+  },
+  debugBtnText: { color: '#60a5fa', fontSize: 12, fontWeight: '700' },
+  debugModalOverlay: { flex: 1, backgroundColor: '#000000bb', justifyContent: 'center', padding: 16 },
+  debugModalContent: { backgroundColor: '#0f172a', borderRadius: 16, maxHeight: '85%', borderWidth: 1, borderColor: '#334155', padding: 16 },
+  debugModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderBottomWidth: 1, borderBottomColor: '#1e293b', paddingBottom: 8 },
+  debugModalTitle: { color: '#60a5fa', fontSize: 15, fontWeight: '700' },
+  debugModalBody: { flexGrow: 0 },
+  debugTextEmpty: { color: '#64748b', fontSize: 13, textAlign: 'center', marginVertical: 20 },
+  debugLogCard: { backgroundColor: '#1e293b', borderRadius: 10, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: '#334155' },
+  debugLogHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  debugLogBadge: { color: '#f8fafc', fontSize: 12, fontWeight: '700', backgroundColor: '#334155', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  debugLogTime: { color: '#94a3b8', fontSize: 11 },
+  debugLogStatus: { fontSize: 12, fontWeight: '700' },
+  debugLogErrorText: { color: '#f43f5e', fontSize: 12, marginBottom: 6, fontWeight: '600' },
+  debugSubLabel: { color: '#94a3b8', fontSize: 11, fontWeight: '600', marginTop: 6, marginBottom: 2 },
+  debugCodeInput: { backgroundColor: '#0f172a', color: '#38bdf8', fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', padding: 8, borderRadius: 6, maxHeight: 150 },
+  debugCloseActionBtn: { backgroundColor: '#334155', borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginTop: 12 },
+  debugCloseActionBtnText: { color: '#f8fafc', fontWeight: '700', fontSize: 13 },
 });
-
