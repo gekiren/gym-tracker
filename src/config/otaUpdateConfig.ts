@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.6.8',
+  version: '1.7.1',
   title: {
-    ja: 'フリーワークアウト開始ボタンのシンプル化',
-    en: 'Simplified Free Workout Button',
+    ja: '履歴グラフの洗練・高信頼化（エリアラインチャート）',
+    en: 'Redesigned History Chart with PR Target Tracking',
   },
   notes: {
     ja: [
-      '✨ アイコン表示の最適化: フリーワークアウト開始ボタンからプラスアイコンを外し、スッキリと再生マークのみのシンプルな表記に修正しました',
+      '📈 グラフの全面刷新: 過去最高の積算負荷（PR比%）を表示する高精度なエリアラインチャートへアップグレードしました。棒グラフ特有の圧迫感をなくし、直感的に過負荷を追跡できます。',
     ],
     en: [
-      '✨ Button Layout Polish: Removed plus icon from free workout button for a cleaner look with play-circle icon',
+      '📈 History Chart Redesign: Upgraded to a sleek area line chart tracking your PR Target % with zero clutter.',
     ],
   },
 };
