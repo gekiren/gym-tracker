@@ -234,6 +234,7 @@
     "history": {
       "title": "History",
       "subtitle": "Past workouts and Markdown export",
+      "calendar_btn": "Calendar",
       "chart_title": "Recent Total Volume ({{unit}})",
       "chart_1rm_title": "Recent Est. 1RM Max ({{unit}})",
       "type_volume": "Volume",

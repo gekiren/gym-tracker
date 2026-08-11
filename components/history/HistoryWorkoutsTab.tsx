@@ -295,8 +295,6 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
         }}
         ListHeaderComponent={
           <>
-            <Text style={styles.subtitle}>{t('ui.history.subtitle')}</Text>
-            
             <HistoryChart
               workouts={workouts}
               chartScale={chartScale}
@@ -304,8 +302,11 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
               chartMetric={chartMetric}
               setChartMetric={setChartMetric}
               weightUnit={settings.weightUnit}
+              setCalendarVisible={setCalendarVisible}
               t={t}
             />
+
+            <Text style={styles.subtitle}>{t('ui.history.subtitle')}</Text>
           </>
         }
         ListEmptyComponent={
@@ -322,7 +323,7 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
 const styles = StyleSheet.create({
   subContainer: { flex: 1 },
   content: { padding: Theme.spacing.md, paddingBottom: 100 },
-  subtitle: { color: Theme.colors.textMuted, fontSize: 16, marginBottom: Theme.spacing.lg },
+  subtitle: { color: Theme.colors.textMuted, fontSize: 14, fontWeight: '600', marginTop: Theme.spacing.xs, marginBottom: Theme.spacing.md },
   card: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, marginBottom: Theme.spacing.md, borderWidth: 1, borderColor: Theme.colors.border },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.xs },
   cardTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', flex: 1, marginRight: 8 },

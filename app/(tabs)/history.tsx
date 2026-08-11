@@ -227,15 +227,6 @@ export default function HistoryScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-          {activeTab === 'workouts' && (
-            <TouchableOpacity 
-              style={styles.calendarBtn}
-              onPress={() => setCalendarVisible(true)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="calendar-outline" size={22} color={Theme.colors.primary} />
-            </TouchableOpacity>
-          )}
         </View>
       </View>
 
@@ -282,5 +273,20 @@ const styles = StyleSheet.create({
   tabButtonActive: { backgroundColor: 'rgba(79, 172, 254, 0.1)', borderColor: Theme.colors.primary },
   tabButtonText: { color: Theme.colors.textMuted, fontSize: 15, fontWeight: 'bold' },
   tabButtonTextActive: { color: Theme.colors.primary },
-  calendarBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.03)', justifyContent: 'center', alignItems: 'center', marginRight: Theme.spacing.md },
+  calendarBtnHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: 'rgba(79, 172, 254, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(79, 172, 254, 0.3)',
+    marginRight: Theme.spacing.md,
+  },
+  calendarBtnHeaderText: {
+    color: Theme.colors.primary,
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
 });

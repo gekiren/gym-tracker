@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import Svg, { Path, Circle, Line, Defs, LinearGradient, Stop, Text as SvgText, Rect, G } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
 import { format, startOfWeek, startOfMonth } from 'date-fns';
 import { Theme } from '../../src/theme';
 import { getWorkoutPRStatsMap, WorkoutPRStat } from '../../src/db/database';
@@ -12,6 +13,7 @@ interface HistoryChartProps {
   chartMetric: 'volume' | 'calories';
   setChartMetric: (metric: 'volume' | 'calories') => void;
   weightUnit: string;
+  setCalendarVisible?: (visible: boolean) => void;
   t: (key: string, options?: any) => string;
 }
 
@@ -42,6 +44,7 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
   chartMetric,
   setChartMetric,
   weightUnit,
+  setCalendarVisible,
   t,
 }) => {
   const chartScrollRef = useRef<ScrollView>(null);
@@ -222,11 +225,24 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
   return (
     <View style={styles.chartContainer}>
       {/* Header & Titles */}
-      <Text style={styles.chartTitle}>
-        {chartMetric === 'volume' 
-          ? t('ui.history.chart_title', { unit: weightUnit }) 
-          : t('ui.history.chart_title_calories')}
-      </Text>
+      <View style={styles.chartHeaderRow}>
+        <Text style={styles.chartTitle}>
+          {chartMetric === 'volume' 
+            ? t('ui.history.chart_title', { unit: weightUnit }) 
+            : t('ui.history.chart_title_calories')}
+        </Text>
+
+        {setCalendarVisible && (
+          <TouchableOpacity 
+            style={styles.calendarBtnInline}
+            onPress={() => setCalendarVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="calendar-outline" size={15} color={Theme.colors.primary} style={{ marginRight: 4 }} />
+            <Text style={styles.calendarBtnText}>{t('ui.history.calendar_btn') || 'カレンダー'}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* Selectors Row */}
       <View style={styles.selectorsRow}>
@@ -462,11 +478,32 @@ const styles = StyleSheet.create({
   chartContainer: {
     marginBottom: Theme.spacing.xl,
   },
+  chartHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Theme.spacing.md,
+  },
+  calendarBtnInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(79, 172, 254, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(79, 172, 254, 0.3)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  calendarBtnText: {
+    color: Theme.colors.primary,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
   chartTitle: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: Theme.spacing.md,
+    marginBottom: 0,
   },
   selectorsRow: {
     flexDirection: 'row',

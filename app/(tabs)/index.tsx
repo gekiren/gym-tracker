@@ -236,25 +236,27 @@ export default function WorkoutHomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {routines.map(r => (
-            <TouchableOpacity 
-              key={r.id} 
-              style={styles.routineCard} 
-              activeOpacity={0.7} 
-              onPress={() => handleStartRoutine(r)}
-              disabled={isLoading}
-            >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.routineTitle}>{r.title}</Text>
-                  <Text style={styles.routineDesc} numberOfLines={2}>
-                    {r.exercises?.map((e: any) => translateExercise(e.name)).join(', ') || t('ui.home.no_exercises')}
-                  </Text>
+          <View style={styles.routineListContainer}>
+            {routines.map(r => (
+              <TouchableOpacity 
+                key={r.id} 
+                style={styles.routineRow} 
+                activeOpacity={0.6} 
+                onPress={() => handleStartRoutine(r)}
+                disabled={isLoading}
+              >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.routineTitle}>{r.title}</Text>
+                    <Text style={styles.routineDesc} numberOfLines={2}>
+                      {r.exercises?.map((e: any) => translateExercise(e.name)).join(', ') || t('ui.home.no_exercises')}
+                    </Text>
+                  </View>
+                  <Ionicons name="play-circle" size={32} color={Theme.colors.primary} style={{ marginLeft: 16 }} />
                 </View>
-                <Ionicons name="play-circle" size={32} color={Theme.colors.primary} style={{ marginLeft: 16 }} />
-              </View>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            ))}
+          </View>
 
           {routines.length === 0 && (
             <View style={{ padding: 24, alignItems: 'center' }}>
@@ -401,7 +403,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     borderRadius: Theme.borderRadius.lg,
-    marginBottom: Theme.spacing.xl,
+    marginBottom: Theme.spacing.sm,
     shadowColor: Theme.colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -414,7 +416,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   section: {
-    marginTop: Theme.spacing.md,
+    marginTop: Theme.spacing.xs,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -431,13 +433,16 @@ const styles = StyleSheet.create({
     color: Theme.colors.primary,
     fontSize: 16,
   },
-  routineCard: {
-    backgroundColor: Theme.colors.card,
-    padding: Theme.spacing.lg,
-    borderRadius: Theme.borderRadius.md,
-    marginBottom: Theme.spacing.md,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
+  routineListContainer: {
+    marginHorizontal: -Theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  routineRow: {
+    paddingVertical: 16,
+    paddingHorizontal: Theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   routineTitle: {
     fontSize: 18,

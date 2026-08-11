@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.7.1',
+  version: '1.7.3',
   title: {
-    ja: '履歴グラフの洗練・高信頼化（エリアラインチャート）',
-    en: 'Redesigned History Chart with PR Target Tracking',
+    ja: '履歴画面レイアウトの最適化（見出し位置の調整）',
+    en: 'History Screen Layout Optimization',
   },
   notes: {
     ja: [
-      '📈 グラフの全面刷新: 過去最高の積算負荷（PR比%）を表示する高精度なエリアラインチャートへアップグレードしました。棒グラフ特有の圧迫感をなくし、直感的に過負荷を追跡できます。',
+      '✨ レイアウト最適化: 「過去のワークアウト記録とMarkdown出力」のテキスト見出しを、グラフカードとワークアウト一覧の間に移動し、画面構成をより分かりやすく調整しました。',
     ],
     en: [
-      '📈 History Chart Redesign: Upgraded to a sleek area line chart tracking your PR Target % with zero clutter.',
+      '✨ Layout Polish: Moved section header between the history chart and workout items for a cleaner flow.',
     ],
   },
 };
