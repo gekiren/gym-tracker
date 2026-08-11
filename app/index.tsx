@@ -661,7 +661,7 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Theme.spacing.md,
+    marginBottom: 10,
   },
   iconContainer: {
     width: 38,
@@ -710,7 +710,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   inactiveWorkoutContainer: {
-    gap: 12,
+    gap: 6,
   },
   inactiveText: {
     color: Theme.colors.textMuted,
@@ -733,7 +733,7 @@ const styles = StyleSheet.create({
   statRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   statVal: {
     color: '#fff',
