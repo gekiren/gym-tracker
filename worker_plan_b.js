@@ -1,6 +1,6 @@
 /**
- * Cloudflare Worker Proxy for Gemini 3.6 Flash & Multi-Model Fallback (Gemini 2.5/1.5 & DeepSeek)
- * (gym-tracker AI Coach & Nutrition Vision Analysis - Plan B / v1.5.4)
+ * Cloudflare Worker Proxy for Gemini 3.6 Flash & Multi-Model Fallback (Gemini 3.5/2.5/2.5-Lite & DeepSeek)
+ * (gym-tracker AI Coach & Nutrition Vision Analysis - Plan B / v1.5.5)
  *
  * ENDPOINTS SUPPORTED:
  * - /api/chat : Fitness AI Coach text chat
@@ -133,8 +133,8 @@ export default {
 
 ※写真が食品や栄養成分表でない場合は、"isFood": false にしてください。`;
 
-        // 試行するモデルリスト (gemini-3.6-flash 優先 ➔ 2.5-flash ➔ 1.5-flash)
-        const geminiModels = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-1.5-flash"];
+        // 最適化されたモデルリスト (3.6-flash 優先 ➔ 3.5-flash ➔ 2.5-flash ➔ 2.5-flash-lite)
+        const geminiModels = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
         let lastErrorText = "";
         let fallbackHistory = [];
 
@@ -176,7 +176,7 @@ export default {
                   return new Response(JSON.stringify({ 
                     success: true, 
                     ...parsedJson,
-                    debugInfo: { workerVersion: "v1.5.4", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
+                    debugInfo: { workerVersion: "v1.5.5", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -187,7 +187,7 @@ export default {
                     success: true, 
                     reply: rawText, 
                     mealName: "食事写真",
-                    debugInfo: { workerVersion: "v1.5.4", modelUsed: modelName, parseError: true, rawSnippet: rawText.substring(0, 100) }
+                    debugInfo: { workerVersion: "v1.5.5", modelUsed: modelName, parseError: true, rawSnippet: rawText.substring(0, 100) }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -238,7 +238,7 @@ export default {
               return new Response(JSON.stringify({
                 success: true,
                 ...parsedJson,
-                debugInfo: { workerVersion: "v1.5.4", modelUsed: "deepseek-chat (text fallback)", fallbackHistory }
+                debugInfo: { workerVersion: "v1.5.5", modelUsed: "deepseek-chat (text fallback)", fallbackHistory }
               }), {
                 status: 200,
                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -261,7 +261,7 @@ export default {
           sodium: 0,
           fiber: 0,
           advice: "AIによる画像解析時に一時的なエラーが発生しました。時間を置いて再実行してください。",
-          debugInfo: { workerVersion: "v1.5.4", fallbackHistory, lastError: lastErrorText }
+          debugInfo: { workerVersion: "v1.5.5", fallbackHistory, lastError: lastErrorText }
         }), {
           status: 200,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -283,7 +283,7 @@ export default {
   "advice": "栄養アドバイス"
 }`;
 
-        const geminiModels = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-1.5-flash"];
+        const geminiModels = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
         let fallbackHistory = [];
 
         if (env.GEMINI_API_KEY) {
@@ -313,7 +313,7 @@ export default {
                   return new Response(JSON.stringify({
                     success: true,
                     ...parsedJson,
-                    debugInfo: { workerVersion: "v1.5.4", modelUsed: modelName, fallbackHistory }
+                    debugInfo: { workerVersion: "v1.5.5", modelUsed: modelName, fallbackHistory }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -363,7 +363,7 @@ export default {
               return new Response(JSON.stringify({
                 success: true,
                 ...parsedJson,
-                debugInfo: { workerVersion: "v1.5.4", modelUsed: "deepseek-chat", fallbackHistory }
+                debugInfo: { workerVersion: "v1.5.5", modelUsed: "deepseek-chat", fallbackHistory }
               }), {
                 status: 200,
                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -388,7 +388,7 @@ export default {
         ? `[User Context]\n- Body Weight: ${user_weight || "Not set"}\n\n${contextHeader}\n${workout_history || "No history available"}\n\n[User Message]\n${message}`
         : `【ユーザー情報】\n- 体重: ${user_weight || "未設定"}\n\n${contextHeader}\n${workout_history || "履歴なし"}\n\n【ユーザーの質問】\n${message}`;
 
-      const geminiModels = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-1.5-flash"];
+      const geminiModels = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
       let chatFallbackHistory = [];
 
       if (env.GEMINI_API_KEY) {
@@ -415,7 +415,7 @@ export default {
                 return new Response(JSON.stringify({
                   success: true,
                   reply,
-                  debugInfo: { workerVersion: "v1.5.4", modelUsed: modelName, chatFallbackHistory }
+                  debugInfo: { workerVersion: "v1.5.5", modelUsed: modelName, chatFallbackHistory }
                 }), {
                   status: 200,
                   headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -459,7 +459,7 @@ export default {
               return new Response(JSON.stringify({
                 success: true,
                 reply,
-                debugInfo: { workerVersion: "v1.5.4", modelUsed: "deepseek-chat", chatFallbackHistory }
+                debugInfo: { workerVersion: "v1.5.5", modelUsed: "deepseek-chat", chatFallbackHistory }
               }), {
                 status: 200,
                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
