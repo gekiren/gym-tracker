@@ -417,6 +417,7 @@ const safeParseInt = (val: string): number | null => {
                   style={[styles.input, { width: 55 }]} 
                   keyboardType="numeric" 
                   step={0.5}
+                  maxValue={10}
                   placeholder="-" 
                   placeholderTextColor="rgba(255,255,255,0.2)"
                   value={localRpe}
@@ -424,9 +425,16 @@ const safeParseInt = (val: string): number | null => {
                   onSelectionChange={() => {}}
                   onChangeText={(val) => {
                     if (val === '' || /^\d{0,2}([.,]\d{0,1})?$/.test(val)) {
-                      setLocalRpe(val);
-                      setRpeSel(undefined);
-                      updateSet(ex.id, set.id, { rpe: safeParseFloat(val) });
+                      const num = safeParseFloat(val);
+                      if (num !== null && num > 10) {
+                        setLocalRpe('10');
+                        setRpeSel(undefined);
+                        updateSet(ex.id, set.id, { rpe: 10 });
+                      } else {
+                        setLocalRpe(val);
+                        setRpeSel(undefined);
+                        updateSet(ex.id, set.id, { rpe: num });
+                      }
                     }
                   }}
                   selectTextOnFocus={true}

@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.4',
+  version: '1.8.5',
   title: {
-    ja: 'スワイプ数値入力の感度調整',
-    en: 'Improved Swipe Input Sensitivity',
+    ja: 'RPEスワイプ入力の上限定義',
+    en: 'RPE Swipe Input Upper Limit',
   },
   notes: {
     ja: [
-      '✨ 横スワイプでの数値変動の感度を調整し、スクロール時などの意図しない誤変動を軽減しました。',
+      '✨ RPE（運動自覚度）のスワイプ入力において、数値が10を超えないよう上限制限（最大10）を設定しました。',
     ],
     en: [
-      '✨ Adjusted swipe input sensitivity to prevent accidental value changes during scroll.',
+      '✨ Added upper limit constraint (max 10) for RPE swipe input.',
     ],
   },
 };
