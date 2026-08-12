@@ -10,6 +10,9 @@ import { AI_CONFIG } from '../../src/config/aiConfig';
 import { translateExercise, translateStance } from '../../src/i18n';
 import { SetInputRow } from './SetInputRow';
 import { StanceModalTarget } from '../../src/hooks/useActiveWorkout';
+import { WeightStepModal } from './WeightStepModal';
+import { updateExerciseWeightStep } from '../../src/db/repositories/exerciseRepository';
+import { useWorkoutStore } from '../../src/store/workoutStore';
 
 interface ActiveExerciseCardProps {
   ex: any;
@@ -48,6 +51,8 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
   onSetActiveSetForCalc,
   calculateRM,
 }) => {
+  const [weightStepModalVisible, setWeightStepModalVisible] = React.useState(false);
+
   const renderLeftActions = (_progress: SharedValue<number>, drag: SharedValue<number>) => {
     const styleAnimation = useAnimatedStyle(() => ({
       transform: [{ translateX: drag.value - 80 }],
@@ -96,8 +101,18 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
                 onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: ex.exercise_id || ex.id } } as any)}
                 onLongPress={() => onDeleteExercise(ex)}
                 delayLongPress={500}
+                style={{ flexDirection: 'row', alignItems: 'center' }}
               >
                 <Text style={styles.exerciseTitle}>{translateExercise(ex.name)}</Text>
+                <TouchableOpacity
+                  style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#2a2a2a', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6, marginLeft: 8 }}
+                  onPress={() => setWeightStepModalVisible(true)}
+                >
+                  <Ionicons name="swap-horizontal-outline" size={12} color={Theme.colors.primary} style={{ marginRight: 2 }} />
+                  <Text style={{ color: Theme.colors.primary, fontSize: 11, fontWeight: 'bold' }}>
+                    ±{ex.weight_step ?? 2.5}kg
+                  </Text>
+                </TouchableOpacity>
               </TouchableOpacity>
               {settings.displayFields?.showStance && (
                 <TouchableOpacity
@@ -205,6 +220,19 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
       <TouchableOpacity style={styles.addSetBtn} onPress={() => onAddSet(ex.id)}>
         <Text style={styles.addSetBtnText}>{t('ui.active_workout.add_set_label')}</Text>
       </TouchableOpacity>
+
+      <WeightStepModal
+        visible={weightStepModalVisible}
+        onClose={() => setWeightStepModalVisible(false)}
+        currentStep={ex.weight_step ?? 2.5}
+        exerciseName={translateExercise(ex.name)}
+        onSelectStep={async (newStep: number) => {
+          useWorkoutStore.getState().updateExerciseWeightStep(ex.id, newStep);
+          if (ex.exercise_id || ex.id) {
+            await updateExerciseWeightStep(ex.exercise_id || ex.id, newStep);
+          }
+        }}
+      />
     </View>
   );
 });

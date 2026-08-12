@@ -34,6 +34,7 @@ export type ActiveExercise = {
   personalRecords?: Record<string, Record<number, number>>;
   default_variation?: string | null;
   default_stance?: string | null;
+  weight_step?: number;
 };
 
 export interface WorkoutCompletionAchievement {
@@ -72,6 +73,7 @@ interface WorkoutState {
   updateExerciseNotes: (exerciseId: string, notes: string) => void;
   updateExerciseVariation: (exerciseId: string, variation: string | null) => void;
   updateExerciseStance: (exerciseId: string, stance: string | null) => void;
+  updateExerciseWeightStep: (exerciseId: string, weightStep: number) => void;
   endWorkout: () => void;
   addExercise: (exercise: { id: number; name: string; previousSets?: any[]; personalRecords?: Record<string, Record<number, number>>; is_unilateral?: number; default_variation?: string | null; default_stance?: string | null; equipment?: string; muscle_group?: string; routineSets?: any[] }) => void;
   removeExercise: (exerciseId: string) => void;
@@ -168,6 +170,12 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     })
   })),
 
+  updateExerciseWeightStep: (exerciseId, weightStep) => set((state) => ({
+    exercises: state.exercises.map(ex => 
+      ex.id === exerciseId ? { ...ex, weight_step: weightStep } : ex
+    )
+  })),
+
   endWorkout: () => {
     cancelRestTimer();
     set({
@@ -199,7 +207,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           notes: '',
           personalRecords: exercise.personalRecords || {},
           default_variation: exercise.default_variation || null,
-          default_stance: exercise.default_stance || null
+          default_stance: exercise.default_stance || null,
+          weight_step: (exercise as any).weight_step ?? 2.5
         }
       ]
     };

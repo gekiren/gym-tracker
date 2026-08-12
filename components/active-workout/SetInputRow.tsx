@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Theme } from '../../src/theme';
 import { translateStance } from '../../src/i18n';
 import { TimerButton } from './TimerButton';
+import { CompactSwipeableInput } from './CompactSwipeableInput';
 
 interface SetInputRowProps {
   ex: any;
@@ -284,9 +285,10 @@ const safeParseInt = (val: string): number | null => {
                 <Text style={styles.inputReadOnlyText}>{localWeight || (set.prev_weight ? String(set.prev_weight) : '-')}</Text>
               </View>
             ) : (
-              <TextInput 
+              <CompactSwipeableInput 
                 style={styles.input} 
                 keyboardType="decimal-pad" 
+                step={ex.weight_step ?? 2.5}
                 placeholder={set.prev_weight ? String(set.prev_weight) : "-"} 
                 placeholderTextColor="rgba(255,255,255,0.2)"
                 value={localWeight}
@@ -320,10 +322,11 @@ const safeParseInt = (val: string): number | null => {
                   <Text style={styles.inputReadOnlyText}>{localReps ? `${localReps}${t('ui.active_workout.seconds_unit')}` : (set.prev_reps ? `${set.prev_reps}${t('ui.active_workout.seconds_unit')}` : '-')}</Text>
                 </View>
               ) : (
-                <TextInput 
-                  ref={repsInputRef}
+                <CompactSwipeableInput 
+                  inputRef={repsInputRef}
                   style={[styles.input, { width: 70 }]} 
                   keyboardType="numeric" 
+                  step={1}
                   placeholder={set.prev_reps ? `${set.prev_reps}${t('ui.active_workout.seconds_unit')}` : t('ui.active_workout.seconds_unit')} 
                   placeholderTextColor="rgba(255,255,255,0.2)"
                   value={localReps}
@@ -353,10 +356,11 @@ const safeParseInt = (val: string): number | null => {
                 <Text style={styles.inputReadOnlyText}>{localReps || (set.prev_reps ? String(set.prev_reps) : '-')}</Text>
               </View>
             ) : (
-              <TextInput 
-                ref={repsInputRef}
+              <CompactSwipeableInput 
+                inputRef={repsInputRef}
                 style={[styles.input, { width: 70 }]} 
                 keyboardType="numeric" 
+                step={1}
                 placeholder={set.prev_reps ? String(set.prev_reps) : "-"} 
                 placeholderTextColor="rgba(255,255,255,0.2)"
                 value={localReps}
@@ -408,10 +412,11 @@ const safeParseInt = (val: string): number | null => {
                   <Text style={styles.inputReadOnlyText}>{localRpe || '-'}</Text>
                 </View>
               ) : (
-                <TextInput 
-                  ref={rpeInputRef}
+                <CompactSwipeableInput 
+                  inputRef={rpeInputRef}
                   style={[styles.input, { width: 55 }]} 
                   keyboardType="numeric" 
+                  step={0.5}
                   placeholder="-" 
                   placeholderTextColor="rgba(255,255,255,0.2)"
                   value={localRpe}

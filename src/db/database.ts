@@ -46,7 +46,8 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       equipment TEXT,
       is_unilateral INTEGER DEFAULT 0,
       default_variation TEXT,
-      default_stance TEXT
+      default_stance TEXT,
+      weight_step REAL DEFAULT 2.5
     );
 
     CREATE TABLE IF NOT EXISTS workouts (
