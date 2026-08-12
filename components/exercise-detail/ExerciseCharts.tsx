@@ -289,7 +289,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
     ? `${linearPath} L ${coords[coords.length - 1].x} ${svgHeight - paddingBottom} L ${coords[0].x} ${svgHeight - paddingBottom} Z`
     : '';
 
-  const chartThemeColor = chartType === 'volume' ? Theme.colors.primary : '#4cd964';
+  const chartThemeColor = Theme.colors.primary;
 
   return (
     <>
