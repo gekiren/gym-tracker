@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.14',
+  version: '1.8.15',
   title: {
-    ja: '水分補給画面のレイアウト・デザイン改善',
-    en: 'Water Intake Screen Layout & Design Improvements',
+    ja: '水分補給画面の全幅デザイン統一',
+    en: 'Water Intake Full-Width Layout Update',
   },
   notes: {
     ja: [
-      '💧 水分補給画面にて、カードの重なり不具合を解消し、より見やすく洗練されたデザインへ改善しました。',
+      '💧 水分補給画面のレイアウトをダッシュボード画面と統一し、横幅全体を使った角丸なしのフラットなデザインに変更しました。',
     ],
     en: [
-      '💧 Fixed layout overlapping issues on the Water Intake screen for a cleaner, refined design.',
+      '💧 Updated the Water Intake screen layout to be full-width without rounded cards, matching the Dashboard screen style.',
     ],
   },
 };

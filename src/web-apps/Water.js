@@ -163,8 +163,8 @@ input {
 
 /* Layout */
 .app-container {
-    max-width: 480px;
-    margin: 0 auto;
+    max-width: 100%;
+    margin: 0;
     background-color: var(--bg-color);
     min-height: 100vh;
     display: flex;
@@ -175,8 +175,8 @@ input {
 .header-section {
     background: var(--primary-gradient);
     padding: 24px 20px 28px;
-    border-bottom-left-radius: 24px;
-    border-bottom-right-radius: 24px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
     color: var(--header-text);
     position: relative;
     display: flex;
@@ -269,18 +269,19 @@ input {
 /* Main Content */
 .main-content {
     flex: 1;
-    padding: 0 20px 40px;
-    margin-top: 16px;
+    padding: 0 0 40px 0;
+    margin-top: 0;
     z-index: 20;
 }
 
 /* Controls Section */
 .controls-section {
-    background: var(--card-bg);
-    border-radius: var(--radius-lg);
-    padding: 24px;
-    box-shadow: var(--shadow-sm);
-    margin-bottom: 24px;
+    background: transparent;
+    border-radius: 0;
+    padding: 20px 16px;
+    box-shadow: none;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .quick-add-grid {
@@ -337,10 +338,10 @@ input {
 
 /* History Section */
 .history-section {
-    background: var(--card-bg);
-    border-radius: var(--radius-lg);
-    padding: 24px;
-    box-shadow: var(--shadow-sm);
+    background: transparent;
+    border-radius: 0;
+    padding: 20px 16px;
+    box-shadow: none;
     min-height: 200px;
 }
 
