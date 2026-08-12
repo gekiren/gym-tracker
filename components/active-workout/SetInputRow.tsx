@@ -47,6 +47,7 @@ export function SetInputRow({
   const [repsSel, setRepsSel] = useState<{ start: number; end: number } | undefined>(undefined);
   const [rpeSel, setRpeSel] = useState<{ start: number; end: number } | undefined>(undefined);
   const repsInputRef = useRef<TextInput>(null);
+  const rpeInputRef = useRef<TextInput>(null);
   const originalWeightRef = useRef<string>('');
   const originalRepsRef = useRef<string>('');
   const originalRpeRef = useRef<string>('');
@@ -343,8 +344,14 @@ const safeParseInt = (val: string): number | null => {
                       updateSet(ex.id, set.id, { reps: safeParseInt(restored) });
                     }
                   }}
-                  returnKeyType="done"
-                  onSubmitEditing={() => Keyboard.dismiss()}
+                  returnKeyType={displayFields?.showRpe !== false ? "next" : "done"}
+                  onSubmitEditing={() => {
+                    if (displayFields?.showRpe !== false) {
+                      rpeInputRef.current?.focus();
+                    } else {
+                      Keyboard.dismiss();
+                    }
+                  }}
                 />
               )
             ) : set.is_completed ? (
@@ -402,6 +409,7 @@ const safeParseInt = (val: string): number | null => {
                 </View>
               ) : (
                 <TextInput 
+                  ref={rpeInputRef}
                   style={[styles.input, { width: 55 }]} 
                   keyboardType="numeric" 
                   placeholder="-" 
@@ -430,6 +438,8 @@ const safeParseInt = (val: string): number | null => {
                       updateSet(ex.id, set.id, { rpe: safeParseFloat(restored) });
                     }
                   }}
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
                 />
               )
             ) : null}
