@@ -174,14 +174,14 @@ input {
 /* Header Section */
 .header-section {
     background: var(--primary-gradient);
-    padding: 40px 20px 60px;
-    border-bottom-left-radius: 40px;
-    border-bottom-right-radius: 40px;
+    padding: 24px 20px 28px;
+    border-bottom-left-radius: 24px;
+    border-bottom-right-radius: 24px;
     color: var(--header-text);
     position: relative;
     display: flex;
     justify-content: center;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
     z-index: 10;
 }
 
@@ -258,6 +258,7 @@ input {
 }
 
 .percentage {
+    display: none;
     font-size: 0.8rem;
     background: rgba(255, 255, 255, 0.2);
     padding: 2px 8px;
@@ -269,8 +270,7 @@ input {
 .main-content {
     flex: 1;
     padding: 0 20px 40px;
-    margin-top: -30px;
-    /* Overlap header */
+    margin-top: 16px;
     z-index: 20;
 }
 

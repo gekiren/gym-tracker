@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.13',
+  version: '1.8.14',
   title: {
-    ja: 'キーボード入力時のフォーカス移動の改善',
-    en: 'Improved Keyboard Focus Navigation',
+    ja: '水分補給画面のレイアウト・デザイン改善',
+    en: 'Water Intake Screen Layout & Design Improvements',
   },
   notes: {
     ja: [
-      '⌨️ ワークアウト入力画面にて、エンターキー（次へ）を押した際に重量から回数・RPEへスムーズにフォーカスが移動するよう改善しました。',
+      '💧 水分補給画面にて、カードの重なり不具合を解消し、より見やすく洗練されたデザインへ改善しました。',
     ],
     en: [
-      '⌨️ Improved keyboard navigation: Pressing Next/Enter in set inputs now seamlessly shifts focus to Reps and RPE.',
+      '💧 Fixed layout overlapping issues on the Water Intake screen for a cleaner, refined design.',
     ],
   },
 };
