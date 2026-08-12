@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 32
+    height: 28
   },
   timerInputBtnText: {
     color: '#fff',

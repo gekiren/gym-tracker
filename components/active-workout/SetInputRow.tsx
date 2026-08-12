@@ -468,7 +468,7 @@ const safeParseInt = (val: string): number | null => {
               toggleSetComplete(ex.id, set.id);
             }}
           >
-            <Ionicons name="checkmark" size={18} color={set.is_completed ? '#fff' : Theme.colors.textMuted} />
+            <Ionicons name="checkmark" size={16} color={set.is_completed ? '#fff' : Theme.colors.textMuted} />
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -516,10 +516,10 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, paddingHorizontal: 4 },
   rowCompleted: { opacity: 0.7 },
   tdSet: { color: Theme.colors.text, textAlign: 'center', fontSize: 16, fontWeight: '500' },
-  input: { backgroundColor: '#2a2a2a', color: Theme.colors.text, width: 90, height: 32, marginHorizontal: 3, borderRadius: 4, paddingVertical: 0, paddingHorizontal: 4, textAlign: 'center', fontSize: 15, justifyContent: 'center', alignItems: 'center' },
+  input: { backgroundColor: '#2a2a2a', color: Theme.colors.text, width: 90, height: 28, marginHorizontal: 3, borderRadius: 4, paddingVertical: 0, paddingHorizontal: 4, textAlign: 'center', fontSize: 15, justifyContent: 'center', alignItems: 'center' },
   inputReadOnly: { opacity: 0.7, justifyContent: 'center', alignItems: 'center' },
   inputReadOnlyText: { color: Theme.colors.text, fontSize: 16 },
-  checkBtn: { width: 32, height: 32, backgroundColor: '#333', borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
+  checkBtn: { width: 28, height: 28, backgroundColor: '#333', borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
   checkBtnActive: { backgroundColor: Theme.colors.success },
   deleteAction: {
     backgroundColor: '#ff4444',
