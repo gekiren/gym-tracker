@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View, Pressable, ScrollView } from 'react-native';
+import * as Updates from 'expo-updates';
 import { Theme } from '../src/theme';
 import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import { CURRENT_OTA_CONFIG } from '../src/config/otaUpdateConfig';
@@ -17,6 +18,17 @@ export const OTAUpdateModal = () => {
   const title = CURRENT_OTA_CONFIG.title[currentLang] || CURRENT_OTA_CONFIG.title['ja'];
   const notes = CURRENT_OTA_CONFIG.notes[currentLang] || CURRENT_OTA_CONFIG.notes['ja'];
   const version = CURRENT_OTA_CONFIG.version;
+
+  const handleApplyAndReload = async () => {
+    hideModal();
+    try {
+      if (Updates.isEnabled && !__DEV__) {
+        await Updates.reloadAsync();
+      }
+    } catch (e) {
+      console.warn('Failed to reload app for OTA update:', e);
+    }
+  };
 
   return (
     <Modal
@@ -55,14 +67,15 @@ export const OTAUpdateModal = () => {
               ))}
             </ScrollView>
 
-            {/* Close Button */}
+            {/* Restart & Apply Button */}
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={hideModal}
+              onPress={handleApplyAndReload}
               activeOpacity={0.8}
             >
+              <Ionicons name="refresh-outline" size={18} color="#000" style={{ marginRight: 6 }} />
               <Text style={styles.closeButtonText}>
-                {currentLang === 'ja' ? '閉じる' : 'Close'}
+                {currentLang === 'ja' ? '今すぐ再起動して反映' : 'Restart App & Apply'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -155,6 +168,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   closeButton: {
+    flexDirection: 'row',
     backgroundColor: Theme.colors.primary,
     width: '100%',
     height: 48,

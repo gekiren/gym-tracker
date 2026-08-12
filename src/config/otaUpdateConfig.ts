@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.0',
+  version: '1.8.1',
   title: {
-    ja: '種目別グラフの機能拡張と指標選択の統一',
-    en: 'Exercise Chart Metrics & Selector Update',
+    ja: 'アップデート自動即時反映機能の追加',
+    en: 'Auto App Reload & Immediate Update',
   },
   notes: {
     ja: [
-      '📊 種目別グラフにセット数、1セット平均負荷、トレーニング密度の指標を追加しました。',
-      '📋 リストから表示したいグラフ指標を簡単に選択・切り替えられるようになりました。',
+      '⚡ 更新通知ポップアップの「今すぐ再起動して反映」を押すと、アプリが自動再起動され即時に最新機能が反映されるようになりました。',
     ],
     en: [
-      '📊 Added Sets, Volume per Set, and Training Density metrics to exercise detail charts.',
-      '📋 Easily switch chart metrics from the dropdown list selector.',
+      '⚡ Pressing "Restart App & Apply" automatically restarts the app to immediately apply new updates.',
     ],
   },
 };
