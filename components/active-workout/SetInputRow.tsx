@@ -47,8 +47,8 @@ export function SetInputRow({
   const [weightSel, setWeightSel] = useState<{ start: number; end: number } | undefined>(undefined);
   const [repsSel, setRepsSel] = useState<{ start: number; end: number } | undefined>(undefined);
   const [rpeSel, setRpeSel] = useState<{ start: number; end: number } | undefined>(undefined);
-  const repsInputRef = useRef<TextInput>(null);
-  const rpeInputRef = useRef<TextInput>(null);
+  const repsInputRef = useRef<any>(null);
+  const rpeInputRef = useRef<any>(null);
   const originalWeightRef = useRef<string>('');
   const originalRepsRef = useRef<string>('');
   const originalRpeRef = useRef<string>('');

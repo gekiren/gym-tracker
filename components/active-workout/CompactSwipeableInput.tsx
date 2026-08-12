@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { View, Text, StyleSheet, TextInput, Platform, StyleProp, ViewStyle, TextStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -9,6 +9,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Theme } from '../../src/theme';
+
+export interface CompactSwipeableInputHandle {
+  focus: () => void;
+  blur: () => void;
+}
 
 interface CompactSwipeableInputProps {
   value: string;
@@ -27,12 +32,12 @@ interface CompactSwipeableInputProps {
   onBlur?: () => void;
   returnKeyType?: 'done' | 'next' | 'go' | 'search' | 'send';
   onSubmitEditing?: () => void;
-  inputRef?: React.RefObject<TextInput | null>;
+  inputRef?: React.RefObject<any>;
   disabled?: boolean;
   keyboardType?: 'numeric' | 'decimal-pad' | 'number-pad';
 }
 
-export function CompactSwipeableInput({
+export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, CompactSwipeableInputProps>(({
   value,
   onChangeText,
   step = 1,
@@ -52,10 +57,31 @@ export function CompactSwipeableInput({
   inputRef,
   disabled = false,
   keyboardType = 'numeric',
-}: CompactSwipeableInputProps) {
+}, ref) => {
   const [isEditing, setIsEditing] = useState(false);
   const localInputRef = useRef<TextInput>(null);
-  const effectiveRef = inputRef || localInputRef;
+
+  const focusInput = () => {
+    setIsEditing(true);
+    setTimeout(() => {
+      localInputRef.current?.focus();
+    }, 40);
+  };
+
+  const blurInput = () => {
+    setIsEditing(false);
+    localInputRef.current?.blur();
+  };
+
+  useImperativeHandle(ref, () => ({
+    focus: focusInput,
+    blur: blurInput,
+  }));
+
+  useImperativeHandle(inputRef as any, () => ({
+    focus: focusInput,
+    blur: blurInput,
+  }));
 
   // Shared Values for animations
   const translationX = useSharedValue(0);
@@ -66,7 +92,7 @@ export function CompactSwipeableInput({
   useEffect(() => {
     if (isEditing) {
       setTimeout(() => {
-        effectiveRef.current?.focus();
+        localInputRef.current?.focus();
       }, 40);
     }
   }, [isEditing]);
@@ -144,7 +170,7 @@ export function CompactSwipeableInput({
   if (isEditing) {
     return (
       <TextInput
-        ref={effectiveRef as any}
+        ref={localInputRef}
         style={style}
         keyboardType={keyboardType}
         placeholder={placeholder}
@@ -192,7 +218,7 @@ export function CompactSwipeableInput({
       </Animated.View>
     </GestureDetector>
   );
-}
+});
 
 const styles = StyleSheet.create({
   baseBox: {
@@ -203,3 +229,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+

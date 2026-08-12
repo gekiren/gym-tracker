@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.12',
+  version: '1.8.13',
   title: {
-    ja: 'ワークアウト確認ポップアップのデザイン刷新',
-    en: 'Workout Confirmation Popup UI Refresh',
+    ja: 'キーボード入力時のフォーカス移動の改善',
+    en: 'Improved Keyboard Focus Navigation',
   },
   notes: {
     ja: [
-      '✨ ワークアウトの中断・完了確認ポップアップをアプリ全体のダークテーマに合わせたモダンなデザインに刷新しました。',
+      '⌨️ ワークアウト入力画面にて、エンターキー（次へ）を押した際に重量から回数・RPEへスムーズにフォーカスが移動するよう改善しました。',
     ],
     en: [
-      '✨ Redesigned the workout pause and finish confirmation popups to match the dark theme.',
+      '⌨️ Improved keyboard navigation: Pressing Next/Enter in set inputs now seamlessly shifts focus to Reps and RPE.',
     ],
   },
 };
