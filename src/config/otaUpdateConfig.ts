@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.10',
+  version: '1.8.11',
   title: {
-    ja: '種目カードおよびカード間余白の最適化',
-    en: 'Exercise Card & Spacing Optimization',
+    ja: 'RM計算機への公式解説ヘルプ追加とレイアウト最適化',
+    en: 'RM Calculator Formula Help & Layout Optimization',
   },
   notes: {
     ja: [
-      '✨ 種目名の上部余白および種目カード同士の黒い余白を縮小し、画面内の表示領域と操作性を向上させました。',
+      '💡 RM計算機に1RMやEpley式・Brzycki式の特徴と違いを確認できる「？」ヘルプボタンを追加しました。',
+      '✨ 画面右上タブの見切れ表示を解消し、表示領域と操作性を向上させました。',
     ],
     en: [
-      '✨ Reduced top padding of exercise titles and gap between exercise cards for improved screen efficiency.',
+      '💡 Added a help icon to the RM Calculator explaining 1RM and Epley / Brzycki formulas.',
+      '✨ Fixed header tab layout overflow issue in the RM Calculator.',
     ],
   },
 };

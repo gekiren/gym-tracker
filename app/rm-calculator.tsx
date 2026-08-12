@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { useState, useEffect } from 'react';
 import { Stack } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../src/theme';
 import { useTranslation } from 'react-i18next';
 import { useWorkoutStore } from '../src/store/workoutStore';
@@ -15,6 +16,7 @@ export default function RMCalculatorScreen() {
   const [reps, setReps] = useState('10');
   const [formula, setFormula] = useState<'epley' | 'brzycki'>('epley');
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isHelpModalVisible, setIsHelpModalVisible] = useState(false);
 
   useEffect(() => {
     const loadLastValues = async () => {
@@ -121,19 +123,31 @@ export default function RMCalculatorScreen() {
             <View style={styles.headerRow}>
               <Text style={styles.subtitle}>{t('ui.rm_calc.subtitle')}</Text>
               
-              {/* 公式切り替えタブ */}
-              <View style={styles.formulaTabGroup}>
+              <View style={styles.headerControls}>
+                {/* 公式切り替えタブ */}
+                <View style={styles.formulaTabGroup}>
+                  <TouchableOpacity
+                    style={[styles.formulaTab, formula === 'epley' && styles.formulaTabActive]}
+                    onPress={() => setFormula('epley')}
+                  >
+                    <Text style={[styles.formulaTabText, formula === 'epley' && styles.formulaTabTextActive]}>Epley</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.formulaTab, formula === 'brzycki' && styles.formulaTabActive]}
+                    onPress={() => setFormula('brzycki')}
+                  >
+                    <Text style={[styles.formulaTabText, formula === 'brzycki' && styles.formulaTabTextActive]}>Brzycki</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* ヘルプボタン */}
                 <TouchableOpacity
-                  style={[styles.formulaTab, formula === 'epley' && styles.formulaTabActive]}
-                  onPress={() => setFormula('epley')}
+                  style={styles.helpButton}
+                  onPress={() => setIsHelpModalVisible(true)}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Text style={[styles.formulaTabText, formula === 'epley' && styles.formulaTabTextActive]}>Epley</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.formulaTab, formula === 'brzycki' && styles.formulaTabActive]}
-                  onPress={() => setFormula('brzycki')}
-                >
-                  <Text style={[styles.formulaTabText, formula === 'brzycki' && styles.formulaTabTextActive]}>Brzycki</Text>
+                  <Ionicons name="help-circle-outline" size={24} color={Theme.colors.primary} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -207,6 +221,65 @@ export default function RMCalculatorScreen() {
                 </View>
             )}
         </ScrollView>
+
+        {/* 1RM・公式解説モーダル */}
+        <Modal
+          visible={isHelpModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setIsHelpModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>💡 1RM計算と公式の解説</Text>
+                <TouchableOpacity onPress={() => setIsHelpModalVisible(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                <Text style={styles.modalSectionTitle}>🏋️‍♂️ 1RM (1 Rep Maximum) とは？</Text>
+                <Text style={styles.modalText}>
+                  「1回だけ正しく挙げることができる限界の最大重量」のことです。筋トレの強度設定や成長の指標として使われます。
+                </Text>
+
+                <View style={styles.modalDivider} />
+
+                <Text style={styles.modalSectionTitle}>⚡ Epley（エプリー）式</Text>
+                <Text style={styles.modalFormulaText}>公式: 1RM = 重量 × (1 + 回数 / 30)</Text>
+                <Text style={styles.modalText}>
+                  ・1〜8回程度の低〜中レップ数で特に高い精度を発揮します。{"\n"}
+                  ・世界中で最も広く使われている定番の推算式です。{"\n"}
+                  ・やや積極的（高め）な数値が算出される傾向があります。
+                </Text>
+
+                <View style={styles.modalDivider} />
+
+                <Text style={styles.modalSectionTitle}>🛡️ Brzycki（ブリジッキ）式</Text>
+                <Text style={styles.modalFormulaText}>公式: 1RM = 重量 × 36 / (37 - 回数)</Text>
+                <Text style={styles.modalText}>
+                  ・5〜10回程度の中〜高レップ数からの推定に適しています。{"\n"}
+                  ・Epley式に比べて高回数での数値が過大評価されにくく、保守的（控えめ・安全）な推測値を出します。
+                </Text>
+
+                <View style={styles.modalDivider} />
+
+                <Text style={styles.modalSectionTitle}>🎯 どちらを選ぶべき？</Text>
+                <Text style={styles.modalText}>
+                  基本的にはデフォルトの「Epley式」で問題ありません。高回数のセットから安全に目標設定を行いたい場合は「Brzycki式」に切り替えるのがおすすめです。
+                </Text>
+              </ScrollView>
+
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setIsHelpModalVisible(false)}
+              >
+                <Text style={styles.modalCloseButtonText}>閉じる</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
     </View>
   );
 }
@@ -215,7 +288,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
   inputSection: { padding: Theme.spacing.lg, backgroundColor: Theme.colors.card, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.md },
-  subtitle: { color: Theme.colors.textMuted, fontSize: 13, lineHeight: 18 },
+  subtitle: { flex: 1, color: Theme.colors.textMuted, fontSize: 12, lineHeight: 17, marginRight: 8 },
+  headerControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  helpButton: { padding: 2 },
   formulaTabGroup: { flexDirection: 'row', backgroundColor: '#1A1A1A', borderRadius: 8, padding: 2, borderWidth: 1, borderColor: Theme.colors.border },
   formulaTab: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   formulaTabActive: { backgroundColor: Theme.colors.primary },
@@ -241,5 +316,18 @@ const styles = StyleSheet.create({
   zoneBadge: { width: 75, paddingVertical: 3, paddingHorizontal: 6, borderRadius: 6, alignItems: 'center' },
   zoneText: { fontSize: 10, fontWeight: '700' },
   emptyState: { alignItems: 'center', padding: 32 },
-  emptyText: { color: Theme.colors.textMuted, fontSize: 14 }
+  emptyText: { color: Theme.colors.textMuted, fontSize: 14 },
+
+  // モーダル用スタイル
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.75)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalContent: { width: '100%', maxHeight: '82%', backgroundColor: Theme.colors.card, borderRadius: 16, borderWidth: 1, borderColor: Theme.colors.border, padding: 20 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
+  modalTitle: { color: Theme.colors.text, fontSize: 16, fontWeight: 'bold' },
+  modalBody: { marginBottom: 16 },
+  modalSectionTitle: { color: Theme.colors.primary, fontSize: 14, fontWeight: 'bold', marginBottom: 6 },
+  modalFormulaText: { color: '#38ef7d', fontSize: 12, fontWeight: '600', backgroundColor: '#1A1A1A', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, marginVertical: 6, alignSelf: 'flex-start' },
+  modalText: { color: Theme.colors.textMuted, fontSize: 13, lineHeight: 19 },
+  modalDivider: { height: 1, backgroundColor: Theme.colors.border, marginVertical: 14 },
+  modalCloseButton: { backgroundColor: Theme.colors.primary, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
+  modalCloseButtonText: { color: '#000', fontWeight: 'bold', fontSize: 15 }
 });
