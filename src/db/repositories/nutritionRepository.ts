@@ -36,6 +36,17 @@ export const getAllMealLogs = async (): Promise<MealLog[]> => {
   });
 };
 
+export const getMealLogsLast24Hours = async (): Promise<MealLog[]> => {
+  await getSafeDB();
+  const sinceTimestamp = Date.now() - 24 * 60 * 60 * 1000;
+  return await withDBQueue(async (conn) => {
+    return await conn.getAllAsync<MealLog>(
+      'SELECT * FROM meal_logs WHERE created_at >= ? ORDER BY created_at ASC',
+      [sinceTimestamp]
+    );
+  });
+};
+
 export const addMealLog = async (
   log: Omit<MealLog, 'id'>
 ): Promise<number> => {

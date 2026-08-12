@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.24',
+  version: '1.8.25',
   title: {
-    ja: 'PFCバランス設定への体重ベース自動決定モード追加',
-    en: 'New Weight-Based PFC Auto-Calculation Mode',
+    ja: 'AIによるオートファジー時間最適化機能の追加',
+    en: 'AI-Powered Autophagy Time Optimization',
   },
   notes: {
     ja: [
-      '🥗 PFCバランス設定に「目標カロリー＋P(g)＋体重比F(g)➔C(g)自動算出」モード（初期値: 体重×0.7g）を追加しました。',
-      '📊 P, F, C のリアルタイム計算カードにg数・配分カロリー(kcal)・比率(%)を同時表示するように改善しました。',
+      '✨ オートファジー絶食タイマーに直近24時間の食事ログをAI解析して最適目標時間を自動提案する「オートファジー時間最適化」機能を追加しました。',
+      '💡 AIが総カロリー・PFCバランス・食事タイミングから個人の状況に合った絶食時間とアドバイスを分かりやすく解説・ワンタップ設定できます。',
     ],
     en: [
-      '🥗 Added a new calculation mode based on Target Calories, P(g), and Fat(g/kg ratio based on body weight).',
-      '📊 Enhanced the real-time PFC card to display grams, calories (kcal), and percentage (%) simultaneously.',
+      '✨ Added AI-powered autophagy time optimization based on the last 24 hours of meal logs.',
+      '💡 The AI analyzes calories, PFC balance, and meal timing to recommend ideal fasting hours with clear advice and one-tap setup.',
     ],
   },
 };

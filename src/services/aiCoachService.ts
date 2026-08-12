@@ -421,3 +421,110 @@ export const analyzeMealImage = async (
     throw err;
   }
 };
+
+// ─── AI オートファジー時間提案 ──────────────────────────────
+
+export interface AutophagyAIProposal {
+  recommendedHours: number;
+  reason: string;
+  advice: string;
+}
+
+/**
+ * 直近24時間の食事ログに基づきAIで適切なオートファジー絶食時間を提案する
+ */
+export const analyzeAutophagyRecommendation = async (
+  mealLogs: MealLog[],
+  preferredModel: string = 'gemini-3.6-flash'
+): Promise<AutophagyAIProposal> => {
+  if (!mealLogs || mealLogs.length === 0) {
+    throw new Error('直近24時間の食事ログが存在しません。食事を記録してからお試しください。');
+  }
+
+  let totalCalories = 0;
+  let totalP = 0;
+  let totalF = 0;
+  let totalC = 0;
+  const mealSummaryList: string[] = [];
+
+  mealLogs.forEach((m, idx) => {
+    const cal = m.calories || 0;
+    const p = m.protein || 0;
+    const f = m.fat || 0;
+    const c = m.carbs || 0;
+    totalCalories += cal;
+    totalP += p;
+    totalF += f;
+    totalC += c;
+
+    const timeStr = m.meal_time || (m.created_at ? new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '時刻不明');
+    mealSummaryList.push(`${idx + 1}. [${timeStr}] ${m.name} (${cal}kcal, P:${Math.round(p)}g, F:${Math.round(f)}g, C:${Math.round(c)}g)`);
+  });
+
+  const lastMeal = mealLogs[mealLogs.length - 1];
+  const lastMealTimeStr = lastMeal.meal_time || (lastMeal.created_at ? new Date(lastMeal.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '直近');
+
+  const promptMessage = `あなたは栄養学・オートファジー（自食作用）に詳しいAI専門トレーナーです。
+以下の「直近24時間におけるユーザーの食事摂取データ」を深く分析し、次回行うべき最も効果的かつ安全なオートファジー（絶食）目標時間（時間数）と、その具体的な医学的・栄養学的理由、および実践アドバイスを提示してください。
+
+【直近24時間の食事ログデータ】
+- 食べた食事の回数: ${mealLogs.length}回
+- 直近の最終食事時刻: ${lastMealTimeStr}
+- 24時間合計カロリー: ${totalCalories} kcal
+- 24時間合計PFC: タンパク質 ${Math.round(totalP)}g, 脂質 ${Math.round(totalF)}g, 炭水化物 ${Math.round(totalC)}g
+- 具体的な品目内訳:
+${mealSummaryList.join('\n')}
+
+【回答のルール】
+必ず以下のJSON形式のみを出力してください（余計な解説文や挨拶は含めないでください）。
+{
+  "recommended_hours": 数字（8から24までの整数。標準は16。摂取カロリーや炭水化物量、直近の食事内容に応じて12, 14, 16, 18, 20など適切に設定）,
+  "reason": "なぜこの絶食時間が推奨されるかの分かりやすい理由説明（総カロリー・PFCバランス・糖質量・消化負担などを絡めた解説）",
+  "advice": "絶食中に気をつけるべきポイントや水分補給・次回食事のアドバイス"
+}`;
+
+  const response = await sendMessageToAICoach(
+    promptMessage,
+    undefined,
+    undefined,
+    'kg',
+    'quick'
+  );
+
+  if (!response.success || !response.reply) {
+    throw new Error(response.reply || 'AIによる解析に失敗しました。');
+  }
+
+  try {
+    // レスポンスからJSON部分をパース
+    let rawText = response.reply.trim();
+    if (rawText.includes('```json')) {
+      rawText = rawText.split('```json')[1].split('```')[0].trim();
+    } else if (rawText.includes('```')) {
+      rawText = rawText.split('```')[1].split('```')[0].trim();
+    }
+
+    const parsed = JSON.parse(rawText);
+    const rawHours = Number(parsed.recommended_hours) || 16;
+    const clampedHours = Math.min(24, Math.max(8, Math.round(rawHours)));
+
+    return {
+      recommendedHours: clampedHours,
+      reason: parsed.reason || '直近の食事摂取バランスに基づき、適切な絶食時間を提案します。',
+      advice: parsed.advice || '絶食中は十分な水分と適度な塩分を補給してください。',
+    };
+  } catch (e) {
+    console.warn('Failed to parse JSON response from AI autophagy proposal, trying fallback text regex:', e);
+    // フォールバック: テキストから数値（時間）を抽出
+    const match = response.reply.match(/(\d{1,2})\s*時間/);
+    let fallbackHours = 16;
+    if (match && match[1]) {
+      fallbackHours = Math.min(24, Math.max(8, parseInt(match[1], 10)));
+    }
+    return {
+      recommendedHours: fallbackHours,
+      reason: response.reply,
+      advice: '絶食期間中は無理をせず水分補給を徹底してください。',
+    };
+  }
+};

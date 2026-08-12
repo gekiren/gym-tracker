@@ -192,23 +192,7 @@ export default function NutritionScreen() {
       </View>
 
       <ScrollView style={styles.scrollBody} contentContainerStyle={styles.scrollContent}>
-        {/* オートファジー絶食タイマー */}
-        <AutophagyCard
-          config={safeAutophagy}
-          lastMealLog={lastMealLog}
-          onUpdateConfig={updateAutophagyConfig}
-        />
-
-        {/* 栄養サマリーカード */}
-        <NutritionSummaryCard mealLogs={mealLogs || []} userGoals={safeGoals} />
-
-        {/* クイックお気に入りバー */}
-        <QuickFavoritesBar
-          favorites={favorites}
-          onSelectFavorite={handleSelectQuickFavorite}
-        />
-
-        {/* 食事登録アクションボタン群 */}
+        {/* 食事登録アクションボタン群（最上段） */}
         <View style={styles.actionSection}>
           {/* 行1: 3個ボタン */}
           <View style={styles.actionRow}>
@@ -257,6 +241,15 @@ export default function NutritionScreen() {
           </View>
         </View>
 
+        {/* クイックお気に入りバー（上から2番目） */}
+        <QuickFavoritesBar
+          favorites={favorites}
+          onSelectFavorite={handleSelectQuickFavorite}
+        />
+
+        {/* 栄養サマリーカード */}
+        <NutritionSummaryCard mealLogs={mealLogs || []} userGoals={safeGoals} />
+
         {/* 食事ログ一覧 */}
         {isLoading ? (
           <ActivityIndicator size="large" color="#4facfe" style={{ marginVertical: 20 }} />
@@ -277,6 +270,13 @@ export default function NutritionScreen() {
 
         {/* 14日間履歴グラフ */}
         <NutritionHistoryChart allLogs={allHistoryLogs || []} goals={safeGoals} />
+
+        {/* オートファジー絶食タイマー（最下段） */}
+        <AutophagyCard
+          config={safeAutophagy}
+          lastMealLog={lastMealLog}
+          onUpdateConfig={updateAutophagyConfig}
+        />
 
         <View style={{ height: 40 }} />
       </ScrollView>

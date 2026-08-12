@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, ActivityIndicator, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AutophagyConfig, MealLog } from '../../src/db/types';
+import { getMealLogsLast24Hours } from '../../src/db/database';
+import { analyzeAutophagyRecommendation, AutophagyAIProposal } from '../../src/services/aiCoachService';
+import AutophagyAiModal from './AutophagyAiModal';
 
 interface Props {
   config: AutophagyConfig;
@@ -10,6 +14,9 @@ interface Props {
 
 export default function AutophagyCard({ config, lastMealLog, onUpdateConfig }: Props) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [proposal, setProposal] = useState<AutophagyAIProposal | null>(null);
+  const [showAiModal, setShowAiModal] = useState(false);
 
   // タイマー更新ループ
   useEffect(() => {
@@ -71,6 +78,40 @@ export default function AutophagyCard({ config, lastMealLog, onUpdateConfig }: P
     });
   };
 
+  // AIによるオートファジー時間の解析・提案
+  const handleAnalyzeAi = async () => {
+    try {
+      setIsAnalyzing(true);
+      const logs = await getMealLogsLast24Hours();
+      if (!logs || logs.length === 0) {
+        Alert.alert(
+          '食事ログがありません',
+          '直近24時間の食事ログが見つかりませんでした。まずは本日の食事を記録してから解析を行ってください。'
+        );
+        return;
+      }
+
+      const result = await analyzeAutophagyRecommendation(logs);
+      setProposal(result);
+      setShowAiModal(true);
+    } catch (err: any) {
+      console.error('Autophagy AI analysis failed:', err);
+      Alert.alert(
+        '解析エラー',
+        err?.message || 'AIによる解析処理に失敗しました。通信状況を確認して再度お試しください。'
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleApplyTargetHours = (hours: number) => {
+    onUpdateConfig({
+      ...config,
+      target_hours: hours,
+    });
+  };
+
   if (!config.enabled) {
     return (
       <View style={styles.cardOff}>
@@ -115,6 +156,23 @@ export default function AutophagyCard({ config, lastMealLog, onUpdateConfig }: P
         </Text>
       </View>
 
+      {/* AI絶食時間最適化ボタン */}
+      <TouchableOpacity
+        style={styles.aiOptimizeBtn}
+        onPress={handleAnalyzeAi}
+        disabled={isAnalyzing}
+        activeOpacity={0.8}
+      >
+        {isAnalyzing ? (
+          <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 6 }} />
+        ) : (
+          <Ionicons name="sparkles" size={15} color="#ffffff" style={{ marginRight: 6 }} />
+        )}
+        <Text style={styles.aiOptimizeBtnText}>
+          {isAnalyzing ? '直近24時間の食事をAI解析中...' : '✨ オートファジー時間最適化'}
+        </Text>
+      </TouchableOpacity>
+
       <View style={styles.btnRow}>
         <TouchableOpacity style={styles.actionBtn} onPress={handleStartNow}>
           <Text style={styles.actionBtnText}>🚀 今すぐ絶食開始</Text>
@@ -123,6 +181,14 @@ export default function AutophagyCard({ config, lastMealLog, onUpdateConfig }: P
           <Text style={styles.resetBtnText}>リセット</Text>
         </TouchableOpacity>
       </View>
+
+      {/* AI結果提案モーダル */}
+      <AutophagyAiModal
+        visible={showAiModal}
+        proposal={proposal}
+        onClose={() => setShowAiModal(false)}
+        onApplyTargetHours={handleApplyTargetHours}
+      />
     </View>
   );
 }
@@ -155,6 +221,20 @@ const styles = StyleSheet.create({
   progressFill: { height: '100%', borderRadius: 4 },
   statusRow: { marginBottom: 10 },
   statusText: { fontSize: 12, color: '#94a3b8', fontWeight: '600' },
+  aiOptimizeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0284c7',
+    borderRadius: 8,
+    paddingVertical: 9,
+    marginBottom: 8,
+  },
+  aiOptimizeBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
   btnRow: { flexDirection: 'row', gap: 8 },
   actionBtn: { flex: 1, backgroundColor: '#0f172a', borderRadius: 8, paddingVertical: 8, alignItems: 'center', borderWidth: 1, borderColor: '#334155' },
   actionBtnText: { fontSize: 12, fontWeight: '700', color: '#4facfe' },
