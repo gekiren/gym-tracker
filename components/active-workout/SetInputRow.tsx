@@ -233,7 +233,9 @@ const safeParseInt = (val: string): number | null => {
           delayLongPress={500}
         >
         <View style={{ width: 50, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={styles.tdSet}>{set.set_number}{set.side ? `\n(${set.side})` : ''}</Text>
+          <Text style={styles.tdSet} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+            {set.set_number}{set.side ? `(${set.side})` : ''}
+          </Text>
         </View>
 
         {isAerobic ? (

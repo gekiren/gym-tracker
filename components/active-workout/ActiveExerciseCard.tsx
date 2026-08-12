@@ -84,6 +84,8 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
   };
 
   const currentStance = ex.default_stance || ex.default_variation || null;
+  const exerciseNameText = translateExercise(ex.name);
+  const isLongName = exerciseNameText.length > 13;
 
   return (
     <View style={styles.card}>
@@ -101,11 +103,33 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
                 onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: ex.exercise_id || ex.id } } as any)}
                 onLongPress={() => onDeleteExercise(ex)}
                 delayLongPress={500}
-                style={{ flexDirection: 'row', alignItems: 'center' }}
+                style={{ flexDirection: 'row', alignItems: 'center', maxWidth: '82%', marginBottom: 2 }}
               >
-                <Text style={styles.exerciseTitle}>{translateExercise(ex.name)}</Text>
+                <Text
+                  style={[styles.exerciseTitle, isLongName && { fontSize: 15 }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={isLongName}
+                  minimumFontScale={0.85}
+                >
+                  {exerciseNameText}
+                </Text>
+              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginTop: 2 }}>
+                {settings.displayFields?.showVolume && (
+                  <View style={styles.exerciseVolumeContainer}>
+                    <Text style={styles.exerciseVolumeLabel}>{t('ui.history.volume_label')}: </Text>
+                    <Text style={styles.exerciseVolumeValue}>
+                      {ex.sets.reduce((sum: number, s: any) => {
+                        if (!s.is_completed) return sum;
+                        const bw = ex.equipment === '自重' && settings.bodyWeight ? settings.bodyWeight : 0;
+                        return sum + ((s.weight || 0) + bw) * (s.reps || 0);
+                      }, 0)}{' '}
+                      {settings.weightUnit}
+                    </Text>
+                  </View>
+                )}
                 <TouchableOpacity
-                  style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#2a2a2a', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6, marginLeft: 8 }}
+                  style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#2a2a2a', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 }}
                   onPress={() => setWeightStepModalVisible(true)}
                 >
                   <Ionicons name="swap-horizontal-outline" size={12} color={Theme.colors.primary} style={{ marginRight: 2 }} />
@@ -113,34 +137,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
                     ±{ex.weight_step ?? 2.5}kg
                   </Text>
                 </TouchableOpacity>
-              </TouchableOpacity>
-              {settings.displayFields?.showStance && (
-                <TouchableOpacity
-                  style={styles.exerciseVariationBtn}
-                  onPress={() => {
-                    onOpenStanceModal({ type: 'exercise', exId: ex.id, currentValue: currentStance });
-                  }}
-                >
-                  <Text style={styles.exerciseVariationText}>
-                    {t('ui.active_workout.stance_label')}:{' '}
-                    {currentStance ? translateStance(currentStance as string) : t('ui.active_workout.stance_standard')}
-                  </Text>
-                  <Ionicons name="chevron-down" size={12} color={Theme.colors.primary} />
-                </TouchableOpacity>
-              )}
-              {settings.displayFields?.showVolume && (
-                <View style={styles.exerciseVolumeContainer}>
-                  <Text style={styles.exerciseVolumeLabel}>{t('ui.history.volume_label')}: </Text>
-                  <Text style={styles.exerciseVolumeValue}>
-                    {ex.sets.reduce((sum: number, s: any) => {
-                      if (!s.is_completed) return sum;
-                      const bw = ex.equipment === '自重' && settings.bodyWeight ? settings.bodyWeight : 0;
-                      return sum + ((s.weight || 0) + bw) * (s.reps || 0);
-                    }, 0)}{' '}
-                    {settings.weightUnit}
-                  </Text>
-                </View>
-              )}
+              </View>
             </View>
             <View style={styles.headerIcons}>
               {AI_CONFIG.status === 'active' && (
@@ -217,9 +214,26 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
         />
       ))}
 
-      <TouchableOpacity style={styles.addSetBtn} onPress={() => onAddSet(ex.id)}>
-        <Text style={styles.addSetBtnText}>{t('ui.active_workout.add_set_label')}</Text>
-      </TouchableOpacity>
+      <View style={styles.bottomRowContainer}>
+        {settings.displayFields?.showStance && (
+          <TouchableOpacity
+            style={styles.exerciseVariationBtnBottom}
+            onPress={() => {
+              onOpenStanceModal({ type: 'exercise', exId: ex.id, currentValue: currentStance });
+            }}
+          >
+            <Text style={styles.exerciseVariationTextBottom}>
+              {t('ui.active_workout.stance_label')}:{'\n'}
+              {currentStance ? translateStance(currentStance as string) : t('ui.active_workout.stance_standard')}
+            </Text>
+            <Ionicons name="chevron-down" size={10} color={Theme.colors.primary} style={{ marginLeft: 2, alignSelf: 'flex-end', marginBottom: 2 }} />
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity style={styles.addSetBtn} onPress={() => onAddSet(ex.id)}>
+          <Text style={styles.addSetBtnText}>{t('ui.active_workout.add_set_label')}</Text>
+        </TouchableOpacity>
+      </View>
 
       <WeightStepModal
         visible={weightStepModalVisible}
@@ -248,35 +262,45 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Theme.spacing.md,
+    marginBottom: 6,
   },
   exerciseTitle: {
     color: Theme.colors.primary,
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginRight: 4,
+    flexShrink: 1,
   },
-  exerciseVariationBtn: {
+  bottomRowContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    position: 'relative',
+    minHeight: 40,
+  },
+  exerciseVariationBtnBottom: {
+    position: 'absolute',
+    left: 0,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(79, 172, 254, 0.1)',
-    alignSelf: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: 'rgba(79, 172, 254, 0.3)',
   },
-  exerciseVariationText: {
+  exerciseVariationTextBottom: {
     color: Theme.colors.primary,
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: 'bold',
-    marginRight: 4,
+    lineHeight: 13,
   },
   exerciseVolumeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 0,
   },
   exerciseVolumeLabel: {
     fontSize: 12,
@@ -314,8 +338,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   addSetBtn: {
-    marginTop: 8,
-    paddingVertical: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     alignItems: 'center',
   },
   addSetBtnText: {

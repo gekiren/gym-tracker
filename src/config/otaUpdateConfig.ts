@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.5',
+  version: '1.8.9',
   title: {
-    ja: 'RPEスワイプ入力の上限定義',
-    en: 'RPE Swipe Input Upper Limit',
+    ja: '種目カード内レイアウト余白の最適化',
+    en: 'Exercise Card Layout Spacing Optimization',
   },
   notes: {
     ja: [
-      '✨ RPE（運動自覚度）のスワイプ入力において、数値が10を超えないよう上限制限（最大10）を設定しました。',
+      '✨ 種目ボリューム・KG調整行とテーブルヘッダー（セット/kg/回数...）の間の余白を短縮し、カード内の配置をスッキリさせました。',
     ],
     en: [
-      '✨ Added upper limit constraint (max 10) for RPE swipe input.',
+      '✨ Tightened spacing between volume/KG step row and table headers for a cleaner layout.',
     ],
   },
 };
