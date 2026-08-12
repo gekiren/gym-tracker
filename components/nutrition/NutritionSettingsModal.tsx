@@ -23,7 +23,7 @@ interface Props {
   onSaveAutophagy: (config: AutophagyConfig) => Promise<void>;
 }
 
-export type SettingMode = 'cal_pfc' | 'pfc_p' | 'manual';
+export type SettingMode = 'cal_pfc' | 'pfc_p' | 'cal_p_weight_f' | 'manual';
 
 export default function NutritionSettingsModal({
   visible,
@@ -33,7 +33,7 @@ export default function NutritionSettingsModal({
   onSaveGoals,
   onSaveAutophagy,
 }: Props) {
-  // モード切替 ('cal_pfc' | 'pfc_p' | 'manual')
+  // モード切替 ('cal_pfc' | 'pfc_p' | 'cal_p_weight_f' | 'manual')
   const [settingMode, setSettingMode] = useState<SettingMode>('cal_pfc');
 
   // PFCバランス比率 (%)
@@ -47,7 +47,12 @@ export default function NutritionSettingsModal({
   // モード2用: P(g) 目標
   const [mode2Protein, setMode2Protein] = useState('104');
 
-  // モード3用: 完全手動フォーム
+  // モード3用 (新モード): カロリー + P(g) + 体重比F(g/kg) -> C(g)
+  const [mode3Calories, setMode3Calories] = useState('2000');
+  const [mode3Protein, setMode3Protein] = useState('130');
+  const [mode3FatPerKg, setMode3FatPerKg] = useState('0.7');
+
+  // 完全手動フォーム用
   const [calories, setCalories] = useState(String(userGoals.calories || 2000));
   const [protein, setProtein] = useState(String(userGoals.protein || 60));
   const [fat, setFat] = useState(String(userGoals.fat || 55));
@@ -128,6 +133,11 @@ export default function NutritionSettingsModal({
       // モード2用P初期値: 体重 × 1.6
       setMode2Protein(String(Math.round(wVal * 1.6)));
 
+      // モード3用初期値 (新モード)
+      setMode3Calories(String(userGoals.calories || calculatedGoals.calories || 2000));
+      setMode3Protein(String(userGoals.protein || Math.round(wVal * 2.0)));
+      setMode3FatPerKg(String(userGoals.fat_per_weight ?? 0.7));
+
       setCalories(String(userGoals.calories || 2000));
       setProtein(String(userGoals.protein || 60));
       setFat(String(userGoals.fat || 55));
@@ -150,17 +160,17 @@ export default function NutritionSettingsModal({
     }
   }, [visible, userGoals, autophagyConfig]);
 
-  // モード1・モード2でのリアルタイムPFC/カロリー計算結果
+  // 各モードでのリアルタイムPFC/カロリー/パーセンテージ計算結果
   const computedModeValues = useMemo(() => {
-    const pPct = parseFloat(ratioP) || 0;
-    const fPct = parseFloat(ratioF) || 0;
-    const cPct = parseFloat(ratioC) || 0;
-    const ratioSum = pPct + fPct + cPct;
+    let pPct = parseFloat(ratioP) || 0;
+    let fPct = parseFloat(ratioF) || 0;
+    let cPct = parseFloat(ratioC) || 0;
 
     let cal = 0;
     let pGramsRaw = 0;
     let fGramsRaw = 0;
     let cGramsRaw = 0;
+    let isCalOver = false;
 
     if (settingMode === 'cal_pfc') {
       // モード1: 総カロリー + PFCバランス
@@ -175,18 +185,51 @@ export default function NutritionSettingsModal({
       cal = pPct > 0 ? Math.round(pCal / (pPct / 100)) : 0;
       fGramsRaw = cal > 0 && fPct > 0 ? (cal * (fPct / 100)) / 9 : 0;
       cGramsRaw = cal > 0 && cPct > 0 ? (cal * (cPct / 100)) / 4 : 0;
+    } else if (settingMode === 'cal_p_weight_f') {
+      // モード3 (新): 目標カロリー + P(g) + 体重比F(g/kg) -> C(g)自動決定
+      cal = parseFloat(mode3Calories) || 0;
+      pGramsRaw = parseFloat(mode3Protein) || 0;
+      const wVal = parseFloat(weight) || 65;
+      const fPerKg = parseFloat(mode3FatPerKg) || 0.7;
+      fGramsRaw = wVal * fPerKg;
+
+      const pCal = pGramsRaw * 4;
+      const fCal = fGramsRaw * 9;
+      const remCal = cal - (pCal + fCal);
+
+      if (remCal < 0) {
+        isCalOver = true;
+        cGramsRaw = 0;
+      } else {
+        cGramsRaw = remCal / 4;
+      }
+
+      // 割合%の逆算
+      if (cal > 0) {
+        pPct = Math.round((pCal / cal) * 1000) / 10;
+        fPct = Math.round((fCal / cal) * 1000) / 10;
+        cPct = Math.round(((cGramsRaw * 4) / cal) * 1000) / 10;
+      }
     } else {
-      // モード3: 完全手動
+      // モード4: 完全手動
       cal = parseFloat(calories) || 0;
       pGramsRaw = parseFloat(protein) || 0;
       fGramsRaw = parseFloat(fat) || 0;
       cGramsRaw = parseFloat(carbs) || 0;
+
+      if (cal > 0) {
+        pPct = Math.round(((pGramsRaw * 4) / cal) * 1000) / 10;
+        fPct = Math.round(((fGramsRaw * 9) / cal) * 1000) / 10;
+        cPct = Math.round(((cGramsRaw * 4) / cal) * 1000) / 10;
+      }
     }
 
     // 各栄養素の配分カロリー
     const pCal = pGramsRaw * 4;
     const fCal = fGramsRaw * 9;
     const cCal = cGramsRaw * 4;
+
+    const ratioSum = Math.round((pPct + fPct + cPct) * 10) / 10;
 
     // 表示用フォーマット (小数第1位または四捨五入整数)
     const formatDisplay = (val: number) => {
@@ -209,9 +252,25 @@ export default function NutritionSettingsModal({
       ratioP: pPct,
       ratioF: fPct,
       ratioC: cPct,
-      ratioSum: Math.round(ratioSum * 10) / 10,
+      ratioSum,
+      isCalOver,
     };
-  }, [settingMode, ratioP, ratioF, ratioC, mode1Calories, mode2Protein, calories, protein, fat, carbs]);
+  }, [
+    settingMode,
+    ratioP,
+    ratioF,
+    ratioC,
+    mode1Calories,
+    mode2Protein,
+    mode3Calories,
+    mode3Protein,
+    mode3FatPerKg,
+    weight,
+    calories,
+    protein,
+    fat,
+    carbs,
+  ]);
 
   // 比率リセット (P20%, F20%, C60%)
   const handleResetRatio = () => {
@@ -245,7 +304,7 @@ export default function NutritionSettingsModal({
 
   const handleSave = async () => {
     // PFC比率合計の警告チェック (モード1, 2)
-    if (settingMode !== 'manual' && Math.abs(computedModeValues.ratioSum - 100) > 0.1) {
+    if ((settingMode === 'cal_pfc' || settingMode === 'pfc_p') && Math.abs(computedModeValues.ratioSum - 100) > 0.1) {
       Alert.alert(
         '⚠️ 比率の確認',
         `PFCの合計比率が ${computedModeValues.ratioSum}% になっています。合計が100%になるように設定することを推奨します。このまま保存しますか？`,
@@ -282,6 +341,7 @@ export default function NutritionSettingsModal({
           f: parseFloat(ratioF) || 20,
           c: parseFloat(ratioC) || 60,
         },
+        fat_per_weight: parseFloat(mode3FatPerKg) || 0.7,
       };
 
       await onSaveGoals(finalGoals);
@@ -354,6 +414,7 @@ export default function NutritionSettingsModal({
                       setWeight(w);
                       const numW = parseFloat(w) || 65;
                       setMode2Protein(String(Math.round(numW * 1.6)));
+                      setMode3Protein(String(Math.round(numW * 2.0)));
                     }}
                   />
                 </View>
@@ -420,9 +481,10 @@ export default function NutritionSettingsModal({
               {/* モード切替タブ */}
               <View style={styles.modeTabContainer}>
                 {[
-                  { key: 'cal_pfc', label: '① 総カロリー+PFC比' },
-                  { key: 'pfc_p',   label: '② PFC比+P(g)量' },
-                  { key: 'manual',  label: '③ 完全手動' },
+                  { key: 'cal_pfc',        label: '① カロリー+PFC比' },
+                  { key: 'pfc_p',          label: '② PFC比+P(g)' },
+                  { key: 'cal_p_weight_f', label: '③ カロリー+P(g)+体重比F' },
+                  { key: 'manual',         label: '④ 完全手動' },
                 ].map((tab) => (
                   <TouchableOpacity
                     key={tab.key}
@@ -601,7 +663,112 @@ export default function NutritionSettingsModal({
                 </View>
               )}
 
-              {/* ===== モード 3: 完全手動 ===== */}
+              {/* ===== モード 3 (新): カロリー ＋ P(g) ＋ 体重比F(g) ➔ C(g)自動算出 ===== */}
+              {settingMode === 'cal_p_weight_f' && (
+                <View style={styles.modeSection}>
+                  <Text style={styles.inputLabelCol}>目標総カロリー (kcal)</Text>
+                  <View style={styles.rowAlign}>
+                    <TextInput
+                      style={[styles.input, { flex: 1 }]}
+                      keyboardType="numeric"
+                      value={mode3Calories}
+                      onChangeText={setMode3Calories}
+                      placeholder="2000"
+                      placeholderTextColor="#475569"
+                    />
+                    <TouchableOpacity
+                      style={styles.subActionBtn}
+                      onPress={() => setMode3Calories(String(calculatedGoals.calories))}
+                    >
+                      <Text style={styles.subActionBtnText}>電卓値をセット</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={[styles.inputLabelCol, { color: '#38bdf8' }]}>タンパク質目標量 P (g)</Text>
+                  <View style={styles.rowAlign}>
+                    <TextInput
+                      style={[styles.input, { flex: 1 }]}
+                      keyboardType="numeric"
+                      value={mode3Protein}
+                      onChangeText={setMode3Protein}
+                      placeholder="130"
+                      placeholderTextColor="#475569"
+                    />
+                    <TouchableOpacity
+                      style={styles.subActionBtn}
+                      onPress={() => {
+                        const w = parseFloat(weight) || 65;
+                        setMode3Protein(String(Math.round(w * 2.0)));
+                      }}
+                    >
+                      <Text style={styles.subActionBtnText}>体重×2.0g</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.subActionBtn}
+                      onPress={() => {
+                        const w = parseFloat(weight) || 65;
+                        setMode3Protein(String(Math.round(w * 1.6)));
+                      }}
+                    >
+                      <Text style={styles.subActionBtnText}>体重×1.6g</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={[styles.inputLabelCol, { color: '#f59e0b' }]}>
+                    体重1kgあたりの脂質 F (g/kg)
+                  </Text>
+                  <View style={styles.rowAlign}>
+                    <TextInput
+                      style={[styles.input, { width: 90 }]}
+                      keyboardType="numeric"
+                      value={mode3FatPerKg}
+                      onChangeText={setMode3FatPerKg}
+                      placeholder="0.7"
+                      placeholderTextColor="#475569"
+                    />
+                    <Text style={{ color: '#94a3b8', fontSize: 12 }}>g/kg</Text>
+                    <View style={{ flex: 1, flexDirection: 'row', gap: 4, justifyContent: 'flex-end' }}>
+                      {['0.7', '0.8', '1.0'].map((v) => (
+                        <TouchableOpacity
+                          key={v}
+                          style={[
+                            styles.subActionBtn,
+                            mode3FatPerKg === v && { backgroundColor: '#f59e0b33', borderColor: '#f59e0b' },
+                          ]}
+                          onPress={() => setMode3FatPerKg(v)}
+                        >
+                          <Text
+                            style={[
+                              styles.subActionBtnText,
+                              mode3FatPerKg === v && { color: '#f59e0b', fontWeight: '700' },
+                            ]}
+                          >
+                            {v}g
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
+                  <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+                    💡 体重 {weight}kg × {mode3FatPerKg}g/kg = 脂質 F: <Text style={{ color: '#f59e0b', fontWeight: '700' }}>{computedModeValues.fatDisplay}g</Text> （残りが自動的に炭水化物 C に配分されます）
+                  </Text>
+
+                  {/* 塩分・食物繊維 */}
+                  <View style={[styles.grid2, { marginTop: 12 }]}>
+                    <View style={styles.col2}>
+                      <Text style={[styles.inputLabel, { color: '#f43f5e' }]}>塩分相当量 (g)</Text>
+                      <TextInput style={styles.input} keyboardType="numeric" value={sodium} onChangeText={setSodium} />
+                    </View>
+                    <View style={styles.col2}>
+                      <Text style={[styles.inputLabel, { color: '#84cc16' }]}>食物繊維 (g)</Text>
+                      <TextInput style={styles.input} keyboardType="numeric" value={fiber} onChangeText={setFiber} />
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              {/* ===== モード 4: 完全手動 ===== */}
               {settingMode === 'manual' && (
                 <View style={styles.modeSection}>
                   <Text style={styles.hintText}>
@@ -640,8 +807,8 @@ export default function NutritionSettingsModal({
                 </View>
               )}
 
-              {/* 🌟 1. 中部：合計比率 ＆ リセットボタン ＆ アナウンス */}
-              {settingMode !== 'manual' && (
+              {/* 🌟 1. 中部：合計比率 ＆ リセットボタン ＆ アナウンス (モード1, モード2用) */}
+              {(settingMode === 'cal_pfc' || settingMode === 'pfc_p') && (
                 <View style={[styles.pfcFooterCard, { marginTop: 12 }]}>
                   <View style={styles.pfcFooterTopRow}>
                     <Text style={styles.pfcTotalLabel}>
@@ -667,11 +834,19 @@ export default function NutritionSettingsModal({
                 </View>
               )}
 
-              {/* 🌟 2. 下部：リアルタイムグラム数 ＆ 配分カロリー内訳カード（計算結果カード） */}
+              {/* 🌟 2. 下部：リアルタイムグラム数 ＆ 配分カロリー ＆ 比率(%) 内訳カード（計算結果カード） */}
               <View style={[styles.pfcDisplayHeroCard, { marginTop: 12 }]}>
                 <Text style={styles.heroCalText}>
                   目標総カロリー: <Text style={styles.heroCalVal}>{computedModeValues.calories}</Text> kcal
                 </Text>
+
+                {computedModeValues.isCalOver && (
+                  <View style={{ backgroundColor: '#ef444422', padding: 6, borderRadius: 6, marginBottom: 8 }}>
+                    <Text style={{ color: '#ef4444', fontSize: 11, fontWeight: '700', textAlign: 'center' }}>
+                      ⚠️ PとFのカロリー合計が目標総カロリーを超過しています。目標カロリーを増やすか、P/Fを下げる必要があります。
+                    </Text>
+                  </View>
+                )}
 
                 <View style={styles.heroGramGrid}>
                   {/* P */}
@@ -681,7 +856,10 @@ export default function NutritionSettingsModal({
                       {computedModeValues.proteinDisplay}<Text style={styles.heroGramUnit}>g</Text>
                     </Text>
                     <Text style={styles.heroCalSubText}>
-                      ({computedModeValues.proteinCalDisplay} kcal)
+                      {computedModeValues.proteinCalDisplay} kcal
+                    </Text>
+                    <Text style={[styles.heroCalSubText, { color: '#38bdf8', fontWeight: '700', marginTop: 2 }]}>
+                      ({computedModeValues.ratioP}%)
                     </Text>
                   </View>
 
@@ -692,7 +870,10 @@ export default function NutritionSettingsModal({
                       {computedModeValues.fatDisplay}<Text style={styles.heroGramUnit}>g</Text>
                     </Text>
                     <Text style={styles.heroCalSubText}>
-                      ({computedModeValues.fatCalDisplay} kcal)
+                      {computedModeValues.fatCalDisplay} kcal
+                    </Text>
+                    <Text style={[styles.heroCalSubText, { color: '#f59e0b', fontWeight: '700', marginTop: 2 }]}>
+                      ({computedModeValues.ratioF}%)
                     </Text>
                   </View>
 
@@ -703,7 +884,10 @@ export default function NutritionSettingsModal({
                       {computedModeValues.carbsDisplay}<Text style={styles.heroGramUnit}>g</Text>
                     </Text>
                     <Text style={styles.heroCalSubText}>
-                      ({computedModeValues.carbsCalDisplay} kcal)
+                      {computedModeValues.carbsCalDisplay} kcal
+                    </Text>
+                    <Text style={[styles.heroCalSubText, { color: '#a855f7', fontWeight: '700', marginTop: 2 }]}>
+                      ({computedModeValues.ratioC}%)
                     </Text>
                   </View>
                 </View>
@@ -798,9 +982,9 @@ const styles = StyleSheet.create({
 
   /* モード切替タブスタイル */
   modeTabContainer: { flexDirection: 'row', backgroundColor: '#0f172a', borderRadius: 10, padding: 3, marginBottom: 12 },
-  modeTabBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
+  modeTabBtn: { flex: 1, paddingVertical: 8, paddingHorizontal: 2, alignItems: 'center', borderRadius: 8 },
   modeTabBtnActive: { backgroundColor: '#10b981' },
-  modeTabBtnText: { fontSize: 11, fontWeight: '600', color: '#94a3b8' },
+  modeTabBtnText: { fontSize: 9.5, fontWeight: '600', color: '#94a3b8', textAlign: 'center' },
   modeTabBtnTextActive: { color: '#ffffff', fontWeight: '700' },
 
   /* 🌟 大型リアルタイム表示カード（カロリー内訳＆バッジ追加版） */

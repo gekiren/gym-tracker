@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.23',
+  version: '1.8.24',
   title: {
-    ja: 'PFC設定画面のレイアウト・表示改善',
-    en: 'Layout & Display Improvements in PFC Settings',
+    ja: 'PFCバランス設定への体重ベース自動決定モード追加',
+    en: 'New Weight-Based PFC Auto-Calculation Mode',
   },
   notes: {
     ja: [
-      '🥗 PFCバランス設定画面の入力欄と計算結果カードの配置を見やすく入れ替えました。',
-      '✨ 不要な補足テキストと重複した%表示を整理し、画面をスッキリさせました。',
+      '🥗 PFCバランス設定に「目標カロリー＋P(g)＋体重比F(g)➔C(g)自動算出」モード（初期値: 体重×0.7g）を追加しました。',
+      '📊 P, F, C のリアルタイム計算カードにg数・配分カロリー(kcal)・比率(%)を同時表示するように改善しました。',
     ],
     en: [
-      '🥗 Reordered input fields and calculation result cards for better readability.',
-      '✨ Cleaned up redundant percentage badges and note texts for a clearer interface.',
+      '🥗 Added a new calculation mode based on Target Calories, P(g), and Fat(g/kg ratio based on body weight).',
+      '📊 Enhanced the real-time PFC card to display grams, calories (kcal), and percentage (%) simultaneously.',
     ],
   },
 };

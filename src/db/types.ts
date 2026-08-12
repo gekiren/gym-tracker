@@ -196,8 +196,9 @@ export interface NutritionGoals {
   weight?: number;
   activity_level?: 'sedentary' | 'light' | 'moderate' | 'active' | 'veryActive';
   goal_type?: 'cut' | 'maintain' | 'bulk';
-  setting_mode?: 'cal_pfc' | 'pfc_p' | 'manual';
+  setting_mode?: 'cal_pfc' | 'pfc_p' | 'cal_p_weight_f' | 'manual';
   pfc_ratio?: { p: number; f: number; c: number };
+  fat_per_weight?: number;
 }
 
 export interface AutophagyConfig {
