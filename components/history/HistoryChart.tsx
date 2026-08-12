@@ -277,12 +277,14 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
 
   if (chartPoints.length === 0) return null;
 
-  const pointWidth = 64;
+  const containerWidth = Dimensions.get('window').width - 32;
+  const targetDisplayCount = 7;
+  const pointWidth = Math.max(48, Math.floor(containerWidth / targetDisplayCount));
   const svgHeight = 180;
   const paddingTop = 45;
   const paddingBottom = 35;
   const drawHeight = svgHeight - paddingTop - paddingBottom;
-  const svgWidth = Math.max(Dimensions.get('window').width - 32, chartPoints.length * pointWidth);
+  const svgWidth = Math.max(containerWidth, chartPoints.length * pointWidth);
 
   const maxRatio = Math.max(115, ...chartPoints.map(p => p.ratio));
   const maxVal = Math.max(0.001, ...chartPoints.map(p => p.value));
