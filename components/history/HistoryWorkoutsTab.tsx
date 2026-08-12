@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { format, startOfWeek, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { Theme } from '../../src/theme';
 import { AI_CONFIG } from '../../src/config/aiConfig';
-import { HistoryChart } from './HistoryChart';
+import { HistoryChart, ChartMetric } from './HistoryChart';
 
 interface HistoryWorkoutsTabProps {
   workouts: any[];
@@ -37,7 +37,7 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
   const [highlightedWorkoutId, setHighlightedWorkoutId] = useState<number | null>(null);
 
   const [chartScale, setChartScale] = useState<'day' | 'week' | 'month' | 'year'>('day');
-  const [chartMetric, setChartMetric] = useState<'volume' | 'calories'>('volume');
+  const [chartMetric, setChartMetric] = useState<ChartMetric>('volume');
 
   // Calendar Helpers (Memoized)
   const calendarDays = useMemo(() => {

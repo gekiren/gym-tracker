@@ -114,6 +114,7 @@ export interface PresetRoutine {
 
 export interface WorkoutWithStats extends WorkoutRow {
   exercise_count: number;
+  total_sets?: number;
   volume: number | null;
 }
 

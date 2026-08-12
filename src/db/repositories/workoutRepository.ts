@@ -524,6 +524,7 @@ export const getWorkoutsWithStats = async (): Promise<WorkoutWithStats[]> => {
   const rows = await conn.getAllAsync<WorkoutWithStats>(`
     SELECT w.*, 
            (SELECT COUNT(*) FROM workout_exercises WHERE workout_id = w.id) as exercise_count,
+           (SELECT COUNT(*) FROM workout_sets ws JOIN workout_exercises we ON ws.workout_exercise_id = we.id WHERE we.workout_id = w.id) as total_sets,
            (SELECT SUM(weight * reps) FROM workout_sets ws JOIN workout_exercises we ON ws.workout_exercise_id = we.id WHERE we.workout_id = w.id) as volume
     FROM workouts w 
     ORDER BY start_time DESC
