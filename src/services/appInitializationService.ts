@@ -48,7 +48,7 @@ export async function initLanguageAndUnits(storedSettings: Record<string, string
 
   if (needsStyleSelection && hasExistingDisplaySettings) {
     needsStyleSelection = false;
-    await saveSetting('style_mode', 'custom');
+    saveSetting('style_mode', 'custom').catch((e) => console.warn('Failed to auto-save style_mode', e));
   }
 
   // 日本語話者の場合は、初回起動時に自動で kg を設定し、選択モーダルをスキップする
