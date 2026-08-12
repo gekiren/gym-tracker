@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.21',
+  version: '1.8.22',
   title: {
-    ja: 'PFCバランス設定の%・g数リアルタイム連動機能',
-    en: 'Real-time PFC Gram & Ratio Sync in Nutrition Settings',
+    ja: 'PFCバランス表示の配分カロリー内訳・補足解説機能',
+    en: 'Calorie Breakdown & Ratio Guidance in PFC Settings',
   },
   notes: {
     ja: [
-      '🥗 PFCバランス設定に%とg数がリアルタイムで連動する表示カードを追加しました。',
-      '✨ 比率(%)を微調整しながら目標グラム数や総カロリーを直感的に確かめて設定できます。',
+      '🥗 PFCバランス表示に各栄養素の配分カロリー（kcal）と1gあたりのカロリー換算の説明を追加しました。',
+      '✨ PとFが同じカロリー割合（%）であることが一目で伝わる安心表示に強化しました。',
     ],
     en: [
-      '🥗 Added real-time sync card between PFC percentage and target grams in nutrition settings.',
-      '✨ Easily verify and adjust target grams and total calories while tuning ratios.',
+      '🥗 Added calorie breakdown (kcal) and calorie-per-gram explanations to PFC ratio settings.',
+      '✨ Easily verify that P and F have identical calorie allocations at equal percentages.',
     ],
   },
 };

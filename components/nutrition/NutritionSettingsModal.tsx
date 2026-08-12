@@ -183,6 +183,11 @@ export default function NutritionSettingsModal({
       cGramsRaw = parseFloat(carbs) || 0;
     }
 
+    // 各栄養素の配分カロリー
+    const pCal = pGramsRaw * 4;
+    const fCal = fGramsRaw * 9;
+    const cCal = cGramsRaw * 4;
+
     // 表示用フォーマット (小数第1位または四捨五入整数)
     const formatDisplay = (val: number) => {
       if (val === 0) return '0';
@@ -198,6 +203,12 @@ export default function NutritionSettingsModal({
       proteinDisplay: formatDisplay(pGramsRaw),
       fatDisplay: formatDisplay(fGramsRaw),
       carbsDisplay: formatDisplay(cGramsRaw),
+      proteinCalDisplay: formatDisplay(pCal),
+      fatCalDisplay: formatDisplay(fCal),
+      carbsCalDisplay: formatDisplay(cCal),
+      ratioP: pPct,
+      ratioF: fPct,
+      ratioC: cPct,
       ratioSum: Math.round(ratioSum * 10) / 10,
     };
   }, [settingMode, ratioP, ratioF, ratioC, mode1Calories, mode2Protein, calories, protein, fat, carbs]);
@@ -425,33 +436,67 @@ export default function NutritionSettingsModal({
                 ))}
               </View>
 
-              {/* 🌟 1. 上部大型リアルタイムグラム数 ＆ カロリー表示ヘッダー（参考画像スタイル） */}
+              {/* 🌟 1. 上部大型リアルタイムグラム数 ＆ 配分カロリー内訳カード（案1スタイル） */}
               <View style={styles.pfcDisplayHeroCard}>
                 <Text style={styles.heroCalText}>
                   目標総カロリー: <Text style={styles.heroCalVal}>{computedModeValues.calories}</Text> kcal
                 </Text>
 
                 <View style={styles.heroGramGrid}>
+                  {/* P */}
                   <View style={styles.heroGramCol}>
                     <Text style={styles.heroGramLabel}>たんぱく質(P)</Text>
                     <Text style={[styles.heroGramVal, { color: '#38bdf8' }]}>
                       {computedModeValues.proteinDisplay}<Text style={styles.heroGramUnit}>g</Text>
                     </Text>
+                    <Text style={styles.heroCalSubText}>
+                      ({computedModeValues.proteinCalDisplay} kcal)
+                    </Text>
+                    {settingMode !== 'manual' && (
+                      <View style={[styles.pctBadge, { backgroundColor: '#38bdf822', borderColor: '#38bdf8' }]}>
+                        <Text style={[styles.pctBadgeText, { color: '#38bdf8' }]}>{computedModeValues.ratioP}%</Text>
+                      </View>
+                    )}
                   </View>
 
+                  {/* F */}
                   <View style={styles.heroGramCol}>
                     <Text style={styles.heroGramLabel}>脂質(F)</Text>
                     <Text style={[styles.heroGramVal, { color: '#f59e0b' }]}>
                       {computedModeValues.fatDisplay}<Text style={styles.heroGramUnit}>g</Text>
                     </Text>
+                    <Text style={styles.heroCalSubText}>
+                      ({computedModeValues.fatCalDisplay} kcal)
+                    </Text>
+                    {settingMode !== 'manual' && (
+                      <View style={[styles.pctBadge, { backgroundColor: '#f59e0b22', borderColor: '#f59e0b' }]}>
+                        <Text style={[styles.pctBadgeText, { color: '#f59e0b' }]}>{computedModeValues.ratioF}%</Text>
+                      </View>
+                    )}
                   </View>
 
+                  {/* C */}
                   <View style={styles.heroGramCol}>
                     <Text style={styles.heroGramLabel}>炭水化物(C)</Text>
                     <Text style={[styles.heroGramVal, { color: '#a855f7' }]}>
                       {computedModeValues.carbsDisplay}<Text style={styles.heroGramUnit}>g</Text>
                     </Text>
+                    <Text style={styles.heroCalSubText}>
+                      ({computedModeValues.carbsCalDisplay} kcal)
+                    </Text>
+                    {settingMode !== 'manual' && (
+                      <View style={[styles.pctBadge, { backgroundColor: '#a855f722', borderColor: '#a855f7' }]}>
+                        <Text style={[styles.pctBadgeText, { color: '#a855f7' }]}>{computedModeValues.ratioC}%</Text>
+                      </View>
+                    )}
                   </View>
+                </View>
+
+                {/* 💡 カロリー密度補足注記 */}
+                <View style={styles.calExplanationBox}>
+                  <Text style={styles.calExplanationText}>
+                    💡 <Text style={{ fontWeight: '700', color: '#f8fafc' }}>カロリー比率のポイント:</Text> P・Cは <Text style={{ color: '#38bdf8', fontWeight: '700' }}>1g=4kcal</Text>、Fは <Text style={{ color: '#f59e0b', fontWeight: '700' }}>1g=9kcal</Text> で計算されます。（脂質Fは1gあたりのカロリーが高いため、同じ20%設定でもグラム数はPの半分以下になります）
+                  </Text>
                 </View>
               </View>
 
@@ -459,7 +504,7 @@ export default function NutritionSettingsModal({
               {settingMode === 'cal_pfc' && (
                 <View style={styles.modeSection}>
                   <Text style={styles.hintText}>
-                    総カロリーとPFCの比率(%)を指定すると、上の各グラム数がリアルタイムで更新されます。
+                    総カロリーとPFCの比率(%)を指定すると、上の各グラム数とカロリー内訳がリアルタイムで更新されます。
                   </Text>
 
                   <Text style={styles.inputLabelCol}>目標総カロリー (kcal)</Text>
@@ -631,7 +676,7 @@ export default function NutritionSettingsModal({
                 </View>
               )}
 
-              {/* 🌟 2. 下部：合計比率 ＆ リセットボタン ＆ アナウンス (参考画像スタイル) */}
+              {/* 🌟 2. 下部：合計比率 ＆ リセットボタン ＆ アナウンス */}
               {settingMode !== 'manual' && (
                 <View style={styles.pfcFooterCard}>
                   <View style={styles.pfcFooterTopRow}>
@@ -757,11 +802,11 @@ const styles = StyleSheet.create({
   modeTabBtnText: { fontSize: 11, fontWeight: '600', color: '#94a3b8' },
   modeTabBtnTextActive: { color: '#ffffff', fontWeight: '700' },
 
-  /* 🌟 参考画像スタイルの大型リアルタイム連動表示カード */
+  /* 🌟 大型リアルタイム表示カード（カロリー内訳＆バッジ追加版） */
   pfcDisplayHeroCard: {
     backgroundColor: '#0f172a',
     borderRadius: 12,
-    padding: 14,
+    padding: 12,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#10b98144',
@@ -771,9 +816,15 @@ const styles = StyleSheet.create({
   heroCalVal: { color: '#10b981', fontSize: 16, fontWeight: '700' },
   heroGramGrid: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', paddingTop: 4 },
   heroGramCol: { alignItems: 'center', flex: 1 },
-  heroGramLabel: { fontSize: 12, fontWeight: '600', color: '#94a3b8', marginBottom: 4 },
-  heroGramVal: { fontSize: 20, fontWeight: '800' },
-  heroGramUnit: { fontSize: 13, fontWeight: '600' },
+  heroGramLabel: { fontSize: 11, fontWeight: '600', color: '#94a3b8', marginBottom: 2 },
+  heroGramVal: { fontSize: 19, fontWeight: '800' },
+  heroGramUnit: { fontSize: 12, fontWeight: '600' },
+  heroCalSubText: { fontSize: 10, color: '#94a3b8', marginTop: 1, fontWeight: '600' },
+  pctBadge: { marginTop: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, borderWidth: 1 },
+  pctBadgeText: { fontSize: 10, fontWeight: '700' },
+
+  calExplanationBox: { marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#1e293b', width: '100%' },
+  calExplanationText: { fontSize: 10.5, color: '#94a3b8', lineHeight: 15 },
 
   modeSection: { marginTop: 4 },
   subActionBtn: { backgroundColor: '#0f172a', borderWidth: 1, borderColor: '#334155', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8 },
@@ -785,7 +836,7 @@ const styles = StyleSheet.create({
   stepBtnText: { fontSize: 16, fontWeight: '700', color: '#38bdf8' },
   inputStep: { flex: 1, textAlign: 'center', color: '#f8fafc', fontSize: 14, fontWeight: '600', paddingVertical: 6 },
 
-  /* 🌟 参考画像スタイルの下部合計・リセットカード */
+  /* 下部合計・リセットカード */
   pfcFooterCard: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#334155' },
   pfcFooterTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   pfcTotalLabel: { fontSize: 14, fontWeight: '600', color: '#f8fafc' },
