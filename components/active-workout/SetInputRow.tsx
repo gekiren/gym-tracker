@@ -344,14 +344,8 @@ const safeParseInt = (val: string): number | null => {
                       updateSet(ex.id, set.id, { reps: safeParseInt(restored) });
                     }
                   }}
-                  returnKeyType={displayFields?.showRpe !== false ? "next" : "done"}
-                  onSubmitEditing={() => {
-                    if (displayFields?.showRpe !== false) {
-                      rpeInputRef.current?.focus();
-                    } else {
-                      Keyboard.dismiss();
-                    }
-                  }}
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
                 />
               )
             ) : set.is_completed ? (
@@ -383,8 +377,14 @@ const safeParseInt = (val: string): number | null => {
                     updateSet(ex.id, set.id, { reps: safeParseInt(restored) });
                   }
                 }}
-                returnKeyType="done"
-                onSubmitEditing={() => Keyboard.dismiss()}
+                returnKeyType={displayFields?.showRpe !== false ? "next" : "done"}
+                onSubmitEditing={() => {
+                  if (displayFields?.showRpe !== false) {
+                    rpeInputRef.current?.focus();
+                  } else {
+                    Keyboard.dismiss();
+                  }
+                }}
               />
             )}
 
