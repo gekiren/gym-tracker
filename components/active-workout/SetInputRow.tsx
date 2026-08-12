@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, paddingHorizontal: 4 },
   rowCompleted: { opacity: 0.7 },
   tdSet: { color: Theme.colors.text, textAlign: 'center', fontSize: 16, fontWeight: '500' },
-  input: { backgroundColor: '#2a2a2a', color: Theme.colors.text, width: 90, marginHorizontal: 3, borderRadius: 4, paddingVertical: 6, paddingHorizontal: 4, textAlign: 'center', fontSize: 15 },
+  input: { backgroundColor: '#2a2a2a', color: Theme.colors.text, width: 90, height: 36, marginHorizontal: 3, borderRadius: 4, paddingVertical: 0, paddingHorizontal: 4, textAlign: 'center', fontSize: 15, justifyContent: 'center', alignItems: 'center' },
   inputReadOnly: { opacity: 0.7, justifyContent: 'center', alignItems: 'center' },
   inputReadOnlyText: { color: Theme.colors.text, fontSize: 16 },
   checkBtn: { width: 36, height: 36, backgroundColor: '#333', borderRadius: 4, alignItems: 'center', justifyContent: 'center' },

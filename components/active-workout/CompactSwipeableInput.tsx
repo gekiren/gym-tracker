@@ -170,12 +170,22 @@ export function CompactSwipeableInput({
     );
   }
 
+  const flatStyle = StyleSheet.flatten(style) || {};
+  const textStyleOnly = {
+    color: flatStyle.color || Theme.colors.text,
+    fontSize: flatStyle.fontSize || 15,
+    fontWeight: flatStyle.fontWeight || 'bold',
+    textAlign: flatStyle.textAlign || 'center',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+  };
+
   return (
     <GestureDetector gesture={gesture}>
       <Animated.View style={[styles.baseBox, style, dragContainerStyle]}>
         <Animated.Text
           numberOfLines={1}
-          style={[styles.baseText, style as any, dragTextStyle]}
+          style={[styles.baseText, textStyleOnly as any, dragTextStyle]}
         >
           {value !== '' ? value : placeholder}
         </Animated.Text>
