@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.19',
+  version: '1.8.20',
   title: {
-    ja: '栄養管理のBMR/TDEE計算設定の保存機能追加',
-    en: 'Save BMR/TDEE Profile Settings in Nutrition',
+    ja: '栄養目標の手動設定に3つの入力モードを追加',
+    en: 'Added 3 Input Modes for Manual Nutrition Target Setting',
   },
   notes: {
     ja: [
-      '🥗 栄養管理のBMR/TDEE計算電卓において、入力した性別・年齢・身長・体重が自動保存されるようになりました。',
+      '🎯 栄養目標の手動設定で「①総カロリー+PFC比」「②PFC比+P(g)量」「③完全手動」の3モードを切替可能になりました。',
+      '✨ モードに応じたPFCグラム数や目標カロリーのリアルタイム自動計算機能を搭載しました。',
     ],
     en: [
-      '🥗 Gender, age, height, and weight entered in the BMR/TDEE calculator are now saved automatically.',
+      '🎯 Added 3 selectable modes for manual nutrition settings: Total Calorie + PFC Ratio, PFC Ratio + Protein Amount, and Full Manual.',
+      '✨ Real-time auto-calculation of PFC grams and target calories based on selected mode.',
     ],
   },
 };
