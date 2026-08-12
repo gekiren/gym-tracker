@@ -502,6 +502,18 @@ export default function NutritionSettingsModal({
                       </View>
                     </View>
                   </View>
+
+                  {/* 塩分・食物繊維 */}
+                  <View style={[styles.grid2, { marginTop: 12 }]}>
+                    <View style={styles.col2}>
+                      <Text style={[styles.inputLabel, { color: '#f43f5e' }]}>塩分相当量 (g)</Text>
+                      <TextInput style={styles.input} keyboardType="numeric" value={sodium} onChangeText={setSodium} />
+                    </View>
+                    <View style={styles.col2}>
+                      <Text style={[styles.inputLabel, { color: '#84cc16' }]}>食物繊維 (g)</Text>
+                      <TextInput style={styles.input} keyboardType="numeric" value={fiber} onChangeText={setFiber} />
+                    </View>
+                  </View>
                 </View>
               )}
 
@@ -574,6 +586,18 @@ export default function NutritionSettingsModal({
                       </View>
                     </View>
                   </View>
+
+                  {/* 塩分・食物繊維 */}
+                  <View style={[styles.grid2, { marginTop: 12 }]}>
+                    <View style={styles.col2}>
+                      <Text style={[styles.inputLabel, { color: '#f43f5e' }]}>塩分相当量 (g)</Text>
+                      <TextInput style={styles.input} keyboardType="numeric" value={sodium} onChangeText={setSodium} />
+                    </View>
+                    <View style={styles.col2}>
+                      <Text style={[styles.inputLabel, { color: '#84cc16' }]}>食物繊維 (g)</Text>
+                      <TextInput style={styles.input} keyboardType="numeric" value={fiber} onChangeText={setFiber} />
+                    </View>
+                  </View>
                 </View>
               )}
 
@@ -601,10 +625,49 @@ export default function NutritionSettingsModal({
                       </View>
                     ))}
                   </View>
+
+                  {/* 塩分・食物繊維 */}
+                  <View style={[styles.grid2, { marginTop: 12 }]}>
+                    <View style={styles.col2}>
+                      <Text style={[styles.inputLabel, { color: '#f43f5e' }]}>塩分相当量 (g)</Text>
+                      <TextInput style={styles.input} keyboardType="numeric" value={sodium} onChangeText={setSodium} />
+                    </View>
+                    <View style={styles.col2}>
+                      <Text style={[styles.inputLabel, { color: '#84cc16' }]}>食物繊維 (g)</Text>
+                      <TextInput style={styles.input} keyboardType="numeric" value={fiber} onChangeText={setFiber} />
+                    </View>
+                  </View>
                 </View>
               )}
 
-              {/* 🌟 リアルタイムグラム数 ＆ 配分カロリー内訳カード（計算結果カード） */}
+              {/* 🌟 1. 中部：合計比率 ＆ リセットボタン ＆ アナウンス */}
+              {settingMode !== 'manual' && (
+                <View style={[styles.pfcFooterCard, { marginTop: 12 }]}>
+                  <View style={styles.pfcFooterTopRow}>
+                    <Text style={styles.pfcTotalLabel}>
+                      合計 <Text style={[
+                        styles.pfcTotalVal,
+                        computedModeValues.ratioSum === 100 ? styles.pfcTotalOk : styles.pfcTotalWarn
+                      ]}>{computedModeValues.ratioSum}%</Text>
+                    </Text>
+
+                    <TouchableOpacity style={styles.resetRatioBtn} onPress={handleResetRatio}>
+                      <Text style={styles.resetRatioBtnText}>リセット</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={styles.pfcNoticeText}>
+                    {computedModeValues.ratioSum === 100
+                      ? '✅ PFC比率の合計が100%になっています。'
+                      : '⚠️ PFC比率の合計は100%にしてください。'}
+                  </Text>
+                  <Text style={styles.pfcSubNoticeText}>
+                    💡 厚生労働省の「日本人の食事摂取基準」に沿ったバランス（P13-20% / F20-30% / C50-65%）を推奨します。
+                  </Text>
+                </View>
+              )}
+
+              {/* 🌟 2. 下部：リアルタイムグラム数 ＆ 配分カロリー内訳カード（計算結果カード） */}
               <View style={[styles.pfcDisplayHeroCard, { marginTop: 12 }]}>
                 <Text style={styles.heroCalText}>
                   目標総カロリー: <Text style={styles.heroCalVal}>{computedModeValues.calories}</Text> kcal
@@ -650,45 +713,6 @@ export default function NutritionSettingsModal({
                   <Text style={styles.calExplanationText}>
                     💡 <Text style={{ fontWeight: '700', color: '#f8fafc' }}>カロリー比率のポイント:</Text> P・Cは <Text style={{ color: '#38bdf8', fontWeight: '700' }}>1g=4kcal</Text>、Fは <Text style={{ color: '#f59e0b', fontWeight: '700' }}>1g=9kcal</Text> で計算されます。
                   </Text>
-                </View>
-              </View>
-
-              {/* 🌟 2. 下部：合計比率 ＆ リセットボタン ＆ アナウンス */}
-              {settingMode !== 'manual' && (
-                <View style={styles.pfcFooterCard}>
-                  <View style={styles.pfcFooterTopRow}>
-                    <Text style={styles.pfcTotalLabel}>
-                      合計 <Text style={[
-                        styles.pfcTotalVal,
-                        computedModeValues.ratioSum === 100 ? styles.pfcTotalOk : styles.pfcTotalWarn
-                      ]}>{computedModeValues.ratioSum}%</Text>
-                    </Text>
-
-                    <TouchableOpacity style={styles.resetRatioBtn} onPress={handleResetRatio}>
-                      <Text style={styles.resetRatioBtnText}>リセット</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  <Text style={styles.pfcNoticeText}>
-                    {computedModeValues.ratioSum === 100
-                      ? '✅ PFC比率の合計が100%になっています。'
-                      : '⚠️ PFC比率の合計は100%にしてください。'}
-                  </Text>
-                  <Text style={styles.pfcSubNoticeText}>
-                    💡 厚生労働省の「日本人の食事摂取基準」に沿ったバランス（P13-20% / F20-30% / C50-65%）を推奨します。
-                  </Text>
-                </View>
-              )}
-
-              {/* 塩分・食物繊維（全モード共通） */}
-              <View style={[styles.grid2, { marginTop: 14 }]}>
-                <View style={styles.col2}>
-                  <Text style={[styles.inputLabel, { color: '#f43f5e' }]}>塩分相当量 (g)</Text>
-                  <TextInput style={styles.input} keyboardType="numeric" value={sodium} onChangeText={setSodium} />
-                </View>
-                <View style={styles.col2}>
-                  <Text style={[styles.inputLabel, { color: '#84cc16' }]}>食物繊維 (g)</Text>
-                  <TextInput style={styles.input} keyboardType="numeric" value={fiber} onChangeText={setFiber} />
                 </View>
               </View>
             </View>
