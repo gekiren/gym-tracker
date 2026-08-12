@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.7.9',
+  version: '1.8.0',
   title: {
-    ja: '推定1RMグラフカラーの統一',
-    en: '1RM Chart Color Standardized',
+    ja: '種目別グラフの機能拡張と指標選択の統一',
+    en: 'Exercise Chart Metrics & Selector Update',
   },
   notes: {
     ja: [
-      '🎨 推定1RMグラフのテーマカラーを総重量グラフと同じテーマカラー（青）に統一しました。',
+      '📊 種目別グラフにセット数、1セット平均負荷、トレーニング密度の指標を追加しました。',
+      '📋 リストから表示したいグラフ指標を簡単に選択・切り替えられるようになりました。',
     ],
     en: [
-      '🎨 Standardized the estimated 1RM chart theme color to blue to match the total volume chart.',
+      '📊 Added Sets, Volume per Set, and Training Density metrics to exercise detail charts.',
+      '📋 Easily switch chart metrics from the dropdown list selector.',
     ],
   },
 };

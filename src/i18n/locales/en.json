@@ -267,6 +267,7 @@
       "metric_sets_sub": "Total sets completed over time",
       "metric_avg_volume_per_set_sub": "Total Volume ÷ Sets (Quality & intensity per set)",
       "metric_density_sub": "Total Volume ÷ Duration (Weight moved per minute)",
+      "metric_1rm_sub": "Estimated 1RM max over time",
       "chart_title_water": "Recent Water Intake (ml)",
       "chart_title_caffeine": "Recent Caffeine Intake (mg)",
       "chart_title_time": "Time - Total Logged Time (hours)",

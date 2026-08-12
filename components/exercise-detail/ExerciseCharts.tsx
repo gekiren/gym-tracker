@@ -7,6 +7,8 @@ import { format, startOfWeek, startOfMonth } from 'date-fns';
 import { Theme } from '../../src/theme';
 import { calculateRM } from '../../src/utils/workoutStats';
 
+export type ExerciseChartMetric = 'volume' | '1rm' | 'sets' | 'avg_volume_per_set' | 'density';
+
 interface ExerciseChartsProps {
   history: any[];
   settings: any;
@@ -39,6 +41,20 @@ function createLinearPath(points: { x: number; y: number }[]): string {
   return path;
 }
 
+export const METRIC_OPTIONS: {
+  id: ExerciseChartMetric;
+  titleKey: string;
+  subKey: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  badge?: string;
+}[] = [
+  { id: 'volume', titleKey: 'ui.history.metric_volume', subKey: 'ui.history.metric_volume_sub', icon: 'bar-chart-outline', badge: 'デフォルト' },
+  { id: '1rm', titleKey: 'ui.history.type_1rm', subKey: 'ui.history.metric_1rm_sub', icon: 'trophy-outline' },
+  { id: 'sets', titleKey: 'ui.history.metric_sets', subKey: 'ui.history.metric_sets_sub', icon: 'layers-outline' },
+  { id: 'avg_volume_per_set', titleKey: 'ui.history.metric_avg_volume_per_set', subKey: 'ui.history.metric_avg_volume_per_set_sub', icon: 'fitness-outline' },
+  { id: 'density', titleKey: 'ui.history.metric_density', subKey: 'ui.history.metric_density_sub', icon: 'speedometer-outline' },
+];
+
 export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
   history,
   settings,
@@ -54,160 +70,170 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
   t,
 }) => {
   const chartScrollRef = useRef<ScrollView>(null);
-  const [chartType, setChartType] = useState<'volume' | '1rm'>('volume');
+  const [chartMetric, setChartMetric] = useState<ExerciseChartMetric>('volume');
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isMetricModalVisible, setMetricModalVisible] = useState(false);
 
-  // chartScaleやchartTypeが変更されたら選択位置をリセット
+  // chartScaleやchartMetricが変更されたら選択位置をリセット
   useEffect(() => {
     setSelectedIndex(null);
-  }, [chartScale, chartType]);
+  }, [chartScale, chartMetric]);
 
   const chartPoints = useMemo<ChartPoint[]>(() => {
     if (!history || history.length === 0) return [];
 
-    if (chartType === 'volume') {
-      const hValid = history
-        .map(item => {
-          const volume = item.sets.reduce((sum: number, s: any) => sum + (parseFloat(s.weight) || 0) * (parseInt(s.reps, 10) || 0), 0);
-          return { start_time: item.start_time, volume };
-        })
-        .filter(h => h.volume > 0);
+    const processedHistory = history.map(item => {
+      const sets = item.sets || [];
+      const setsCount = sets.length;
+      const volume = sets.reduce((sum: number, s: any) => sum + (parseFloat(s.weight) || 0) * (parseInt(s.reps, 10) || 0), 0);
+      const max1Rm = sets.reduce((max: number, s: any) => {
+        const rm = calculateRM(parseFloat(s.weight), parseInt(s.reps, 10)) || 0;
+        return Math.max(max, rm);
+      }, 0);
+      let totalSecs = sets.reduce((sum: number, s: any) => sum + (parseFloat(s.work_seconds) || 0) + (parseFloat(s.rest_seconds) || 0), 0);
+      let durationMin = totalSecs > 0 ? totalSecs / 60 : (setsCount > 0 ? setsCount * 2 : 0);
 
-      if (hValid.length === 0) return [];
+      return {
+        start_time: item.start_time,
+        volume,
+        setsCount,
+        max1Rm,
+        durationMin,
+      };
+    });
 
-      if (chartScale === 'day') {
-        const hRev = [...hValid].reverse().slice(-40);
-        return hRev.map(h => {
-          const d = new Date(h.start_time);
-          return {
-            id: h.start_time,
-            label: format(d, 'MM/dd'),
-            dateStr: format(d, 'yyyy/MM/dd'),
-            value: Math.round(h.volume)
-          };
-        });
-      }
+    const hValid = processedHistory.filter(h => {
+      if (chartMetric === '1rm') return h.max1Rm > 0;
+      if (chartMetric === 'sets') return h.setsCount > 0;
+      return h.volume > 0;
+    });
 
-      if (chartScale === 'week') {
-        const weeklyVolumes: { [key: string]: { date: Date; volume: number } } = {};
-        hValid.forEach(h => {
-          const date = new Date(h.start_time);
-          const weekStart = startOfWeek(date, { weekStartsOn: 1 });
-          const key = weekStart.toISOString();
-          if (!weeklyVolumes[key]) {
-            weeklyVolumes[key] = { date: weekStart, volume: 0 };
-          }
-          weeklyVolumes[key].volume += h.volume;
-        });
+    if (hValid.length === 0) return [];
 
-        const sortedWeeks = Object.values(weeklyVolumes).sort((a, b) => a.date.getTime() - b.date.getTime()).slice(-40);
-        return sortedWeeks.map(w => ({
+    if (chartScale === 'day') {
+      const hRev = [...hValid].reverse().slice(-40);
+      return hRev.map(h => {
+        const d = new Date(h.start_time);
+        let val = 0;
+        switch (chartMetric) {
+          case 'volume':
+            val = Math.round(h.volume);
+            break;
+          case '1rm':
+            val = Math.round(h.max1Rm * 10) / 10;
+            break;
+          case 'sets':
+            val = h.setsCount;
+            break;
+          case 'avg_volume_per_set':
+            val = h.setsCount > 0 ? Math.round(h.volume / h.setsCount) : 0;
+            break;
+          case 'density':
+            val = h.durationMin > 0 ? Math.round((h.volume / h.durationMin) * 10) / 10 : 0;
+            break;
+        }
+
+        return {
+          id: h.start_time,
+          label: format(d, 'MM/dd'),
+          dateStr: format(d, 'yyyy/MM/dd'),
+          value: val,
+        };
+      });
+    }
+
+    if (chartScale === 'week') {
+      const weeklyData: { [key: string]: { date: Date; volume: number; setsCount: number; max1Rm: number; durationMin: number } } = {};
+      hValid.forEach(h => {
+        const date = new Date(h.start_time);
+        const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+        const key = weekStart.toISOString();
+        if (!weeklyData[key]) {
+          weeklyData[key] = { date: weekStart, volume: 0, setsCount: 0, max1Rm: 0, durationMin: 0 };
+        }
+        weeklyData[key].volume += h.volume;
+        weeklyData[key].setsCount += h.setsCount;
+        weeklyData[key].max1Rm = Math.max(weeklyData[key].max1Rm, h.max1Rm);
+        weeklyData[key].durationMin += h.durationMin;
+      });
+
+      const sortedWeeks = Object.values(weeklyData).sort((a, b) => a.date.getTime() - b.date.getTime()).slice(-40);
+      return sortedWeeks.map(w => {
+        let val = 0;
+        switch (chartMetric) {
+          case 'volume':
+            val = Math.round(w.volume);
+            break;
+          case '1rm':
+            val = Math.round(w.max1Rm * 10) / 10;
+            break;
+          case 'sets':
+            val = w.setsCount;
+            break;
+          case 'avg_volume_per_set':
+            val = w.setsCount > 0 ? Math.round(w.volume / w.setsCount) : 0;
+            break;
+          case 'density':
+            val = w.durationMin > 0 ? Math.round((w.volume / w.durationMin) * 10) / 10 : 0;
+            break;
+        }
+
+        return {
           id: w.date.toISOString(),
           label: format(w.date, 'MM/dd'),
           dateStr: `${format(w.date, 'yyyy/MM/dd')}週`,
-          value: Math.round(w.volume)
-        }));
-      }
+          value: val,
+        };
+      });
+    }
 
-      if (chartScale === 'month') {
-        const monthlyVolumes: { [key: string]: { date: Date; volume: number } } = {};
-        hValid.forEach(h => {
-          const date = new Date(h.start_time);
-          const monthStart = startOfMonth(date);
-          const key = monthStart.toISOString();
-          if (!monthlyVolumes[key]) {
-            monthlyVolumes[key] = { date: monthStart, volume: 0 };
-          }
-          monthlyVolumes[key].volume += h.volume;
-        });
+    if (chartScale === 'month') {
+      const monthlyData: { [key: string]: { date: Date; volume: number; setsCount: number; max1Rm: number; durationMin: number } } = {};
+      hValid.forEach(h => {
+        const date = new Date(h.start_time);
+        const monthStart = startOfMonth(date);
+        const key = monthStart.toISOString();
+        if (!monthlyData[key]) {
+          monthlyData[key] = { date: monthStart, volume: 0, setsCount: 0, max1Rm: 0, durationMin: 0 };
+        }
+        monthlyData[key].volume += h.volume;
+        monthlyData[key].setsCount += h.setsCount;
+        monthlyData[key].max1Rm = Math.max(monthlyData[key].max1Rm, h.max1Rm);
+        monthlyData[key].durationMin += h.durationMin;
+      });
 
-        const sortedMonths = Object.values(monthlyVolumes).sort((a, b) => a.date.getTime() - b.date.getTime()).slice(-40);
-        return sortedMonths.map(m => ({
+      const sortedMonths = Object.values(monthlyData).sort((a, b) => a.date.getTime() - b.date.getTime()).slice(-40);
+      return sortedMonths.map(m => {
+        let val = 0;
+        switch (chartMetric) {
+          case 'volume':
+            val = Math.round(m.volume);
+            break;
+          case '1rm':
+            val = Math.round(m.max1Rm * 10) / 10;
+            break;
+          case 'sets':
+            val = m.setsCount;
+            break;
+          case 'avg_volume_per_set':
+            val = m.setsCount > 0 ? Math.round(m.volume / m.setsCount) : 0;
+            break;
+          case 'density':
+            val = m.durationMin > 0 ? Math.round((m.volume / m.durationMin) * 10) / 10 : 0;
+            break;
+        }
+
+        return {
           id: m.date.toISOString(),
           label: format(m.date, 'yyyy/MM'),
           dateStr: format(m.date, 'yyyy年M月'),
-          value: Math.round(m.volume)
-        }));
-      }
-    } else {
-      // 1RM Chart Data
-      const hValid = history
-        .map(item => {
-          const max1Rm = item.sets.reduce((max: number, s: any) => {
-            const rm = calculateRM(parseFloat(s.weight), parseInt(s.reps, 10)) || 0;
-            return Math.max(max, rm);
-          }, 0);
-          return { start_time: item.start_time, max1Rm };
-        })
-        .filter(h => h.max1Rm > 0);
-
-      if (hValid.length === 0) return [];
-
-      if (chartScale === 'day') {
-        const daily1RMs: { [key: string]: { date: Date; max1Rm: number } } = {};
-        hValid.forEach(h => {
-          const date = new Date(h.start_time);
-          const key = format(date, 'yyyy-MM-dd');
-          if (!daily1RMs[key]) {
-            daily1RMs[key] = { date, max1Rm: 0 };
-          }
-          daily1RMs[key].max1Rm = Math.max(daily1RMs[key].max1Rm, h.max1Rm);
-        });
-
-        const sortedDays = Object.values(daily1RMs).sort((a, b) => a.date.getTime() - b.date.getTime()).slice(-40);
-        return sortedDays.map(d => ({
-          id: d.date.toISOString(),
-          label: format(d.date, 'MM/dd'),
-          dateStr: format(d.date, 'yyyy/MM/dd'),
-          value: Math.round(d.max1Rm * 10) / 10
-        }));
-      }
-
-      if (chartScale === 'week') {
-        const weekly1RMs: { [key: string]: { date: Date; max1Rm: number } } = {};
-        hValid.forEach(h => {
-          const date = new Date(h.start_time);
-          const weekStart = startOfWeek(date, { weekStartsOn: 1 });
-          const key = weekStart.toISOString();
-          if (!weekly1RMs[key]) {
-            weekly1RMs[key] = { date: weekStart, max1Rm: 0 };
-          }
-          weekly1RMs[key].max1Rm = Math.max(weekly1RMs[key].max1Rm, h.max1Rm);
-        });
-
-        const sortedWeeks = Object.values(weekly1RMs).sort((a, b) => a.date.getTime() - b.date.getTime()).slice(-40);
-        return sortedWeeks.map(w => ({
-          id: w.date.toISOString(),
-          label: format(w.date, 'MM/dd'),
-          dateStr: `${format(w.date, 'yyyy/MM/dd')}週`,
-          value: Math.round(w.max1Rm * 10) / 10
-        }));
-      }
-
-      if (chartScale === 'month') {
-        const monthly1RMs: { [key: string]: { date: Date; max1Rm: number } } = {};
-        hValid.forEach(h => {
-          const date = new Date(h.start_time);
-          const monthStart = startOfMonth(date);
-          const key = monthStart.toISOString();
-          if (!monthly1RMs[key]) {
-            monthly1RMs[key] = { date: monthStart, max1Rm: 0 };
-          }
-          monthly1RMs[key].max1Rm = Math.max(monthly1RMs[key].max1Rm, h.max1Rm);
-        });
-
-        const sortedMonths = Object.values(monthly1RMs).sort((a, b) => a.date.getTime() - b.date.getTime()).slice(-40);
-        return sortedMonths.map(m => ({
-          id: m.date.toISOString(),
-          label: format(m.date, 'yyyy/MM'),
-          dateStr: format(m.date, 'yyyy年M月'),
-          value: Math.round(m.max1Rm * 10) / 10
-        }));
-      }
+          value: val,
+        };
+      });
     }
 
     return [];
-  }, [history, chartScale, chartType]);
+  }, [history, chartScale, chartMetric]);
 
   const getPRTimeline = useCallback((reps: number, variation: string) => {
     const sortedHistory = [...history].reverse();
@@ -290,6 +316,40 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
     : '';
 
   const chartThemeColor = Theme.colors.primary;
+  const currentMetricOption = METRIC_OPTIONS.find(o => o.id === chartMetric) || METRIC_OPTIONS[0];
+
+  const getMetricTitle = useCallback((metric: ExerciseChartMetric) => {
+    switch (metric) {
+      case 'volume':
+        return t('ui.history.chart_title', { unit: settings.weightUnit }) || `最近の総挙上重量 (${settings.weightUnit})`;
+      case '1rm':
+        return t('ui.history.chart_1rm_title', { unit: settings.weightUnit }) || `最近の推定1RM最大値 (${settings.weightUnit})`;
+      case 'sets':
+        return t('ui.history.chart_title_sets') || '最近の総セット数 (セット)';
+      case 'avg_volume_per_set':
+        return t('ui.history.chart_title_avg_volume_per_set', { unit: settings.weightUnit }) || `1セット平均負荷 (${settings.weightUnit}/セット)`;
+      case 'density':
+        return t('ui.history.chart_title_density', { unit: settings.weightUnit }) || `トレーニング密度 (${settings.weightUnit}/分)`;
+      default:
+        return t('ui.history.chart_title', { unit: settings.weightUnit });
+    }
+  }, [settings.weightUnit, t]);
+
+  const getMetricUnitLabel = useCallback((metric: ExerciseChartMetric) => {
+    switch (metric) {
+      case 'volume':
+      case '1rm':
+        return settings.weightUnit;
+      case 'sets':
+        return 'セット';
+      case 'avg_volume_per_set':
+        return `${settings.weightUnit}/セット`;
+      case 'density':
+        return `${settings.weightUnit}/分`;
+      default:
+        return settings.weightUnit;
+    }
+  }, [settings.weightUnit]);
 
   return (
     <>
@@ -298,9 +358,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
           {/* Header Row */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
             <Text style={styles.chartTitle}>
-              {chartType === 'volume'
-                ? t('ui.history.chart_title', { unit: settings.weightUnit })
-                : t('ui.history.chart_1rm_title', { unit: settings.weightUnit })}
+              {getMetricTitle(chartMetric)}
             </Text>
             <TouchableOpacity 
               style={styles.calendarBtn}
@@ -313,19 +371,17 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
           
           {/* Selectors Row */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
-            <View style={styles.toggleContainer}>
-              {(['volume', '1rm'] as const).map(type => (
-                <TouchableOpacity
-                  key={type}
-                  style={[styles.toggleButton, chartType === type && styles.toggleButtonActive]}
-                  onPress={() => setChartType(type)}
-                >
-                  <Text style={[styles.toggleButtonText, chartType === type && styles.toggleButtonTextActive]}>
-                    {t(type === 'volume' ? 'ui.history.type_volume' : 'ui.history.type_1rm')}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <TouchableOpacity
+              style={styles.metricSelectButton}
+              onPress={() => setMetricModalVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name={currentMetricOption.icon} size={15} color={Theme.colors.primary} style={{ marginRight: 6 }} />
+              <Text style={styles.metricSelectText}>
+                {t(currentMetricOption.titleKey)}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={Theme.colors.textMuted} style={{ marginLeft: 4 }} />
+            </TouchableOpacity>
 
             <View style={styles.scaleContainer}>
               {(['day', 'week', 'month'] as const).map(scale => (
@@ -348,7 +404,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
               <Text style={styles.summaryDate}>{activePoint.dateStr}</Text>
               <Text style={styles.summaryVal}>
                 {activePoint.value.toLocaleString()}
-                <Text style={styles.summaryUnit}> {settings.weightUnit}</Text>
+                <Text style={styles.summaryUnit}> {getMetricUnitLabel(chartMetric)}</Text>
               </Text>
             </View>
           )}
@@ -356,7 +412,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
           {/* SVG Line & Area Chart */}
           <View style={styles.chartWrapper}>
             <ScrollView
-              key={`${chartType}_${chartScale}`}
+              key={`${chartMetric}_${chartScale}`}
               ref={chartScrollRef}
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -477,6 +533,70 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
         </View>
       )}
 
+      {/* Metric Selector Modal */}
+      <Modal
+        visible={isMetricModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setMetricModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setMetricModalVisible(false)}
+        >
+          <View style={styles.metricModalContent} onStartShouldSetResponder={() => true}>
+            <View style={styles.metricModalHeader}>
+              <Text style={styles.metricModalTitle}>{t('ui.history.metric_select_title') || '表示する指標を選択'}</Text>
+              <TouchableOpacity onPress={() => setMetricModalVisible(false)}>
+                <Ionicons name="close" size={22} color={Theme.colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            {METRIC_OPTIONS.map(option => {
+              const isSelected = chartMetric === option.id;
+              return (
+                <TouchableOpacity
+                  key={option.id}
+                  style={[styles.metricOptionItem, isSelected && styles.metricOptionItemActive]}
+                  onPress={() => {
+                    setChartMetric(option.id);
+                    setMetricModalVisible(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.metricIconContainer, isSelected && styles.metricIconContainerActive]}>
+                    <Ionicons
+                      name={option.icon}
+                      size={20}
+                      color={isSelected ? Theme.colors.primary : Theme.colors.textMuted}
+                    />
+                  </View>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={[styles.metricOptionTitle, isSelected && styles.metricOptionTitleActive]}>
+                        {t(option.titleKey)}
+                      </Text>
+                      {option.badge && (
+                        <View style={[styles.recommendBadge, option.id === 'avg_volume_per_set' && styles.recommendBadgeStar]}>
+                          <Text style={[styles.recommendBadgeText, option.id === 'avg_volume_per_set' && styles.recommendBadgeTextStar]}>
+                            {option.badge}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.metricOptionSub}>{t(option.subKey)}</Text>
+                  </View>
+                  {isSelected && (
+                    <Ionicons name="checkmark-circle" size={20} color={Theme.colors.primary} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       {/* PR Progression Chart Modal */}
       <Modal
         visible={showChartModal}
@@ -563,29 +683,20 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
 const styles = StyleSheet.create({
   chartContainer: { paddingHorizontal: Theme.spacing.lg, marginVertical: Theme.spacing.md },
   chartTitle: { color: Theme.colors.text, fontSize: 18, fontWeight: 'bold' },
-  toggleContainer: {
+  metricSelectButton: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: Theme.borderRadius.sm,
-    padding: 2,
-    alignSelf: 'flex-start',
-  },
-  toggleButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: Theme.borderRadius.sm - 2,
+    paddingVertical: 7,
+    borderRadius: Theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  toggleButtonActive: {
-    backgroundColor: Theme.colors.card,
-  },
-  toggleButtonText: {
-    color: Theme.colors.textMuted,
+  metricSelectText: {
+    color: Theme.colors.text,
     fontSize: 13,
-    fontWeight: '500',
-  },
-  toggleButtonTextActive: {
-    color: Theme.colors.primary,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   scaleContainer: {
     flexDirection: 'row',
@@ -661,5 +772,87 @@ const styles = StyleSheet.create({
   analysisCard: { flex: 1, backgroundColor: '#1a1a1a', borderRadius: 8, padding: 10, marginHorizontal: 4, alignItems: 'center', borderWidth: 1, borderColor: '#333' },
   analysisLabel: { fontSize: 11, color: Theme.colors.textMuted, marginBottom: 4 },
   analysisValue: { fontSize: 14, fontWeight: 'bold', color: Theme.colors.text },
+
+  // Metric Modal Styles
+  metricModalContent: {
+    width: '90%',
+    backgroundColor: Theme.colors.card,
+    borderRadius: Theme.borderRadius.lg,
+    padding: Theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  metricModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Theme.spacing.md,
+    paddingBottom: Theme.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  metricModalTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: Theme.colors.text,
+  },
+  metricOptionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: Theme.borderRadius.md,
+    marginBottom: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  metricOptionItemActive: {
+    backgroundColor: 'rgba(79, 172, 254, 0.08)',
+    borderColor: Theme.colors.primary,
+  },
+  metricIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  metricIconContainerActive: {
+    backgroundColor: 'rgba(79, 172, 254, 0.15)',
+  },
+  metricOptionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Theme.colors.text,
+  },
+  metricOptionTitleActive: {
+    color: Theme.colors.primary,
+    fontWeight: 'bold',
+  },
+  metricOptionSub: {
+    fontSize: 11,
+    color: Theme.colors.textMuted,
+    marginTop: 2,
+  },
+  recommendBadge: {
+    backgroundColor: 'rgba(79, 172, 254, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 6,
+  },
+  recommendBadgeText: {
+    color: Theme.colors.primary,
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  recommendBadgeStar: {
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+  },
+  recommendBadgeTextStar: {
+    color: '#ffd700',
+  },
 });
 
