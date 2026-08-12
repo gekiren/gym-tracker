@@ -35,7 +35,21 @@ export async function initLanguageAndUnits(storedSettings: Record<string, string
 
   let needsUnitSelection = !storedSettings['weight_unit'];
   let weightUnit = (storedSettings['weight_unit'] === 'lbs' ? 'lbs' : 'kg') as 'kg' | 'lbs';
-  const needsStyleSelection = !storedSettings['style_mode'];
+
+  // 既存設定（RPE, 1RM, ボリューム, スタンス, または単位設定等）が存在するか判定
+  const hasExistingDisplaySettings =
+    storedSettings['display_rpe'] !== undefined ||
+    storedSettings['display_1rm'] !== undefined ||
+    storedSettings['display_volume'] !== undefined ||
+    storedSettings['display_stance'] !== undefined ||
+    Boolean(storedSettings['weight_unit']);
+
+  let needsStyleSelection = !storedSettings['style_mode'];
+
+  if (needsStyleSelection && hasExistingDisplaySettings) {
+    needsStyleSelection = false;
+    await saveSetting('style_mode', 'custom');
+  }
 
   // 日本語話者の場合は、初回起動時に自動で kg を設定し、選択モーダルをスキップする
   if (needsUnitSelection && currentLang === 'ja') {

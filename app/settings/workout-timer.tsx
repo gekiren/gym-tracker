@@ -122,6 +122,7 @@ export default function WorkoutTimerSettingsScreen() {
     else if (field === 'showStance') setShowStance(val);
     useSettingsStore.getState().setDisplayFields({ [field]: val });
     await saveSetting(keyMap[field], val ? '1' : '0');
+    await saveSetting('style_mode', 'custom');
   };
 
   return (
