@@ -36,7 +36,7 @@ export function CompactSwipeableInput({
   value,
   onChangeText,
   step = 1,
-  sensitivity = 14,
+  sensitivity = 32,
   minValue = 0,
   maxValue = 9999,
   placeholder = '-',

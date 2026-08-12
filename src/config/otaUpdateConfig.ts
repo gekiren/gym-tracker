@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.3',
+  version: '1.8.4',
   title: {
-    ja: '入力欄デザインの再スリム化',
-    en: 'UI Polish for Workout Input',
+    ja: 'スワイプ数値入力の感度調整',
+    en: 'Improved Swipe Input Sensitivity',
   },
   notes: {
     ja: [
-      '✨ 筋トレ記録の入力欄の高さをさらにスリム（28px）に調整し、画面の視認性を向上させました。',
+      '✨ 横スワイプでの数値変動の感度を調整し、スクロール時などの意図しない誤変動を軽減しました。',
     ],
     en: [
-      '✨ Further refined the height of workout set input boxes (28px) for a sleeker look.',
+      '✨ Adjusted swipe input sensitivity to prevent accidental value changes during scroll.',
     ],
   },
 };

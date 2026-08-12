@@ -29,7 +29,7 @@ export default function SwipeableNumericInput({
   value,
   onChangeText,
   step = 1,
-  sensitivity = 15,
+  sensitivity = 32,
   minValue = 0,
   maxValue = 9999,
   maxLength = 5,
