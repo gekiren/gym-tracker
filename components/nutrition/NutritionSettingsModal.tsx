@@ -62,6 +62,13 @@ export default function NutritionSettingsModal({
       setSodium(String(userGoals.sodium || 7.5));
       setFiber(String(userGoals.fiber || 20));
 
+      setGender(userGoals.gender || 'male');
+      setAge(String(userGoals.age ?? 30));
+      setHeight(String(userGoals.height ?? 170));
+      setWeight(String(userGoals.weight ?? 65));
+      setActivityLevel(userGoals.activity_level || 'moderate');
+      setGoalType((userGoals.goal_type as any) || 'maintain');
+
       setTargetHours(String(autophagyConfig.target_hours || 16));
       setAutophagyEnabled(!!autophagyConfig.enabled);
     }
@@ -130,6 +137,12 @@ export default function NutritionSettingsModal({
         carbs: parseFloat(carbs) || 250,
         sodium: parseFloat(sodium) || 7.5,
         fiber: parseFloat(fiber) || 20,
+        gender,
+        age: parseFloat(age) || 30,
+        height: parseFloat(height) || 170,
+        weight: parseFloat(weight) || 65,
+        activity_level: activityLevel,
+        goal_type: goalType,
       });
 
       await onSaveAutophagy({

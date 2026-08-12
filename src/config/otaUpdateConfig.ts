@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.18',
+  version: '1.8.19',
   title: {
-    ja: '起動・データ読み込みの安定化修正',
-    en: 'Startup & Data Loading Stabilization',
+    ja: '栄養管理のBMR/TDEE計算設定の保存機能追加',
+    en: 'Save BMR/TDEE Profile Settings in Nutrition',
   },
   notes: {
     ja: [
-      '⚡ 起動時のデータベース初期化処理を最適化し、画面読み込みが停止する問題を修正しました。',
-      '✨ 過去に表示設定を変更済みのユーザー様で初回選択ポップアップが再表示される現象を修正しました。',
+      '🥗 栄養管理のBMR/TDEE計算電卓において、入力した性別・年齢・身長・体重が自動保存されるようになりました。',
     ],
     en: [
-      '⚡ Optimized startup database initialization to fix loading issue.',
-      '✨ Fixed an issue where the initial style selection popup re-appeared for users who already had custom display settings.',
+      '🥗 Gender, age, height, and weight entered in the BMR/TDEE calculator are now saved automatically.',
     ],
   },
 };

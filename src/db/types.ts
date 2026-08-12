@@ -190,6 +190,12 @@ export interface NutritionGoals {
   carbs: number;
   sodium: number;
   fiber: number;
+  gender?: 'male' | 'female';
+  age?: number;
+  height?: number;
+  weight?: number;
+  activity_level?: 'sedentary' | 'light' | 'moderate' | 'active' | 'veryActive';
+  goal_type?: 'cut' | 'maintain' | 'bulk';
 }
 
 export interface AutophagyConfig {

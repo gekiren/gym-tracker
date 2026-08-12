@@ -159,6 +159,12 @@ const DEFAULT_GOALS: NutritionGoals = {
   carbs: 250,
   sodium: 7.5,
   fiber: 20,
+  gender: 'male',
+  age: 30,
+  height: 170,
+  weight: 65,
+  activity_level: 'moderate',
+  goal_type: 'maintain',
 };
 
 export const getNutritionGoals = async (): Promise<NutritionGoals> => {
