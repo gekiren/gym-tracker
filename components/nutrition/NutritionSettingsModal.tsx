@@ -157,44 +157,63 @@ export default function NutritionSettingsModal({
     const cPct = parseFloat(ratioC) || 0;
     const ratioSum = pPct + fPct + cPct;
 
+    let cal = 0;
+    let pGramsRaw = 0;
+    let fGramsRaw = 0;
+    let cGramsRaw = 0;
+
     if (settingMode === 'cal_pfc') {
       // モード1: 総カロリー + PFCバランス
-      const targetCal = parseFloat(mode1Calories) || 0;
-      const calcP = targetCal > 0 && pPct > 0 ? Math.round((targetCal * (pPct / 100)) / 4) : 0;
-      const calcF = targetCal > 0 && fPct > 0 ? Math.round((targetCal * (fPct / 100)) / 9) : 0;
-      const calcC = targetCal > 0 && cPct > 0 ? Math.round((targetCal * (cPct / 100)) / 4) : 0;
-      return {
-        calories: targetCal,
-        protein: calcP,
-        fat: calcF,
-        carbs: calcC,
-        ratioSum,
-      };
+      cal = parseFloat(mode1Calories) || 0;
+      pGramsRaw = cal > 0 && pPct > 0 ? (cal * (pPct / 100)) / 4 : 0;
+      fGramsRaw = cal > 0 && fPct > 0 ? (cal * (fPct / 100)) / 9 : 0;
+      cGramsRaw = cal > 0 && cPct > 0 ? (cal * (cPct / 100)) / 4 : 0;
     } else if (settingMode === 'pfc_p') {
       // モード2: PFCバランス + P(g)
-      const pGram = parseFloat(mode2Protein) || 0;
-      const pCal = pGram * 4;
-      const calcCal = pPct > 0 ? Math.round(pCal / (pPct / 100)) : 0;
-      const calcF = calcCal > 0 && fPct > 0 ? Math.round((calcCal * (fPct / 100)) / 9) : 0;
-      const calcC = calcCal > 0 && cPct > 0 ? Math.round((calcCal * (cPct / 100)) / 4) : 0;
-      return {
-        calories: calcCal,
-        protein: pGram,
-        fat: calcF,
-        carbs: calcC,
-        ratioSum,
-      };
+      pGramsRaw = parseFloat(mode2Protein) || 0;
+      const pCal = pGramsRaw * 4;
+      cal = pPct > 0 ? Math.round(pCal / (pPct / 100)) : 0;
+      fGramsRaw = cal > 0 && fPct > 0 ? (cal * (fPct / 100)) / 9 : 0;
+      cGramsRaw = cal > 0 && cPct > 0 ? (cal * (cPct / 100)) / 4 : 0;
     } else {
       // モード3: 完全手動
-      return {
-        calories: parseFloat(calories) || 0,
-        protein: parseFloat(protein) || 0,
-        fat: parseFloat(fat) || 0,
-        carbs: parseFloat(carbs) || 0,
-        ratioSum: 100,
-      };
+      cal = parseFloat(calories) || 0;
+      pGramsRaw = parseFloat(protein) || 0;
+      fGramsRaw = parseFloat(fat) || 0;
+      cGramsRaw = parseFloat(carbs) || 0;
     }
+
+    // 表示用フォーマット (小数第1位または四捨五入整数)
+    const formatDisplay = (val: number) => {
+      if (val === 0) return '0';
+      const rounded1 = Math.round(val * 10) / 10;
+      return rounded1 % 1 === 0 ? rounded1.toFixed(0) : rounded1.toFixed(1);
+    };
+
+    return {
+      calories: Math.round(cal),
+      protein: Math.round(pGramsRaw),
+      fat: Math.round(fGramsRaw),
+      carbs: Math.round(cGramsRaw),
+      proteinDisplay: formatDisplay(pGramsRaw),
+      fatDisplay: formatDisplay(fGramsRaw),
+      carbsDisplay: formatDisplay(cGramsRaw),
+      ratioSum: Math.round(ratioSum * 10) / 10,
+    };
   }, [settingMode, ratioP, ratioF, ratioC, mode1Calories, mode2Protein, calories, protein, fat, carbs]);
+
+  // 比率リセット (P20%, F20%, C60%)
+  const handleResetRatio = () => {
+    setRatioP('20');
+    setRatioF('20');
+    setRatioC('60');
+  };
+
+  // 比率調整 (+ / - ステップ)
+  const adjustRatio = (setter: React.Dispatch<React.SetStateAction<string>>, currentVal: string, delta: number) => {
+    const num = Math.max(0, (parseFloat(currentVal) || 0) + delta);
+    setter(String(num));
+  };
 
   // BMR/TDEE電卓からの反映ボタンを押した時
   const handleApplyCalculated = () => {
@@ -383,9 +402,9 @@ export default function NutritionSettingsModal({
               </View>
             </View>
 
-            {/* 🎯 手動設定モード切替セクション */}
+            {/* 🎯 PFCバランス設定・手動設定モード */}
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>🎯 栄養目標の手動設定</Text>
+              <Text style={styles.cardTitle}>🎯 PFCバランス設定</Text>
 
               {/* モード切替タブ */}
               <View style={styles.modeTabContainer}>
@@ -406,11 +425,41 @@ export default function NutritionSettingsModal({
                 ))}
               </View>
 
+              {/* 🌟 1. 上部大型リアルタイムグラム数 ＆ カロリー表示ヘッダー（参考画像スタイル） */}
+              <View style={styles.pfcDisplayHeroCard}>
+                <Text style={styles.heroCalText}>
+                  目標総カロリー: <Text style={styles.heroCalVal}>{computedModeValues.calories}</Text> kcal
+                </Text>
+
+                <View style={styles.heroGramGrid}>
+                  <View style={styles.heroGramCol}>
+                    <Text style={styles.heroGramLabel}>たんぱく質(P)</Text>
+                    <Text style={[styles.heroGramVal, { color: '#38bdf8' }]}>
+                      {computedModeValues.proteinDisplay}<Text style={styles.heroGramUnit}>g</Text>
+                    </Text>
+                  </View>
+
+                  <View style={styles.heroGramCol}>
+                    <Text style={styles.heroGramLabel}>脂質(F)</Text>
+                    <Text style={[styles.heroGramVal, { color: '#f59e0b' }]}>
+                      {computedModeValues.fatDisplay}<Text style={styles.heroGramUnit}>g</Text>
+                    </Text>
+                  </View>
+
+                  <View style={styles.heroGramCol}>
+                    <Text style={styles.heroGramLabel}>炭水化物(C)</Text>
+                    <Text style={[styles.heroGramVal, { color: '#a855f7' }]}>
+                      {computedModeValues.carbsDisplay}<Text style={styles.heroGramUnit}>g</Text>
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
               {/* ===== モード 1: 総カロリー ＋ PFCバランス ===== */}
               {settingMode === 'cal_pfc' && (
                 <View style={styles.modeSection}>
                   <Text style={styles.hintText}>
-                    総カロリーとPFCの割合(%)を指定して、各マクロ栄養素の目標(g)を自動計算します。（初期比率: P20% / F20% / C60%）
+                    総カロリーとPFCの比率(%)を指定すると、上の各グラム数がリアルタイムで更新されます。
                   </Text>
 
                   <Text style={styles.inputLabelCol}>目標総カロリー (kcal)</Text>
@@ -431,27 +480,51 @@ export default function NutritionSettingsModal({
                     </TouchableOpacity>
                   </View>
 
+                  {/* 比率コントロール */}
                   <Text style={styles.label}>PFCバランス比率 (%)</Text>
                   <View style={styles.grid3}>
+                    {/* P */}
                     <View style={styles.col3}>
-                      <Text style={[styles.inputLabel, { color: '#06b6d4' }]}>P (タンパク質 %)</Text>
-                      <TextInput style={styles.input} keyboardType="numeric" value={ratioP} onChangeText={setRatioP} />
+                      <Text style={[styles.inputLabel, { color: '#38bdf8' }]}>P (タンパク質 %)</Text>
+                      <View style={styles.adjustInputRow}>
+                        <TouchableOpacity style={styles.stepBtn} onPress={() => adjustRatio(setRatioP, ratioP, -1)}>
+                          <Text style={styles.stepBtnText}>-</Text>
+                        </TouchableOpacity>
+                        <TextInput style={styles.inputStep} keyboardType="numeric" value={ratioP} onChangeText={setRatioP} />
+                        <TouchableOpacity style={styles.stepBtn} onPress={() => adjustRatio(setRatioP, ratioP, 1)}>
+                          <Text style={styles.stepBtnText}>+</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
+
+                    {/* F */}
                     <View style={styles.col3}>
                       <Text style={[styles.inputLabel, { color: '#f59e0b' }]}>F (脂質 %)</Text>
-                      <TextInput style={styles.input} keyboardType="numeric" value={ratioF} onChangeText={setRatioF} />
+                      <View style={styles.adjustInputRow}>
+                        <TouchableOpacity style={styles.stepBtn} onPress={() => adjustRatio(setRatioF, ratioF, -1)}>
+                          <Text style={styles.stepBtnText}>-</Text>
+                        </TouchableOpacity>
+                        <TextInput style={styles.inputStep} keyboardType="numeric" value={ratioF} onChangeText={setRatioF} />
+                        <TouchableOpacity style={styles.stepBtn} onPress={() => adjustRatio(setRatioF, ratioF, 1)}>
+                          <Text style={styles.stepBtnText}>+</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
+
+                    {/* C */}
                     <View style={styles.col3}>
                       <Text style={[styles.inputLabel, { color: '#a855f7' }]}>C (炭水化物 %)</Text>
-                      <TextInput style={styles.input} keyboardType="numeric" value={ratioC} onChangeText={setRatioC} />
+                      <View style={styles.adjustInputRow}>
+                        <TouchableOpacity style={styles.stepBtn} onPress={() => adjustRatio(setRatioC, ratioC, -1)}>
+                          <Text style={styles.stepBtnText}>-</Text>
+                        </TouchableOpacity>
+                        <TextInput style={styles.inputStep} keyboardType="numeric" value={ratioC} onChangeText={setRatioC} />
+                        <TouchableOpacity style={styles.stepBtn} onPress={() => adjustRatio(setRatioC, ratioC, 1)}>
+                          <Text style={styles.stepBtnText}>+</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   </View>
-                  <Text style={[
-                    styles.sumRatioText,
-                    computedModeValues.ratioSum === 100 ? styles.sumRatioOk : styles.sumRatioWarn
-                  ]}>
-                    比率合計: {computedModeValues.ratioSum}% {computedModeValues.ratioSum === 100 ? '✅ 100%' : '⚠️ (100%になるよう調整してください)'}
-                  </Text>
                 </View>
               )}
 
@@ -459,29 +532,7 @@ export default function NutritionSettingsModal({
               {settingMode === 'pfc_p' && (
                 <View style={styles.modeSection}>
                   <Text style={styles.hintText}>
-                    指定したPFC比率とタンパク質目標量 P(g) から、必要総カロリーおよび F(g), C(g) を自動設定します。（初期値: 体重×1.6g）
-                  </Text>
-
-                  <Text style={styles.label}>PFCバランス比率 (%)</Text>
-                  <View style={styles.grid3}>
-                    <View style={styles.col3}>
-                      <Text style={[styles.inputLabel, { color: '#06b6d4' }]}>P (タンパク質 %)</Text>
-                      <TextInput style={styles.input} keyboardType="numeric" value={ratioP} onChangeText={setRatioP} />
-                    </View>
-                    <View style={styles.col3}>
-                      <Text style={[styles.inputLabel, { color: '#f59e0b' }]}>F (脂質 %)</Text>
-                      <TextInput style={styles.input} keyboardType="numeric" value={ratioF} onChangeText={setRatioF} />
-                    </View>
-                    <View style={styles.col3}>
-                      <Text style={[styles.inputLabel, { color: '#a855f7' }]}>C (炭水化物 %)</Text>
-                      <TextInput style={styles.input} keyboardType="numeric" value={ratioC} onChangeText={setRatioC} />
-                    </View>
-                  </View>
-                  <Text style={[
-                    styles.sumRatioText,
-                    computedModeValues.ratioSum === 100 ? styles.sumRatioOk : styles.sumRatioWarn
-                  ]}>
-                    比率合計: {computedModeValues.ratioSum}% {computedModeValues.ratioSum === 100 ? '✅ 100%' : '⚠️ (100%になるよう調整してください)'}
+                    指定したPFC比率とタンパク質目標量 P(g) から、必要総カロリーおよび F(g), C(g) が連動更新されます。
                   </Text>
 
                   <Text style={styles.inputLabelCol}>タンパク質目標量 P (g)</Text>
@@ -504,6 +555,52 @@ export default function NutritionSettingsModal({
                       <Text style={styles.subActionBtnText}>体重×1.6gをセット</Text>
                     </TouchableOpacity>
                   </View>
+
+                  {/* 比率コントロール */}
+                  <Text style={styles.label}>PFCバランス比率 (%)</Text>
+                  <View style={styles.grid3}>
+                    {/* P */}
+                    <View style={styles.col3}>
+                      <Text style={[styles.inputLabel, { color: '#38bdf8' }]}>P (タンパク質 %)</Text>
+                      <View style={styles.adjustInputRow}>
+                        <TouchableOpacity style={styles.stepBtn} onPress={() => adjustRatio(setRatioP, ratioP, -1)}>
+                          <Text style={styles.stepBtnText}>-</Text>
+                        </TouchableOpacity>
+                        <TextInput style={styles.inputStep} keyboardType="numeric" value={ratioP} onChangeText={setRatioP} />
+                        <TouchableOpacity style={styles.stepBtn} onPress={() => adjustRatio(setRatioP, ratioP, 1)}>
+                          <Text style={styles.stepBtnText}>+</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+
+                    {/* F */}
+                    <View style={styles.col3}>
+                      <Text style={[styles.inputLabel, { color: '#f59e0b' }]}>F (脂質 %)</Text>
+                      <View style={styles.adjustInputRow}>
+                        <TouchableOpacity style={styles.stepBtn} onPress={() => adjustRatio(setRatioF, ratioF, -1)}>
+                          <Text style={styles.stepBtnText}>-</Text>
+                        </TouchableOpacity>
+                        <TextInput style={styles.inputStep} keyboardType="numeric" value={ratioF} onChangeText={setRatioF} />
+                        <TouchableOpacity style={styles.stepBtn} onPress={() => adjustRatio(setRatioF, ratioF, 1)}>
+                          <Text style={styles.stepBtnText}>+</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+
+                    {/* C */}
+                    <View style={styles.col3}>
+                      <Text style={[styles.inputLabel, { color: '#a855f7' }]}>C (炭水化物 %)</Text>
+                      <View style={styles.adjustInputRow}>
+                        <TouchableOpacity style={styles.stepBtn} onPress={() => adjustRatio(setRatioC, ratioC, -1)}>
+                          <Text style={styles.stepBtnText}>-</Text>
+                        </TouchableOpacity>
+                        <TextInput style={styles.inputStep} keyboardType="numeric" value={ratioC} onChangeText={setRatioC} />
+                        <TouchableOpacity style={styles.stepBtn} onPress={() => adjustRatio(setRatioC, ratioC, 1)}>
+                          <Text style={styles.stepBtnText}>+</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
                 </View>
               )}
 
@@ -516,7 +613,7 @@ export default function NutritionSettingsModal({
                   <View style={styles.grid2}>
                     {[
                       { label: '目標カロリー (kcal)', val: calories, setter: setCalories, color: '#10b981' },
-                      { label: 'タンパク質 (g)',     val: protein,  setter: setProtein,  color: '#06b6d4' },
+                      { label: 'タンパク質 (g)',     val: protein,  setter: setProtein,  color: '#38bdf8' },
                       { label: '脂質 (g)',           val: fat,      setter: setFat,      color: '#f59e0b' },
                       { label: '炭水化物 (g)',       val: carbs,    setter: setCarbs,    color: '#a855f7' },
                     ].map((item) => (
@@ -534,31 +631,35 @@ export default function NutritionSettingsModal({
                 </View>
               )}
 
-              {/* 💡 リアルタイム算出プレビュー（モード1・モード2用） */}
+              {/* 🌟 2. 下部：合計比率 ＆ リセットボタン ＆ アナウンス (参考画像スタイル) */}
               {settingMode !== 'manual' && (
-                <View style={styles.previewBox}>
-                  <Text style={styles.previewTitle}>💡 算出される設定目標値</Text>
-                  <View style={styles.previewRow}>
-                    <Text style={styles.previewCal}>
-                      総カロリー: <Text style={styles.previewCalVal}>{computedModeValues.calories}</Text> kcal
+                <View style={styles.pfcFooterCard}>
+                  <View style={styles.pfcFooterTopRow}>
+                    <Text style={styles.pfcTotalLabel}>
+                      合計 <Text style={[
+                        styles.pfcTotalVal,
+                        computedModeValues.ratioSum === 100 ? styles.pfcTotalOk : styles.pfcTotalWarn
+                      ]}>{computedModeValues.ratioSum}%</Text>
                     </Text>
+
+                    <TouchableOpacity style={styles.resetRatioBtn} onPress={handleResetRatio}>
+                      <Text style={styles.resetRatioBtnText}>リセット</Text>
+                    </TouchableOpacity>
                   </View>
-                  <View style={styles.previewPfcRow}>
-                    <Text style={[styles.previewPfcItem, { color: '#06b6d4' }]}>
-                      P: {computedModeValues.protein}g
-                    </Text>
-                    <Text style={[styles.previewPfcItem, { color: '#f59e0b' }]}>
-                      F: {computedModeValues.fat}g
-                    </Text>
-                    <Text style={[styles.previewPfcItem, { color: '#a855f7' }]}>
-                      C: {computedModeValues.carbs}g
-                    </Text>
-                  </View>
+
+                  <Text style={styles.pfcNoticeText}>
+                    {computedModeValues.ratioSum === 100
+                      ? '✅ PFC比率の合計が100%になっています。'
+                      : '⚠️ PFC比率の合計は100%にしてください。'}
+                  </Text>
+                  <Text style={styles.pfcSubNoticeText}>
+                    💡 厚生労働省の「日本人の食事摂取基準」に沿ったバランス（P13-20% / F20-30% / C50-65%）を推奨します。
+                  </Text>
                 </View>
               )}
 
               {/* 塩分・食物繊維（全モード共通） */}
-              <View style={[styles.grid2, { marginTop: 12 }]}>
+              <View style={[styles.grid2, { marginTop: 14 }]}>
                 <View style={styles.col2}>
                   <Text style={[styles.inputLabel, { color: '#f43f5e' }]}>塩分相当量 (g)</Text>
                   <TextInput style={styles.input} keyboardType="numeric" value={sodium} onChangeText={setSodium} />
@@ -635,7 +736,7 @@ const styles = StyleSheet.create({
   longChipActive: { backgroundColor: '#4facfe22', borderColor: '#4facfe' },
   longChipText: { fontSize: 12, color: '#94a3b8' },
   longChipTextActive: { color: '#4facfe', fontWeight: '700' },
-  grid3: { flexDirection: 'row', gap: 8 },
+  grid3: { flexDirection: 'row', gap: 6 },
   col3: { flex: 1 },
   grid2: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   col2: { width: '48%' },
@@ -650,27 +751,51 @@ const styles = StyleSheet.create({
   applyBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 
   /* モード切替タブスタイル */
-  modeTabContainer: { flexDirection: 'row', backgroundColor: '#0f172a', borderRadius: 10, padding: 3, marginBottom: 10 },
+  modeTabContainer: { flexDirection: 'row', backgroundColor: '#0f172a', borderRadius: 10, padding: 3, marginBottom: 12 },
   modeTabBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
   modeTabBtnActive: { backgroundColor: '#10b981' },
   modeTabBtnText: { fontSize: 11, fontWeight: '600', color: '#94a3b8' },
   modeTabBtnTextActive: { color: '#ffffff', fontWeight: '700' },
 
+  /* 🌟 参考画像スタイルの大型リアルタイム連動表示カード */
+  pfcDisplayHeroCard: {
+    backgroundColor: '#0f172a',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#10b98144',
+    alignItems: 'center',
+  },
+  heroCalText: { fontSize: 12, color: '#94a3b8', fontWeight: '600', marginBottom: 8 },
+  heroCalVal: { color: '#10b981', fontSize: 16, fontWeight: '700' },
+  heroGramGrid: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', paddingTop: 4 },
+  heroGramCol: { alignItems: 'center', flex: 1 },
+  heroGramLabel: { fontSize: 12, fontWeight: '600', color: '#94a3b8', marginBottom: 4 },
+  heroGramVal: { fontSize: 20, fontWeight: '800' },
+  heroGramUnit: { fontSize: 13, fontWeight: '600' },
+
   modeSection: { marginTop: 4 },
   subActionBtn: { backgroundColor: '#0f172a', borderWidth: 1, borderColor: '#334155', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8 },
   subActionBtnText: { fontSize: 11, color: '#38bdf8', fontWeight: '600' },
-  sumRatioText: { fontSize: 11, marginTop: 4, fontWeight: '600' },
-  sumRatioOk: { color: '#10b981' },
-  sumRatioWarn: { color: '#f59e0b' },
 
-  /* プレビューボックス */
-  previewBox: { marginTop: 12, backgroundColor: '#0f172a', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#38bdf844' },
-  previewTitle: { fontSize: 12, fontWeight: '700', color: '#38bdf8', marginBottom: 4 },
-  previewRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  previewCal: { fontSize: 13, color: '#f8fafc', fontWeight: '600' },
-  previewCalVal: { color: '#10b981', fontSize: 16, fontWeight: '700' },
-  previewPfcRow: { flexDirection: 'row', gap: 12, marginTop: 4 },
-  previewPfcItem: { fontSize: 12, fontWeight: '700' },
+  /* 比率ステップ調整付き入力ボックス */
+  adjustInputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f172a', borderRadius: 8, borderWidth: 1, borderColor: '#334155', overflow: 'hidden' },
+  stepBtn: { width: 28, height: 36, backgroundColor: '#1e293b', justifyContent: 'center', alignItems: 'center' },
+  stepBtnText: { fontSize: 16, fontWeight: '700', color: '#38bdf8' },
+  inputStep: { flex: 1, textAlign: 'center', color: '#f8fafc', fontSize: 14, fontWeight: '600', paddingVertical: 6 },
+
+  /* 🌟 参考画像スタイルの下部合計・リセットカード */
+  pfcFooterCard: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#334155' },
+  pfcFooterTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  pfcTotalLabel: { fontSize: 14, fontWeight: '600', color: '#f8fafc' },
+  pfcTotalVal: { fontSize: 18, fontWeight: '800' },
+  pfcTotalOk: { color: '#10b981' },
+  pfcTotalWarn: { color: '#f59e0b' },
+  resetRatioBtn: { backgroundColor: '#0f172a', borderWidth: 1, borderColor: '#38bdf8', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16 },
+  resetRatioBtnText: { fontSize: 12, fontWeight: '700', color: '#38bdf8' },
+  pfcNoticeText: { fontSize: 12, fontWeight: '600', color: '#94a3b8', marginBottom: 4 },
+  pfcSubNoticeText: { fontSize: 11, color: '#64748b', lineHeight: 16 },
 
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 8 },
   switchLabel: { fontSize: 13, fontWeight: '600', color: '#f8fafc' },

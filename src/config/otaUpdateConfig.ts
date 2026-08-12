@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.20',
+  version: '1.8.21',
   title: {
-    ja: '栄養目標の手動設定に3つの入力モードを追加',
-    en: 'Added 3 Input Modes for Manual Nutrition Target Setting',
+    ja: 'PFCバランス設定の%・g数リアルタイム連動機能',
+    en: 'Real-time PFC Gram & Ratio Sync in Nutrition Settings',
   },
   notes: {
     ja: [
-      '🎯 栄養目標の手動設定で「①総カロリー+PFC比」「②PFC比+P(g)量」「③完全手動」の3モードを切替可能になりました。',
-      '✨ モードに応じたPFCグラム数や目標カロリーのリアルタイム自動計算機能を搭載しました。',
+      '🥗 PFCバランス設定に%とg数がリアルタイムで連動する表示カードを追加しました。',
+      '✨ 比率(%)を微調整しながら目標グラム数や総カロリーを直感的に確かめて設定できます。',
     ],
     en: [
-      '🎯 Added 3 selectable modes for manual nutrition settings: Total Calorie + PFC Ratio, PFC Ratio + Protein Amount, and Full Manual.',
-      '✨ Real-time auto-calculation of PFC grams and target calories based on selected mode.',
+      '🥗 Added real-time sync card between PFC percentage and target grams in nutrition settings.',
+      '✨ Easily verify and adjust target grams and total calories while tuning ratios.',
     ],
   },
 };
