@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.1',
+  version: '1.8.2',
   title: {
-    ja: 'アップデート自動即時反映機能の追加',
-    en: 'Auto App Reload & Immediate Update',
+    ja: '入力欄デザインの微調整',
+    en: 'UI Polish for Workout Input',
   },
   notes: {
     ja: [
-      '⚡ 更新通知ポップアップの「今すぐ再起動して反映」を押すと、アプリが自動再起動され即時に最新機能が反映されるようになりました。',
+      '✨ 筋トレ記録の入力欄の高さをスリムに調整し、画面の視認性を向上させました。',
     ],
     en: [
-      '⚡ Pressing "Restart App & Apply" automatically restarts the app to immediately apply new updates.',
+      '✨ Refined the height of workout set input boxes for a sleeker look and better visibility.',
     ],
   },
 };
