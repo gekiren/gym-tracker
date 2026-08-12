@@ -129,22 +129,13 @@ export function CompactSwipeableInput({
         isDragging.value ? Theme.colors.primary : (style as any)?.color || Theme.colors.text,
         { duration: 100 }
       ),
-      transform: [
-        {
-          scale: withTiming(isDragging.value ? 1.08 : 1, { duration: 100 }),
-        },
-      ],
     };
   });
 
   const dragContainerStyle = useAnimatedStyle(() => {
     return {
       backgroundColor: withTiming(
-        isDragging.value ? 'rgba(74, 144, 226, 0.25)' : ((style as any)?.backgroundColor || '#2a2a2a'),
-        { duration: 100 }
-      ),
-      borderColor: withTiming(
-        isDragging.value ? Theme.colors.primary : 'transparent',
+        isDragging.value ? 'rgba(74, 144, 226, 0.3)' : ((style as any)?.backgroundColor || '#2a2a2a'),
         { duration: 100 }
       ),
     };
@@ -181,7 +172,7 @@ export function CompactSwipeableInput({
 
   return (
     <GestureDetector gesture={gesture}>
-      <Animated.View style={[style, styles.baseBox, dragContainerStyle]}>
+      <Animated.View style={[styles.baseBox, style, dragContainerStyle]}>
         <Animated.Text
           numberOfLines={1}
           style={[styles.baseText, style as any, dragTextStyle]}
@@ -197,10 +188,8 @@ const styles = StyleSheet.create({
   baseBox: {
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
   },
   baseText: {
     textAlign: 'center',
-    fontWeight: 'bold',
   },
 });
