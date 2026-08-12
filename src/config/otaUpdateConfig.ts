@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.15',
+  version: '1.8.16',
   title: {
-    ja: '水分補給画面の全幅デザイン統一',
-    en: 'Water Intake Full-Width Layout Update',
+    ja: '水分補給履歴グラフのデザイン統一',
+    en: 'Water History Chart Design Update',
   },
   notes: {
     ja: [
-      '💧 水分補給画面のレイアウトをダッシュボード画面と統一し、横幅全体を使った角丸なしのフラットなデザインに変更しました。',
+      '💧 水分補給の履歴グラフを筋トレ履歴グラフと同様の美しいSVGグラデーションエリアチャート＆サマリーカードデザインに統一しました。',
     ],
     en: [
-      '💧 Updated the Water Intake screen layout to be full-width without rounded cards, matching the Dashboard screen style.',
+      '💧 Updated the Water history chart to match the workout history SVG gradient area chart and summary card design.',
     ],
   },
 };

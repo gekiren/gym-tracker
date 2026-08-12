@@ -8,8 +8,9 @@ import {
   ActivityIndicator,
   FlatList,
   Modal,
+  Dimensions,
 } from 'react-native';
-import { BarChart } from 'react-native-chart-kit';
+import Svg, { Path, Circle, Line, Defs, LinearGradient, Stop, Text as SvgText, Rect, G } from 'react-native-svg';
 import { format, startOfWeek, startOfMonth } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
@@ -31,12 +32,33 @@ interface LifelogHistoryTabProps {
   t: (key: string, options?: any) => string;
 }
 
+interface ChartPoint {
+  id: string;
+  label: string;
+  dateStr: string;
+  value: number;
+  subValue?: number; // e.g. caffeine amount when viewing water
+  date: Date;
+}
+
+// Linear Path Generator
+function createLinearPath(points: { x: number; y: number }[]): string {
+  if (points.length === 0) return '';
+  let path = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    path += ` L ${points[i].x} ${points[i].y}`;
+  }
+  return path;
+}
+
 export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t }) => {
   const [loading, setLoading] = useState(true);
   const [chartScale, setChartScale] = useState<'day' | 'week' | 'month' | 'year'>('day');
   const [chartMetric, setChartMetric] = useState<'amount' | 'caffeine'>('amount'); // for water
   const [selectedFilter, setSelectedFilter] = useState<string>('all'); // tag, habitId, or routineId
   const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [metricModalVisible, setMetricModalVisible] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   // Raw Database Data
   const [waterLogs, setWaterLogs] = useState<WaterLog[]>([]);
@@ -125,25 +147,28 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
     return matched ? matched.name : t('ui.history.filter_all') || 'すべて';
   }, [selectedFilter, filtersList, t]);
 
-  // Reset filter when type changes
+  // Reset filter & selected index when type changes
   useEffect(() => {
     setSelectedFilter('all');
+    setSelectedIndex(null);
   }, [type]);
 
-  // 2. Filtered & Aggregated Data for Chart
-  const chartData = useMemo(() => {
-    const aggregated: { [key: string]: { date: Date; value: number } } = {};
+  // 2. Filtered & Aggregated Data Points for SVG Chart
+  const chartPoints = useMemo<ChartPoint[]>(() => {
+    const aggregated: { [key: string]: { date: Date; value: number; subValue: number } } = {};
 
-    const addVal = (key: string, date: Date, val: number) => {
+    const addVal = (key: string, date: Date, val: number, subVal: number = 0) => {
       if (!aggregated[key]) {
-        aggregated[key] = { date, value: 0 };
+        aggregated[key] = { date, value: 0, subValue: 0 };
       }
       aggregated[key].value += val;
+      aggregated[key].subValue += subVal;
     };
 
     if (type === 'water') {
       waterLogs.forEach((log) => {
         const val = chartMetric === 'amount' ? log.amount : log.caffeine || 0;
+        const subVal = chartMetric === 'amount' ? (log.caffeine || 0) : log.amount;
         const date = parseLogDate(log.date);
         let key = '';
 
@@ -156,7 +181,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
         } else if (chartScale === 'year') {
           key = new Date(date.getFullYear(), 0, 1).toISOString();
         }
-        addVal(key, date, val);
+        addVal(key, date, val, subVal);
       });
     } else if (type === 'time') {
       timeLogs.forEach((log) => {
@@ -218,10 +243,10 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
     }
 
     const sorted = Object.values(aggregated).sort((a, b) => a.date.getTime() - b.date.getTime());
-    if (sorted.length === 0) return null;
+    if (sorted.length === 0) return [];
 
-    const recent = sorted.slice(-50);
-    const fmtStr =
+    const recent = sorted.slice(-40);
+    const fmtLabel =
       chartScale === 'day'
         ? 'MM/dd'
         : chartScale === 'week'
@@ -230,15 +255,32 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
         ? 'yyyy/MM'
         : 'yyyy';
 
-    return {
-      labels: recent.map((item) => format(item.date, fmtStr)),
-      datasets: [
-        {
-          data: recent.map((item) => parseFloat(item.value.toFixed(1))),
-        },
-      ],
+    const fmtDateStr = (date: Date) => {
+      if (chartScale === 'day') return format(date, 'yyyy/MM/dd (eee)');
+      if (chartScale === 'week') return `${format(date, 'yyyy/MM/dd')}週`;
+      if (chartScale === 'month') return format(date, 'yyyy年M月');
+      return format(date, 'yyyy年');
     };
+
+    return recent.map((item) => ({
+      id: item.date.toISOString(),
+      label: format(item.date, fmtLabel),
+      dateStr: fmtDateStr(item.date),
+      value: parseFloat(item.value.toFixed(1)),
+      subValue: parseFloat(item.subValue.toFixed(1)),
+      date: item.date,
+    }));
   }, [type, waterLogs, timeLogs, habitLogs, routines, chartScale, chartMetric, selectedFilter]);
+
+  // Active Selected Point Calculation
+  const activeIndex =
+    selectedIndex !== null && selectedIndex < chartPoints.length
+      ? selectedIndex
+      : chartPoints.length > 0
+      ? chartPoints.length - 1
+      : null;
+
+  const activePoint = activeIndex !== null ? chartPoints[activeIndex] : null;
 
   // 3. Detailed List Data Grouped by Date (for List display)
   const listItems = useMemo(() => {
@@ -295,12 +337,12 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
 
   // Scroll to end of chart when data loads or changes
   useEffect(() => {
-    if (chartData && chartScrollRef.current) {
+    if (chartPoints.length > 0 && chartScrollRef.current) {
       setTimeout(() => {
         chartScrollRef.current?.scrollToEnd({ animated: false });
       }, 100);
     }
-  }, [chartData, chartScale, chartMetric, selectedFilter]);
+  }, [chartPoints.length, chartScale, chartMetric, selectedFilter]);
 
   if (loading) {
     return (
@@ -309,6 +351,75 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
       </View>
     );
   }
+
+  // Header Title Text
+  const getChartTitleText = () => {
+    if (type === 'water') {
+      return chartMetric === 'amount'
+        ? (t('ui.history.chart_title_water') || '最近の水分摂取量 (ml)')
+        : (t('ui.history.chart_title_caffeine') || '最近のカフェイン摂取量 (mg)');
+    } else if (type === 'time') {
+      return selectedFilter === 'all'
+        ? (t('ui.history.chart_title_time') || '最近の活動時間 (時間)')
+        : (t('ui.history.chart_title_time_tag', { tag: selectedFilter }) || `最近の${selectedFilter}時間 (時間)`);
+    } else if (type === 'habit') {
+      return selectedFilter === 'all'
+        ? (t('ui.history.chart_title_habit') || '最近の習慣達成回数')
+        : (t('ui.history.chart_title_habit_item', { item: selectedFilterName }) || `最近の${selectedFilterName}達成回数`);
+    } else {
+      return selectedFilter === 'all'
+        ? (t('ui.history.chart_title_routine') || '最近のルーティン達成回数')
+        : (t('ui.history.chart_title_routine_item', { item: selectedFilterName }) || `最近の${selectedFilterName}達成回数`);
+    }
+  };
+
+  // Formatted Unit for Summary Card
+  const getFormattedSummary = (point: ChartPoint) => {
+    if (type === 'water') {
+      if (chartMetric === 'amount') {
+        return { valStr: Math.round(point.value).toLocaleString(), unitStr: 'ml' };
+      } else {
+        return { valStr: Math.round(point.value).toLocaleString(), unitStr: 'mg' };
+      }
+    } else if (type === 'time') {
+      return { valStr: point.value.toFixed(1), unitStr: t('ui.history.unit_hours') || '時間' };
+    } else {
+      return { valStr: Math.round(point.value).toLocaleString(), unitStr: t('ui.history.unit_times') || '回' };
+    }
+  };
+
+  // SVG Dimension & Coordinate Calculations
+  const containerWidth = Dimensions.get('window').width - 32;
+  const targetDisplayCount = 7;
+  const pointWidth = Math.max(48, Math.floor(containerWidth / targetDisplayCount));
+  const svgHeight = 180;
+  const paddingTop = 45;
+  const paddingBottom = 35;
+  const drawHeight = svgHeight - paddingTop - paddingBottom;
+  const svgWidth = Math.max(containerWidth, chartPoints.length * pointWidth);
+
+  // Maximum scale logic
+  let maxVal = Math.max(0.001, ...chartPoints.map((p) => p.value));
+  let goalY: number | null = null;
+
+  if (type === 'water' && chartMetric === 'amount' && waterGoal > 0) {
+    maxVal = Math.max(maxVal, waterGoal * 1.15);
+    const goalNorm = waterGoal / maxVal;
+    goalY = svgHeight - paddingBottom - goalNorm * drawHeight;
+  }
+
+  const coords = chartPoints.map((p, idx) => {
+    const x = (idx + 0.5) * pointWidth;
+    const valNorm = maxVal > 0 ? p.value / maxVal : 0;
+    const y = svgHeight - paddingBottom - valNorm * drawHeight;
+    return { x, y, point: p, idx };
+  });
+
+  const linearPath = createLinearPath(coords.map((c) => ({ x: c.x, y: c.y })));
+  const areaPath =
+    coords.length > 0
+      ? `${linearPath} L ${coords[coords.length - 1].x} ${svgHeight - paddingBottom} L ${coords[0].x} ${svgHeight - paddingBottom} Z`
+      : '';
 
   const renderFilterModal = () => {
     return (
@@ -336,6 +447,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   ]}
                   onPress={() => {
                     setSelectedFilter(item.id);
+                    setSelectedIndex(null);
                     setFilterModalVisible(false);
                   }}
                 >
@@ -359,24 +471,80 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
     );
   };
 
-  const getChartTitle = () => {
-    if (type === 'water') {
-      return chartMetric === 'amount'
-        ? t('ui.history.chart_title_water')
-        : t('ui.history.chart_title_caffeine');
-    } else if (type === 'time') {
-      return selectedFilter === 'all'
-        ? t('ui.history.chart_title_time')
-        : t('ui.history.chart_title_time_tag', { tag: selectedFilter });
-    } else if (type === 'habit') {
-      return selectedFilter === 'all'
-        ? t('ui.history.chart_title_habit')
-        : t('ui.history.chart_title_habit_item', { item: selectedFilterName });
-    } else {
-      return selectedFilter === 'all'
-        ? t('ui.history.chart_title_routine')
-        : t('ui.history.chart_title_routine_item', { item: selectedFilterName });
-    }
+  const renderMetricModal = () => {
+    return (
+      <Modal
+        visible={metricModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMetricModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setMetricModalVisible(false)}
+        >
+          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="water-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+                <Text style={styles.modalTitle}>
+                  {t('ui.history.metric_select_title') || '表示する指標を選択'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setMetricModalVisible(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="close" size={22} color={Theme.colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.metricOptionItem, chartMetric === 'amount' && styles.metricOptionItemActive]}
+              onPress={() => {
+                setChartMetric('amount');
+                setSelectedIndex(null);
+                setMetricModalVisible(false);
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.optionIconBox, chartMetric === 'amount' && styles.optionIconBoxActive]}>
+                <Ionicons name="water" size={20} color={chartMetric === 'amount' ? Theme.colors.primary : Theme.colors.textMuted} />
+              </View>
+              <View style={styles.optionTextContent}>
+                <Text style={[styles.optionTitle, chartMetric === 'amount' && styles.optionTitleActive]}>
+                  {t('ui.history.metric_water') || '水分量 (ml)'}
+                </Text>
+                <Text style={styles.optionSub}>日々の水分摂取量の推移を表示します</Text>
+              </View>
+              {chartMetric === 'amount' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.metricOptionItem, chartMetric === 'caffeine' && styles.metricOptionItemActive]}
+              onPress={() => {
+                setChartMetric('caffeine');
+                setSelectedIndex(null);
+                setMetricModalVisible(false);
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.optionIconBox, chartMetric === 'caffeine' && styles.optionIconBoxActive]}>
+                <Ionicons name="cafe" size={20} color={chartMetric === 'caffeine' ? Theme.colors.primary : Theme.colors.textMuted} />
+              </View>
+              <View style={styles.optionTextContent}>
+                <Text style={[styles.optionTitle, chartMetric === 'caffeine' && styles.optionTitleActive]}>
+                  {t('ui.history.metric_caffeine') || 'カフェイン (mg)'}
+                </Text>
+                <Text style={styles.optionSub}>カフェイン摂取量の推移を表示します</Text>
+              </View>
+              {chartMetric === 'caffeine' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    );
   };
 
   return (
@@ -386,34 +554,57 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
         keyExtractor={(item) => item.dateStr}
         contentContainerStyle={styles.scrollContent}
         ListHeaderComponent={
-          <>
-            {/* Header / Metric & Filter Selector */}
+          <View style={styles.chartSectionContainer}>
+            {/* Header & Chart Title */}
+            <View style={styles.chartHeaderRow}>
+              <Text style={styles.chartTitle}>{getChartTitleText()}</Text>
+            </View>
+
+            {/* Selectors Row (Scale & Metric/Filter) */}
             <View style={styles.selectorsRow}>
-              {/* Type-Specific metric or item filter selectors */}
-              {type === 'water' ? (
-                <View style={styles.scaleContainer}>
-                  {(['amount', 'caffeine'] as const).map((metric) => (
-                    <TouchableOpacity
-                      key={metric}
+              {/* Day, Week, Month, Year Scale selector */}
+              <View style={styles.scaleContainer}>
+                {(['day', 'week', 'month', 'year'] as const).map((scale) => (
+                  <TouchableOpacity
+                    key={scale}
+                    style={[styles.scaleButton, chartScale === scale && styles.scaleButtonActive]}
+                    onPress={() => {
+                      setChartScale(scale);
+                      setSelectedIndex(null);
+                    }}
+                  >
+                    <Text
                       style={[
-                        styles.scaleButton,
-                        chartMetric === metric && styles.scaleButtonActive,
+                        styles.scaleButtonText,
+                        chartScale === scale && styles.scaleButtonTextActive,
                       ]}
-                      onPress={() => setChartMetric(metric)}
                     >
-                      <Text
-                        style={[
-                          styles.scaleButtonText,
-                          chartMetric === metric && styles.scaleButtonTextActive,
-                        ]}
-                      >
-                        {metric === 'amount'
-                          ? t('ui.history.metric_water') || '水分量'
-                          : t('ui.history.metric_caffeine') || 'カフェイン'}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                      {t(`ui.history.scale_${scale}`)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Type-Specific metric or item filter selector button */}
+              {type === 'water' ? (
+                <TouchableOpacity
+                  style={styles.metricSelectBtn}
+                  onPress={() => setMetricModalVisible(true)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={chartMetric === 'amount' ? 'water' : 'cafe'}
+                    size={14}
+                    color={Theme.colors.primary}
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text style={styles.metricSelectBtnText} numberOfLines={1}>
+                    {chartMetric === 'amount'
+                      ? (t('ui.history.metric_water') || '水分量')
+                      : (t('ui.history.metric_caffeine') || 'カフェイン')}
+                  </Text>
+                  <Ionicons name="chevron-down" size={14} color={Theme.colors.textMuted} style={{ marginLeft: 4 }} />
+                </TouchableOpacity>
               ) : (
                 <TouchableOpacity
                   style={styles.dropdownBtn}
@@ -427,78 +618,222 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   <Ionicons name="chevron-down" size={14} color={Theme.colors.textMuted} />
                 </TouchableOpacity>
               )}
-
-              {/* Day, Week, Month, Year Scale selector */}
-              <View style={styles.scaleContainer}>
-                {(['day', 'week', 'month', 'year'] as const).map((scale) => (
-                  <TouchableOpacity
-                    key={scale}
-                    style={[styles.scaleButton, chartScale === scale && styles.scaleButtonActive]}
-                    onPress={() => setChartScale(scale)}
-                  >
-                    <Text
-                      style={[
-                        styles.scaleButtonText,
-                        chartScale === scale && styles.scaleButtonTextActive,
-                      ]}
-                    >
-                      {t(`ui.history.scale_${scale}`)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
             </View>
 
-            {/* Chart Title */}
-            <Text style={styles.chartTitle}>{getChartTitle()}</Text>
+            {/* Active Selected Point Summary Card */}
+            {activePoint && (
+              <View style={styles.summaryCard}>
+                <View style={styles.summaryLeftContent}>
+                  <Text style={styles.summaryDate}>{activePoint.dateStr}</Text>
+                  <View style={styles.summaryValRow}>
+                    {(() => {
+                      const { valStr, unitStr } = getFormattedSummary(activePoint);
+                      return (
+                        <Text style={styles.summaryVal}>
+                          {valStr}
+                          <Text style={styles.summaryUnit}> {unitStr}</Text>
+                        </Text>
+                      );
+                    })()}
 
-            {/* Chart Render */}
-            {chartData ? (
+                    {type === 'water' && chartMetric === 'amount' && waterGoal > 0 && (
+                      <View
+                        style={[
+                          styles.badge,
+                          activePoint.value >= waterGoal && styles.badgeGoalReached,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.badgeText,
+                            activePoint.value >= waterGoal && styles.badgeTextGoalReached,
+                          ]}
+                        >
+                          {activePoint.value >= waterGoal
+                            ? `目標達成! (${Math.round((activePoint.value / waterGoal) * 100)}%)`
+                            : `目標比 ${Math.round((activePoint.value / waterGoal) * 100)}%`}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                {type === 'water' && activePoint.subValue !== undefined && activePoint.subValue > 0 && (
+                  <View style={styles.summaryRightContent}>
+                    <Text style={styles.summarySubLabel}>
+                      {chartMetric === 'amount' ? 'カフェイン' : '水分量'}
+                    </Text>
+                    <Text style={styles.summarySubVal}>
+                      {chartMetric === 'amount' ? `☕ ${activePoint.subValue}mg` : `💧 ${activePoint.subValue}ml`}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* SVG Linear Area Line Chart Canvas */}
+            {chartPoints.length > 0 ? (
               <View style={styles.chartWrapper}>
                 <ScrollView
                   key={`${chartScale}_${chartMetric}_${selectedFilter}`}
                   ref={chartScrollRef}
                   horizontal
                   showsHorizontalScrollIndicator={false}
+                  onContentSizeChange={() => chartScrollRef.current?.scrollToEnd({ animated: false })}
                   contentContainerStyle={styles.chartScrollContent}
                 >
-                  <BarChart
-                    data={chartData}
-                    width={Math.max(340, chartData.labels.length * 48)}
-                    height={220}
-                    chartConfig={{
-                      backgroundColor: Theme.colors.card,
-                      backgroundGradientFrom: Theme.colors.card,
-                      backgroundGradientTo: Theme.colors.card,
-                      decimalPlaces: type === 'time' ? 1 : 0,
-                      color: (opacity = 1) => `rgba(79, 172, 254, ${opacity})`,
-                      labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                      barPercentage: 0.55,
-                      propsForBackgroundLines: {
-                        stroke: 'rgba(255, 255, 255, 0.05)',
-                        strokeDasharray: '3',
-                      },
-                    }}
-                    withHorizontalLabels={false}
-                    withVerticalLabels={true}
-                    showValuesOnTopOfBars={true}
-                    yAxisLabel=""
-                    yAxisSuffix=""
-                    style={styles.barChartStyle}
-                  />
+                  <View style={{ width: svgWidth, height: svgHeight, position: 'relative' }}>
+                    <Svg width={svgWidth} height={svgHeight} style={StyleSheet.absoluteFill}>
+                      <Defs>
+                        <LinearGradient id="lifelogAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                          <Stop offset="0%" stopColor={Theme.colors.primary} stopOpacity={0.35} />
+                          <Stop offset="100%" stopColor={Theme.colors.primary} stopOpacity={0.0} />
+                        </LinearGradient>
+                      </Defs>
+
+                      {/* Goal Line Target Baseline (Water Goal時) */}
+                      {goalY !== null && (
+                        <>
+                          <Line
+                            x1={0}
+                            y1={goalY}
+                            x2={svgWidth}
+                            y2={goalY}
+                            stroke={Theme.colors.primary}
+                            strokeOpacity={0.4}
+                            strokeDasharray="4,4"
+                            strokeWidth={1.5}
+                          />
+                          <SvgText
+                            x={svgWidth - 10}
+                            y={goalY - 6}
+                            fill={Theme.colors.primary}
+                            fontSize={10}
+                            fontWeight="600"
+                            opacity={0.8}
+                            textAnchor="end"
+                          >
+                            目標 {waterGoal}ml
+                          </SvgText>
+                        </>
+                      )}
+
+                      {/* 50% Horizontal Grid Line */}
+                      <Line
+                        x1={0}
+                        y1={svgHeight - paddingBottom - drawHeight * 0.5}
+                        x2={svgWidth}
+                        y2={svgHeight - paddingBottom - drawHeight * 0.5}
+                        stroke="rgba(255, 255, 255, 0.05)"
+                        strokeWidth={1}
+                      />
+
+                      {/* Area Gradient Fill */}
+                      {areaPath !== '' && <Path d={areaPath} fill="url(#lifelogAreaGrad)" />}
+
+                      {/* Linear Line Path */}
+                      {linearPath !== '' && (
+                        <Path
+                          d={linearPath}
+                          fill="none"
+                          stroke={Theme.colors.primary}
+                          strokeWidth={3}
+                          strokeLinejoin="round"
+                          strokeLinecap="round"
+                        />
+                      )}
+
+                      {/* Data Points & Active Selection Ring */}
+                      {coords.map((c) => {
+                        const isSelected = c.idx === activeIndex;
+                        const isGoalReached =
+                          type === 'water' &&
+                          chartMetric === 'amount' &&
+                          waterGoal > 0 &&
+                          c.point.value >= waterGoal;
+
+                        return (
+                          <G key={c.point.id}>
+                            {/* Vertical Guide Line on Active Selection */}
+                            {isSelected && (
+                              <Line
+                                x1={c.x}
+                                y1={paddingTop - 10}
+                                x2={c.x}
+                                y2={svgHeight - paddingBottom}
+                                stroke={Theme.colors.primary}
+                                strokeOpacity={0.35}
+                                strokeDasharray="3,3"
+                                strokeWidth={1.5}
+                              />
+                            )}
+
+                            {/* Active Halo Outer Ring */}
+                            {isSelected && (
+                              <Circle
+                                cx={c.x}
+                                cy={c.y}
+                                r={10}
+                                fill="none"
+                                stroke={Theme.colors.primary}
+                                strokeOpacity={0.4}
+                                strokeWidth={2}
+                              />
+                            )}
+
+                            {/* Point Circle */}
+                            <Circle
+                              cx={c.x}
+                              cy={c.y}
+                              r={isSelected ? 5.5 : 4}
+                              fill={isGoalReached ? '#00d2ff' : isSelected ? Theme.colors.primary : '#121212'}
+                              stroke={isSelected ? '#ffffff' : Theme.colors.primary}
+                              strokeWidth={isSelected ? 2 : 2.5}
+                            />
+
+                            {/* X-Axis Date Label */}
+                            <SvgText
+                              x={c.x}
+                              y={svgHeight - 10}
+                              fill={isSelected ? Theme.colors.primary : Theme.colors.textMuted}
+                              fontSize={11}
+                              fontWeight={isSelected ? '800' : '600'}
+                              textAnchor="middle"
+                            >
+                              {c.point.label}
+                            </SvgText>
+                          </G>
+                        );
+                      })}
+                    </Svg>
+
+                    {/* Transparent Touch Layer Area for 100% Reliable Tapping */}
+                    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+                      <View style={{ flexDirection: 'row', width: svgWidth, height: svgHeight }}>
+                        {coords.map((c) => (
+                          <TouchableOpacity
+                            key={`touch_${c.point.id}`}
+                            style={{ width: pointWidth, height: svgHeight }}
+                            activeOpacity={0.7}
+                            onPress={() => setSelectedIndex(c.idx)}
+                          />
+                        ))}
+                      </View>
+                    </View>
+                  </View>
                 </ScrollView>
               </View>
             ) : (
               <View style={styles.emptyChart}>
-                <Text style={styles.emptyText}>{t('ui.history.empty_state')}</Text>
+                <Text style={styles.emptyText}>{t('ui.history.empty_state') || 'データがありません'}</Text>
               </View>
             )}
 
             {/* History List Header */}
             <Text style={styles.listSectionTitle}>
-              {t('ui.history.section_history')}
+              {t('ui.history.section_history') || '過去の履歴'}
             </Text>
-          </>
+          </View>
         }
         renderItem={({ item }) => {
           return (
@@ -507,20 +842,20 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                 <Text style={styles.historyDateText}>{item.dateStr}</Text>
                 {type === 'water' && (
                   <Text style={styles.cardTotalText}>
-                    {t('ui.history.total_label')}: {item.totalAmount}ml / {waterGoal}ml
+                    {t('ui.history.total_label') || '合計'}: {item.totalAmount}ml / {waterGoal}ml
                     {item.totalCaffeine > 0 ? ` (☕ ${item.totalCaffeine}mg)` : ''}
                   </Text>
                 )}
                 {type === 'time' && (
                   <Text style={styles.cardTotalText}>
-                    {t('ui.history.logged_time')}: {item.totalHours.toFixed(1)}{t('ui.history.unit_hours')}
+                    {t('ui.history.logged_time') || '記録時間'}: {item.totalHours.toFixed(1)}{t('ui.history.unit_hours') || '時間'}
                   </Text>
                 )}
                 {type === 'habit' && (
-                  <Text style={styles.cardTotalText}>{t('ui.history.count_label_unit')}: {item.items.length}{t('ui.history.unit_times')}</Text>
+                  <Text style={styles.cardTotalText}>{t('ui.history.count_label_unit') || '回数'}: {item.items.length}{t('ui.history.unit_times') || '回'}</Text>
                 )}
                 {type === 'routine' && (
-                  <Text style={styles.cardTotalText}>{t('ui.history.completed_label')}: {item.items.length}{t('ui.history.unit_items')}</Text>
+                  <Text style={styles.cardTotalText}>{t('ui.history.completed_label') || '完了'}: {item.items.length}{t('ui.history.unit_items') || '件'}</Text>
                 )}
               </View>
 
@@ -593,6 +928,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
         }
       />
       {renderFilterModal()}
+      {renderMetricModal()}
     </View>
   );
 };
@@ -601,12 +937,26 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scrollContent: { padding: Theme.spacing.md, paddingBottom: 100 },
+  chartSectionContainer: {
+    marginBottom: Theme.spacing.md,
+  },
+  chartHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Theme.spacing.sm,
+  },
+  chartTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 0,
+  },
   selectorsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: Theme.spacing.md,
-    gap: 8,
   },
   scaleContainer: {
     flexDirection: 'row',
@@ -617,7 +967,7 @@ const styles = StyleSheet.create({
     borderColor: Theme.colors.border,
   },
   scaleButton: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 6,
   },
@@ -632,6 +982,23 @@ const styles = StyleSheet.create({
   scaleButtonTextActive: {
     color: Theme.colors.primary,
     fontWeight: 'bold',
+  },
+  metricSelectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(79, 172, 254, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(79, 172, 254, 0.35)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    maxWidth: 160,
+  },
+  metricSelectBtnText: {
+    color: Theme.colors.primary,
+    fontSize: 12,
+    fontWeight: 'bold',
+    maxWidth: 100,
   },
   dropdownBtn: {
     flexDirection: 'row',
@@ -651,26 +1018,85 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     flexShrink: 1,
   },
-  chartTitle: {
-    color: '#fff',
-    fontSize: 15,
+  summaryCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: Theme.borderRadius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: Theme.spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  summaryLeftContent: {
+    flex: 1,
+    marginRight: 10,
+  },
+  summaryDate: {
+    color: Theme.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  summaryValRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  summaryVal: {
+    color: Theme.colors.text,
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  summaryUnit: {
+    color: Theme.colors.textMuted,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  summaryRightContent: {
+    alignItems: 'flex-end',
+  },
+  summarySubLabel: {
+    color: Theme.colors.textMuted,
+    fontSize: 10,
+    marginBottom: 2,
+  },
+  summarySubVal: {
+    color: Theme.colors.text,
+    fontSize: 13,
     fontWeight: 'bold',
-    marginBottom: Theme.spacing.sm,
+  },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  badgeGoalReached: {
+    backgroundColor: 'rgba(0, 210, 255, 0.15)',
+  },
+  badgeText: {
+    color: Theme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  badgeTextGoalReached: {
+    color: '#00d2ff',
   },
   chartWrapper: {
     backgroundColor: Theme.colors.card,
     borderRadius: Theme.borderRadius.md,
     overflow: 'hidden',
     marginBottom: Theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
   },
   chartScrollContent: {
-    paddingLeft: 15,
-    paddingRight: 20,
-  },
-  barChartStyle: {
-    marginLeft: -10,
-    paddingRight: 16,
-    paddingTop: 12,
+    paddingLeft: 10,
+    paddingRight: 10,
   },
   emptyChart: {
     height: 180,
@@ -687,7 +1113,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: Theme.spacing.md,
-    marginTop: Theme.spacing.sm,
+    marginTop: Theme.spacing.xs,
   },
   historyCard: {
     backgroundColor: Theme.colors.card,
@@ -769,17 +1195,21 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     width: '100%',
-    maxWidth: 320,
+    maxWidth: 340,
     maxHeight: '70%',
     borderWidth: 1,
     borderColor: Theme.colors.border,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   modalTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 16,
-    textAlign: 'center',
   },
   filterOption: {
     flexDirection: 'row',
@@ -793,12 +1223,6 @@ const styles = StyleSheet.create({
   filterOptionActive: {
     backgroundColor: 'rgba(79, 172, 254, 0.15)',
   },
-  colorDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 10,
-  },
   filterOptionText: {
     color: Theme.colors.textMuted,
     fontSize: 14,
@@ -806,5 +1230,53 @@ const styles = StyleSheet.create({
   filterOptionTextActive: {
     color: Theme.colors.primary,
     fontWeight: 'bold',
+  },
+  colorDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  metricOptionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  metricOptionItemActive: {
+    backgroundColor: 'rgba(79, 172, 254, 0.12)',
+    borderColor: Theme.colors.primary,
+  },
+  optionIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  optionIconBoxActive: {
+    backgroundColor: 'rgba(79, 172, 254, 0.2)',
+  },
+  optionTextContent: {
+    flex: 1,
+  },
+  optionTitle: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  optionTitleActive: {
+    color: Theme.colors.primary,
+  },
+  optionSub: {
+    color: Theme.colors.textMuted,
+    fontSize: 11,
   },
 });
