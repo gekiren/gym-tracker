@@ -436,77 +436,9 @@ export default function NutritionSettingsModal({
                 ))}
               </View>
 
-              {/* 🌟 1. 上部大型リアルタイムグラム数 ＆ 配分カロリー内訳カード（案1スタイル） */}
-              <View style={styles.pfcDisplayHeroCard}>
-                <Text style={styles.heroCalText}>
-                  目標総カロリー: <Text style={styles.heroCalVal}>{computedModeValues.calories}</Text> kcal
-                </Text>
-
-                <View style={styles.heroGramGrid}>
-                  {/* P */}
-                  <View style={styles.heroGramCol}>
-                    <Text style={styles.heroGramLabel}>たんぱく質(P)</Text>
-                    <Text style={[styles.heroGramVal, { color: '#38bdf8' }]}>
-                      {computedModeValues.proteinDisplay}<Text style={styles.heroGramUnit}>g</Text>
-                    </Text>
-                    <Text style={styles.heroCalSubText}>
-                      ({computedModeValues.proteinCalDisplay} kcal)
-                    </Text>
-                    {settingMode !== 'manual' && (
-                      <View style={[styles.pctBadge, { backgroundColor: '#38bdf822', borderColor: '#38bdf8' }]}>
-                        <Text style={[styles.pctBadgeText, { color: '#38bdf8' }]}>{computedModeValues.ratioP}%</Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {/* F */}
-                  <View style={styles.heroGramCol}>
-                    <Text style={styles.heroGramLabel}>脂質(F)</Text>
-                    <Text style={[styles.heroGramVal, { color: '#f59e0b' }]}>
-                      {computedModeValues.fatDisplay}<Text style={styles.heroGramUnit}>g</Text>
-                    </Text>
-                    <Text style={styles.heroCalSubText}>
-                      ({computedModeValues.fatCalDisplay} kcal)
-                    </Text>
-                    {settingMode !== 'manual' && (
-                      <View style={[styles.pctBadge, { backgroundColor: '#f59e0b22', borderColor: '#f59e0b' }]}>
-                        <Text style={[styles.pctBadgeText, { color: '#f59e0b' }]}>{computedModeValues.ratioF}%</Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {/* C */}
-                  <View style={styles.heroGramCol}>
-                    <Text style={styles.heroGramLabel}>炭水化物(C)</Text>
-                    <Text style={[styles.heroGramVal, { color: '#a855f7' }]}>
-                      {computedModeValues.carbsDisplay}<Text style={styles.heroGramUnit}>g</Text>
-                    </Text>
-                    <Text style={styles.heroCalSubText}>
-                      ({computedModeValues.carbsCalDisplay} kcal)
-                    </Text>
-                    {settingMode !== 'manual' && (
-                      <View style={[styles.pctBadge, { backgroundColor: '#a855f722', borderColor: '#a855f7' }]}>
-                        <Text style={[styles.pctBadgeText, { color: '#a855f7' }]}>{computedModeValues.ratioC}%</Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-
-                {/* 💡 カロリー密度補足注記 */}
-                <View style={styles.calExplanationBox}>
-                  <Text style={styles.calExplanationText}>
-                    💡 <Text style={{ fontWeight: '700', color: '#f8fafc' }}>カロリー比率のポイント:</Text> P・Cは <Text style={{ color: '#38bdf8', fontWeight: '700' }}>1g=4kcal</Text>、Fは <Text style={{ color: '#f59e0b', fontWeight: '700' }}>1g=9kcal</Text> で計算されます。（脂質Fは1gあたりのカロリーが高いため、同じ20%設定でもグラム数はPの半分以下になります）
-                  </Text>
-                </View>
-              </View>
-
               {/* ===== モード 1: 総カロリー ＋ PFCバランス ===== */}
               {settingMode === 'cal_pfc' && (
                 <View style={styles.modeSection}>
-                  <Text style={styles.hintText}>
-                    総カロリーとPFCの比率(%)を指定すると、上の各グラム数とカロリー内訳がリアルタイムで更新されます。
-                  </Text>
-
                   <Text style={styles.inputLabelCol}>目標総カロリー (kcal)</Text>
                   <View style={styles.rowAlign}>
                     <TextInput
@@ -576,10 +508,6 @@ export default function NutritionSettingsModal({
               {/* ===== モード 2: PFCバランス ＋ P(g)目標量 ===== */}
               {settingMode === 'pfc_p' && (
                 <View style={styles.modeSection}>
-                  <Text style={styles.hintText}>
-                    指定したPFC比率とタンパク質目標量 P(g) から、必要総カロリーおよび F(g), C(g) が連動更新されます。
-                  </Text>
-
                   <Text style={styles.inputLabelCol}>タンパク質目標量 P (g)</Text>
                   <View style={styles.rowAlign}>
                     <TextInput
@@ -675,6 +603,55 @@ export default function NutritionSettingsModal({
                   </View>
                 </View>
               )}
+
+              {/* 🌟 リアルタイムグラム数 ＆ 配分カロリー内訳カード（計算結果カード） */}
+              <View style={[styles.pfcDisplayHeroCard, { marginTop: 12 }]}>
+                <Text style={styles.heroCalText}>
+                  目標総カロリー: <Text style={styles.heroCalVal}>{computedModeValues.calories}</Text> kcal
+                </Text>
+
+                <View style={styles.heroGramGrid}>
+                  {/* P */}
+                  <View style={styles.heroGramCol}>
+                    <Text style={styles.heroGramLabel}>たんぱく質(P)</Text>
+                    <Text style={[styles.heroGramVal, { color: '#38bdf8' }]}>
+                      {computedModeValues.proteinDisplay}<Text style={styles.heroGramUnit}>g</Text>
+                    </Text>
+                    <Text style={styles.heroCalSubText}>
+                      ({computedModeValues.proteinCalDisplay} kcal)
+                    </Text>
+                  </View>
+
+                  {/* F */}
+                  <View style={styles.heroGramCol}>
+                    <Text style={styles.heroGramLabel}>脂質(F)</Text>
+                    <Text style={[styles.heroGramVal, { color: '#f59e0b' }]}>
+                      {computedModeValues.fatDisplay}<Text style={styles.heroGramUnit}>g</Text>
+                    </Text>
+                    <Text style={styles.heroCalSubText}>
+                      ({computedModeValues.fatCalDisplay} kcal)
+                    </Text>
+                  </View>
+
+                  {/* C */}
+                  <View style={styles.heroGramCol}>
+                    <Text style={styles.heroGramLabel}>炭水化物(C)</Text>
+                    <Text style={[styles.heroGramVal, { color: '#a855f7' }]}>
+                      {computedModeValues.carbsDisplay}<Text style={styles.heroGramUnit}>g</Text>
+                    </Text>
+                    <Text style={styles.heroCalSubText}>
+                      ({computedModeValues.carbsCalDisplay} kcal)
+                    </Text>
+                  </View>
+                </View>
+
+                {/* 💡 カロリー密度補足注記 */}
+                <View style={styles.calExplanationBox}>
+                  <Text style={styles.calExplanationText}>
+                    💡 <Text style={{ fontWeight: '700', color: '#f8fafc' }}>カロリー比率のポイント:</Text> P・Cは <Text style={{ color: '#38bdf8', fontWeight: '700' }}>1g=4kcal</Text>、Fは <Text style={{ color: '#f59e0b', fontWeight: '700' }}>1g=9kcal</Text> で計算されます。
+                  </Text>
+                </View>
+              </View>
 
               {/* 🌟 2. 下部：合計比率 ＆ リセットボタン ＆ アナウンス */}
               {settingMode !== 'manual' && (
