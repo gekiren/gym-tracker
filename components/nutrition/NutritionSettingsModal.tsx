@@ -362,7 +362,7 @@ export default function NutritionSettingsModal({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
-      <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title}>⚙️ 栄養目標 ＆ タイマー設定</Text>
@@ -371,7 +371,7 @@ export default function NutritionSettingsModal({
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
+          <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 220 }} keyboardShouldPersistTaps="handled">
             {/* BMR / TDEE 自動計算電卓 */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>🧮 BMR / TDEE 目標自動計算電卓</Text>
