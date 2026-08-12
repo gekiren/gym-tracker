@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.11',
+  version: '1.8.12',
   title: {
-    ja: 'RM計算機への公式解説ヘルプ追加とレイアウト最適化',
-    en: 'RM Calculator Formula Help & Layout Optimization',
+    ja: 'ワークアウト確認ポップアップのデザイン刷新',
+    en: 'Workout Confirmation Popup UI Refresh',
   },
   notes: {
     ja: [
-      '💡 RM計算機に1RMやEpley式・Brzycki式の特徴と違いを確認できる「？」ヘルプボタンを追加しました。',
-      '✨ 画面右上タブの見切れ表示を解消し、表示領域と操作性を向上させました。',
+      '✨ ワークアウトの中断・完了確認ポップアップをアプリ全体のダークテーマに合わせたモダンなデザインに刷新しました。',
     ],
     en: [
-      '💡 Added a help icon to the RM Calculator explaining 1RM and Epley / Brzycki formulas.',
-      '✨ Fixed header tab layout overflow issue in the RM Calculator.',
+      '✨ Redesigned the workout pause and finish confirmation popups to match the dark theme.',
     ],
   },
 };

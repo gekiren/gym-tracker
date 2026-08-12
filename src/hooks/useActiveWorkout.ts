@@ -52,6 +52,8 @@ export function useActiveWorkout() {
   // Stance Modal State
   const [stanceModalVisible, setStanceModalVisible] = useState(false);
   const [stanceModalTarget, setStanceModalTarget] = useState<StanceModalTarget | null>(null);
+  const [pauseModalVisible, setPauseModalVisible] = useState(false);
+  const [finishModalVisible, setFinishModalVisible] = useState(false);
   const presetStances = settings.customStances || [];
 
   // Rest Timer Tick Effect
@@ -99,33 +101,24 @@ export function useActiveWorkout() {
 
   // Back button handler
   const handleBack = useCallback(() => {
-    Alert.alert(
-      t('ui.active_workout.alert_pause_title'),
-      t('ui.active_workout.alert_pause_message'),
-      [
-        {
-          text: t('ui.active_workout.alert_pause_cancel'),
-          style: 'cancel',
-        },
-        {
-          text: t('ui.active_workout.alert_pause_leave'),
-          style: 'default',
-          onPress: () => {
-            router.dismiss();
-          },
-        },
-        {
-          text: t('ui.active_workout.alert_pause_discard'),
-          style: 'destructive',
-          onPress: () => {
-            endWorkout();
-            router.dismiss();
-          },
-        },
-      ]
-    );
+    setPauseModalVisible(true);
     return true;
-  }, [endWorkout, t]);
+  }, []);
+
+  const confirmLeaveWorkout = useCallback(() => {
+    setPauseModalVisible(false);
+    router.dismiss();
+  }, []);
+
+  const confirmDiscardWorkout = useCallback(() => {
+    setPauseModalVisible(false);
+    endWorkout();
+    router.dismiss();
+  }, [endWorkout]);
+
+  const cancelPauseModal = useCallback(() => {
+    setPauseModalVisible(false);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -248,113 +241,107 @@ export function useActiveWorkout() {
     startRestTimer(curSettings.defaultRest);
   }, []);
 
-  // Finish Workout
+  // Finish Workout Modal trigger
   const handleFinish = useCallback(() => {
     if (isSaving) return;
+    setFinishModalVisible(true);
+  }, [isSaving]);
+
+  const cancelFinishModal = useCallback(() => {
+    setFinishModalVisible(false);
+    setIsSaving(false);
+  }, []);
+
+  const confirmSaveWorkout = useCallback(async () => {
+    if (isSaving) return;
     setIsSaving(true);
+    setFinishModalVisible(false);
 
-    Alert.alert(
-      t('ui.active_workout.alert_finish_title'),
-      t('ui.active_workout.alert_finish_message'),
-      [
-        {
-          text: t('ui.active_workout.cancel'),
-          style: 'cancel',
-          onPress: () => setIsSaving(false),
+    try {
+      // 1. Gather unique completed exercise IDs
+      const exerciseIds = exercises
+        .map(ex => ex.exercise_id)
+        .filter((id): id is number => typeof id === 'number');
+
+      // 2. Prefetch historical data safely
+      let dbWorkouts: any[] = [];
+      let pastSets: any[] = [];
+      try {
+        const res = await prefetchWorkoutCompletionData(exerciseIds);
+        dbWorkouts = res.workouts || [];
+        pastSets = res.pastSets || [];
+      } catch (e) {
+        console.warn('Failed to prefetch workout completion data', e);
+      }
+
+      // 3. Compute calorie stats safely
+      let roundedCalories = 0;
+      try {
+        roundedCalories = computeCalories(exercises, settings.bodyWeight || 70, settings.weightUnit);
+      } catch (e) {
+        console.warn('Failed to compute calories', e);
+      }
+      const et = new Date().toISOString();
+
+      // 4. Calculate achievements safely
+      let updated1RMs: any[] = [];
+      let updatedVolumes: any[] = [];
+      try {
+        const achRes = computeAchievements(exercises, pastSets, settings.bodyWeight || 70);
+        updated1RMs = achRes.updated1RMs || [];
+        updatedVolumes = achRes.updatedVolumes || [];
+      } catch (e) {
+        console.warn('Failed to compute achievements', e);
+      }
+
+      // Save the workout to DB
+      const savedTitle = title || t('ui.home.free_workout_title');
+      const savedStartTime = startTime || et;
+
+      // Streak Calculations safely
+      let streakDays = 1;
+      let streakWeeks = 1;
+      let weeklyWorkoutCount = 1;
+      try {
+        const streaks = computeStreaks(dbWorkouts);
+        streakDays = streaks.streakDays;
+        streakWeeks = streaks.streakWeeks;
+        weeklyWorkoutCount = computeWeeklyWorkoutCount(dbWorkouts, savedStartTime);
+      } catch (e) {
+        console.warn('Failed to compute streaks', e);
+      }
+
+      const workoutId = await saveWorkout(savedTitle, savedStartTime, et, workoutNotes, exercises, roundedCalories);
+
+      // Set store state for completed screen
+      useWorkoutStore.getState().setLastWorkoutCompletion({
+        workout: {
+          id: workoutId,
+          title: savedTitle,
+          start_time: savedStartTime,
+          end_time: et,
+          notes: workoutNotes || null,
+          calories: roundedCalories,
+          exercises: exercises,
         },
-        {
-          text: t('ui.active_workout.alert_finish_save'),
-          style: 'default',
-          onPress: async () => {
-            try {
-              // 1. Gather unique completed exercise IDs
-              const exerciseIds = exercises
-                .map(ex => ex.exercise_id)
-                .filter((id): id is number => typeof id === 'number');
-
-              // 2. Prefetch historical data safely
-              let dbWorkouts: any[] = [];
-              let pastSets: any[] = [];
-              try {
-                const res = await prefetchWorkoutCompletionData(exerciseIds);
-                dbWorkouts = res.workouts || [];
-                pastSets = res.pastSets || [];
-              } catch (e) {
-                console.warn('Failed to prefetch workout completion data', e);
-              }
-
-              // 3. Compute calorie stats safely
-              let roundedCalories = 0;
-              try {
-                roundedCalories = computeCalories(exercises, settings.bodyWeight || 70, settings.weightUnit);
-              } catch (e) {
-                console.warn('Failed to compute calories', e);
-              }
-              const et = new Date().toISOString();
-
-              // 4. Calculate achievements safely
-              let updated1RMs: any[] = [];
-              let updatedVolumes: any[] = [];
-              try {
-                const achRes = computeAchievements(exercises, pastSets, settings.bodyWeight || 70);
-                updated1RMs = achRes.updated1RMs || [];
-                updatedVolumes = achRes.updatedVolumes || [];
-              } catch (e) {
-                console.warn('Failed to compute achievements', e);
-              }
-
-              // Save the workout to DB
-              const savedTitle = title || t('ui.home.free_workout_title');
-              const savedStartTime = startTime || et;
-
-              // Streak Calculations safely
-              let streakDays = 1;
-              let streakWeeks = 1;
-              let weeklyWorkoutCount = 1;
-              try {
-                const streaks = computeStreaks(dbWorkouts);
-                streakDays = streaks.streakDays;
-                streakWeeks = streaks.streakWeeks;
-                weeklyWorkoutCount = computeWeeklyWorkoutCount(dbWorkouts, savedStartTime);
-              } catch (e) {
-                console.warn('Failed to compute streaks', e);
-              }
-
-              const workoutId = await saveWorkout(savedTitle, savedStartTime, et, workoutNotes, exercises, roundedCalories);
-
-              // Set store state for completed screen
-              useWorkoutStore.getState().setLastWorkoutCompletion({
-                workout: {
-                  id: workoutId,
-                  title: savedTitle,
-                  start_time: savedStartTime,
-                  end_time: et,
-                  notes: workoutNotes || null,
-                  calories: roundedCalories,
-                  exercises: exercises,
-                },
-                achievements: {
-                  streakDays,
-                  streakWeeks,
-                  weeklyWorkoutCount,
-                  is1RMUpdated: updated1RMs.length > 0,
-                  isVolumeUpdated: updatedVolumes.length > 0,
-                  updated1RMs,
-                  updatedVolumes,
-                },
-              });
-
-              endWorkout();
-              router.replace('/workout-completion');
-            } catch (e) {
-              console.error('Failed to finish workout', e);
-              Alert.alert(t('ui.common.error') || 'Error', 'Failed to save workout.');
-              setIsSaving(false);
-            }
-          },
+        achievements: {
+          streakDays,
+          streakWeeks,
+          weeklyWorkoutCount,
+          is1RMUpdated: updated1RMs.length > 0,
+          isVolumeUpdated: updatedVolumes.length > 0,
+          updated1RMs,
+          updatedVolumes,
         },
-      ]
-    );
+      });
+
+      endWorkout();
+      router.replace('/workout-completion');
+    } catch (e) {
+      console.error('Failed to finish workout', e);
+      Alert.alert(t('ui.common.error') || 'Error', 'Failed to save workout.');
+      setIsSaving(false);
+    }
   }, [isSaving, exercises, settings.bodyWeight, settings.weightUnit, title, startTime, workoutNotes, endWorkout, t]);
 
   const handleAddExercise = useCallback(() => {
@@ -433,6 +420,15 @@ export function useActiveWorkout() {
     setStanceModalVisible,
     stanceModalTarget,
     setStanceModalTarget,
+    pauseModalVisible,
+    setPauseModalVisible,
+    finishModalVisible,
+    setFinishModalVisible,
+    confirmLeaveWorkout,
+    confirmDiscardWorkout,
+    cancelPauseModal,
+    confirmSaveWorkout,
+    cancelFinishModal,
     presetStances,
     updateWorkoutNotes,
     updateExerciseNotes,

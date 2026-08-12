@@ -11,6 +11,7 @@ import { ResumeWorkoutButton } from '../components/active-workout/ResumeWorkoutB
 import { KeyboardAvoidingWrapper } from '../components/active-workout/KeyboardAvoidingWrapper';
 import { PlateCalculatorModal } from '../components/active-workout/PlateCalculatorModal';
 import { StanceModal } from '../components/active-workout/StanceModal';
+import { WorkoutConfirmModal } from '../components/active-workout/WorkoutConfirmModal';
 import { calculateRM } from '../src/utils/workoutStats';
 import { useActiveWorkout } from '../src/hooks/useActiveWorkout';
 import { ActiveWorkoutHeaderLeft, ActiveWorkoutHeaderRight } from '../components/active-workout/ActiveWorkoutHeader';
@@ -43,6 +44,13 @@ export default function ActiveWorkoutScreen() {
     setStanceModalVisible,
     stanceModalTarget,
     setStanceModalTarget,
+    pauseModalVisible,
+    finishModalVisible,
+    confirmLeaveWorkout,
+    confirmDiscardWorkout,
+    cancelPauseModal,
+    confirmSaveWorkout,
+    cancelFinishModal,
     presetStances,
     updateWorkoutNotes,
     updateExerciseNotes,
@@ -210,6 +218,33 @@ export default function ActiveWorkoutScreen() {
         onSelectStance={handleSelectStance}
         onAddCustomStance={handleAddCustomStance}
         onRemoveCustomStance={handleRemoveCustomStance}
+      />
+
+      {/* ワークアウト中断確認モーダル */}
+      <WorkoutConfirmModal
+        visible={pauseModalVisible}
+        type="pause"
+        title={t('ui.active_workout.alert_pause_title')}
+        message={t('ui.active_workout.alert_pause_message')}
+        onCancel={cancelPauseModal}
+        onLeave={confirmLeaveWorkout}
+        onDiscard={confirmDiscardWorkout}
+        leaveText={t('ui.active_workout.alert_pause_leave')}
+        discardText={t('ui.active_workout.alert_pause_discard')}
+        cancelText={t('ui.active_workout.alert_pause_cancel')}
+      />
+
+      {/* ワークアウト終了確認モーダル */}
+      <WorkoutConfirmModal
+        visible={finishModalVisible}
+        type="finish"
+        title={t('ui.active_workout.alert_finish_title')}
+        message={t('ui.active_workout.alert_finish_message')}
+        isSaving={isSaving}
+        onCancel={cancelFinishModal}
+        onSave={confirmSaveWorkout}
+        saveText={t('ui.active_workout.alert_finish_save')}
+        cancelText={t('ui.active_workout.cancel')}
       />
     </View>
   );
