@@ -96,7 +96,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
         leftThreshold={40}
         rightThreshold={40}
       >
-        <View style={{ backgroundColor: Theme.colors.card, paddingVertical: 4 }}>
+        <View style={{ backgroundColor: Theme.colors.card, paddingTop: 0, paddingBottom: 2 }}>
           <View style={styles.headerRow}>
             <View style={{ flex: 1 }}>
               <TouchableOpacity
@@ -255,8 +255,10 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Theme.colors.card,
     borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.md,
-    marginBottom: Theme.spacing.lg,
+    paddingHorizontal: Theme.spacing.md,
+    paddingTop: 8,
+    paddingBottom: 12,
+    marginBottom: 10,
   },
   headerRow: {
     flexDirection: 'row',

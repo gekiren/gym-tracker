@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.9',
+  version: '1.8.10',
   title: {
-    ja: '種目カード内レイアウト余白の最適化',
-    en: 'Exercise Card Layout Spacing Optimization',
+    ja: '種目カードおよびカード間余白の最適化',
+    en: 'Exercise Card & Spacing Optimization',
   },
   notes: {
     ja: [
-      '✨ 種目ボリューム・KG調整行とテーブルヘッダー（セット/kg/回数...）の間の余白を短縮し、カード内の配置をスッキリさせました。',
+      '✨ 種目名の上部余白および種目カード同士の黒い余白を縮小し、画面内の表示領域と操作性を向上させました。',
     ],
     en: [
-      '✨ Tightened spacing between volume/KG step row and table headers for a cleaner layout.',
+      '✨ Reduced top padding of exercise titles and gap between exercise cards for improved screen efficiency.',
     ],
   },
 };
