@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.43',
+  version: '1.8.45',
   title: {
-    ja: '設定タブおよびアプリ設定メニューのアクセス再構成',
-    en: 'Settings Tab & App Settings Reorganization',
+    ja: 'プラン＆アプリ情報および環境設定のレイアウト改善',
+    en: 'Plan & App Info Layout Improvements',
   },
   notes: {
     ja: [
-      '⚙️ 筋トレ機能のヘッダー表記を「筋トレ」に、右下設定タブを「設定」に統一しました。',
-      '📱 「アカウント情報」「Obsidian連携」「バックアップ・復元」「データ管理」をダッシュボードの「アプリ設定」画面内に集約・整理しました。',
+      '📋 設定画面の表記を「プラン & アプリ情報」および「プランの種類」へ更新しました。',
+      '⚙️ 「プラン情報」および「環境設定」にカードヘッダー見出しを追加し、レイアウトを統一しました。',
     ],
     en: [
-      '⚙️ Updated header title to Workout and right tab label to Settings.',
-      '📱 Consolidated Account Info, Obsidian Sync, Backup, and Data Management into the App Settings menu.',
+      '📋 Updated setting labels to "Plan & App Info" and "Plan Type".',
+      '⚙️ Added section headers for Plan Info and Preferences for unified layout.',
     ],
   },
 };

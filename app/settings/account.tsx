@@ -162,7 +162,7 @@ export default function AccountSettingsScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="chevron-back" size={24} color={Theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>アカウント & アプリ情報</Text>
+        <Text style={styles.headerTitle}>プラン & アプリ情報</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -171,6 +171,8 @@ export default function AccountSettingsScreen() {
           accountType={accountType}
           premiumUntil={settings.premiumUntil}
           onPressAccountCard={() => setIsPaywallVisible(true)}
+          onPressPlanDetail={() => setIsPaywallVisible(true)}
+          onPressPromo={handlePromoPress}
           t={t}
         />
 
@@ -183,30 +185,13 @@ export default function AccountSettingsScreen() {
           />
         </View>
 
-        <View style={styles.card}>
-          <TouchableOpacity style={styles.menuRow} onPress={handlePromoPress}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="ticket-outline" size={22} color={Theme.colors.primary} style={{ marginRight: 12 }} />
-              <Text style={styles.menuTitle}>プロモーションコード入力</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuRow, { borderBottomWidth: 0 }]} onPress={() => setIsPaywallVisible(true)}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="ribbon-outline" size={22} color="#ffd700" style={{ marginRight: 12 }} />
-              <Text style={styles.menuTitle}>プラン詳細 / アップグレード</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
-          </TouchableOpacity>
-        </View>
-
         {/* Environment & Preferences Section */}
-        <View style={styles.preferenceCard}>
-          <View style={styles.cardHeaderRow}>
-            <Ionicons name="settings-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-            <Text style={styles.preferenceCardTitle}>環境設定</Text>
+        <View style={{ marginTop: Theme.spacing.md }}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="settings-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.sectionTitle}>環境設定</Text>
           </View>
+          <View style={styles.preferenceCard}>
 
           {/* Theme Mode */}
           <View style={styles.settingItemRow}>
@@ -217,13 +202,13 @@ export default function AccountSettingsScreen() {
                 style={[styles.langChip, settings.backgroundTheme === 'dark' && styles.chipActive]}
                 onPress={() => handleUpdateBackgroundTheme('dark')}
               >
-                <Text style={[styles.chipText, settings.backgroundTheme === 'dark' && styles.chipTextActive]}>🌑 ダーク (#121212)</Text>
+                <Text style={[styles.chipText, settings.backgroundTheme === 'dark' && styles.chipTextActive]}>🌑 ダーク</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.langChip, settings.backgroundTheme === 'pureBlack' && styles.chipActive]}
                 onPress={() => handleUpdateBackgroundTheme('pureBlack')}
               >
-                <Text style={[styles.chipText, settings.backgroundTheme === 'pureBlack' && styles.chipTextActive]}>⬛ 純黒 / OLED (#000000)</Text>
+                <Text style={[styles.chipText, settings.backgroundTheme === 'pureBlack' && styles.chipTextActive]}>⬛ 純黒 / OLED</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -260,6 +245,7 @@ export default function AccountSettingsScreen() {
               thumbColor={'#fff'}
             />
           </View>
+        </View>
         </View>
 
         <View style={styles.appInfoWrapper}>
@@ -317,7 +303,9 @@ const styles = StyleSheet.create({
   card: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, borderWidth: 1, borderColor: Theme.colors.border, marginTop: Theme.spacing.md },
   menuRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: Theme.spacing.md, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
   menuTitle: { fontSize: 16, fontWeight: '600', color: Theme.colors.text },
-  preferenceCard: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, borderWidth: 1, borderColor: Theme.colors.border, marginTop: Theme.spacing.md },
+  preferenceCard: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, borderWidth: 1, borderColor: Theme.colors.border },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: Theme.spacing.md },
+  sectionTitle: { fontSize: 18, color: Theme.colors.text, fontWeight: 'bold' },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: Theme.spacing.sm },
   preferenceCardTitle: { fontSize: 16, fontWeight: 'bold', color: Theme.colors.text },
   settingItemRow: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },

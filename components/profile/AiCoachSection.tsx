@@ -30,9 +30,6 @@ export const AiCoachSection: React.FC<AiCoachSectionProps> = ({
               {`${aiTokensBalance} / ${maxTokens}`}
             </Text>
           </View>
-          <Text style={[styles.settingDesc, { paddingRight: 0 }]}>
-            {t('ui.profile.ai_tokens_desc') || 'Cloudflare Worker & Gemini APIを経由した安全で高度なトレーニング指導が受けられます。'}
-          </Text>
           
           <View style={styles.aiTokensContainer}>
             <View style={styles.progressBarBg}>

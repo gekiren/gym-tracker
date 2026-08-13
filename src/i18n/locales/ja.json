@@ -389,7 +389,7 @@
       "ai_tokens_desc": "Cloudflare Worker & Gemini APIを経由した安全で高度なトレーニング指導が受けられます。",
       "quota_exhausted_alert": "今月の利用枠が残っていません。",
       "ai_tokens_reset_desc": "毎月1日に利用枠は自動的に20回にリセットされます。",
-      "account_type_label": "アカウントの種類",
+      "account_type_label": "プランの種類",
       "account_basic": "ベーシックプラン",
       "account_premium": "プレミアムプラン",
       "account_early_adopter": "アーリーアダプター",

@@ -92,7 +92,7 @@ export function useProfile() {
     () => [
       {
         id: 'account',
-        title: 'アカウント & アプリ情報',
+        title: 'プラン & アプリ情報',
         desc: `AI残高: ${settings.aiTokensBalance} 回 • 環境設定 • バージョン`,
         icon: 'person-circle-outline',
         iconColor: '#4facfe',
