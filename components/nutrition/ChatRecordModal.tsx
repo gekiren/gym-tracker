@@ -13,6 +13,7 @@ import {
   Platform,
 } from 'react-native';
 import { NutritionAIResult, analyzeMealText } from '../../src/services/aiCoachService';
+import { copyAIDebugLogsToClipboard } from '../../src/utils/debugLogStore';
 import { MealLog } from '../../src/db/types';
 import { useAppTheme } from '../../src/theme';
 
@@ -51,7 +52,14 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
       const res = await analyzeMealText(textInput.trim(), 'gemini');
       setResult(res);
     } catch (err: any) {
-      Alert.alert('解析エラー', err.message || 'AI栄養解析に失敗しました。通信環境を確認してください。');
+      Alert.alert(
+        '解析エラー',
+        err.message || 'AI栄養解析に失敗しました。通信環境を確認してください。',
+        [
+          { text: 'OK', style: 'cancel' },
+          { text: '📋 通信ログをコピー', onPress: () => copyAIDebugLogsToClipboard(true) }
+        ]
+      );
     } finally {
       setIsLoading(false);
     }
@@ -176,17 +184,25 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
                 {result.advice && (
                   <Text style={[styles.adviceText, isPureBlack && { backgroundColor: '#000000' }]}>💡 {result.advice}</Text>
                 )}
-                <TouchableOpacity
-                  style={[styles.saveBtn, isSaving && styles.saveBtnDisabled]}
-                  onPress={handleSave}
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <ActivityIndicator color="#fff" size="small" />
-                  ) : (
-                    <Text style={styles.saveBtnText}>💾 この内容で保存</Text>
-                  )}
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                  <TouchableOpacity
+                    style={[styles.saveBtn, { flex: 1 }, isSaving && styles.saveBtnDisabled]}
+                    onPress={handleSave}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <Text style={styles.saveBtnText}>💾 この内容で保存</Text>
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.mealTypeBtn, { justifyContent: 'center', alignItems: 'center', paddingHorizontal: 12 }]}
+                    onPress={() => copyAIDebugLogsToClipboard(true)}
+                  >
+                    <Text style={{ fontSize: 12, color: '#4facfe', fontWeight: '600' }}>📋 ログコピー</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
           </ScrollView>

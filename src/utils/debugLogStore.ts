@@ -1,4 +1,6 @@
 import * as Updates from 'expo-updates';
+import * as Clipboard from 'expo-clipboard';
+import { Alert } from 'react-native';
 
 export interface AIDebugLogEntry {
   id: string;
@@ -96,3 +98,32 @@ export const getLatestAIDebugLog = (): AIDebugLogEntry | null => {
 export const clearAIDebugLogs = () => {
   logStore = [];
 };
+
+/**
+ * AI通信バックデータログをクリップボードにコピーする
+ * @param onlyLatest true の場合は直近の最新1件のみコピー
+ */
+export const copyAIDebugLogsToClipboard = async (onlyLatest: boolean = false): Promise<boolean> => {
+  const logs = onlyLatest ? (logStore.length > 0 ? [logStore[0]] : []) : logStore;
+  if (logs.length === 0) {
+    Alert.alert('AI通信ログ', 'まだ通信ログが記録されていません。食事解析やAIチャットを実行した後に再度お試しください。');
+    return false;
+  }
+
+  const formattedHeader = onlyLatest
+    ? `### 🤖 AI通信バックデータログ (最新1件 / ${logs[0].timestamp})\n`
+    : `### 🤖 AI通信バックデータログ (全 ${logs.length} 件)\n`;
+
+  const jsonStr = JSON.stringify(logs, null, 2);
+  const copyText = `${formattedHeader}\`\`\`json\n${jsonStr}\n\`\`\``;
+
+  await Clipboard.setStringAsync(copyText);
+  Alert.alert(
+    'ログコピー完了',
+    onlyLatest
+      ? '最新1件のAI通信バックデータログをクリップボードにコピーしました。チャット画面に貼り付けて共有してください。'
+      : `${logs.length}件のAI通信バックデータログをクリップボードにコピーしました。チャット画面に貼り付けて共有してください。`
+  );
+  return true;
+};
+

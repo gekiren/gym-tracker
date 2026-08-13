@@ -133,8 +133,8 @@ export default {
 
 ※写真が食品や栄養成分表でない場合は、"isFood": false にしてください。`;
 
-        // 最適化されたモデルリスト (3.6-flash 優先 ➔ 3.5-flash ➔ 2.5-flash ➔ 2.5-flash-lite)
-        const geminiModels = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+        // 最適化されたマルチモーダル画像解析モデルリスト (3.1-flash-image 優先 ➔ 3.1-flash-lite-image ➔ 2.5-flash-preview-image ➔ 2.0-flash)
+        const geminiModels = ["gemini-3.1-flash-image", "gemini-3.1-flash-lite-image", "gemini-2.5-flash-preview-image", "gemini-2.0-flash"];
         let lastErrorText = "";
         let fallbackHistory = [];
 
@@ -176,7 +176,7 @@ export default {
                   return new Response(JSON.stringify({ 
                     success: true, 
                     ...parsedJson,
-                    debugInfo: { workerVersion: "v1.5.5", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
+                    debugInfo: { workerVersion: "v1.6.0", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -187,7 +187,7 @@ export default {
                     success: true, 
                     reply: rawText, 
                     mealName: "食事写真",
-                    debugInfo: { workerVersion: "v1.5.5", modelUsed: modelName, parseError: true, rawSnippet: rawText.substring(0, 100) }
+                    debugInfo: { workerVersion: "v1.6.0", modelUsed: modelName, parseError: true, rawSnippet: rawText.substring(0, 100) }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -238,7 +238,7 @@ export default {
               return new Response(JSON.stringify({
                 success: true,
                 ...parsedJson,
-                debugInfo: { workerVersion: "v1.5.5", modelUsed: "deepseek-v4-pro (text fallback)", fallbackHistory }
+                debugInfo: { workerVersion: "v1.6.0", modelUsed: "deepseek-v4-pro (text fallback)", fallbackHistory }
               }), {
                 status: 200,
                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -249,7 +249,7 @@ export default {
           }
         }
 
-        // すべてのフォールバックが失敗した場合のエラーレスポンス
+        // すべてのフォールバックが失敗した場合のエラーレスポンス (status: 500)
         return new Response(JSON.stringify({
           success: false,
           isFood: false,
@@ -261,9 +261,9 @@ export default {
           sodium: 0,
           fiber: 0,
           advice: "AIによる画像解析時に一時的なエラーが発生しました。時間を置いて再実行してください。",
-          debugInfo: { workerVersion: "v1.5.5", fallbackHistory, lastError: lastErrorText }
+          debugInfo: { workerVersion: "v1.6.0", fallbackHistory, lastError: lastErrorText }
         }), {
-          status: 200,
+          status: 500,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
         });
       }

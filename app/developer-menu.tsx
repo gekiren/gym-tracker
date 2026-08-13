@@ -18,7 +18,7 @@ import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import * as Clipboard from 'expo-clipboard';
-import { getAIDebugLogs, clearAIDebugLogs } from '../src/utils/debugLogStore';
+import { getAIDebugLogs, clearAIDebugLogs, copyAIDebugLogsToClipboard } from '../src/utils/debugLogStore';
 import { useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
 import { AD_CONFIG } from '../src/config/adConfig';
 
@@ -1108,33 +1108,34 @@ export default function DeveloperMenuScreen() {
             AI解析（食事写真・テキスト・チャット）発生時のHTTP通信、Worker応答Raw JSON、エラーの直近ログを確認・コピーできます。
           </Text>
 
-          <TouchableOpacity
-            style={styles.btnPrimary}
-            onPress={async () => {
-              const logs = getAIDebugLogs();
-              if (logs.length === 0) {
-                Alert.alert('AI通信ログ', 'まだ通信ログが記録されていません。食事解析やAIチャットを実行してください。');
-                return;
-              }
-              const jsonStr = JSON.stringify(logs, null, 2);
-              await Clipboard.setStringAsync(jsonStr);
-              Alert.alert('ログコピー完了', `${logs.length}件の通信バックデータログをクリップボードにコピーしました。`);
-            }}
-          >
-            <Ionicons name="copy-outline" size={20} color="#000" style={{ marginRight: 8 }} />
-            <Text style={styles.btnPrimaryText}>📋 全通信バックデータログを全コピー</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'column', gap: 10 }}>
+            <TouchableOpacity
+              style={styles.btnPrimary}
+              onPress={() => copyAIDebugLogsToClipboard(false)}
+            >
+              <Ionicons name="copy-outline" size={20} color="#000" style={{ marginRight: 8 }} />
+              <Text style={styles.btnPrimaryText}>📋 全通信バックデータログをコピー</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.btnDanger, { marginTop: 10, backgroundColor: '#334155' }]}
-            onPress={() => {
-              clearAIDebugLogs();
-              Alert.alert('クリア', 'AI通信ログをクリアしました。');
-            }}
-          >
-            <Ionicons name="trash-outline" size={18} color="#94a3b8" style={{ marginRight: 8 }} />
-            <Text style={[styles.btnDangerText, { color: '#94a3b8' }]}>ログメモリをクリア</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.btnOutline, { borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.08)' }]}
+              onPress={() => copyAIDebugLogsToClipboard(true)}
+            >
+              <Ionicons name="flash-outline" size={20} color="#38bdf8" style={{ marginRight: 8 }} />
+              <Text style={[styles.btnOutlineText, { color: '#38bdf8' }]}>⚡ 直近（最新1件）のログのみコピー</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.btnDanger, { marginTop: 4, backgroundColor: '#334155' }]}
+              onPress={() => {
+                clearAIDebugLogs();
+                Alert.alert('クリア', 'AI通信ログをクリアしました。');
+              }}
+            >
+              <Ionicons name="trash-outline" size={18} color="#94a3b8" style={{ marginRight: 8 }} />
+              <Text style={[styles.btnDangerText, { color: '#94a3b8' }]}>ログメモリをクリア</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </View>

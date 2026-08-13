@@ -60,6 +60,7 @@ const safeGetImageManipulator = () => {
 };
 
 import { analyzeMealImage, NutritionAIResult } from '../../src/services/aiCoachService';
+import { copyAIDebugLogsToClipboard } from '../../src/utils/debugLogStore';
 import { MealLog } from '../../src/db/types';
 import { useAppTheme } from '../../src/theme';
 
@@ -245,7 +246,14 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
       setMealName(res.mealName);
       applyMultiplier(res, multiplier);
     } catch (err: any) {
-      Alert.alert('AI解析エラー', err.message || '食事写真の解析に失敗しました。');
+      Alert.alert(
+        'AI解析エラー',
+        err.message || '食事写真の解析に失敗しました。',
+        [
+          { text: 'OK', style: 'cancel' },
+          { text: '📋 通信ログをコピー', onPress: () => copyAIDebugLogsToClipboard(true) }
+        ]
+      );
     } finally {
       setIsAnalyzing(false);
     }
@@ -382,6 +390,9 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
                       <Text style={styles.reAnalyzeBtnText}>🔄 再解析</Text>
                     </TouchableOpacity>
                   )}
+                  <TouchableOpacity style={styles.rePickBtn} onPress={() => copyAIDebugLogsToClipboard(true)}>
+                    <Text style={styles.rePickBtnText}>📋 ログコピー</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             ) : (

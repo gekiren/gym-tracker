@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.55',
+  version: '1.8.56',
   title: {
-    ja: '食事記録モーダルのタイトル変更およびテキストAI解析の整理',
-    en: 'Meal Record Modal Title Update & Text AI Analysis Removal',
+    ja: 'AI通信バックデータログのクリップボードコピー機能の追加',
+    en: 'Add Clipboard Copy Functionality for AI Debug Logs',
   },
   notes: {
     ja: [
-      '食事記録モーダルのタイトルを「写真から食事記録」に変更しました。',
-      '「テキストメモからAI栄養解析」ボタンを削除し、直感的なUI構造に改善しました。',
+      'AI食事解析や通信発生時のバックデータログをクリップボードにワンタップでコピーできる機能を追加しました。',
+      '隠しデベロッパーメニューおよび食事解析画面から簡単にログを取得し共有可能になりました。',
     ],
     en: [
-      'Updated the meal record modal title to "Meal Record from Photo".',
-      'Removed the text memo AI analysis button for a cleaner user interface.',
+      'Added a feature to copy AI communication and debug logs to the clipboard with one tap.',
+      'Easily export logs from the developer menu and meal analysis screens for AI sharing.',
     ],
   },
 };
