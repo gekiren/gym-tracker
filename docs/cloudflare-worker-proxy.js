@@ -216,7 +216,7 @@ export default {
                 "Authorization": `Bearer ${env.DEEPSEEK_API_KEY}`
               },
               body: JSON.stringify({
-                model: "deepseek-chat",
+                model: "deepseek-v4-pro",
                 messages: [
                   { role: "system", content: visionSystemInstruction },
                   { role: "user", content: `【補足メモ/テキスト】${fallbackText}\nこの食事内容から料理名、推定カロリー、PFCバランスをJSONで回答してください。` }
@@ -238,7 +238,7 @@ export default {
               return new Response(JSON.stringify({
                 success: true,
                 ...parsedJson,
-                debugInfo: { workerVersion: "v1.5.5", modelUsed: "deepseek-chat (text fallback)", fallbackHistory }
+                debugInfo: { workerVersion: "v1.5.5", modelUsed: "deepseek-v4-pro (text fallback)", fallbackHistory }
               }), {
                 status: 200,
                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -341,7 +341,7 @@ export default {
                 "Authorization": `Bearer ${env.DEEPSEEK_API_KEY}`
               },
               body: JSON.stringify({
-                model: "deepseek-chat",
+                model: "deepseek-v4-pro",
                 messages: [
                   { role: "system", content: textNutritionInstruction },
                   { role: "user", content: textInput || message }
@@ -363,7 +363,7 @@ export default {
               return new Response(JSON.stringify({
                 success: true,
                 ...parsedJson,
-                debugInfo: { workerVersion: "v1.5.5", modelUsed: "deepseek-chat", fallbackHistory }
+                debugInfo: { workerVersion: "v1.5.5", modelUsed: "deepseek-v4-pro", fallbackHistory }
               }), {
                 status: 200,
                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -441,7 +441,7 @@ export default {
               "Authorization": `Bearer ${env.DEEPSEEK_API_KEY}`
             },
             body: JSON.stringify({
-              model: "deepseek-chat",
+              model: "deepseek-v4-pro",
               messages: [
                 { role: "system", content: systemInstruction },
                 { role: "user", content: promptContext }
@@ -459,7 +459,7 @@ export default {
               return new Response(JSON.stringify({
                 success: true,
                 reply,
-                debugInfo: { workerVersion: "v1.5.5", modelUsed: "deepseek-chat", chatFallbackHistory }
+                debugInfo: { workerVersion: "v1.5.5", modelUsed: "deepseek-v4-pro", chatFallbackHistory }
               }), {
                 status: 200,
                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }

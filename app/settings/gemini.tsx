@@ -93,7 +93,7 @@ export default function GeminiSettingsScreen() {
                     color={preferredModel === 'deepseek' ? Theme.colors.primary : Theme.colors.textMuted} 
                     style={{ marginRight: 8 }}
                   />
-                  <Text style={styles.modelName}>DeepSeek V3 / Chat</Text>
+                  <Text style={styles.modelName}>DeepSeek V4 Pro</Text>
                 </View>
                 <View style={styles.badgeAnalytical}>
                   <Text style={styles.badgeAnalyticalText}>深層分析</Text>

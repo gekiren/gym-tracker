@@ -265,7 +265,7 @@
   2. **`gemini-3.5-flash`** (セカンダリ / 10,000 RPD)
   3. **`gemini-2.5-flash`** (サード / 10,000 RPD)
   4. **`gemini-2.5-flash-lite`** (フォールバック / **RPD 無制限**)
-  5. **`deepseek-chat`** (DeepSeek API / テキスト最終フォールバック)
+  5. **`deepseek-v4-pro`** (DeepSeek API / テキスト最終フォールバック)
 
 ### ② サーバー（Worker）接続仕様
 - クライアント側（`aiCoachService.ts`）の接続先は、必ず実際に稼働しているユーザー様のプロキシアドレス `https://gym-tracker-ai-proxy.toshi-diyil.workers.dev/api/chat` を参照・維持してください。テスト用のプレースホルダーへの変更は絶対に行わないでください。
