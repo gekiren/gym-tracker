@@ -116,6 +116,15 @@ export default `<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Routine Tracker</title>
+    <script>
+    (function() {
+      if (window.__BACKGROUND_THEME__ === 'pureBlack') {
+        var style = document.createElement('style');
+        style.innerHTML = 'body { background-color: #000000 !important; color: #c8c8c8 !important; } .card, .routine-card, .routine-item, .item-card, div[class*="card"] { background-color: #080808 !important; border: 1px solid #1f1f1f !important; }';
+        document.head.appendChild(style);
+      }
+    })();
+    </script>
     <style>
 body {
     background-color: #121212;

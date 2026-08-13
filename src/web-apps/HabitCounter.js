@@ -116,7 +116,15 @@ export default `<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>習慣カウンター</title>
-    
+    <script>
+    (function() {
+      if (window.__BACKGROUND_THEME__ === 'pureBlack') {
+        var style = document.createElement('style');
+        style.innerHTML = ':root { --bg-color: #000000 !important; --text-color: #c8c8c8 !important; } body { background-color: #000000 !important; } .habit-card .habit-name, .habit-card .habit-count { color: #ffffff !important; opacity: 0.95 !important; }';
+        document.head.appendChild(style);
+      }
+    })();
+    </script>
     <style>
 :root {
     --bg-color: #121212;

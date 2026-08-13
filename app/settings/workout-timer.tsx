@@ -125,6 +125,11 @@ export default function WorkoutTimerSettingsScreen() {
     await saveSetting('style_mode', 'custom');
   };
 
+  const setBackgroundTheme = useSettingsStore(state => state.setBackgroundTheme);
+  const handleUpdateBackgroundTheme = (theme: 'dark' | 'pureBlack') => {
+    setBackgroundTheme(theme);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -168,6 +173,8 @@ export default function WorkoutTimerSettingsScreen() {
           onChangeLanguage={handleChangeLanguage}
           crashConsent={crashConsent}
           onUpdateCrashConsent={handleUpdateCrashConsent}
+          backgroundTheme={settings.backgroundTheme}
+          onUpdateBackgroundTheme={handleUpdateBackgroundTheme}
           t={t}
         />
       </ScrollView>

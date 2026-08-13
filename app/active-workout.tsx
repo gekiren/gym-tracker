@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Platfo
 import { useCallback } from 'react';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../src/theme';
+import { Theme, useAppTheme } from '../src/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AI_CONFIG } from '../src/config/aiConfig';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -23,6 +23,7 @@ function KeepAwakeController() {
 }
 
 export default function ActiveWorkoutScreen() {
+  const { colors } = useAppTheme();
   const {
     t,
     startTime,
@@ -38,7 +39,6 @@ export default function ActiveWorkoutScreen() {
     isSaving,
     plateCalcVisible,
     setPlateCalcVisible,
-    activeSetForCalc,
     setActiveSetForCalc,
     stanceModalVisible,
     setStanceModalVisible,
@@ -304,18 +304,18 @@ const styles = StyleSheet.create({
   },
   content: { padding: Theme.spacing.md, paddingBottom: 100 },
   startWorkoutHeroBtn: {
-    backgroundColor: Theme.colors.primary,
+    backgroundColor: '#2563eb',
     paddingVertical: 16,
     borderRadius: Theme.borderRadius.lg,
     alignItems: 'center',
     marginBottom: 16,
-    shadowColor: Theme.colors.primary,
+    shadowColor: '#2563eb',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
-  startWorkoutHeroBtnText: { color: '#fff', fontSize: 18, fontWeight: '900', letterSpacing: 1 },
+  startWorkoutHeroBtnText: { color: '#d1d5db', fontSize: 18, fontWeight: '900', letterSpacing: 1 },
   addExerciseBtn: {
     backgroundColor: 'rgba(79, 172, 254, 0.1)',
     paddingVertical: 16,

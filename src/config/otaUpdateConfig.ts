@@ -11,20 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.26',
+  version: '1.8.30',
   title: {
-    ja: '栄養管理画面の表示・レイアウト調整',
-    en: 'Nutrition Management Screen UI Adjustments',
+    ja: 'ボタン明度・文字可読性・直近14日カード配色の細部調整',
+    en: 'Fine-tuned Button Brightness, Text Legibility, and 14-Day Chart Colors',
   },
   notes: {
     ja: [
-      '✨ 栄養摂取進捗グリッドの表示順を調整し、タンパク質を1行表示、脂質・炭水化物、塩分・食物繊維をそれぞれ2列で並列表示するように改善しました。',
-      '🧹 栄養管理画面のタイトルおよび項目見出しから不要な絵文字を削除し、デザインを簡素化しました。',
+      '🎨 青・紫・各種アクションボタンの明度を落とし、ボタン内文字を優しいグレーに変更しました。',
+      '✨ 習慣カウンターのカード上テキストの可読性をクッキリした白文字に復元しました。',
+      '📈 「直近14日間のカロリー推移」カードの背景色を他カードと完全統一（漆黒トーン）に統一しました。',
     ],
     en: [
-      '✨ Improved nutrient progress layout to show protein in a full-width row, and paired fat/carbs and sodium/fiber into two-column rows.',
-      '🧹 Simplified UI by removing emojis from titles and header labels in the nutrition section.',
+      '🎨 Darkened blue, purple, and action button styles; adjusted button texts to soft grey.',
+      '✨ Restored high-contrast text readability on Habit Counter cards.',
+      '📈 Unified 14-day calorie chart background colors to match pure black card styling.',
     ],
   },
 };
-

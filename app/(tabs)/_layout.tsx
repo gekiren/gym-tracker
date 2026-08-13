@@ -3,7 +3,7 @@ import React from 'react';
 import { Platform, View } from 'react-native';
 import AdBanner from '../../components/AdBanner';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { Theme, useAppTheme } from '../../src/theme';
 import { useTranslation } from 'react-i18next';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
@@ -12,6 +12,7 @@ import { AI_CONFIG } from '../../src/config/aiConfig';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
+  const { colors } = useAppTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const aiTokensBalance = useSettingsStore(state => state.settings.aiTokensBalance);
@@ -40,22 +41,22 @@ export default function TabLayout() {
   const tabHeight = baseHeight + tabPaddingBottom;
 
   return (
-    <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Tabs
       screenOptions={{
         headerStyle: {
-          backgroundColor: Theme.colors.background,
+          backgroundColor: colors.background,
           borderBottomWidth: 1,
-          borderBottomColor: Theme.colors.border,
+          borderBottomColor: colors.border,
           elevation: 0,
           shadowOpacity: 0,
         },
-        headerTintColor: Theme.colors.text,
-        tabBarActiveTintColor: Theme.colors.primary,
-        tabBarInactiveTintColor: Theme.colors.textMuted,
+        headerTintColor: colors.text,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
-          backgroundColor: Theme.colors.background,
-          borderTopColor: Theme.colors.border,
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
           height: tabHeight,
           paddingBottom: tabPaddingBottom,
           paddingTop: 8,

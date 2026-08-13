@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '../src/theme';
+import { Theme, useAppTheme } from '../src/theme';
 import { getRoutines, deleteRoutine, updateRoutineOrders } from '../src/db/database';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore } from '../src/store/settingsStore';
@@ -14,6 +14,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 export default function RoutinesScreen() {
+  const { colors } = useAppTheme();
   const { t } = useTranslation();
   const [routines, setRoutines] = useState<any[]>([]);
   const [isReorderMode, setIsReorderMode] = useState(false);
@@ -92,50 +93,39 @@ export default function RoutinesScreen() {
 
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
-            <Ionicons name="arrow-back" size={28} color={Theme.colors.primary} />
-          </TouchableOpacity>
-          <Text style={styles.title}>{t('ui.routines.all_routines')}</Text>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <TouchableOpacity onPress={() => router.back()} style={{ padding: 8, marginRight: 8 }}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.title, { color: colors.text, flex: 1 }]}>{t('ui.routines.title')}</Text>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           {routines.length > 1 && (
             <TouchableOpacity 
-              onPress={() => {
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                setIsReorderMode(!isReorderMode);
-              }} 
-              style={styles.reorderToggleBtn}
+              onPress={() => setIsReorderMode(!isReorderMode)} 
+              style={[styles.reorderToggleBtn, isReorderMode && { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderRadius: 8 }]}
             >
-              <Ionicons 
-                name={isReorderMode ? "checkmark-circle" : "swap-vertical"} 
-                size={24} 
-                color={Theme.colors.primary} 
-              />
+              <Ionicons name={isReorderMode ? "checkmark-outline" : "swap-vertical-outline"} size={22} color={colors.primary} />
             </TouchableOpacity>
           )}
+
           <TouchableOpacity 
             onPress={() => {
-              if (isBasic && routines.length >= 10) {
+              if (isBasic && routines.length >= 11) {
                 Alert.alert(
-                  'ルーティン登録制限',
-                  'ベーシックプランでは最大10個までルーティンを登録できます。登録上限を増やすにはプレミアムプランへのアップグレードが必要です。',
-                  [
-                    { text: 'キャンセル', style: 'cancel' },
-                    { text: 'アップグレードする', onPress: () => router.push('/(tabs)/profile') }
-                  ]
+                  '作成制限',
+                  'ベーシックプランではルーティン作成数が上限（11個）に達しています。既存のルーティンを削除するかプレミアムプランへ登録してください。',
+                  [{ text: 'OK', style: 'default' }]
                 );
-              } else {
-                router.push('/build-routine');
+                return;
               }
-            }}
-            style={[styles.reorderToggleBtn, { marginLeft: 8 }]}
-            activeOpacity={0.8}
+              router.push('/build-routine');
+            }} 
+            style={{ padding: 8 }}
           >
-            <Ionicons name="add" size={28} color={Theme.colors.primary} />
+            <Ionicons name="add" size={26} color={colors.primary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -144,7 +134,7 @@ export default function RoutinesScreen() {
         {routines.map((r, index) => (
           <TouchableOpacity 
             key={r.id} 
-            style={[styles.routineCard, isReorderMode && styles.routineCardEditing]} 
+            style={[styles.routineCard, { backgroundColor: colors.card, borderColor: colors.border }, isReorderMode && styles.routineCardEditing]} 
             activeOpacity={0.7} 
             onPress={() => {
               if (isReorderMode) return;

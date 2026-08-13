@@ -4,6 +4,7 @@ import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getInitialDataForWebView, handleWebViewMessage, syncWidgetPunches } from '../src/services/lifelogSyncService';
 import { useLifelogStore } from '../src/store/lifelogStore';
+import { useAppTheme } from '../src/theme';
 
 interface WebViewTabProps {
   html: string;
@@ -11,6 +12,7 @@ interface WebViewTabProps {
 }
 
 export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, currentDate }) => {
+  const { colors, backgroundTheme } = useAppTheme();
   const webViewRef = useRef<WebView>(null);
   const [initialData, setInitialData] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,6 +61,7 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
           window.__INITIAL_WEBVIEW_DATA__ = ${JSON.stringify(initialStorage)};
           window.__TARGET_DATE__ = "${currentDate}";
           window.__ACTIVE_ROUTINE_STATE__ = ${JSON.stringify(activeRoutineState)};
+          window.__BACKGROUND_THEME__ = "${backgroundTheme}";
         })();
       </script>
     `;
@@ -67,7 +70,7 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
       return html.replace('<head>', `<head>\n${injectScript}`);
     }
     return injectScript + html;
-  }, [html, initialData]);
+  }, [html, initialData, backgroundTheme]);
 
   // Handle messages from the WebView
   const onMessage = async (event: any) => {
@@ -300,26 +303,24 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
     };
   }, [currentDate]);
 
-  if (loading || !initialData) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0A84FF" />
-        <Text style={styles.loadingText}>読み込み中...</Text>
-      </View>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['bottom']}>
+      {loading ? (
+        <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+          <ActivityIndicator size="large" color="#4facfe" />
+          <Text style={[styles.loadingText, { color: colors.text }]}>読み込み中...</Text>
+        </View>
+      ) : null}
+
       <WebView
         ref={webViewRef}
-        source={{ html: htmlWithData }}
         originWhitelist={['*']}
-        domStorageEnabled={true}
+        source={{ html: htmlWithData }}
         javaScriptEnabled={true}
+        domStorageEnabled={true}
         allowFileAccess={true}
         onMessage={onMessage}
-        style={styles.webview}
+        style={[styles.webview, { backgroundColor: colors.background }]}
       />
     </SafeAreaView>
   );

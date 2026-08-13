@@ -90,14 +90,14 @@ export default function NutritionHistoryChart({ allLogs, goals }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#1e293b',
+    backgroundColor: '#0a0a0a',
     borderRadius: 14,
     padding: 14,
     marginVertical: 8,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#1c1c1c',
   },
-  title: { fontSize: 15, fontWeight: '700', color: '#f8fafc', marginBottom: 12 },
+  title: { fontSize: 15, fontWeight: '700', color: '#c8c8c8', marginBottom: 12 },
   chartContainer: { height: 160, width: 440, position: 'relative', paddingTop: 20 },
   goalLine: {
     position: 'absolute',

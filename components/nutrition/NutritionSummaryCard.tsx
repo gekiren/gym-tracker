@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { MealLog, NutritionGoals } from '../../src/db/types';
+import { useAppTheme } from '../../src/theme';
 
 // ─── PFC比率計算ヘルパー ────────────────────────────────
 
@@ -205,36 +206,36 @@ export default function NutritionSummaryCard({ mealLogs, userGoals }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#1e293b',
+    backgroundColor: '#0a0a0a',
     borderRadius: 16,
     padding: 16,
     marginVertical: 8,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#1c1c1c',
   },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#f8fafc', marginBottom: 12 },
-  mainCalBox: { backgroundColor: '#0f172a', borderRadius: 12, padding: 12, marginBottom: 12 },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: '#c8c8c8', marginBottom: 12 },
+  mainCalBox: { backgroundColor: '#121212', borderRadius: 12, padding: 12, marginBottom: 12 },
   mainCalTextRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  mainCalLabel: { fontSize: 13, fontWeight: '600', color: '#94a3b8' },
+  mainCalLabel: { fontSize: 13, fontWeight: '600', color: '#888888' },
   mainCalVal: { fontSize: 18, fontWeight: '700', color: '#10b981' },
-  unitText: { fontSize: 12, color: '#64748b', fontWeight: '400' },
-  progressBg: { height: 10, backgroundColor: '#334155', borderRadius: 5, overflow: 'hidden' },
+  unitText: { fontSize: 12, color: '#888888', fontWeight: '400' },
+  progressBg: { height: 10, backgroundColor: '#1c1c1c', borderRadius: 5, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 5 },
-  pfcRatioBox: { backgroundColor: '#0f172a', borderRadius: 12, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: '#1e293b' },
+  pfcRatioBox: { backgroundColor: '#121212', borderRadius: 12, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: '#1c1c1c' },
   pfcHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  pfcRatioTitle: { fontSize: 13, fontWeight: '700', color: '#f8fafc' },
-  pfcIdeaHint: { fontSize: 10, color: '#64748b' },
-  pfcPropBarBg: { height: 14, backgroundColor: '#334155', borderRadius: 7, overflow: 'hidden', flexDirection: 'row', marginBottom: 10 },
+  pfcRatioTitle: { fontSize: 13, fontWeight: '700', color: '#c8c8c8' },
+  pfcIdeaHint: { fontSize: 10, color: '#888888' },
+  pfcPropBarBg: { height: 14, backgroundColor: '#1c1c1c', borderRadius: 7, overflow: 'hidden', flexDirection: 'row', marginBottom: 10 },
   pfcPropSeg: { height: '100%' },
   pfcValLegendRow: { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 },
   pfcLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   pfcDot: { width: 8, height: 8, borderRadius: 4 },
-  pfcLegendLabel: { fontSize: 11, color: '#94a3b8', fontWeight: '600' },
-  pfcLegendVal: { fontSize: 12, fontWeight: '700', color: '#f8fafc' },
-  pfcLegendKcal: { fontSize: 10, color: '#64748b' },
+  pfcLegendLabel: { fontSize: 11, color: '#888888', fontWeight: '600' },
+  pfcLegendVal: { fontSize: 12, fontWeight: '700', color: '#c8c8c8' },
+  pfcLegendKcal: { fontSize: 10, color: '#888888' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
-  gridItem: { width: '48%', backgroundColor: '#0f172a', borderRadius: 10, padding: 10 },
-  gridItemFull: { width: '100%', backgroundColor: '#0f172a', borderRadius: 10, padding: 10 },
+  gridItem: { width: '48%', backgroundColor: '#121212', borderRadius: 10, padding: 10 },
+  gridItemFull: { width: '100%', backgroundColor: '#121212', borderRadius: 10, padding: 10 },
   itemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   itemLabel: { fontSize: 12, fontWeight: '600', color: '#94a3b8' },
   itemVal: { fontSize: 13, fontWeight: '700', color: '#f8fafc' },

@@ -11,7 +11,7 @@ import {
 import { Stack, useNavigation } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { Theme, useAppTheme } from '../../src/theme';
 import { useNutritionStore } from '../../src/store/nutritionStore';
 import { MealLog, MealFavorite, NutritionGoals, AutophagyConfig } from '../../src/db/types';
 
@@ -30,6 +30,7 @@ import MdImportModal from '../../components/nutrition/MdImportModal';
 import NutritionSettingsModal from '../../components/nutrition/NutritionSettingsModal';
 
 export default function NutritionScreen() {
+  const { colors } = useAppTheme();
   const navigation = useNavigation();
   const isFocused = useIsFocused();
 
@@ -163,31 +164,31 @@ export default function NutritionScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
         options={{
           title: '🥗 栄養＆食事管理',
-          headerStyle: { backgroundColor: Theme.colors.background },
-          headerTintColor: Theme.colors.text,
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.text,
           headerTitleStyle: { fontWeight: 'bold' },
           headerRight: () => (
             <TouchableOpacity onPress={() => setShowSettingsModal(true)} style={{ marginRight: 12, padding: 4 }}>
-              <Ionicons name="settings-outline" size={22} color={Theme.colors.primary} />
+              <Ionicons name="settings-outline" size={22} color={colors.primary} />
             </TouchableOpacity>
           ),
         }}
       />
 
       {/* 日付ナビゲーションバー */}
-      <View style={styles.dateBar}>
+      <View style={[styles.dateBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity style={styles.dateNavBtn} onPress={() => changeDateOffset(-1)}>
-          <Ionicons name="chevron-back" size={20} color="#94a3b8" />
+          <Ionicons name="chevron-back" size={20} color={colors.textMuted} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.dateCenterBtn} onPress={() => setSelectedDate(getTodayStr())}>
-          <Text style={styles.dateText}>{selectedDate === getTodayStr() ? `今日 (${selectedDate})` : selectedDate}</Text>
+          <Text style={[styles.dateText, { color: colors.text }]}>{selectedDate === getTodayStr() ? `今日 (${selectedDate})` : selectedDate}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.dateNavBtn} onPress={() => changeDateOffset(1)}>
-          <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
         </TouchableOpacity>
       </View>
 
@@ -197,7 +198,7 @@ export default function NutritionScreen() {
           {/* 行1: 3個ボタン */}
           <View style={styles.actionRow}>
             <TouchableOpacity
-              style={[styles.actionGridBtn, { backgroundColor: '#0284c7' }]}
+              style={[styles.actionGridBtn, { backgroundColor: '#0369a1' }]}
               onPress={() => setShowPhotoModal(true)}
               activeOpacity={0.8}
             >
@@ -205,7 +206,7 @@ export default function NutritionScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.actionGridBtn, { backgroundColor: '#0ea5e9' }]}
+              style={[styles.actionGridBtn, { backgroundColor: '#0284c7' }]}
               onPress={() => setShowChatModal(true)}
               activeOpacity={0.8}
             >
@@ -213,7 +214,7 @@ export default function NutritionScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.actionGridBtn, { backgroundColor: '#10b981' }]}
+              style={[styles.actionGridBtn, { backgroundColor: '#047857' }]}
               onPress={() => setShowManualModal(true)}
               activeOpacity={0.8}
             >
@@ -224,7 +225,7 @@ export default function NutritionScreen() {
           {/* 行2: 2個ボタン */}
           <View style={styles.actionRow}>
             <TouchableOpacity
-              style={[styles.actionGridBtn, { backgroundColor: '#6366f1' }]}
+              style={[styles.actionGridBtn, { backgroundColor: '#3730a3' }]}
               onPress={() => setShowHistoryModal(true)}
               activeOpacity={0.8}
             >
@@ -232,7 +233,7 @@ export default function NutritionScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.actionGridBtn, { backgroundColor: '#8b5cf6' }]}
+              style={[styles.actionGridBtn, { backgroundColor: '#5b21b6' }]}
               onPress={() => setShowMdModal(true)}
               activeOpacity={0.8}
             >
@@ -379,7 +380,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   actionGridBtnText: {
-    color: '#ffffff',
+    color: '#d1d5db',
     fontSize: 13,
     fontWeight: '700',
   },

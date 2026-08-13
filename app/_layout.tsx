@@ -55,6 +55,7 @@ export default function RootLayout() {
       const alwaysOneSet = storedSettings['always_one_set'] === '1';
       const preferredAiModel = (storedSettings['preferred_ai_model'] === 'deepseek' ? 'deepseek' : 'gemini') as 'gemini' | 'deepseek';
       const aiChatMode = (storedSettings['ai_chat_mode'] === 'thinking' ? 'thinking' : 'quick') as 'quick' | 'thinking';
+      const backgroundTheme = (storedSettings['background_theme'] === 'pureBlack' ? 'pureBlack' : 'dark') as 'dark' | 'pureBlack';
 
       const isProductionChannel = Updates.channel === 'production';
       let enableAiDebugContext = !isProductionChannel;
@@ -96,6 +97,7 @@ export default function RootLayout() {
         preferredAiModel,
         aiChatMode,
         enableAiDebugContext,
+        backgroundTheme,
       });
       if (expired) {
         useWorkoutStore.getState().setShouldShowPaywall(true);

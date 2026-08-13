@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useNavigation } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '../../src/theme';
+import { Theme, useAppTheme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { getRoutines, getPreviousWorkoutSets, getPersonalRecords, saveSetting } from '../../src/db/database';
@@ -11,6 +11,7 @@ import { translateExercise } from '../../src/i18n';
 import { readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../../src/services/crashReporterService';
 
 export default function WorkoutHomeScreen() {
+  const { colors } = useAppTheme();
   const { t } = useTranslation();
   const navigation = useNavigation();
   const startWorkout = useWorkoutStore(state => state.startWorkout);
@@ -29,6 +30,8 @@ export default function WorkoutHomeScreen() {
   // Configure navigation header dynamics (Dashboard Back Button)
   useEffect(() => {
     navigation.setOptions({
+      headerStyle: { backgroundColor: colors.background },
+      headerTintColor: colors.text,
       headerLeft: () => (
         <TouchableOpacity 
           onPress={() => {
@@ -41,11 +44,11 @@ export default function WorkoutHomeScreen() {
           style={{ marginLeft: 16, padding: 8 }}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color={Theme.colors.text} />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
       ),
     });
-  }, [navigation]);
+  }, [navigation, colors]);
 
   useFocusEffect(
     useCallback(() => {
@@ -211,8 +214,8 @@ export default function WorkoutHomeScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
         {isActive ? (
           <TouchableOpacity style={[styles.primaryButton, { backgroundColor: Theme.colors.success || '#4caf50' }]} activeOpacity={0.8} onPress={() => router.push('/active-workout')}>
             <Ionicons name="play" size={24} color="#fff" style={{ marginRight: 8 }} />

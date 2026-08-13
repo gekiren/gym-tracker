@@ -116,6 +116,15 @@ export default `<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>水分補給トラッカー</title>
+    <script>
+    (function() {
+      if (window.__BACKGROUND_THEME__ === 'pureBlack') {
+        var style = document.createElement('style');
+        style.innerHTML = ':root { --bg-color: #000000 !important; --card-bg: #080808 !important; --text-color: #c8c8c8 !important; --text-muted: #888888 !important; --border-color: #1f1f1f !important; } body { background-color: #000000 !important; }';
+        document.head.appendChild(style);
+      }
+    })();
+    </script>
     <style>
 :root {
     --primary-color: #4facfe;

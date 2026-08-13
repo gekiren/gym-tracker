@@ -12,6 +12,8 @@ interface PreferenceSectionProps {
   onChangeLanguage: (lang: 'ja' | 'en') => void;
   crashConsent: string;
   onUpdateCrashConsent: (val: boolean) => void;
+  backgroundTheme?: 'dark' | 'pureBlack';
+  onUpdateBackgroundTheme?: (theme: 'dark' | 'pureBlack') => void;
   t: (key: string, options?: any) => string;
 }
 
@@ -24,6 +26,8 @@ export const PreferenceSection: React.FC<PreferenceSectionProps> = ({
   onChangeLanguage,
   crashConsent,
   onUpdateCrashConsent,
+  backgroundTheme = 'dark',
+  onUpdateBackgroundTheme,
   t,
 }) => {
   return (
@@ -62,6 +66,24 @@ export const PreferenceSection: React.FC<PreferenceSectionProps> = ({
             placeholder={`e.g. 70 (${weightUnit})`}
             placeholderTextColor={Theme.colors.textMuted}
           />
+        </View>
+        <View style={[styles.settingRow, { flexDirection: 'column', alignItems: 'flex-start' }]}>
+          <Text style={styles.settingLabel}>背景テーマ (カラーモード)</Text>
+          <Text style={styles.settingDesc}>アプリ全体の背景色テーマを選択できます。</Text>
+          <View style={[styles.chipContainer, { marginTop: 12 }]}>
+            <TouchableOpacity
+              style={[styles.langChip, backgroundTheme === 'dark' && styles.chipActive]}
+              onPress={() => onUpdateBackgroundTheme?.('dark')}
+            >
+              <Text style={[styles.chipText, backgroundTheme === 'dark' && styles.chipTextActive]}>🌑 ダーク (#121212)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.langChip, backgroundTheme === 'pureBlack' && styles.chipActive]}
+              onPress={() => onUpdateBackgroundTheme?.('pureBlack')}
+            >
+              <Text style={[styles.chipText, backgroundTheme === 'pureBlack' && styles.chipTextActive]}>⬛ 純黒 / OLED (#000000)</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         <View style={[styles.settingRow, { flexDirection: 'column', alignItems: 'flex-start' }]}>
           <Text style={styles.settingLabel}>{t('ui.profile.language_label')}</Text>

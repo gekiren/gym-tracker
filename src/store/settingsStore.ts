@@ -27,6 +27,7 @@ export interface ApplicationSettings {
   preferredAiModel: 'gemini' | 'deepseek';
   aiChatMode: 'quick' | 'thinking';
   enableAiDebugContext: boolean;
+  backgroundTheme: 'dark' | 'pureBlack';
 }
 
 export interface LoadSettingsPayload {
@@ -46,6 +47,7 @@ export interface LoadSettingsPayload {
   preferredAiModel?: 'gemini' | 'deepseek';
   aiChatMode?: 'quick' | 'thinking';
   enableAiDebugContext?: boolean;
+  backgroundTheme?: 'dark' | 'pureBlack';
 }
 
 export interface SettingsState {
@@ -53,6 +55,7 @@ export interface SettingsState {
   loadSettings: (payload: LoadSettingsPayload) => void;
   setKeepAwake: (keepAwake: boolean) => void;
   setAlwaysOneSet: (alwaysOneSet: boolean) => void;
+  setBackgroundTheme: (theme: 'dark' | 'pureBlack') => void;
   setPreferredAiModel: (model: 'gemini' | 'deepseek') => void;
   setAiChatMode: (mode: 'quick' | 'thinking') => void;
   setEnableAiDebugContext: (enabled: boolean) => void;
@@ -94,6 +97,7 @@ export const initialSettings: ApplicationSettings = {
   preferredAiModel: 'gemini',
   aiChatMode: 'quick',
   enableAiDebugContext: true,
+  backgroundTheme: 'dark',
 };
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -116,7 +120,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       alwaysOneSet,
       preferredAiModel,
       aiChatMode,
-      enableAiDebugContext
+      enableAiDebugContext,
+      backgroundTheme
     } = payload;
     const finalNeedsUnitSelection = needsUnitSelection !== undefined ? needsUnitSelection : state.settings.needsUnitSelection;
     const finalBodyWeight = bodyWeight !== undefined ? bodyWeight : state.settings.bodyWeight;
@@ -130,6 +135,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const finalPreferredAiModel = preferredAiModel !== undefined ? preferredAiModel : state.settings.preferredAiModel;
     const finalAiChatMode = aiChatMode !== undefined ? aiChatMode : state.settings.aiChatMode;
     const finalEnableAiDebugContext = enableAiDebugContext !== undefined ? enableAiDebugContext : state.settings.enableAiDebugContext;
+    const finalBackgroundTheme = backgroundTheme !== undefined ? backgroundTheme : state.settings.backgroundTheme;
 
     const isPremium = computeIsPremium(finalPremiumUntil, finalIsEarlyAdopter);
     return {
@@ -150,10 +156,18 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         keepAwake: finalKeepAwake,
         alwaysOneSet: finalAlwaysOneSet,
         preferredAiModel: finalPreferredAiModel,
-        aiChatMode: finalAiChatMode
+        aiChatMode: finalAiChatMode,
+        backgroundTheme: finalBackgroundTheme
       }
     };
   }),
+
+  setBackgroundTheme: (theme: 'dark' | 'pureBlack') => {
+    saveSetting('background_theme', theme).catch(e => console.warn('Failed to save background_theme setting', e));
+    set((state) => ({
+      settings: { ...state.settings, backgroundTheme: theme }
+    }));
+  },
 
   setPreferredAiModel: (model: 'gemini' | 'deepseek') => {
     saveSetting('preferred_ai_model', model).catch(e => console.warn('Failed to save preferred_ai_model setting', e));

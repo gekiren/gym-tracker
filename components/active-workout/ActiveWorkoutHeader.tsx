@@ -97,24 +97,24 @@ const styles = StyleSheet.create({
   },
   finishBtn: {
     marginRight: 8,
-    backgroundColor: Theme.colors.primary,
+    backgroundColor: '#2563eb',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 4,
   },
   finishBtnText: {
-    color: '#fff',
+    color: '#d1d5db',
     fontWeight: 'bold',
   },
   backBtn: {
     marginLeft: 8,
-    backgroundColor: Theme.colors.primary,
+    backgroundColor: '#2563eb',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 4,
   },
   backBtnText: {
-    color: '#fff',
+    color: '#d1d5db',
     fontWeight: 'bold',
   },
 });

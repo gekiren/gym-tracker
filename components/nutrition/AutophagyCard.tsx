@@ -195,20 +195,20 @@ export default function AutophagyCard({ config, lastMealLog, onUpdateConfig }: P
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#1e293b',
+    backgroundColor: '#0a0a0a',
     borderRadius: 14,
     padding: 14,
     marginVertical: 8,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#1c1c1c',
   },
   cardOff: {
-    backgroundColor: '#1e293b',
+    backgroundColor: '#0a0a0a',
     borderRadius: 14,
     padding: 12,
     marginVertical: 8,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#1c1c1c',
     opacity: 0.6,
   },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

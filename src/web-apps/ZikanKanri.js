@@ -117,11 +117,20 @@ export default `<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>時間内訳管理</title>
     <meta name="theme-color" content="#121212">
+    <script>
+    (function() {
+      if (window.__BACKGROUND_THEME__ === 'pureBlack') {
+        var style = document.createElement('style');
+        style.innerHTML = ':root { --bg-color: #000000 !important; --surface-color: #080808 !important; --text-primary: #a0a0a0 !important; --text-secondary: #888888 !important; --primary-color: #6d28d9 !important; } body { background-color: #000000 !important; } #current-date { color: #a0a0a0 !important; } button.btn-primary, #save-log, .btn-primary { background-color: #6d28d9 !important; color: #d1d5db !important; }';
+        document.head.appendChild(style);
+      }
+    })();
+    </script>
     <style>
 :root {
   --bg-color: #121212;
   --surface-color: #1E1E1E;
-  --primary-color: #BB86FC;
+  --primary-color: #6d28d9;
   --primary-variant: #3700B3;
   --secondary-color: #03DAC6;
   --text-primary: #FFFFFF;

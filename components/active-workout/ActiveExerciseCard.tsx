@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
-import { Theme } from '../../src/theme';
+import { Theme, useAppTheme } from '../../src/theme';
 import { AI_CONFIG } from '../../src/config/aiConfig';
 import { translateExercise, translateStance } from '../../src/i18n';
 import { SetInputRow } from './SetInputRow';
@@ -51,6 +51,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
   onSetActiveSetForCalc,
   calculateRM,
 }) => {
+  const { colors } = useAppTheme();
   const [weightStepModalVisible, setWeightStepModalVisible] = React.useState(false);
 
   const renderLeftActions = (_progress: SharedValue<number>, drag: SharedValue<number>) => {
@@ -88,7 +89,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
   const isLongName = exerciseNameText.length > 13;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.card }]}>
       <Swipeable
         renderLeftActions={(progress, drag) => renderLeftActions(progress, drag)}
         renderRightActions={(progress, drag) => renderRightActions(progress, drag)}
@@ -96,7 +97,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
         leftThreshold={40}
         rightThreshold={40}
       >
-        <View style={{ backgroundColor: Theme.colors.card, paddingTop: 0, paddingBottom: 2 }}>
+        <View style={{ backgroundColor: colors.card, paddingTop: 0, paddingBottom: 2 }}>
           <View style={styles.headerRow}>
             <View style={{ flex: 1 }}>
               <TouchableOpacity
