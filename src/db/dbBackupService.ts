@@ -1,4 +1,6 @@
 import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
+import { getDB } from './connection';
 
 const DB_NAME = 'gymtracker.db';
 const BACKUP_DIR = `${FileSystem.documentDirectory}backups/`;
@@ -97,3 +99,68 @@ export const restoreFromLatestBackup = async (): Promise<boolean> => {
     return false;
   }
 };
+
+/**
+ * データベースのバックアップファイル(.db)を出力・共有ダイアログで開く
+ */
+export const exportDatabaseBackup = async (options?: {
+  dialogTitle?: string;
+}): Promise<{ success: boolean; error?: string }> => {
+  try {
+    // 1. WAL checkpoint (Flush WAL changes into main DB file)
+    // 失敗しても例外を潰して処理を継続させる（一時的なDBロック等でバックアップ自体が失敗するのを防止）
+    try {
+      const conn = getDB();
+      if (conn) {
+        await conn.execAsync('PRAGMA wal_checkpoint(TRUNCATE);');
+      }
+    } catch (walErr) {
+      console.warn('[DB_BACKUP] WAL checkpoint failed before export (proceeding anyway):', walErr);
+    }
+
+    // 2. データベース存在確認
+    const dbInfo = await FileSystem.getInfoAsync(DB_PATH);
+    if (!dbInfo.exists) {
+      return { success: false, error: 'Database file not found.' };
+    }
+
+    // 3. 一時ファイルパスの構築
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const date = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const dateStr = `${year}${month}${date}_${hours}${minutes}${seconds}`;
+
+    const cacheDir = FileSystem.cacheDirectory || `${FileSystem.documentDirectory}Caches/`;
+    const backupUri = `${cacheDir}trenote_backup_${dateStr}.db`;
+
+    // 古い同名ファイルが存在すれば事前削除
+    await FileSystem.deleteAsync(backupUri, { idempotent: true }).catch(() => {});
+
+    // 4. コピー実行
+    await FileSystem.copyAsync({
+      from: DB_PATH,
+      to: backupUri,
+    });
+
+    // 5. 共有モーダルの呼び出し
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(backupUri, {
+        mimeType: 'application/octet-stream',
+        dialogTitle: options?.dialogTitle || 'バックアップデータの保存',
+        UTI: 'public.database',
+      });
+      return { success: true };
+    } else {
+      return { success: false, error: 'Sharing is not available on this device.' };
+    }
+  } catch (error: any) {
+    console.error('[DB_BACKUP] Export failed:', error);
+    const msg = error?.message || String(error);
+    return { success: false, error: msg };
+  }
+};
+

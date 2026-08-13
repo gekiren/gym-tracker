@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '../../src/theme';
 import { useSettingsStore } from '../../src/store/settingsStore';
-import { getDB, closeDB } from '../../src/db/database';
+import { getDB, closeDB, exportDatabaseBackup } from '../../src/db/database';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -24,46 +24,11 @@ export default function BackupSettingsScreen() {
       alertPremiumOnly();
       return;
     }
-    try {
-      const conn = getDB();
-      await conn.execAsync('PRAGMA wal_checkpoint(TRUNCATE);');
-
-      const dbDir = FileSystem.documentDirectory + 'SQLite/';
-      const dbUri = dbDir + 'gymtracker.db';
-
-      const fileInfo = await FileSystem.getInfoAsync(dbUri);
-      if (!fileInfo.exists) {
-        Alert.alert(t('ui.common.error') || 'エラー', 'データベースファイルが見つかりません。');
-        return;
-      }
-
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const date = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      const dateStr = `${year}${month}${date}_${hours}${minutes}${seconds}`;
-
-      const backupUri = FileSystem.cacheDirectory + `trenote_backup_${dateStr}.db`;
-      await FileSystem.copyAsync({
-        from: dbUri,
-        to: backupUri
-      });
-
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(backupUri, {
-          mimeType: 'application/octet-stream',
-          dialogTitle: t('ui.developer_menu.backup_title') || 'バックアップデータの保存',
-          UTI: 'public.database'
-        });
-      } else {
-        Alert.alert(t('ui.common.error') || 'エラー', 'この端末では共有機能が利用できません。');
-      }
-    } catch (error) {
-      console.error('Backup error:', error);
-      Alert.alert(t('ui.common.error') || 'エラー', 'バックアップの作成に失敗しました。');
+    const result = await exportDatabaseBackup({
+      dialogTitle: t('ui.developer_menu.backup_title') || 'バックアップデータの保存'
+    });
+    if (!result.success && result.error) {
+      Alert.alert(t('ui.common.error') || 'エラー', `バックアップの作成に失敗しました: ${result.error}`);
     }
   };
 

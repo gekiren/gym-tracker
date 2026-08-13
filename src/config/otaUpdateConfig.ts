@@ -13,17 +13,17 @@ export interface OTAUpdateConfig {
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
   version: '1.8.42',
   title: {
-    ja: '習慣タップ時の全数値一瞬変化・チラつきの完全修正',
-    en: 'Fix habit count flickering and momentary data alteration on tap',
+    ja: 'データベースバックアップ作成・エクスポート機能の不具合修正',
+    en: 'Fix database backup creation and export issue',
   },
   notes: {
     ja: [
-      '🐛 習慣カウンターをタップした際、すべての習慣の数値が一瞬変化したり0になるチラつき現象を完全解消しました。',
-      '⚡ React Native と WebView 間のログ注入タイミングおよび状態同期を最適化しました。',
+      '🐛 デベロッパーメニューおよび設定画面からの「バックアップファイルの保存」実行時にエラーが発生する問題を解消しました。',
+      '⚡ SQLite WALチェックポイント処理と端末共有（Share）処理の堅牢化を行い、スムーズに保存・共有できるように改善しました。',
     ],
     en: [
-      '🐛 Completely fixed flickering where all habit counts briefly shifted or reset to 0 on tap.',
-      '⚡ Optimized log injection and state sync between React Native and WebView.',
+      '🐛 Fixed an issue where creating or exporting database backup files would fail with an error.',
+      '⚡ Hardened SQLite WAL checkpoints and sharing mechanisms for smoother backup exports.',
     ],
   },
 };

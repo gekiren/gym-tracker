@@ -10,7 +10,7 @@ import { importWorkoutFromSelectedFile, importWorkoutFromMarkdownText } from '..
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Updates from 'expo-updates';
-import { saveSetting, getDB, closeDB, initDB, getSettings } from '../src/db/database';
+import { saveSetting, getDB, closeDB, initDB, getSettings, exportDatabaseBackup } from '../src/db/database';
 import { getSyncDiagnosticsLogs } from '../src/services/lifelogSyncService';
 import { showReviewDialog } from '../src/services/reviewService';
 import { saveCrashLog, readCrashLog } from '../src/services/crashReporterService';
@@ -205,50 +205,11 @@ export default function DeveloperMenuScreen() {
   };
 
   const handleBackup = async () => {
-    try {
-      // Flush WAL to the main gymtracker.db file before copying
-      const conn = getDB();
-      await conn.execAsync('PRAGMA wal_checkpoint(TRUNCATE);');
-
-      const dbDir = FileSystem.documentDirectory + 'SQLite/';
-      const dbUri = dbDir + 'gymtracker.db';
-
-      // Check if DB file exists
-      const fileInfo = await FileSystem.getInfoAsync(dbUri);
-      if (!fileInfo.exists) {
-        Alert.alert(t('ui.common.error'), 'Database file not found.');
-        return;
-      }
-
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const date = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      const dateStr = `${year}${month}${date}_${hours}${minutes}${seconds}`;
-
-      // Copy to temporary cache location for sharing
-      const backupUri = FileSystem.cacheDirectory + `trenote_backup_${dateStr}.db`;
-      await FileSystem.copyAsync({
-        from: dbUri,
-        to: backupUri
-      });
-
-      // Share the file
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(backupUri, {
-          mimeType: 'application/octet-stream',
-          dialogTitle: t('ui.developer_menu.backup_title'),
-          UTI: 'public.database'
-        });
-      } else {
-        Alert.alert(t('ui.common.error'), 'Sharing is not available on this device.');
-      }
-    } catch (error) {
-      console.error('Backup error:', error);
-      Alert.alert(t('ui.common.error'), 'Failed to create backup.');
+    const result = await exportDatabaseBackup({
+      dialogTitle: t('ui.developer_menu.backup_title')
+    });
+    if (!result.success && result.error) {
+      Alert.alert(t('ui.common.error'), `Failed to create backup: ${result.error}`);
     }
   };
 
