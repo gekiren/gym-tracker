@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.54',
+  version: '1.8.55',
   title: {
-    ja: 'メモ入力時の自動最下部スクロール対応',
-    en: 'Auto Scroll-to-Bottom on Memo Input Focus',
+    ja: '食事記録モーダルのタイトル変更およびテキストAI解析の整理',
+    en: 'Meal Record Modal Title Update & Text AI Analysis Removal',
   },
   notes: {
     ja: [
-      '手動入力・編集・写真解析モーダルのメモ入力欄選択時に画面が自動で一番下までスムーズにスクロールする機能を追加しました。',
-      'キーボード表示時にもメモ入力と保存アクションが途切れることなく快適に行えるようになりました。',
+      '食事記録モーダルのタイトルを「写真から食事記録」に変更しました。',
+      '「テキストメモからAI栄養解析」ボタンを削除し、直感的なUI構造に改善しました。',
     ],
     en: [
-      'Added automatic smooth scrolling to the bottom when focusing memo input fields.',
-      'Ensured seamless typing and saving experience above the software keyboard.',
+      'Updated the meal record modal title to "Meal Record from Photo".',
+      'Removed the text memo AI analysis button for a cleaner user interface.',
     ],
   },
 };

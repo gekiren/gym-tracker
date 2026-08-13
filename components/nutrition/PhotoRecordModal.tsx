@@ -59,7 +59,7 @@ const safeGetImageManipulator = () => {
   }
 };
 
-import { analyzeMealImage, analyzeMealText, NutritionAIResult } from '../../src/services/aiCoachService';
+import { analyzeMealImage, NutritionAIResult } from '../../src/services/aiCoachService';
 import { MealLog } from '../../src/db/types';
 import { useAppTheme } from '../../src/theme';
 
@@ -251,26 +251,6 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
     }
   };
 
-  // AI解析の実行 (テキストのみ)
-  const runTextAnalysis = async () => {
-    const textQuery = userMemo.trim() || mealName.trim();
-    if (!textQuery) {
-      Alert.alert('入力案内', '「料理名」または「メモ欄」に食事内容（例: 焼肉定食とウーロン茶）を入力してください。');
-      return;
-    }
-    setIsAnalyzing(true);
-    setAiResult(null);
-    try {
-      const res = await analyzeMealText(textQuery, 'gemini');
-      setAiResult(res);
-      setMealName(res.mealName);
-      applyMultiplier(res, multiplier);
-    } catch (err: any) {
-      Alert.alert('AIテキスト解析エラー', err.message || 'テキストからの食事解析に失敗しました。');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
 
   // 倍率変更の反映
   const applyMultiplier = (res: NutritionAIResult, mult: number) => {
@@ -329,7 +309,7 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
       <KeyboardAvoidingView style={styles.sheetContainer} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={[styles.sheet, isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' }]}>
           <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
-            <Text style={styles.title}>📷 写真・AIから食事記録</Text>
+            <Text style={styles.title}>📷 写真から食事記録</Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
@@ -342,7 +322,7 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
                 <Text style={styles.warningBannerTitle}>⚠️ カメラ非対応ビルド環境</Text>
                 <Text style={styles.warningBannerText}>
                   お使いのアプリはJSアップデートのみが適用された環境です。写真撮影には最新のNative APKの更新が必要です。
-                  下記のメモ・料理名から「✍️ テキストでAI解析」または直接手動入力をご利用いただけます。
+                  下記のメモ・料理名から直接手動入力をご利用いただけます。
                 </Text>
               </View>
             )}
@@ -416,13 +396,7 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
                     </TouchableOpacity>
                   </>
                 )}
-                <TouchableOpacity
-                  style={[styles.pickBtn, { backgroundColor: '#0d9488' }]}
-                  onPress={runTextAnalysis}
-                  disabled={isAnalyzing}
-                >
-                  <Text style={styles.pickBtnText}>✍️ テキストメモからAI栄養解析</Text>
-                </TouchableOpacity>
+
               </View>
             )}
 
