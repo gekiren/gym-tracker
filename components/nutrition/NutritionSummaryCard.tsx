@@ -98,7 +98,7 @@ export default function NutritionSummaryCard({ mealLogs, userGoals }: Props) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>📊 今日の栄養摂取進捗</Text>
+      <Text style={styles.cardTitle}>今日の栄養摂取進捗</Text>
 
       {/* 総カロリー進捗バー */}
       <View style={styles.mainCalBox}>
@@ -122,7 +122,7 @@ export default function NutritionSummaryCard({ mealLogs, userGoals }: Props) {
       {/* PFC エネルギー比率 */}
       <View style={styles.pfcRatioBox}>
         <View style={styles.pfcHeaderRow}>
-          <Text style={styles.pfcRatioTitle}>⚖️ PFCエネルギー比率</Text>
+          <Text style={styles.pfcRatioTitle}>PFCエネルギー比率</Text>
           <Text style={styles.pfcIdeaHint}>理想: P 15-25% / F 20-30% / C 50-65%</Text>
         </View>
         <View style={styles.pfcPropBarBg}>
@@ -155,12 +155,13 @@ export default function NutritionSummaryCard({ mealLogs, userGoals }: Props) {
       {/* PFC + 塩分 + 食物繊維 目標進捗グリッド */}
       <View style={styles.grid}>
         {[
-          { label: 'タンパク質 (P)', val: totals.protein, goal: goals.protein, color: '#06b6d4' },
-          { label: '脂質 (F)',       val: totals.fat,     goal: goals.fat,     color: '#f59e0b' },
-          { label: '炭水化物 (C)',   val: totals.carbs,   goal: goals.carbs,   color: '#a855f7' },
-          { label: '塩分',           val: totals.sodium,  goal: goals.sodium,  color: totals.sodium > goals.sodium ? '#ef4444' : '#f43f5e' },
+          { label: 'タンパク質 (P)', val: totals.protein, goal: goals.protein, color: '#06b6d4', fullWidth: true },
+          { label: '脂質 (F)',       val: totals.fat,     goal: goals.fat,     color: '#f59e0b', fullWidth: false },
+          { label: '炭水化物 (C)',   val: totals.carbs,   goal: goals.carbs,   color: '#a855f7', fullWidth: false },
+          { label: '塩分',           val: totals.sodium,  goal: goals.sodium,  color: totals.sodium > goals.sodium ? '#ef4444' : '#f43f5e', fullWidth: false },
+          { label: '食物繊維',       val: totals.fiber,   goal: goals.fiber,   color: '#10b981', fullWidth: false },
         ].map((item) => (
-          <View key={item.label} style={styles.gridItem}>
+          <View key={item.label} style={item.fullWidth ? styles.gridItemFull : styles.gridItem}>
             <View style={styles.itemHeader}>
               <Text style={styles.itemLabel}>{item.label}</Text>
               <Text style={styles.itemVal}>
@@ -172,17 +173,6 @@ export default function NutritionSummaryCard({ mealLogs, userGoals }: Props) {
             </View>
           </View>
         ))}
-        <View style={styles.gridItemFull}>
-          <View style={styles.itemHeader}>
-            <Text style={styles.itemLabel}>🌾 食物繊維</Text>
-            <Text style={styles.itemVal}>
-              {totals.fiber.toFixed(1)} <Text style={styles.subUnit}>/ {goals.fiber}g</Text>
-            </Text>
-          </View>
-          <View style={styles.subProgressBg}>
-            <View style={[styles.subProgressFill, { width: `${getPercent(totals.fiber, goals.fiber)}%`, backgroundColor: '#10b981' }]} />
-          </View>
-        </View>
       </View>
 
       {/* 食事タイプ別内訳 */}
