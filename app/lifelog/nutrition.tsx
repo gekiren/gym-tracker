@@ -11,6 +11,7 @@ import {
 import { Stack, useNavigation } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Theme, useAppTheme } from '../../src/theme';
 import { useNutritionStore } from '../../src/store/nutritionStore';
 import { MealLog, MealFavorite, NutritionGoals, AutophagyConfig } from '../../src/db/types';
@@ -29,11 +30,15 @@ import NutritionHistoryChart from '../../components/nutrition/NutritionHistoryCh
 import MdImportModal from '../../components/nutrition/MdImportModal';
 import NutritionSettingsModal from '../../components/nutrition/NutritionSettingsModal';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
 
 export default function NutritionScreen() {
   const { colors } = useAppTheme();
   const navigation = useNavigation();
   const isFocused = useIsFocused();
+  const { t } = useTranslation();
+
+  const [showHistory, setShowHistory] = useState(false);
 
   // Zustand selector 形式の徹底
   const mealLogs = useNutritionStore((state) => state.mealLogs);
@@ -186,27 +191,36 @@ export default function NutritionScreen() {
           headerTintColor: colors.text,
           headerTitleStyle: { fontWeight: 'bold' },
           headerRight: () => (
-            <TouchableOpacity onPress={() => setShowSettingsModal(true)} style={{ marginRight: 12, padding: 4 }}>
-              <Ionicons name="settings-outline" size={22} color={colors.primary} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+              <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ padding: 6, marginRight: 6 }}>
+                <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowSettingsModal(true)} style={{ padding: 6 }}>
+                <Ionicons name="settings-outline" size={22} color={colors.primary} />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />
 
-      {/* 日付ナビゲーションバー */}
-      <View style={[styles.dateBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={styles.dateNavBtn} onPress={() => changeDateOffset(-1)}>
-          <Ionicons name="chevron-back" size={20} color={colors.textMuted} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.dateCenterBtn} onPress={() => setSelectedDate(getTodayStr())}>
-          <Text style={[styles.dateText, { color: colors.text }]}>{selectedDate === getTodayStr() ? `今日 (${selectedDate})` : selectedDate}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.dateNavBtn} onPress={() => changeDateOffset(1)}>
-          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-        </TouchableOpacity>
-      </View>
+      {showHistory ? (
+        <LifelogHistoryTab type="nutrition" t={t} />
+      ) : (
+        <>
+          {/* 日付ナビゲーションバー */}
+          <View style={[styles.dateBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+            <TouchableOpacity style={styles.dateNavBtn} onPress={() => changeDateOffset(-1)}>
+              <Ionicons name="chevron-back" size={20} color={colors.textMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.dateCenterBtn} onPress={() => setSelectedDate(getTodayStr())}>
+              <Text style={[styles.dateText, { color: colors.text }]}>{selectedDate === getTodayStr() ? `今日 (${selectedDate})` : selectedDate}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.dateNavBtn} onPress={() => changeDateOffset(1)}>
+              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
 
-      <ScrollView style={styles.scrollBody} contentContainerStyle={styles.scrollContent}>
+          <ScrollView style={styles.scrollBody} contentContainerStyle={styles.scrollContent}>
         {/* 食事登録アクションボタン群（最上段） */}
         <View style={styles.actionSection}>
           {/* 行1: 3個ボタン */}
@@ -290,6 +304,8 @@ export default function NutritionScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+      </>
+      )}
 
       {/* 各種モーダル */}
       <ChatRecordModal

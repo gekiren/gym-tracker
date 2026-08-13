@@ -265,6 +265,10 @@
       "metric_1rm_sub": "算出された推定最高1RMの推移",
       "chart_title_water": "最近の水分摂取量 (ml)",
       "chart_title_caffeine": "最近のカフェイン摂取量 (mg)",
+      "chart_title_nutrition_calories": "最近の摂取カロリー (kcal)",
+      "chart_title_nutrition_protein": "最近のタンパク質摂取量 (g)",
+      "chart_title_nutrition_fat": "最近の脂質摂取量 (g)",
+      "chart_title_nutrition_carbs": "最近の炭水化物摂取量 (g)",
       "chart_title_time": "時間管理 - 合計記録時間 (時間)",
       "chart_title_time_tag": "時間管理 - 「{{tag}}」の時間 (時間)",
       "chart_title_habit": "習慣 - 総達成回数 (回)",
@@ -273,6 +277,9 @@
       "chart_title_routine_item": "ルーティン - 「{{item}}」完了回数 (回)",
       "metric_water": "水分量",
       "metric_caffeine": "カフェイン",
+      "metric_protein": "タンパク質",
+      "metric_fat": "脂質",
+      "metric_carbs": "炭水化物",
       "filter_all": "すべて",
       "select_filter": "フィルター選択",
       "section_history": "過去の履歴",
@@ -282,7 +289,9 @@
       "completed_label": "完了",
       "unit_times": "回",
       "unit_items": "件",
-      "unit_hours": "時間"
+      "unit_hours": "時間",
+      "unit_kcal": "kcal",
+      "unit_g": "g"
     },
     "exercise_library": {
       "title": "種目辞典",

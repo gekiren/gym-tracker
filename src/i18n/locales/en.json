@@ -270,6 +270,10 @@
       "metric_1rm_sub": "Estimated 1RM max over time",
       "chart_title_water": "Recent Water Intake (ml)",
       "chart_title_caffeine": "Recent Caffeine Intake (mg)",
+      "chart_title_nutrition_calories": "Recent Calories Intake (kcal)",
+      "chart_title_nutrition_protein": "Recent Protein Intake (g)",
+      "chart_title_nutrition_fat": "Recent Fat Intake (g)",
+      "chart_title_nutrition_carbs": "Recent Carbs Intake (g)",
       "chart_title_time": "Time - Total Logged Time (hours)",
       "chart_title_time_tag": "Time - \"{{tag}}\" (hours)",
       "chart_title_habit": "Habits - Total Completions",
@@ -278,6 +282,9 @@
       "chart_title_routine_item": "Routines - \"{{item}}\" Completions",
       "metric_water": "Water",
       "metric_caffeine": "Caffeine",
+      "metric_protein": "Protein",
+      "metric_fat": "Fat",
+      "metric_carbs": "Carbs",
       "filter_all": "All",
       "select_filter": "Select Filter",
       "section_history": "Past History",
@@ -287,7 +294,9 @@
       "completed_label": "Completed",
       "unit_times": "times",
       "unit_items": "items",
-      "unit_hours": "hours"
+      "unit_hours": "hours",
+      "unit_kcal": "kcal",
+      "unit_g": "g"
     },
     "exercise_library": {
       "title": "Exercise Library",

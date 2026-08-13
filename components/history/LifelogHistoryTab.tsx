@@ -21,14 +21,18 @@ import {
   getHabitItems,
   getSettingValue,
   getWaterGoal,
+  getAllMealLogs,
+  getNutritionGoals,
   WaterLog,
   TimeLog,
   HabitLog,
   HabitItem,
+  MealLog,
+  NutritionGoals,
 } from '../../src/db/database';
 
 interface LifelogHistoryTabProps {
-  type: 'water' | 'time' | 'habit' | 'routine';
+  type: 'water' | 'time' | 'habit' | 'routine' | 'nutrition';
   t: (key: string, options?: any) => string;
 }
 
@@ -54,7 +58,7 @@ function createLinearPath(points: { x: number; y: number }[]): string {
 export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t }) => {
   const [loading, setLoading] = useState(true);
   const [chartScale, setChartScale] = useState<'day' | 'week' | 'month' | 'year'>('day');
-  const [chartMetric, setChartMetric] = useState<'amount' | 'caffeine'>('amount'); // for water
+  const [chartMetric, setChartMetric] = useState<'amount' | 'caffeine' | 'calories' | 'protein' | 'fat' | 'carbs'>('amount');
   const [selectedFilter, setSelectedFilter] = useState<string>('all'); // tag, habitId, or routineId
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [metricModalVisible, setMetricModalVisible] = useState(false);
@@ -67,6 +71,8 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
   const [habitItems, setHabitItems] = useState<HabitItem[]>([]);
   const [habitLogs, setHabitLogs] = useState<HabitLog[]>([]);
   const [routines, setRoutines] = useState<any[]>([]);
+  const [mealLogs, setMealLogs] = useState<MealLog[]>([]);
+  const [nutritionGoals, setNutritionGoals] = useState<NutritionGoals | null>(null);
 
   const chartScrollRef = useRef<ScrollView>(null);
 
@@ -97,6 +103,12 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
           const value = await getSettingValue('routine_tracker_data');
           if (isMounted) {
             setRoutines(value ? JSON.parse(value) : []);
+          }
+        } else if (type === 'nutrition') {
+          const [mLogs, nGoals] = await Promise.all([getAllMealLogs(), getNutritionGoals()]);
+          if (isMounted) {
+            setMealLogs(mLogs);
+            setNutritionGoals(nGoals);
           }
         }
       } catch (err) {
@@ -151,6 +163,11 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
   useEffect(() => {
     setSelectedFilter('all');
     setSelectedIndex(null);
+    if (type === 'nutrition') {
+      setChartMetric('calories');
+    } else if (type === 'water') {
+      setChartMetric('amount');
+    }
   }, [type]);
 
   // 2. Filtered & Aggregated Data Points for SVG Chart
@@ -182,6 +199,28 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
           key = new Date(date.getFullYear(), 0, 1).toISOString();
         }
         addVal(key, date, val, subVal);
+      });
+    } else if (type === 'nutrition') {
+      mealLogs.forEach((log) => {
+        let val = 0;
+        if (chartMetric === 'calories') val = log.calories || 0;
+        else if (chartMetric === 'protein') val = log.protein || 0;
+        else if (chartMetric === 'fat') val = log.fat || 0;
+        else if (chartMetric === 'carbs') val = log.carbs || 0;
+
+        const date = parseLogDate(log.date);
+        let key = '';
+
+        if (chartScale === 'day') {
+          key = log.date;
+        } else if (chartScale === 'week') {
+          key = startOfWeek(date, { weekStartsOn: 1 }).toISOString();
+        } else if (chartScale === 'month') {
+          key = startOfMonth(date).toISOString();
+        } else if (chartScale === 'year') {
+          key = new Date(date.getFullYear(), 0, 1).toISOString();
+        }
+        addVal(key, date, val);
       });
     } else if (type === 'time') {
       timeLogs.forEach((log) => {
@@ -270,7 +309,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
       subValue: parseFloat(item.subValue.toFixed(1)),
       date: item.date,
     }));
-  }, [type, waterLogs, timeLogs, habitLogs, routines, chartScale, chartMetric, selectedFilter]);
+  }, [type, waterLogs, timeLogs, habitLogs, routines, mealLogs, chartScale, chartMetric, selectedFilter]);
 
   // Active Selected Point Calculation
   const activeIndex =
@@ -289,7 +328,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
 
     const getOrCreateGroup = (dateStr: string) => {
       if (!dateMap[dateStr]) {
-        dateMap[dateStr] = { dateStr, items: [], totalAmount: 0, totalCaffeine: 0, totalHours: 0 };
+        dateMap[dateStr] = { dateStr, items: [], totalAmount: 0, totalCaffeine: 0, totalHours: 0, totalCalories: 0, totalProtein: 0, totalFat: 0, totalCarbs: 0 };
         list.push(dateMap[dateStr]);
       }
       return dateMap[dateStr];
@@ -300,6 +339,15 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
         const group = getOrCreateGroup(log.date);
         group.totalAmount += log.amount;
         group.totalCaffeine += log.caffeine || 0;
+        group.items.push(log);
+      });
+    } else if (type === 'nutrition') {
+      mealLogs.forEach((log) => {
+        const group = getOrCreateGroup(log.date);
+        group.totalCalories += log.calories || 0;
+        group.totalProtein += log.protein || 0;
+        group.totalFat += log.fat || 0;
+        group.totalCarbs += log.carbs || 0;
         group.items.push(log);
       });
     } else if (type === 'time') {
@@ -333,7 +381,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
     // Sort list by date descending
     list.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
     return list;
-  }, [type, waterLogs, timeLogs, habitLogs, habitItems, routines, selectedFilter]);
+  }, [type, waterLogs, timeLogs, habitLogs, habitItems, routines, mealLogs, selectedFilter]);
 
   // Scroll to end of chart when data loads or changes
   useEffect(() => {
@@ -358,6 +406,11 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
       return chartMetric === 'amount'
         ? (t('ui.history.chart_title_water') || '最近の水分摂取量 (ml)')
         : (t('ui.history.chart_title_caffeine') || '最近のカフェイン摂取量 (mg)');
+    } else if (type === 'nutrition') {
+      if (chartMetric === 'calories') return t('ui.history.chart_title_nutrition_calories') || '最近の摂取カロリー (kcal)';
+      if (chartMetric === 'protein') return t('ui.history.chart_title_nutrition_protein') || '最近のタンパク質摂取量 (g)';
+      if (chartMetric === 'fat') return t('ui.history.chart_title_nutrition_fat') || '最近の脂質摂取量 (g)';
+      if (chartMetric === 'carbs') return t('ui.history.chart_title_nutrition_carbs') || '最近の炭水化物摂取量 (g)';
     } else if (type === 'time') {
       return selectedFilter === 'all'
         ? (t('ui.history.chart_title_time') || '最近の活動時間 (時間)')
@@ -381,6 +434,12 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
       } else {
         return { valStr: Math.round(point.value).toLocaleString(), unitStr: 'mg' };
       }
+    } else if (type === 'nutrition') {
+      if (chartMetric === 'calories') {
+        return { valStr: Math.round(point.value).toLocaleString(), unitStr: 'kcal' };
+      } else {
+        return { valStr: point.value.toFixed(1), unitStr: 'g' };
+      }
     } else if (type === 'time') {
       return { valStr: point.value.toFixed(1), unitStr: t('ui.history.unit_hours') || '時間' };
     } else {
@@ -401,10 +460,20 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
   // Maximum scale logic
   let maxVal = Math.max(0.001, ...chartPoints.map((p) => p.value));
   let goalY: number | null = null;
+  let targetGoal: number | null = null;
 
   if (type === 'water' && chartMetric === 'amount' && waterGoal > 0) {
-    maxVal = Math.max(maxVal, waterGoal * 1.15);
-    const goalNorm = waterGoal / maxVal;
+    targetGoal = waterGoal;
+  } else if (type === 'nutrition' && nutritionGoals) {
+    if (chartMetric === 'calories' && nutritionGoals.calories > 0) targetGoal = nutritionGoals.calories;
+    else if (chartMetric === 'protein' && nutritionGoals.protein > 0) targetGoal = nutritionGoals.protein;
+    else if (chartMetric === 'fat' && nutritionGoals.fat > 0) targetGoal = nutritionGoals.fat;
+    else if (chartMetric === 'carbs' && nutritionGoals.carbs > 0) targetGoal = nutritionGoals.carbs;
+  }
+
+  if (targetGoal !== null && targetGoal > 0) {
+    maxVal = Math.max(maxVal, targetGoal * 1.15);
+    const goalNorm = targetGoal / maxVal;
     goalY = svgHeight - paddingBottom - goalNorm * drawHeight;
   }
 
@@ -487,7 +556,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
           <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name="water-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+                <Ionicons name={type === 'nutrition' ? 'restaurant-outline' : 'water-outline'} size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
                 <Text style={styles.modalTitle}>
                   {t('ui.history.metric_select_title') || '表示する指標を選択'}
                 </Text>
@@ -500,47 +569,137 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              style={[styles.metricOptionItem, chartMetric === 'amount' && styles.metricOptionItemActive]}
-              onPress={() => {
-                setChartMetric('amount');
-                setSelectedIndex(null);
-                setMetricModalVisible(false);
-              }}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.optionIconBox, chartMetric === 'amount' && styles.optionIconBoxActive]}>
-                <Ionicons name="water" size={20} color={chartMetric === 'amount' ? Theme.colors.primary : Theme.colors.textMuted} />
-              </View>
-              <View style={styles.optionTextContent}>
-                <Text style={[styles.optionTitle, chartMetric === 'amount' && styles.optionTitleActive]}>
-                  {t('ui.history.metric_water') || '水分量 (ml)'}
-                </Text>
-                <Text style={styles.optionSub}>日々の水分摂取量の推移を表示します</Text>
-              </View>
-              {chartMetric === 'amount' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
-            </TouchableOpacity>
+            {type === 'nutrition' ? (
+              <>
+                <TouchableOpacity
+                  style={[styles.metricOptionItem, chartMetric === 'calories' && styles.metricOptionItemActive]}
+                  onPress={() => {
+                    setChartMetric('calories');
+                    setSelectedIndex(null);
+                    setMetricModalVisible(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.optionIconBox, chartMetric === 'calories' && styles.optionIconBoxActive]}>
+                    <Ionicons name="flame" size={20} color={chartMetric === 'calories' ? Theme.colors.primary : Theme.colors.textMuted} />
+                  </View>
+                  <View style={styles.optionTextContent}>
+                    <Text style={[styles.optionTitle, chartMetric === 'calories' && styles.optionTitleActive]}>
+                      {t('ui.history.metric_calories') || 'カロリー'} (kcal)
+                    </Text>
+                    <Text style={styles.optionSub}>日々の摂取カロリーの推移を表示します</Text>
+                  </View>
+                  {chartMetric === 'calories' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.metricOptionItem, chartMetric === 'caffeine' && styles.metricOptionItemActive]}
-              onPress={() => {
-                setChartMetric('caffeine');
-                setSelectedIndex(null);
-                setMetricModalVisible(false);
-              }}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.optionIconBox, chartMetric === 'caffeine' && styles.optionIconBoxActive]}>
-                <Ionicons name="cafe" size={20} color={chartMetric === 'caffeine' ? Theme.colors.primary : Theme.colors.textMuted} />
-              </View>
-              <View style={styles.optionTextContent}>
-                <Text style={[styles.optionTitle, chartMetric === 'caffeine' && styles.optionTitleActive]}>
-                  {t('ui.history.metric_caffeine') || 'カフェイン (mg)'}
-                </Text>
-                <Text style={styles.optionSub}>カフェイン摂取量の推移を表示します</Text>
-              </View>
-              {chartMetric === 'caffeine' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.metricOptionItem, chartMetric === 'protein' && styles.metricOptionItemActive]}
+                  onPress={() => {
+                    setChartMetric('protein');
+                    setSelectedIndex(null);
+                    setMetricModalVisible(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.optionIconBox, chartMetric === 'protein' && styles.optionIconBoxActive]}>
+                    <Ionicons name="fitness" size={20} color={chartMetric === 'protein' ? Theme.colors.primary : Theme.colors.textMuted} />
+                  </View>
+                  <View style={styles.optionTextContent}>
+                    <Text style={[styles.optionTitle, chartMetric === 'protein' && styles.optionTitleActive]}>
+                      {t('ui.history.metric_protein') || 'タンパク質'} (g)
+                    </Text>
+                    <Text style={styles.optionSub}>日々のタンパク質摂取量の推移を表示します</Text>
+                  </View>
+                  {chartMetric === 'protein' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.metricOptionItem, chartMetric === 'fat' && styles.metricOptionItemActive]}
+                  onPress={() => {
+                    setChartMetric('fat');
+                    setSelectedIndex(null);
+                    setMetricModalVisible(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.optionIconBox, chartMetric === 'fat' && styles.optionIconBoxActive]}>
+                    <Ionicons name="pizza" size={20} color={chartMetric === 'fat' ? Theme.colors.primary : Theme.colors.textMuted} />
+                  </View>
+                  <View style={styles.optionTextContent}>
+                    <Text style={[styles.optionTitle, chartMetric === 'fat' && styles.optionTitleActive]}>
+                      {t('ui.history.metric_fat') || '脂質'} (g)
+                    </Text>
+                    <Text style={styles.optionSub}>日々の脂質摂取量の推移を表示します</Text>
+                  </View>
+                  {chartMetric === 'fat' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.metricOptionItem, chartMetric === 'carbs' && styles.metricOptionItemActive]}
+                  onPress={() => {
+                    setChartMetric('carbs');
+                    setSelectedIndex(null);
+                    setMetricModalVisible(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.optionIconBox, chartMetric === 'carbs' && styles.optionIconBoxActive]}>
+                    <Ionicons name="nutrition" size={20} color={chartMetric === 'carbs' ? Theme.colors.primary : Theme.colors.textMuted} />
+                  </View>
+                  <View style={styles.optionTextContent}>
+                    <Text style={[styles.optionTitle, chartMetric === 'carbs' && styles.optionTitleActive]}>
+                      {t('ui.history.metric_carbs') || '炭水化物'} (g)
+                    </Text>
+                    <Text style={styles.optionSub}>日々の炭水化物摂取量の推移を表示します</Text>
+                  </View>
+                  {chartMetric === 'carbs' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={[styles.metricOptionItem, chartMetric === 'amount' && styles.metricOptionItemActive]}
+                  onPress={() => {
+                    setChartMetric('amount');
+                    setSelectedIndex(null);
+                    setMetricModalVisible(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.optionIconBox, chartMetric === 'amount' && styles.optionIconBoxActive]}>
+                    <Ionicons name="water" size={20} color={chartMetric === 'amount' ? Theme.colors.primary : Theme.colors.textMuted} />
+                  </View>
+                  <View style={styles.optionTextContent}>
+                    <Text style={[styles.optionTitle, chartMetric === 'amount' && styles.optionTitleActive]}>
+                      {t('ui.history.metric_water') || '水分量 (ml)'}
+                    </Text>
+                    <Text style={styles.optionSub}>日々の水分摂取量の推移を表示します</Text>
+                  </View>
+                  {chartMetric === 'amount' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.metricOptionItem, chartMetric === 'caffeine' && styles.metricOptionItemActive]}
+                  onPress={() => {
+                    setChartMetric('caffeine');
+                    setSelectedIndex(null);
+                    setMetricModalVisible(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.optionIconBox, chartMetric === 'caffeine' && styles.optionIconBoxActive]}>
+                    <Ionicons name="cafe" size={20} color={chartMetric === 'caffeine' ? Theme.colors.primary : Theme.colors.textMuted} />
+                  </View>
+                  <View style={styles.optionTextContent}>
+                    <Text style={[styles.optionTitle, chartMetric === 'caffeine' && styles.optionTitleActive]}>
+                      {t('ui.history.metric_caffeine') || 'カフェイン (mg)'}
+                    </Text>
+                    <Text style={styles.optionSub}>カフェイン摂取量の推移を表示します</Text>
+                  </View>
+                  {chartMetric === 'caffeine' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </TouchableOpacity>
       </Modal>
@@ -586,22 +745,26 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
               </View>
 
               {/* Type-Specific metric or item filter selector button */}
-              {type === 'water' ? (
+              {type === 'water' || type === 'nutrition' ? (
                 <TouchableOpacity
                   style={styles.metricSelectBtn}
                   onPress={() => setMetricModalVisible(true)}
                   activeOpacity={0.7}
                 >
                   <Ionicons
-                    name={chartMetric === 'amount' ? 'water' : 'cafe'}
+                    name={
+                      type === 'nutrition'
+                        ? (chartMetric === 'calories' ? 'flame' : chartMetric === 'protein' ? 'fitness' : chartMetric === 'fat' ? 'pizza' : 'nutrition')
+                        : (chartMetric === 'amount' ? 'water' : 'cafe')
+                    }
                     size={14}
                     color={Theme.colors.primary}
                     style={{ marginRight: 4 }}
                   />
                   <Text style={styles.metricSelectBtnText} numberOfLines={1}>
-                    {chartMetric === 'amount'
-                      ? (t('ui.history.metric_water') || '水分量')
-                      : (t('ui.history.metric_caffeine') || 'カフェイン')}
+                    {type === 'nutrition'
+                      ? (chartMetric === 'calories' ? (t('ui.history.metric_calories') || 'カロリー') : chartMetric === 'protein' ? (t('ui.history.metric_protein') || 'タンパク質') : chartMetric === 'fat' ? (t('ui.history.metric_fat') || '脂質') : (t('ui.history.metric_carbs') || '炭水化物'))
+                      : (chartMetric === 'amount' ? (t('ui.history.metric_water') || '水分量') : (t('ui.history.metric_caffeine') || 'カフェイン'))}
                   </Text>
                   <Ionicons name="chevron-down" size={14} color={Theme.colors.textMuted} style={{ marginLeft: 4 }} />
                 </TouchableOpacity>
@@ -636,22 +799,22 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                       );
                     })()}
 
-                    {type === 'water' && chartMetric === 'amount' && waterGoal > 0 && (
+                    {targetGoal !== null && targetGoal > 0 && (
                       <View
                         style={[
                           styles.badge,
-                          activePoint.value >= waterGoal && styles.badgeGoalReached,
+                          activePoint.value >= targetGoal && styles.badgeGoalReached,
                         ]}
                       >
                         <Text
                           style={[
                             styles.badgeText,
-                            activePoint.value >= waterGoal && styles.badgeTextGoalReached,
+                            activePoint.value >= targetGoal && styles.badgeTextGoalReached,
                           ]}
                         >
-                          {activePoint.value >= waterGoal
-                            ? `目標達成! (${Math.round((activePoint.value / waterGoal) * 100)}%)`
-                            : `目標比 ${Math.round((activePoint.value / waterGoal) * 100)}%`}
+                          {activePoint.value >= targetGoal
+                            ? `目標達成! (${Math.round((activePoint.value / targetGoal) * 100)}%)`
+                            : `目標比 ${Math.round((activePoint.value / targetGoal) * 100)}%`}
                         </Text>
                       </View>
                     )}
@@ -846,6 +1009,11 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     {item.totalCaffeine > 0 ? ` (☕ ${item.totalCaffeine}mg)` : ''}
                   </Text>
                 )}
+                {type === 'nutrition' && (
+                  <Text style={styles.cardTotalText}>
+                    {t('ui.history.total_label') || '合計'}: {Math.round(item.totalCalories)}kcal (P:{Math.round(item.totalProtein)}g F:{Math.round(item.totalFat)}g C:{Math.round(item.totalCarbs)}g)
+                  </Text>
+                )}
                 {type === 'time' && (
                   <Text style={styles.cardTotalText}>
                     {t('ui.history.logged_time') || '記録時間'}: {item.totalHours.toFixed(1)}{t('ui.history.unit_hours') || '時間'}
@@ -872,6 +1040,16 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                         <Text style={styles.listTimeText}>
                           {format(new Date(sub.timestamp), 'HH:mm')}
                         </Text>
+                      </View>
+                    );
+                  } else if (type === 'nutrition') {
+                    const mealTypeLabel = sub.meal_type === 'breakfast' ? '朝食' : sub.meal_type === 'lunch' ? '昼食' : sub.meal_type === 'dinner' ? '夕食' : '間食';
+                    return (
+                      <View key={sub.id || idx} style={styles.listItemRow}>
+                        <Ionicons name="restaurant" size={14} color="#4facfe" style={styles.listIcon} />
+                        <Text style={styles.listMainText}>{sub.name} <Text style={{ fontSize: 11, color: Theme.colors.textMuted }}>({mealTypeLabel})</Text></Text>
+                        <Text style={styles.listSubText}>P:{sub.protein || 0}g F:{sub.fat || 0}g C:{sub.carbs || 0}g</Text>
+                        <Text style={styles.listTimeText}>{sub.calories || 0}kcal</Text>
                       </View>
                     );
                   } else if (type === 'time') {

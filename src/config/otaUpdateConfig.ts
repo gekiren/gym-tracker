@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.66',
+  version: '1.8.67',
   title: {
-    ja: '水分補給画面におけるカフェイン管理数値の文字色改善',
-    en: 'Improved Caffeine Display Text Color on Hydration Screen',
+    ja: '栄養管理機能への履歴管理ページおよびグラフアイコンの追加',
+    en: 'Added History Page and Graph Icon to Nutrition Feature',
   },
   notes: {
     ja: [
-      '水分補給画面中央プログレスリング内のカフェイン管理数値（☕ カフェイン: X / XXX mg）の文字色を、水量の目標表示と同じ白色に修正し、視認性を向上させました。',
+      '栄養（食事管理）画面の右上に青いグラフアイコンを追加し、過去の摂取カロリー・PFC（タンパク質・脂質・炭水化物）推移グラフや詳細履歴をいつでも確認・管理できるように改善しました。',
     ],
     en: [
-      'Updated the text color of the central caffeine display on the hydration screen to white to improve visibility and match the water goals display.',
+      'Added a blue graph icon to the header of the Nutrition screen, allowing users to view historical calorie and PFC nutrient charts and logs.',
     ],
   },
 };
