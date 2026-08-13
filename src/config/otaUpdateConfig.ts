@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.49',
+  version: '1.8.54',
   title: {
-    ja: '習慣カウンターの並び順保存不具合を修正',
-    en: 'Fixed Habit Counter Reordering Persistence Bug',
+    ja: 'メモ入力時の自動最下部スクロール対応',
+    en: 'Auto Scroll-to-Bottom on Memo Input Focus',
   },
   notes: {
     ja: [
-      '習慣管理モーダルで並び替え後にモーダルを閉じると順序が元に戻る不具合を修正しました。',
-      '並び替え後の順序が SQLite データベースへ即座かつ永久に保存されるよう改善しました。',
+      '手動入力・編集・写真解析モーダルのメモ入力欄選択時に画面が自動で一番下までスムーズにスクロールする機能を追加しました。',
+      'キーボード表示時にもメモ入力と保存アクションが途切れることなく快適に行えるようになりました。',
     ],
     en: [
-      'Fixed an issue where reordered habits reverted to their original position after closing the management modal.',
-      'Ensured reordered item sequence is immediately and permanently persisted to SQLite storage.',
+      'Added automatic smooth scrolling to the bottom when focusing memo input fields.',
+      'Ensured seamless typing and saving experience above the software keyboard.',
     ],
   },
 };

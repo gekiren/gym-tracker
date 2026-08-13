@@ -8,8 +8,10 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import { MealLog } from '../../src/db/types';
+import { useAppTheme } from '../../src/theme';
 
 interface Props {
   visible: boolean;
@@ -19,6 +21,9 @@ interface Props {
 }
 
 export default function MdImportModal({ visible, onClose, onImport, selectedDate }: Props) {
+  const { backgroundTheme } = useAppTheme();
+  const isPureBlack = backgroundTheme === 'pureBlack';
+
   const [mdText, setMdText] = useState('');
 
   const handleParseAndImport = async () => {
@@ -81,8 +86,8 @@ export default function MdImportModal({ visible, onClose, onImport, selectedDate
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
       <View style={styles.overlay}>
-        <View style={styles.sheet}>
-          <View style={styles.header}>
+        <View style={[styles.sheet, isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' }]}>
+          <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
             <Text style={styles.title}>📋 Markdown一括取り込み</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
@@ -90,14 +95,14 @@ export default function MdImportModal({ visible, onClose, onImport, selectedDate
           </View>
 
           <ScrollView style={styles.body}>
-            <Text style={styles.hint}>
+            <Text style={[styles.hint, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f', borderWidth: 1 }]}>
               形式例:{'\n'}
               - 鶏胸肉サラダ: 250kcal, P:30g, F:5g, C:10g{'\n'}
               - 白米200g: 330kcal, P:5g, F:1g, C:75g
             </Text>
 
             <TextInput
-              style={styles.textArea}
+              style={[styles.textArea, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}
               value={mdText}
               onChangeText={setMdText}
               placeholder="ここにMarkdown形式の食事リストを貼り付け..."
@@ -118,8 +123,15 @@ export default function MdImportModal({ visible, onClose, onImport, selectedDate
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: '#0f172a', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '85%' },
+  overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-start' },
+  sheet: {
+    backgroundColor: '#0f172a',
+    borderRadius: 20,
+    marginTop: Platform.OS === 'android' ? 40 : 50,
+    marginHorizontal: 8,
+    maxHeight: '85%',
+    overflow: 'hidden',
+  },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   title: { fontSize: 18, fontWeight: '700', color: '#f8fafc' },
   closeBtn: { padding: 4 },

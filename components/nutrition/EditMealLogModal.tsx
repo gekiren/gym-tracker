@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Modal,
   View,
@@ -13,6 +13,7 @@ import {
   Platform,
 } from 'react-native';
 import { MealLog } from '../../src/db/types';
+import { useAppTheme } from '../../src/theme';
 
 const MEAL_TYPES = [
   { key: 'breakfast', label: '🌅 朝食' },
@@ -29,6 +30,10 @@ interface Props {
 }
 
 export default function EditMealLogModal({ visible, log, onClose, onSave }: Props) {
+  const { backgroundTheme } = useAppTheme();
+  const isPureBlack = backgroundTheme === 'pureBlack';
+  const scrollViewRef = useRef<ScrollView>(null);
+
   const [name, setName] = useState('');
   const [mealType, setMealType] = useState<string>('dinner');
   const [calories, setCalories] = useState('');
@@ -90,22 +95,26 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
         style={styles.overlay}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.sheet}>
-          <View style={styles.header}>
+        <View style={[styles.sheet, isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' }]}>
+          <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
             <Text style={styles.title}>✏️ 食事ログ編集</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
+          <ScrollView ref={scrollViewRef} style={styles.body} contentContainerStyle={{ paddingBottom: 260 }} keyboardShouldPersistTaps="handled">
             {/* 食事タイプ */}
             <Text style={styles.label}>食事タイプ</Text>
             <View style={styles.mealTypeRow}>
               {MEAL_TYPES.map((t) => (
                 <TouchableOpacity
                   key={t.key}
-                  style={[styles.mealTypeBtn, mealType === t.key && styles.mealTypeBtnActive]}
+                  style={[
+                    styles.mealTypeBtn,
+                    isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' },
+                    mealType === t.key && styles.mealTypeBtnActive,
+                  ]}
                   onPress={() => setMealType(t.key)}
                 >
                   <Text style={[styles.mealTypeBtnText, mealType === t.key && styles.mealTypeBtnTextActive]}>
@@ -117,7 +126,7 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
 
             {/* 料理名 */}
             <Text style={styles.label}>料理名</Text>
-            <TextInput style={styles.input} value={name} onChangeText={setName} placeholderTextColor="#475569" />
+            <TextInput style={[styles.input, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]} value={name} onChangeText={setName} placeholderTextColor="#475569" />
 
             {/* 栄養素グリッド */}
             <Text style={styles.label}>栄養素</Text>
@@ -130,10 +139,10 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
                 { label: '塩分 (g)',       value: sodium,  setter: setSodium,  color: '#f43f5e' },
                 { label: '食物繊維 (g)',   value: fiber,   setter: setFiber,   color: '#84cc16' },
               ].map((item) => (
-                <View key={item.label} style={styles.nutriItem}>
+                <View key={item.label} style={[styles.nutriItem, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
                   <Text style={[styles.nutriLabel, { color: item.color }]}>{item.label}</Text>
                   <TextInput
-                    style={styles.nutriInput}
+                    style={[styles.nutriInput, isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' }]}
                     value={item.value}
                     onChangeText={item.setter}
                     keyboardType="decimal-pad"
@@ -146,12 +155,17 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
             {/* メモ */}
             <Text style={styles.label}>メモ（任意）</Text>
             <TextInput
-              style={styles.textArea}
+              style={[styles.textArea, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}
               value={memo}
               onChangeText={setMemo}
               multiline
               numberOfLines={3}
               placeholderTextColor="#475569"
+              onFocus={() => {
+                setTimeout(() => {
+                  scrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 100);
+              }}
             />
 
             <TouchableOpacity
@@ -175,8 +189,15 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: '#0f172a', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '92%' },
+  overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-start' },
+  sheet: {
+    backgroundColor: '#0f172a',
+    borderRadius: 20,
+    marginTop: Platform.OS === 'android' ? 40 : 50,
+    marginHorizontal: 8,
+    maxHeight: '88%',
+    overflow: 'hidden',
+  },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   title: { fontSize: 18, fontWeight: '700', color: '#f8fafc' },
   closeBtn: { padding: 4 },

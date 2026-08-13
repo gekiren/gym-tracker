@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { NutritionAIResult, analyzeMealText } from '../../src/services/aiCoachService';
 import { MealLog } from '../../src/db/types';
+import { useAppTheme } from '../../src/theme';
 
 const MEAL_TYPES = [
   { key: 'breakfast', label: '🌅 朝食' },
@@ -30,6 +31,9 @@ interface Props {
 }
 
 export default function ChatRecordModal({ visible, onClose, onSave, selectedDate }: Props) {
+  const { backgroundTheme } = useAppTheme();
+  const isPureBlack = backgroundTheme === 'pureBlack';
+
   const [textInput, setTextInput] = useState('');
   const [mealType, setMealType] = useState<string>('dinner');
   const [isLoading, setIsLoading] = useState(false);
@@ -95,8 +99,8 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
         style={styles.overlay}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.sheet}>
-          <View style={styles.header}>
+        <View style={[styles.sheet, isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' }]}>
+          <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
             <Text style={styles.title}>💬 チャット記録</Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
@@ -110,7 +114,11 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
               {MEAL_TYPES.map((t) => (
                 <TouchableOpacity
                   key={t.key}
-                  style={[styles.mealTypeBtn, mealType === t.key && styles.mealTypeBtnActive]}
+                  style={[
+                    styles.mealTypeBtn,
+                    isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' },
+                    mealType === t.key && styles.mealTypeBtnActive,
+                  ]}
                   onPress={() => setMealType(t.key)}
                 >
                   <Text style={[styles.mealTypeBtnText, mealType === t.key && styles.mealTypeBtnTextActive]}>
@@ -123,7 +131,7 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
             {/* テキスト入力 */}
             <Text style={styles.label}>食事内容を入力</Text>
             <TextInput
-              style={styles.textArea}
+              style={[styles.textArea, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}
               value={textInput}
               onChangeText={setTextInput}
               placeholder="例: ラーメン大盛りと餃子3個、コーラ500ml"
@@ -148,7 +156,7 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
 
             {/* 解析結果 */}
             {result && (
-              <View style={styles.resultCard}>
+              <View style={[styles.resultCard, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
                 <Text style={styles.resultTitle}>✅ 解析結果: {result.mealName}</Text>
                 <View style={styles.nutriGrid}>
                   {[
@@ -159,14 +167,14 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
                     { label: '塩分', val: `${result.sodium.toFixed(1)} g`, color: '#f43f5e' },
                     { label: '食物繊維', val: `${result.fiber.toFixed(1)} g`, color: '#84cc16' },
                   ].map((item) => (
-                    <View key={item.label} style={styles.nutriItem}>
+                    <View key={item.label} style={[styles.nutriItem, isPureBlack && { backgroundColor: '#000000' }]}>
                       <Text style={styles.nutriLabel}>{item.label}</Text>
                       <Text style={[styles.nutriVal, { color: item.color }]}>{item.val}</Text>
                     </View>
                   ))}
                 </View>
                 {result.advice && (
-                  <Text style={styles.adviceText}>💡 {result.advice}</Text>
+                  <Text style={[styles.adviceText, isPureBlack && { backgroundColor: '#000000' }]}>💡 {result.advice}</Text>
                 )}
                 <TouchableOpacity
                   style={[styles.saveBtn, isSaving && styles.saveBtnDisabled]}
@@ -189,8 +197,15 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: '#0f172a', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%' },
+  overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-start' },
+  sheet: {
+    backgroundColor: '#0f172a',
+    borderRadius: 20,
+    marginTop: Platform.OS === 'android' ? 40 : 50,
+    marginHorizontal: 8,
+    maxHeight: '85%',
+    overflow: 'hidden',
+  },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   title: { fontSize: 18, fontWeight: '700', color: '#f8fafc' },
   closeBtn: { padding: 4 },

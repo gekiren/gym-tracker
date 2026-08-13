@@ -13,6 +13,7 @@ import {
   Platform,
 } from 'react-native';
 import { NutritionGoals, AutophagyConfig } from '../../src/db/types';
+import { useAppTheme } from '../../src/theme';
 
 interface Props {
   visible: boolean;
@@ -33,6 +34,9 @@ export default function NutritionSettingsModal({
   onSaveGoals,
   onSaveAutophagy,
 }: Props) {
+  const { backgroundTheme } = useAppTheme();
+  const isPureBlack = backgroundTheme === 'pureBlack';
+
   // モード切替 ('cal_pfc' | 'pfc_p' | 'cal_p_weight_f' | 'manual')
   const [settingMode, setSettingMode] = useState<SettingMode>('cal_pfc');
 
@@ -362,9 +366,9 @@ export default function NutritionSettingsModal({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
-      <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View style={styles.sheet}>
-          <View style={styles.header}>
+      <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={[styles.sheet, isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' }]}>
+          <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
             <Text style={styles.title}>⚙️ 栄養目標 ＆ タイマー設定</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
@@ -373,7 +377,7 @@ export default function NutritionSettingsModal({
 
           <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 220 }} keyboardShouldPersistTaps="handled">
             {/* BMR / TDEE 自動計算電卓 */}
-            <View style={styles.card}>
+            <View style={[styles.card, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
               <Text style={styles.cardTitle}>🧮 BMR / TDEE 目標自動計算電卓</Text>
               <Text style={styles.hintText}>
                 身体情報と運動強度から基礎代謝 (BMR) と総消費カロリー (TDEE) を算出し、最適な目標値を求めます。
@@ -942,8 +946,15 @@ export default function NutritionSettingsModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: '#0f172a', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '92%' },
+  overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-start' },
+  sheet: {
+    backgroundColor: '#0f172a',
+    borderRadius: 20,
+    marginTop: Platform.OS === 'android' ? 40 : 50,
+    marginHorizontal: 8,
+    maxHeight: '88%',
+    overflow: 'hidden',
+  },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   title: { fontSize: 17, fontWeight: '700', color: '#f8fafc' },
   closeBtn: { padding: 4 },

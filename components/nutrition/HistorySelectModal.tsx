@@ -8,8 +8,10 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import { MealLog } from '../../src/db/types';
+import { useAppTheme } from '../../src/theme';
 
 interface Props {
   visible: boolean;
@@ -26,6 +28,9 @@ export default function HistorySelectModal({
   onSelect,
   selectedDate,
 }: Props) {
+  const { backgroundTheme } = useAppTheme();
+  const isPureBlack = backgroundTheme === 'pureBlack';
+
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredLogs = historyLogs.filter((log) =>
@@ -68,8 +73,8 @@ export default function HistorySelectModal({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
       <View style={styles.overlay}>
-        <View style={styles.sheet}>
-          <View style={styles.header}>
+        <View style={[styles.sheet, isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' }]}>
+          <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
             <Text style={styles.title}>⭐ 過去の履歴から再使用</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
@@ -78,7 +83,7 @@ export default function HistorySelectModal({
 
           <View style={styles.searchBox}>
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder="料理名で検索..."
@@ -95,7 +100,7 @@ export default function HistorySelectModal({
               displayItems.map((item) => (
                 <TouchableOpacity
                   key={`hist-${item.id}`}
-                  style={styles.itemCard}
+                  style={[styles.itemCard, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}
                   onPress={() => handleSelect(item)}
                 >
                   <View style={styles.itemHeader}>
@@ -121,8 +126,15 @@ export default function HistorySelectModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: '#0f172a', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '85%' },
+  overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-start' },
+  sheet: {
+    backgroundColor: '#0f172a',
+    borderRadius: 20,
+    marginTop: Platform.OS === 'android' ? 40 : 50,
+    marginHorizontal: 8,
+    maxHeight: '85%',
+    overflow: 'hidden',
+  },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   title: { fontSize: 18, fontWeight: '700', color: '#f8fafc' },
   closeBtn: { padding: 4 },

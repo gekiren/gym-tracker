@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Modal,
   View,
@@ -61,6 +61,7 @@ const safeGetImageManipulator = () => {
 
 import { analyzeMealImage, analyzeMealText, NutritionAIResult } from '../../src/services/aiCoachService';
 import { MealLog } from '../../src/db/types';
+import { useAppTheme } from '../../src/theme';
 
 const MEAL_TYPES = [
   { key: 'breakfast', label: '🌅 朝食' },
@@ -77,6 +78,10 @@ interface Props {
 }
 
 export default function PhotoRecordModal({ visible, onClose, onSave, selectedDate }: Props) {
+  const { backgroundTheme } = useAppTheme();
+  const isPureBlack = backgroundTheme === 'pureBlack';
+  const scrollViewRef = useRef<ScrollView>(null);
+
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
   const [base64Data, setBase64Data] = useState<string | null>(null);
   const [userMemo, setUserMemo] = useState('');
@@ -322,15 +327,15 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
         <View style={styles.overlay} />
       </TouchableWithoutFeedback>
       <KeyboardAvoidingView style={styles.sheetContainer} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={styles.sheet}>
-          <View style={styles.header}>
+        <View style={[styles.sheet, isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' }]}>
+          <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
             <Text style={styles.title}>📷 写真・AIから食事記録</Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
+          <ScrollView ref={scrollViewRef} style={styles.body} contentContainerStyle={{ paddingBottom: 260 }} keyboardShouldPersistTaps="handled">
             {/* モジュール不在時の案内バナー */}
             {!isImagePickerAvailable && (
               <View style={styles.warningBanner}>
@@ -348,7 +353,11 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
               {MEAL_TYPES.map((t) => (
                 <TouchableOpacity
                   key={t.key}
-                  style={[styles.mealTypeBtn, mealType === t.key && styles.mealTypeBtnActive]}
+                  style={[
+                    styles.mealTypeBtn,
+                    isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' },
+                    mealType === t.key && styles.mealTypeBtnActive,
+                  ]}
                   onPress={() => setMealType(t.key)}
                 >
                   <Text style={[styles.mealTypeBtnText, mealType === t.key && styles.mealTypeBtnTextActive]}>
@@ -361,11 +370,16 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
             {/* 補足メモ */}
             <Text style={styles.label}>食事内容メモ（例: カツカレー大盛り、スープ半分残した）</Text>
             <TextInput
-              style={styles.memoInput}
+              style={[styles.memoInput, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}
               value={userMemo}
               onChangeText={setUserMemo}
               placeholder="例: サラダチキン1個、おにぎり1個"
               placeholderTextColor="#475569"
+              onFocus={() => {
+                setTimeout(() => {
+                  scrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 100);
+              }}
             />
 
             {/* 写真選択/撮影ボタン & プレビュー */}
@@ -451,7 +465,7 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
             {/* 栄養数値入力フォーム */}
             <View style={styles.formSection}>
               <Text style={styles.label}>料理名</Text>
-              <TextInput style={styles.input} value={mealName} onChangeText={setMealName} placeholder="例: 鶏胸肉とブロッコリー" placeholderTextColor="#475569" />
+              <TextInput style={[styles.input, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]} value={mealName} onChangeText={setMealName} placeholder="例: 鶏胸肉とブロッコリー" placeholderTextColor="#475569" />
 
               <Text style={styles.label}>栄養成分</Text>
               <View style={styles.nutriGrid}>
@@ -463,10 +477,10 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
                   { label: '塩分', val: sodium, setter: setSodium, unit: 'g', color: '#f43f5e' },
                   { label: '食物繊維', val: fiber, setter: setFiber, unit: 'g', color: '#84cc16' },
                 ].map((item) => (
-                  <View key={item.label} style={styles.nutriCell}>
+                  <View key={item.label} style={[styles.nutriCell, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
                     <Text style={[styles.cellLabel, { color: item.color }]}>{item.label}</Text>
                     <TextInput
-                      style={styles.cellInput}
+                      style={[styles.cellInput, isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' }]}
                       value={item.val}
                       onChangeText={item.setter}
                       keyboardType="decimal-pad"
