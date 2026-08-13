@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
+import { useNutritionStore } from '../../src/store/nutritionStore';
 import { saveSetting } from '../../src/db/database';
 import { changeLanguage, getCurrentLanguage } from '../../src/i18n';
 import { DisplayFieldsSection } from '../../components/profile/DisplayFieldsSection';
@@ -102,9 +103,18 @@ export default function WorkoutTimerSettingsScreen() {
       await saveSetting('body_weight', '');
     } else {
       const num = parseFloat(val.replace(',', '.'));
-      if (!isNaN(num)) {
+      if (!isNaN(num) && num > 0) {
         useSettingsStore.getState().setBodyWeight(num);
         await saveSetting('body_weight', num.toString());
+
+        // 栄養管理目標（PFC / カロリー）の体重数値にも即時連動
+        const currentGoals = useNutritionStore.getState().userNutritionGoals;
+        if (currentGoals && currentGoals.weight !== num) {
+          await useNutritionStore.getState().saveGoals({
+            ...currentGoals,
+            weight: num,
+          });
+        }
       }
     }
   };
@@ -169,12 +179,6 @@ export default function WorkoutTimerSettingsScreen() {
           onUpdateUnit={handleUpdateUnit}
           bodyWeight={bodyWeight}
           onUpdateBodyWeight={handleUpdateBodyWeight}
-          currentLang={currentLang}
-          onChangeLanguage={handleChangeLanguage}
-          crashConsent={crashConsent}
-          onUpdateCrashConsent={handleUpdateCrashConsent}
-          backgroundTheme={settings.backgroundTheme}
-          onUpdateBackgroundTheme={handleUpdateBackgroundTheme}
           t={t}
         />
       </ScrollView>

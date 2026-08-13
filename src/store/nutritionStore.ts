@@ -16,7 +16,9 @@ import {
   saveNutritionGoals,
   getAutophagyConfig,
   saveAutophagyConfig,
+  saveSetting,
 } from '../db/database';
+import { useSettingsStore } from './settingsStore';
 
 // ─── 型定義 ────────────────────────────────────────────
 
@@ -180,6 +182,17 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
     try {
       const goals = await getNutritionGoals();
       set({ userNutritionGoals: goals });
+
+      const goalsWeight = goals.weight ?? 65;
+      const currentSettingBw = useSettingsStore.getState().settings.bodyWeight;
+      if (currentSettingBw !== null && currentSettingBw !== goalsWeight && currentSettingBw > 0) {
+        const updatedGoals = { ...goals, weight: currentSettingBw };
+        await saveNutritionGoals(updatedGoals);
+        set({ userNutritionGoals: updatedGoals });
+      } else if ((currentSettingBw === null || currentSettingBw === 0) && goalsWeight > 0) {
+        useSettingsStore.getState().setBodyWeight(goalsWeight);
+        await saveSetting('body_weight', goalsWeight.toString());
+      }
     } catch (e) {
       console.warn('useNutritionStore: loadGoals failed', e);
     }
@@ -189,6 +202,15 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
     try {
       await saveNutritionGoals(goals);
       set({ userNutritionGoals: goals });
+
+      // 同時に settingsStore の bodyWeight も同期
+      if (typeof goals.weight === 'number' && !isNaN(goals.weight)) {
+        const currentSettingBw = useSettingsStore.getState().settings.bodyWeight;
+        if (currentSettingBw !== goals.weight) {
+          useSettingsStore.getState().setBodyWeight(goals.weight);
+          await saveSetting('body_weight', goals.weight.toString());
+        }
+      }
     } catch (e) {
       console.warn('useNutritionStore: saveGoals failed', e);
     }

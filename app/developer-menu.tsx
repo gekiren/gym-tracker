@@ -31,6 +31,8 @@ export default function DeveloperMenuScreen() {
   const { t } = useTranslation();
   const enableAiDebugContext = useSettingsStore(state => state.settings.enableAiDebugContext);
   const setEnableAiDebugContext = useSettingsStore(state => state.setEnableAiDebugContext);
+  const preferredAiModel = useSettingsStore(state => state.settings.preferredAiModel || 'gemini');
+  const setPreferredAiModel = useSettingsStore(state => state.setPreferredAiModel);
 
   const [isChecking, setIsChecking] = useState(false);
   const [lastAckId, setLastAckId] = useState<string>('Loading...');
@@ -955,6 +957,100 @@ export default function DeveloperMenuScreen() {
             </View>
           </View>
         </Modal>
+
+        {/* AI Model Selection Section */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="options-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>使用AIモデルの選択 (AI Model Selection)</Text>
+          </View>
+          <Text style={styles.cardDesc}>
+            AI Coach 解析およびアドバイス生成時に優先して呼び出す AI モデルを選択できます。
+          </Text>
+
+          <View style={{ gap: 10, marginBottom: 12 }}>
+            {/* Gemini Option */}
+            <TouchableOpacity
+              style={[
+                {
+                  backgroundColor: '#121214',
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: Theme.colors.border,
+                  padding: 12,
+                },
+                preferredAiModel === 'gemini' && {
+                  borderColor: Theme.colors.primary,
+                  backgroundColor: 'rgba(79, 172, 254, 0.08)',
+                }
+              ]}
+              activeOpacity={0.8}
+              onPress={() => setPreferredAiModel('gemini')}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons 
+                    name={preferredAiModel === 'gemini' ? 'radio-button-on' : 'radio-button-off'} 
+                    size={20} 
+                    color={preferredAiModel === 'gemini' ? Theme.colors.primary : Theme.colors.textMuted} 
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: Theme.colors.text }}>Gemini 3.6 Flash</Text>
+                </View>
+                <View style={{ backgroundColor: 'rgba(79, 172, 254, 0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
+                  <Text style={{ fontSize: 11, color: Theme.colors.primary, fontWeight: 'bold' }}>推奨・高速</Text>
+                </View>
+              </View>
+              <Text style={{ fontSize: 12, color: Theme.colors.textMuted, lineHeight: 17, paddingLeft: 28 }}>
+                Googleの最新軽量AI。超高速な応答速度と高いトレーニング理解度でスマートにアドバイスします。
+              </Text>
+            </TouchableOpacity>
+
+            {/* DeepSeek Option */}
+            <TouchableOpacity
+              style={[
+                {
+                  backgroundColor: '#121214',
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: Theme.colors.border,
+                  padding: 12,
+                },
+                preferredAiModel === 'deepseek' && {
+                  borderColor: Theme.colors.primary,
+                  backgroundColor: 'rgba(79, 172, 254, 0.08)',
+                }
+              ]}
+              activeOpacity={0.8}
+              onPress={() => setPreferredAiModel('deepseek')}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons 
+                    name={preferredAiModel === 'deepseek' ? 'radio-button-on' : 'radio-button-off'} 
+                    size={20} 
+                    color={preferredAiModel === 'deepseek' ? Theme.colors.primary : Theme.colors.textMuted} 
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: Theme.colors.text }}>DeepSeek V4 Pro</Text>
+                </View>
+                <View style={{ backgroundColor: 'rgba(156, 39, 176, 0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
+                  <Text style={{ fontSize: 11, color: '#ba68c8', fontWeight: 'bold' }}>深層分析</Text>
+                </View>
+              </View>
+              <Text style={{ fontSize: 12, color: Theme.colors.textMuted, lineHeight: 17, paddingLeft: 28 }}>
+                高度な論理推論に強いオープン重みAI。トレーニングプログラムや理論の深い解説・分析が得意です。
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: 6, padding: 10, marginTop: 4 }}>
+            <Ionicons name="shield-checkmark-outline" size={16} color={Theme.colors.primary} style={{ marginRight: 6 }} />
+            <Text style={{ fontSize: 12, color: Theme.colors.textMuted, flex: 1, lineHeight: 16 }}>
+              障害・混雑時には自動でもう一方のモデルに相互フォールバックし、中断なく応答を提供します。
+            </Text>
+          </View>
+        </View>
 
         {/* AI Coach Debug Section */}
         <View style={styles.card}>

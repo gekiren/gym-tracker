@@ -93,27 +93,14 @@ export function useProfile() {
       {
         id: 'account',
         title: 'アカウント & アプリ情報',
-        desc:
-          accountType === 'premium'
-            ? 'プレミアム会員（永久）'
-            : accountType === 'early_adopter'
-            ? 'アーリーアダプター'
-            : 'フリープラン • バージョン情報',
+        desc: `AI残高: ${settings.aiTokensBalance} 回 • 環境設定 • バージョン`,
         icon: 'person-circle-outline',
         iconColor: '#4facfe',
         route: '/settings/account',
       },
       {
-        id: 'gemini',
-        title: 'AI Coach 設定 (モデル選択)',
-        desc: `残高: ${settings.aiTokensBalance} 回 (${settings.preferredAiModel === 'deepseek' ? 'DeepSeek V4 Pro' : 'Gemini 3.6'})`,
-        icon: 'sparkles',
-        iconColor: '#ffd700',
-        route: '/settings/gemini',
-      },
-      {
         id: 'workout-timer',
-        title: '筋トレ・タイマー・環境設定',
+        title: '筋トレ & タイマー設定',
         desc: '表示項目、インターバルタイマー、重量単位',
         icon: 'barbell-outline',
         iconColor: Theme.colors.primary,
@@ -146,7 +133,7 @@ export function useProfile() {
         route: '/settings/data-management',
       },
     ],
-    [accountType, settings.aiTokensBalance, settings.preferredAiModel]
+    [accountType, settings.aiTokensBalance]
   );
 
   return {
