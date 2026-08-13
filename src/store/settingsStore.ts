@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { saveSetting } from '../db/database';
 import { computeIsPremium } from '../utils/subscriptionUtils';
 
+export type FeatureId = 'workout' | 'water' | 'nutrition' | 'zikan' | 'routine';
+
 export interface ApplicationSettings {
   defaultRest: number;
   autoRest: boolean;
@@ -28,6 +30,8 @@ export interface ApplicationSettings {
   aiChatMode: 'quick' | 'thinking';
   enableAiDebugContext: boolean;
   backgroundTheme: 'dark' | 'pureBlack';
+  featureOrder: FeatureId[];
+  featureVisibility: Record<FeatureId, boolean>;
 }
 
 export interface LoadSettingsPayload {
@@ -48,6 +52,8 @@ export interface LoadSettingsPayload {
   aiChatMode?: 'quick' | 'thinking';
   enableAiDebugContext?: boolean;
   backgroundTheme?: 'dark' | 'pureBlack';
+  featureOrder?: FeatureId[];
+  featureVisibility?: Record<FeatureId, boolean>;
 }
 
 export interface SettingsState {
@@ -59,6 +65,7 @@ export interface SettingsState {
   setPreferredAiModel: (model: 'gemini' | 'deepseek') => void;
   setAiChatMode: (mode: 'quick' | 'thinking') => void;
   setEnableAiDebugContext: (enabled: boolean) => void;
+  setFeatureConfig: (order: FeatureId[], visibility: Record<FeatureId, boolean>) => void;
   setPremiumUntil: (premiumUntil: string) => void;
   updatePremiumStatus: (premiumUntil: string) => void;
   setIsEarlyAdopter: (isEarly: boolean) => void;
@@ -98,6 +105,14 @@ export const initialSettings: ApplicationSettings = {
   aiChatMode: 'quick',
   enableAiDebugContext: true,
   backgroundTheme: 'dark',
+  featureOrder: ['workout', 'water', 'nutrition', 'zikan', 'routine'],
+  featureVisibility: {
+    workout: true,
+    water: true,
+    nutrition: true,
+    zikan: true,
+    routine: true,
+  },
 };
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -121,7 +136,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       preferredAiModel,
       aiChatMode,
       enableAiDebugContext,
-      backgroundTheme
+      backgroundTheme,
+      featureOrder,
+      featureVisibility,
     } = payload;
     const finalNeedsUnitSelection = needsUnitSelection !== undefined ? needsUnitSelection : state.settings.needsUnitSelection;
     const finalBodyWeight = bodyWeight !== undefined ? bodyWeight : state.settings.bodyWeight;
@@ -136,6 +153,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const finalAiChatMode = aiChatMode !== undefined ? aiChatMode : state.settings.aiChatMode;
     const finalEnableAiDebugContext = enableAiDebugContext !== undefined ? enableAiDebugContext : state.settings.enableAiDebugContext;
     const finalBackgroundTheme = backgroundTheme !== undefined ? backgroundTheme : state.settings.backgroundTheme;
+    const finalFeatureOrder = featureOrder !== undefined ? featureOrder : state.settings.featureOrder;
+    const finalFeatureVisibility = featureVisibility !== undefined ? featureVisibility : state.settings.featureVisibility;
 
     const isPremium = computeIsPremium(finalPremiumUntil, finalIsEarlyAdopter);
     return {
@@ -157,7 +176,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         alwaysOneSet: finalAlwaysOneSet,
         preferredAiModel: finalPreferredAiModel,
         aiChatMode: finalAiChatMode,
-        backgroundTheme: finalBackgroundTheme
+        backgroundTheme: finalBackgroundTheme,
+        featureOrder: finalFeatureOrder,
+        featureVisibility: finalFeatureVisibility,
       }
     };
   }),
@@ -187,6 +208,14 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     saveSetting('enable_ai_debug_context', enabled ? 'true' : 'false').catch(e => console.warn('Failed to save enable_ai_debug_context setting', e));
     set((state) => ({
       settings: { ...state.settings, enableAiDebugContext: enabled }
+    }));
+  },
+
+  setFeatureConfig: (order: FeatureId[], visibility: Record<FeatureId, boolean>) => {
+    saveSetting('feature_order', JSON.stringify(order)).catch(e => console.warn('Failed to save feature_order setting', e));
+    saveSetting('feature_visibility', JSON.stringify(visibility)).catch(e => console.warn('Failed to save feature_visibility setting', e));
+    set((state) => ({
+      settings: { ...state.settings, featureOrder: order, featureVisibility: visibility }
     }));
   },
 

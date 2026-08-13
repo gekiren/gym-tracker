@@ -99,6 +99,14 @@ export function useProfile() {
         route: '/settings/account',
       },
       {
+        id: 'feature-management',
+        title: '機能管理',
+        desc: 'ダッシュボードの表示機能・表示順の設定',
+        icon: 'options-outline',
+        iconColor: '#e91e63',
+        route: '/settings/feature-management',
+      },
+      {
         id: 'obsidian',
         title: 'データ出力 & Obsidian連携',
         desc: 'Markdown出力・共有・Obsidian自動同期',

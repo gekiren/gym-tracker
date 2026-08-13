@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.45',
+  version: '1.8.46',
   title: {
-    ja: 'プラン＆アプリ情報および環境設定のレイアウト改善',
-    en: 'Plan & App Info Layout Improvements',
+    ja: 'アプリ設定に「機能管理」ページを追加',
+    en: 'Added Feature Management Page in Settings',
   },
   notes: {
     ja: [
-      '📋 設定画面の表記を「プラン & アプリ情報」および「プランの種類」へ更新しました。',
-      '⚙️ 「プラン情報」および「環境設定」にカードヘッダー見出しを追加し、レイアウトを統一しました。',
+      '⚙️ アプリ設定に「機能管理」ページを新設しました。',
+      '🎛️ 「筋トレ」「水分管理」「栄養＆食事管理」「24時間管理」「ルーティン管理」の表示/非表示と、ダッシュボードでの表示順を変更できるようになりました。',
     ],
     en: [
-      '📋 Updated setting labels to "Plan & App Info" and "Plan Type".',
-      '⚙️ Added section headers for Plan Info and Preferences for unified layout.',
+      '⚙️ Added a new "Feature Management" page in App Settings.',
+      '🎛️ You can now toggle visibility and reorder dashboard features (Workout, Water, Nutrition, 24h Log, Routine).',
     ],
   },
 };

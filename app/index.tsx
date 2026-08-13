@@ -1,11 +1,11 @@
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Dimensions, Alert } from 'react-native';
-import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
-import { useSettingsStore } from '../src/store/settingsStore';
+import { useSettingsStore, FeatureId } from '../src/store/settingsStore';
 import { useLifelogStore } from '../src/store/lifelogStore';
 import { useNutritionStore } from '../src/store/nutritionStore';
 import { saveSetting, getLastWorkoutSummary, LastWorkoutSummary } from '../src/db/database';
@@ -27,6 +27,8 @@ export default function DashboardScreen() {
   const workoutTitle = useWorkoutStore(state => state.title);
   const settings = useSettingsStore(state => state.settings);
   const loadSettings = useSettingsStore(state => state.loadSettings);
+  const featureOrder = useSettingsStore(state => state.settings.featureOrder);
+  const featureVisibility = useSettingsStore(state => state.settings.featureVisibility);
   const hasUnsentCrashLog = useWorkoutStore(state => state.hasUnsentCrashLog);
 
   // Lifelog Store
@@ -176,6 +178,353 @@ export default function DashboardScreen() {
     }
   };
 
+  const renderFeatureCard = (id: FeatureId) => {
+    switch (id) {
+      case 'workout':
+        return (
+          <TouchableOpacity 
+            key="workout"
+            style={styles.card} 
+            activeOpacity={0.85} 
+            onPress={() => router.push('/(tabs)')}
+          >
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconContainer, { backgroundColor: 'rgba(79, 172, 254, 0.15)' }]}>
+                <Ionicons name="barbell" size={24} color={Theme.colors.primary} />
+              </View>
+              <Text style={styles.cardTitle}>筋トレ</Text>
+              <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
+            </View>
+
+            <View style={styles.cardBody}>
+              {isActive ? (
+                <View style={styles.activeWorkoutContainer}>
+                  <View style={styles.statusBadge}>
+                    <View style={styles.activeDot} />
+                    <Text style={styles.statusBadgeText}>実行中</Text>
+                  </View>
+                  <Text style={styles.workoutActiveTitle} numberOfLines={1}>
+                    {workoutTitle || 'フリーワークアウト'}
+                  </Text>
+                  <TouchableOpacity 
+                    style={[styles.actionBtn, { backgroundColor: Theme.colors.success }]}
+                    onPress={() => router.push('/active-workout')}
+                  >
+                    <Text style={styles.actionBtnText}>トレーニングに戻る</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={styles.inactiveWorkoutContainer}>
+                  {lastWorkoutSummary ? (
+                    <>
+                      <View style={[styles.statRow, { marginBottom: 2 }]}>
+                        <Text style={[styles.statGoal, { color: Theme.colors.textMuted, fontSize: 14 }]}>
+                          直近: <Text style={{ color: Theme.colors.textMuted, fontSize: 14 }}>{lastWorkoutSummary.dateStr}</Text> ({lastWorkoutSummary.title || '筋トレ'})
+                        </Text>
+                      </View>
+
+                      {lastWorkoutSummary.muscleVolumes.filter(item => item.volumeKg > 0).length > 0 ? (
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 }}>
+                          {lastWorkoutSummary.muscleVolumes.filter(item => item.volumeKg > 0).map((item, idx) => (
+                            <View key={idx} style={styles.muscleVolumeBadge}>
+                              <Text style={styles.muscleVolumeText}>
+                                {item.muscle}: <Text style={{ color: '#fff', fontWeight: 'bold' }}>{item.volumeKg.toLocaleString()} kg</Text>
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      ) : (
+                        <Text style={styles.inactiveText}>セット記録なし ({lastWorkoutSummary.totalSets}セット)</Text>
+                      )}
+
+                      {Updates.channel !== 'production' && lastWorkoutSummary?.debugInfo && (
+                        <View style={{ marginTop: 8 }}>
+                          <TouchableOpacity
+                            activeOpacity={0.7}
+                            onPress={() => setIsDebugExpanded(prev => !prev)}
+                            style={{
+                              alignSelf: 'flex-start',
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              gap: 4,
+                              paddingVertical: 3,
+                              paddingHorizontal: 8,
+                              backgroundColor: 'rgba(255, 183, 77, 0.12)',
+                              borderRadius: 12,
+                              borderWidth: 1,
+                              borderColor: 'rgba(255, 183, 77, 0.3)',
+                            }}
+                          >
+                            <Ionicons name="bug-outline" size={12} color="#ffb74d" />
+                            <Text style={{ color: '#ffb74d', fontSize: 10, fontWeight: 'bold' }}>
+                              {isDebugExpanded ? 'Debug 閉じる' : 'Debug'}
+                            </Text>
+                          </TouchableOpacity>
+
+                          {isDebugExpanded && (
+                            <View style={{ marginTop: 6, padding: 8, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,183,77,0.2)' }}>
+                              <Text style={{ color: '#ffb74d', fontSize: 10 }} numberOfLines={6}>
+                                🔍 [Staging Debug] {lastWorkoutSummary.debugInfo}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      )}
+                    </>
+                  ) : (
+                    <Text style={styles.inactiveText}>過去のワークアウト記録がありません。タップして筋トレを開始しましょう。</Text>
+                  )}
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
+        );
+
+      case 'water':
+        return (
+          <View key="water" style={styles.card}>
+            <TouchableOpacity 
+              style={styles.cardHeader}
+              activeOpacity={0.7}
+              onPress={() => router.push('/lifelog/water')}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: 'rgba(0, 210, 255, 0.15)' }]}>
+                <Ionicons name="water" size={24} color="#00d2ff" />
+              </View>
+              <Text style={styles.cardTitle}>水分補給</Text>
+              <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
+            </TouchableOpacity>
+
+            <View style={styles.cardBody}>
+              <View style={styles.statRow}>
+                <Text style={styles.statVal}>{daySummary?.water.amount ?? 0} <Text style={styles.statUnit}>ml</Text></Text>
+                <Text style={styles.statGoal}>/ {daySummary?.water.goal ?? 2000} ml</Text>
+              </View>
+
+              <View style={styles.progressContainer}>
+                <View style={styles.progressBarBg}>
+                  <View 
+                    style={[
+                      styles.progressBarFill, 
+                      { 
+                        width: `${Math.min(100, daySummary?.water.percentage ?? 0)}%`,
+                        backgroundColor: '#00d2ff' 
+                      }
+                    ]} 
+                  />
+                </View>
+                <Text style={styles.progressPercent}>{daySummary?.water.percentage ?? 0}%</Text>
+              </View>
+
+              <View style={styles.presetsRow}>
+                {waterPresets.map((preset, idx) => (
+                  <TouchableOpacity 
+                    key={idx}
+                    style={styles.presetBtn} 
+                    onPress={() => handleAddWaterAmount(preset.amount, preset.caffeine)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.presetBtnText}>
+                      {preset.caffeine > 0 ? `☕${preset.amount}ml` : `${preset.amount}ml`}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+        );
+
+      case 'nutrition':
+        return (
+          <TouchableOpacity 
+            key="nutrition"
+            style={styles.card} 
+            activeOpacity={0.85}
+            onPress={() => router.push('/lifelog/nutrition')}
+          >
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                <Ionicons name="restaurant" size={24} color="#10b981" />
+              </View>
+              <Text style={styles.cardTitle}>栄養＆食事管理</Text>
+              <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
+            </View>
+            <View style={styles.cardBody}>
+              {(() => {
+                const logs = mealLogs || [];
+                const goalCal = userNutritionGoals?.calories || 2000;
+                const totalCal = logs.reduce((acc, curr) => acc + (curr.calories || 0), 0);
+                const totalP = logs.reduce((acc, curr) => acc + (curr.protein || 0), 0);
+                const totalF = logs.reduce((acc, curr) => acc + (curr.fat || 0), 0);
+                const totalC = logs.reduce((acc, curr) => acc + (curr.carbs || 0), 0);
+                const calPercent = Math.min(100, Math.round((totalCal / goalCal) * 100));
+
+                return (
+                  <>
+                    <View style={styles.statRow}>
+                      <Text style={styles.statVal}>{Math.round(totalCal)} <Text style={styles.statUnit}>kcal</Text></Text>
+                      <Text style={styles.statGoal}>/ {goalCal} kcal ({logs.length}件)</Text>
+                    </View>
+
+                    <View style={styles.progressContainer}>
+                      <View style={styles.progressBarBg}>
+                        <View 
+                          style={[
+                            styles.progressBarFill, 
+                            { 
+                              width: `${calPercent}%`,
+                              backgroundColor: '#10b981' 
+                            }
+                          ]} 
+                        />
+                      </View>
+                      <Text style={styles.progressPercent}>{calPercent}%</Text>
+                    </View>
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#334155' }}>
+                      <Text style={{ fontSize: 13, color: '#94a3b8' }}>P: <Text style={{ fontWeight: '700', color: '#06b6d4' }}>{totalP.toFixed(1)}g</Text></Text>
+                      <Text style={{ fontSize: 13, color: '#94a3b8' }}>F: <Text style={{ fontWeight: '700', color: '#f59e0b' }}>{totalF.toFixed(1)}g</Text></Text>
+                      <Text style={{ fontSize: 13, color: '#94a3b8' }}>C: <Text style={{ fontWeight: '700', color: '#a855f7' }}>{totalC.toFixed(1)}g</Text></Text>
+                    </View>
+                  </>
+                );
+              })()}
+            </View>
+          </TouchableOpacity>
+        );
+
+      case 'zikan':
+        return (
+          <TouchableOpacity 
+            key="zikan"
+            style={styles.card} 
+            activeOpacity={0.9}
+            onPress={() => router.push('/lifelog/zikan')}
+          >
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconContainer, { backgroundColor: 'rgba(255, 152, 0, 0.15)' }]}>
+                <Ionicons name="time" size={24} color="#ff9800" />
+              </View>
+              <Text style={styles.cardTitle}>24時間管理</Text>
+              <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
+            </View>
+
+            <View style={styles.cardBody}>
+              <View style={styles.statRow}>
+                <Text style={styles.statVal}>
+                  {daySummary ? (daySummary.totalZikanMinutes / 60).toFixed(1) : '0.0'} <Text style={styles.statUnit}>時間</Text>
+                </Text>
+                <Text style={styles.statGoal}>記録済み</Text>
+              </View>
+
+              <View style={styles.breakdownList}>
+                {daySummary?.zikan && daySummary.zikan.length > 0 ? (
+                  daySummary.zikan.slice(0, 3).map((item, index) => (
+                    <View key={index} style={styles.breakdownRow}>
+                      <Text style={styles.breakdownName}>• {item.name}</Text>
+                      <Text style={styles.breakdownTime}>
+                        {item.hours >= 1 ? `${item.hours}時間` : ''}{item.minutes % 60 > 0 ? `${item.minutes % 60}分` : ''}
+                      </Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.emptyText}>記録された時間ブロックがありません</Text>
+                )}
+              </View>
+            </View>
+          </TouchableOpacity>
+        );
+
+      case 'routine':
+        return (
+          <React.Fragment key="routine">
+            {/* Habits Card */}
+            <View style={styles.card}>
+              <TouchableOpacity 
+                style={styles.cardHeader}
+                activeOpacity={0.7}
+                onPress={() => router.push('/lifelog/habit')}
+              >
+                <View style={[styles.iconContainer, { backgroundColor: 'rgba(233, 30, 99, 0.15)' }]}>
+                  <Ionicons name="checkmark-circle" size={24} color="#e91e63" />
+                </View>
+                <Text style={styles.cardTitle}>習慣カウンター</Text>
+                <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
+              </TouchableOpacity>
+
+              <View style={styles.cardBody}>
+                {daySummary?.habits && daySummary.habits.length > 0 ? (
+                  <View style={styles.habitList}>
+                    {daySummary.habits.map((habit) => (
+                      <View key={habit.id} style={styles.habitRow}>
+                        <View style={styles.habitInfo}>
+                          <View style={[styles.habitColorDot, { backgroundColor: habit.color || '#fff' }]} />
+                          <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
+                        </View>
+                        <View style={styles.habitActionContainer}>
+                          <Text style={styles.habitCount}>{habit.count} 回</Text>
+                          <TouchableOpacity
+                            style={styles.habitAddBtn}
+                            onPress={() => handleIncrementHabit(habit.id)}
+                            activeOpacity={0.7}
+                          >
+                            <Ionicons name="add" size={16} color="#fff" />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={styles.emptyText}>習慣が登録されていません</Text>
+                )}
+              </View>
+            </View>
+
+            {/* Routine Tracker Card */}
+            <TouchableOpacity 
+              style={styles.card} 
+              activeOpacity={0.9}
+              onPress={() => router.push('/lifelog/routine')}
+            >
+              <View style={styles.cardHeader}>
+                <View style={[styles.iconContainer, { backgroundColor: 'rgba(76, 175, 80, 0.15)' }]}>
+                  <Ionicons name="repeat" size={24} color="#4caf50" />
+                </View>
+                <Text style={styles.cardTitle}>ルーティン管理</Text>
+                <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
+              </View>
+
+              <View style={styles.cardBody}>
+                <View style={styles.routineSummaryRow}>
+                  <Ionicons name="checkmark-done-circle-outline" size={20} color="#4caf50" style={{ marginRight: 6 }} />
+                  <Text style={styles.routineSummaryText}>
+                    完了したルーティン:
+                  </Text>
+                </View>
+                {daySummary?.completedRoutineNames && daySummary.completedRoutineNames.length > 0 ? (
+                  <View style={{ marginTop: 8, paddingLeft: 26 }}>
+                    {daySummary.completedRoutineNames.map((name, index) => (
+                      <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                        <Ionicons name="checkmark" size={14} color="#4caf50" style={{ marginRight: 6 }} />
+                        <Text style={{ color: Theme.colors.text, fontSize: 15 }}>{name}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <View style={{ marginTop: 8, paddingLeft: 26 }}>
+                    <Text style={{ color: Theme.colors.textMuted, fontSize: 14 }}>なし</Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          </React.Fragment>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
       {/* Date Switcher Header */}
@@ -190,332 +539,29 @@ export default function DashboardScreen() {
 
 
 
-        {/* 1. Workout Card */}
-        <TouchableOpacity 
-          style={styles.card} 
-          activeOpacity={0.85} 
-          onPress={() => router.push('/(tabs)')}
-        >
-          <View style={styles.cardHeader}>
-            <View style={[styles.iconContainer, { backgroundColor: 'rgba(79, 172, 254, 0.15)' }]}>
-              <Ionicons name="barbell" size={24} color={Theme.colors.primary} />
-            </View>
-            <Text style={styles.cardTitle}>筋トレ</Text>
-            <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-          </View>
+        {/* Dynamic Feature Cards List */}
+        {(() => {
+          const activeOrder: FeatureId[] = featureOrder && featureOrder.length > 0 
+            ? featureOrder 
+            : ['workout', 'water', 'nutrition', 'zikan', 'routine'];
+          const visibleFeatures = activeOrder.filter((id: FeatureId) =>
+            featureVisibility ? featureVisibility[id] !== false : true
+          );
 
-          <View style={styles.cardBody}>
-            {isActive ? (
-              <View style={styles.activeWorkoutContainer}>
-                <View style={styles.statusBadge}>
-                  <View style={styles.activeDot} />
-                  <Text style={styles.statusBadgeText}>実行中</Text>
-                </View>
-                <Text style={styles.workoutActiveTitle} numberOfLines={1}>
-                  {workoutTitle || 'フリーワークアウト'}
+          if (visibleFeatures.length === 0) {
+            return (
+              <View style={[styles.card, { alignItems: 'center', paddingVertical: 36 }]}>
+                <Ionicons name="options-outline" size={44} color={Theme.colors.textMuted} style={{ marginBottom: 12 }} />
+                <Text style={{ color: Theme.colors.textMuted, fontSize: 14, textAlign: 'center', lineHeight: 22 }}>
+                  表示される機能が選択されていません。{'\n'}
+                  アプリ設定 ➔「機能管理」から表示する機能を選択してください。
                 </Text>
-                <TouchableOpacity 
-                  style={[styles.actionBtn, { backgroundColor: Theme.colors.success }]}
-                  onPress={() => router.push('/active-workout')}
-                >
-                  <Text style={styles.actionBtnText}>トレーニングに戻る</Text>
-                </TouchableOpacity>
               </View>
-            ) : (
-              <View style={styles.inactiveWorkoutContainer}>
-                {lastWorkoutSummary ? (
-                  <>
-                    <View style={[styles.statRow, { marginBottom: 2 }]}>
-                      <Text style={[styles.statGoal, { color: Theme.colors.textMuted, fontSize: 14 }]}>
-                        直近: <Text style={{ color: Theme.colors.textMuted, fontSize: 14 }}>{lastWorkoutSummary.dateStr}</Text> ({lastWorkoutSummary.title || '筋トレ'})
-                      </Text>
-                    </View>
+            );
+          }
 
-                    {lastWorkoutSummary.muscleVolumes.filter(item => item.volumeKg > 0).length > 0 ? (
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 }}>
-                        {lastWorkoutSummary.muscleVolumes.filter(item => item.volumeKg > 0).map((item, idx) => (
-                          <View key={idx} style={styles.muscleVolumeBadge}>
-                            <Text style={styles.muscleVolumeText}>
-                              {item.muscle}: <Text style={{ color: '#fff', fontWeight: 'bold' }}>{item.volumeKg.toLocaleString()} kg</Text>
-                            </Text>
-                          </View>
-                        ))}
-                      </View>
-                    ) : (
-                      <Text style={styles.inactiveText}>セット記録なし ({lastWorkoutSummary.totalSets}セット)</Text>
-                    )}
-
-                    {Updates.channel !== 'production' && lastWorkoutSummary?.debugInfo && (
-                      <View style={{ marginTop: 8 }}>
-                        <TouchableOpacity
-                          activeOpacity={0.7}
-                          onPress={() => setIsDebugExpanded(prev => !prev)}
-                          style={{
-                            alignSelf: 'flex-start',
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 4,
-                            paddingVertical: 3,
-                            paddingHorizontal: 8,
-                            backgroundColor: 'rgba(255, 183, 77, 0.12)',
-                            borderRadius: 12,
-                            borderWidth: 1,
-                            borderColor: 'rgba(255, 183, 77, 0.3)',
-                          }}
-                        >
-                          <Ionicons name="bug-outline" size={12} color="#ffb74d" />
-                          <Text style={{ color: '#ffb74d', fontSize: 10, fontWeight: 'bold' }}>
-                            {isDebugExpanded ? 'Debug 閉じる' : 'Debug'}
-                          </Text>
-                        </TouchableOpacity>
-
-                        {isDebugExpanded && (
-                          <View style={{ marginTop: 6, padding: 8, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,183,77,0.2)' }}>
-                            <Text style={{ color: '#ffb74d', fontSize: 10 }} numberOfLines={6}>
-                              🔍 [Staging Debug] {lastWorkoutSummary.debugInfo}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    )}
-                  </>
-                ) : (
-                  <Text style={styles.inactiveText}>過去のワークアウト記録がありません。タップして筋トレを開始しましょう。</Text>
-                )}
-              </View>
-            )}
-          </View>
-        </TouchableOpacity>
-
-        {/* 2. Water Intake Card */}
-        <View style={styles.card}>
-          <TouchableOpacity 
-            style={styles.cardHeader}
-            activeOpacity={0.7}
-            onPress={() => router.push('/lifelog/water')}
-          >
-            <View style={[styles.iconContainer, { backgroundColor: 'rgba(0, 210, 255, 0.15)' }]}>
-              <Ionicons name="water" size={24} color="#00d2ff" />
-            </View>
-            <Text style={styles.cardTitle}>水分補給</Text>
-            <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-          </TouchableOpacity>
-
-          <View style={styles.cardBody}>
-            <View style={styles.statRow}>
-              <Text style={styles.statVal}>{daySummary?.water.amount ?? 0} <Text style={styles.statUnit}>ml</Text></Text>
-              <Text style={styles.statGoal}>/ {daySummary?.water.goal ?? 2000} ml</Text>
-            </View>
-
-            {/* Progress Bar */}
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBarBg}>
-                <View 
-                  style={[
-                    styles.progressBarFill, 
-                    { 
-                      width: `${Math.min(100, daySummary?.water.percentage ?? 0)}%`,
-                      backgroundColor: '#00d2ff' 
-                    }
-                  ]} 
-                />
-              </View>
-              <Text style={styles.progressPercent}>{daySummary?.water.percentage ?? 0}%</Text>
-            </View>
-
-            {/* Quick Add Presets */}
-            <View style={styles.presetsRow}>
-              {waterPresets.map((preset, idx) => (
-                <TouchableOpacity 
-                  key={idx}
-                  style={styles.presetBtn} 
-                  onPress={() => handleAddWaterAmount(preset.amount, preset.caffeine)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.presetBtnText}>
-                    {preset.caffeine > 0 ? `☕${preset.amount}ml` : `${preset.amount}ml`}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </View>
-
-        {/* 2.5 Nutrition & Meal Card */}
-        <TouchableOpacity 
-          style={styles.card} 
-          activeOpacity={0.85}
-          onPress={() => router.push('/lifelog/nutrition')}
-        >
-          <View style={styles.cardHeader}>
-            <View style={[styles.iconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-              <Ionicons name="restaurant" size={24} color="#10b981" />
-            </View>
-            <Text style={styles.cardTitle}>栄養＆食事管理</Text>
-            <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-          </View>
-          <View style={styles.cardBody}>
-            {(() => {
-              const logs = mealLogs || [];
-              const goalCal = userNutritionGoals?.calories || 2000;
-              const totalCal = logs.reduce((acc, curr) => acc + (curr.calories || 0), 0);
-              const totalP = logs.reduce((acc, curr) => acc + (curr.protein || 0), 0);
-              const totalF = logs.reduce((acc, curr) => acc + (curr.fat || 0), 0);
-              const totalC = logs.reduce((acc, curr) => acc + (curr.carbs || 0), 0);
-              const calPercent = Math.min(100, Math.round((totalCal / goalCal) * 100));
-
-              return (
-                <>
-                  <View style={styles.statRow}>
-                    <Text style={styles.statVal}>{Math.round(totalCal)} <Text style={styles.statUnit}>kcal</Text></Text>
-                    <Text style={styles.statGoal}>/ {goalCal} kcal ({logs.length}件)</Text>
-                  </View>
-
-                  <View style={styles.progressContainer}>
-                    <View style={styles.progressBarBg}>
-                      <View 
-                        style={[
-                          styles.progressBarFill, 
-                          { 
-                            width: `${calPercent}%`,
-                            backgroundColor: '#10b981' 
-                          }
-                        ]} 
-                      />
-                    </View>
-                    <Text style={styles.progressPercent}>{calPercent}%</Text>
-                  </View>
-
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#334155' }}>
-                    <Text style={{ fontSize: 13, color: '#94a3b8' }}>P: <Text style={{ fontWeight: '700', color: '#06b6d4' }}>{totalP.toFixed(1)}g</Text></Text>
-                    <Text style={{ fontSize: 13, color: '#94a3b8' }}>F: <Text style={{ fontWeight: '700', color: '#f59e0b' }}>{totalF.toFixed(1)}g</Text></Text>
-                    <Text style={{ fontSize: 13, color: '#94a3b8' }}>C: <Text style={{ fontWeight: '700', color: '#a855f7' }}>{totalC.toFixed(1)}g</Text></Text>
-                  </View>
-                </>
-              );
-            })()}
-          </View>
-        </TouchableOpacity>
-
-
-        {/* 3. 24h Time Breakdown Card */}
-        <TouchableOpacity 
-          style={styles.card} 
-          activeOpacity={0.9}
-          onPress={() => router.push('/lifelog/zikan')}
-        >
-          <View style={styles.cardHeader}>
-            <View style={[styles.iconContainer, { backgroundColor: 'rgba(255, 152, 0, 0.15)' }]}>
-              <Ionicons name="time" size={24} color="#ff9800" />
-            </View>
-            <Text style={styles.cardTitle}>24時間管理</Text>
-            <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-          </View>
-
-          <View style={styles.cardBody}>
-            <View style={styles.statRow}>
-              <Text style={styles.statVal}>
-                {daySummary ? (daySummary.totalZikanMinutes / 60).toFixed(1) : '0.0'} <Text style={styles.statUnit}>時間</Text>
-              </Text>
-              <Text style={styles.statGoal}>記録済み</Text>
-            </View>
-
-            <View style={styles.breakdownList}>
-              {daySummary?.zikan && daySummary.zikan.length > 0 ? (
-                daySummary.zikan.slice(0, 3).map((item, index) => (
-                  <View key={index} style={styles.breakdownRow}>
-                    <Text style={styles.breakdownName}>• {item.name}</Text>
-                    <Text style={styles.breakdownTime}>
-                      {item.hours >= 1 ? `${item.hours}時間` : ''}{item.minutes % 60 > 0 ? `${item.minutes % 60}分` : ''}
-                    </Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.emptyText}>記録された時間ブロックがありません</Text>
-              )}
-            </View>
-          </View>
-        </TouchableOpacity>
-
-        {/* 4. Habits Card */}
-        <View style={styles.card}>
-          <TouchableOpacity 
-            style={styles.cardHeader}
-            activeOpacity={0.7}
-            onPress={() => router.push('/lifelog/habit')}
-          >
-            <View style={[styles.iconContainer, { backgroundColor: 'rgba(233, 30, 99, 0.15)' }]}>
-              <Ionicons name="checkmark-circle" size={24} color="#e91e63" />
-            </View>
-            <Text style={styles.cardTitle}>習慣カウンター</Text>
-            <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-          </TouchableOpacity>
-
-          <View style={styles.cardBody}>
-            {daySummary?.habits && daySummary.habits.length > 0 ? (
-              <View style={styles.habitList}>
-                {daySummary.habits.map((habit) => (
-                  <View key={habit.id} style={styles.habitRow}>
-                    <View style={styles.habitInfo}>
-                      <View style={[styles.habitColorDot, { backgroundColor: habit.color || '#fff' }]} />
-                      <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
-                    </View>
-                    <View style={styles.habitActionContainer}>
-                      <Text style={styles.habitCount}>{habit.count} 回</Text>
-                      <TouchableOpacity
-                        style={styles.habitAddBtn}
-                        onPress={() => handleIncrementHabit(habit.id)}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="add" size={16} color="#fff" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <Text style={styles.emptyText}>習慣が登録されていません</Text>
-            )}
-          </View>
-        </View>
-
-        {/* 5. Routine Tracker Card */}
-        <TouchableOpacity 
-          style={styles.card} 
-          activeOpacity={0.9}
-          onPress={() => router.push('/lifelog/routine')}
-        >
-          <View style={styles.cardHeader}>
-            <View style={[styles.iconContainer, { backgroundColor: 'rgba(76, 175, 80, 0.15)' }]}>
-              <Ionicons name="repeat" size={24} color="#4caf50" />
-            </View>
-            <Text style={styles.cardTitle}>ルーティン管理</Text>
-            <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-          </View>
-
-          <View style={styles.cardBody}>
-            <View style={styles.routineSummaryRow}>
-              <Ionicons name="checkmark-done-circle-outline" size={20} color="#4caf50" style={{ marginRight: 6 }} />
-              <Text style={styles.routineSummaryText}>
-                完了したルーティン:
-              </Text>
-            </View>
-            {daySummary?.completedRoutineNames && daySummary.completedRoutineNames.length > 0 ? (
-              <View style={{ marginTop: 8, paddingLeft: 26 }}>
-                {daySummary.completedRoutineNames.map((name, index) => (
-                  <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                    <Ionicons name="checkmark" size={14} color="#4caf50" style={{ marginRight: 6 }} />
-                    <Text style={{ color: Theme.colors.text, fontSize: 15 }}>{name}</Text>
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <View style={{ marginTop: 8, paddingLeft: 26 }}>
-                <Text style={{ color: Theme.colors.textMuted, fontSize: 14 }}>なし</Text>
-              </View>
-            )}
-          </View>
-        </TouchableOpacity>
+          return visibleFeatures.map((id) => renderFeatureCard(id as FeatureId));
+        })()}
 
         {/* App Settings Access Card */}
         <TouchableOpacity 
@@ -532,7 +578,7 @@ export default function DashboardScreen() {
           </View>
           <View style={styles.cardBody}>
             <Text style={styles.inactiveText}>
-              Gemini AI連携、データ出力・共有、バックアップ、Obsidian連携などを管理できます。
+              Gemini AI連携、データ出力・共有、バックアップ、機能管理などを操作できます。
             </Text>
           </View>
         </TouchableOpacity>

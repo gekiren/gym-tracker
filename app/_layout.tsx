@@ -11,7 +11,7 @@ import mobileAds from 'react-native-google-mobile-ads';
 import { initDB, getSettings, saveSetting } from '../src/db/database';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
-import { useSettingsStore } from '../src/store/settingsStore';
+import { useSettingsStore, FeatureId } from '../src/store/settingsStore';
 import '../src/i18n';
 import i18n from '../src/i18n';
 import { registerGlobalErrorHandler } from '../src/services/crashReporterService';
@@ -79,6 +79,36 @@ export default function RootLayout() {
       // 4. サブスク・プレミアム＆トークン判定
       const { finalPremiumUntil, finalTokensBalance, expired, isEarlyAdopter } = await initSubscriptionAndTokens(storedSettings);
 
+      // 4.5 機能管理設定（表示順・表示ON/OFF）
+      const ALL_FEATURES: FeatureId[] = ['workout', 'water', 'nutrition', 'zikan', 'routine'];
+      let featureOrder: FeatureId[] = ALL_FEATURES;
+      if (storedSettings['feature_order']) {
+        try {
+          const parsed = JSON.parse(storedSettings['feature_order']);
+          if (Array.isArray(parsed)) {
+            const valid = parsed.filter((id: any) => ALL_FEATURES.includes(id as FeatureId)) as FeatureId[];
+            ALL_FEATURES.forEach(id => {
+              if (!valid.includes(id)) valid.push(id);
+            });
+            featureOrder = valid;
+          }
+        } catch (e) {
+          console.warn('Failed to parse feature_order', e);
+        }
+      }
+
+      let featureVisibility: Record<FeatureId, boolean> = { workout: true, water: true, nutrition: true, zikan: true, routine: true };
+      if (storedSettings['feature_visibility']) {
+        try {
+          const parsed = JSON.parse(storedSettings['feature_visibility']);
+          if (parsed && typeof parsed === 'object') {
+            featureVisibility = { ...featureVisibility, ...parsed };
+          }
+        } catch (e) {
+          console.warn('Failed to parse feature_visibility', e);
+        }
+      }
+
       // 5. ストアへの設定ロード
       useSettingsStore.getState().loadSettings({
         defaultRest,
@@ -98,6 +128,8 @@ export default function RootLayout() {
         aiChatMode,
         enableAiDebugContext,
         backgroundTheme,
+        featureOrder,
+        featureVisibility,
       });
       if (expired) {
         useWorkoutStore.getState().setShouldShowPaywall(true);
