@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#1c1c1c',
   },
-  emptyText: { fontSize: 15, fontWeight: '700', color: '#c8c8c8', marginBottom: 6 },
+  emptyText: { fontSize: 15, fontWeight: '700', color: '#ffffff', marginBottom: 6 },
   emptySubText: { fontSize: 12, color: '#888888', textAlign: 'center', lineHeight: 18 },
   logCard: {
     backgroundColor: '#0a0a0a',
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   typeBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginRight: 8 },
   typeBadgeText: { fontSize: 11, fontWeight: '700', color: '#ffffff' },
   timeText: { fontSize: 11, fontWeight: '600', color: '#888888', marginRight: 8 },
-  mealName: { flex: 1, fontSize: 15, fontWeight: '700', color: '#c8c8c8' },
+  mealName: { flex: 1, fontSize: 15, fontWeight: '700', color: '#ffffff' },
   caloriesText: { fontSize: 15, fontWeight: '700', color: '#10b981' },
   photoThumb: {
     width: '100%',

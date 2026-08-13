@@ -120,7 +120,7 @@ export default `<!DOCTYPE html>
     (function() {
       if (window.__BACKGROUND_THEME__ === 'pureBlack') {
         var style = document.createElement('style');
-        style.innerHTML = 'body { background-color: #000000 !important; color: #c8c8c8 !important; } .card, .routine-card, .routine-item, .item-card, div[class*="card"] { background-color: #080808 !important; border: 1px solid #1f1f1f !important; }';
+        style.innerHTML = 'body { background-color: #000000 !important; color: #ffffff !important; } .card, .routine-card, .routine-item, .item-card, div[class*="card"] { background-color: #080808 !important; border: 1px solid #1f1f1f !important; } .text-muted, small, span.sub { color: #888888 !important; }';
         document.head.appendChild(style);
       }
     })();

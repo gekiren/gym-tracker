@@ -11,21 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.30',
+  version: '1.8.32',
   title: {
-    ja: 'ボタン明度・文字可読性・直近14日カード配色の細部調整',
-    en: 'Fine-tuned Button Brightness, Text Legibility, and 14-Day Chart Colors',
+    ja: '戻る・タイマー・中止せずに離れるボタン色＆文字色のフリーワークアウト一括統一',
+    en: 'Unified Back, Timer & Leave Button Styling with Free Workout Theme',
   },
   notes: {
     ja: [
-      '🎨 青・紫・各種アクションボタンの明度を落とし、ボタン内文字を優しいグレーに変更しました。',
-      '✨ 習慣カウンターのカード上テキストの可読性をクッキリした白文字に復元しました。',
-      '📈 「直近14日間のカロリー推移」カードの背景色を他カードと完全統一（漆黒トーン）に統一しました。',
+      '✨ 2枚目の「戻る」「完了」「トレーニングタイマー開始」の背景色および文字色をフリーワークアウトボタン（水色 #4facfe / 白文字 #ffffff）へ完全統一しました。',
+      '✨ 3枚目モーダルの「中止せずに離れる」の背景色、文字色、アイコン色をフリーワークアウトボタンと同じ水色・白文字に完全統一しました。',
     ],
     en: [
-      '🎨 Darkened blue, purple, and action button styles; adjusted button texts to soft grey.',
-      '✨ Restored high-contrast text readability on Habit Counter cards.',
-      '📈 Unified 14-day calorie chart background colors to match pure black card styling.',
+      '✨ Unified Back, Finish, and Training Timer buttons with Free Workout button styling (#4facfe bg / white text).',
+      '✨ Unified "Leave in background" modal button styling to match Free Workout button theme.',
     ],
   },
 };

@@ -73,7 +73,7 @@ export const WorkoutConfirmModal: React.FC<WorkoutConfirmModalProps> = ({
                     onPress={onLeave}
                     activeOpacity={0.8}
                   >
-                    <Ionicons name="arrow-back-circle-outline" size={20} color="#000" style={styles.btnIcon} />
+                    <Ionicons name="arrow-back-circle-outline" size={20} color="#ffffff" style={styles.btnIcon} />
                     <Text style={styles.buttonPrimaryText}>{leaveText || '中止せずに離れる'}</Text>
                   </TouchableOpacity>
 
@@ -105,7 +105,7 @@ export const WorkoutConfirmModal: React.FC<WorkoutConfirmModalProps> = ({
                     disabled={isSaving}
                     activeOpacity={0.8}
                   >
-                    <Ionicons name="save-outline" size={18} color="#000" style={styles.btnIcon} />
+                    <Ionicons name="save-outline" size={18} color="#ffffff" style={styles.btnIcon} />
                     <Text style={styles.buttonPrimaryText}>
                       {isSaving ? '保存中...' : (saveText || '保存して終了')}
                     </Text>
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   buttonPrimaryText: {
-    color: '#000',
+    color: '#ffffff',
     fontSize: 15,
     fontWeight: 'bold',
   },

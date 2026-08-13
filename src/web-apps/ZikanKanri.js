@@ -121,7 +121,7 @@ export default `<!DOCTYPE html>
     (function() {
       if (window.__BACKGROUND_THEME__ === 'pureBlack') {
         var style = document.createElement('style');
-        style.innerHTML = ':root { --bg-color: #000000 !important; --surface-color: #080808 !important; --text-primary: #a0a0a0 !important; --text-secondary: #888888 !important; --primary-color: #6d28d9 !important; } body { background-color: #000000 !important; } #current-date { color: #a0a0a0 !important; } button.btn-primary, #save-log, .btn-primary { background-color: #6d28d9 !important; color: #d1d5db !important; }';
+        style.innerHTML = ':root { --bg-color: #000000 !important; --surface-color: #080808 !important; --text-primary: #ffffff !important; --text-secondary: #888888 !important; --primary-color: #6d28d9 !important; } body { background-color: #000000 !important; } #current-date { color: #888888 !important; } button.btn-primary, #save-log, .btn-primary { background-color: #6d28d9 !important; color: #ffffff !important; }';
         document.head.appendChild(style);
       }
     })();

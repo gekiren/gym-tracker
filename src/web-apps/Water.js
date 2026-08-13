@@ -120,7 +120,7 @@ export default `<!DOCTYPE html>
     (function() {
       if (window.__BACKGROUND_THEME__ === 'pureBlack') {
         var style = document.createElement('style');
-        style.innerHTML = ':root { --bg-color: #000000 !important; --card-bg: #080808 !important; --text-color: #c8c8c8 !important; --text-muted: #888888 !important; --border-color: #1f1f1f !important; } body { background-color: #000000 !important; }';
+        style.innerHTML = ':root { --bg-color: #000000 !important; --card-bg: #080808 !important; --text-color: #ffffff !important; --text-muted: #888888 !important; --border-color: #1f1f1f !important; } body { background-color: #000000 !important; }';
         document.head.appendChild(style);
       }
     })();

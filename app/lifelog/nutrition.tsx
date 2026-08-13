@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   actionGridBtnText: {
-    color: '#d1d5db',
+    color: '#ffffff',
     fontSize: 13,
     fontWeight: '700',
   },
