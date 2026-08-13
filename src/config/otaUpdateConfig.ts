@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.57',
+  version: '1.8.58',
   title: {
-    ja: 'オートファジー時間最適化のAI解析タイムアウト＆エラー表示改善',
-    en: 'Autophagy Time Optimization Analysis Timeout & Error Display Improvement',
+    ja: '食事写真解析およびAIチャットへの手動倍率入力機能の追加',
+    en: 'Added custom multiplier input for photo analysis and AI meal chat',
   },
   notes: {
     ja: [
-      '「✨ オートファジー時間最適化」機能実行時のAI解析タイムアウト制限時間を拡張し、安定性を向上させました。',
-      '通信タイムアウト発生時に生のシステムキーが表示される不具合を修正し、分かりやすいエラー表示に対応しました。',
+      '食事の写真解析後画面に「自分で倍率入力」ボタンを追加し、任意の倍率（例: 0.8倍、1.3倍）を直接数値入力できるように改善しました。',
+      '栄養AIチャット解析後にも倍率調整機能（プリセットボタン＆手動入力ボタン）を追加し、倍率変更に応じた栄養価の再計算・保存に対応しました。',
     ],
     en: [
-      'Extended timeout limits for Autophagy AI Time Optimization for increased stability.',
-      'Fixed an issue where raw error keys were displayed on timeout, improving error message visibility.',
+      'Added a "Custom Input" button after photo meal analysis to allow direct numeric multiplier entry (e.g. 0.8x, 1.3x).',
+      'Added portion multiplier controls (presets & custom entry) to AI meal chat with auto-recalculation and updated log saving.',
     ],
   },
 };

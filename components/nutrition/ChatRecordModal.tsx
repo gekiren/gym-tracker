@@ -39,6 +39,9 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
   const [mealType, setMealType] = useState<string>('dinner');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<NutritionAIResult | null>(null);
+  const [multiplier, setMultiplier] = useState(1.0);
+  const [showCustomMultiplierInput, setShowCustomMultiplierInput] = useState(false);
+  const [customMultiplierText, setCustomMultiplierText] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleAnalyze = async () => {
@@ -48,6 +51,9 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
     }
     setIsLoading(true);
     setResult(null);
+    setMultiplier(1.0);
+    setShowCustomMultiplierInput(false);
+    setCustomMultiplierText('');
     try {
       const res = await analyzeMealText(textInput.trim(), 'gemini');
       setResult(res);
@@ -65,6 +71,25 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
     }
   };
 
+  const handleMultiplierChange = (m: number) => {
+    setMultiplier(m);
+    setShowCustomMultiplierInput(false);
+  };
+
+  const handleApplyCustomMultiplier = () => {
+    const normalized = customMultiplierText.replace(/[０-９．]/g, (s) =>
+      String.fromCharCode(s.charCodeAt(0) - 0xfee0)
+    );
+    const parsed = parseFloat(normalized);
+    if (isNaN(parsed) || parsed <= 0) {
+      Alert.alert('入力エラー', '正しい倍率（0より大きい数値）を入力してください。');
+      return;
+    }
+    const rounded = parseFloat(parsed.toFixed(2));
+    setMultiplier(rounded);
+    setShowCustomMultiplierInput(false);
+  };
+
   const handleSave = async () => {
     if (!result) return;
     setIsSaving(true);
@@ -75,17 +100,20 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
         meal_type: mealType,
         meal_time: now.toTimeString().slice(0, 5),
         name: result.mealName,
-        calories: result.calories,
-        protein: result.protein,
-        fat: result.fat,
-        carbs: result.carbs,
-        sodium: result.sodium,
-        fiber: result.fiber,
+        calories: Math.round(result.calories * multiplier),
+        protein: parseFloat((result.protein * multiplier).toFixed(1)),
+        fat: parseFloat((result.fat * multiplier).toFixed(1)),
+        carbs: parseFloat((result.carbs * multiplier).toFixed(1)),
+        sodium: parseFloat((result.sodium * multiplier).toFixed(1)),
+        fiber: parseFloat((result.fiber * multiplier).toFixed(1)),
         memo: result.advice,
         created_at: now.getTime(),
       });
       setTextInput('');
       setResult(null);
+      setMultiplier(1.0);
+      setShowCustomMultiplierInput(false);
+      setCustomMultiplierText('');
       onClose();
     } catch (err) {
       Alert.alert('保存エラー', '食事ログの保存に失敗しました。');
@@ -98,6 +126,9 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
     if (isLoading) return;
     setTextInput('');
     setResult(null);
+    setMultiplier(1.0);
+    setShowCustomMultiplierInput(false);
+    setCustomMultiplierText('');
     onClose();
   };
 
@@ -168,12 +199,12 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
                 <Text style={styles.resultTitle}>✅ 解析結果: {result.mealName}</Text>
                 <View style={styles.nutriGrid}>
                   {[
-                    { label: 'カロリー', val: `${Math.round(result.calories)} kcal`, color: '#10b981' },
-                    { label: 'タンパク質', val: `${result.protein.toFixed(1)} g`, color: '#06b6d4' },
-                    { label: '脂質', val: `${result.fat.toFixed(1)} g`, color: '#f59e0b' },
-                    { label: '炭水化物', val: `${result.carbs.toFixed(1)} g`, color: '#a855f7' },
-                    { label: '塩分', val: `${result.sodium.toFixed(1)} g`, color: '#f43f5e' },
-                    { label: '食物繊維', val: `${result.fiber.toFixed(1)} g`, color: '#84cc16' },
+                    { label: 'カロリー', val: `${Math.round(result.calories * multiplier)} kcal`, color: '#10b981' },
+                    { label: 'タンパク質', val: `${(result.protein * multiplier).toFixed(1)} g`, color: '#06b6d4' },
+                    { label: '脂質', val: `${(result.fat * multiplier).toFixed(1)} g`, color: '#f59e0b' },
+                    { label: '炭水化物', val: `${(result.carbs * multiplier).toFixed(1)} g`, color: '#a855f7' },
+                    { label: '塩分', val: `${(result.sodium * multiplier).toFixed(1)} g`, color: '#f43f5e' },
+                    { label: '食物繊維', val: `${(result.fiber * multiplier).toFixed(1)} g`, color: '#84cc16' },
                   ].map((item) => (
                     <View key={item.label} style={[styles.nutriItem, isPureBlack && { backgroundColor: '#000000' }]}>
                       <Text style={styles.nutriLabel}>{item.label}</Text>
@@ -181,6 +212,61 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
                     </View>
                   ))}
                 </View>
+
+                {/* 倍率調整 */}
+                <View style={[styles.portionBox, isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' }]}>
+                  <Text style={styles.portionLabel}>食べた量の倍率: {multiplier}倍</Text>
+                  <View style={styles.presetRow}>
+                    {[0.5, 0.7, 1.0, 1.2, 1.5, 2.0].map((m) => (
+                      <TouchableOpacity
+                        key={m}
+                        style={[styles.presetBtn, multiplier === m && !showCustomMultiplierInput && styles.presetBtnActive]}
+                        onPress={() => handleMultiplierChange(m)}
+                      >
+                        <Text style={[styles.presetBtnText, multiplier === m && !showCustomMultiplierInput && styles.presetBtnTextActive]}>
+                          {m}倍
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                    <TouchableOpacity
+                      style={[
+                        styles.presetBtn,
+                        (showCustomMultiplierInput || (![0.5, 0.7, 1.0, 1.2, 1.5, 2.0].includes(multiplier))) && styles.presetBtnActive,
+                      ]}
+                      onPress={() => {
+                        setCustomMultiplierText(String(multiplier));
+                        setShowCustomMultiplierInput(!showCustomMultiplierInput);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.presetBtnText,
+                          (showCustomMultiplierInput || (![0.5, 0.7, 1.0, 1.2, 1.5, 2.0].includes(multiplier))) && styles.presetBtnTextActive,
+                        ]}
+                      >
+                        ✏️ 自分で入力{!showCustomMultiplierInput && ![0.5, 0.7, 1.0, 1.2, 1.5, 2.0].includes(multiplier) ? ` (${multiplier}倍)` : ''}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {showCustomMultiplierInput && (
+                    <View style={styles.customInputRow}>
+                      <TextInput
+                        style={[styles.customInput, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}
+                        value={customMultiplierText}
+                        onChangeText={setCustomMultiplierText}
+                        keyboardType="decimal-pad"
+                        placeholder="例: 1.3"
+                        placeholderTextColor="#475569"
+                      />
+                      <Text style={styles.customInputUnit}>倍</Text>
+                      <TouchableOpacity style={styles.customApplyBtn} onPress={handleApplyCustomMultiplier}>
+                        <Text style={styles.customApplyBtnText}>適用</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+
                 {result.advice && (
                   <Text style={[styles.adviceText, isPureBlack && { backgroundColor: '#000000' }]}>💡 {result.advice}</Text>
                 )}
@@ -255,6 +341,46 @@ const styles = StyleSheet.create({
   nutriLabel: { fontSize: 11, color: '#64748b', marginBottom: 2 },
   nutriVal: { fontSize: 14, fontWeight: '700' },
   adviceText: { fontSize: 12, color: '#94a3b8', lineHeight: 18, marginBottom: 12, backgroundColor: '#0f172a', borderRadius: 8, padding: 10 },
+  portionBox: { backgroundColor: '#0f172a', borderRadius: 10, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: '#334155' },
+  portionLabel: { fontSize: 12, fontWeight: '600', color: '#94a3b8', marginBottom: 8 },
+  presetRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
+  presetBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, backgroundColor: '#1e293b', borderWidth: 1, borderColor: '#334155' },
+  presetBtnActive: { backgroundColor: '#10b981', borderColor: '#10b981' },
+  presetBtnText: { fontSize: 12, color: '#94a3b8' },
+  presetBtnTextActive: { color: '#fff', fontWeight: '700' },
+  customInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    gap: 8,
+  },
+  customInput: {
+    flex: 1,
+    backgroundColor: '#1e293b',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+    color: '#f8fafc',
+    fontSize: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  customInputUnit: {
+    fontSize: 14,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+  customApplyBtn: {
+    backgroundColor: '#10b981',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  customApplyBtnText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
   saveBtn: { backgroundColor: '#10b981', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
   saveBtnDisabled: { opacity: 0.5 },
   saveBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },

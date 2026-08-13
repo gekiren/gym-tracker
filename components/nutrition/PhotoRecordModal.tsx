@@ -99,6 +99,8 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
   const [sodium, setSodium] = useState('');
   const [fiber, setFiber] = useState('');
   const [multiplier, setMultiplier] = useState(1.0);
+  const [showCustomMultiplierInput, setShowCustomMultiplierInput] = useState(false);
+  const [customMultiplierText, setCustomMultiplierText] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showDebugModal, setShowDebugModal] = useState(false);
 
@@ -117,6 +119,8 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
     setSodium('');
     setFiber('');
     setMultiplier(1.0);
+    setShowCustomMultiplierInput(false);
+    setCustomMultiplierText('');
     setMealType('dinner');
   };
 
@@ -272,8 +276,26 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
 
   const handleMultiplierChange = (m: number) => {
     setMultiplier(m);
+    setShowCustomMultiplierInput(false);
     if (aiResult) {
       applyMultiplier(aiResult, m);
+    }
+  };
+
+  const handleApplyCustomMultiplier = () => {
+    const normalized = customMultiplierText.replace(/[０-９．]/g, (s) =>
+      String.fromCharCode(s.charCodeAt(0) - 0xfee0)
+    );
+    const parsed = parseFloat(normalized);
+    if (isNaN(parsed) || parsed <= 0) {
+      Alert.alert('入力エラー', '正しい倍率（0より大きい数値）を入力してください。');
+      return;
+    }
+    const rounded = parseFloat(parsed.toFixed(2));
+    setMultiplier(rounded);
+    setShowCustomMultiplierInput(false);
+    if (aiResult) {
+      applyMultiplier(aiResult, rounded);
     }
   };
 
@@ -429,21 +451,57 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
 
             {/* 倍率調整 */}
             {aiResult && (
-              <View style={styles.portionBox}>
+              <View style={[styles.portionBox, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
                 <Text style={styles.label}>食べた量の倍率: {multiplier}倍</Text>
                 <View style={styles.presetRow}>
                   {[0.5, 0.7, 1.0, 1.2, 1.5, 2.0].map((m) => (
                     <TouchableOpacity
                       key={m}
-                      style={[styles.presetBtn, multiplier === m && styles.presetBtnActive]}
+                      style={[styles.presetBtn, multiplier === m && !showCustomMultiplierInput && styles.presetBtnActive]}
                       onPress={() => handleMultiplierChange(m)}
                     >
-                      <Text style={[styles.presetBtnText, multiplier === m && styles.presetBtnTextActive]}>
+                      <Text style={[styles.presetBtnText, multiplier === m && !showCustomMultiplierInput && styles.presetBtnTextActive]}>
                         {m}倍
                       </Text>
                     </TouchableOpacity>
                   ))}
+                  <TouchableOpacity
+                    style={[
+                      styles.presetBtn,
+                      (showCustomMultiplierInput || (![0.5, 0.7, 1.0, 1.2, 1.5, 2.0].includes(multiplier))) && styles.presetBtnActive,
+                    ]}
+                    onPress={() => {
+                      setCustomMultiplierText(String(multiplier));
+                      setShowCustomMultiplierInput(!showCustomMultiplierInput);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.presetBtnText,
+                        (showCustomMultiplierInput || (![0.5, 0.7, 1.0, 1.2, 1.5, 2.0].includes(multiplier))) && styles.presetBtnTextActive,
+                      ]}
+                    >
+                      ✏️ 自分で入力{!showCustomMultiplierInput && ![0.5, 0.7, 1.0, 1.2, 1.5, 2.0].includes(multiplier) ? ` (${multiplier}倍)` : ''}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
+
+                {showCustomMultiplierInput && (
+                  <View style={styles.customInputRow}>
+                    <TextInput
+                      style={[styles.customInput, isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' }]}
+                      value={customMultiplierText}
+                      onChangeText={setCustomMultiplierText}
+                      keyboardType="decimal-pad"
+                      placeholder="例: 1.3"
+                      placeholderTextColor="#475569"
+                    />
+                    <Text style={styles.customInputUnit}>倍</Text>
+                    <TouchableOpacity style={styles.customApplyBtn} onPress={handleApplyCustomMultiplier}>
+                      <Text style={styles.customApplyBtnText}>適用</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             )}
 
@@ -610,12 +668,45 @@ const styles = StyleSheet.create({
   adviceBox: { backgroundColor: '#10b98115', borderWidth: 1, borderColor: '#10b98144', padding: 12, borderRadius: 10, marginVertical: 8 },
   adviceTitle: { fontSize: 13, fontWeight: '700', color: '#10b981', marginBottom: 4 },
   adviceText: { fontSize: 12, color: '#e2e8f0', lineHeight: 18 },
-  portionBox: { backgroundColor: '#1e293b', borderRadius: 10, padding: 12, marginVertical: 8 },
+  portionBox: { backgroundColor: '#1e293b', borderRadius: 10, padding: 12, marginVertical: 8, borderWidth: 1, borderColor: '#334155' },
   presetRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
   presetBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, backgroundColor: '#0f172a', borderWidth: 1, borderColor: '#334155' },
   presetBtnActive: { backgroundColor: '#10b981', borderColor: '#10b981' },
   presetBtnText: { fontSize: 12, color: '#94a3b8' },
   presetBtnTextActive: { color: '#fff', fontWeight: '700' },
+  customInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    gap: 8,
+  },
+  customInput: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+    color: '#f8fafc',
+    fontSize: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  customInputUnit: {
+    fontSize: 14,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+  customApplyBtn: {
+    backgroundColor: '#10b981',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  customApplyBtnText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
   formSection: { marginTop: 8 },
   input: { backgroundColor: '#1e293b', borderRadius: 10, borderWidth: 1, borderColor: '#334155', color: '#f8fafc', fontSize: 14, padding: 10, marginBottom: 8 },
   nutriGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
