@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.63',
+  version: '1.8.66',
   title: {
-    ja: 'MD一括取り込み画面でのAIプロンプトコピー機能追加',
-    en: 'Added AI Prompt Copy Feature to MD Bulk Import',
+    ja: '水分補給画面におけるカフェイン管理数値の文字色改善',
+    en: 'Improved Caffeine Display Text Color on Hydration Screen',
   },
   notes: {
     ja: [
-      '「MD一括取り込み」画面にChatGPTやClaude等の外部AIへ食事写真・メモを送信して解析させるための専用プロンプトをクリップボードにコピーできる機能を追加しました。',
+      '水分補給画面中央プログレスリング内のカフェイン管理数値（☕ カフェイン: X / XXX mg）の文字色を、水量の目標表示と同じ白色に修正し、視認性を向上させました。',
     ],
     en: [
-      'Added a button in MD Bulk Import to copy the AI Nutritionist prompt for ChatGPT and Claude directly to the clipboard.',
+      'Updated the text color of the central caffeine display on the hydration screen to white to improve visibility and match the water goals display.',
     ],
   },
 };

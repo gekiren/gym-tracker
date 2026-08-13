@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Stack } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { Theme } from '../../src/theme';
-import { WebViewTab } from '../../components/WebViewTab';
+import { WebViewTab, WebViewTabRef } from '../../components/WebViewTab';
 import HabitCounterHTML from '../../src/web-apps/HabitCounter';
 import { useLifelogStore } from '../../src/store/lifelogStore';
 import { LifelogDateHeader } from '../../components/LifelogDateHeader';
@@ -14,6 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 export default function HabitScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
   const [showHistory, setShowHistory] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const webViewTabRef = useRef<WebViewTabRef>(null);
   const { t } = useTranslation();
   const isFocused = useIsFocused();
 
@@ -27,6 +29,19 @@ export default function HabitScreen() {
 
   const targetDate = currentDate || getTodayStr();
 
+  // フォーカス離脱時にモーダルフラグをリセット
+  React.useEffect(() => {
+    if (!isFocused) {
+      setIsModalVisible(false);
+    }
+  }, [isFocused]);
+
+  const handleOpenManageModal = () => {
+    webViewTabRef.current?.injectJavaScript(
+      "if (typeof showManageModal === 'function') showManageModal(); else if (typeof openManageModal === 'function') openManageModal();"
+    );
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
       <Stack.Screen
@@ -36,9 +51,14 @@ export default function HabitScreen() {
           headerTintColor: Theme.colors.text,
           headerTitleStyle: { fontWeight: 'bold' },
           headerRight: () => (
-            <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ marginRight: 16, padding: 4 }}>
-              <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+              <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ padding: 6, marginRight: 6 }}>
+                <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleOpenManageModal} style={{ padding: 6 }}>
+                <Ionicons name="settings-outline" size={22} color={Theme.colors.primary} />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />
@@ -46,8 +66,13 @@ export default function HabitScreen() {
         <LifelogHistoryTab type="habit" t={t} />
       ) : isFocused ? (
         <>
-          <LifelogDateHeader type="habit" />
-          <WebViewTab html={HabitCounterHTML} currentDate={targetDate} />
+          {!isModalVisible && <LifelogDateHeader type="habit" />}
+          <WebViewTab
+            ref={webViewTabRef}
+            html={HabitCounterHTML}
+            currentDate={targetDate}
+            onModalStateChange={(visible) => setIsModalVisible(visible)}
+          />
         </>
       ) : null}
     </View>

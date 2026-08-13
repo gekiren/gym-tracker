@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useImperativeHandle, forwardRef } from 'react';
 import { StyleSheet, View, ActivityIndicator, Text, AppState, AppStateStatus } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,12 +6,17 @@ import { getInitialDataForWebView, handleWebViewMessage, syncWidgetPunches, addS
 import { useLifelogStore } from '../src/store/lifelogStore';
 import { useAppTheme } from '../src/theme';
 
+export interface WebViewTabRef {
+  injectJavaScript: (script: string) => void;
+}
+
 interface WebViewTabProps {
   html: string;
   currentDate: string;
+  onModalStateChange?: (visible: boolean) => void;
 }
 
-export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, currentDate }) => {
+export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(({ html, currentDate, onModalStateChange }, ref) => {
   const { colors, backgroundTheme } = useAppTheme();
   const webViewRef = useRef<WebView>(null);
   const [initialData, setInitialData] = useState<Record<string, any> | null>(null);
@@ -20,6 +25,12 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
   const timeLogs = useLifelogStore((state) => state.timeLogs);
   const habitItems = useLifelogStore((state) => state.habitItems);
   const habitLogs = useLifelogStore((state) => state.habitLogs);
+
+  useImperativeHandle(ref, () => ({
+    injectJavaScript: (script: string) => {
+      webViewRef.current?.injectJavaScript(script);
+    },
+  }));
 
   // Load all initial data from SQLite
   useEffect(() => {
@@ -83,6 +94,13 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
       if (message.type === 'WEB_ERROR') {
         console.error(`[WebView JS Error]: ${message.message}`);
         addSyncDiagnosticLog(`[WEB_ERROR] ${message.message}`);
+        return;
+      }
+
+      if (message.type === 'MODAL_STATE_CHANGE') {
+        const { visible } = message;
+        console.log(`[WebViewTab] MODAL_STATE_CHANGE visible=${visible}`);
+        onModalStateChange?.(!!visible);
         return;
       }
 
@@ -350,7 +368,7 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
       )}
     </SafeAreaView>
   );
-});
+}));
 
 const styles = StyleSheet.create({
   safeArea: {

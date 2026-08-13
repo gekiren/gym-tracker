@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, TouchableOpacity, AppState, AppStateStatus } from 'react-native';
 import { Stack, useNavigation } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { Theme } from '../../src/theme';
-import { WebViewTab } from '../../components/WebViewTab';
+import { WebViewTab, WebViewTabRef } from '../../components/WebViewTab';
 import WaterHTML from '../../src/web-apps/Water';
 import { useLifelogStore } from '../../src/store/lifelogStore';
 import { LifelogDateHeader } from '../../components/LifelogDateHeader';
@@ -15,6 +15,8 @@ export default function WaterScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
   const loadWaterData = useLifelogStore((state) => state.loadWaterData);
   const [showHistory, setShowHistory] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const webViewTabRef = useRef<WebViewTabRef>(null);
   const { t } = useTranslation();
   const navigation = useNavigation();
   const isFocused = useIsFocused();
@@ -28,6 +30,19 @@ export default function WaterScreen() {
   };
 
   const targetDate = currentDate || getTodayStr();
+
+  // フォーカス外脱時にモーダルフラグをリセット
+  useEffect(() => {
+    if (!isFocused) {
+      setIsModalVisible(false);
+    }
+  }, [isFocused]);
+
+  const handleOpenSettingsModal = () => {
+    webViewTabRef.current?.injectJavaScript(
+      "if (typeof openSettingsModal === 'function') openSettingsModal(); else if (typeof showSettingsModal === 'function') showSettingsModal();"
+    );
+  };
 
   // 1. 画面フォーカス時にDBから最新データを読み直す (isFocusedガード)
   useEffect(() => {
@@ -62,9 +77,14 @@ export default function WaterScreen() {
           headerTintColor: Theme.colors.text,
           headerTitleStyle: { fontWeight: 'bold' },
           headerRight: () => (
-            <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ marginRight: 16, padding: 4 }}>
-              <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+              <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ padding: 6, marginRight: 6 }}>
+                <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleOpenSettingsModal} style={{ padding: 6 }}>
+                <Ionicons name="settings-outline" size={22} color={Theme.colors.primary} />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />
@@ -72,8 +92,13 @@ export default function WaterScreen() {
         <LifelogHistoryTab type="water" t={t} />
       ) : (
         <>
-          <LifelogDateHeader type="water" />
-          <WebViewTab html={WaterHTML} currentDate={targetDate} />
+          {!isModalVisible && <LifelogDateHeader type="water" />}
+          <WebViewTab
+            ref={webViewTabRef}
+            html={WaterHTML}
+            currentDate={targetDate}
+            onModalStateChange={(visible) => setIsModalVisible(visible)}
+          />
         </>
       )}
     </View>

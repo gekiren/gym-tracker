@@ -251,8 +251,11 @@ h2 {
     background-color: rgba(0, 0, 0, 0.8);
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    padding-top: max(40px, 6vh);
+    box-sizing: border-box;
     z-index: 1000;
+    overflow-y: auto;
 }
 
 .hidden {
@@ -449,7 +452,7 @@ h2 {
     <div id="app">
         <!-- ホーム画面 -->
         <div id="home-screen">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div style="display: none;">
                 <h1 style="margin: 0; text-align: left;">Select Routine</h1>
                 <button onclick="showManageScreen()" class="icon-btn" style="font-size: 14px; padding: 8px 12px; background: #2563eb; font-weight: bold; border: none; color: white; border-radius: 6px;">⚙️ 管理メニュー</button>
             </div>
@@ -460,9 +463,9 @@ h2 {
 
         <!-- 管理画面 (専用メニュー) -->
         <div id="manage-screen" class="hidden">
-            <h1>Routine Management</h1>
-            <button id="create-routine-btn" class="btn-large-primary" style="margin-top: 20px;">+ New</button>
-            <button onclick="goHome()" class="btn-large-secondary" style="margin-top: 20px; margin-bottom: 20px;">Back to Home</button>
+            <h1>ルーティン編集</h1>
+            <button id="create-routine-btn" class="btn-large-primary" style="margin-top: 20px;">+ 追加</button>
+            <button onclick="goHome()" class="btn-large-secondary" style="margin-top: 20px; margin-bottom: 20px;">閉じる</button>
             <div id="manage-routine-list">
                 <!-- ここに管理用のルーティンリストが生成される -->
             </div>
@@ -729,6 +732,16 @@ const components = {
 };
 
 // --- Navigation ---
+function notifyModalState(show) {
+    if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+        try {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MODAL_STATE_CHANGE', visible: show }));
+        } catch (e) {
+            console.warn('Failed to post MODAL_STATE_CHANGE:', e);
+        }
+    }
+}
+
 function showScreen(screenName) {
     Object.values(screens).forEach(el => el.classList.add('hidden'));
     screens[screenName].classList.remove('hidden');
@@ -740,12 +753,17 @@ function goHome() {
     sendRoutineStateToRN();
     showScreen('home');
     loadRoutines();
+    notifyModalState(false);
 }
 
 function showManageScreen() {
     showScreen('manage');
     loadRoutines();
+    notifyModalState(true);
 }
+window.showManageScreen = showManageScreen;
+window.openManageScreen = showManageScreen;
+window.openManageView = showManageScreen;
 
 // --- Routine List & Management ---
 function isRoutineCompletedOnTargetDate(routine, targetDateStr) {

@@ -392,11 +392,14 @@ label {
   background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  padding-top: max(40px, 6vh);
+  box-sizing: border-box;
   z-index: 1000;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.3s ease, visibility 0.3s ease;
+  overflow-y: auto;
 }
 
 .modal-overlay.active {
