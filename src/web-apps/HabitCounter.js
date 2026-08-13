@@ -285,11 +285,14 @@ h1 {
     background: rgba(0, 0, 0, 0.8);
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    padding-top: max(40px, 8vh);
+    box-sizing: border-box;
     z-index: 100;
     opacity: 1;
     transition: opacity 0.3s;
     backdrop-filter: blur(5px);
+    overflow-y: auto;
 }
 
 .modal.hidden {
@@ -300,12 +303,15 @@ h1 {
 .modal-content.glass {
     background: rgba(30, 30, 30, 0.9);
     border: 1px solid var(--glass-border);
-    padding: 30px;
+    padding: 24px 24px 20px;
     border-radius: 24px;
     width: 85%;
     max-width: 350px;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     text-align: center;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-sizing: border-box;
 }
 
 .modal-content h2 {
@@ -643,7 +649,7 @@ header {
 
 <body>
     <div class="app-container">
-        <header>
+        <header style="display: none;">
             <h1>習慣カウンター</h1>
             <button id="manage-btn" class="icon-btn" aria-label="管理" style="margin-right: 8px;">
                 ⚙️
@@ -898,16 +904,35 @@ function saveData() {
     localStorage.setItem('habit-logs', JSON.stringify(logs));
 }
 
+function notifyModalState(show) {
+    if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+        try {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MODAL_STATE_CHANGE', visible: show }));
+        } catch (e) {
+            console.warn('Failed to post MODAL_STATE_CHANGE:', e);
+        }
+    }
+}
+
 function setupEventListeners() {
     // Modals
     addBtn.addEventListener('click', () => {
         newItemInput.value = '';
         addModal.classList.remove('hidden');
+        notifyModalState(true);
         newItemInput.focus();
     });
 
     cancelAddBtn.addEventListener('click', () => {
         addModal.classList.add('hidden');
+        notifyModalState(false);
+    });
+
+    // Enter key to dismiss keyboard on input
+    newItemInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            newItemInput.blur();
+        }
     });
 
     // Color Picker
@@ -928,9 +953,11 @@ function setupEventListeners() {
     statsBtn.addEventListener('click', () => {
         currentStatsDate = parseDateStr(currentDateStr); // Use selected date
         showStats();
+        notifyModalState(true);
     });
     closeStatsBtn.addEventListener('click', () => {
         statsModal.classList.add('hidden');
+        notifyModalState(false);
         statsViewMain.classList.remove('hidden');
         statsViewDetail.classList.add('hidden');
     });
@@ -1013,11 +1040,12 @@ function notifyDateChanged(dateObj) {
 
     // Close modals on outside click
     window.addEventListener('click', (e) => {
-        if (e.target === addModal) addModal.classList.add('hidden');
-        if (e.target === statsModal) statsModal.classList.add('hidden');
-        if (e.target === editModal) editModal.classList.add('hidden');
+        if (e.target === addModal) { addModal.classList.add('hidden'); notifyModalState(false); }
+        if (e.target === statsModal) { statsModal.classList.add('hidden'); notifyModalState(false); }
+        if (e.target === editModal) { editModal.classList.add('hidden'); notifyModalState(false); }
         if (e.target === manageModal) {
             manageModal.classList.add('hidden');
+            notifyModalState(false);
             render();
         }
     });
@@ -1038,6 +1066,7 @@ function addItem() {
     saveData();
     render();
     addModal.classList.add('hidden');
+    notifyModalState(false);
 }
 
 const COLOR_OPTIONS = [
@@ -1060,7 +1089,10 @@ function escapeHtml(str) {
 function showManageModal() {
     renderManageList();
     manageModal.classList.remove('hidden');
+    notifyModalState(true);
 }
+window.showManageModal = showManageModal;
+window.openManageModal = showManageModal;
 
 function renderManageList() {
     manageList.innerHTML = '';

@@ -1,11 +1,12 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, TouchableOpacity, Alert, BackHandler } from 'react-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { Theme } from '../../src/theme';
-import { WebViewTab } from '../../components/WebViewTab';
+import { WebViewTab, WebViewTabRef } from '../../components/WebViewTab';
 import RoutineTrackerHTML from '../../src/web-apps/RoutineTracker';
 import { useLifelogStore } from '../../src/store/lifelogStore';
+import { LifelogDateHeader } from '../../components/LifelogDateHeader';
 import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,10 +15,25 @@ export default function RoutineScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
   const activeRoutineState = useLifelogStore((state) => state.activeRoutineState);
   const [showHistory, setShowHistory] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const webViewTabRef = useRef<WebViewTabRef>(null);
   const { t } = useTranslation();
   const isFocused = useIsFocused();
 
   const isExecuting = activeRoutineState?.isExecuting || false;
+
+  // フォーカス離脱時にモーダルフラグをリセット
+  React.useEffect(() => {
+    if (!isFocused) {
+      setIsModalVisible(false);
+    }
+  }, [isFocused]);
+
+  const handleOpenManageView = () => {
+    webViewTabRef.current?.injectJavaScript(
+      "if (typeof showManageScreen === 'function') showManageScreen(); else if (typeof openManageScreen === 'function') openManageScreen();"
+    );
+  };
 
   const handleBack = useCallback(() => {
     if (isExecuting) {
@@ -83,16 +99,29 @@ export default function RoutineScreen() {
             </TouchableOpacity>
           ),
           headerRight: () => (
-            <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ marginRight: 16, padding: 4 }}>
-              <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+              <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ padding: 6, marginRight: 6 }}>
+                <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleOpenManageView} style={{ padding: 6 }}>
+                <Ionicons name="settings-outline" size={22} color={Theme.colors.primary} />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />
       {showHistory ? (
         <LifelogHistoryTab type="routine" t={t} />
       ) : isFocused ? (
-        <WebViewTab html={RoutineTrackerHTML} currentDate={targetDate} />
+        <>
+          {!isModalVisible && <LifelogDateHeader type="routine" />}
+          <WebViewTab
+            ref={webViewTabRef}
+            html={RoutineTrackerHTML}
+            currentDate={targetDate}
+            onModalStateChange={(visible) => setIsModalVisible(visible)}
+          />
+        </>
       ) : null}
     </View>
   );

@@ -480,12 +480,15 @@ input {
 .modal-content {
     background: var(--card-bg);
     width: 90%;
-    max-width: 320px;
+    max-width: 340px;
     border-radius: var(--radius-lg);
-    padding: 24px;
+    padding: 16px 20px 20px;
     box-shadow: var(--shadow-md);
     transform: scale(0.9);
     transition: transform 0.3s;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-sizing: border-box;
 }
 
 .modal.visible .modal-content {
@@ -493,7 +496,7 @@ input {
 }
 
 .modal h3 {
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     text-align: center;
 }
 
@@ -501,10 +504,10 @@ input {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
     background: var(--bg-color);
     border-radius: var(--radius-md);
-    padding: 12px;
+    padding: 10px;
 }
 
 .input-group input {
@@ -525,22 +528,22 @@ input {
 }
 
 .setting-item {
-    margin-bottom: 24px;
+    margin-bottom: 14px;
 }
 
 .setting-item label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     font-weight: 500;
     color: var(--text-muted);
 }
 
 .setting-item input {
     width: 100%;
-    padding: 12px;
+    padding: 8px 12px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     outline: none;
     background: var(--bg-color);
     color: var(--text-color);
@@ -554,6 +557,8 @@ input {
     display: flex;
     justify-content: flex-end;
     gap: 16px;
+    padding-top: 8px;
+    margin-top: 6px;
 }
 
 .text-button {
@@ -746,13 +751,13 @@ input {
                 <div class="progress-text">
                     <div class="current-amount"><span id="currentAmount">0</span><span class="unit">ml</span></div>
                     <div class="goal-amount">目標: <span id="goalAmount">2000</span>ml</div>
-                    <div class="caffeine-amount" id="caffeineAmount" style="font-size: 0.85rem; opacity: 0.9; margin-top: 4px; color: #000000; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                    <div class="caffeine-amount" id="caffeineAmount" style="font-size: 0.85rem; opacity: 0.9; margin-top: 4px; color: rgba(255, 255, 255, 0.9); display: flex; align-items: center; justify-content: center; gap: 4px;">
                         <span class="material-icons-round" style="font-size: 16px;">coffee</span>カフェイン: <span id="todayCaffeine">0</span> / <span id="caffeineLimit">400</span>mg
                     </div>
                     <div class="percentage" id="percentage">0%</div>
                 </div>
             </div>
-            <button id="settingsBtn" class="icon-button settings-button" aria-label="設定">
+            <button id="settingsBtn" class="icon-button settings-button" aria-label="設定" style="display: none;">
                 <span class="material-icons-round">settings</span>
             </button>
         </header>
@@ -1323,6 +1328,13 @@ function renderWeeklyChart() {
 
 // Helper to toggle modal
 const toggleModal = (modal, show) => {
+    if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+        try {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MODAL_STATE_CHANGE', visible: show }));
+        } catch (e) {
+            console.warn('Failed to post MODAL_STATE_CHANGE:', e);
+        }
+    }
     if (show) {
         modal.classList.remove('hidden');
         // small timeout to allow display:block to apply before opacity transition
@@ -1471,7 +1483,7 @@ function setupEventListeners() {
     });
 
     // Settings Modal
-    els.settingsBtn.addEventListener('click', () => {
+    function openSettingsModal() {
         els.goalInput.value = settings.goal;
         els.caffeineLimitInput.value = settings.caffeineLimit || DEFAULT_CAFFEINE_LIMIT;
         els.widgetQuickAddInput.value = settings.widgetQuickAddAmount || 200;
@@ -1483,7 +1495,11 @@ function setupEventListeners() {
             }
         });
         toggleModal(els.settingsModal, true);
-    });
+    }
+    window.openSettingsModal = openSettingsModal;
+    window.showSettingsModal = openSettingsModal;
+
+    els.settingsBtn.addEventListener('click', openSettingsModal);
 
     els.closeSettings.addEventListener('click', () => toggleModal(els.settingsModal, false));
 
