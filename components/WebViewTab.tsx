@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { StyleSheet, View, ActivityIndicator, Text, AppState, AppStateStatus } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getInitialDataForWebView, handleWebViewMessage, syncWidgetPunches } from '../src/services/lifelogSyncService';
+import { getInitialDataForWebView, handleWebViewMessage, syncWidgetPunches, addSyncDiagnosticLog } from '../src/services/lifelogSyncService';
 import { useLifelogStore } from '../src/store/lifelogStore';
 import { useAppTheme } from '../src/theme';
 
@@ -18,6 +18,8 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
   const [loading, setLoading] = useState(true);
   const waterLogs = useLifelogStore((state) => state.waterLogs);
   const timeLogs = useLifelogStore((state) => state.timeLogs);
+  const habitItems = useLifelogStore((state) => state.habitItems);
+  const habitLogs = useLifelogStore((state) => state.habitLogs);
 
   // Load all initial data from SQLite
   useEffect(() => {
@@ -80,6 +82,7 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
 
       if (message.type === 'WEB_ERROR') {
         console.error(`[WebView JS Error]: ${message.message}`);
+        addSyncDiagnosticLog(`[WEB_ERROR] ${message.message}`);
         return;
       }
 
@@ -100,25 +103,18 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
       if (message.type === 'LOCAL_STORAGE_SET') {
         const { key, value } = message;
         console.log(`[WebViewTab] LOCAL_STORAGE_SET key=${key}, value length=${value ? value.length : 0}`);
+        addSyncDiagnosticLog(`[WebViewTab] LOCAL_STORAGE_SET key=${key}, len=${value ? value.length : 0}`);
         // Update database and store
         const responseValue = await handleWebViewMessage(key, value, currentDate);
 
-        // If the service returns an updated list (e.g. for mapped habit-items IDs), inject it back!
+        // If the service returns an updated value (e.g. for specific keys), inject it back
         if (responseValue) {
-          let updateAppScript = '';
-          if (key === 'habit-items') {
-            updateAppScript = `
-              if (typeof loadData === 'function' && typeof render === 'function') {
-                loadData();
-                render();
-              }
-            `;
-          }
           const injectScript = `
             (function() {
               window.isInitialSync = true;
               localStorage.setItem('${key}', ${JSON.stringify(responseValue)});
-              ${updateAppScript}
+              if (typeof loadData === 'function') loadData();
+              if (typeof render === 'function') render();
               window.isInitialSync = false;
             })();
           `;
@@ -127,6 +123,7 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
       }
     } catch (e) {
       console.error('Error handling WebView message:', e);
+      addSyncDiagnosticLog(`[WebViewTab Error] ${String(e)}`);
     }
   };
 
@@ -283,6 +280,35 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
       webViewRef.current.injectJavaScript(injectScript);
     }
   }, [timeLogs, loading]);
+
+  // Sync database updates from React Native to WebView when habitItems change (habitLogs removed to prevent log corruption & flickering)
+  useEffect(() => {
+    if (webViewRef.current && !loading) {
+      const formattedItems = habitItems.map((item) => ({
+        id: String(item.id),
+        name: item.name,
+        color: item.color,
+        createdAt: item.created_at,
+      }));
+
+      const injectScript = `
+        (function() {
+          if (typeof localStorage !== 'undefined') {
+            window.isInitialSync = true;
+            localStorage.setItem('habit-items', ${JSON.stringify(JSON.stringify(formattedItems))});
+            if (typeof loadData === 'function') {
+              loadData();
+            }
+            if (typeof render === 'function') {
+              render();
+            }
+            window.isInitialSync = false;
+          }
+        })();
+      `;
+      webViewRef.current.injectJavaScript(injectScript);
+    }
+  }, [habitItems, loading]);
 
   // Handle AppState changes to sync widget punches automatically when app comes to foreground
   useEffect(() => {

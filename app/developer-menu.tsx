@@ -11,6 +11,7 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Updates from 'expo-updates';
 import { saveSetting, getDB, closeDB, initDB, getSettings } from '../src/db/database';
+import { getSyncDiagnosticsLogs } from '../src/services/lifelogSyncService';
 import { showReviewDialog } from '../src/services/reviewService';
 import { saveCrashLog, readCrashLog } from '../src/services/crashReporterService';
 import { useWorkoutStore } from '../src/store/workoutStore';
@@ -422,7 +423,8 @@ export default function DeveloperMenuScreen() {
                   }
                 } catch (fetchErr) {
                   console.error('Fetch update failed:', fetchErr);
-                  Alert.alert(t('ui.common.error'), 'Failed to download update.');
+                  const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+                  Alert.alert(t('ui.common.error'), `Failed to download update:\n${msg}`);
                   setIsChecking(false);
                 }
               }
@@ -724,6 +726,27 @@ export default function DeveloperMenuScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+          </View>
+
+          {/* Synchronisation Diagnostics Logs Section */}
+          <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.05)', paddingTop: 16 }}>
+            <Text style={[styles.cardDesc, { marginBottom: 8, fontWeight: 'bold' }]}>📋 同期診断ログ (Sync Diagnostics):</Text>
+            <TouchableOpacity 
+              style={[styles.btnOutline, { marginTop: 4 }]} 
+              onPress={async () => {
+                const logs = getSyncDiagnosticsLogs();
+                if (logs.length === 0) {
+                  Alert.alert('同期診断ログ', 'まだ同期ログが記録されていません。習慣画面でアイテム追加・タップ操作を行ってから再度お試しください。');
+                } else {
+                  const logText = logs.join('\n');
+                  await Clipboard.setStringAsync(logText);
+                  Alert.alert('同期診断ログ (クリップボードにコピーしました)', logText.slice(0, 800) + (logText.length > 800 ? '\n...' : ''));
+                }
+              }}
+            >
+              <Ionicons name="document-text-outline" size={18} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.btnOutlineText}>同期ログを表示 / コピー</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.05)', paddingTop: 16 }}>

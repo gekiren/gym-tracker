@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.32',
+  version: '1.8.42',
   title: {
-    ja: '戻る・タイマー・中止せずに離れるボタン色＆文字色のフリーワークアウト一括統一',
-    en: 'Unified Back, Timer & Leave Button Styling with Free Workout Theme',
+    ja: '習慣タップ時の全数値一瞬変化・チラつきの完全修正',
+    en: 'Fix habit count flickering and momentary data alteration on tap',
   },
   notes: {
     ja: [
-      '✨ 2枚目の「戻る」「完了」「トレーニングタイマー開始」の背景色および文字色をフリーワークアウトボタン（水色 #4facfe / 白文字 #ffffff）へ完全統一しました。',
-      '✨ 3枚目モーダルの「中止せずに離れる」の背景色、文字色、アイコン色をフリーワークアウトボタンと同じ水色・白文字に完全統一しました。',
+      '🐛 習慣カウンターをタップした際、すべての習慣の数値が一瞬変化したり0になるチラつき現象を完全解消しました。',
+      '⚡ React Native と WebView 間のログ注入タイミングおよび状態同期を最適化しました。',
     ],
     en: [
-      '✨ Unified Back, Finish, and Training Timer buttons with Free Workout button styling (#4facfe bg / white text).',
-      '✨ Unified "Leave in background" modal button styling to match Free Workout button theme.',
+      '🐛 Completely fixed flickering where all habit counts briefly shifted or reset to 0 on tap.',
+      '⚡ Optimized log injection and state sync between React Native and WebView.',
     ],
   },
 };

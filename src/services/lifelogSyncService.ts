@@ -32,6 +32,21 @@ const timeToMins = (timeStr: string): number => {
   return h * 60 + m;
 };
 
+// Diagnostic sync logs in memory
+const syncDiagnosticsLogs: string[] = [];
+
+export const addSyncDiagnosticLog = (msg: string) => {
+  const time = new Date().toLocaleTimeString('ja-JP');
+  syncDiagnosticsLogs.unshift(`[${time}] ${msg}`);
+  if (syncDiagnosticsLogs.length > 50) {
+    syncDiagnosticsLogs.pop();
+  }
+};
+
+export const getSyncDiagnosticsLogs = (): string[] => {
+  return [...syncDiagnosticsLogs];
+};
+
 /**
  * Synchronizes widget time punches (from 'widget_time_punches' setting) to SQLite 'time_logs' table,
  * and reloads water/time data in useLifelogStore.
@@ -370,74 +385,129 @@ export const handleWebViewMessage = async (
     
     else if (key === 'habit-items') {
       const items = JSON.parse(value) as Array<{ id: string; name: string; color: string; createdAt: number }>;
-      let hasNewItems = false;
+      addSyncDiagnosticLog(`Received habit-items from WebView. Count: ${items.length}`);
 
-      const existingItems = await db.getAllAsync<{ id: number }>('SELECT id FROM habit_items');
-      const existingIds = new Set(existingItems.map((item) => String(item.id)));
-      const webViewIds = new Set(items.map((item) => item.id));
+      const existingRows = await db.getAllAsync<{ id: number; name: string; created_at: number }>(
+        'SELECT id, name, created_at FROM habit_items'
+      );
 
-      await db.withTransactionAsync(async () => {
-        // 1. Delete removed items
-        for (const id of existingIds) {
-          if (!webViewIds.has(id)) {
-            await db.runAsync('DELETE FROM habit_items WHERE id = ?', [parseInt(id, 10)]);
-          }
+      // Helper to check if a SQLite row matches any incoming WebView item
+      const isRowMatchingItem = (row: { id: number; name: string; created_at: number }, item: { id: string; name: string; createdAt: number }) => {
+        return (
+          String(row.id) === item.id ||
+          (item.createdAt && row.created_at === item.createdAt) ||
+          (item.name && row.name === item.name)
+        );
+      };
+
+      // 1. Delete items from SQLite ONLY if they do NOT match any incoming item (safe deletion)
+      for (const row of existingRows) {
+        const matched = items.some((item) => isRowMatchingItem(row, item));
+        if (!matched) {
+          await db.runAsync('DELETE FROM habit_items WHERE id = ?', [row.id]);
+          await db.runAsync('DELETE FROM habit_logs WHERE habit_item_id = ?', [row.id]);
         }
+      }
 
-        // 2. Insert or update items
-        for (const item of items) {
-          const isTempId = item.id.length > 6;
-          if (isTempId || !existingIds.has(item.id)) {
+      // 2. Insert or update items safely
+      for (const item of items) {
+        // Find matching existing row (by ID, createdAt, or name)
+        const matchedRow = existingRows.find((row) => isRowMatchingItem(row, item));
+
+        if (matchedRow) {
+          // Update existing record using its SQLite ID
+          await db.runAsync(
+            'UPDATE habit_items SET name = ?, color = ? WHERE id = ?',
+            [item.name, item.color, matchedRow.id]
+          );
+        } else {
+          // Insert new item
+          const numericId = parseInt(item.id, 10);
+          if (!isNaN(numericId) && numericId > 0) {
             await db.runAsync(
-              'INSERT INTO habit_items (name, color, created_at, sort_order) VALUES (?, ?, ?, 0)',
-              [item.name, item.color, item.createdAt]
+              'INSERT INTO habit_items (id, name, color, created_at, sort_order) VALUES (?, ?, ?, ?, 0)',
+              [numericId, item.name, item.color, item.createdAt || Date.now()]
             );
-            hasNewItems = true;
           } else {
             await db.runAsync(
-              'UPDATE habit_items SET name = ?, color = ? WHERE id = ?',
-              [item.name, item.color, parseInt(item.id, 10)]
+              'INSERT INTO habit_items (name, color, created_at, sort_order) VALUES (?, ?, ?, 0)',
+              [item.name, item.color, item.createdAt || Date.now()]
             );
           }
         }
-      });
+      }
 
       await useLifelogStore.getState().loadHabitItems();
       await useLifelogStore.getState().loadHabits(currentDate);
 
-      // If new items were added, we return the list updated with their new SQLite IDs
-      if (hasNewItems) {
-        const updatedItems = await db.getAllAsync<{ id: number; name: string; color: string; created_at: number }>(
-          'SELECT * FROM habit_items'
-        );
-        const mapped = updatedItems.map((row) => ({
-          id: String(row.id),
-          name: row.name,
-          color: row.color,
-          createdAt: row.created_at,
-        }));
-        return JSON.stringify(mapped);
-      }
+      // Return latest formatted habit items with SQLite IDs to update WebView localStorage
+      const updatedRows = await db.getAllAsync<{ id: number; name: string; color: string; created_at: number }>(
+        'SELECT * FROM habit_items ORDER BY sort_order ASC, created_at ASC'
+      );
+      const formattedUpdated = updatedRows.map((row) => ({
+        id: String(row.id),
+        name: row.name,
+        color: row.color,
+        createdAt: row.created_at,
+      }));
+      addSyncDiagnosticLog(`Updated habit-items in SQLite. Total items: ${updatedRows.length}`);
+      return JSON.stringify(formattedUpdated);
     } 
     
     else if (key === 'habit-logs') {
       const logs = JSON.parse(value) as Array<{ itemId: string; timestamp: number }>;
+      addSyncDiagnosticLog(`Received habit-logs from WebView. Incoming count: ${logs.length}`);
 
-      await db.withTransactionAsync(async () => {
-        await db.runAsync('DELETE FROM habit_logs');
-        for (const log of logs) {
-          const dateStr = formatDate(parseTimestampToDate(log.timestamp));
-          const habitItemId = parseInt(log.itemId, 10);
-          if (!isNaN(habitItemId)) {
-            await db.runAsync(
-              'INSERT INTO habit_logs (habit_item_id, timestamp, date) VALUES (?, ?, ?)',
-              [habitItemId, log.timestamp, dateStr]
-            );
+      // 1. Fetch current valid habit items in SQLite for flexible ID mapping
+      const validItems = await db.getAllAsync<{ id: number; name: string; created_at: number }>(
+        'SELECT id, name, created_at FROM habit_items'
+      );
+
+      // Map any incoming itemId format (SQLite ID, createdAt timestamp, or item name) to actual SQLite item.id
+      const itemIdToSqliteIdMap = new Map<string, number>();
+      for (const item of validItems) {
+        itemIdToSqliteIdMap.set(String(item.id), item.id);
+        if (item.created_at) {
+          itemIdToSqliteIdMap.set(String(item.created_at), item.id);
+        }
+        if (item.name) {
+          itemIdToSqliteIdMap.set(item.name, item.id);
+        }
+      }
+
+      // 2. Resolve logs to SQLite habit_item_ids and deduplicate (same resolved habitItemId & timestamp)
+      const seen = new Set<string>();
+      const resolvedLogs: Array<{ habitItemId: number; timestamp: number }> = [];
+
+      for (const log of logs) {
+        let sqliteItemId = itemIdToSqliteIdMap.get(log.itemId);
+        if (sqliteItemId === undefined) {
+          const num = parseInt(log.itemId, 10);
+          if (!isNaN(num) && itemIdToSqliteIdMap.has(String(num))) {
+            sqliteItemId = num;
           }
         }
-      });
+
+        if (sqliteItemId !== undefined) {
+          const dedupeKey = `${sqliteItemId}_${log.timestamp}`;
+          if (!seen.has(dedupeKey)) {
+            seen.add(dedupeKey);
+            resolvedLogs.push({ habitItemId: sqliteItemId, timestamp: log.timestamp });
+          }
+        }
+      }
+
+      await db.runAsync('DELETE FROM habit_logs');
+      for (const log of resolvedLogs) {
+        const dateStr = formatDate(parseTimestampToDate(log.timestamp));
+        await db.runAsync(
+          'INSERT INTO habit_logs (habit_item_id, timestamp, date) VALUES (?, ?, ?)',
+          [log.habitItemId, log.timestamp, dateStr]
+        );
+      }
 
       await useLifelogStore.getState().loadHabits(currentDate);
+      addSyncDiagnosticLog(`Resolved habit-logs into SQLite. Saved: ${resolvedLogs.length}/${logs.length}`);
     } 
     
     else if (key === 'routine_tracker_data') {
@@ -449,6 +519,7 @@ export const handleWebViewMessage = async (
     }
   } catch (e) {
     console.error(`Failed to handle WebView update for key ${key}:`, e);
+    addSyncDiagnosticLog(`[Sync Error] key=${key}: ${String(e)}`);
   }
 
   return null;

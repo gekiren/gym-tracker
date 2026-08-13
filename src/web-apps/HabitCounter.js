@@ -1309,8 +1309,18 @@ function getCountForDate(itemId, date) {
     const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
     const endOfDay = startOfDay + 86400000;
 
+    const targetStr = String(itemId);
+    const item = items.find(i => String(i.id) === targetStr || (i.createdAt && String(i.createdAt) === targetStr) || i.name === itemId);
+    const validIds = new Set();
+    validIds.add(targetStr);
+    if (item) {
+        if (item.id) validIds.add(String(item.id));
+        if (item.createdAt) validIds.add(String(item.createdAt));
+        if (item.name) validIds.add(item.name);
+    }
+
     return logs.filter(log =>
-        log.itemId === itemId && log.timestamp >= startOfDay && log.timestamp < endOfDay
+        validIds.has(String(log.itemId)) && log.timestamp >= startOfDay && log.timestamp < endOfDay
     ).length;
 }
 
