@@ -100,9 +100,16 @@
     >    ローカルビルド時には、自動生成されない `android/app/src/main/assets/expo-updates.properties` ファイルにもチャンネル設定（`expo.modules.updates.EXPO_RELEASE_CHANNEL=production`）が必要です。これらすべてを `scripts/inject-channel.ps1` が自動処理します。
     > 4. **検証方法:**
     >    ビルド後、デベロッパーメニューを開き、`Channel: production` が表示されていること、およびアップデートIDが適用できることを確認してください。
-    > 
+    > [!IMPORTANT]
+    > **ネイティブビルド実行時のバージョンコード（versionCode）インクリメント ＆ 本体バージョンの最新OTA追従必須ルール**
+    > Android/iOS 用ネイティブビルド（AAB/APK ファイル生成: ローカルビルド `bundleRelease` / EAS Build `eas build` 等）を行う際は、**ビルドコマンドを実行する前に必ず以下の 2 点の更新を行わなければなりません：**
+    > 1. **バージョンコード（versionCode）のインクリメント:**
+    >    `app.json` の `android.versionCode` を現在の値から 1 つ加算（インクリメント: 例 `35` → `36`）すること。（Google Play Console 等へのアップロード時にバージョンコード重複エラーが発生するのを防止するため）
+    > 2. **本体バージョン（version）の最新OTA追従:**
+    >    `app.json` の `version`、`package.json` の `version`、および `src/config/otaUpdateConfig.ts` の `CURRENT_OTA_CONFIG.version` などの本体バージョン（例: `1.8.42`）を、**直近で配信された最新の OTA アップデートのバージョンに同期（追従・同調）させること。**（ネイティブバイナリの本体バージョンと配信済みOTAバージョンの乖離・先祖返りを完全に防ぐため）
+    >
     > ---
-
+    >
     > [!IMPORTANT]
    > **クラウドビルド運用時のローカル Prebuild クリーン徹底ルール**
    > 本プロジェクトでは `/android` フォルダが `.gitignore` に指定されています。クラウドビルド（EAS Build）はコミットされた `app.json` から常にクリーンビルドされますが、ローカルで動作検証（`npx expo run:android` 等）を行う際は手元の古い `android` フォルダが使い回されるため、設定が同期しない問題が発生します。
