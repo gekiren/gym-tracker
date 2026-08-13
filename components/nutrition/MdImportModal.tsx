@@ -10,8 +10,31 @@ import {
   Alert,
   Platform,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { MealLog } from '../../src/db/types';
 import { useAppTheme } from '../../src/theme';
+
+export const AI_NUTRITION_PROMPT = `あなたはスポーツ栄養学に精通したAI栄養士です。
+ユーザーから送信された「食事のテキストメモ」「食事の写真」「食品の栄養成分表示ラベルの写真」を解析し、アプリへ一括取り込み可能なMarkdownフォーマットで食事ログを出力してください。
+
+【出力フォーマットルール】
+1. 1品目につき1行で記述してください。
+2. 必ず以下の形式を厳格に守って出力してください。
+   - 料理名: 〇〇kcal, P:〇g, F:〇g, C:〇g, 塩:〇g, 繊:〇g
+
+【記述ルールと注意点】
+- 「料理名」は具体的かつ簡潔に記載してください（例: 鶏胸肉サラダ、白米200g）。
+- 数値は半角数字で記載し、単位（kcal, g）を必ず付けてください。
+- P（タンパク質）、F（脂質）、C（炭水化物）は必須項目です。
+- 塩（塩分/食塩相当量）および 繊（食物繊維）が写真やテキストから推測可能な場合は記載してください。不明または微量な場合は省略しても構いません。
+- 写真に複数の品目が写っている場合は、品目ごとに改行して出力してください。
+- コピペしやすくするため、挨拶や前置き文・解説文言は一切含めず、出力フォーマットのテキストのみを出力してください。
+
+【出力例】
+- 鶏胸肉サラダ: 250kcal, P:30g, F:5g, C:10g
+- 白米200g: 330kcal, P:5g, F:1g, C:75g
+- 鮭の塩焼き: 200kcal, P:22g, F:12g, C:0g, 塩:1.5g
+- 納豆1パック: 100kcal, P:8g, F:5g, C:6g, 塩:0.5g, 繊:3g`;
 
 interface Props {
   visible: boolean;
@@ -25,6 +48,24 @@ export default function MdImportModal({ visible, onClose, onImport, selectedDate
   const isPureBlack = backgroundTheme === 'pureBlack';
 
   const [mdText, setMdText] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyPrompt = async () => {
+    try {
+      await Clipboard.setStringAsync(AI_NUTRITION_PROMPT);
+      setCopied(true);
+      Alert.alert(
+        'コピー完了 📋',
+        'AI栄養士用のプロンプトをクリップボードにコピーしました！\n\nChatGPTやClaude等の外部AIに写真やテキストを添付してこのプロンプトを渡すことで、アプリへ一括取り込み可能な形式のテキストが生成されます。'
+      );
+      setTimeout(() => {
+        setCopied(false);
+      }, 3000);
+    } catch (err) {
+      console.error('Failed to copy prompt:', err);
+      Alert.alert('コピーエラー', 'クリップボードへのコピーに失敗しました。');
+    }
+  };
 
   const handleParseAndImport = async () => {
     if (!mdText.trim()) {
@@ -95,8 +136,25 @@ export default function MdImportModal({ visible, onClose, onImport, selectedDate
           </View>
 
           <ScrollView style={styles.body}>
+            {/* AIプロンプトコピーボタン領域 */}
+            <View style={[styles.promptCard, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
+              <View style={styles.promptHeader}>
+                <Text style={styles.promptTitle}>🤖 外部AI用プロンプト</Text>
+                <Text style={styles.promptSubtitle}>ChatGPTやClaudeに食事写真・メモを解析させる専用プロンプト</Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.copyBtn, copied && styles.copyBtnSuccess]}
+                onPress={handleCopyPrompt}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.copyBtnText}>
+                  {copied ? '✓ クリップボードにコピーしました' : '📋 AIプロンプトをコピー'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <Text style={[styles.hint, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f', borderWidth: 1 }]}>
-              形式例:{'\n'}
+              取り込み形式例:{'\n'}
               - 鶏胸肉サラダ: 250kcal, P:30g, F:5g, C:10g{'\n'}
               - 白米200g: 330kcal, P:5g, F:1g, C:75g
             </Text>
@@ -137,8 +195,47 @@ const styles = StyleSheet.create({
   closeBtn: { padding: 4 },
   closeBtnText: { fontSize: 18, color: '#94a3b8' },
   body: { padding: 16 },
+  promptCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  promptHeader: {
+    marginBottom: 8,
+  },
+  promptTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#38bdf8',
+    marginBottom: 2,
+  },
+  promptSubtitle: {
+    fontSize: 11,
+    color: '#94a3b8',
+    lineHeight: 15,
+  },
+  copyBtn: {
+    backgroundColor: '#0284c7',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  copyBtnSuccess: {
+    backgroundColor: '#059669',
+  },
+  copyBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
   hint: { fontSize: 12, color: '#94a3b8', backgroundColor: '#1e293b', padding: 10, borderRadius: 8, lineHeight: 18, marginBottom: 12 },
   textArea: { backgroundColor: '#1e293b', borderRadius: 10, borderWidth: 1, borderColor: '#334155', color: '#f8fafc', padding: 12, fontSize: 13, minHeight: 140, textAlignVertical: 'top', marginBottom: 16 },
   importBtn: { backgroundColor: '#10b981', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   importBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 });
+
