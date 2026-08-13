@@ -409,29 +409,30 @@ export const handleWebViewMessage = async (
         }
       }
 
-      // 2. Insert or update items safely
-      for (const item of items) {
+      // 2. Insert or update items safely with sort_order
+      for (let index = 0; index < items.length; index++) {
+        const item = items[index];
         // Find matching existing row (by ID, createdAt, or name)
         const matchedRow = existingRows.find((row) => isRowMatchingItem(row, item));
 
         if (matchedRow) {
-          // Update existing record using its SQLite ID
+          // Update existing record using its SQLite ID and update sort_order
           await db.runAsync(
-            'UPDATE habit_items SET name = ?, color = ? WHERE id = ?',
-            [item.name, item.color, matchedRow.id]
+            'UPDATE habit_items SET name = ?, color = ?, sort_order = ? WHERE id = ?',
+            [item.name, item.color, index, matchedRow.id]
           );
         } else {
-          // Insert new item
+          // Insert new item with sort_order
           const numericId = parseInt(item.id, 10);
           if (!isNaN(numericId) && numericId > 0) {
             await db.runAsync(
-              'INSERT INTO habit_items (id, name, color, created_at, sort_order) VALUES (?, ?, ?, ?, 0)',
-              [numericId, item.name, item.color, item.createdAt || Date.now()]
+              'INSERT INTO habit_items (id, name, color, created_at, sort_order) VALUES (?, ?, ?, ?, ?)',
+              [numericId, item.name, item.color, item.createdAt || Date.now(), index]
             );
           } else {
             await db.runAsync(
-              'INSERT INTO habit_items (name, color, created_at, sort_order) VALUES (?, ?, ?, 0)',
-              [item.name, item.color, item.createdAt || Date.now()]
+              'INSERT INTO habit_items (name, color, created_at, sort_order) VALUES (?, ?, ?, ?)',
+              [item.name, item.color, item.createdAt || Date.now(), index]
             );
           }
         }

@@ -551,21 +551,30 @@ header {
     gap: 4px;
 }
 .manage-reorder-btn {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
     border: none;
     color: white;
-    width: 28px;
-    height: 24px;
-    border-radius: 4px;
+    width: 36px;
+    height: 30px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    transition: background 0.15s, transform 0.1s;
+}
+.manage-reorder-btn:active {
+    background: rgba(255, 255, 255, 0.35);
+    transform: scale(0.92);
 }
 .manage-reorder-btn:disabled {
     opacity: 0.2;
     cursor: not-allowed;
+    transform: none;
 }
 .manage-color-dot {
     width: 24px;
@@ -995,9 +1004,11 @@ function notifyDateChanged(dateObj) {
     manageBtn.addEventListener('click', showManageModal);
     closeManageBtn.addEventListener('click', () => {
         manageModal.classList.add('hidden');
+        render();
     });
     closeManageXBtn.addEventListener('click', () => {
         manageModal.classList.add('hidden');
+        render();
     });
 
     // Close modals on outside click
@@ -1005,7 +1016,10 @@ function notifyDateChanged(dateObj) {
         if (e.target === addModal) addModal.classList.add('hidden');
         if (e.target === statsModal) statsModal.classList.add('hidden');
         if (e.target === editModal) editModal.classList.add('hidden');
-        if (e.target === manageModal) manageModal.classList.add('hidden');
+        if (e.target === manageModal) {
+            manageModal.classList.add('hidden');
+            render();
+        }
     });
 }
 
@@ -1068,11 +1082,13 @@ function renderManageList() {
             ? \`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>\`
             : \`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>\`;
 
+        const hiddenBadge = isHidden ? ' <span style="font-size:0.75rem; opacity:0.6; color:#ffaaaa; margin-left:4px;">(非表示中)</span>' : '';
+
         li.innerHTML = \`
             <div class="manage-item">
                 <div class="manage-reorder">
-                    <button class="manage-reorder-btn" onclick="moveItemUp('\${item.id}')" \${isFirst ? 'disabled' : ''}>▲</button>
-                    <button class="manage-reorder-btn" onclick="moveItemDown('\${item.id}')" \${isLast ? 'disabled' : ''}>▼</button>
+                    <button class="manage-reorder-btn" onclick="moveItemUp('\${item.id}', event)" \${isFirst ? 'disabled' : ''}>▲</button>
+                    <button class="manage-reorder-btn" onclick="moveItemDown('\${item.id}', event)" \${isLast ? 'disabled' : ''}>▼</button>
                 </div>
                 <div class="manage-color-dot" style="background: \${item.color}" onclick="toggleColorPicker('\${item.id}')"></div>
                 <input type="text" class="manage-input" value="\${escapeHtml(item.name)}" onchange="renameItem('\${item.id}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" />
@@ -1116,7 +1132,15 @@ function renameItem(id, newName) {
     }
 }
 
-function moveItemUp(id) {
+function moveItemUp(id, e) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+    }
+
     const idx = items.findIndex(i => i.id === id);
     if (idx > 0) {
         const temp = items[idx];
@@ -1128,7 +1152,15 @@ function moveItemUp(id) {
     }
 }
 
-function moveItemDown(id) {
+function moveItemDown(id, e) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+    }
+
     const idx = items.findIndex(i => i.id === id);
     if (idx !== -1 && idx < items.length - 1) {
         const temp = items[idx];

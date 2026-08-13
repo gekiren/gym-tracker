@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.47',
+  version: '1.8.49',
   title: {
-    ja: 'ダッシュボードの習慣カウンター表示を改善',
-    en: 'Improved Dashboard Habit Counter',
+    ja: '習慣カウンターの並び順保存不具合を修正',
+    en: 'Fixed Habit Counter Reordering Persistence Bug',
   },
   notes: {
     ja: [
-      '📌 ダッシュボードの習慣カウンター表示を最大3件に制限し、すっきり整理しました。',
-      '👆 習慣名やカウント部分をタップして習慣管理画面へスムーズに移動できるようになりました。',
+      '習慣管理モーダルで並び替え後にモーダルを閉じると順序が元に戻る不具合を修正しました。',
+      '並び替え後の順序が SQLite データベースへ即座かつ永久に保存されるよう改善しました。',
     ],
     en: [
-      '📌 Limited dashboard habit counter display to a maximum of 3 items for a cleaner UI.',
-      '👆 Tapping habit names or count areas now seamlessly navigates to the habit management screen.',
+      'Fixed an issue where reordered habits reverted to their original position after closing the management modal.',
+      'Ensured reordered item sequence is immediately and permanently persisted to SQLite storage.',
     ],
   },
 };
