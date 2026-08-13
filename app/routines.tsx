@@ -8,6 +8,7 @@ import { getRoutines, deleteRoutine, updateRoutineOrders } from '../src/db/datab
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { translateExercise } from '../src/i18n';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -18,6 +19,7 @@ export default function RoutinesScreen() {
   const { t } = useTranslation();
   const [routines, setRoutines] = useState<any[]>([]);
   const [isReorderMode, setIsReorderMode] = useState(false);
+  const [deletingRoutine, setDeletingRoutine] = useState<{ id: number; title: string } | null>(null);
   const { settings } = useSettingsStore();
   const isPremium = settings.isPremium;
   const isEarly = settings.isEarlyAdopter;
@@ -73,21 +75,7 @@ export default function RoutinesScreen() {
   };
 
   const handleDelete = (id: number, title: string) => {
-    Alert.alert(
-      t('ui.routines.delete_title'),
-      t('ui.routines.delete_message_with_title', { title }),
-      [
-        { text: t('ui.common.cancel'), style: 'cancel' },
-        { 
-          text: t('ui.common.delete'), 
-          style: 'destructive',
-          onPress: async () => {
-            await deleteRoutine(id);
-            fetchRoutines();
-          }
-        }
-      ]
-    );
+    setDeletingRoutine({ id, title });
   };
 
 
@@ -189,7 +177,22 @@ export default function RoutinesScreen() {
         )}
       </ScrollView>
 
-
+      <ConfirmModal
+        visible={deletingRoutine !== null}
+        title={t('ui.routines.delete_title')}
+        message={deletingRoutine ? t('ui.routines.delete_message_with_title', { title: deletingRoutine.title }) : ''}
+        confirmText={t('ui.common.delete')}
+        cancelText={t('ui.common.cancel')}
+        type="danger"
+        onConfirm={async () => {
+          if (deletingRoutine) {
+            await deleteRoutine(deletingRoutine.id);
+            setDeletingRoutine(null);
+            fetchRoutines();
+          }
+        }}
+        onCancel={() => setDeletingRoutine(null)}
+      />
     </View>
   );
 }

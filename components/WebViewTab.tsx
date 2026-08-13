@@ -331,23 +331,23 @@ export const WebViewTab: React.FC<WebViewTabProps> = React.memo(({ html, current
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['bottom']}>
-      {loading ? (
+      {loading || !initialData ? (
         <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
           <ActivityIndicator size="large" color="#4facfe" />
           <Text style={[styles.loadingText, { color: colors.text }]}>読み込み中...</Text>
         </View>
-      ) : null}
-
-      <WebView
-        ref={webViewRef}
-        originWhitelist={['*']}
-        source={{ html: htmlWithData }}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        allowFileAccess={true}
-        onMessage={onMessage}
-        style={[styles.webview, { backgroundColor: colors.background }]}
-      />
+      ) : (
+        <WebView
+          ref={webViewRef}
+          originWhitelist={['*']}
+          source={{ html: htmlWithData }}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          allowFileAccess={true}
+          onMessage={onMessage}
+          style={[styles.webview, { backgroundColor: colors.background }]}
+        />
+      )}
     </SafeAreaView>
   );
 });

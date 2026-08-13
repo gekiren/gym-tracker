@@ -19,10 +19,12 @@ const getSafeDB = async () => {
 
 export const getMealLogsByDate = async (date: string): Promise<MealLog[]> => {
   await getSafeDB();
+  const dateSlash = date.replace(/-/g, '/');
+  const dateHyphen = date.replace(/\//g, '-');
   return await withDBQueue(async (conn) => {
     return await conn.getAllAsync<MealLog>(
-      'SELECT * FROM meal_logs WHERE date = ? ORDER BY created_at ASC',
-      [date]
+      'SELECT * FROM meal_logs WHERE date = ? OR date = ? ORDER BY created_at ASC',
+      [dateSlash, dateHyphen]
     );
   });
 };

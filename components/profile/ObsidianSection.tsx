@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert, ActivityIndica
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Theme } from '../../src/theme';
+import { ConfirmModal } from '../ui/ConfirmModal';
 import {
   getObsidianSettings,
   saveObsidianSettings,
@@ -22,6 +23,7 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [isFoldersExpanded, setIsFoldersExpanded] = useState(true);
+  const [showExportConfirm, setShowExportConfirm] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -126,42 +128,35 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
       return;
     }
 
-    Alert.alert(
-      '一括エクスポート確認',
-      'これまでのすべての筋トレログ、種目ノート、ライフログ、ルーティンを Obsidian Vault へエクスポートします。実行しますか？',
-      [
-        { text: 'キャンセル', style: 'cancel' },
-        {
-          text: '実行する',
-          onPress: async () => {
-            setIsExporting(true);
-            try {
-              const res = await exportAllDataToObsidian();
-              const d = res.details;
-              const msg =
-                `一括エクスポートが完了しました！\n\n` +
-                `【出力フォルダ別内訳】\n` +
-                `📅 デイリー (${settings.folderDaily}): ${d.dailyCount}件\n` +
-                `🏋️ 筋トレ (${settings.folderWorkouts}): ${d.workoutsCount}件\n` +
-                `💪 種目 (${settings.folderExercises}): ${d.exercisesCount}件\n` +
-                `💧 水分 (${settings.folderWater}): ${d.waterCount}件\n` +
-                `⏱ 時間 (${settings.folderTime}): ${d.timeCount}件\n` +
-                `✅ 習慣 (${settings.folderHabits}): ${d.habitsCount}件\n` +
-                `🔄 ルーティン (${settings.folderRoutines}): ${d.routinesCount}件\n` +
-                `📊 ヘルス (${settings.folderHealth})\n\n` +
-                `総出力ファイル数: ${res.successCount}件` +
-                (res.failCount > 0 ? ` (失敗: ${res.failCount}件)` : '');
-              Alert.alert('完了', msg);
-            } catch (e: any) {
-              Alert.alert('エラー', e.message);
-            } finally {
-              setIsExporting(false);
-              await loadSettings();
-            }
-          }
-        }
-      ]
-    );
+    setShowExportConfirm(true);
+  };
+
+  const handleExecuteExport = async () => {
+    setShowExportConfirm(false);
+    setIsExporting(true);
+    try {
+      const res = await exportAllDataToObsidian();
+      const d = res.details;
+      const msg =
+        `一括エクスポートが完了しました！\n\n` +
+        `【出力フォルダ別内訳】\n` +
+        `📅 デイリー (${settings?.folderDaily}): ${d.dailyCount}件\n` +
+        `🏋️ 筋トレ (${settings?.folderWorkouts}): ${d.workoutsCount}件\n` +
+        `💪 種目 (${settings?.folderExercises}): ${d.exercisesCount}件\n` +
+        `💧 水分 (${settings?.folderWater}): ${d.waterCount}件\n` +
+        `⏱ 時間 (${settings?.folderTime}): ${d.timeCount}件\n` +
+        `✅ 習慣 (${settings?.folderHabits}): ${d.habitsCount}件\n` +
+        `🔄 ルーティン (${settings?.folderRoutines}): ${d.routinesCount}件\n` +
+        `📊 ヘルス (${settings?.folderHealth})\n\n` +
+        `総出力ファイル数: ${res.successCount}件` +
+        (res.failCount > 0 ? ` (失敗: ${res.failCount}件)` : '');
+      Alert.alert('完了', msg);
+    } catch (e: any) {
+      Alert.alert('エラー', e.message);
+    } finally {
+      setIsExporting(false);
+      await loadSettings();
+    }
   };
 
   if (isLoading || !settings) {
@@ -482,6 +477,18 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
           </View>
         </View>
       )}
+      {/* 統一一括エクスポート確認モーダル */}
+      <ConfirmModal
+        visible={showExportConfirm}
+        title="一括エクスポート確認"
+        message="これまでのすべての筋トレログ、種目ノート、ライフログ、ルーティンを Obsidian Vault へエクスポートします。実行しますか？"
+        confirmText="実行する"
+        cancelText="キャンセル"
+        type="info"
+        icon="cloud-upload-outline"
+        onConfirm={handleExecuteExport}
+        onCancel={() => setShowExportConfirm(false)}
+      />
     </View>
   );
 };
