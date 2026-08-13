@@ -455,14 +455,20 @@ export default function DashboardScreen() {
               <View style={styles.cardBody}>
                 {daySummary?.habits && daySummary.habits.length > 0 ? (
                   <View style={styles.habitList}>
-                    {daySummary.habits.map((habit) => (
+                    {daySummary.habits.slice(0, 3).map((habit) => (
                       <View key={habit.id} style={styles.habitRow}>
-                        <View style={styles.habitInfo}>
-                          <View style={[styles.habitColorDot, { backgroundColor: habit.color || '#fff' }]} />
-                          <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
-                        </View>
-                        <View style={styles.habitActionContainer}>
+                        <TouchableOpacity
+                          style={styles.habitMainClickArea}
+                          onPress={() => router.push('/lifelog/habit')}
+                          activeOpacity={0.7}
+                        >
+                          <View style={styles.habitInfo}>
+                            <View style={[styles.habitColorDot, { backgroundColor: habit.color || '#fff' }]} />
+                            <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
+                          </View>
                           <Text style={styles.habitCount}>{habit.count} 回</Text>
+                        </TouchableOpacity>
+                        <View style={styles.habitActionContainer}>
                           <TouchableOpacity
                             style={styles.habitAddBtn}
                             onPress={() => handleIncrementHabit(habit.id)}
@@ -874,6 +880,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)',
+  },
+  habitMainClickArea: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginRight: 12,
   },
   habitInfo: {
     flexDirection: 'row',
