@@ -561,6 +561,7 @@
       "input_placeholder": "トレーナーに質問してみる...",
       "limit_reached_msg": "今月の利用枠が残っていません。",
       "network_error": "ネットワークエラーが発生しました。接続を確認してください。",
+      "timeout_error": "接続タイムアウトが発生しました。通信環境の良い場所で再度お試しください。",
       "busy_error": "現在AIサービスが非常に混雑しています。しばらく時間をおいてから再度お試しください。",
       "busy_title": "混雑中",
       "linked_context": "連動中: {{title}}",

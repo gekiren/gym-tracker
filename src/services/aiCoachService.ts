@@ -212,8 +212,10 @@ export const sendMessageToAICoach = async (
     console.error('Failed to communicate with AI Coach', err);
     
     if (err.name === 'AbortError') {
+      const fallbackMsg = '接続タイムアウトが発生しました。通信環境の良い場所で再度お試しください。';
+      const timeoutText = i18next.t('ui.coach.timeout_error', { defaultValue: fallbackMsg });
       return {
-        reply: i18next.t('ui.coach.timeout_error') || '接続タイムアウトが発生しました。通信環境の良い場所で再度お試しください。',
+        reply: !timeoutText || timeoutText === 'ui.coach.timeout_error' ? fallbackMsg : timeoutText,
         success: false,
         errorType: 'network',
       };
@@ -488,7 +490,7 @@ ${mealSummaryList.join('\n')}
     undefined,
     undefined,
     'kg',
-    'quick'
+    'thinking'
   );
 
   if (!response.success || !response.reply) {
