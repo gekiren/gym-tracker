@@ -106,7 +106,7 @@ export function useProfile() {
       {
         id: 'gemini',
         title: 'AI Coach 設定 (モデル選択)',
-        desc: `残高: ${settings.aiTokensBalance} 回 (${settings.preferredAiModel === 'deepseek' ? 'DeepSeek' : 'Gemini 3.6'})`,
+        desc: `残高: ${settings.aiTokensBalance} 回 (${settings.preferredAiModel === 'deepseek' ? 'DeepSeek V4 Pro' : 'Gemini 3.6'})`,
         icon: 'sparkles',
         iconColor: '#ffd700',
         route: '/settings/gemini',

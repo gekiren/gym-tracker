@@ -261,7 +261,7 @@ export const buildWorkoutCoachPrompt = (workoutData: {
 /**
  * テキスト入力による食事栄養解析
  * @param textInput 例: "ラーメン大盛りと餃子3個"
- * @param preferredModel 'gemini' | 'deepseek'
+ * @param preferredModel 'gemini' | 'deepseek' (Gemini 3.6 Flash / DeepSeek V4 Pro)
  */
 export const analyzeMealText = async (
   textInput: string,
@@ -328,7 +328,7 @@ export const analyzeMealText = async (
  * @param base64Image data:image/jpeg;base64,... 形式
  * @param ocrHintText オンデバイスOCRで事前抽出したテキスト（任意）
  * @param userMemo ユーザーが入力した補足メモ（任意）
- * @param preferredModel 'gemini' | 'deepseek'
+ * @param preferredModel 'gemini' | 'deepseek' (Gemini 3.6 Flash / DeepSeek V4 Pro)
  */
 export const analyzeMealImage = async (
   base64Image: string,

@@ -13,17 +13,17 @@ export interface OTAUpdateConfig {
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
   version: '1.8.42',
   title: {
-    ja: 'データベースバックアップ作成・エクスポート機能の不具合修正',
-    en: 'Fix database backup creation and export issue',
+    ja: 'AI Coach モデル表記の DeepSeek V4 Pro 更新',
+    en: 'Update AI Coach Model to DeepSeek V4 Pro',
   },
   notes: {
     ja: [
-      '🐛 デベロッパーメニューおよび設定画面からの「バックアップファイルの保存」実行時にエラーが発生する問題を解消しました。',
-      '⚡ SQLite WALチェックポイント処理と端末共有（Share）処理の堅牢化を行い、スムーズに保存・共有できるように改善しました。',
+      '🤖 AI Coach 設定画面および設定メニューでの DeepSeek モデル表示を「DeepSeek V4 Pro」にアップデートしました。',
+      '⚡ 高度な論理推論機能を提供する最新の DeepSeek V4 Pro モデルとの表示・連携を最適化しました。',
     ],
     en: [
-      '🐛 Fixed an issue where creating or exporting database backup files would fail with an error.',
-      '⚡ Hardened SQLite WAL checkpoints and sharing mechanisms for smoother backup exports.',
+      '🤖 Updated AI Coach DeepSeek model display label to "DeepSeek V4 Pro".',
+      '⚡ Optimized alignment and display for the latest DeepSeek V4 Pro model.',
     ],
   },
 };
