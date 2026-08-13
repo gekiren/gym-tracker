@@ -99,14 +99,6 @@ export function useProfile() {
         route: '/settings/account',
       },
       {
-        id: 'workout-timer',
-        title: '筋トレ & タイマー設定',
-        desc: '表示項目、インターバルタイマー、重量単位',
-        icon: 'barbell-outline',
-        iconColor: Theme.colors.primary,
-        route: '/settings/workout-timer',
-      },
-      {
         id: 'obsidian',
         title: 'データ出力 & Obsidian連携',
         desc: 'Markdown出力・共有・Obsidian自動同期',

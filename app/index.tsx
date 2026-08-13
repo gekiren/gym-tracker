@@ -200,7 +200,7 @@ export default function DashboardScreen() {
             <View style={[styles.iconContainer, { backgroundColor: 'rgba(79, 172, 254, 0.15)' }]}>
               <Ionicons name="barbell" size={24} color={Theme.colors.primary} />
             </View>
-            <Text style={styles.cardTitle}>ワークアウト記録</Text>
+            <Text style={styles.cardTitle}>筋トレ</Text>
             <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
           </View>
 
@@ -521,7 +521,7 @@ export default function DashboardScreen() {
         <TouchableOpacity 
           style={styles.card} 
           activeOpacity={0.8}
-          onPress={() => router.push('/(tabs)/profile')}
+          onPress={() => router.push('/settings')}
         >
           <View style={styles.cardHeader}>
             <View style={[styles.iconContainer, { backgroundColor: 'rgba(79, 172, 254, 0.15)' }]}>
@@ -532,7 +532,7 @@ export default function DashboardScreen() {
           </View>
           <View style={styles.cardBody}>
             <Text style={styles.inactiveText}>
-              Gemini AI連携、データ出力・共有、バックアップ、Obsidian連携、筋トレ・タイマー設定などを管理できます。
+              Gemini AI連携、データ出力・共有、バックアップ、Obsidian連携などを管理できます。
             </Text>
           </View>
         </TouchableOpacity>

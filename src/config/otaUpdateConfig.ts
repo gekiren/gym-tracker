@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.42',
+  version: '1.8.43',
   title: {
-    ja: '環境設定体重と栄養管理目標体重のリアルタイム相互連動',
-    en: 'Sync Body Weight between App Preferences and Nutrition Goals',
+    ja: '設定タブおよびアプリ設定メニューのアクセス再構成',
+    en: 'Settings Tab & App Settings Reorganization',
   },
   notes: {
     ja: [
-      '📱 「アカウント & アプリ情報」画面に AI Coach 利用残高および環境設定（背景テーマ、アプリ言語、クラッシュレポート送信）を集約統合しました。',
-      '⚖️ 環境設定での体重変更と栄養管理設定の目標体重がリアルタイムで相互連動し、一元管理できるよう改善しました。',
+      '⚙️ 筋トレ機能のヘッダー表記を「筋トレ」に、右下設定タブを「設定」に統一しました。',
+      '📱 「アカウント情報」「Obsidian連携」「バックアップ・復元」「データ管理」をダッシュボードの「アプリ設定」画面内に集約・整理しました。',
     ],
     en: [
-      '📱 Integrated AI Coach balance and environment preferences into the Account Info screen.',
-      '⚖️ Synchronized body weight setting seamlessly with Nutrition Goals for unified data tracking.',
+      '⚙️ Updated header title to Workout and right tab label to Settings.',
+      '📱 Consolidated Account Info, Obsidian Sync, Backup, and Data Management into the App Settings menu.',
     ],
   },
 };

@@ -101,7 +101,7 @@ export default function TabLayout() {
         options={{
           headerTitle: t('ui.tabs.profile'),
           title: t('ui.tabs.profile'),
-          tabBarIcon: ({ color }) => <Ionicons name="person" size={26} color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons name="settings-outline" size={26} color={color} />,
         }}
       />
     </Tabs>

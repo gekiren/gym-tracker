@@ -15,7 +15,7 @@
       "routines": "ルーティン",
       "start_routine": "ルーティンを開始",
       "free_workout_title": "フリーワークアウト",
-      "home_header_title": "トレーニングを開始",
+      "home_header_title": "筋トレ",
       "home_header_subtitle": "新しいワークアウトを始めるか、ルーティンを選んでください。",
       "return_to_active": "進行中のワークアウトに戻る",
       "start_free_workout": "フリーワークアウトを開始",
@@ -315,7 +315,7 @@
       "history": "履歴",
       "exercises": "種目",
       "coach": "トレーナー",
-      "profile": "プロフィール"
+      "profile": "設定"
     },
     "notifications": {
       "rest_finished_title": "休憩終了！",
