@@ -11,6 +11,7 @@ import { useSettingsStore } from '../src/store/settingsStore';
 import { useRoutineDraftStore } from '../src/store/routineDraftStore';
 import { useTranslation } from 'react-i18next';
 import { translateExercise, translateMuscleGroup, translateEquipment, translateStance } from '../src/i18n';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { openYouTubeSearch } from '../src/utils/youtubeUtils';
 
 type Exercise = {
@@ -59,7 +60,8 @@ export default function SelectExerciseScreen() {
   const [isModalVisible, setModalVisible] = useState(false);
   const [newName, setNewName] = useState('');
   const [newGroup, setNewGroup] = useState('胸');
-  const [newEquip, setNewEquip] = useState('ダンベル');
+  const [newEquip, setNewEquip] = useState('バーベル');
+  const [deletingExerciseTarget, setDeletingExerciseTarget] = useState<Exercise | null>(null);
   const [isUnilateral, setIsUnilateral] = useState(false);
   const [useDefaultStance, setUseDefaultStance] = useState(false);
   const [newDefaultStance, setNewDefaultStance] = useState('');
@@ -195,25 +197,7 @@ export default function SelectExerciseScreen() {
   if (otherItems.length > 0) sections.push({ title: favItems.length > 0 ? t('ui.exercise_select.section_others') : t('ui.exercise_select.section_all'), data: otherItems });
 
   const handleDelete = async (ex: Exercise) => {
-    Alert.alert(
-      t('ui.exercise_select.delete_title'),
-      t('ui.exercise_select.delete_message', { name: translateExercise(ex.name) }),
-      [
-        { text: t('ui.common.cancel'), style: 'cancel' },
-        { 
-          text: t('ui.common.delete'), 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteExercise(ex.id);
-              await fetchAll();
-            } catch (e) {
-              Alert.alert(t('ui.common.error'), t('ui.exercise_select.delete_error'));
-            }
-          }
-        }
-      ]
-    );
+    setDeletingExerciseTarget(ex);
   };
 
   const renderRightActions = (progress: SharedValue<number>, drag: SharedValue<number>, item: Exercise) => {
@@ -430,6 +414,28 @@ export default function SelectExerciseScreen() {
           </KeyboardAvoidingView>
         </View>
       </Modal>
+
+      <ConfirmModal
+        visible={deletingExerciseTarget !== null}
+        title={t('ui.exercise_select.delete_title')}
+        message={deletingExerciseTarget ? t('ui.exercise_select.delete_message', { name: translateExercise(deletingExerciseTarget.name) }) : ''}
+        confirmText={t('ui.common.delete')}
+        cancelText={t('ui.common.cancel')}
+        type="danger"
+        onConfirm={async () => {
+          if (deletingExerciseTarget) {
+            try {
+              await deleteExercise(deletingExerciseTarget.id);
+              await fetchAll();
+            } catch (e) {
+              Alert.alert(t('ui.common.error'), t('ui.exercise_select.delete_error'));
+            } finally {
+              setDeletingExerciseTarget(null);
+            }
+          }
+        }}
+        onCancel={() => setDeletingExerciseTarget(null)}
+      />
     </View>
   );
 }

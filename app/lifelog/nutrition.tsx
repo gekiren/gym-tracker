@@ -28,6 +28,7 @@ import AutophagyCard from '../../components/nutrition/AutophagyCard';
 import NutritionHistoryChart from '../../components/nutrition/NutritionHistoryChart';
 import MdImportModal from '../../components/nutrition/MdImportModal';
 import NutritionSettingsModal from '../../components/nutrition/NutritionSettingsModal';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
 
 export default function NutritionScreen() {
   const { colors } = useAppTheme();
@@ -56,7 +57,13 @@ export default function NutritionScreen() {
   const updateAutophagyConfig = useNutritionStore((state) => state.updateAutophagyConfig);
 
   // 日付状態 (YYYY-MM-DD)
-  const getTodayStr = () => new Date().toISOString().split('T')[0];
+  const getTodayStr = () => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
   const [selectedDate, setSelectedDate] = useState(getTodayStr());
 
   // モーダル開閉状態
@@ -67,12 +74,19 @@ export default function NutritionScreen() {
   const [showMdModal, setShowMdModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [editingLog, setEditingLog] = useState<MealLog | null>(null);
+  const [deletingMealId, setDeletingMealId] = useState<number | null>(null);
 
   // 日付切替
   const changeDateOffset = (offsetDays: number) => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() + offsetDays);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    const parts = selectedDate.split('-');
+    const base = parts.length === 3
+      ? new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10))
+      : new Date();
+    base.setDate(base.getDate() + offsetDays);
+    const y = base.getFullYear();
+    const m = String(base.getMonth() + 1).padStart(2, '0');
+    const d = String(base.getDate()).padStart(2, '0');
+    setSelectedDate(`${y}-${m}-${d}`);
   };
 
   // 画面フォーカス時のデータ読み込み（isFocusedでバックグラウンド時サスペンド）
@@ -258,12 +272,7 @@ export default function NutritionScreen() {
           <MealLogList
             mealLogs={mealLogs}
             favorites={favorites}
-            onDeleteMeal={(id) => {
-              Alert.alert('ログ削除', 'この食事ログを削除しますか？', [
-                { text: 'キャンセル', style: 'cancel' },
-                { text: '削除', style: 'destructive', onPress: () => deleteMeal(id) },
-              ]);
-            }}
+            onDeleteMeal={(id) => setDeletingMealId(id)}
             onEditMeal={(log) => setEditingLog(log)}
             onToggleFavorite={handleToggleFavorite}
           />
@@ -335,6 +344,21 @@ export default function NutritionScreen() {
         autophagyConfig={safeAutophagy}
         onSaveGoals={saveGoals}
         onSaveAutophagy={updateAutophagyConfig}
+      />
+
+      <ConfirmModal
+        visible={deletingMealId !== null}
+        title="ログ削除"
+        message="この食事ログを削除しますか？"
+        confirmText="削除"
+        type="danger"
+        onConfirm={async () => {
+          if (deletingMealId !== null) {
+            await deleteMeal(deletingMealId);
+            setDeletingMealId(null);
+          }
+        }}
+        onCancel={() => setDeletingMealId(null)}
       />
     </View>
   );

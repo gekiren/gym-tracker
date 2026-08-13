@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,53 +8,14 @@ import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../../src/i18n';
-
-const KeyboardAvoidingWrapper = ({ children }: { children: React.ReactNode }) => {
-  const [behavior, setBehavior] = useState<'padding' | undefined>(undefined);
-
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-
-    const showListener = Keyboard.addListener('keyboardDidShow', () => {
-      setBehavior('padding');
-    });
-    const hideListener = Keyboard.addListener('keyboardDidHide', () => {
-      setBehavior(undefined);
-    });
-
-    return () => {
-      showListener.remove();
-      hideListener.remove();
-    };
-  }, []);
-
-  if (Platform.OS === 'ios') {
-    return (
-      <KeyboardAvoidingView
-        behavior="padding"
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={90}
-      >
-        {children}
-      </KeyboardAvoidingView>
-    );
-  }
-
-  return (
-    <KeyboardAvoidingView
-      behavior={behavior}
-      style={{ flex: 1 }}
-      keyboardVerticalOffset={80}
-    >
-      {children}
-    </KeyboardAvoidingView>
-  );
-};
+import { KeyboardAvoidingWrapper } from '../../components/active-workout/KeyboardAvoidingWrapper';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
 
 export default function EditWorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [deletingSetTarget, setDeletingSetTarget] = useState<{ exIdx: number; setIdx: number } | null>(null);
   const settings = useSettingsStore(state => state.settings);
   const { t } = useTranslation();
 
@@ -117,19 +78,7 @@ export default function EditWorkoutScreen() {
   };
 
   const handleRemoveSet = (exIndex: number, setIndex: number) => {
-    Alert.alert(t('ui.edit_workout.delete_set_title'), t('ui.edit_workout.delete_set_message'), [
-      { text: t('ui.common.cancel'), style: 'cancel' },
-      { 
-        text: t('ui.common.delete'), style: 'destructive', 
-        onPress: () => {
-          setData((prev: any) => {
-            const copy = { ...prev };
-            copy.exercises[exIndex].sets[setIndex]._deleted = true;
-            return copy;
-          });
-        }
-      }
-    ]);
+    setDeletingSetTarget({ exIdx: exIndex, setIdx: setIndex });
   };
 
   if (isLoading) {
@@ -222,6 +171,27 @@ export default function EditWorkoutScreen() {
         ))}
       </ScrollView>
       </KeyboardAvoidingWrapper>
+
+      <ConfirmModal
+        visible={deletingSetTarget !== null}
+        title={t('ui.edit_workout.delete_set_title')}
+        message={t('ui.edit_workout.delete_set_message')}
+        confirmText={t('ui.common.delete')}
+        cancelText={t('ui.common.cancel')}
+        type="danger"
+        onConfirm={() => {
+          if (deletingSetTarget) {
+            const { exIdx, setIdx } = deletingSetTarget;
+            setData((prev: any) => {
+              const copy = { ...prev };
+              copy.exercises[exIdx].sets[setIdx]._deleted = true;
+              return copy;
+            });
+            setDeletingSetTarget(null);
+          }
+        }}
+        onCancel={() => setDeletingSetTarget(null)}
+      />
     </View>
   );
 }

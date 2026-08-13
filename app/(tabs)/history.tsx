@@ -9,6 +9,7 @@ import { useSettingsStore } from '../../src/store/settingsStore';
 import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../../src/i18n';
 import WorkoutShareModal from '../../components/WorkoutShareModal';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
 
 // Subcomponents
 import { HistoryWorkoutsTab } from '../../components/history/HistoryWorkoutsTab';
@@ -34,6 +35,10 @@ export default function HistoryScreen() {
   const [isCalendarVisible, setCalendarVisible] = useState(false);
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [selectedWorkoutForShare, setSelectedWorkoutForShare] = useState<FullWorkoutData | null>(null);
+
+  // 統一削除確認モーダル用の状態
+  const [deletingWorkout, setDeletingWorkout] = useState<{ id: number; title: string } | null>(null);
+  const [deletingExerciseTarget, setDeletingExerciseTarget] = useState<Exercise | null>(null);
 
   // Exercises State
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -69,21 +74,7 @@ export default function HistoryScreen() {
   };
 
   const handleDeleteWorkout = (id: number, title: string) => {
-    Alert.alert(
-      t('ui.history.delete_alert_title'),
-      t('ui.history.delete_alert_message', { title }),
-      [
-        { text: t('ui.common.cancel'), style: 'cancel' },
-        { 
-          text: t('ui.history.delete_confirm'), 
-          style: 'destructive',
-          onPress: async () => {
-            await deleteWorkout(id);
-            fetchWorkouts();
-          }
-        }
-      ]
-    );
+    setDeletingWorkout({ id, title });
   };
 
   const handleSNSSharePress = async (workoutId: number) => {
@@ -183,25 +174,7 @@ export default function HistoryScreen() {
   };
 
   const handleDeleteExercise = async (ex: Exercise) => {
-    Alert.alert(
-      t('ui.exercise_select.delete_title'),
-      t('ui.exercise_select.delete_message', { name: translateExercise(ex.name) }),
-      [
-        { text: t('ui.common.cancel'), style: 'cancel' },
-        { 
-          text: t('ui.common.delete'), 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteExercise(ex.id);
-              fetchExercises();
-            } catch (e) {
-              Alert.alert(t('ui.common.error'), t('ui.exercise_select.delete_error'));
-            }
-          }
-        }
-      ]
-    );
+    setDeletingExerciseTarget(ex);
   };
 
   return (
@@ -260,6 +233,47 @@ export default function HistoryScreen() {
         onClose={() => setShareModalVisible(false)}
         workout={selectedWorkoutForShare}
         settings={settings}
+      />
+
+      {/* 統一確認モーダル（ワークアウト履歴削除） */}
+      <ConfirmModal
+        visible={deletingWorkout !== null}
+        title={t('ui.history.delete_alert_title')}
+        message={deletingWorkout ? t('ui.history.delete_alert_message', { title: deletingWorkout.title }) : ''}
+        confirmText={t('ui.history.delete_confirm')}
+        cancelText={t('ui.common.cancel')}
+        type="danger"
+        onConfirm={async () => {
+          if (deletingWorkout) {
+            await deleteWorkout(deletingWorkout.id);
+            setDeletingWorkout(null);
+            fetchWorkouts();
+          }
+        }}
+        onCancel={() => setDeletingWorkout(null)}
+      />
+
+      {/* 統一確認モーダル（カスタム種目削除） */}
+      <ConfirmModal
+        visible={deletingExerciseTarget !== null}
+        title={t('ui.exercise_select.delete_title')}
+        message={deletingExerciseTarget ? t('ui.exercise_select.delete_message', { name: translateExercise(deletingExerciseTarget.name) }) : ''}
+        confirmText={t('ui.common.delete')}
+        cancelText={t('ui.common.cancel')}
+        type="danger"
+        onConfirm={async () => {
+          if (deletingExerciseTarget) {
+            try {
+              await deleteExercise(deletingExerciseTarget.id);
+              fetchExercises();
+            } catch (e) {
+              Alert.alert(t('ui.common.error'), t('ui.exercise_select.delete_error'));
+            } finally {
+              setDeletingExerciseTarget(null);
+            }
+          }
+        }}
+        onCancel={() => setDeletingExerciseTarget(null)}
       />
     </View>
   );

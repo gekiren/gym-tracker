@@ -270,7 +270,7 @@ export const analyzeMealText = async (
   preferredModel: string = 'gemini'
 ): Promise<NutritionAIResult> => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 25000);
+  const timeoutId = setTimeout(() => controller.abort(), 45000);
 
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -314,13 +314,23 @@ export const analyzeMealText = async (
   } catch (err: any) {
     clearTimeout(timeoutId);
     console.error('analyzeMealText failed:', err);
+
+    const isAbort = err?.name === 'AbortError' || err?.message === 'Aborted' || err?.message === 'AbortError';
+    const friendlyErrMsg = isAbort
+      ? '接続タイムアウトが発生しました（45秒超過）。通信環境を確認するか、再度お試しください。'
+      : (err?.message || String(err));
+
     recordAIDebugLog({
       type: 'text_analysis',
       endpointUrl: NUTRITION_TEXT_URL,
       success: false,
       requestSummary: { textInput, preferredModel },
-      errorMessage: err?.message || String(err),
+      errorMessage: friendlyErrMsg,
     });
+
+    if (isAbort) {
+      throw new Error(friendlyErrMsg);
+    }
     throw err;
   }
 };

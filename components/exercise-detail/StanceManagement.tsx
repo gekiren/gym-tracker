@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
 import { translateStance } from '../../src/i18n';
 import { updateExerciseDefaultStance, updateExerciseDefaultVariation, saveSetting } from '../../src/db/database';
+import { ConfirmModal } from '../ui/ConfirmModal';
 
 interface StanceManagementProps {
   exercise: any;
@@ -25,6 +26,7 @@ export const StanceManagement: React.FC<StanceManagementProps> = ({
   const [isStanceExpanded, setIsStanceExpanded] = useState(false);
   const [isAddingStance, setIsAddingStance] = useState(false);
   const [newStance, setNewStance] = useState('');
+  const [deletingStanceTarget, setDeletingStanceTarget] = useState<string | null>(null);
 
   return (
     <View style={styles.stanceSection}>
@@ -67,27 +69,7 @@ export const StanceManagement: React.FC<StanceManagementProps> = ({
                     setExercise({ ...exercise, default_stance: s, default_variation: s });
                   }}
                   onLongPress={() => {
-                    Alert.alert(
-                      t('ui.active_workout.stance_delete_title'),
-                      t('ui.active_workout.stance_delete_message', { name: translateStance(s) }),
-                      [
-                        { text: t('ui.active_workout.stance_cancel'), style: 'cancel' },
-                        { 
-                          text: t('ui.active_workout.stance_delete_confirm'), 
-                          style: 'destructive',
-                          onPress: async () => {
-                            const next = (settings.customStances || []).filter((item: string) => item !== s);
-                            removeCustomStance(s);
-                            await saveSetting('custom_stances', JSON.stringify(next));
-                            if (exercise.default_stance === s || exercise.default_variation === s) {
-                              await updateExerciseDefaultStance(exercise.id, null);
-                              await updateExerciseDefaultVariation(exercise.id, null);
-                              setExercise({ ...exercise, default_stance: null, default_variation: null });
-                            }
-                          }
-                        }
-                      ]
-                    );
+                    setDeletingStanceTarget(s);
                   }}
                 >
                   <Text style={[styles.choiceChipText, isActive && styles.choiceChipTextActive]}>
@@ -147,6 +129,30 @@ export const StanceManagement: React.FC<StanceManagementProps> = ({
           )}
         </View>
       )}
+
+      <ConfirmModal
+        visible={deletingStanceTarget !== null}
+        title={t('ui.active_workout.stance_delete_title')}
+        message={deletingStanceTarget ? t('ui.active_workout.stance_delete_message', { name: translateStance(deletingStanceTarget) }) : ''}
+        confirmText={t('ui.active_workout.stance_delete_confirm')}
+        cancelText={t('ui.active_workout.stance_cancel')}
+        type="danger"
+        onConfirm={async () => {
+          if (deletingStanceTarget) {
+            const s = deletingStanceTarget;
+            const next = (settings.customStances || []).filter((item: string) => item !== s);
+            removeCustomStance(s);
+            await saveSetting('custom_stances', JSON.stringify(next));
+            if (exercise.default_stance === s || exercise.default_variation === s) {
+              await updateExerciseDefaultStance(exercise.id, null);
+              await updateExerciseDefaultVariation(exercise.id, null);
+              setExercise({ ...exercise, default_stance: null, default_variation: null });
+            }
+            setDeletingStanceTarget(null);
+          }
+        }}
+        onCancel={() => setDeletingStanceTarget(null)}
+      />
     </View>
   );
 };

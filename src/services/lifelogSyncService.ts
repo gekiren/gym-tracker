@@ -284,6 +284,13 @@ export const handleWebViewMessage = async (
       const logs = JSON.parse(value) as Array<{ id: number; timestamp: number; amount: number; date: string; caffeine?: number }>;
       console.log(`[SyncService] Parsed logs count: ${logs.length}. Logs:`, JSON.stringify(logs));
 
+      const existingCountRow = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM water_logs');
+      const existingCount = existingCountRow?.count || 0;
+      if (existingCount > 0 && (!logs || logs.length === 0)) {
+        addSyncDiagnosticLog('[Safety Guard] Skipped empty water_logs wipe due to existing DB records');
+        return null;
+      }
+
       await db.withTransactionAsync(async () => {
         console.log('[SyncService] Starting transaction to delete and insert water logs');
         await db.runAsync('DELETE FROM water_logs');
@@ -341,6 +348,13 @@ export const handleWebViewMessage = async (
         items: Array<{ name: string; percent: number }>;
       }>;
 
+      const existingCountRow = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM time_logs');
+      const existingCount = existingCountRow?.count || 0;
+      if (existingCount > 0 && (!logs || logs.length === 0)) {
+        addSyncDiagnosticLog('[Safety Guard] Skipped empty time_logs wipe due to existing DB records');
+        return null;
+      }
+
       await db.withTransactionAsync(async () => {
         await db.runAsync('DELETE FROM time_logs');
         for (const log of logs) {
@@ -390,6 +404,11 @@ export const handleWebViewMessage = async (
       const existingRows = await db.getAllAsync<{ id: number; name: string; created_at: number }>(
         'SELECT id, name, created_at FROM habit_items'
       );
+
+      if (existingRows.length > 0 && (!items || items.length === 0)) {
+        addSyncDiagnosticLog('[Safety Guard] Skipped empty habit-items wipe due to existing DB records');
+        return null;
+      }
 
       // Helper to check if a SQLite row matches any incoming WebView item
       const isRowMatchingItem = (row: { id: number; name: string; created_at: number }, item: { id: string; name: string; createdAt: number }) => {
@@ -458,6 +477,13 @@ export const handleWebViewMessage = async (
     else if (key === 'habit-logs') {
       const logs = JSON.parse(value) as Array<{ itemId: string; timestamp: number }>;
       addSyncDiagnosticLog(`Received habit-logs from WebView. Incoming count: ${logs.length}`);
+
+      const existingCountRow = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM habit_logs');
+      const existingCount = existingCountRow?.count || 0;
+      if (existingCount > 0 && (!logs || logs.length === 0)) {
+        addSyncDiagnosticLog('[Safety Guard] Skipped empty habit-logs wipe due to existing DB records');
+        return null;
+      }
 
       // 1. Fetch current valid habit items in SQLite for flexible ID mapping
       const validItems = await db.getAllAsync<{ id: number; name: string; created_at: number }>(
