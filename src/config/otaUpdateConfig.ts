@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.62',
+  version: '1.8.63',
   title: {
-    ja: 'ライフログデータの絶対全消去防止ガード＆同期競合の完全修復',
-    en: 'Lifelog Data Wipe Safety Guard & Sync Fix',
+    ja: 'MD一括取り込み画面でのAIプロンプトコピー機能追加',
+    en: 'Added AI Prompt Copy Feature to MD Bulk Import',
   },
   notes: {
     ja: [
-      'WebView起動時の非同期競合バグの修正に加え、空データ受信による実データベースの誤削除を物理的に遮断する二重安全ガードを実装しました。',
-      '栄養管理（食事ログ）の日付クエリ表記揺れ（YYYY-MM-DD / YYYY/MM/DD）の吸収処理およびタイムゾーン補正を強化しました。',
+      '「MD一括取り込み」画面にChatGPTやClaude等の外部AIへ食事写真・メモを送信して解析させるための専用プロンプトをクリップボードにコピーできる機能を追加しました。',
     ],
     en: [
-      'Added strict safety guards to prevent accidental table wipes upon receiving empty data from WebViews.',
-      'Enhanced nutrition date query matching to seamlessly handle hyphen and slash date formats.',
+      'Added a button in MD Bulk Import to copy the AI Nutritionist prompt for ChatGPT and Claude directly to the clipboard.',
     ],
   },
 };
