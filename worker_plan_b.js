@@ -133,8 +133,8 @@ export default {
 
 ※写真が食品や栄養成分表でない場合は、"isFood": false にしてください。`;
 
-        // 最適化されたマルチモーダル画像解析モデルリスト (3.1-flash-image 優先 ➔ 3.1-flash-lite-image ➔ 2.5-flash-preview-image ➔ 2.0-flash)
-        const geminiModels = ["gemini-3.1-flash-image", "gemini-3.1-flash-lite-image", "gemini-2.5-flash-preview-image", "gemini-2.0-flash"];
+        // DEVELOPMENT_RULES.md 準拠のマルチモーダル画像解析モデルリスト (3.7-flash 優先 ➔ 3.6-flash ➔ 3.5-flash ➔ 2.5-flash ➔ 2.5-flash-lite)
+        const geminiModels = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
         let lastErrorText = "";
         let fallbackHistory = [];
 
@@ -176,7 +176,7 @@ export default {
                   return new Response(JSON.stringify({ 
                     success: true, 
                     ...parsedJson,
-                    debugInfo: { workerVersion: "v1.6.0", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
+                    debugInfo: { workerVersion: "v1.7.0", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -187,7 +187,7 @@ export default {
                     success: true, 
                     reply: rawText, 
                     mealName: "食事写真",
-                    debugInfo: { workerVersion: "v1.6.0", modelUsed: modelName, parseError: true, rawSnippet: rawText.substring(0, 100) }
+                    debugInfo: { workerVersion: "v1.7.0", modelUsed: modelName, parseError: true, rawSnippet: rawText.substring(0, 100) }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -205,9 +205,10 @@ export default {
           }
         }
 
-        // DeepSeek へのテキストフォールバック（画像モデル全滅時でメモやテキストがある場合）
+        // DeepSeek へのテキストフォールバック（画像モデル全滅時）
+        // message（プロンプト文）は常に存在するため、userMemo/ocrHintText が空でも発動する
         const fallbackText = userMemo || ocrHintText || message;
-        if (env.DEEPSEEK_API_KEY && fallbackText && fallbackText.trim()) {
+        if (env.DEEPSEEK_API_KEY && (fallbackText?.trim() || userMemo?.trim() || ocrHintText?.trim() || message?.trim())) {
           try {
             const deepseekResponse = await fetch("https://api.deepseek.com/chat/completions", {
               method: "POST",
@@ -238,7 +239,7 @@ export default {
               return new Response(JSON.stringify({
                 success: true,
                 ...parsedJson,
-                debugInfo: { workerVersion: "v1.6.0", modelUsed: "deepseek-v4-pro (text fallback)", fallbackHistory }
+                debugInfo: { workerVersion: "v1.7.0", modelUsed: "deepseek-v4-pro (text fallback)", fallbackHistory }
               }), {
                 status: 200,
                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -261,7 +262,7 @@ export default {
           sodium: 0,
           fiber: 0,
           advice: "AIによる画像解析時に一時的なエラーが発生しました。時間を置いて再実行してください。",
-          debugInfo: { workerVersion: "v1.6.0", fallbackHistory, lastError: lastErrorText }
+          debugInfo: { workerVersion: "v1.7.0", fallbackHistory, lastError: lastErrorText }
         }), {
           status: 500,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
