@@ -283,7 +283,7 @@ export default {
   "advice": "栄養アドバイス"
 }`;
 
-        const geminiModels = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+        const geminiModels = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
         let fallbackHistory = [];
 
         if (env.GEMINI_API_KEY) {
@@ -388,7 +388,7 @@ export default {
         ? `[User Context]\n- Body Weight: ${user_weight || "Not set"}\n\n${contextHeader}\n${workout_history || "No history available"}\n\n[User Message]\n${message}`
         : `【ユーザー情報】\n- 体重: ${user_weight || "未設定"}\n\n${contextHeader}\n${workout_history || "履歴なし"}\n\n【ユーザーの質問】\n${message}`;
 
-      const geminiModels = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+      const geminiModels = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
       let chatFallbackHistory = [];
 
       if (env.GEMINI_API_KEY) {

@@ -136,7 +136,7 @@ export const sendMessageToAICoach = async (
 
     const bodyWeightStr = userWeight ? `${userWeight} ${weightUnit}` : '未設定';
     const lang = i18next.language || 'ja';
-    const preferredModel = useSettingsStore.getState().settings.preferredAiModel || 'gemini-3.6-flash';
+    const preferredModel = useSettingsStore.getState().settings.preferredAiModel || 'gemini-3.7-flash';
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -447,7 +447,7 @@ export interface AutophagyAIProposal {
  */
 export const analyzeAutophagyRecommendation = async (
   mealLogs: MealLog[],
-  preferredModel: string = 'gemini-3.6-flash'
+  preferredModel: string = 'gemini-3.7-flash'
 ): Promise<AutophagyAIProposal> => {
   if (!mealLogs || mealLogs.length === 0) {
     throw new Error('直近24時間の食事ログが存在しません。食事を記録してからお試しください。');
