@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, Keyboard } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Pressable, Alert, StyleSheet, Keyboard } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
@@ -226,9 +226,8 @@ const safeParseInt = (val: string): number | null => {
       rightThreshold={40}
     >
       <View style={{ backgroundColor: Theme.colors.card }}>
-        <TouchableOpacity 
+        <Pressable
           style={[styles.row, set.is_completed && styles.rowCompleted]}
-          activeOpacity={0.8}
           onLongPress={handleLongPress}
           delayLongPress={500}
         >
@@ -463,9 +462,10 @@ const safeParseInt = (val: string): number | null => {
 
         {/* Check Button & RM Display */}
         <View style={{ width: 40, alignItems: 'center' }}>
-          <TouchableOpacity 
+          <GHTouchableOpacity
             style={[styles.checkBtn, set.is_completed && styles.checkBtnActive]}
             onPress={() => {
+              Keyboard.dismiss();
               if (isAerobic && !set.is_completed) {
                 let finalSeconds = swElapsed;
                 if (swRunning) {
@@ -479,9 +479,9 @@ const safeParseInt = (val: string): number | null => {
             }}
           >
             <Ionicons name="checkmark" size={16} color={set.is_completed ? '#fff' : Theme.colors.textMuted} />
-          </TouchableOpacity>
+          </GHTouchableOpacity>
         </View>
-      </TouchableOpacity>
+      </Pressable>
       
       {/* Meta Row (Variation & RM & Time & PR) */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 8, marginBottom: 8, marginTop: -4 }}>
