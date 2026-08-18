@@ -10,7 +10,12 @@ import { useBodyStore } from '../../src/store/bodyStore';
 interface CaseyLimitCalculatorCardProps {
   currentLog: BodyCompositionLog | null;
   latestLog: BodyCompositionLog | null;
-  onSaveMeasurements: (wrist: number, ankle: number, targetFatRate?: number) => void;
+  onSaveMeasurements: (
+    wrist: number,
+    ankle: number,
+    targetFatRate: number,
+    height: number
+  ) => void;
   onOpenGuide: () => void;
 }
 
@@ -127,8 +132,9 @@ export default function CaseyLimitCalculatorCard({
     const wrist = parseFloat(wristStr);
     const ankle = parseFloat(ankleStr);
     const targetFat = parseFloat(targetFatStr) || 10;
+    const h = parseFloat(heightStr) || 175;
     if (wrist > 0 && ankle > 0) {
-      onSaveMeasurements(wrist, ankle, targetFat);
+      onSaveMeasurements(wrist, ankle, targetFat, h);
     }
   };
 
@@ -314,7 +320,7 @@ export default function CaseyLimitCalculatorCard({
 
           <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.7}>
             <Ionicons name="save-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
-            <Text style={styles.saveBtnText}>手首・足首サイズを保存</Text>
+            <Text style={styles.saveBtnText}>骨格測定値・目標値を保存</Text>
           </TouchableOpacity>
         </View>
       ) : (

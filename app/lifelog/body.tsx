@@ -44,6 +44,7 @@ export default function BodyCompositionScreen() {
 
   const loadBodyData = useBodyStore((state) => state.loadBodyData);
   const saveBodyLog = useBodyStore((state) => state.saveBodyLog);
+  const saveLastMeasurements = useBodyStore((state) => state.saveLastMeasurements);
   const deleteBodyLog = useBodyStore((state) => state.deleteBodyLog);
   const syncWithHealthConnect = useBodyStore((state) => state.syncWithHealthConnect);
 
@@ -112,7 +113,8 @@ export default function BodyCompositionScreen() {
     bodyFatRate: number,
     neck: number,
     waist: number,
-    hip?: number
+    hip?: number,
+    height?: number
   ) => {
     try {
       const weight = currentLog?.weight ?? latestLog?.weight ?? null;
@@ -125,9 +127,15 @@ export default function BodyCompositionScreen() {
         neck,
         waist,
         hip: hip ?? null,
+        height: height ?? currentLog?.height ?? latestLog?.height ?? null,
         lbm,
         source: 'navy_calc',
       });
+
+      if (height) {
+        saveLastMeasurements({ height, neck, waist, hip: hip ?? null });
+      }
+
       Alert.alert('反映完了', `体脂肪率 ${bodyFatRate}% を今日の体組成ログに保存しました。`);
     } catch (e: any) {
       Alert.alert('保存エラー', e.message || '体脂肪率の保存に失敗しました');
@@ -137,15 +145,26 @@ export default function BodyCompositionScreen() {
   // ケーシーバット骨格サイズの保存ハンドラー
   const handleSaveCaseyMeasurements = async (
     wrist: number,
-    ankle: number
+    ankle: number,
+    targetFatRate?: number,
+    height?: number
   ) => {
     try {
       await saveBodyLog({
         date: selectedDate,
         wrist,
         ankle,
+        height: height ?? currentLog?.height ?? latestLog?.height ?? null,
       });
-      Alert.alert('保存完了', '手首囲・足首囲のサイズを保存しました。');
+
+      saveLastMeasurements({
+        wrist,
+        ankle,
+        targetFatRate: targetFatRate ?? 10,
+        ...(height ? { height } : {}),
+      });
+
+      Alert.alert('保存完了', '手首囲・足首囲・想定体脂肪率・身長を保存しました。');
     } catch (e: any) {
       Alert.alert('保存エラー', e.message || '測定値の保存に失敗しました');
     }

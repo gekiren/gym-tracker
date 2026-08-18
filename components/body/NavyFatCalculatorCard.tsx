@@ -10,7 +10,13 @@ import { useBodyStore } from '../../src/store/bodyStore';
 interface NavyFatCalculatorCardProps {
   currentLog: BodyCompositionLog | null;
   latestLog: BodyCompositionLog | null;
-  onApplyBodyFat: (bodyFatRate: number, neck: number, waist: number, hip?: number) => void;
+  onApplyBodyFat: (
+    bodyFatRate: number,
+    neck: number,
+    waist: number,
+    hip?: number,
+    height?: number
+  ) => void;
   onOpenGuide: () => void;
 }
 
@@ -142,7 +148,8 @@ export default function NavyFatCalculatorCard({
     const neck = parseFloat(neckStr);
     const waist = parseFloat(waistStr);
     const hip = gender === 'female' ? parseFloat(hipStr) : undefined;
-    onApplyBodyFat(result.bodyFatRate, neck, waist, hip);
+    const h = parseFloat(heightStr);
+    onApplyBodyFat(result.bodyFatRate, neck, waist, hip, isNaN(h) || h <= 0 ? undefined : h);
   };
 
   return (
