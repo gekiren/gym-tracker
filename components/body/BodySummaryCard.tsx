@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
 import { BodyCompositionLog } from '../../src/types/bodyComposition';
-import { calculateBmi, calculateFfmi } from '../../src/utils/bodyCalculators';
+import { calculateBmi, calculateFfmi, calculateMfRatio, calculateMachoScore } from '../../src/utils/bodyCalculators';
 
 import { useBodyStore } from '../../src/store/bodyStore';
 
@@ -42,6 +42,18 @@ export default function BodySummaryCard({
 
   // FFMIの算出
   const ffmiResult = lbm && height ? calculateFfmi(lbm, height) : null;
+
+  // MF比（筋肉・脂肪比）の算出
+  const mfResult =
+    muscleMass !== null && weight !== null && bodyFatRate !== null
+      ? calculateMfRatio(muscleMass, weight, bodyFatRate)
+      : null;
+
+  // マッチョスコア（MS）の算出
+  const machoResult =
+    weight !== null && bodyFatRate !== null && height !== null
+      ? calculateMachoScore(weight, bodyFatRate, height)
+      : null;
 
   return (
     <View style={styles.card}>
@@ -131,6 +143,60 @@ export default function BodySummaryCard({
               {ffmiResult ? ffmiResult.normalizedFfmi.toFixed(1) : '--'}
             </Text>
             <Text style={styles.statUnit}>pt</Text>
+          </View>
+        </View>
+
+        {/* 筋肉・脂肪比 (MF比) */}
+        <View style={styles.statBox}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <Text style={styles.statLabel}>MF比 (筋/脂比)</Text>
+            {mfResult && mfResult.mfRatio >= 7.0 && (
+              <View style={styles.badgeWrap}>
+                <Text style={styles.badgeText}>{mfResult.mfRatio >= 7.5 ? '維持' : '腹筋'}</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.valueRow}>
+            <Text
+              style={[
+                styles.statValueSmall,
+                { color: mfResult && mfResult.mfRatio >= 7.0 ? '#2dd4bf' : Theme.colors.text },
+              ]}
+            >
+              {mfResult ? mfResult.mfRatio.toFixed(2) : '--'}
+            </Text>
+            <Text style={styles.statUnit}>比</Text>
+            {mfResult && (
+              <Text style={styles.ratioDetail}>({mfResult.categoryLabel.split(' ')[0]})</Text>
+            )}
+          </View>
+        </View>
+
+        {/* マッチョ評価スコア (MS) */}
+        <View style={styles.statBox}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <Text style={styles.statLabel}>マッチョスコア (MS)</Text>
+            {machoResult?.is20Achieved && (
+              <View style={[styles.badgeWrap, { backgroundColor: 'rgba(232, 121, 249, 0.2)' }]}>
+                <Text style={[styles.badgeText, { color: '#e879f9' }]}>20突破</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.valueRow}>
+            <Text
+              style={[
+                styles.statValueSmall,
+                { color: machoResult?.is20Achieved ? '#e879f9' : '#f43f5e' },
+              ]}
+            >
+              {machoResult ? machoResult.score.toFixed(1) : '--'}
+            </Text>
+            <Text style={styles.statUnit}>pt</Text>
+            {machoResult && (
+              <Text style={styles.bonusHint}>
+                ({machoResult.fatBonus >= 0 ? `+${machoResult.fatBonus.toFixed(1)}` : machoResult.fatBonus.toFixed(1)})
+              </Text>
+            )}
           </View>
         </View>
       </View>
@@ -245,6 +311,28 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Theme.colors.textMuted,
     marginLeft: 2,
+  },
+  badgeWrap: {
+    backgroundColor: 'rgba(45, 212, 191, 0.15)',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  badgeText: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#2dd4bf',
+  },
+  ratioDetail: {
+    fontSize: 10,
+    color: Theme.colors.textMuted,
+    marginLeft: 2,
+  },
+  bonusHint: {
+    fontSize: 10,
+    color: '#e879f9',
+    marginLeft: 2,
+    fontWeight: '600',
   },
   actionRow: {
     flexDirection: 'row',

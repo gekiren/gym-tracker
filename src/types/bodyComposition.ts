@@ -76,3 +76,24 @@ export interface MusclePotentialAnalysis {
   naturalStatusLabel: string;
   advice: string;
 }
+
+export interface MfRatioResult {
+  mfRatio: number; // 筋肉・脂肪比
+  fatMass: number; // 脂肪量 (kg)
+  muscleMass: number; // 筋肉量 (kg)
+  category: 'low' | 'average' | 'fitness' | 'athlete' | 'visible_abs' | 'elite';
+  categoryLabel: string;
+  advice: string;
+}
+
+export interface MachoScoreResult {
+  score: number; // MSスコア
+  ffmi: number; // 基準FFMI
+  fatBonus: number; // 絞りボーナス点 ((20 - 体脂肪率) * 0.2)
+  bodyFatRate: number; // 体脂肪率 (%)
+  is20Achieved: boolean; // 20.0突破フラグ
+  category: 'standard' | 'fitness' | 'athlete' | 'macho' | 'superhuman';
+  categoryLabel: string;
+  advice: string;
+}
+

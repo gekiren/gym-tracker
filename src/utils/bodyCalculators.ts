@@ -5,6 +5,8 @@ import {
   CaseyLimitInput,
   CaseyLimitResult,
   MusclePotentialAnalysis,
+  MfRatioResult,
+  MachoScoreResult,
 } from '../types/bodyComposition';
 
 /**
@@ -266,3 +268,132 @@ export function analyzeMusclePotential(
     advice,
   };
 }
+
+/**
+ * 筋肉・脂肪比（MF比：Muscle-to-Fat Ratio）の計算
+ * 脂肪1kgに対して何kgの筋肉があるかを表す「筋肉の密度」の指標
+ * 計算式: MF比 = 筋肉量 (kg) / 体脂肪量 (kg)
+ * @param muscleMassKg 骨格筋量・筋肉量 (kg)
+ * @param weightKg 体重 (kg)
+ * @param bodyFatRate 体脂肪率 (%)
+ */
+export function calculateMfRatio(
+  muscleMassKg: number,
+  weightKg: number,
+  bodyFatRate: number
+): MfRatioResult | null {
+  if (muscleMassKg <= 0 || weightKg <= 0 || bodyFatRate <= 0) {
+    return null;
+  }
+
+  const fatMass = Number(((weightKg * bodyFatRate) / 100).toFixed(2));
+  if (fatMass <= 0.05) return null; // ゼロ除算・極小値ガード
+
+  const mfRatio = Number((muscleMassKg / fatMass).toFixed(2));
+
+  let category: MfRatioResult['category'] = 'average';
+  let categoryLabel = '標準 (2.5+)';
+  let advice = '標準的な体組成バランスです。筋力トレーニングで筋量を高めることでさらにスコアが向上します。';
+
+  if (mfRatio >= 7.5) {
+    category = 'elite';
+    categoryLabel = 'ハイレベル維持 (7.5+)';
+    advice = '脂肪1kgに対し7.5kg以上の筋肉。極めて高い筋密度と絞りを極限で維持している状態です。';
+  } else if (mfRatio >= 7.0) {
+    category = 'visible_abs';
+    categoryLabel = '腹筋常時視認・高密度 (7.0+)';
+    advice = '服の上からでも筋肉の質感が分かり、常時腹筋が鮮明に見える状態です。';
+  } else if (mfRatio >= 5.5) {
+    category = 'athlete';
+    categoryLabel = 'アスリート・カット (5.5+)';
+    advice = '筋肉量が十分に多く、体脂肪が適度に削ぎ落とされたシャープな体組成です。';
+  } else if (mfRatio >= 4.0) {
+    category = 'fitness';
+    categoryLabel = 'フィットネス (4.0+)';
+    advice = '一般的な平均を上回る筋肉の密度です。引き締まったシルエットを形成しています。';
+  } else if (mfRatio >= 2.5) {
+    category = 'average';
+    categoryLabel = '標準 (2.5+)';
+    advice = '標準的な体組成バランスです。筋力トレーニングで筋量を高めることでさらにスコアが向上します。';
+  } else {
+    category = 'low';
+    categoryLabel = '低め';
+    advice = '体脂肪量に対して筋肉量が控えめです。体脂肪の低減または筋肉量の増量を目指しましょう。';
+  }
+
+  return {
+    mfRatio,
+    fatMass,
+    muscleMass: Number(muscleMassKg.toFixed(1)),
+    category,
+    categoryLabel,
+    advice,
+  };
+}
+
+/**
+ * マッチョ評価スコア（MS：Macho Score）の計算
+ * FFMI（除脂肪量指数）をベースに、「絞り（体脂肪率の低さ）」のボーナスを加点した総合スコア
+ * 計算式: MSスコア = FFMI + (20 - 体脂肪率(%)) * 0.2
+ * FFMIの計算式: FFMI = 除脂肪体重 (kg) / (身長 (m))^2
+ * @param weightKg 体重 (kg)
+ * @param bodyFatRate 体脂肪率 (%)
+ * @param heightCm 身長 (cm)
+ */
+export function calculateMachoScore(
+  weightKg: number,
+  bodyFatRate: number,
+  heightCm: number
+): MachoScoreResult | null {
+  if (weightKg <= 0 || bodyFatRate <= 0 || heightCm <= 0) {
+    return null;
+  }
+
+  const heightM = heightCm / 100;
+  const lbm = weightKg * (1 - bodyFatRate / 100);
+  const rawFfmi = lbm / (heightM * heightM);
+  const ffmi = Number(rawFfmi.toFixed(2));
+
+  // 体脂肪率20%を基準（±0）とし、体脂肪率が1%低くなるごとに +0.2点 加算
+  const fatBonus = Number(((20 - bodyFatRate) * 0.2).toFixed(2));
+  const score = Number((ffmi + fatBonus).toFixed(2));
+  const is20Achieved = score >= 20.0;
+
+  let category: MachoScoreResult['category'] = 'standard';
+  let categoryLabel = '標準レベル';
+  let advice = '標準的な体型です。筋トレと食事管理でFFMI向上と体脂肪率低下を目指しましょう。';
+
+  if (score >= 22.0) {
+    category = 'superhuman';
+    categoryLabel = '超人・コンテスト級 (22.0+)';
+    advice = '圧倒的な除脂肪筋肉量と極限の絞りを両立したトップフィジークです。';
+  } else if (score >= 20.0) {
+    category = 'macho';
+    categoryLabel = 'マッチョ到達 (20.0+)';
+    advice = '高い筋肉量と低い体脂肪率をハイレベルで両立している状態です！';
+  } else if (score >= 18.0) {
+    category = 'athlete';
+    categoryLabel = '上級フィジーク (18.0+)';
+    advice = '充実した筋量と絞りを備えています。20.0突破まであと少しです！';
+  } else if (score >= 16.0) {
+    category = 'fitness';
+    categoryLabel = 'フィットネス (16.0+)';
+    advice = '健康で活動的な体格です。さらなる筋肥大または減量でスコアアップが狙えます。';
+  } else {
+    category = 'standard';
+    categoryLabel = '標準レベル';
+    advice = '標準的な体型です。筋トレと食事管理でFFMI向上と体脂肪率低下を目指しましょう。';
+  }
+
+  return {
+    score,
+    ffmi,
+    fatBonus,
+    bodyFatRate: Number(bodyFatRate.toFixed(1)),
+    is20Achieved,
+    category,
+    categoryLabel,
+    advice,
+  };
+}
+
