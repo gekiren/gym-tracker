@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
@@ -56,24 +56,25 @@ export default function CaseyLimitCalculatorCard({
   const [showPartSizes, setShowPartSizes] = useState(false);
   const [result, setResult] = useState<CaseyLimitResult | null>(null);
 
-  // currentLog や savedMeasurements, latestLog が更新された時に同期
+  // 日付が切り替わった時（または初期ロード時）のみローカル入力値を同期
+  const lastDateRef = useRef<string | undefined>(undefined);
   useEffect(() => {
-    const valWrist = currentLog?.wrist ?? savedMeasurements.wrist ?? latestLog?.wrist;
-    if (valWrist !== undefined && valWrist !== null) {
-      setWristStr(String(valWrist));
+    if (lastDateRef.current !== currentLog?.date) {
+      lastDateRef.current = currentLog?.date;
+      const valWrist = currentLog?.wrist ?? savedMeasurements.wrist ?? latestLog?.wrist;
+      setWristStr(valWrist !== undefined && valWrist !== null ? String(valWrist) : '');
+
+      const valAnkle = currentLog?.ankle ?? savedMeasurements.ankle ?? latestLog?.ankle;
+      setAnkleStr(valAnkle !== undefined && valAnkle !== null ? String(valAnkle) : '');
+
+      if (savedMeasurements.targetFatRate) {
+        setTargetFatStr(String(savedMeasurements.targetFatRate));
+      }
+
+      const valHeight = currentLog?.height ?? savedMeasurements.height ?? latestLog?.height;
+      setHeightStr(valHeight !== undefined && valHeight !== null ? String(valHeight) : '175');
     }
-    const valAnkle = currentLog?.ankle ?? savedMeasurements.ankle ?? latestLog?.ankle;
-    if (valAnkle !== undefined && valAnkle !== null) {
-      setAnkleStr(String(valAnkle));
-    }
-    if (savedMeasurements.targetFatRate) {
-      setTargetFatStr(String(savedMeasurements.targetFatRate));
-    }
-    const valHeight = currentLog?.height ?? savedMeasurements.height ?? latestLog?.height;
-    if (valHeight !== undefined && valHeight !== null) {
-      setHeightStr(String(valHeight));
-    }
-  }, [currentLog, savedMeasurements, latestLog]);
+  }, [currentLog?.date]);
 
   // 入力変更ハンドラ（即時State更新 ＆ バックグラウンド永続化）
   const handleWristChange = (val: string) => {

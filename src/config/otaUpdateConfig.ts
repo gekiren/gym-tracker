@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.83',
+  version: '1.8.84',
   title: {
-    ja: '🧬 測定値入力の小数点入力対応（decimal-pad）',
-    en: '🧬 Decimal Keyboard Support for Body Measurements',
+    ja: '🧬 測定値入力欄の文字削除・編集の不具合修正',
+    en: '🧬 Measurement Input & Deletion Fix',
   },
   notes: {
     ja: [
-      '手首、足首、身長、首回り、ウエストなどの測定値入力欄で小数点が入力できるようキーボード設定を改善しました。',
+      '測定値入力欄での文字削除およびリアルタイム編集がスムーズに行えるよう入力同期ループを修正しました。',
     ],
     en: [
-      'Enabled decimal keyboard input for wrist, ankle, height, neck, waist and circumference measurements.',
+      'Fixed input sync loop to allow smooth editing and character deletion in measurement fields.',
     ],
   },
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
@@ -64,25 +64,24 @@ export default function NavyFatCalculatorCard({
 
   const [result, setResult] = useState<NavyBodyFatResult | null>(null);
 
-  // currentLog や savedMeasurements, latestLog が更新された時に初期値を同期
+  // 日付が切り替わった時（または初期ロード時）のみローカル入力値を同期
+  const lastDateRef = useRef<string | undefined>(undefined);
   useEffect(() => {
-    const valNeck = currentLog?.neck ?? savedMeasurements.neck ?? latestLog?.neck;
-    if (valNeck !== undefined && valNeck !== null) {
-      setNeckStr(String(valNeck));
+    if (lastDateRef.current !== currentLog?.date) {
+      lastDateRef.current = currentLog?.date;
+      const valNeck = currentLog?.neck ?? savedMeasurements.neck ?? latestLog?.neck;
+      setNeckStr(valNeck !== undefined && valNeck !== null ? String(valNeck) : '');
+
+      const valWaist = currentLog?.waist ?? savedMeasurements.waist ?? latestLog?.waist;
+      setWaistStr(valWaist !== undefined && valWaist !== null ? String(valWaist) : '');
+
+      const valHip = currentLog?.hip ?? savedMeasurements.hip ?? latestLog?.hip;
+      setHipStr(valHip !== undefined && valHip !== null ? String(valHip) : '');
+
+      const valHeight = currentLog?.height ?? savedMeasurements.height ?? latestLog?.height;
+      setHeightStr(valHeight !== undefined && valHeight !== null ? String(valHeight) : '170');
     }
-    const valWaist = currentLog?.waist ?? savedMeasurements.waist ?? latestLog?.waist;
-    if (valWaist !== undefined && valWaist !== null) {
-      setWaistStr(String(valWaist));
-    }
-    const valHip = currentLog?.hip ?? savedMeasurements.hip ?? latestLog?.hip;
-    if (valHip !== undefined && valHip !== null) {
-      setHipStr(String(valHip));
-    }
-    const valHeight = currentLog?.height ?? savedMeasurements.height ?? latestLog?.height;
-    if (valHeight !== undefined && valHeight !== null) {
-      setHeightStr(String(valHeight));
-    }
-  }, [currentLog, savedMeasurements, latestLog]);
+  }, [currentLog?.date]);
 
   // 入力変更ハンドラ（即時State更新 ＆ バックグラウンド永続化）
   const handleNeckChange = (val: string) => {
