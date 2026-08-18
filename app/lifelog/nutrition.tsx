@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Stack, useNavigation } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { Theme, useAppTheme } from '../../src/theme';
@@ -34,6 +35,7 @@ import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
 
 export default function NutritionScreen() {
   const { colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const { t } = useTranslation();
@@ -220,7 +222,13 @@ export default function NutritionScreen() {
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.scrollBody} contentContainerStyle={styles.scrollContent}>
+          <ScrollView
+            style={styles.scrollBody}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: Math.max(insets.bottom + 80, 120) },
+            ]}
+          >
         {/* 食事登録アクションボタン群（最上段） */}
         <View style={styles.actionSection}>
           {/* 行1: 3個ボタン */}

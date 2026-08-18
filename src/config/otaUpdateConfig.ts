@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.74',
+  version: '1.8.76',
   title: {
-    ja: '時間設定ホイールの無限ループ対応',
-    en: 'Infinite Looping Time Wheels',
+    ja: '食事管理画面のレイアウト改善',
+    en: 'Nutrition Screen Layout Improvement',
   },
   notes: {
     ja: [
-      '時間設定モーダルの各ホイール（時・分の十の位・分の一の位）において、上下どちらにも途切れることなく無限にループしてスワイプ選択できるように改善しました。',
+      '最下部のオートファジーカードが見切れないよう、画面下のスクロール余白を改善しました。',
     ],
     en: [
-      'Made the time picker wheels (hours, minute tens, minute ones) infinitely loopable in both directions.',
+      'Adjusted bottom scroll padding on the nutrition screen so the autophagy card is fully visible.',
     ],
   },
 };
