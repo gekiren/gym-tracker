@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { MealLog } from '../../src/db/types';
 import { useAppTheme } from '../../src/theme';
+import TimeWheelPicker from './TimeWheelPicker';
 
 const MEAL_TYPES = [
   { key: 'breakfast', label: '🌅 朝食' },
@@ -21,6 +22,18 @@ const MEAL_TYPES = [
   { key: 'dinner',   label: '🌙 夕食' },
   { key: 'snack',    label: '☕ 間食' },
 ] as const;
+
+const formatTimeFromLog = (log: MealLog | null): string => {
+  if (log?.meal_time) return log.meal_time;
+  if (log?.created_at) {
+    const d = new Date(log.created_at);
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    return `${h}:${m}`;
+  }
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+};
 
 interface Props {
   visible: boolean;
@@ -36,6 +49,7 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
 
   const [name, setName] = useState('');
   const [mealType, setMealType] = useState<string>('dinner');
+  const [mealTime, setMealTime] = useState<string>('12:00');
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
   const [fat, setFat] = useState('');
@@ -50,6 +64,7 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
     if (log) {
       setName(log.name || '');
       setMealType(log.meal_type || 'dinner');
+      setMealTime(formatTimeFromLog(log));
       setCalories(String(log.calories ?? ''));
       setProtein(String(log.protein ?? ''));
       setFat(String(log.fat ?? ''));
@@ -71,6 +86,7 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
       await onSave(log.id, {
         name: name.trim(),
         meal_type: mealType,
+        meal_time: mealTime,
         calories: parseFloat(calories) || 0,
         protein: parseFloat(protein) || 0,
         fat: parseFloat(fat) || 0,
@@ -123,6 +139,13 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* 時間設定 (TimeWheelPicker) */}
+            <TimeWheelPicker
+              value={mealTime}
+              onChange={setMealTime}
+              label="食事時間"
+            />
 
             {/* 料理名 */}
             <Text style={styles.label}>料理名</Text>
