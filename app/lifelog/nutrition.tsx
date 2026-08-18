@@ -303,12 +303,14 @@ export default function NutritionScreen() {
         {/* 14日間履歴グラフ */}
         <NutritionHistoryChart allLogs={allHistoryLogs || []} goals={safeGoals} />
 
-        {/* オートファジー絶食タイマー（最下段） */}
-        <AutophagyCard
-          config={safeAutophagy}
-          lastMealLog={lastMealLog}
-          onUpdateConfig={updateAutophagyConfig}
-        />
+        {/* オートファジー絶食タイマー（当日のみ最下段に表示） */}
+        {selectedDate === getTodayStr() && (
+          <AutophagyCard
+            config={safeAutophagy}
+            lastMealLog={lastMealLog}
+            onUpdateConfig={updateAutophagyConfig}
+          />
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>

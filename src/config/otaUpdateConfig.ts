@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.76',
+  version: '1.8.77',
   title: {
-    ja: '食事管理画面のレイアウト改善',
-    en: 'Nutrition Screen Layout Improvement',
+    ja: 'オートファジータイマーの表示改善',
+    en: 'Autophagy Timer Display Improvement',
   },
   notes: {
     ja: [
-      '最下部のオートファジーカードが見切れないよう、画面下のスクロール余白を改善しました。',
+      'オートファジータイマーが当日のみ表示されるよう改善し、過去日での誤表示を防止しました。',
     ],
     en: [
-      'Adjusted bottom scroll padding on the nutrition screen so the autophagy card is fully visible.',
+      'The autophagy timer is now only displayed for the current day, preventing inaccurate display on past dates.',
     ],
   },
 };
