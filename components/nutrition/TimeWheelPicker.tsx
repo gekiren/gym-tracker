@@ -35,6 +35,9 @@ const triggerHaptic = () => {
   }
 };
 
+const REPEAT_COUNT = 40;
+const MIDDLE_SET = Math.floor(REPEAT_COUNT / 2); // 20
+
 interface WheelColumnProps {
   data: number[];
   selectedValue: number;
@@ -52,56 +55,67 @@ function WheelColumn({
   padZero = false,
   columnWidth = 72,
 }: WheelColumnProps) {
-  const flatListRef = useRef<FlatList<number>>(null);
+  const flatListRef = useRef<FlatList<{ key: string; val: number; indexInBase: number }>>(null);
 
-  // 初期位置合わせ
+  // 仮想的なリピートデータ生成
+  const repeatedItems = useRef(
+    Array.from({ length: data.length * REPEAT_COUNT }, (_, i) => ({
+      key: `item-${i}`,
+      val: data[i % data.length],
+      indexInBase: i % data.length,
+    }))
+  ).current;
+
+  // 初期位置合わせ（中央セットへ）
   useEffect(() => {
-    const idx = data.indexOf(selectedValue);
-    if (idx >= 0 && flatListRef.current) {
+    const baseIdx = data.indexOf(selectedValue);
+    if (baseIdx >= 0 && flatListRef.current) {
+      const targetIdx = MIDDLE_SET * data.length + baseIdx;
       setTimeout(() => {
         flatListRef.current?.scrollToOffset({
-          offset: idx * ITEM_HEIGHT,
+          offset: targetIdx * ITEM_HEIGHT,
           animated: false,
         });
       }, 50);
     }
   }, []);
 
-  const handleMomentumScrollEnd = useCallback(
+  const handleScrollEnd = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offsetY = e.nativeEvent.contentOffset.y;
-      const index = Math.round(offsetY / ITEM_HEIGHT);
-      const clampedIndex = Math.max(0, Math.min(index, data.length - 1));
-      const val = data[clampedIndex];
-      if (val !== undefined && val !== selectedValue) {
-        onSelect(val);
-        triggerHaptic();
+      const rawIndex = Math.round(offsetY / ITEM_HEIGHT);
+      const clampedIndex = Math.max(0, Math.min(rawIndex, repeatedItems.length - 1));
+      const item = repeatedItems[clampedIndex];
+      if (item) {
+        if (item.val !== selectedValue) {
+          onSelect(item.val);
+          triggerHaptic();
+        }
+
+        // 端に近づいたら中央セットへシームレスに位置リセット
+        if (rawIndex < data.length * 6 || rawIndex > data.length * 34) {
+          const recenteredIndex = MIDDLE_SET * data.length + item.indexInBase;
+          setTimeout(() => {
+            flatListRef.current?.scrollToOffset({
+              offset: recenteredIndex * ITEM_HEIGHT,
+              animated: false,
+            });
+          }, 30);
+        }
       }
     },
-    [data, selectedValue, onSelect]
+    [data, repeatedItems, selectedValue, onSelect]
   );
 
-  const handleScrollEndDrag = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const offsetY = e.nativeEvent.contentOffset.y;
-      const index = Math.round(offsetY / ITEM_HEIGHT);
-      const clampedIndex = Math.max(0, Math.min(index, data.length - 1));
-      const val = data[clampedIndex];
-      if (val !== undefined && val !== selectedValue) {
-        onSelect(val);
-        triggerHaptic();
-      }
-    },
-    [data, selectedValue, onSelect]
-  );
-
-  const handleItemPress = (item: number, index: number) => {
+  const handleItemPress = (item: { val: number; indexInBase: number }, flatIndex: number) => {
     flatListRef.current?.scrollToOffset({
-      offset: index * ITEM_HEIGHT,
+      offset: flatIndex * ITEM_HEIGHT,
       animated: true,
     });
-    onSelect(item);
-    triggerHaptic();
+    if (item.val !== selectedValue) {
+      onSelect(item.val);
+      triggerHaptic();
+    }
   };
 
   const getItemLayout = (_: any, index: number) => ({
@@ -119,20 +133,23 @@ function WheelColumn({
 
         <FlatList
           ref={flatListRef}
-          data={data}
-          keyExtractor={(item) => String(item)}
+          data={repeatedItems}
+          keyExtractor={(item) => item.key}
           snapToInterval={ITEM_HEIGHT}
           decelerationRate="fast"
           showsVerticalScrollIndicator={false}
           getItemLayout={getItemLayout}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={7}
           contentContainerStyle={{
             paddingVertical: ITEM_HEIGHT, // 上下に1項目分の余白で中央配置
           }}
-          onMomentumScrollEnd={handleMomentumScrollEnd}
-          onScrollEndDrag={handleScrollEndDrag}
+          onMomentumScrollEnd={handleScrollEnd}
+          onScrollEndDrag={handleScrollEnd}
           renderItem={({ item, index }) => {
-            const isSelected = item === selectedValue;
-            const text = padZero ? String(item).padStart(2, '0') : String(item);
+            const isSelected = item.val === selectedValue;
+            const text = padZero ? String(item.val).padStart(2, '0') : String(item.val);
             return (
               <TouchableOpacity
                 style={styles.wheelItem}
