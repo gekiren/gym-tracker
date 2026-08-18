@@ -11,6 +11,8 @@ import {
   deleteMealLog,
   getFavorites,
   addFavorite,
+  updateFavorite,
+  updateFavoriteOrders,
   deleteFavorite,
   getNutritionGoals,
   saveNutritionGoals,
@@ -39,6 +41,9 @@ interface NutritionState {
   deleteMeal: (id: number) => Promise<void>;
   loadFavorites: () => Promise<void>;
   addFavoriteFromLog: (fav: Omit<MealFavorite, 'id'>) => Promise<void>;
+  addNewFavorite: (fav: Omit<MealFavorite, 'id'>) => Promise<void>;
+  updateFavoriteItem: (id: number, fav: Partial<Omit<MealFavorite, 'id'>>) => Promise<void>;
+  updateFavoritesOrder: (orders: { id: number; sort_order: number }[]) => Promise<void>;
   deleteFavoriteById: (id: number) => Promise<void>;
   loadGoals: () => Promise<void>;
   saveGoals: (goals: NutritionGoals) => Promise<void>;
@@ -160,11 +165,59 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
 
   addFavoriteFromLog: async (fav: Omit<MealFavorite, 'id'>) => {
     try {
-      await addFavorite(fav);
+      const currentFavs = get().favorites;
+      const nextSortOrder = currentFavs.length > 0
+        ? Math.max(...currentFavs.map(f => f.sort_order ?? 0)) + 1
+        : 0;
+      await addFavorite({ ...fav, sort_order: nextSortOrder });
       const favs = await getFavorites();
       set({ favorites: favs });
     } catch (e) {
       console.warn('useNutritionStore: addFavoriteFromLog failed', e);
+    }
+  },
+
+  addNewFavorite: async (fav: Omit<MealFavorite, 'id'>) => {
+    try {
+      const currentFavs = get().favorites;
+      const nextSortOrder = currentFavs.length > 0
+        ? Math.max(...currentFavs.map(f => f.sort_order ?? 0)) + 1
+        : 0;
+      await addFavorite({ ...fav, sort_order: fav.sort_order ?? nextSortOrder });
+      const favs = await getFavorites();
+      set({ favorites: favs });
+    } catch (e) {
+      console.warn('useNutritionStore: addNewFavorite failed', e);
+    }
+  },
+
+  updateFavoriteItem: async (id: number, fav: Partial<Omit<MealFavorite, 'id'>>) => {
+    try {
+      await updateFavorite(id, fav);
+      const favs = await getFavorites();
+      set({ favorites: favs });
+    } catch (e) {
+      console.warn('useNutritionStore: updateFavoriteItem failed', e);
+    }
+  },
+
+  updateFavoritesOrder: async (orders: { id: number; sort_order: number }[]) => {
+    try {
+      // ローカル状態を先行して更新
+      const currentFavs = [...get().favorites];
+      const orderMap = new Map(orders.map(o => [o.id, o.sort_order]));
+      currentFavs.sort((a, b) => {
+        const orderA = orderMap.get(a.id) ?? a.sort_order ?? 0;
+        const orderB = orderMap.get(b.id) ?? b.sort_order ?? 0;
+        return orderA - orderB;
+      });
+      set({ favorites: currentFavs });
+
+      await updateFavoriteOrders(orders);
+      const favs = await getFavorites();
+      set({ favorites: favs });
+    } catch (e) {
+      console.warn('useNutritionStore: updateFavoritesOrder failed', e);
     }
   },
 

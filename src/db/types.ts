@@ -181,6 +181,7 @@ export interface MealFavorite {
   fiber: number;
   memo?: string;
   created_at: number;
+  sort_order?: number;
 }
 
 export interface NutritionGoals {

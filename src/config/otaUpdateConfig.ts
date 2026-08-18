@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.78',
+  version: '1.8.79',
   title: {
-    ja: 'カロリー推移グラフの表示修正',
-    en: 'Calorie History Chart Display Fix',
+    ja: '🥗 栄養クイックお気に入りの編集・並び替え機能',
+    en: '🥗 Nutrition Quick Favorites Management',
   },
   notes: {
     ja: [
-      '直近14日間のカロリー推移グラフにおいて、目標ラインとバーの描画位置がずれていた不具合を修正しました。',
+      'クイックお気に入りに編集ボタンを追加し、お気に入りの編集・削除・並び替え・新規追加を直接行えるように改善しました。',
     ],
     en: [
-      'Fixed an issue where the target line and bar positions were misaligned in the 14-day calorie history chart.',
+      'Added an edit button to Quick Favorites allowing direct editing, reordering, deletion, and addition of favorite foods.',
     ],
   },
 };
