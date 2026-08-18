@@ -1,12 +1,36 @@
 /**
- * Cloudflare Worker Proxy for Gemini 3.6 Flash & Multi-Model Fallback (Gemini 3.5/2.5/2.5-Lite & DeepSeek)
- * (gym-tracker AI Coach & Nutrition Vision Analysis - Plan B / v1.5.5)
+ * Cloudflare Worker Proxy for Gemini 3.7 Flash & Multi-Model Fallback (Gemini 3.6/3.5/2.5/2.5-Lite & DeepSeek)
+ * (gym-tracker AI Coach & Nutrition Vision Analysis - Plan B / v1.8.0)
  *
  * ENDPOINTS SUPPORTED:
  * - /api/chat : Fitness AI Coach text chat
  * - /api/nutrition-image : Image-based nutrition analysis (returns structured JSON)
  * - /api/nutrition : Text-based nutrition analysis (returns structured JSON)
  */
+
+/**
+ * タイムアウト付き fetch ヘルパー
+ */
+async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+      const timeoutErr = new Error(`Request timed out after ${timeoutMs}ms`);
+      timeoutErr.name = 'TimeoutError';
+      throw timeoutErr;
+    }
+    throw err;
+  }
+}
 
 export default {
   async fetch(request, env, ctx) {
@@ -143,7 +167,8 @@ export default {
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
             
             try {
-              const response = await fetch(geminiUrl, {
+              // 画像解析は12秒で個別タイムアウト制御
+              const response = await fetchWithTimeout(geminiUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -159,7 +184,7 @@ export default {
                   systemInstruction: { parts: [{ text: visionSystemInstruction }] },
                   generationConfig: { maxOutputTokens: 2048 }
                 })
-              });
+              }, 12000);
 
               if (response.ok) {
                 const result = await response.json();
@@ -176,7 +201,7 @@ export default {
                   return new Response(JSON.stringify({ 
                     success: true, 
                     ...parsedJson,
-                    debugInfo: { workerVersion: "v1.7.0", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
+                    debugInfo: { workerVersion: "v1.8.0", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -187,7 +212,7 @@ export default {
                     success: true, 
                     reply: rawText, 
                     mealName: "食事写真",
-                    debugInfo: { workerVersion: "v1.7.0", modelUsed: modelName, parseError: true, rawSnippet: rawText.substring(0, 100) }
+                    debugInfo: { workerVersion: "v1.8.0", modelUsed: modelName, parseError: true, rawSnippet: rawText.substring(0, 100) }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -200,17 +225,16 @@ export default {
               }
             } catch (fetchErr) {
               console.error(`Fetch exception for ${modelName}:`, fetchErr);
-              fallbackHistory.push({ model: modelName, error: String(fetchErr) });
+              fallbackHistory.push({ model: modelName, error: String(fetchErr?.message || fetchErr) });
             }
           }
         }
 
         // DeepSeek へのテキストフォールバック（画像モデル全滅時）
-        // message（プロンプト文）は常に存在するため、userMemo/ocrHintText が空でも発動する
         const fallbackText = userMemo || ocrHintText || message;
         if (env.DEEPSEEK_API_KEY && (fallbackText?.trim() || userMemo?.trim() || ocrHintText?.trim() || message?.trim())) {
           try {
-            const deepseekResponse = await fetch("https://api.deepseek.com/chat/completions", {
+            const deepseekResponse = await fetchWithTimeout("https://api.deepseek.com/chat/completions", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -224,7 +248,7 @@ export default {
                 ],
                 response_format: { type: "json_object" }
               })
-            });
+            }, 10000);
 
             if (deepseekResponse.ok) {
               const dsData = await deepseekResponse.json();
@@ -239,7 +263,7 @@ export default {
               return new Response(JSON.stringify({
                 success: true,
                 ...parsedJson,
-                debugInfo: { workerVersion: "v1.7.0", modelUsed: "deepseek-v4-pro (text fallback)", fallbackHistory }
+                debugInfo: { workerVersion: "v1.8.0", modelUsed: "deepseek-v4-pro (text fallback)", fallbackHistory }
               }), {
                 status: 200,
                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -247,6 +271,7 @@ export default {
             }
           } catch (dsErr) {
             console.error("DeepSeek fallback error:", dsErr);
+            fallbackHistory.push({ model: "deepseek-v4-pro", error: String(dsErr?.message || dsErr) });
           }
         }
 
@@ -262,7 +287,7 @@ export default {
           sodium: 0,
           fiber: 0,
           advice: "AIによる画像解析時に一時的なエラーが発生しました。時間を置いて再実行してください。",
-          debugInfo: { workerVersion: "v1.7.0", fallbackHistory, lastError: lastErrorText }
+          debugInfo: { workerVersion: "v1.8.0", fallbackHistory, lastError: lastErrorText }
         }), {
           status: 500,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -291,7 +316,8 @@ export default {
           for (const modelName of geminiModels) {
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
             try {
-              const response = await fetch(geminiUrl, {
+              // テキスト栄養解析は8秒で個別タイムアウト制御
+              const response = await fetchWithTimeout(geminiUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -299,7 +325,7 @@ export default {
                   systemInstruction: { parts: [{ text: textNutritionInstruction }] },
                   generationConfig: { maxOutputTokens: 1024 }
                 })
-              });
+              }, 8000);
 
               if (response.ok) {
                 const result = await response.json();
@@ -314,7 +340,7 @@ export default {
                   return new Response(JSON.stringify({
                     success: true,
                     ...parsedJson,
-                    debugInfo: { workerVersion: "v1.5.5", modelUsed: modelName, fallbackHistory }
+                    debugInfo: { workerVersion: "v1.8.0", modelUsed: modelName, fallbackHistory }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -327,7 +353,8 @@ export default {
                 fallbackHistory.push({ model: modelName, status: response.status, error: errTxt.substring(0, 100) });
               }
             } catch (err) {
-              fallbackHistory.push({ model: modelName, error: String(err) });
+              console.error(`Text nutrition error for ${modelName}:`, err);
+              fallbackHistory.push({ model: modelName, error: String(err?.message || err) });
             }
           }
         }
@@ -335,7 +362,7 @@ export default {
         // DeepSeek フォールバック
         if (env.DEEPSEEK_API_KEY) {
           try {
-            const dsResponse = await fetch("https://api.deepseek.com/chat/completions", {
+            const dsResponse = await fetchWithTimeout("https://api.deepseek.com/chat/completions", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -349,7 +376,7 @@ export default {
                 ],
                 response_format: { type: "json_object" }
               })
-            });
+            }, 10000);
 
             if (dsResponse.ok) {
               const dsData = await dsResponse.json();
@@ -364,7 +391,7 @@ export default {
               return new Response(JSON.stringify({
                 success: true,
                 ...parsedJson,
-                debugInfo: { workerVersion: "v1.5.5", modelUsed: "deepseek-v4-pro", fallbackHistory }
+                debugInfo: { workerVersion: "v1.8.0", modelUsed: "deepseek-v4-pro", fallbackHistory }
               }), {
                 status: 200,
                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -372,8 +399,25 @@ export default {
             }
           } catch (dsErr) {
             console.error("DeepSeek text nutrition error:", dsErr);
+            fallbackHistory.push({ model: "deepseek-v4-pro", error: String(dsErr?.message || dsErr) });
           }
         }
+
+        return new Response(JSON.stringify({
+          success: false,
+          mealName: textInput || "食事記録",
+          calories: 0,
+          protein: 0,
+          fat: 0,
+          carbs: 0,
+          sodium: 0,
+          fiber: 0,
+          advice: "AIによるテキスト栄養解析時に一時的なエラーが発生しました。時間を置いて再実行してください。",
+          debugInfo: { workerVersion: "v1.8.0", fallbackHistory }
+        }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
       }
 
       // ─── C. 通常のAIコーチテキスト対話 (/api/chat) ───
@@ -396,7 +440,8 @@ export default {
         for (const modelName of geminiModels) {
           const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
           try {
-            const response = await fetch(geminiUrl, {
+            // AIコーチチャットは8秒で個別タイムアウト制御
+            const response = await fetchWithTimeout(geminiUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -404,7 +449,7 @@ export default {
                 systemInstruction: { parts: [{ text: systemInstruction }] },
                 generationConfig: { maxOutputTokens: 2048 }
               })
-            });
+            }, 8000);
 
             if (response.ok) {
               const result = await response.json();
@@ -416,7 +461,7 @@ export default {
                 return new Response(JSON.stringify({
                   success: true,
                   reply,
-                  debugInfo: { workerVersion: "v1.5.5", modelUsed: modelName, chatFallbackHistory }
+                  debugInfo: { workerVersion: "v1.8.0", modelUsed: modelName, chatFallbackHistory }
                 }), {
                   status: 200,
                   headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -427,7 +472,8 @@ export default {
               chatFallbackHistory.push({ model: modelName, status: response.status, error: errText.substring(0, 100) });
             }
           } catch (chatErr) {
-            chatFallbackHistory.push({ model: modelName, error: String(chatErr) });
+            console.error(`AI Coach chat error for ${modelName}:`, chatErr);
+            chatFallbackHistory.push({ model: modelName, error: String(chatErr?.message || chatErr) });
           }
         }
       }
@@ -435,7 +481,7 @@ export default {
       // DeepSeek チャットフォールバック
       if (env.DEEPSEEK_API_KEY) {
         try {
-          const dsResponse = await fetch("https://api.deepseek.com/chat/completions", {
+          const dsResponse = await fetchWithTimeout("https://api.deepseek.com/chat/completions", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -448,7 +494,7 @@ export default {
                 { role: "user", content: promptContext }
               ]
             })
-          });
+          }, 12000);
 
           if (dsResponse.ok) {
             const dsData = await dsResponse.json();
@@ -460,7 +506,7 @@ export default {
               return new Response(JSON.stringify({
                 success: true,
                 reply,
-                debugInfo: { workerVersion: "v1.5.5", modelUsed: "deepseek-v4-pro", chatFallbackHistory }
+                debugInfo: { workerVersion: "v1.8.0", modelUsed: "deepseek-v4-pro", chatFallbackHistory }
               }), {
                 status: 200,
                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -469,10 +515,15 @@ export default {
           }
         } catch (dsErr) {
           console.error("DeepSeek chat fallback error:", dsErr);
+          chatFallbackHistory.push({ model: "deepseek-v4-pro", error: String(dsErr?.message || dsErr) });
         }
       }
 
-      return new Response(JSON.stringify({ success: false, error: "AI Service Error" }), {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "AI Service Error",
+        debugInfo: { workerVersion: "v1.8.0", chatFallbackHistory }
+      }), {
         status: 500,
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
       });

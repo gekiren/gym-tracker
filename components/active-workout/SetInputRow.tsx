@@ -10,6 +10,8 @@ import { translateStance } from '../../src/i18n';
 import { TimerButton } from './TimerButton';
 import { CompactSwipeableInput } from './CompactSwipeableInput';
 
+const RPE_ALLOWED_VALUES = [0, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
+
 interface SetInputRowProps {
   ex: any;
   set: any;
@@ -419,6 +421,7 @@ const safeParseInt = (val: string): number | null => {
                   keyboardType="numeric" 
                   step={0.5}
                   maxValue={10}
+                  allowedValues={RPE_ALLOWED_VALUES}
                   placeholder="-" 
                   placeholderTextColor="rgba(255,255,255,0.2)"
                   value={localRpe}

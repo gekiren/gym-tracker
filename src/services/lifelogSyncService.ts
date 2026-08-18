@@ -126,10 +126,17 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
   const db = getDB();
   const data: Record<string, any> = {};
 
+  // メモリ圧迫防止: 直近365日分のみ取得（週ナビ・日ナビの全操作範囲をカバー）
+  const DATA_RETENTION_DAYS = 365;
+  const cutoffDate = formatDate(
+    new Date(Date.now() - DATA_RETENTION_DAYS * 24 * 60 * 60 * 1000)
+  );
+
   try {
     // 1. Water logs & settings
     const waterLogsRows = await db.getAllAsync<{ amount: number; timestamp: number; date: string; caffeine: number | null }>(
-      'SELECT amount, timestamp, date, caffeine FROM water_logs ORDER BY timestamp ASC'
+      'SELECT amount, timestamp, date, caffeine FROM water_logs WHERE date >= ? ORDER BY timestamp ASC',
+      [cutoffDate]
     );
     data['hydration_data_v1'] = JSON.stringify(waterLogsRows.map((row) => ({
       id: row.timestamp,
@@ -185,7 +192,10 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
       end_time: string;
       date: string;
       duration_minutes: number;
-    }>('SELECT * FROM time_logs ORDER BY start_time ASC');
+    }>(
+      'SELECT id, activity_name, start_time, end_time, date, duration_minutes FROM time_logs WHERE date >= ? ORDER BY start_time ASC',
+      [cutoffDate]
+    );
 
     const timeLogsMap: Record<string, any> = {};
     timeLogsRows.forEach((row) => {
@@ -247,7 +257,8 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
     }));
 
     const habitLogsRows = await db.getAllAsync<{ habit_item_id: number; timestamp: number }>(
-      'SELECT * FROM habit_logs'
+      'SELECT habit_item_id, timestamp FROM habit_logs WHERE date >= ? ORDER BY timestamp ASC',
+      [cutoffDate]
     );
     data['habit-logs'] = habitLogsRows.map((row) => ({
       itemId: String(row.habit_item_id),
@@ -524,14 +535,16 @@ export const handleWebViewMessage = async (
         }
       }
 
-      await db.runAsync('DELETE FROM habit_logs');
-      for (const log of resolvedLogs) {
-        const dateStr = formatDate(parseTimestampToDate(log.timestamp));
-        await db.runAsync(
-          'INSERT INTO habit_logs (habit_item_id, timestamp, date) VALUES (?, ?, ?)',
-          [log.habitItemId, log.timestamp, dateStr]
-        );
-      }
+      await db.withTransactionAsync(async () => {
+        await db.runAsync('DELETE FROM habit_logs');
+        for (const log of resolvedLogs) {
+          const dateStr = formatDate(parseTimestampToDate(log.timestamp));
+          await db.runAsync(
+            'INSERT INTO habit_logs (habit_item_id, timestamp, date) VALUES (?, ?, ?)',
+            [log.habitItemId, log.timestamp, dateStr]
+          );
+        }
+      });
 
       await useLifelogStore.getState().loadHabits(currentDate);
       addSyncDiagnosticLog(`Resolved habit-logs into SQLite. Saved: ${resolvedLogs.length}/${logs.length}`);

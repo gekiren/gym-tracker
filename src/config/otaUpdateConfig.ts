@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.67',
+  version: '1.8.68',
   title: {
-    ja: '栄養管理機能への履歴管理ページおよびグラフアイコンの追加',
-    en: 'Added History Page and Graph Icon to Nutrition Feature',
+    ja: 'RPEスワイプ操作の使いやすさ向上',
+    en: 'Improved RPE Swipe Usability',
   },
   notes: {
     ja: [
-      '栄養（食事管理）画面の右上に青いグラフアイコンを追加し、過去の摂取カロリー・PFC（タンパク質・脂質・炭水化物）推移グラフや詳細履歴をいつでも確認・管理できるように改善しました。',
+      'ワークアウト中のRPE（自覚的運動強度）スワイプ入力について、使用頻度の高い「0」および「6.0〜10.0（0.5刻み）」に限定し、素早くスムーズに数値を設定できるように改善しました。',
     ],
     en: [
-      'Added a blue graph icon to the header of the Nutrition screen, allowing users to view historical calorie and PFC nutrient charts and logs.',
+      'Optimized the RPE swipe input during workouts to select between "0" and "6.0 to 10.0" (0.5 steps), skipping rarely used values for quicker adjustments.',
     ],
   },
 };

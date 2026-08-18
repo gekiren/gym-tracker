@@ -414,7 +414,10 @@ export const resetDatabase = async () => {
     await conn.runAsync('DELETE FROM autophagy_config');
   });
 
+  // setDB(null) の前に再初期化 Promise をセットしておく。
+  // これにより withDBQueue が db===null の間も dbPromise を参照して待機できる。
+  const reinitPromise = initDB();
   setDB(null);
-  setDBPromise(null);
-  await initDB();
+  setDBPromise(reinitPromise);
+  await reinitPromise;
 };
