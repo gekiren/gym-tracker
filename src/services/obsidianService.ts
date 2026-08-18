@@ -888,5 +888,70 @@ export const exportHealthDataToObsidian = async (
   }
 };
 
+/**
+ * 体組成ログ（体重・体脂肪率・骨格測定値など）を Obsidian のデイリーノートへエクスポート
+ */
+export const exportBodyCompositionToObsidian = async (
+  log: import('../types/bodyComposition').BodyCompositionLog,
+  subFolderOverride?: string
+): Promise<boolean> => {
+  const settings = await getObsidianSettings();
+  if (!settings.enabled || !settings.vaultUri || !settings.exportHealth) {
+    return false;
+  }
+
+  try {
+    const targetFolder = subFolderOverride || settings.folderDaily;
+    const dailyFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, targetFolder);
+    const dateStr = log.date;
+    const fileName = settings.exportMode === 'append' ? `${dateStr}.md` : `TreNote_${dateStr}.md`;
+
+    const sectionHeader = '## ⚖️ 体組成＆筋肥大限界';
+    const lines = [
+      `## ⚖️ 体組成＆筋肥大限界 (${log.date})`,
+      `- ⚖️ **体重**: ${log.weight !== null ? `${log.weight.toFixed(1)} kg` : '--'}`,
+      `- 📉 **体脂肪率**: ${log.body_fat_rate !== null ? `${log.body_fat_rate.toFixed(1)} %` : '--'}`,
+      `- 💪 **除脂肪体重 (LBM)**: ${log.lbm !== null ? `${log.lbm.toFixed(1)} kg` : '--'}`,
+      `- 🧬 **骨格筋量**: ${log.muscle_mass !== null ? `${log.muscle_mass.toFixed(1)} kg` : '--'}`,
+    ];
+
+    if (log.height) lines.push(`- 📏 **身長**: ${log.height} cm`);
+    if (log.neck) lines.push(`- 📐 **首回り**: ${log.neck} cm`);
+    if (log.waist) lines.push(`- 📐 **ウエスト**: ${log.waist} cm`);
+    if (log.hip) lines.push(`- 📐 **ヒップ**: ${log.hip} cm`);
+    if (log.wrist) lines.push(`- 🦴 **手首最小囲**: ${log.wrist} cm`);
+    if (log.ankle) lines.push(`- 🦴 **足首最小囲**: ${log.ankle} cm`);
+    if (log.memo) lines.push(`- 📝 **メモ**: ${log.memo}`);
+
+    const newContent = lines.join('\n');
+
+    const files = await FileSystem.StorageAccessFramework.readDirectoryAsync(dailyFolderUri);
+    let targetFileUri: string | null = null;
+
+    for (const fUri of files) {
+      const base = getBasenameFromUri(fUri);
+      if (base === fileName) {
+        targetFileUri = fUri;
+        break;
+      }
+    }
+
+    if (targetFileUri) {
+      const existingText = await FileSystem.StorageAccessFramework.readAsStringAsync(targetFileUri);
+      const updatedText = mergeSectionText(existingText, sectionHeader, newContent);
+      await FileSystem.StorageAccessFramework.writeAsStringAsync(targetFileUri, updatedText);
+    } else {
+      targetFileUri = await FileSystem.StorageAccessFramework.createFileAsync(dailyFolderUri, fileName, 'text/markdown');
+      await FileSystem.StorageAccessFramework.writeAsStringAsync(targetFileUri, newContent);
+    }
+
+    return true;
+  } catch (e) {
+    console.error('Failed to export body composition to Obsidian:', e);
+    return false;
+  }
+};
+
+
 
 

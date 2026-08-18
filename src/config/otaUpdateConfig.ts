@@ -11,17 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.79',
+  version: '1.8.80',
   title: {
-    ja: '🥗 栄養クイックお気に入りの編集・並び替え機能',
-    en: '🥗 Nutrition Quick Favorites Management',
+    ja: '🧬 体組成＆筋肥大限界モデル機能の追加',
+    en: '🧬 Body Composition & Muscular Potential Feature',
   },
   notes: {
     ja: [
-      'クイックお気に入りに編集ボタンを追加し、お気に入りの編集・削除・並び替え・新規追加を直接行えるように改善しました。',
+      '新機能「体組成＆筋肥大限界」を追加しました。Google Health Connectからの体重・体脂肪率同期に対応。',
+      '米海軍式（US Navy Method）による体脂肪率・LBMの自動推定計算を搭載。',
+      'ケーシー・バット博士モデルによる骨格筋肥大限界およびポテンシャル診断（到達率%）に対応。',
     ],
     en: [
-      'Added an edit button to Quick Favorites allowing direct editing, reordering, deletion, and addition of favorite foods.',
+      'Added Body Composition & Muscular Potential feature with Health Connect sync.',
+      'Integrated US Navy Method for body fat & LBM circumference estimation.',
+      'Integrated Dr. Casey Butt formula for maximum natural muscular potential tracking.',
     ],
   },
 };
