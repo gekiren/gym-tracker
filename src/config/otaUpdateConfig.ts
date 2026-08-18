@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.69',
+  version: '1.8.70',
   title: {
-    ja: 'セット追加時のRPE引き継ぎ対応',
-    en: 'Copy RPE on Adding Sets',
+    ja: '食事記録の時間選択UIの改善',
+    en: 'Improved Meal Time Picker',
   },
   notes: {
     ja: [
-      'ワークアウト中およびルーティン作成時に新しいセットを追加した際、前回の重量や回数に加えて、直前セットのRPE（自覚的運動強度）も自動的に引き継いで入力されるように改善しました。',
+      '食事記録（手動入力、写真記録、チャット記録、編集）において、食事時間を直感的に選択できるドラムロール式タイムピッカーを追加しました。',
     ],
     en: [
-      'When adding a new set during a workout or routine creation, the RPE (Rate of Perceived Exertion) from the previous set is now automatically copied along with weight and reps.',
+      'Added a wheel-based time picker to meal record modals (Manual, Photo, Chat, Edit) for intuitive meal time adjustment.',
     ],
   },
 };

@@ -63,6 +63,7 @@ import { analyzeMealImage, NutritionAIResult } from '../../src/services/aiCoachS
 import { copyAIDebugLogsToClipboard } from '../../src/utils/debugLogStore';
 import { MealLog } from '../../src/db/types';
 import { useAppTheme } from '../../src/theme';
+import TimeWheelPicker from './TimeWheelPicker';
 
 const MEAL_TYPES = [
   { key: 'breakfast', label: '🌅 朝食' },
@@ -70,6 +71,13 @@ const MEAL_TYPES = [
   { key: 'dinner',   label: '🌙 夕食' },
   { key: 'snack',    label: '☕ 間食' },
 ] as const;
+
+const getCurrentTimeStr = () => {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+};
 
 interface Props {
   visible: boolean;
@@ -87,6 +95,7 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
   const [base64Data, setBase64Data] = useState<string | null>(null);
   const [userMemo, setUserMemo] = useState('');
   const [mealType, setMealType] = useState<string>('dinner');
+  const [mealTime, setMealTime] = useState<string>(getCurrentTimeStr());
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiResult, setAiResult] = useState<NutritionAIResult | null>(null);
 
@@ -122,6 +131,7 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
     setShowCustomMultiplierInput(false);
     setCustomMultiplierText('');
     setMealType('dinner');
+    setMealTime(getCurrentTimeStr());
   };
 
   const handleClose = () => {
@@ -310,7 +320,7 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
       await onSave({
         date: selectedDate,
         meal_type: mealType,
-        meal_time: now.toTimeString().slice(0, 5),
+        meal_time: mealTime || getCurrentTimeStr(),
         name: mealName.trim(),
         calories: parseFloat(calories) || 0,
         protein: parseFloat(protein) || 0,
@@ -376,6 +386,13 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* 時間設定 (TimeWheelPicker) */}
+            <TimeWheelPicker
+              value={mealTime}
+              onChange={setMealTime}
+              label="食事時間"
+            />
 
             {/* 補足メモ */}
             <Text style={styles.label}>食事内容メモ（例: カツカレー大盛り、スープ半分残した）</Text>

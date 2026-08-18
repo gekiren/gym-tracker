@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { MealLog } from '../../src/db/types';
 import { useAppTheme } from '../../src/theme';
+import TimeWheelPicker from './TimeWheelPicker';
 
 const MEAL_TYPES = [
   { key: 'breakfast', label: '🌅 朝食' },
@@ -21,6 +22,13 @@ const MEAL_TYPES = [
   { key: 'dinner',   label: '🌙 夕食' },
   { key: 'snack',    label: '☕ 間食' },
 ] as const;
+
+const getCurrentTimeStr = () => {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+};
 
 interface Props {
   visible: boolean;
@@ -36,6 +44,7 @@ export default function ManualEntryModal({ visible, onClose, onSave, selectedDat
 
   const [name, setName] = useState('');
   const [mealType, setMealType] = useState<string>('dinner');
+  const [mealTime, setMealTime] = useState<string>(getCurrentTimeStr());
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
   const [fat, setFat] = useState('');
@@ -49,6 +58,7 @@ export default function ManualEntryModal({ visible, onClose, onSave, selectedDat
     setName(''); setCalories(''); setProtein(''); setFat('');
     setCarbs(''); setSodium(''); setFiber(''); setMemo('');
     setMealType('dinner');
+    setMealTime(getCurrentTimeStr());
   };
 
   const handleClose = () => {
@@ -68,7 +78,7 @@ export default function ManualEntryModal({ visible, onClose, onSave, selectedDat
       await onSave({
         date: selectedDate,
         meal_type: mealType,
-        meal_time: now.toTimeString().slice(0, 5),
+        meal_time: mealTime || getCurrentTimeStr(),
         name: name.trim(),
         calories: parseFloat(calories) || 0,
         protein: parseFloat(protein) || 0,
@@ -122,6 +132,13 @@ export default function ManualEntryModal({ visible, onClose, onSave, selectedDat
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* 時間設定 (TimeWheelPicker) */}
+            <TimeWheelPicker
+              value={mealTime}
+              onChange={setMealTime}
+              label="食事時間"
+            />
 
             {/* 料理名 */}
             <Text style={styles.label}>料理名 <Text style={styles.required}>*</Text></Text>
