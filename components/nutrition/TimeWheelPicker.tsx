@@ -1,11 +1,14 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  PanResponder,
+  Platform,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { runOnJS, useSharedValue } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../src/theme';
 
@@ -24,6 +27,12 @@ interface DigitColumnProps {
   isPureBlack?: boolean;
 }
 
+const triggerHaptic = () => {
+  if (Platform.OS !== 'web') {
+    Haptics.selectionAsync().catch(() => {});
+  }
+};
+
 // 各桁の上下スワイプ＆ボタン対応ホイールカラム
 function DigitColumn({
   value,
@@ -39,34 +48,32 @@ function DigitColumn({
     if (next > max) next = min;
     if (next < min) next = max;
     onChange(next);
+    triggerHaptic();
   }, [value, min, max, onChange]);
 
-  const accumulatedDyRef = useRef<number>(0);
-  const stepThreshold = 20; // 20pxスワイプごとに1ステップ変化
+  const lastStep = useSharedValue(0);
+  const stepThreshold = 16; // 16pxドラッグごとに1ステップ変化
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 4,
-      onPanResponderGrant: () => {
-        accumulatedDyRef.current = 0;
-      },
-      onPanResponderMove: (_, gestureState) => {
-        const delta = -gestureState.dy - accumulatedDyRef.current;
-        if (Math.abs(delta) >= stepThreshold) {
-          const steps = Math.trunc(delta / stepThreshold);
-          handleStep(steps);
-          accumulatedDyRef.current += steps * stepThreshold;
-        }
-      },
-      onPanResponderRelease: () => {
-        accumulatedDyRef.current = 0;
-      },
-      onPanResponderTerminate: () => {
-        accumulatedDyRef.current = 0;
-      },
+  const panGesture = Gesture.Pan()
+    .activeOffsetY([-4, 4])
+    .failOffsetX([-30, 30])
+    .shouldCancelWhenOutside(false)
+    .onStart(() => {
+      lastStep.value = 0;
     })
-  ).current;
+    .onUpdate((event) => {
+      // 上にドラッグ（-translationY）で数値増加、下にドラッグで数値減少
+      const delta = -event.translationY;
+      const currentStep = Math.trunc(delta / stepThreshold);
+      if (currentStep !== lastStep.value) {
+        const diff = currentStep - lastStep.value;
+        lastStep.value = currentStep;
+        runOnJS(handleStep)(diff);
+      }
+    })
+    .onEnd(() => {
+      lastStep.value = 0;
+    });
 
   // 表示用の前後の数値
   const prevVal = value === min ? max : value - 1;
@@ -81,32 +88,33 @@ function DigitColumn({
         style={styles.arrowBtn}
         onPress={() => handleStep(1)}
         activeOpacity={0.6}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        hitSlop={{ top: 10, bottom: 6, left: 10, right: 10 }}
       >
         <Ionicons name="chevron-up" size={16} color="#60a5fa" />
       </TouchableOpacity>
 
-      {/* スワイプエリア */}
-      <View
-        {...panResponder.panHandlers}
-        style={[
-          styles.wheelCard,
-          isPureBlack && { backgroundColor: '#050505', borderColor: '#262626' },
-        ]}
-      >
-        <Text style={styles.ghostDigit}>{format(nextVal)}</Text>
-        <View style={styles.activeDigitWrapper}>
-          <Text style={styles.activeDigit}>{format(value)}</Text>
+      {/* スワイプエリア (GestureDetector) */}
+      <GestureDetector gesture={panGesture}>
+        <View
+          style={[
+            styles.wheelCard,
+            isPureBlack && { backgroundColor: '#050505', borderColor: '#262626' },
+          ]}
+        >
+          <Text style={styles.ghostDigit}>{format(nextVal)}</Text>
+          <View style={styles.activeDigitWrapper}>
+            <Text style={styles.activeDigit}>{format(value)}</Text>
+          </View>
+          <Text style={styles.ghostDigit}>{format(prevVal)}</Text>
         </View>
-        <Text style={styles.ghostDigit}>{format(prevVal)}</Text>
-      </View>
+      </GestureDetector>
 
       {/* 下タップボタン */}
       <TouchableOpacity
         style={styles.arrowBtn}
         onPress={() => handleStep(-1)}
         activeOpacity={0.6}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        hitSlop={{ top: 6, bottom: 10, left: 10, right: 10 }}
       >
         <Ionicons name="chevron-down" size={16} color="#60a5fa" />
       </TouchableOpacity>
@@ -142,6 +150,7 @@ export default function TimeWheelPicker({ value, onChange, label = '時間設定
   };
 
   const handleToggleAmPm = (pm: boolean) => {
+    triggerHaptic();
     updateTime(pm, h12, minuteTens, minuteOnes);
   };
 

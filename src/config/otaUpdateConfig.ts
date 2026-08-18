@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.70',
+  version: '1.8.71',
   title: {
-    ja: '食事記録の時間選択UIの改善',
-    en: 'Improved Meal Time Picker',
+    ja: '食事時間選択ピッカーの操作性改善',
+    en: 'Improved Meal Time Wheel Interaction',
   },
   notes: {
     ja: [
-      '食事記録（手動入力、写真記録、チャット記録、編集）において、食事時間を直感的に選択できるドラムロール式タイムピッカーを追加しました。',
+      '食事時間のドラムロール式タイムピッカーにおいて、上下スワイプの操作性を改善し、軽快に時間・分を調整できるようにしました。',
     ],
     en: [
-      'Added a wheel-based time picker to meal record modals (Manual, Photo, Chat, Edit) for intuitive meal time adjustment.',
+      'Enhanced the swipe responsiveness and tactile feedback of the meal time picker.',
     ],
   },
 };
