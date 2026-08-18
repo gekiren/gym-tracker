@@ -94,30 +94,6 @@ export default function PotentialGaugeCard({
             <Text style={[styles.reachUnit, { color: progressColor }]}>%</Text>
           </View>
         </View>
-
-        {/* Progress Bar */}
-        <View style={styles.progressBarBg}>
-          <View
-            style={[
-              styles.progressBarFill,
-              {
-                width: `${Math.max(0, Math.min(100, analysis.reachPercentage))}%`,
-                backgroundColor: progressColor,
-              },
-            ]}
-          />
-          {/* 95% 現実的上限目標ラインマーカー */}
-          <View style={styles.marker95} />
-        </View>
-        <View style={styles.markerLabels}>
-          <Text style={styles.markerLabelText}>0%</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Text style={[styles.markerLabelText, { color: '#fbbf24', fontWeight: 'bold' }]}>
-              95% (現実的目標)
-            </Text>
-            <Text style={styles.markerLabelText}>100% (限界)</Text>
-          </View>
-        </View>
       </View>
 
       {/* Key Numbers Grid */}
@@ -198,8 +174,7 @@ const styles = StyleSheet.create({
   gaugeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'baseline',
-    marginBottom: 10,
+    alignItems: 'center',
   },
   gaugeLabel: {
     fontSize: 13,
@@ -224,34 +199,6 @@ const styles = StyleSheet.create({
   reachUnit: {
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  progressBarBg: {
-    height: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 6,
-    overflow: 'hidden',
-    position: 'relative',
-    marginBottom: 6,
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 6,
-  },
-  marker95: {
-    position: 'absolute',
-    left: '95%',
-    top: 0,
-    bottom: 0,
-    width: 2,
-    backgroundColor: '#fff',
-  },
-  markerLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  markerLabelText: {
-    fontSize: 10,
-    color: Theme.colors.textMuted,
   },
   numbersGrid: {
     flexDirection: 'row',
