@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { MealLog, NutritionGoals } from '../../src/db/types';
 
@@ -9,16 +9,24 @@ interface Props {
 
 export default function NutritionHistoryChart({ allLogs, goals }: Props) {
   const targetCal = goals.calories || 2000;
+  const scrollRef = useRef<ScrollView>(null);
 
   // 直近14日間のデータ集計
   const dailyData = useMemo(() => {
     const map = new Map<string, number>();
     const today = new Date();
 
+    const formatLocalDate = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
     for (let i = 13; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = formatLocalDate(d);
       map.set(dateStr, 0);
     }
 
@@ -39,7 +47,12 @@ export default function NutritionHistoryChart({ allLogs, goals }: Props) {
   return (
     <View style={styles.card}>
       <Text style={styles.title}>📈 直近14日間のカロリー推移</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
+      >
         <View style={styles.chartContainer}>
           {/* 目標ライン */}
           <View

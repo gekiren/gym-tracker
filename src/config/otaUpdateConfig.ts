@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.74',
+  version: '1.8.75',
   title: {
-    ja: '時間設定ホイールの無限ループ対応',
-    en: 'Infinite Looping Time Wheels',
+    ja: 'カロリー推移グラフの表示改善',
+    en: 'Calorie History Chart Improvement',
   },
   notes: {
     ja: [
-      '時間設定モーダルの各ホイール（時・分の十の位・分の一の位）において、上下どちらにも途切れることなく無限にループしてスワイプ選択できるように改善しました。',
+      '直近14日間のカロリー推移グラフで、今日の日付が右端に初期表示されるよう改善しました。',
     ],
     en: [
-      'Made the time picker wheels (hours, minute tens, minute ones) infinitely loopable in both directions.',
+      'Improved the 14-day calorie history chart to show today\'s date on the far right by default.',
     ],
   },
 };
