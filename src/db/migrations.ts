@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 
-export const DATABASE_VERSION = 7;
+export const DATABASE_VERSION = 8;
 
 export interface Migration {
   version: number;
@@ -205,6 +205,32 @@ export const MIGRATIONS: Migration[] = [
     version: 7,
     up: async (db) => {
       await safeAddColumn(db, 'meal_favorites', 'sort_order', 'INTEGER DEFAULT 0');
+    },
+  },
+  {
+    version: 8,
+    up: async (db) => {
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS body_composition_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          date TEXT NOT NULL,
+          weight REAL,
+          body_fat_rate REAL,
+          muscle_mass REAL,
+          lbm REAL,
+          height REAL,
+          neck REAL,
+          waist REAL,
+          hip REAL,
+          wrist REAL,
+          ankle REAL,
+          gender TEXT DEFAULT 'male',
+          source TEXT DEFAULT 'manual',
+          memo TEXT,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_body_composition_date ON body_composition_logs(date);
+      `);
     },
   },
 ];

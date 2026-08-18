@@ -15,6 +15,7 @@ export * from './repositories/routineRepository';
 export * from './repositories/settingsRepository';
 export * from './repositories/lifelogRepository';
 export * from './repositories/nutritionRepository';
+export * from './repositories/bodyRepository';
 export * from './dbIntegrityService';
 export * from './dbBackupService';
 
@@ -211,6 +212,26 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       notified INTEGER DEFAULT 0,
       auto_sync_with_last_meal INTEGER DEFAULT 1
     );
+
+    CREATE TABLE IF NOT EXISTS body_composition_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL,
+      weight REAL,
+      body_fat_rate REAL,
+      muscle_mass REAL,
+      lbm REAL,
+      height REAL,
+      neck REAL,
+      waist REAL,
+      hip REAL,
+      wrist REAL,
+      ankle REAL,
+      gender TEXT DEFAULT 'male',
+      source TEXT DEFAULT 'manual',
+      memo TEXT,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_body_composition_date ON body_composition_logs(date);
   `);
 
   // Run schema migrations using PRAGMA user_version
@@ -413,6 +434,7 @@ export const resetDatabase = async () => {
     await conn.runAsync('DELETE FROM meal_logs');
     await conn.runAsync('DELETE FROM meal_favorites');
     await conn.runAsync('DELETE FROM autophagy_config');
+    await conn.runAsync('DELETE FROM body_composition_logs');
   });
 
   // setDB(null) の前に再初期化 Promise をセットしておく。

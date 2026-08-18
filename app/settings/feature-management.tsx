@@ -21,6 +21,13 @@ const FEATURE_METAS: Record<FeatureId, FeatureMeta> = {
     icon: 'barbell',
     iconColor: '#4facfe',
   },
+  body: {
+    id: 'body',
+    title: '体組成＆筋肥大限界',
+    desc: '体重・体脂肪率・骨格限界モデルの追跡',
+    icon: 'body',
+    iconColor: '#38bdf8',
+  },
   water: {
     id: 'water',
     title: '水分管理',
@@ -51,9 +58,10 @@ const FEATURE_METAS: Record<FeatureId, FeatureMeta> = {
   },
 };
 
-const DEFAULT_ORDER: FeatureId[] = ['workout', 'water', 'nutrition', 'zikan', 'routine'];
+const DEFAULT_ORDER: FeatureId[] = ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine'];
 const DEFAULT_VISIBILITY: Record<FeatureId, boolean> = {
   workout: true,
+  body: true,
   water: true,
   nutrition: true,
   zikan: true,

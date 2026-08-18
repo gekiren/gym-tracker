@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.79',
+  version: '1.8.84',
   title: {
-    ja: '🥗 栄養クイックお気に入りの編集・並び替え機能',
-    en: '🥗 Nutrition Quick Favorites Management',
+    ja: '🧬 測定値入力欄の文字削除・編集の不具合修正',
+    en: '🧬 Measurement Input & Deletion Fix',
   },
   notes: {
     ja: [
-      'クイックお気に入りに編集ボタンを追加し、お気に入りの編集・削除・並び替え・新規追加を直接行えるように改善しました。',
+      '測定値入力欄での文字削除およびリアルタイム編集がスムーズに行えるよう入力同期ループを修正しました。',
     ],
     en: [
-      'Added an edit button to Quick Favorites allowing direct editing, reordering, deletion, and addition of favorite foods.',
+      'Fixed input sync loop to allow smooth editing and character deletion in measurement fields.',
     ],
   },
 };

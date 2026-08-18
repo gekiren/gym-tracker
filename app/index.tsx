@@ -8,6 +8,8 @@ import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore, FeatureId } from '../src/store/settingsStore';
 import { useLifelogStore } from '../src/store/lifelogStore';
 import { useNutritionStore } from '../src/store/nutritionStore';
+import { useBodyStore } from '../src/store/bodyStore';
+import { analyzeMusclePotential } from '../src/utils/bodyCalculators';
 import { saveSetting, getLastWorkoutSummary, LastWorkoutSummary } from '../src/db/database';
 import * as Updates from 'expo-updates';
 import { readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../src/services/crashReporterService';
@@ -46,6 +48,12 @@ export default function DashboardScreen() {
   const loadMealLogs = useNutritionStore(state => state.loadMealLogs);
   const loadGoals = useNutritionStore(state => state.loadGoals);
 
+  // Body Store
+  const currentBodyLog = useBodyStore(state => state.currentLog);
+  const latestBodyLog = useBodyStore(state => state.latestLog);
+  const savedBodyMeasurements = useBodyStore(state => state.savedMeasurements);
+  const loadBodyData = useBodyStore(state => state.loadBodyData);
+
   // Local state for onboarding/modals
   const [isSendingCrash, setIsSendingCrash] = useState(false);
   const [isNewUser, setIsNewUser] = useState(settings.needsStyleSelection);
@@ -69,6 +77,7 @@ export default function DashboardScreen() {
       setCurrentDate(targetDate);
       loadMealLogs(targetDate);
       loadGoals();
+      loadBodyData(targetDate.replace(/\//g, '-'));
 
       const fetchSummary = async () => {
         try {
@@ -276,6 +285,99 @@ export default function DashboardScreen() {
                   )}
                 </View>
               )}
+            </View>
+          </TouchableOpacity>
+        );
+
+      case 'body':
+        return (
+          <TouchableOpacity 
+            key="body"
+            style={styles.card} 
+            activeOpacity={0.85}
+            onPress={() => router.push('/lifelog/body')}
+          >
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconContainer, { backgroundColor: 'rgba(56, 189, 248, 0.15)' }]}>
+                <Ionicons name="body" size={24} color="#38bdf8" />
+              </View>
+              <Text style={styles.cardTitle}>体組成＆筋肥大限界</Text>
+              <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
+            </View>
+
+            <View style={styles.cardBody}>
+              {(() => {
+                const log = currentBodyLog || latestBodyLog;
+                const weight = log?.weight ?? null;
+                const bodyFatRate = log?.body_fat_rate ?? null;
+                const height = log?.height ?? savedBodyMeasurements.height ?? 175;
+                const wrist = log?.wrist ?? savedBodyMeasurements.wrist ?? null;
+                const ankle = log?.ankle ?? savedBodyMeasurements.ankle ?? null;
+
+                if (!weight && !bodyFatRate) {
+                  return (
+                    <Text style={styles.inactiveText}>
+                      体組成データが未記録です。タップして体重・体脂肪率や骨格限界モデルを診断しましょう。
+                    </Text>
+                  );
+                }
+
+                const lbm = weight && bodyFatRate ? Number((weight * (1 - bodyFatRate / 100)).toFixed(1)) : null;
+                const potential = weight && bodyFatRate && height && wrist && ankle
+                  ? analyzeMusclePotential(weight, bodyFatRate, height, wrist, ankle)
+                  : null;
+
+                return (
+                  <>
+                    <View style={styles.statRow}>
+                      <Text style={styles.statVal}>
+                        {weight !== null ? weight.toFixed(1) : '--'}{' '}
+                        <Text style={styles.statUnit}>kg</Text>
+                      </Text>
+                      <Text style={styles.statGoal}>
+                        / 体脂肪率: {bodyFatRate !== null ? `${bodyFatRate.toFixed(1)}%` : '--'}
+                        {lbm !== null ? ` (LBM ${lbm}kg)` : ''}
+                      </Text>
+                    </View>
+
+                    {potential ? (
+                      <>
+                        <View style={styles.progressContainer}>
+                          <View style={styles.progressBarBg}>
+                            <View 
+                              style={[
+                                styles.progressBarFill, 
+                                { 
+                                  width: `${Math.min(100, potential.reachPercentage)}%`,
+                                  backgroundColor: '#38bdf8' 
+                                }
+                              ]} 
+                            />
+                          </View>
+                          <Text style={styles.progressPercent}>{potential.reachPercentage}%</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, paddingTop: 6, borderTopWidth: 1, borderTopColor: '#334155' }}>
+                          <Text style={{ fontSize: 12, color: '#94a3b8' }}>
+                            限界除脂肪: <Text style={{ fontWeight: '700', color: '#a78bfa' }}>{potential.maxLbm}kg</Text>
+                          </Text>
+                          <Text style={{ fontSize: 12, color: '#94a3b8' }}>
+                            増量可能: <Text style={{ fontWeight: '700', color: '#4ade80' }}>+{potential.remainingMuscleGainKg}kg</Text>
+                          </Text>
+                          <Text style={{ fontSize: 12, color: '#38bdf8', fontWeight: 'bold' }}>
+                            {potential.naturalStatusLabel.split(' ')[0]}
+                          </Text>
+                        </View>
+                      </>
+                    ) : (
+                      <View style={{ marginTop: 6 }}>
+                        <Text style={{ fontSize: 12, color: '#94a3b8' }}>
+                          ※手首・足首サイズを入力すると骨格筋肥大限界（%）が自動診断されます。
+                        </Text>
+                      </View>
+                    )}
+                  </>
+                );
+              })()}
             </View>
           </TouchableOpacity>
         );
