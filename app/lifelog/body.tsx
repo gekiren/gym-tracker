@@ -26,6 +26,7 @@ import CaseyLimitCalculatorCard from '../../components/body/CaseyLimitCalculator
 import PotentialGaugeCard from '../../components/body/PotentialGaugeCard';
 import BodyMeasurementModal from '../../components/body/BodyMeasurementModal';
 import BodyGuideModal from '../../components/body/BodyGuideModal';
+import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
 
 export default function BodyCompositionScreen() {
   const { colors } = useAppTheme();
@@ -170,20 +171,6 @@ export default function BodyCompositionScreen() {
     }
   };
 
-  // 履歴項目の削除ハンドラー
-  const handleDeleteLog = (id: number) => {
-    Alert.alert('記録の削除', 'この体組成ログを削除してもよろしいですか？', [
-      { text: 'キャンセル', style: 'cancel' },
-      {
-        text: '削除',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteBodyLog(id, selectedDate);
-        },
-      },
-    ]);
-  };
-
   return (
     <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
       <Stack.Screen
@@ -200,7 +187,7 @@ export default function BodyCompositionScreen() {
                 activeOpacity={0.7}
               >
                 <Ionicons
-                  name={showHistoryTab ? 'speedometer-outline' : 'list-outline'}
+                  name={showHistoryTab ? 'speedometer-outline' : 'stats-chart-outline'}
                   size={22}
                   color={Theme.colors.primary}
                 />
@@ -217,99 +204,47 @@ export default function BodyCompositionScreen() {
         }}
       />
 
-      {/* Date Header Switcher */}
-      <View style={styles.dateBar}>
-        <TouchableOpacity
-          style={styles.dateArrowBtn}
-          onPress={() => changeDateOffset(-1)}
-          activeOpacity={0.6}
-        >
-          <Ionicons name="chevron-back" size={20} color={Theme.colors.text} />
-        </TouchableOpacity>
+      {/* Date Header Switcher (メイン画面表示時のみ) */}
+      {!showHistoryTab && (
+        <View style={styles.dateBar}>
+          <TouchableOpacity
+            style={styles.dateArrowBtn}
+            onPress={() => changeDateOffset(-1)}
+            activeOpacity={0.6}
+          >
+            <Ionicons name="chevron-back" size={20} color={Theme.colors.text} />
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.dateCenterBtn}
-          onPress={() => setSelectedDate(getTodayStr())}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.dateMainText}>{selectedDate}</Text>
-          {selectedDate === getTodayStr() && <Text style={styles.todayBadge}>今日</Text>}
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dateCenterBtn}
+            onPress={() => setSelectedDate(getTodayStr())}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.dateMainText}>{selectedDate}</Text>
+            {selectedDate === getTodayStr() && <Text style={styles.todayBadge}>今日</Text>}
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.dateArrowBtn}
-          onPress={() => changeDateOffset(1)}
-          activeOpacity={0.6}
-        >
-          <Ionicons name="chevron-forward" size={20} color={Theme.colors.text} />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={styles.dateArrowBtn}
+            onPress={() => changeDateOffset(1)}
+            activeOpacity={0.6}
+          >
+            <Ionicons name="chevron-forward" size={20} color={Theme.colors.text} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Content View */}
       {showHistoryTab ? (
-        /* 履歴一覧タブ */
-        <ScrollView
-          contentContainerStyle={styles.historyContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.colors.primary} />
-          }
-        >
-          <Text style={styles.historyTitle}>📜 体組成 測定履歴一覧</Text>
-          {historyLogs.length === 0 ? (
-            <View style={styles.emptyHistoryBox}>
-              <Ionicons name="document-text-outline" size={36} color={Theme.colors.textMuted} style={{ marginBottom: 8 }} />
-              <Text style={styles.emptyHistoryText}>記録された履歴がありません</Text>
-            </View>
-          ) : (
-            historyLogs.map((log) => (
-              <View key={log.id} style={styles.historyCard}>
-                <View style={styles.historyHeader}>
-                  <Text style={styles.historyDate}>{log.date}</Text>
-                  <TouchableOpacity
-                    onPress={() => log.id && handleDeleteLog(log.id)}
-                    style={styles.historyDeleteBtn}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="trash-outline" size={18} color="#ef4444" />
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.historyGrid}>
-                  <Text style={styles.historyStat}>
-                    体重: <Text style={styles.historyVal}>{log.weight !== null ? `${log.weight} kg` : '--'}</Text>
-                  </Text>
-                  <Text style={styles.historyStat}>
-                    体脂肪: <Text style={[styles.historyVal, { color: '#fb923c' }]}>{log.body_fat_rate !== null ? `${log.body_fat_rate} %` : '--'}</Text>
-                  </Text>
-                  <Text style={styles.historyStat}>
-                    除脂肪 (LBM): <Text style={[styles.historyVal, { color: '#38bdf8' }]}>{log.lbm !== null ? `${log.lbm} kg` : '--'}</Text>
-                  </Text>
-                  <Text style={styles.historyStat}>
-                    骨格筋: <Text style={[styles.historyVal, { color: '#4ade80' }]}>{log.muscle_mass !== null ? `${log.muscle_mass} kg` : '--'}</Text>
-                  </Text>
-                </View>
-
-                {(log.neck || log.waist || log.wrist || log.ankle) && (
-                  <View style={styles.historyPartsRow}>
-                    {log.neck && <Text style={styles.historyPartText}>首: {log.neck}cm</Text>}
-                    {log.waist && <Text style={styles.historyPartText}>ウエスト: {log.waist}cm</Text>}
-                    {log.wrist && <Text style={styles.historyPartText}>手首: {log.wrist}cm</Text>}
-                    {log.ankle && <Text style={styles.historyPartText}>足首: {log.ankle}cm</Text>}
-                  </View>
-                )}
-
-                {log.memo && <Text style={styles.historyMemo}>💬 {log.memo}</Text>}
-              </View>
-            ))
-          )}
-        </ScrollView>
+        /* 履歴・折れ線推移グラフトップ */
+        <LifelogHistoryTab type="body" t={t} />
       ) : (
         /* メイン ダッシュボード タブ */
         <ScrollView
           style={styles.mainScroll}
           contentContainerStyle={styles.mainContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.colors.primary} />
           }
@@ -401,84 +336,6 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     padding: 16,
-    paddingBottom: 40,
-  },
-  historyContent: {
-    padding: 16,
-    paddingBottom: 40,
-    gap: 12,
-  },
-  historyTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Theme.colors.text,
-    marginBottom: 8,
-  },
-  historyCard: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.md,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  historyHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
-    paddingBottom: 6,
-  },
-  historyDate: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: Theme.colors.text,
-  },
-  historyDeleteBtn: {
-    padding: 4,
-  },
-  historyGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 8,
-  },
-  historyStat: {
-    width: '48%',
-    fontSize: 12,
-    color: Theme.colors.textMuted,
-  },
-  historyVal: {
-    color: Theme.colors.text,
-    fontWeight: 'bold',
-  },
-  historyPartsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-    padding: 8,
-    borderRadius: 6,
-    marginTop: 4,
-  },
-  historyPartText: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
-  },
-  historyMemo: {
-    fontSize: 12,
-    color: Theme.colors.textMuted,
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-  emptyHistoryBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  emptyHistoryText: {
-    color: Theme.colors.textMuted,
-    fontSize: 14,
+    paddingBottom: 220,
   },
 });

@@ -178,7 +178,11 @@ export default function BodyMeasurementModal({
             </TouchableOpacity>
           </View>
 
-          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
             {/* 性別セレクター */}
             <View style={styles.sectionRow}>
               <Text style={styles.sectionLabel}>性別</Text>
@@ -430,6 +434,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
+    paddingBottom: 80,
   },
   sectionRow: {
     flexDirection: 'row',

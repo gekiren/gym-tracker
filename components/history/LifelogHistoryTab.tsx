@@ -9,6 +9,7 @@ import {
   FlatList,
   Modal,
   Dimensions,
+  Alert,
 } from 'react-native';
 import Svg, { Path, Circle, Line, Defs, LinearGradient, Stop, Text as SvgText, Rect, G } from 'react-native-svg';
 import { format, startOfWeek, startOfMonth } from 'date-fns';
@@ -30,9 +31,12 @@ import {
   MealLog,
   NutritionGoals,
 } from '../../src/db/database';
+import { getAllBodyLogs } from '../../src/db/repositories/bodyRepository';
+import { BodyCompositionLog } from '../../src/types/bodyComposition';
+import { useBodyStore } from '../../src/store/bodyStore';
 
 interface LifelogHistoryTabProps {
-  type: 'water' | 'time' | 'habit' | 'routine' | 'nutrition';
+  type: 'water' | 'time' | 'habit' | 'routine' | 'nutrition' | 'body';
   t: (key: string, options?: any) => string;
 }
 
@@ -58,7 +62,9 @@ function createLinearPath(points: { x: number; y: number }[]): string {
 export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t }) => {
   const [loading, setLoading] = useState(true);
   const [chartScale, setChartScale] = useState<'day' | 'week' | 'month' | 'year'>('day');
-  const [chartMetric, setChartMetric] = useState<'amount' | 'caffeine' | 'calories' | 'protein' | 'fat' | 'carbs'>('amount');
+  const [chartMetric, setChartMetric] = useState<
+    'amount' | 'caffeine' | 'calories' | 'protein' | 'fat' | 'carbs' | 'weight' | 'body_fat_rate' | 'muscle_mass' | 'lbm'
+  >('amount');
   const [selectedFilter, setSelectedFilter] = useState<string>('all'); // tag, habitId, or routineId
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [metricModalVisible, setMetricModalVisible] = useState(false);
@@ -73,6 +79,9 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
   const [routines, setRoutines] = useState<any[]>([]);
   const [mealLogs, setMealLogs] = useState<MealLog[]>([]);
   const [nutritionGoals, setNutritionGoals] = useState<NutritionGoals | null>(null);
+  const [bodyLogs, setBodyLogs] = useState<BodyCompositionLog[]>([]);
+
+  const deleteBodyLogAction = useBodyStore((state) => state.deleteBodyLog);
 
   const chartScrollRef = useRef<ScrollView>(null);
 
@@ -109,6 +118,11 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
           if (isMounted) {
             setMealLogs(mLogs);
             setNutritionGoals(nGoals);
+          }
+        } else if (type === 'body') {
+          const bLogs = await getAllBodyLogs(100);
+          if (isMounted) {
+            setBodyLogs(bLogs);
           }
         }
       } catch (err) {
@@ -167,6 +181,8 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
       setChartMetric('calories');
     } else if (type === 'water') {
       setChartMetric('amount');
+    } else if (type === 'body') {
+      setChartMetric('weight');
     }
   }, [type]);
 
@@ -279,6 +295,51 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
           });
         }
       });
+    } else if (type === 'body') {
+      const bodyGroup: { [key: string]: { date: Date; values: number[]; subValues: number[] } } = {};
+      bodyLogs.forEach((log) => {
+        let val: number | null = null;
+        let subVal: number = 0;
+        if (chartMetric === 'weight') {
+          val = log.weight;
+          subVal = log.body_fat_rate || 0;
+        } else if (chartMetric === 'body_fat_rate') {
+          val = log.body_fat_rate;
+          subVal = log.weight || 0;
+        } else if (chartMetric === 'muscle_mass') {
+          val = log.muscle_mass;
+          subVal = log.weight || 0;
+        } else if (chartMetric === 'lbm') {
+          val = log.lbm;
+          subVal = log.body_fat_rate || 0;
+        }
+
+        if (val === null || val === undefined || isNaN(val) || val <= 0) return;
+
+        const date = parseLogDate(log.date);
+        let key = '';
+        if (chartScale === 'day') {
+          key = log.date;
+        } else if (chartScale === 'week') {
+          key = startOfWeek(date, { weekStartsOn: 1 }).toISOString();
+        } else if (chartScale === 'month') {
+          key = startOfMonth(date).toISOString();
+        } else if (chartScale === 'year') {
+          key = new Date(date.getFullYear(), 0, 1).toISOString();
+        }
+
+        if (!bodyGroup[key]) {
+          bodyGroup[key] = { date, values: [], subValues: [] };
+        }
+        bodyGroup[key].values.push(val);
+        if (subVal > 0) bodyGroup[key].subValues.push(subVal);
+      });
+
+      Object.entries(bodyGroup).forEach(([k, g]) => {
+        const avgVal = g.values.reduce((sum, v) => sum + v, 0) / g.values.length;
+        const avgSub = g.subValues.length > 0 ? g.subValues.reduce((sum, v) => sum + v, 0) / g.subValues.length : 0;
+        addVal(k, g.date, avgVal, avgSub);
+      });
     }
 
     const sorted = Object.values(aggregated).sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -376,12 +437,17 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
           });
         }
       });
+    } else if (type === 'body') {
+      bodyLogs.forEach((log) => {
+        const group = getOrCreateGroup(log.date);
+        group.items.push(log);
+      });
     }
 
     // Sort list by date descending
     list.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
     return list;
-  }, [type, waterLogs, timeLogs, habitLogs, habitItems, routines, mealLogs, selectedFilter]);
+  }, [type, waterLogs, timeLogs, habitLogs, habitItems, routines, mealLogs, bodyLogs, selectedFilter]);
 
   // Scroll to end of chart when data loads or changes
   useEffect(() => {
@@ -411,6 +477,11 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
       if (chartMetric === 'protein') return t('ui.history.chart_title_nutrition_protein') || '最近のタンパク質摂取量 (g)';
       if (chartMetric === 'fat') return t('ui.history.chart_title_nutrition_fat') || '最近の脂質摂取量 (g)';
       if (chartMetric === 'carbs') return t('ui.history.chart_title_nutrition_carbs') || '最近の炭水化物摂取量 (g)';
+    } else if (type === 'body') {
+      if (chartMetric === 'weight') return t('ui.history.chart_title_body_weight') || '最近の体重推移 (kg)';
+      if (chartMetric === 'body_fat_rate') return t('ui.history.chart_title_body_fat') || '最近の体脂肪率推移 (%)';
+      if (chartMetric === 'muscle_mass') return t('ui.history.chart_title_body_muscle') || '最近の骨格筋量推移 (kg)';
+      if (chartMetric === 'lbm') return t('ui.history.chart_title_body_lbm') || '最近の除脂肪体重(LBM)推移 (kg)';
     } else if (type === 'time') {
       return selectedFilter === 'all'
         ? (t('ui.history.chart_title_time') || '最近の活動時間 (時間)')
@@ -439,6 +510,12 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
         return { valStr: Math.round(point.value).toLocaleString(), unitStr: 'kcal' };
       } else {
         return { valStr: point.value.toFixed(1), unitStr: 'g' };
+      }
+    } else if (type === 'body') {
+      if (chartMetric === 'body_fat_rate') {
+        return { valStr: point.value.toFixed(1), unitStr: '%' };
+      } else {
+        return { valStr: point.value.toFixed(1), unitStr: 'kg' };
       }
     } else if (type === 'time') {
       return { valStr: point.value.toFixed(1), unitStr: t('ui.history.unit_hours') || '時間' };
@@ -556,7 +633,18 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
           <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name={type === 'nutrition' ? 'restaurant-outline' : 'water-outline'} size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+                <Ionicons
+                  name={
+                    type === 'nutrition'
+                      ? 'restaurant-outline'
+                      : type === 'body'
+                      ? 'scale-outline'
+                      : 'water-outline'
+                  }
+                  size={20}
+                  color={Theme.colors.primary}
+                  style={{ marginRight: 8 }}
+                />
                 <Text style={styles.modalTitle}>
                   {t('ui.history.metric_select_title') || '表示する指標を選択'}
                 </Text>
@@ -655,6 +743,92 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   {chartMetric === 'carbs' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
                 </TouchableOpacity>
               </>
+            ) : type === 'body' ? (
+              <>
+                <TouchableOpacity
+                  style={[styles.metricOptionItem, chartMetric === 'weight' && styles.metricOptionItemActive]}
+                  onPress={() => {
+                    setChartMetric('weight');
+                    setSelectedIndex(null);
+                    setMetricModalVisible(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.optionIconBox, chartMetric === 'weight' && styles.optionIconBoxActive]}>
+                    <Ionicons name="scale-outline" size={20} color={chartMetric === 'weight' ? Theme.colors.primary : Theme.colors.textMuted} />
+                  </View>
+                  <View style={styles.optionTextContent}>
+                    <Text style={[styles.optionTitle, chartMetric === 'weight' && styles.optionTitleActive]}>
+                      {t('ui.history.metric_weight') || '体重'} (kg)
+                    </Text>
+                    <Text style={styles.optionSub}>日々の体重の推移を表示します</Text>
+                  </View>
+                  {chartMetric === 'weight' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.metricOptionItem, chartMetric === 'body_fat_rate' && styles.metricOptionItemActive]}
+                  onPress={() => {
+                    setChartMetric('body_fat_rate');
+                    setSelectedIndex(null);
+                    setMetricModalVisible(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.optionIconBox, chartMetric === 'body_fat_rate' && styles.optionIconBoxActive]}>
+                    <Ionicons name="pie-chart-outline" size={20} color={chartMetric === 'body_fat_rate' ? Theme.colors.primary : Theme.colors.textMuted} />
+                  </View>
+                  <View style={styles.optionTextContent}>
+                    <Text style={[styles.optionTitle, chartMetric === 'body_fat_rate' && styles.optionTitleActive]}>
+                      {t('ui.history.metric_body_fat') || '体脂肪率'} (%)
+                    </Text>
+                    <Text style={styles.optionSub}>日々の体脂肪率の推移を表示します</Text>
+                  </View>
+                  {chartMetric === 'body_fat_rate' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.metricOptionItem, chartMetric === 'muscle_mass' && styles.metricOptionItemActive]}
+                  onPress={() => {
+                    setChartMetric('muscle_mass');
+                    setSelectedIndex(null);
+                    setMetricModalVisible(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.optionIconBox, chartMetric === 'muscle_mass' && styles.optionIconBoxActive]}>
+                    <Ionicons name="barbell-outline" size={20} color={chartMetric === 'muscle_mass' ? Theme.colors.primary : Theme.colors.textMuted} />
+                  </View>
+                  <View style={styles.optionTextContent}>
+                    <Text style={[styles.optionTitle, chartMetric === 'muscle_mass' && styles.optionTitleActive]}>
+                      {t('ui.history.metric_muscle_mass') || '骨格筋量・筋肉量'} (kg)
+                    </Text>
+                    <Text style={styles.optionSub}>日々の骨格筋量・筋肉量の推移を表示します</Text>
+                  </View>
+                  {chartMetric === 'muscle_mass' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.metricOptionItem, chartMetric === 'lbm' && styles.metricOptionItemActive]}
+                  onPress={() => {
+                    setChartMetric('lbm');
+                    setSelectedIndex(null);
+                    setMetricModalVisible(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.optionIconBox, chartMetric === 'lbm' && styles.optionIconBoxActive]}>
+                    <Ionicons name="body-outline" size={20} color={chartMetric === 'lbm' ? Theme.colors.primary : Theme.colors.textMuted} />
+                  </View>
+                  <View style={styles.optionTextContent}>
+                    <Text style={[styles.optionTitle, chartMetric === 'lbm' && styles.optionTitleActive]}>
+                      {t('ui.history.metric_lbm') || '除脂肪体重 (LBM)'} (kg)
+                    </Text>
+                    <Text style={styles.optionSub}>日々の除脂肪体重の推移を表示します</Text>
+                  </View>
+                  {chartMetric === 'lbm' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                </TouchableOpacity>
+              </>
             ) : (
               <>
                 <TouchableOpacity
@@ -745,7 +919,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
               </View>
 
               {/* Type-Specific metric or item filter selector button */}
-              {type === 'water' || type === 'nutrition' ? (
+              {type === 'water' || type === 'nutrition' || type === 'body' ? (
                 <TouchableOpacity
                   style={styles.metricSelectBtn}
                   onPress={() => setMetricModalVisible(true)}
@@ -755,6 +929,8 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     name={
                       type === 'nutrition'
                         ? (chartMetric === 'calories' ? 'flame' : chartMetric === 'protein' ? 'fitness' : chartMetric === 'fat' ? 'pizza' : 'nutrition')
+                        : type === 'body'
+                        ? (chartMetric === 'weight' ? 'scale-outline' : chartMetric === 'body_fat_rate' ? 'pie-chart-outline' : chartMetric === 'muscle_mass' ? 'barbell-outline' : 'body-outline')
                         : (chartMetric === 'amount' ? 'water' : 'cafe')
                     }
                     size={14}
@@ -764,6 +940,8 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   <Text style={styles.metricSelectBtnText} numberOfLines={1}>
                     {type === 'nutrition'
                       ? (chartMetric === 'calories' ? (t('ui.history.metric_calories') || 'カロリー') : chartMetric === 'protein' ? (t('ui.history.metric_protein') || 'タンパク質') : chartMetric === 'fat' ? (t('ui.history.metric_fat') || '脂質') : (t('ui.history.metric_carbs') || '炭水化物'))
+                      : type === 'body'
+                      ? (chartMetric === 'weight' ? (t('ui.history.metric_weight') || '体重') : chartMetric === 'body_fat_rate' ? (t('ui.history.metric_body_fat') || '体脂肪率') : chartMetric === 'muscle_mass' ? (t('ui.history.metric_muscle_mass') || '骨格筋量') : (t('ui.history.metric_lbm') || '除脂肪体重'))
                       : (chartMetric === 'amount' ? (t('ui.history.metric_water') || '水分量') : (t('ui.history.metric_caffeine') || 'カフェイン'))}
                   </Text>
                   <Ionicons name="chevron-down" size={14} color={Theme.colors.textMuted} style={{ marginLeft: 4 }} />
@@ -1025,6 +1203,12 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                 {type === 'routine' && (
                   <Text style={styles.cardTotalText}>{t('ui.history.completed_label') || '完了'}: {item.items.length}{t('ui.history.unit_items') || '件'}</Text>
                 )}
+                {type === 'body' && (
+                  <Text style={styles.cardTotalText}>
+                    {item.items[0]?.weight ? `体重: ${item.items[0].weight}kg` : ''}
+                    {item.items[0]?.body_fat_rate ? ` / 脂肪: ${item.items[0].body_fat_rate}%` : ''}
+                  </Text>
+                )}
               </View>
 
               <View style={styles.historyCardBody}>
@@ -1088,6 +1272,64 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                         <Text style={styles.listTimeText}>
                           {format(new Date(sub.timestamp), 'HH:mm')}
                         </Text>
+                      </View>
+                    );
+                  } else if (type === 'body') {
+                    const log = sub as BodyCompositionLog;
+                    return (
+                      <View key={log.id || idx} style={styles.bodyHistoryItem}>
+                        <View style={styles.bodyGrid}>
+                          <Text style={styles.bodyStat}>
+                            体重: <Text style={styles.bodyVal}>{log.weight !== null && log.weight !== undefined ? `${log.weight} kg` : '--'}</Text>
+                          </Text>
+                          <Text style={styles.bodyStat}>
+                            体脂肪: <Text style={[styles.bodyVal, { color: '#fb923c' }]}>{log.body_fat_rate !== null && log.body_fat_rate !== undefined ? `${log.body_fat_rate} %` : '--'}</Text>
+                          </Text>
+                          <Text style={styles.bodyStat}>
+                            除脂肪: <Text style={[styles.bodyVal, { color: '#38bdf8' }]}>{log.lbm !== null && log.lbm !== undefined ? `${log.lbm} kg` : '--'}</Text>
+                          </Text>
+                          <Text style={styles.bodyStat}>
+                            骨格筋: <Text style={[styles.bodyVal, { color: '#4ade80' }]}>{log.muscle_mass !== null && log.muscle_mass !== undefined ? `${log.muscle_mass} kg` : '--'}</Text>
+                          </Text>
+                        </View>
+
+                        {(log.neck || log.waist || log.wrist || log.ankle) && (
+                          <View style={styles.bodyPartsRow}>
+                            {log.neck && <Text style={styles.bodyPartText}>首: {log.neck}cm</Text>}
+                            {log.waist && <Text style={styles.bodyPartText}>ウエスト: {log.waist}cm</Text>}
+                            {log.wrist && <Text style={styles.bodyPartText}>手首: {log.wrist}cm</Text>}
+                            {log.ankle && <Text style={styles.bodyPartText}>足首: {log.ankle}cm</Text>}
+                          </View>
+                        )}
+
+                        {log.memo && <Text style={styles.bodyMemoText}>💬 {log.memo}</Text>}
+
+                        {log.id && (
+                          <View style={styles.bodyDeleteRow}>
+                            <TouchableOpacity
+                              onPress={() => {
+                                Alert.alert('記録の削除', 'この体組成ログを削除してもよろしいですか？', [
+                                  { text: 'キャンセル', style: 'cancel' },
+                                  {
+                                    text: '削除',
+                                    style: 'destructive',
+                                    onPress: async () => {
+                                      if (log.id) {
+                                        await deleteBodyLogAction(log.id, log.date);
+                                        setBodyLogs((prev) => prev.filter((b) => b.id !== log.id));
+                                      }
+                                    },
+                                  },
+                                ]);
+                              }}
+                              style={styles.bodyDeleteBtn}
+                              activeOpacity={0.7}
+                            >
+                              <Ionicons name="trash-outline" size={14} color="#ef4444" />
+                              <Text style={styles.bodyDeleteText}>削除</Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
                       </View>
                     );
                   }
@@ -1456,5 +1698,66 @@ const styles = StyleSheet.create({
   optionSub: {
     color: Theme.colors.textMuted,
     fontSize: 11,
+  },
+  // Body History Card Styles
+  bodyHistoryItem: {
+    paddingTop: 2,
+  },
+  bodyGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 6,
+  },
+  bodyStat: {
+    width: '48%',
+    fontSize: 12,
+    color: Theme.colors.textMuted,
+  },
+  bodyVal: {
+    color: Theme.colors.text,
+    fontWeight: 'bold',
+  },
+  bodyPartsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    padding: 8,
+    borderRadius: 6,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  bodyPartText: {
+    fontSize: 11,
+    color: Theme.colors.textMuted,
+  },
+  bodyMemoText: {
+    fontSize: 12,
+    color: Theme.colors.textMuted,
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  bodyDeleteRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.03)',
+    paddingTop: 6,
+  },
+  bodyDeleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+  },
+  bodyDeleteText: {
+    color: '#ef4444',
+    fontSize: 11,
+    fontWeight: 'bold',
+    marginLeft: 4,
   },
 });
