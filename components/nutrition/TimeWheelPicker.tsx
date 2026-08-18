@@ -22,11 +22,12 @@ interface Props {
 }
 
 const ITEM_HEIGHT = 46;
-const VISIBLE_ITEMS = 3; // 画面内に表示する項目数
+const VISIBLE_ITEMS = 3;
 const WHEEL_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS; // 138px
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0..23
-const MINUTES = Array.from({ length: 60 }, (_, i) => i); // 0..59
+const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1); // 1..12
+const MINUTE_TENS = Array.from({ length: 6 }, (_, i) => i); // 0..5
+const MINUTE_ONES = Array.from({ length: 10 }, (_, i) => i); // 0..9
 
 const triggerHaptic = () => {
   if (Platform.OS !== 'web') {
@@ -40,6 +41,7 @@ interface WheelColumnProps {
   onSelect: (val: number) => void;
   unit: string;
   padZero?: boolean;
+  columnWidth?: number;
 }
 
 function WheelColumn({
@@ -47,10 +49,10 @@ function WheelColumn({
   selectedValue,
   onSelect,
   unit,
-  padZero = true,
+  padZero = false,
+  columnWidth = 72,
 }: WheelColumnProps) {
   const flatListRef = useRef<FlatList<number>>(null);
-  const isUserScrollingRef = useRef(false);
 
   // 初期位置合わせ
   useEffect(() => {
@@ -75,7 +77,6 @@ function WheelColumn({
         onSelect(val);
         triggerHaptic();
       }
-      isUserScrollingRef.current = false;
     },
     [data, selectedValue, onSelect]
   );
@@ -110,7 +111,7 @@ function WheelColumn({
   });
 
   return (
-    <View style={styles.wheelColumnContainer}>
+    <View style={[styles.wheelColumnContainer, { width: columnWidth }]}>
       <Text style={styles.columnUnitText}>{unit}</Text>
       <View style={styles.wheelWrapper}>
         {/* 中央のハイライト枠 */}
@@ -126,9 +127,6 @@ function WheelColumn({
           getItemLayout={getItemLayout}
           contentContainerStyle={{
             paddingVertical: ITEM_HEIGHT, // 上下に1項目分の余白で中央配置
-          }}
-          onScrollBeginDrag={() => {
-            isUserScrollingRef.current = true;
           }}
           onMomentumScrollEnd={handleMomentumScrollEnd}
           onScrollEndDrag={handleScrollEndDrag}
@@ -169,31 +167,59 @@ export default function TimeWheelPicker({
   const [modalVisible, setModalVisible] = useState(false);
 
   // 一時選択ステート
-  const [tempHour, setTempHour] = useState(12);
-  const [tempMinute, setTempMinute] = useState(0);
+  const [tempIsPm, setTempIsPm] = useState(false);
+  const [tempHour12, setTempHour12] = useState(12);
+  const [tempTens, setTempTens] = useState(0);
+  const [tempOnes, setTempOnes] = useState(0);
 
-  // "HH:mm" からパース
-  const parseCurrentTime = (timeStr: string) => {
+  // 24時間制 "HH:mm" からパース
+  const parseTo12HourState = (timeStr: string) => {
     const [hStr, mStr] = (timeStr || '12:00').split(':');
-    const h = parseInt(hStr, 10);
-    const m = parseInt(mStr, 10);
-    return {
-      hour: isNaN(h) ? 12 : Math.max(0, Math.min(23, h)),
-      minute: isNaN(m) ? 0 : Math.max(0, Math.min(59, m)),
-    };
+    const h24 = parseInt(hStr, 10) || 0;
+    const m = parseInt(mStr, 10) || 0;
+
+    const isPm = h24 >= 12;
+    const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+    const tens = Math.floor((m % 60) / 10);
+    const ones = (m % 60) % 10;
+
+    return { isPm, h12, tens, ones };
   };
 
   const openModal = () => {
-    const { hour, minute } = parseCurrentTime(value);
-    setTempHour(hour);
-    setTempMinute(minute);
+    const { isPm, h12, tens, ones } = parseTo12HourState(value);
+    setTempIsPm(isPm);
+    setTempHour12(h12);
+    setTempTens(tens);
+    setTempOnes(ones);
     setModalVisible(true);
     triggerHaptic();
   };
 
+  const calculate24HourTime = (
+    pm: boolean,
+    h12: number,
+    tens: number,
+    ones: number
+  ) => {
+    let finalH24 = 0;
+    if (pm) {
+      finalH24 = h12 === 12 ? 12 : h12 + 12;
+    } else {
+      finalH24 = h12 === 12 ? 0 : h12;
+    }
+    const finalMin = tens * 10 + ones;
+    return `${String(finalH24).padStart(2, '0')}:${String(finalMin).padStart(2, '0')}`;
+  };
+
   const handleSave = () => {
-    const formatted = `${String(tempHour).padStart(2, '0')}:${String(tempMinute).padStart(2, '0')}`;
-    onChange(formatted);
+    const result24 = calculate24HourTime(
+      tempIsPm,
+      tempHour12,
+      tempTens,
+      tempOnes
+    );
+    onChange(result24);
     setModalVisible(false);
     triggerHaptic();
   };
@@ -202,24 +228,43 @@ export default function TimeWheelPicker({
     setModalVisible(false);
   };
 
+  const handleToggleAmPm = (pm: boolean) => {
+    setTempIsPm(pm);
+    triggerHaptic();
+  };
+
   // プリセット適用
   const applyPresetMinutesAgo = (minsAgo: number) => {
     const now = new Date();
     if (minsAgo > 0) {
       now.setMinutes(now.getMinutes() - minsAgo);
     }
-    const h = now.getHours();
+    const h24 = now.getHours();
     const m = now.getMinutes();
-    setTempHour(h);
-    setTempMinute(m);
+
+    const isPm = h24 >= 12;
+    const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+    const tens = Math.floor(m / 10);
+    const ones = m % 10;
+
+    setTempIsPm(isPm);
+    setTempHour12(h12);
+    setTempTens(tens);
+    setTempOnes(ones);
     triggerHaptic();
   };
 
   const displayTime = value || '12:00';
-  const { hour: curH } = parseCurrentTime(displayTime);
-  const isPm = curH >= 12;
-  const h12 = curH % 12 === 0 ? 12 : curH % 12;
-  const ampmStr = isPm ? '午後' : '午前';
+  const { isPm: curIsPm, h12: curH12 } = parseTo12HourState(displayTime);
+  const ampmDisplayStr = curIsPm ? '午後' : '午前';
+
+  // プレビュー用計算
+  const currentPreview24 = calculate24HourTime(
+    tempIsPm,
+    tempHour12,
+    tempTens,
+    tempOnes
+  );
 
   return (
     <View style={styles.container}>
@@ -235,7 +280,7 @@ export default function TimeWheelPicker({
         <View style={styles.triggerLeft}>
           <Text style={styles.triggerLabel}>⏰ {label}</Text>
           <Text style={styles.triggerSubText}>
-            {ampmStr} {h12}:{displayTime.split(':')[1] || '00'}
+            {ampmDisplayStr} {curH12}:{displayTime.split(':')[1] || '00'}
           </Text>
         </View>
 
@@ -279,15 +324,52 @@ export default function TimeWheelPicker({
 
                 {/* 現在選択中の時間の大きなプレビュー */}
                 <View style={styles.previewContainer}>
-                  <Text style={styles.previewText}>
-                    {String(tempHour).padStart(2, '0')}:
-                    {String(tempMinute).padStart(2, '0')}
-                  </Text>
+                  <Text style={styles.previewText}>{currentPreview24}</Text>
                   <Text style={styles.previewSubText}>
-                    {tempHour >= 12 ? '午後' : '午前'}{' '}
-                    {tempHour % 12 === 0 ? 12 : tempHour % 12}:
-                    {String(tempMinute).padStart(2, '0')}
+                    {tempIsPm ? '午後' : '午前'} {tempHour12}:
+                    {String(tempTens * 10 + tempOnes).padStart(2, '0')}
                   </Text>
+                </View>
+
+                {/* AM / PM 切替ボタン */}
+                <View style={styles.ampmRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.ampmBtn,
+                      !tempIsPm && styles.ampmBtnActive,
+                      isPureBlack && !tempIsPm && { backgroundColor: '#1e3a8a', borderColor: '#3b82f6' },
+                    ]}
+                    onPress={() => handleToggleAmPm(false)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.ampmBtnText,
+                        !tempIsPm && styles.ampmBtnTextActive,
+                      ]}
+                    >
+                      🌅 AM (午前)
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.ampmBtn,
+                      tempIsPm && styles.ampmBtnActive,
+                      isPureBlack && tempIsPm && { backgroundColor: '#1e3a8a', borderColor: '#3b82f6' },
+                    ]}
+                    onPress={() => handleToggleAmPm(true)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.ampmBtnText,
+                        tempIsPm && styles.ampmBtnTextActive,
+                      ]}
+                    >
+                      🌙 PM (午後)
+                    </Text>
+                  </TouchableOpacity>
                 </View>
 
                 {/* クイックプリセットボタン */}
@@ -296,7 +378,7 @@ export default function TimeWheelPicker({
                     style={styles.presetBtn}
                     onPress={() => applyPresetMinutesAgo(0)}
                   >
-                    <Text style={styles.presetBtnText}>現在時刻</Text>
+                    <Text style={styles.presetBtnText}>現在</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.presetBtn}
@@ -318,24 +400,38 @@ export default function TimeWheelPicker({
                   </TouchableOpacity>
                 </View>
 
-                {/* ドラムロールホイールエリア */}
+                {/* ドラムロールホイールエリア（時、十の位、一の位） */}
                 <View style={styles.wheelsContainer}>
+                  {/* 時 (1〜12) */}
                   <WheelColumn
-                    key={`hour-${tempHour}`}
-                    data={HOURS}
-                    selectedValue={tempHour}
-                    onSelect={setTempHour}
-                    unit="時 (00-23)"
+                    key={`h12-${tempHour12}`}
+                    data={HOURS_12}
+                    selectedValue={tempHour12}
+                    onSelect={setTempHour12}
+                    unit="時"
+                    columnWidth={74}
                   />
 
                   <Text style={styles.colonSeparator}>:</Text>
 
+                  {/* 分 (十の位: 0〜5) */}
                   <WheelColumn
-                    key={`min-${tempMinute}`}
-                    data={MINUTES}
-                    selectedValue={tempMinute}
-                    onSelect={setTempMinute}
-                    unit="分 (00-59)"
+                    key={`tens-${tempTens}`}
+                    data={MINUTE_TENS}
+                    selectedValue={tempTens}
+                    onSelect={setTempTens}
+                    unit="分の十位"
+                    columnWidth={70}
+                  />
+
+                  {/* 分 (一の位: 0〜9) */}
+                  <WheelColumn
+                    key={`ones-${tempOnes}`}
+                    data={MINUTE_ONES}
+                    selectedValue={tempOnes}
+                    onSelect={setTempOnes}
+                    unit="分の一位"
+                    columnWidth={70}
                   />
                 </View>
 
@@ -352,7 +448,12 @@ export default function TimeWheelPicker({
                     style={styles.confirmBtn}
                     onPress={handleSave}
                   >
-                    <Ionicons name="checkmark" size={18} color="#ffffff" style={{ marginRight: 4 }} />
+                    <Ionicons
+                      name="checkmark"
+                      size={18}
+                      color="#ffffff"
+                      style={{ marginRight: 4 }}
+                    />
                     <Text style={styles.confirmBtnText}>決定</Text>
                   </TouchableOpacity>
                 </View>
@@ -417,16 +518,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
   },
   modalCard: {
     width: '100%',
-    maxWidth: 340,
+    maxWidth: 350,
     backgroundColor: '#0f172a',
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#334155',
-    padding: 20,
+    padding: 18,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
@@ -437,7 +538,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   modalTitleRow: {
     flexDirection: 'row',
@@ -452,13 +553,13 @@ const styles = StyleSheet.create({
   previewContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
+    paddingVertical: 6,
     backgroundColor: '#1e293b55',
     borderRadius: 12,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   previewText: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: '900',
     color: '#38bdf8',
     letterSpacing: 2,
@@ -469,11 +570,38 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     marginTop: 2,
   },
+  ampmRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+  },
+  ampmBtn: {
+    flex: 1,
+    backgroundColor: '#1e293b',
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#334155',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ampmBtnActive: {
+    backgroundColor: '#0284c7',
+    borderColor: '#38bdf8',
+  },
+  ampmBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#94a3b8',
+  },
+  ampmBtnTextActive: {
+    color: '#ffffff',
+  },
   presetRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 6,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   presetBtn: {
     flex: 1,
@@ -499,14 +627,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderWidth: 1,
     borderColor: '#334155',
-    marginBottom: 18,
+    marginBottom: 16,
+    gap: 4,
   },
   wheelColumnContainer: {
-    width: 90,
     alignItems: 'center',
   },
   columnUnitText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     color: '#64748b',
     marginBottom: 4,
@@ -520,8 +648,8 @@ const styles = StyleSheet.create({
   selectionHighlight: {
     position: 'absolute',
     top: ITEM_HEIGHT,
-    left: 4,
-    right: 4,
+    left: 2,
+    right: 2,
     height: ITEM_HEIGHT,
     backgroundColor: '#38bdf822',
     borderRadius: 8,
@@ -545,11 +673,11 @@ const styles = StyleSheet.create({
     color: '#f8fafc',
   },
   colonSeparator: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
     color: '#38bdf8',
-    marginTop: 18,
-    marginHorizontal: 4,
+    marginTop: 14,
+    marginHorizontal: 2,
   },
   modalActions: {
     flexDirection: 'row',
@@ -585,4 +713,5 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
 });
+
 
