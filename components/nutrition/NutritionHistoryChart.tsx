@@ -7,6 +7,9 @@ interface Props {
   goals: NutritionGoals;
 }
 
+const TRACK_HEIGHT = 110;
+const DATE_LABEL_HEIGHT = 18;
+
 export default function NutritionHistoryChart({ allLogs, goals }: Props) {
   const targetCal = goals.calories || 2000;
   const scrollRef = useRef<ScrollView>(null);
@@ -43,6 +46,7 @@ export default function NutritionHistoryChart({ allLogs, goals }: Props) {
   }, [allLogs]);
 
   const maxCal = Math.max(targetCal * 1.3, ...dailyData.map((d) => d.totalCal), 2500);
+  const goalBottomPct = Math.min(100, (targetCal / maxCal) * 100);
 
   return (
     <View style={styles.card}>
@@ -54,21 +58,23 @@ export default function NutritionHistoryChart({ allLogs, goals }: Props) {
         onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
       >
         <View style={styles.chartContainer}>
-          {/* 目標ライン */}
-          <View
-            style={[
-              styles.goalLine,
-              { bottom: `${Math.min(100, (targetCal / maxCal) * 100)}%` },
-            ]}
-          />
-          <Text
-            style={[
-              styles.goalLabel,
-              { bottom: `${Math.min(95, (targetCal / maxCal) * 100)}%` },
-            ]}
-          >
-            目標 {targetCal} kcal
-          </Text>
+          {/* 目標ライン（barTrack の描画領域と完全に一致させた plotArea 内に配置） */}
+          <View style={styles.plotArea} pointerEvents="none">
+            <View
+              style={[
+                styles.goalLine,
+                { bottom: `${goalBottomPct}%` },
+              ]}
+            />
+            <Text
+              style={[
+                styles.goalLabel,
+                { bottom: `${Math.min(95, goalBottomPct + 1)}%` },
+              ]}
+            >
+              目標 {targetCal} kcal
+            </Text>
+          </View>
 
           {/* バー一覧 */}
           <View style={styles.barsRow}>
@@ -79,7 +85,7 @@ export default function NutritionHistoryChart({ allLogs, goals }: Props) {
               return (
                 <View key={item.date} style={styles.barCol}>
                   <Text style={styles.barVal}>{item.totalCal > 0 ? Math.round(item.totalCal) : ''}</Text>
-                  <View style={styles.barTrack}>
+                  <View style={[styles.barTrack, { height: TRACK_HEIGHT }]}>
                     <View
                       style={[
                         styles.barFill,
@@ -111,7 +117,15 @@ const styles = StyleSheet.create({
     borderColor: '#1c1c1c',
   },
   title: { fontSize: 15, fontWeight: '700', color: '#ffffff', marginBottom: 12 },
-  chartContainer: { height: 160, width: 440, position: 'relative', paddingTop: 20 },
+  chartContainer: { height: 160, width: 440, position: 'relative' },
+  plotArea: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: DATE_LABEL_HEIGHT,
+    height: TRACK_HEIGHT,
+    zIndex: 2,
+  },
   goalLine: {
     position: 'absolute',
     left: 0,
@@ -119,7 +133,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: '#f59e0b88',
     borderStyle: 'dashed',
-    zIndex: 2,
   },
   goalLabel: {
     position: 'absolute',
@@ -127,12 +140,12 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: '#f59e0b',
     fontWeight: '700',
-    zIndex: 3,
+    marginBottom: 2,
   },
   barsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: '100%' },
   barCol: { width: 26, alignItems: 'center', height: '100%', justifyContent: 'flex-end' },
-  barVal: { fontSize: 8, color: '#94a3b8', marginBottom: 2 },
-  barTrack: { width: 14, height: 100, backgroundColor: '#0f172a', borderRadius: 7, overflow: 'hidden', justifyContent: 'flex-end' },
+  barVal: { fontSize: 8, color: '#94a3b8', marginBottom: 2, height: 12 },
+  barTrack: { width: 14, backgroundColor: '#0f172a', borderRadius: 7, overflow: 'hidden', justifyContent: 'flex-end' },
   barFill: { width: '100%', borderRadius: 7 },
-  barDate: { fontSize: 9, color: '#64748b', marginTop: 4 },
+  barDate: { fontSize: 9, color: '#64748b', marginTop: 4, height: DATE_LABEL_HEIGHT - 4 },
 });
