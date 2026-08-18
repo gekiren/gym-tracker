@@ -363,26 +363,30 @@ export function calculateMachoScore(
   let categoryLabel = '標準レベル';
   let advice = '標準的な体型です。筋トレと食事管理でFFMI向上と体脂肪率低下を目指しましょう。';
 
-  if (score >= 22.0) {
+  if (score >= 24.5) {
     category = 'superhuman';
-    categoryLabel = '超人・コンテスト級 (22.0+)';
-    advice = '圧倒的な除脂肪筋肉量と極限の絞りを両立したトップフィジークです。';
-  } else if (score >= 20.0) {
-    category = 'macho';
-    categoryLabel = 'マッチョ到達 (20.0+)';
-    advice = '高い筋肉量と低い体脂肪率をハイレベルで両立している状態です！';
-  } else if (score >= 18.0) {
+    categoryLabel = 'トップフィジーク・限界級 (24.5+)';
+    advice = '圧倒的な除脂肪筋肉量と極限の絞りを両立した大会上位・トップフィジークです。';
+  } else if (score >= 23.0) {
     category = 'athlete';
-    categoryLabel = '上級フィジーク (18.0+)';
-    advice = '充実した筋量と絞りを備えています。20.0突破まであと少しです！';
-  } else if (score >= 16.0) {
+    categoryLabel = '本格マッチョ・アスリート (23.0+)';
+    advice = '充実した筋肉量と優れたカットを備えた、誰もが一目でマッチョと認める身体です。';
+  } else if (score >= 21.5) {
+    category = 'macho';
+    categoryLabel = '中上級マッチョ・筋肉質 (21.5+)';
+    advice = '服の上からでも筋肉の厚みが分かるレベルに到達しています！';
+  } else if (score >= 20.0) {
     category = 'fitness';
-    categoryLabel = 'フィットネス (16.0+)';
-    advice = '健康で活動的な体格です。さらなる筋肥大または減量でスコアアップが狙えます。';
+    categoryLabel = '細マッチョ・引き締まり (20.0+)';
+    advice = '体脂肪が低くシャープに引き締まった細身（スリムフィット）です。筋肉増量でさらなるスコアUPが狙えます。';
+  } else if (score >= 18.5) {
+    category = 'standard';
+    categoryLabel = '標準・ライトフィットネス (18.5+)';
+    advice = '健康的で標準的な体型です。筋力トレーニングで筋量を高めることでさらにスコアが向上します。';
   } else {
     category = 'standard';
-    categoryLabel = '標準レベル';
-    advice = '標準的な体型です。筋トレと食事管理でFFMI向上と体脂肪率低下を目指しましょう。';
+    categoryLabel = '発展途上・筋量控えめ';
+    advice = '標準的な体格です。筋トレと食事管理でFFMI向上と体脂肪率低下を目指しましょう。';
   }
 
   return {

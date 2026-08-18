@@ -176,9 +176,11 @@ export default function BodySummaryCard({
         <View style={styles.statBox}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
             <Text style={styles.statLabel}>マッチョスコア (MS)</Text>
-            {machoResult?.is20Achieved && (
-              <View style={[styles.badgeWrap, { backgroundColor: 'rgba(232, 121, 249, 0.2)' }]}>
-                <Text style={[styles.badgeText, { color: '#e879f9' }]}>20突破</Text>
+            {machoResult && machoResult.score >= 20.0 && (
+              <View style={[styles.badgeWrap, { backgroundColor: machoResult.score >= 23.0 ? 'rgba(244, 63, 94, 0.2)' : 'rgba(232, 121, 249, 0.2)' }]}>
+                <Text style={[styles.badgeText, { color: machoResult.score >= 23.0 ? '#f43f5e' : '#e879f9' }]}>
+                  {machoResult.score >= 24.5 ? '超人' : machoResult.score >= 23.0 ? 'マッチョ' : machoResult.score >= 21.5 ? '筋肉質' : '細マッチョ'}
+                </Text>
               </View>
             )}
           </View>
@@ -186,7 +188,7 @@ export default function BodySummaryCard({
             <Text
               style={[
                 styles.statValueSmall,
-                { color: machoResult?.is20Achieved ? '#e879f9' : '#f43f5e' },
+                { color: machoResult && machoResult.score >= 21.5 ? '#f43f5e' : machoResult && machoResult.score >= 20.0 ? '#e879f9' : Theme.colors.text },
               ]}
             >
               {machoResult ? machoResult.score.toFixed(1) : '--'}

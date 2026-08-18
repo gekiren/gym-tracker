@@ -147,12 +147,14 @@ export default function BodyGuideModal({ visible, onClose }: BodyGuideModalProps
               <Text style={styles.descText}>
                 体脂肪率20%を基準（±0点）とし、体脂肪率が1%低くなるごとに +0.2点 加算されます（例: 15%で+1.0点、10%で+2.0点、25%で-1.0点）。
               </Text>
-              <Text style={styles.subTitle}>🏆 評価の目安</Text>
+              <Text style={styles.subTitle}>🏆 評価の目安（FFMI基準連動）</Text>
               <View style={styles.ffmiTable}>
-                <Text style={styles.ffmiRow}>• <Text style={[styles.ffmiBold, { color: '#e879f9' }]}>22.0 以上</Text>: 超人・コンテスト級のトップフィジーク</Text>
-                <Text style={styles.ffmiRow}>• <Text style={[styles.ffmiBold, { color: '#e879f9' }]}>20.0 突破</Text>: 高い筋肉量と低い体脂肪率をハイレベルで両立している状態</Text>
-                <Text style={styles.ffmiRow}>• <Text style={styles.ffmiBold}>18.0〜19.9</Text>: 上級フィジーク（充実した筋量と絞り）</Text>
-                <Text style={styles.ffmiRow}>• <Text style={styles.ffmiBold}>16.0〜17.9</Text>: 中級・フィットネスレベル</Text>
+                <Text style={styles.ffmiRow}>• <Text style={[styles.ffmiBold, { color: '#f43f5e' }]}>24.5 以上</Text>: トップフィジーク・限界級（大会上位レベル）</Text>
+                <Text style={styles.ffmiRow}>• <Text style={[styles.ffmiBold, { color: '#f43f5e' }]}>23.0〜24.4</Text>: 本格マッチョ・アスリート（誰もが一目で認める体）</Text>
+                <Text style={styles.ffmiRow}>• <Text style={[styles.ffmiBold, { color: '#e879f9' }]}>21.5〜22.9</Text>: 中上級マッチョ・筋肉質（服の上からでも厚みが分かる）</Text>
+                <Text style={styles.ffmiRow}>• <Text style={[styles.ffmiBold, { color: '#e879f9' }]}>20.0〜21.4</Text>: 細マッチョ・引き締まり（スリムフィット・腹筋視認）</Text>
+                <Text style={styles.ffmiRow}>• <Text style={styles.ffmiBold}>18.5〜19.9</Text>: 標準・ライトフィットネス（健康的標準体型）</Text>
+                <Text style={styles.ffmiRow}>• <Text style={styles.ffmiBold}>18.5 未満</Text>: 発展途上・筋量控えめ</Text>
               </View>
             </View>
           </ScrollView>
