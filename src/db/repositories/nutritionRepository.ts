@@ -123,7 +123,7 @@ export const getFavorites = async (): Promise<MealFavorite[]> => {
   await getSafeDB();
   return await withDBQueue(async (conn) => {
     return await conn.getAllAsync<MealFavorite>(
-      'SELECT * FROM meal_favorites ORDER BY created_at DESC'
+      'SELECT * FROM meal_favorites ORDER BY sort_order ASC, created_at DESC'
     );
   });
 };
@@ -135,8 +135,8 @@ export const addFavorite = async (
   return await withDBQueue(async (conn) => {
     const res = await conn.runAsync(
       `INSERT INTO meal_favorites
-        (name, meal_type, calories, protein, fat, carbs, sodium, fiber, memo, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (name, meal_type, calories, protein, fat, carbs, sodium, fiber, memo, created_at, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         fav.name,
         fav.meal_type ?? null,
@@ -148,9 +148,54 @@ export const addFavorite = async (
         fav.fiber,
         fav.memo ?? null,
         fav.created_at,
+        fav.sort_order ?? 0,
       ]
     );
     return res.lastInsertRowId;
+  });
+};
+
+export const updateFavorite = async (
+  id: number,
+  fav: Partial<Omit<MealFavorite, 'id'>>
+): Promise<void> => {
+  await getSafeDB();
+  const fields: string[] = [];
+  const values: (string | number | null)[] = [];
+
+  if (fav.name !== undefined) { fields.push('name = ?'); values.push(fav.name); }
+  if (fav.meal_type !== undefined) { fields.push('meal_type = ?'); values.push(fav.meal_type ?? null); }
+  if (fav.calories !== undefined) { fields.push('calories = ?'); values.push(fav.calories); }
+  if (fav.protein !== undefined) { fields.push('protein = ?'); values.push(fav.protein); }
+  if (fav.fat !== undefined) { fields.push('fat = ?'); values.push(fav.fat); }
+  if (fav.carbs !== undefined) { fields.push('carbs = ?'); values.push(fav.carbs); }
+  if (fav.sodium !== undefined) { fields.push('sodium = ?'); values.push(fav.sodium); }
+  if (fav.fiber !== undefined) { fields.push('fiber = ?'); values.push(fav.fiber); }
+  if (fav.memo !== undefined) { fields.push('memo = ?'); values.push(fav.memo ?? null); }
+  if (fav.sort_order !== undefined) { fields.push('sort_order = ?'); values.push(fav.sort_order); }
+
+  if (fields.length === 0) return;
+  values.push(id);
+
+  await withDBQueue(async (conn) => {
+    await conn.runAsync(
+      `UPDATE meal_favorites SET ${fields.join(', ')} WHERE id = ?`,
+      values
+    );
+  });
+};
+
+export const updateFavoriteOrders = async (
+  orders: { id: number; sort_order: number }[]
+): Promise<void> => {
+  await getSafeDB();
+  await withDBQueue(async (conn) => {
+    for (const item of orders) {
+      await conn.runAsync(
+        'UPDATE meal_favorites SET sort_order = ? WHERE id = ?',
+        [item.sort_order, item.id]
+      );
+    }
   });
 };
 

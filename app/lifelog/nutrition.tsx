@@ -26,6 +26,7 @@ import PhotoRecordModal from '../../components/nutrition/PhotoRecordModal';
 import ManualEntryModal from '../../components/nutrition/ManualEntryModal';
 import HistorySelectModal from '../../components/nutrition/HistorySelectModal';
 import EditMealLogModal from '../../components/nutrition/EditMealLogModal';
+import ManageFavoritesModal from '../../components/nutrition/ManageFavoritesModal';
 import AutophagyCard from '../../components/nutrition/AutophagyCard';
 import NutritionHistoryChart from '../../components/nutrition/NutritionHistoryChart';
 import MdImportModal from '../../components/nutrition/MdImportModal';
@@ -57,6 +58,9 @@ export default function NutritionScreen() {
   const deleteMeal = useNutritionStore((state) => state.deleteMeal);
   const loadFavorites = useNutritionStore((state) => state.loadFavorites);
   const addFavoriteFromLog = useNutritionStore((state) => state.addFavoriteFromLog);
+  const addNewFavorite = useNutritionStore((state) => state.addNewFavorite);
+  const updateFavoriteItem = useNutritionStore((state) => state.updateFavoriteItem);
+  const updateFavoritesOrder = useNutritionStore((state) => state.updateFavoritesOrder);
   const deleteFavoriteById = useNutritionStore((state) => state.deleteFavoriteById);
   const loadGoals = useNutritionStore((state) => state.loadGoals);
   const saveGoals = useNutritionStore((state) => state.saveGoals);
@@ -80,6 +84,7 @@ export default function NutritionScreen() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showMdModal, setShowMdModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showManageFavsModal, setShowManageFavsModal] = useState(false);
   const [editingLog, setEditingLog] = useState<MealLog | null>(null);
   const [deletingMealId, setDeletingMealId] = useState<number | null>(null);
 
@@ -282,6 +287,7 @@ export default function NutritionScreen() {
         <QuickFavoritesBar
           favorites={favorites}
           onSelectFavorite={handleSelectQuickFavorite}
+          onOpenManage={() => setShowManageFavsModal(true)}
         />
 
         {/* 栄養サマリーカード */}
@@ -370,6 +376,16 @@ export default function NutritionScreen() {
         autophagyConfig={safeAutophagy}
         onSaveGoals={saveGoals}
         onSaveAutophagy={updateAutophagyConfig}
+      />
+
+      <ManageFavoritesModal
+        visible={showManageFavsModal}
+        favorites={favorites}
+        onClose={() => setShowManageFavsModal(false)}
+        onAddFavorite={addNewFavorite}
+        onUpdateFavorite={updateFavoriteItem}
+        onDeleteFavorite={deleteFavoriteById}
+        onUpdateOrder={updateFavoritesOrder}
       />
 
       <ConfirmModal
