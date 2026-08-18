@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Modal,
   View,
@@ -15,6 +15,8 @@ import {
 import { MealLog } from '../../src/db/types';
 import { useAppTheme } from '../../src/theme';
 import { getDefaultMealType } from '../../src/utils/nutritionUtils';
+import { useNutritionStore } from '../../src/store/nutritionStore';
+import { Ionicons } from '@expo/vector-icons';
 import TimeWheelPicker from './TimeWheelPicker';
 
 const MEAL_TYPES = [
@@ -48,6 +50,10 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
   const isPureBlack = backgroundTheme === 'pureBlack';
   const scrollViewRef = useRef<ScrollView>(null);
 
+  const favorites = useNutritionStore((state) => state.favorites);
+  const addFavoriteFromLog = useNutritionStore((state) => state.addFavoriteFromLog);
+  const deleteFavoriteById = useNutritionStore((state) => state.deleteFavoriteById);
+
   const [name, setName] = useState('');
   const [mealType, setMealType] = useState<string>(getDefaultMealType());
   const [mealTime, setMealTime] = useState<string>('12:00');
@@ -59,6 +65,14 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
   const [fiber, setFiber] = useState('');
   const [memo, setMemo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isFavLoading, setIsFavLoading] = useState(false);
+
+  // 入力中の料理名がお気に入りに登録されているか判定
+  const isFavorited = useMemo(() => {
+    const clean = name.trim().toLowerCase();
+    if (!clean) return false;
+    return favorites.some((f) => (f.name || '').trim().toLowerCase() === clean);
+  }, [name, favorites]);
 
   // logが変わったらフィールドを同期
   useEffect(() => {
@@ -75,6 +89,40 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
       setMemo(log.memo || '');
     }
   }, [log]);
+
+  const handleToggleFavorite = async () => {
+    if (!name.trim()) {
+      Alert.alert('入力エラー', '料理名を入力してください。');
+      return;
+    }
+    setIsFavLoading(true);
+    try {
+      const clean = name.trim().toLowerCase();
+      const existing = favorites.find(
+        (f) => (f.name || '').trim().toLowerCase() === clean
+      );
+      if (existing) {
+        await deleteFavoriteById(existing.id);
+      } else {
+        await addFavoriteFromLog({
+          name: name.trim(),
+          meal_type: mealType,
+          calories: parseFloat(calories) || 0,
+          protein: parseFloat(protein) || 0,
+          fat: parseFloat(fat) || 0,
+          carbs: parseFloat(carbs) || 0,
+          sodium: parseFloat(sodium) || 0,
+          fiber: parseFloat(fiber) || 0,
+          memo: memo.trim() || undefined,
+          created_at: Date.now(),
+        });
+      }
+    } catch {
+      Alert.alert('エラー', 'お気に入りの更新に失敗しました。');
+    } finally {
+      setIsFavLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!log) return;
@@ -115,9 +163,27 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
         <View style={[styles.sheet, isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' }]}>
           <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
             <Text style={styles.title}>✏️ 食事ログ編集</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Text style={styles.closeBtnText}>✕</Text>
-            </TouchableOpacity>
+            <View style={styles.headerRight}>
+              <TouchableOpacity
+                onPress={handleToggleFavorite}
+                style={styles.headerFavBtn}
+                disabled={isFavLoading}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                {isFavLoading ? (
+                  <ActivityIndicator size="small" color="#f59e0b" />
+                ) : (
+                  <Ionicons
+                    name={isFavorited ? 'star' : 'star-outline'}
+                    size={22}
+                    color={isFavorited ? '#f59e0b' : '#94a3b8'}
+                  />
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                <Text style={styles.closeBtnText}>✕</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <ScrollView ref={scrollViewRef} style={styles.body} contentContainerStyle={{ paddingBottom: 260 }} keyboardShouldPersistTaps="handled">
@@ -192,6 +258,34 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
               }}
             />
 
+            {/* お気に入り追加/解除ボタン */}
+            <TouchableOpacity
+              style={[
+                styles.favActionBtn,
+                isFavorited ? styles.favActionBtnActive : styles.favActionBtnInactive,
+                isPureBlack && { backgroundColor: isFavorited ? '#f59e0b18' : '#080808', borderColor: isFavorited ? '#f59e0b' : '#1f1f1f' },
+              ]}
+              onPress={handleToggleFavorite}
+              disabled={isFavLoading}
+              activeOpacity={0.8}
+            >
+              {isFavLoading ? (
+                <ActivityIndicator size="small" color="#f59e0b" />
+              ) : (
+                <>
+                  <Ionicons
+                    name={isFavorited ? 'star' : 'star-outline'}
+                    size={16}
+                    color={isFavorited ? '#f59e0b' : '#94a3b8'}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text style={[styles.favActionBtnText, isFavorited && styles.favActionBtnTextActive]}>
+                    {isFavorited ? '★ お気に入り解除' : '⭐ お気に入りに追加'}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={[styles.saveBtn, isSaving && styles.saveBtnDisabled]}
               onPress={handleSave}
@@ -224,6 +318,8 @@ const styles = StyleSheet.create({
   },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   title: { fontSize: 18, fontWeight: '700', color: '#f8fafc' },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerFavBtn: { padding: 4 },
   closeBtn: { padding: 4 },
   closeBtnText: { fontSize: 18, color: '#94a3b8' },
   body: { padding: 16 },
@@ -268,6 +364,31 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: 'top',
     marginBottom: 16,
+  },
+  favActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  favActionBtnInactive: {
+    backgroundColor: '#1e293b',
+    borderColor: '#334155',
+  },
+  favActionBtnActive: {
+    backgroundColor: '#f59e0b20',
+    borderColor: '#f59e0b',
+  },
+  favActionBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#94a3b8',
+  },
+  favActionBtnTextActive: {
+    color: '#f59e0b',
   },
   saveBtn: { backgroundColor: '#4facfe', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   saveBtnDisabled: { opacity: 0.5 },
