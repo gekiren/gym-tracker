@@ -227,12 +227,38 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         const inheritedStance = ex.default_stance || (lastSet ? lastSet.stance : null);
         
         if (ex.is_unilateral) {
+          const lastL = [...ex.sets].reverse().find(s => s.side === 'L');
+          const lastR = [...ex.sets].reverse().find(s => s.side === 'R');
           return {
             ...ex,
             sets: [
               ...ex.sets,
-              { id: Math.random().toString(36).substring(7), set_number: newSetNum, weight: lastSet ? lastSet.weight : null, reps: lastSet ? lastSet.reps : null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'L', variation: inheritedVariation, stance: inheritedStance },
-              { id: Math.random().toString(36).substring(7), set_number: newSetNum, weight: lastSet ? lastSet.weight : null, reps: lastSet ? lastSet.reps : null, rpe: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'R', variation: inheritedVariation, stance: inheritedStance }
+              {
+                id: Math.random().toString(36).substring(7),
+                set_number: newSetNum,
+                weight: lastL ? lastL.weight : (lastSet ? lastSet.weight : null),
+                reps: lastL ? lastL.reps : (lastSet ? lastSet.reps : null),
+                rpe: lastL ? lastL.rpe : (lastSet ? lastSet.rpe : null),
+                is_completed: false,
+                rest_seconds: null,
+                work_seconds: null,
+                side: 'L',
+                variation: inheritedVariation,
+                stance: inheritedStance
+              },
+              {
+                id: Math.random().toString(36).substring(7),
+                set_number: newSetNum,
+                weight: lastR ? lastR.weight : (lastSet ? lastSet.weight : null),
+                reps: lastR ? lastR.reps : (lastSet ? lastSet.reps : null),
+                rpe: lastR ? lastR.rpe : (lastSet ? lastSet.rpe : null),
+                is_completed: false,
+                rest_seconds: null,
+                work_seconds: null,
+                side: 'R',
+                variation: inheritedVariation,
+                stance: inheritedStance
+              }
             ]
           };
         } else {
@@ -243,7 +269,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
               set_number: newSetNum,
               weight: lastSet ? lastSet.weight : null,
               reps: lastSet ? lastSet.reps : null,
-              rpe: null,
+              rpe: lastSet ? lastSet.rpe : null,
               is_completed: false,
               rest_seconds: null,
               work_seconds: null,
