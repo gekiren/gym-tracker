@@ -34,6 +34,7 @@ import {
 import { getAllBodyLogs } from '../../src/db/repositories/bodyRepository';
 import { BodyCompositionLog } from '../../src/types/bodyComposition';
 import { useBodyStore } from '../../src/store/bodyStore';
+import { calculateMfRatio, calculateMachoScore } from '../../src/utils/bodyCalculators';
 
 interface LifelogHistoryTabProps {
   type: 'water' | 'time' | 'habit' | 'routine' | 'nutrition' | 'body';
@@ -63,7 +64,18 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
   const [loading, setLoading] = useState(true);
   const [chartScale, setChartScale] = useState<'day' | 'week' | 'month' | 'year'>('day');
   const [chartMetric, setChartMetric] = useState<
-    'amount' | 'caffeine' | 'calories' | 'protein' | 'fat' | 'carbs' | 'weight' | 'body_fat_rate' | 'muscle_mass' | 'lbm'
+    | 'amount'
+    | 'caffeine'
+    | 'calories'
+    | 'protein'
+    | 'fat'
+    | 'carbs'
+    | 'weight'
+    | 'body_fat_rate'
+    | 'muscle_mass'
+    | 'lbm'
+    | 'mf_ratio'
+    | 'macho_score'
   >('amount');
   const [selectedFilter, setSelectedFilter] = useState<string>('all'); // tag, habitId, or routineId
   const [filterModalVisible, setFilterModalVisible] = useState(false);
@@ -297,6 +309,8 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
       });
     } else if (type === 'body') {
       const bodyGroup: { [key: string]: { date: Date; values: number[]; subValues: number[] } } = {};
+      const fallbackHeight = bodyLogs.find((b) => b.height && b.height > 0)?.height || null;
+
       bodyLogs.forEach((log) => {
         let val: number | null = null;
         let subVal: number = 0;
@@ -312,6 +326,23 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
         } else if (chartMetric === 'lbm') {
           val = log.lbm;
           subVal = log.body_fat_rate || 0;
+        } else if (chartMetric === 'mf_ratio') {
+          if (log.muscle_mass && log.weight && log.body_fat_rate) {
+            const mf = calculateMfRatio(log.muscle_mass, log.weight, log.body_fat_rate);
+            if (mf) {
+              val = mf.mfRatio;
+              subVal = log.muscle_mass;
+            }
+          }
+        } else if (chartMetric === 'macho_score') {
+          const h = log.height || fallbackHeight;
+          if (log.weight && log.body_fat_rate && h) {
+            const ms = calculateMachoScore(log.weight, log.body_fat_rate, h);
+            if (ms) {
+              val = ms.score;
+              subVal = ms.fatBonus;
+            }
+          }
         }
 
         if (val === null || val === undefined || isNaN(val) || val <= 0) return;
@@ -482,6 +513,8 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
       if (chartMetric === 'body_fat_rate') return t('ui.history.chart_title_body_fat') || '最近の体脂肪率推移 (%)';
       if (chartMetric === 'muscle_mass') return t('ui.history.chart_title_body_muscle') || '最近の骨格筋量推移 (kg)';
       if (chartMetric === 'lbm') return t('ui.history.chart_title_body_lbm') || '最近の除脂肪体重(LBM)推移 (kg)';
+      if (chartMetric === 'mf_ratio') return t('ui.history.chart_title_body_mf_ratio') || '最近の筋肉・脂肪比 (MF比) 推移';
+      if (chartMetric === 'macho_score') return t('ui.history.chart_title_body_macho_score') || '最近のマッチョスコア (MS) 推移 (pt)';
     } else if (type === 'time') {
       return selectedFilter === 'all'
         ? (t('ui.history.chart_title_time') || '最近の活動時間 (時間)')
@@ -514,6 +547,10 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
     } else if (type === 'body') {
       if (chartMetric === 'body_fat_rate') {
         return { valStr: point.value.toFixed(1), unitStr: '%' };
+      } else if (chartMetric === 'mf_ratio') {
+        return { valStr: point.value.toFixed(2), unitStr: '比' };
+      } else if (chartMetric === 'macho_score') {
+        return { valStr: point.value.toFixed(1), unitStr: 'pt' };
       } else {
         return { valStr: point.value.toFixed(1), unitStr: 'kg' };
       }
@@ -828,6 +865,48 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   </View>
                   {chartMetric === 'lbm' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.metricOptionItem, chartMetric === 'mf_ratio' && styles.metricOptionItemActive]}
+                  onPress={() => {
+                    setChartMetric('mf_ratio');
+                    setSelectedIndex(null);
+                    setMetricModalVisible(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.optionIconBox, chartMetric === 'mf_ratio' && styles.optionIconBoxActive]}>
+                    <Ionicons name="git-compare-outline" size={20} color={chartMetric === 'mf_ratio' ? Theme.colors.primary : Theme.colors.textMuted} />
+                  </View>
+                  <View style={styles.optionTextContent}>
+                    <Text style={[styles.optionTitle, chartMetric === 'mf_ratio' && styles.optionTitleActive]}>
+                      {t('ui.history.metric_mf_ratio') || '筋肉・脂肪比 (MF比)'}
+                    </Text>
+                    <Text style={styles.optionSub}>筋肉量 ÷ 体脂肪量による筋肉の密度推移を表示します</Text>
+                  </View>
+                  {chartMetric === 'mf_ratio' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.metricOptionItem, chartMetric === 'macho_score' && styles.metricOptionItemActive]}
+                  onPress={() => {
+                    setChartMetric('macho_score');
+                    setSelectedIndex(null);
+                    setMetricModalVisible(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.optionIconBox, chartMetric === 'macho_score' && styles.optionIconBoxActive]}>
+                    <Ionicons name="flame-outline" size={20} color={chartMetric === 'macho_score' ? Theme.colors.primary : Theme.colors.textMuted} />
+                  </View>
+                  <View style={styles.optionTextContent}>
+                    <Text style={[styles.optionTitle, chartMetric === 'macho_score' && styles.optionTitleActive]}>
+                      {t('ui.history.metric_macho_score') || 'マッチョスコア (MS)'} (pt)
+                    </Text>
+                    <Text style={styles.optionSub}>FFMI ＋ 絞りボーナスによる総合スコア推移を表示します</Text>
+                  </View>
+                  {chartMetric === 'macho_score' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                </TouchableOpacity>
               </>
             ) : (
               <>
@@ -930,7 +1009,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                       type === 'nutrition'
                         ? (chartMetric === 'calories' ? 'flame' : chartMetric === 'protein' ? 'fitness' : chartMetric === 'fat' ? 'pizza' : 'nutrition')
                         : type === 'body'
-                        ? (chartMetric === 'weight' ? 'scale-outline' : chartMetric === 'body_fat_rate' ? 'pie-chart-outline' : chartMetric === 'muscle_mass' ? 'barbell-outline' : 'body-outline')
+                        ? (chartMetric === 'weight' ? 'scale-outline' : chartMetric === 'body_fat_rate' ? 'pie-chart-outline' : chartMetric === 'muscle_mass' ? 'barbell-outline' : chartMetric === 'lbm' ? 'body-outline' : chartMetric === 'mf_ratio' ? 'git-compare-outline' : 'flame-outline')
                         : (chartMetric === 'amount' ? 'water' : 'cafe')
                     }
                     size={14}
@@ -941,7 +1020,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     {type === 'nutrition'
                       ? (chartMetric === 'calories' ? (t('ui.history.metric_calories') || 'カロリー') : chartMetric === 'protein' ? (t('ui.history.metric_protein') || 'タンパク質') : chartMetric === 'fat' ? (t('ui.history.metric_fat') || '脂質') : (t('ui.history.metric_carbs') || '炭水化物'))
                       : type === 'body'
-                      ? (chartMetric === 'weight' ? (t('ui.history.metric_weight') || '体重') : chartMetric === 'body_fat_rate' ? (t('ui.history.metric_body_fat') || '体脂肪率') : chartMetric === 'muscle_mass' ? (t('ui.history.metric_muscle_mass') || '骨格筋量') : (t('ui.history.metric_lbm') || '除脂肪体重'))
+                      ? (chartMetric === 'weight' ? (t('ui.history.metric_weight') || '体重') : chartMetric === 'body_fat_rate' ? (t('ui.history.metric_body_fat') || '体脂肪率') : chartMetric === 'muscle_mass' ? (t('ui.history.metric_muscle_mass') || '骨格筋量') : chartMetric === 'lbm' ? (t('ui.history.metric_lbm') || '除脂肪体重') : chartMetric === 'mf_ratio' ? (t('ui.history.metric_mf_ratio') || 'MF比') : (t('ui.history.metric_macho_score') || 'MSスコア'))
                       : (chartMetric === 'amount' ? (t('ui.history.metric_water') || '水分量') : (t('ui.history.metric_caffeine') || 'カフェイン'))}
                   </Text>
                   <Ionicons name="chevron-down" size={14} color={Theme.colors.textMuted} style={{ marginLeft: 4 }} />
@@ -1276,6 +1355,16 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     );
                   } else if (type === 'body') {
                     const log = sub as BodyCompositionLog;
+                    const fallbackHeight = bodyLogs.find((b) => b.height && b.height > 0)?.height || null;
+                    const mfRes =
+                      log.muscle_mass && log.weight && log.body_fat_rate
+                        ? calculateMfRatio(log.muscle_mass, log.weight, log.body_fat_rate)
+                        : null;
+                    const msRes =
+                      log.weight && log.body_fat_rate && (log.height || fallbackHeight)
+                        ? calculateMachoScore(log.weight, log.body_fat_rate, log.height || fallbackHeight!)
+                        : null;
+
                     return (
                       <View key={log.id || idx} style={styles.bodyHistoryItem}>
                         <View style={styles.bodyGrid}>
@@ -1291,6 +1380,16 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                           <Text style={styles.bodyStat}>
                             骨格筋: <Text style={[styles.bodyVal, { color: '#4ade80' }]}>{log.muscle_mass !== null && log.muscle_mass !== undefined ? `${log.muscle_mass} kg` : '--'}</Text>
                           </Text>
+                          {mfRes && (
+                            <Text style={styles.bodyStat}>
+                              MF比: <Text style={[styles.bodyVal, { color: '#2dd4bf' }]}>{mfRes.mfRatio.toFixed(2)}</Text>
+                            </Text>
+                          )}
+                          {msRes && (
+                            <Text style={styles.bodyStat}>
+                              MS: <Text style={[styles.bodyVal, { color: msRes.is20Achieved ? '#e879f9' : '#f43f5e' }]}>{msRes.score.toFixed(1)} pt</Text>
+                            </Text>
+                          )}
                         </View>
 
                         {(log.neck || log.waist || log.wrist || log.ankle) && (

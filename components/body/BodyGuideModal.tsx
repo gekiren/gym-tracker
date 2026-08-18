@@ -109,6 +109,52 @@ export default function BodyGuideModal({ visible, onClose }: BodyGuideModalProps
                 <Text style={styles.ffmiRow}>• <Text style={styles.ffmiBold}>24〜25</Text>: ナチュラルの最高峰・遺伝的限界域</Text>
               </View>
             </View>
+
+            {/* 1. 筋肉・脂肪比（MF比） */}
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="git-compare" size={20} color="#2dd4bf" style={{ marginRight: 8 }} />
+                <Text style={styles.sectionTitle}>筋肉・脂肪比（MF比：Muscle-to-Fat Ratio）</Text>
+              </View>
+              <Text style={styles.descText}>
+                脂肪1kgに対して何kgの筋肉があるかを表す「筋肉の密度」の指標です。体重や体脂肪率単体では見えない、筋肉の密度の高さ・身体のキレを評価します。
+              </Text>
+              <View style={styles.formulaBox}>
+                <Text style={styles.formulaText}>MF比 ＝ 筋肉量 (kg) ÷ 体脂肪量 (kg)</Text>
+              </View>
+              <Text style={styles.subTitle}>🎯 評価の目安</Text>
+              <View style={styles.ffmiTable}>
+                <Text style={styles.ffmiRow}>• <Text style={[styles.ffmiBold, { color: '#2dd4bf' }]}>7.5 以上</Text>: 非常にハイレベルな維持目標（極限の質感）</Text>
+                <Text style={styles.ffmiRow}>• <Text style={[styles.ffmiBold, { color: '#2dd4bf' }]}>7.0 以上</Text>: 服の上からでも筋肉の質感が分かり、常時腹筋が見える状態</Text>
+                <Text style={styles.ffmiRow}>• <Text style={styles.ffmiBold}>5.5〜6.9</Text>: アスリート・カット（高密度・シャープ）</Text>
+                <Text style={styles.ffmiRow}>• <Text style={styles.ffmiBold}>4.0〜5.4</Text>: フィットネス（標準を上回る引き締まり）</Text>
+              </View>
+            </View>
+
+            {/* 2. マッチョ評価スコア（MS） */}
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="flame" size={20} color="#e879f9" style={{ marginRight: 8 }} />
+                <Text style={styles.sectionTitle}>マッチョ評価スコア（MS：Macho Score）</Text>
+              </View>
+              <Text style={styles.descText}>
+                FFMI（除脂肪量指数）をベースに、「絞り（体脂肪率の低さ）」のボーナスを加点した総合スコアです。単なる太さではなく「筋肉量と体脂肪の低さの両立」を評価します。
+              </Text>
+              <View style={styles.formulaBox}>
+                <Text style={styles.formulaText}>MSスコア ＝ FFMI ＋ (20 － 体脂肪率(%)) × 0.2</Text>
+              </View>
+              <Text style={styles.subTitle}>⚡ ボーナスの仕組み</Text>
+              <Text style={styles.descText}>
+                体脂肪率20%を基準（±0点）とし、体脂肪率が1%低くなるごとに +0.2点 加算されます（例: 15%で+1.0点、10%で+2.0点、25%で-1.0点）。
+              </Text>
+              <Text style={styles.subTitle}>🏆 評価の目安</Text>
+              <View style={styles.ffmiTable}>
+                <Text style={styles.ffmiRow}>• <Text style={[styles.ffmiBold, { color: '#e879f9' }]}>22.0 以上</Text>: 超人・コンテスト級のトップフィジーク</Text>
+                <Text style={styles.ffmiRow}>• <Text style={[styles.ffmiBold, { color: '#e879f9' }]}>20.0 突破</Text>: 高い筋肉量と低い体脂肪率をハイレベルで両立している状態</Text>
+                <Text style={styles.ffmiRow}>• <Text style={styles.ffmiBold}>18.0〜19.9</Text>: 上級フィジーク（充実した筋量と絞り）</Text>
+                <Text style={styles.ffmiRow}>• <Text style={styles.ffmiBold}>16.0〜17.9</Text>: 中級・フィットネスレベル</Text>
+              </View>
+            </View>
           </ScrollView>
 
           {/* Close Button */}
@@ -216,6 +262,19 @@ const styles = StyleSheet.create({
   ffmiBold: {
     color: Theme.colors.text,
     fontWeight: 'bold',
+  },
+  formulaBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginVertical: 6,
+  },
+  formulaText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#38bdf8',
+    textAlign: 'center',
   },
   modalFooter: {
     paddingHorizontal: 20,
