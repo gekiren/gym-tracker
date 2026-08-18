@@ -5,6 +5,8 @@ import { Theme } from '../../src/theme';
 import { BodyCompositionLog } from '../../src/types/bodyComposition';
 import { analyzeMusclePotential } from '../../src/utils/bodyCalculators';
 
+import { useBodyStore } from '../../src/store/bodyStore';
+
 interface PotentialGaugeCardProps {
   currentLog: BodyCompositionLog | null;
   latestLog: BodyCompositionLog | null;
@@ -14,11 +16,13 @@ export default function PotentialGaugeCard({
   currentLog,
   latestLog,
 }: PotentialGaugeCardProps) {
+  const savedMeasurements = useBodyStore((state) => state.savedMeasurements);
+
   const weight = currentLog?.weight ?? latestLog?.weight ?? null;
   const bodyFatRate = currentLog?.body_fat_rate ?? latestLog?.body_fat_rate ?? null;
-  const height = currentLog?.height ?? latestLog?.height ?? null;
-  const wrist = currentLog?.wrist ?? latestLog?.wrist ?? null;
-  const ankle = currentLog?.ankle ?? latestLog?.ankle ?? null;
+  const height = currentLog?.height ?? savedMeasurements.height ?? latestLog?.height ?? null;
+  const wrist = currentLog?.wrist ?? savedMeasurements.wrist ?? latestLog?.wrist ?? null;
+  const ankle = currentLog?.ankle ?? savedMeasurements.ankle ?? latestLog?.ankle ?? null;
 
   const analysis =
     weight && bodyFatRate && height && wrist && ankle

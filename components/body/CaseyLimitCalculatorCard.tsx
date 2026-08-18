@@ -5,6 +5,8 @@ import { Theme } from '../../src/theme';
 import { BodyCompositionLog, CaseyLimitResult } from '../../src/types/bodyComposition';
 import { calculateCaseyMuscularLimit } from '../../src/utils/bodyCalculators';
 
+import { useBodyStore } from '../../src/store/bodyStore';
+
 interface CaseyLimitCalculatorCardProps {
   currentLog: BodyCompositionLog | null;
   latestLog: BodyCompositionLog | null;
@@ -18,32 +20,88 @@ export default function CaseyLimitCalculatorCard({
   onSaveMeasurements,
   onOpenGuide,
 }: CaseyLimitCalculatorCardProps) {
-  const height = currentLog?.height || latestLog?.height || 175;
+  const savedMeasurements = useBodyStore((state) => state.savedMeasurements);
+  const saveLastMeasurements = useBodyStore((state) => state.saveLastMeasurements);
+
+  const initialHeight = currentLog?.height || savedMeasurements.height || latestLog?.height || 175;
 
   const [wristStr, setWristStr] = useState(
-    currentLog?.wrist ? String(currentLog.wrist) : latestLog?.wrist ? String(latestLog.wrist) : ''
+    currentLog?.wrist
+      ? String(currentLog.wrist)
+      : savedMeasurements.wrist
+      ? String(savedMeasurements.wrist)
+      : latestLog?.wrist
+      ? String(latestLog.wrist)
+      : ''
   );
   const [ankleStr, setAnkleStr] = useState(
-    currentLog?.ankle ? String(currentLog.ankle) : latestLog?.ankle ? String(latestLog.ankle) : ''
+    currentLog?.ankle
+      ? String(currentLog.ankle)
+      : savedMeasurements.ankle
+      ? String(savedMeasurements.ankle)
+      : latestLog?.ankle
+      ? String(latestLog.ankle)
+      : ''
   );
-  const [targetFatStr, setTargetFatStr] = useState('10');
-  const [heightStr, setHeightStr] = useState(String(height));
+  const [targetFatStr, setTargetFatStr] = useState(
+    savedMeasurements.targetFatRate ? String(savedMeasurements.targetFatRate) : '10'
+  );
+  const [heightStr, setHeightStr] = useState(String(initialHeight));
 
   const [showPartSizes, setShowPartSizes] = useState(false);
   const [result, setResult] = useState<CaseyLimitResult | null>(null);
 
-  // currentLog や latestLog が更新された時に同期
+  // currentLog や savedMeasurements, latestLog が更新された時に同期
   useEffect(() => {
-    if (currentLog?.wrist || latestLog?.wrist) {
-      setWristStr(String(currentLog?.wrist ?? latestLog?.wrist ?? ''));
+    const valWrist = currentLog?.wrist ?? savedMeasurements.wrist ?? latestLog?.wrist;
+    if (valWrist !== undefined && valWrist !== null) {
+      setWristStr(String(valWrist));
     }
-    if (currentLog?.ankle || latestLog?.ankle) {
-      setAnkleStr(String(currentLog?.ankle ?? latestLog?.ankle ?? ''));
+    const valAnkle = currentLog?.ankle ?? savedMeasurements.ankle ?? latestLog?.ankle;
+    if (valAnkle !== undefined && valAnkle !== null) {
+      setAnkleStr(String(valAnkle));
     }
-    if (currentLog?.height || latestLog?.height) {
-      setHeightStr(String(currentLog?.height ?? latestLog?.height ?? 175));
+    if (savedMeasurements.targetFatRate) {
+      setTargetFatStr(String(savedMeasurements.targetFatRate));
     }
-  }, [currentLog, latestLog]);
+    const valHeight = currentLog?.height ?? savedMeasurements.height ?? latestLog?.height;
+    if (valHeight !== undefined && valHeight !== null) {
+      setHeightStr(String(valHeight));
+    }
+  }, [currentLog, savedMeasurements, latestLog]);
+
+  // 入力変更ハンドラ（即時State更新 ＆ バックグラウンド永続化）
+  const handleWristChange = (val: string) => {
+    setWristStr(val);
+    const num = parseFloat(val);
+    if (!isNaN(num) && num > 0) {
+      saveLastMeasurements({ wrist: num });
+    }
+  };
+
+  const handleAnkleChange = (val: string) => {
+    setAnkleStr(val);
+    const num = parseFloat(val);
+    if (!isNaN(num) && num > 0) {
+      saveLastMeasurements({ ankle: num });
+    }
+  };
+
+  const handleTargetFatChange = (val: string) => {
+    setTargetFatStr(val);
+    const num = parseFloat(val);
+    if (!isNaN(num) && num > 0) {
+      saveLastMeasurements({ targetFatRate: num });
+    }
+  };
+
+  const handleHeightChange = (val: string) => {
+    setHeightStr(val);
+    const num = parseFloat(val);
+    if (!isNaN(num) && num > 0) {
+      saveLastMeasurements({ height: num });
+    }
+  };
 
   // 入力値変更時に自動再計算
   useEffect(() => {
@@ -104,7 +162,7 @@ export default function CaseyLimitCalculatorCard({
               placeholder="17.0"
               placeholderTextColor={Theme.colors.textMuted}
               value={wristStr}
-              onChangeText={setWristStr}
+              onChangeText={handleWristChange}
             />
             <Text style={styles.inputUnit}>cm</Text>
           </View>
@@ -120,7 +178,7 @@ export default function CaseyLimitCalculatorCard({
               placeholder="22.0"
               placeholderTextColor={Theme.colors.textMuted}
               value={ankleStr}
-              onChangeText={setAnkleStr}
+              onChangeText={handleAnkleChange}
             />
             <Text style={styles.inputUnit}>cm</Text>
           </View>
@@ -136,7 +194,7 @@ export default function CaseyLimitCalculatorCard({
               placeholder="10"
               placeholderTextColor={Theme.colors.textMuted}
               value={targetFatStr}
-              onChangeText={setTargetFatStr}
+              onChangeText={handleTargetFatChange}
             />
             <Text style={styles.inputUnit}>%</Text>
           </View>
@@ -152,7 +210,7 @@ export default function CaseyLimitCalculatorCard({
               placeholder="175.0"
               placeholderTextColor={Theme.colors.textMuted}
               value={heightStr}
-              onChangeText={setHeightStr}
+              onChangeText={handleHeightChange}
             />
             <Text style={styles.inputUnit}>cm</Text>
           </View>

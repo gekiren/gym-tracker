@@ -14,6 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
 import { BodyCompositionLog, Gender } from '../../src/types/bodyComposition';
 
+import { useBodyStore } from '../../src/store/bodyStore';
+
 interface BodyMeasurementModalProps {
   visible: boolean;
   date: string;
@@ -31,6 +33,8 @@ export default function BodyMeasurementModal({
   onClose,
   onSave,
 }: BodyMeasurementModalProps) {
+  const savedMeasurements = useBodyStore((state) => state.savedMeasurements);
+
   const [weight, setWeight] = useState('');
   const [bodyFatRate, setBodyFatRate] = useState('');
   const [muscleMass, setMuscleMass] = useState('');
@@ -60,6 +64,8 @@ export default function BodyMeasurementModal({
       setHeight(
         currentLog?.height !== null && currentLog?.height !== undefined
           ? String(currentLog.height)
+          : savedMeasurements.height !== null && savedMeasurements.height !== undefined
+          ? String(savedMeasurements.height)
           : latestLog?.height !== null && latestLog?.height !== undefined
           ? String(latestLog.height)
           : ''
@@ -67,6 +73,8 @@ export default function BodyMeasurementModal({
       setNeck(
         currentLog?.neck !== null && currentLog?.neck !== undefined
           ? String(currentLog.neck)
+          : savedMeasurements.neck !== null && savedMeasurements.neck !== undefined
+          ? String(savedMeasurements.neck)
           : latestLog?.neck !== null && latestLog?.neck !== undefined
           ? String(latestLog.neck)
           : ''
@@ -74,6 +82,8 @@ export default function BodyMeasurementModal({
       setWaist(
         currentLog?.waist !== null && currentLog?.waist !== undefined
           ? String(currentLog.waist)
+          : savedMeasurements.waist !== null && savedMeasurements.waist !== undefined
+          ? String(savedMeasurements.waist)
           : latestLog?.waist !== null && latestLog?.waist !== undefined
           ? String(latestLog.waist)
           : ''
@@ -81,6 +91,8 @@ export default function BodyMeasurementModal({
       setHip(
         currentLog?.hip !== null && currentLog?.hip !== undefined
           ? String(currentLog.hip)
+          : savedMeasurements.hip !== null && savedMeasurements.hip !== undefined
+          ? String(savedMeasurements.hip)
           : latestLog?.hip !== null && latestLog?.hip !== undefined
           ? String(latestLog.hip)
           : ''
@@ -88,6 +100,8 @@ export default function BodyMeasurementModal({
       setWrist(
         currentLog?.wrist !== null && currentLog?.wrist !== undefined
           ? String(currentLog.wrist)
+          : savedMeasurements.wrist !== null && savedMeasurements.wrist !== undefined
+          ? String(savedMeasurements.wrist)
           : latestLog?.wrist !== null && latestLog?.wrist !== undefined
           ? String(latestLog.wrist)
           : ''
@@ -95,6 +109,8 @@ export default function BodyMeasurementModal({
       setAnkle(
         currentLog?.ankle !== null && currentLog?.ankle !== undefined
           ? String(currentLog.ankle)
+          : savedMeasurements.ankle !== null && savedMeasurements.ankle !== undefined
+          ? String(savedMeasurements.ankle)
           : latestLog?.ankle !== null && latestLog?.ankle !== undefined
           ? String(latestLog.ankle)
           : ''
@@ -102,7 +118,7 @@ export default function BodyMeasurementModal({
       setGender(currentLog?.gender || latestLog?.gender || 'male');
       setMemo(currentLog?.memo || '');
     }
-  }, [visible, currentLog, latestLog]);
+  }, [visible, currentLog, savedMeasurements, latestLog]);
 
   const handleSave = async () => {
     if (isSaving) return;

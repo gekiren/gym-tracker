@@ -5,6 +5,8 @@ import { Theme } from '../../src/theme';
 import { BodyCompositionLog, Gender, NavyBodyFatResult } from '../../src/types/bodyComposition';
 import { calculateNavyBodyFat } from '../../src/utils/bodyCalculators';
 
+import { useBodyStore } from '../../src/store/bodyStore';
+
 interface NavyFatCalculatorCardProps {
   currentLog: BodyCompositionLog | null;
   latestLog: BodyCompositionLog | null;
@@ -18,38 +20,96 @@ export default function NavyFatCalculatorCard({
   onApplyBodyFat,
   onOpenGuide,
 }: NavyFatCalculatorCardProps) {
+  const savedMeasurements = useBodyStore((state) => state.savedMeasurements);
+  const saveLastMeasurements = useBodyStore((state) => state.saveLastMeasurements);
+
   const gender: Gender = currentLog?.gender || latestLog?.gender || 'male';
-  const height = currentLog?.height || latestLog?.height || 170;
+  const initialHeight = currentLog?.height || savedMeasurements.height || latestLog?.height || 170;
   const weight = currentLog?.weight || latestLog?.weight || 70;
 
   const [neckStr, setNeckStr] = useState(
-    currentLog?.neck ? String(currentLog.neck) : latestLog?.neck ? String(latestLog.neck) : ''
+    currentLog?.neck
+      ? String(currentLog.neck)
+      : savedMeasurements.neck
+      ? String(savedMeasurements.neck)
+      : latestLog?.neck
+      ? String(latestLog.neck)
+      : ''
   );
   const [waistStr, setWaistStr] = useState(
-    currentLog?.waist ? String(currentLog.waist) : latestLog?.waist ? String(latestLog.waist) : ''
+    currentLog?.waist
+      ? String(currentLog.waist)
+      : savedMeasurements.waist
+      ? String(savedMeasurements.waist)
+      : latestLog?.waist
+      ? String(latestLog.waist)
+      : ''
   );
   const [hipStr, setHipStr] = useState(
-    currentLog?.hip ? String(currentLog.hip) : latestLog?.hip ? String(latestLog.hip) : ''
+    currentLog?.hip
+      ? String(currentLog.hip)
+      : savedMeasurements.hip
+      ? String(savedMeasurements.hip)
+      : latestLog?.hip
+      ? String(latestLog.hip)
+      : ''
   );
-  const [heightStr, setHeightStr] = useState(String(height));
+  const [heightStr, setHeightStr] = useState(String(initialHeight));
 
   const [result, setResult] = useState<NavyBodyFatResult | null>(null);
 
-  // currentLog や latestLog が更新された時に初期値を同期
+  // currentLog や savedMeasurements, latestLog が更新された時に初期値を同期
   useEffect(() => {
-    if (currentLog?.neck || latestLog?.neck) {
-      setNeckStr(String(currentLog?.neck ?? latestLog?.neck ?? ''));
+    const valNeck = currentLog?.neck ?? savedMeasurements.neck ?? latestLog?.neck;
+    if (valNeck !== undefined && valNeck !== null) {
+      setNeckStr(String(valNeck));
     }
-    if (currentLog?.waist || latestLog?.waist) {
-      setWaistStr(String(currentLog?.waist ?? latestLog?.waist ?? ''));
+    const valWaist = currentLog?.waist ?? savedMeasurements.waist ?? latestLog?.waist;
+    if (valWaist !== undefined && valWaist !== null) {
+      setWaistStr(String(valWaist));
     }
-    if (currentLog?.hip || latestLog?.hip) {
-      setHipStr(String(currentLog?.hip ?? latestLog?.hip ?? ''));
+    const valHip = currentLog?.hip ?? savedMeasurements.hip ?? latestLog?.hip;
+    if (valHip !== undefined && valHip !== null) {
+      setHipStr(String(valHip));
     }
-    if (currentLog?.height || latestLog?.height) {
-      setHeightStr(String(currentLog?.height ?? latestLog?.height ?? 170));
+    const valHeight = currentLog?.height ?? savedMeasurements.height ?? latestLog?.height;
+    if (valHeight !== undefined && valHeight !== null) {
+      setHeightStr(String(valHeight));
     }
-  }, [currentLog, latestLog]);
+  }, [currentLog, savedMeasurements, latestLog]);
+
+  // 入力変更ハンドラ（即時State更新 ＆ バックグラウンド永続化）
+  const handleNeckChange = (val: string) => {
+    setNeckStr(val);
+    const num = parseFloat(val);
+    if (!isNaN(num) && num > 0) {
+      saveLastMeasurements({ neck: num });
+    }
+  };
+
+  const handleWaistChange = (val: string) => {
+    setWaistStr(val);
+    const num = parseFloat(val);
+    if (!isNaN(num) && num > 0) {
+      saveLastMeasurements({ waist: num });
+    }
+  };
+
+  const handleHipChange = (val: string) => {
+    setHipStr(val);
+    const num = parseFloat(val);
+    if (!isNaN(num) && num > 0) {
+      saveLastMeasurements({ hip: num });
+    }
+  };
+
+  const handleHeightChange = (val: string) => {
+    setHeightStr(val);
+    const num = parseFloat(val);
+    if (!isNaN(num) && num > 0) {
+      saveLastMeasurements({ height: num });
+    }
+  };
 
   // 入力値変更時に自動再計算
   useEffect(() => {
@@ -115,7 +175,7 @@ export default function NavyFatCalculatorCard({
               placeholder="38.0"
               placeholderTextColor={Theme.colors.textMuted}
               value={neckStr}
-              onChangeText={setNeckStr}
+              onChangeText={handleNeckChange}
             />
             <Text style={styles.inputUnit}>cm</Text>
           </View>
@@ -131,7 +191,7 @@ export default function NavyFatCalculatorCard({
               placeholder="80.0"
               placeholderTextColor={Theme.colors.textMuted}
               value={waistStr}
-              onChangeText={setWaistStr}
+              onChangeText={handleWaistChange}
             />
             <Text style={styles.inputUnit}>cm</Text>
           </View>
@@ -148,7 +208,7 @@ export default function NavyFatCalculatorCard({
                 placeholder="90.0"
                 placeholderTextColor={Theme.colors.textMuted}
                 value={hipStr}
-                onChangeText={setHipStr}
+                onChangeText={handleHipChange}
               />
               <Text style={styles.inputUnit}>cm</Text>
             </View>
@@ -165,7 +225,7 @@ export default function NavyFatCalculatorCard({
               placeholder="175.0"
               placeholderTextColor={Theme.colors.textMuted}
               value={heightStr}
-              onChangeText={setHeightStr}
+              onChangeText={handleHeightChange}
             />
             <Text style={styles.inputUnit}>cm</Text>
           </View>

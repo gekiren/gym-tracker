@@ -11,21 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.80',
+  version: '1.8.81',
   title: {
-    ja: '🧬 体組成＆筋肥大限界モデル機能の追加',
-    en: '🧬 Body Composition & Muscular Potential Feature',
+    ja: '🧬 体組成・骨格測定値の自動維持・永続化対応',
+    en: '🧬 Body Measurements Persistence & Auto-Retention',
   },
   notes: {
     ja: [
-      '新機能「体組成＆筋肥大限界」を追加しました。Google Health Connectからの体重・体脂肪率同期に対応。',
-      '米海軍式（US Navy Method）による体脂肪率・LBMの自動推定計算を搭載。',
-      'ケーシー・バット博士モデルによる骨格筋肥大限界およびポテンシャル診断（到達率%）に対応。',
+      '体脂肪推定（首・ウエスト等）および生理的限界（手首・足首等）の入力数値を自動永続化し、画面切り替え・日付変更後も維持されるよう改善しました。',
     ],
     en: [
-      'Added Body Composition & Muscular Potential feature with Health Connect sync.',
-      'Integrated US Navy Method for body fat & LBM circumference estimation.',
-      'Integrated Dr. Casey Butt formula for maximum natural muscular potential tracking.',
+      'Persisted measurements for body fat estimation and muscular potential model across screens and dates.',
     ],
   },
 };

@@ -8,10 +8,22 @@ import {
   getLatestBodyLog,
 } from '../db/repositories/bodyRepository';
 import { fetchTodayHealthData } from '../services/healthService';
+import { getSettings, saveSetting } from '../db/database';
+
+export interface SavedBodyMeasurements {
+  neck?: number | null;
+  waist?: number | null;
+  hip?: number | null;
+  wrist?: number | null;
+  ankle?: number | null;
+  targetFatRate?: number;
+  height?: number | null;
+}
 
 export interface BodyState {
   currentLog: BodyCompositionLog | null;
   latestLog: BodyCompositionLog | null;
+  savedMeasurements: SavedBodyMeasurements;
   historyLogs: BodyCompositionLog[];
   isLoading: boolean;
   isHealthSyncing: boolean;
@@ -21,6 +33,7 @@ export interface BodyState {
   loadBodyData: (date: string) => Promise<void>;
   loadAllHistory: (limit?: number) => Promise<void>;
   saveBodyLog: (log: Partial<BodyCompositionLog> & { date: string }) => Promise<number>;
+  saveLastMeasurements: (measurements: Partial<SavedBodyMeasurements>) => Promise<void>;
   deleteBodyLog: (id: number, currentDate?: string) => Promise<void>;
   syncWithHealthConnect: (date: string) => Promise<boolean>;
 }
@@ -28,25 +41,36 @@ export interface BodyState {
 export const useBodyStore = create<BodyState>((set, get) => ({
   currentLog: null,
   latestLog: null,
+  savedMeasurements: {},
   historyLogs: [],
   isLoading: false,
   isHealthSyncing: false,
   syncError: null,
 
   /**
-   * 指定日の体組成ログと直近ログを読み込む
+   * 指定日の体組成ログ、直近ログ、保存された測定設定値を読み込む
    */
   loadBodyData: async (date: string) => {
     set({ isLoading: true, syncError: null });
     try {
-      const [current, latest, history] = await Promise.all([
+      const [current, latest, history, dbSettings] = await Promise.all([
         getBodyLogByDate(date),
         getLatestBodyLog(),
         getAllBodyLogs(50),
+        getSettings().catch(() => ({} as Record<string, string>)),
       ]);
+
+      let parsedSaved: SavedBodyMeasurements = {};
+      if (dbSettings && dbSettings['body_last_measurements']) {
+        try {
+          parsedSaved = JSON.parse(dbSettings['body_last_measurements']);
+        } catch (_) {}
+      }
+
       set({
         currentLog: current,
         latestLog: latest,
+        savedMeasurements: parsedSaved,
         historyLogs: history,
         isLoading: false,
       });
@@ -69,6 +93,23 @@ export const useBodyStore = create<BodyState>((set, get) => ({
   },
 
   /**
+   * 測定値（首・ウエスト・手首・足首など）の永続キャッシュ保存
+   */
+  saveLastMeasurements: async (measurements: Partial<SavedBodyMeasurements>) => {
+    const current = get().savedMeasurements;
+    const merged: SavedBodyMeasurements = {
+      ...current,
+      ...measurements,
+    };
+    set({ savedMeasurements: merged });
+    try {
+      await saveSetting('body_last_measurements', JSON.stringify(merged));
+    } catch (e) {
+      console.warn('Failed to save body_last_measurements setting:', e);
+    }
+  },
+
+  /**
    * 体組成ログを保存（新規/更新）
    */
   saveBodyLog: async (log: Partial<BodyCompositionLog> & { date: string }) => {
@@ -80,6 +121,20 @@ export const useBodyStore = create<BodyState>((set, get) => ({
         getLatestBodyLog(),
         getAllBodyLogs(50),
       ]);
+
+      // 測定値があれば永続キャッシュにも即時反映
+      const toCache: Partial<SavedBodyMeasurements> = {};
+      if (log.neck !== undefined && log.neck !== null) toCache.neck = log.neck;
+      if (log.waist !== undefined && log.waist !== null) toCache.waist = log.waist;
+      if (log.hip !== undefined && log.hip !== null) toCache.hip = log.hip;
+      if (log.wrist !== undefined && log.wrist !== null) toCache.wrist = log.wrist;
+      if (log.ankle !== undefined && log.ankle !== null) toCache.ankle = log.ankle;
+      if (log.height !== undefined && log.height !== null) toCache.height = log.height;
+
+      if (Object.keys(toCache).length > 0) {
+        get().saveLastMeasurements(toCache);
+      }
+
       set({
         currentLog: updatedCurrent,
         latestLog: updatedLatest,

@@ -51,6 +51,7 @@ export default function DashboardScreen() {
   // Body Store
   const currentBodyLog = useBodyStore(state => state.currentLog);
   const latestBodyLog = useBodyStore(state => state.latestLog);
+  const savedBodyMeasurements = useBodyStore(state => state.savedMeasurements);
   const loadBodyData = useBodyStore(state => state.loadBodyData);
 
   // Local state for onboarding/modals
@@ -309,9 +310,9 @@ export default function DashboardScreen() {
                 const log = currentBodyLog || latestBodyLog;
                 const weight = log?.weight ?? null;
                 const bodyFatRate = log?.body_fat_rate ?? null;
-                const height = log?.height ?? 175;
-                const wrist = log?.wrist ?? null;
-                const ankle = log?.ankle ?? null;
+                const height = log?.height ?? savedBodyMeasurements.height ?? 175;
+                const wrist = log?.wrist ?? savedBodyMeasurements.wrist ?? null;
+                const ankle = log?.ankle ?? savedBodyMeasurements.ankle ?? null;
 
                 if (!weight && !bodyFatRate) {
                   return (

@@ -5,6 +5,8 @@ import { Theme } from '../../src/theme';
 import { BodyCompositionLog } from '../../src/types/bodyComposition';
 import { calculateBmi, calculateFfmi } from '../../src/utils/bodyCalculators';
 
+import { useBodyStore } from '../../src/store/bodyStore';
+
 interface BodySummaryCardProps {
   currentLog: BodyCompositionLog | null;
   latestLog: BodyCompositionLog | null;
@@ -22,11 +24,13 @@ export default function BodySummaryCard({
   onOpenEditModal,
   onOpenGuideModal,
 }: BodySummaryCardProps) {
-  // 表示用データの解決（currentLog優先、なければlatestLogの身長などを使用）
+  const savedMeasurements = useBodyStore((state) => state.savedMeasurements);
+
+  // 表示用データの解決（currentLog優先、なければsavedMeasurements/latestLogの身長などを使用）
   const weight = currentLog?.weight ?? null;
   const bodyFatRate = currentLog?.body_fat_rate ?? null;
   const muscleMass = currentLog?.muscle_mass ?? null;
-  const height = currentLog?.height ?? latestLog?.height ?? null;
+  const height = currentLog?.height ?? savedMeasurements.height ?? latestLog?.height ?? null;
 
   // LBM（除脂肪体重）の算出
   const lbm =
