@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.75',
+  version: '1.8.76',
   title: {
-    ja: 'カロリー推移グラフの表示改善',
-    en: 'Calorie History Chart Improvement',
+    ja: '食事管理画面のレイアウト改善',
+    en: 'Nutrition Screen Layout Improvement',
   },
   notes: {
     ja: [
-      '直近14日間のカロリー推移グラフで、今日の日付が右端に初期表示されるよう改善しました。',
+      '最下部のオートファジーカードが見切れないよう、画面下のスクロール余白を改善しました。',
     ],
     en: [
-      'Improved the 14-day calorie history chart to show today\'s date on the far right by default.',
+      'Adjusted bottom scroll padding on the nutrition screen so the autophagy card is fully visible.',
     ],
   },
 };
