@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.88',
+  version: '1.8.89',
   title: {
-    ja: '🎯 限界到達度カードの表示シンプル化（到達率数値・ポテンシャル分析への最適化）',
-    en: '🎯 Simplified Potential Analysis Card (Focused on Metrics & Reach %)',
+    ja: '🥗 食事記録時の食事区分自動判定機能の追加',
+    en: '🥗 Auto-Selected Meal Types Based on Current Time',
   },
   notes: {
     ja: [
-      '限界到達度カードのプログレスバーを削除し、到達率（%）とポテンシャル数値・アドバイスに特化したすっきり見やすいデザインに改善しました。',
+      '食事の追加・記録時に、現在時刻に基づいて朝食・昼食・間食・夕食が自動的に初期選択されるようになりました。',
     ],
     en: [
-      'Removed the visual progress bar from the Muscle Potential card to provide a cleaner, distraction-free view of reach percentage and key stats.',
+      'Meal types (Breakfast, Lunch, Snack, Dinner) are now automatically pre-selected based on the current time when logging meals.',
     ],
   },
 };
