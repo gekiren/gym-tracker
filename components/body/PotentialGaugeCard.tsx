@@ -54,6 +54,20 @@ export default function PotentialGaugeCard({
     );
   }
 
+  // 未トレーニング下限（65%）〜 骨格限界（100%）のスケール定義
+  const MIN_REACH_PCT = 65.0;
+  const MAX_REACH_PCT = 100.0;
+  const TARGET_REACH_PCT = 95.0;
+
+  // 95% 目標ラインのバー内位置（(95 - 65) / (100 - 65) * 100 = 85.71%）
+  const targetMarkerPosition = `${((TARGET_REACH_PCT - MIN_REACH_PCT) / (MAX_REACH_PCT - MIN_REACH_PCT)) * 100}%`;
+
+  // ゲージ進捗率（65%で0%、95%で85.7%、100%で100%満タン）
+  const gaugeProgressPercent = Math.max(
+    0,
+    Math.min(100, ((analysis.reachPercentage - MIN_REACH_PCT) / (MAX_REACH_PCT - MIN_REACH_PCT)) * 100)
+  );
+
   // プログレスバーのカラー判定
   const getProgressColor = (pct: number) => {
     if (pct < 75) return '#38bdf8';
@@ -83,7 +97,10 @@ export default function PotentialGaugeCard({
       {/* Progress Section */}
       <View style={styles.gaugeSection}>
         <View style={styles.gaugeHeader}>
-          <Text style={styles.gaugeLabel}>骨格筋限界への到達率</Text>
+          <View>
+            <Text style={styles.gaugeLabel}>骨格筋限界への到達率</Text>
+            <Text style={styles.gaugeSubHint}>※未トレ下限(65%)〜骨格限界(100%)基準</Text>
+          </View>
           <View style={styles.reachWrap}>
             <Text style={[styles.reachValue, { color: progressColor }]}>
               {analysis.reachPercentage.toFixed(1)}
@@ -98,18 +115,20 @@ export default function PotentialGaugeCard({
             style={[
               styles.progressBarFill,
               {
-                width: `${Math.min(100, analysis.reachPercentage)}%`,
+                width: `${gaugeProgressPercent}%`,
                 backgroundColor: progressColor,
               },
             ]}
           />
-          {/* 95% 現実的上限ラインマーカー */}
-          <View style={styles.marker95} />
+          {/* 95% 現実的上限目標ラインマーカー */}
+          <View style={[styles.marker95, { left: targetMarkerPosition }]} />
         </View>
         <View style={styles.markerLabels}>
-          <Text style={styles.markerLabelText}>0%</Text>
-          <Text style={styles.markerLabelText}>95% (現実的上限)</Text>
-          <Text style={styles.markerLabelText}>100%</Text>
+          <Text style={styles.markerLabelText}>未トレ下限 (65%)</Text>
+          <Text style={[styles.markerLabelText, { color: '#fbbf24', fontWeight: 'bold' }]}>
+            95% (現実的目標)
+          </Text>
+          <Text style={styles.markerLabelText}>100% (限界)</Text>
         </View>
       </View>
 
@@ -198,6 +217,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Theme.colors.textMuted,
     fontWeight: '500',
+  },
+  gaugeSubHint: {
+    fontSize: 10,
+    color: Theme.colors.textMuted,
+    marginTop: 2,
+    opacity: 0.8,
   },
   reachWrap: {
     flexDirection: 'row',
