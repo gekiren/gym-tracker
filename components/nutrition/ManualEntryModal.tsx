@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { MealLog } from '../../src/db/types';
 import { useAppTheme } from '../../src/theme';
+import { getDefaultMealType, getCurrentTimeStr } from '../../src/utils/nutritionUtils';
 import TimeWheelPicker from './TimeWheelPicker';
 
 const MEAL_TYPES = [
@@ -22,13 +23,6 @@ const MEAL_TYPES = [
   { key: 'dinner',   label: '🌙 夕食' },
   { key: 'snack',    label: '☕ 間食' },
 ] as const;
-
-const getCurrentTimeStr = () => {
-  const now = new Date();
-  const h = String(now.getHours()).padStart(2, '0');
-  const m = String(now.getMinutes()).padStart(2, '0');
-  return `${h}:${m}`;
-};
 
 interface Props {
   visible: boolean;
@@ -43,7 +37,7 @@ export default function ManualEntryModal({ visible, onClose, onSave, selectedDat
   const scrollViewRef = useRef<ScrollView>(null);
 
   const [name, setName] = useState('');
-  const [mealType, setMealType] = useState<string>('dinner');
+  const [mealType, setMealType] = useState<string>(getDefaultMealType());
   const [mealTime, setMealTime] = useState<string>(getCurrentTimeStr());
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
@@ -54,10 +48,17 @@ export default function ManualEntryModal({ visible, onClose, onSave, selectedDat
   const [memo, setMemo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    if (visible) {
+      setMealType(getDefaultMealType());
+      setMealTime(getCurrentTimeStr());
+    }
+  }, [visible]);
+
   const reset = () => {
     setName(''); setCalories(''); setProtein(''); setFat('');
     setCarbs(''); setSodium(''); setFiber(''); setMemo('');
-    setMealType('dinner');
+    setMealType(getDefaultMealType());
     setMealTime(getCurrentTimeStr());
   };
 

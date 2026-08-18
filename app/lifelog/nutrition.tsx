@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { Theme, useAppTheme } from '../../src/theme';
 import { useNutritionStore } from '../../src/store/nutritionStore';
 import { MealLog, MealFavorite, NutritionGoals, AutophagyConfig } from '../../src/db/types';
+import { getDefaultMealType } from '../../src/utils/nutritionUtils';
 
 // コンポーネントインポート
 import NutritionSummaryCard from '../../components/nutrition/NutritionSummaryCard';
@@ -151,7 +152,7 @@ export default function NutritionScreen() {
     const now = new Date();
     await addMeal({
       date: selectedDate,
-      meal_type: fav.meal_type || 'dinner',
+      meal_type: fav.meal_type || getDefaultMealType(now),
       meal_time: now.toTimeString().slice(0, 5),
       name: fav.name,
       calories: fav.calories,

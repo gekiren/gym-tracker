@@ -18,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import { MealFavorite } from '../../src/db/types';
 import { useAppTheme } from '../../src/theme';
 import { ConfirmModal } from '../ui/ConfirmModal';
+import { getDefaultMealType } from '../../src/utils/nutritionUtils';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -58,7 +59,7 @@ export default function ManageFavoritesModal({
 
   // フォーム入力項目
   const [formName, setFormName] = useState('');
-  const [formMealType, setFormMealType] = useState<string>('dinner');
+  const [formMealType, setFormMealType] = useState<string>(getDefaultMealType());
   const [formCalories, setFormCalories] = useState('');
   const [formProtein, setFormProtein] = useState('');
   const [formFat, setFormFat] = useState('');
@@ -73,7 +74,7 @@ export default function ManageFavoritesModal({
   // 新規作成開始
   const handleStartAdd = () => {
     setFormName('');
-    setFormMealType('dinner');
+    setFormMealType(getDefaultMealType());
     setFormCalories('');
     setFormProtein('');
     setFormFat('');
@@ -87,7 +88,7 @@ export default function ManageFavoritesModal({
   // 編集開始
   const handleStartEdit = (item: MealFavorite) => {
     setFormName(item.name || '');
-    setFormMealType(item.meal_type || 'dinner');
+    setFormMealType(item.meal_type || getDefaultMealType());
     setFormCalories(item.calories > 0 ? String(item.calories) : '');
     setFormProtein(item.protein > 0 ? String(item.protein) : '');
     setFormFat(item.fat > 0 ? String(item.fat) : '');

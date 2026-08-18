@@ -13,6 +13,7 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import { MealLog } from '../../src/db/types';
 import { useAppTheme } from '../../src/theme';
+import { getDefaultMealType } from '../../src/utils/nutritionUtils';
 
 export const AI_NUTRITION_PROMPT = `あなたはスポーツ栄養学に精通したAI栄養士です。
 ユーザーから送信された「食事のテキストメモ」「食事の写真」「食品の栄養成分表示ラベルの写真」を解析し、アプリへ一括取り込み可能なMarkdownフォーマットで食事ログを出力してください。
@@ -95,7 +96,7 @@ export default function MdImportModal({ visible, onClose, onImport, selectedDate
       if (name) {
         parsedLogs.push({
           date: selectedDate,
-          meal_type: 'dinner',
+          meal_type: getDefaultMealType(now),
           meal_time: now.toTimeString().slice(0, 5),
           name,
           calories: calMatch ? parseFloat(calMatch[1]) : 0,

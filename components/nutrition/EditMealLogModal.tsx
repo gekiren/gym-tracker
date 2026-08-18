@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { MealLog } from '../../src/db/types';
 import { useAppTheme } from '../../src/theme';
+import { getDefaultMealType } from '../../src/utils/nutritionUtils';
 import TimeWheelPicker from './TimeWheelPicker';
 
 const MEAL_TYPES = [
@@ -48,7 +49,7 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
   const scrollViewRef = useRef<ScrollView>(null);
 
   const [name, setName] = useState('');
-  const [mealType, setMealType] = useState<string>('dinner');
+  const [mealType, setMealType] = useState<string>(getDefaultMealType());
   const [mealTime, setMealTime] = useState<string>('12:00');
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
@@ -63,7 +64,7 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
   useEffect(() => {
     if (log) {
       setName(log.name || '');
-      setMealType(log.meal_type || 'dinner');
+      setMealType(log.meal_type || getDefaultMealType());
       setMealTime(formatTimeFromLog(log));
       setCalories(String(log.calories ?? ''));
       setProtein(String(log.protein ?? ''));
