@@ -11,21 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.86',
+  version: '1.8.87',
   title: {
-    ja: '💪 体組成機能に「MF比（筋肉・脂肪比）」＆「マッチョ評価スコア（MS）」を追加',
-    en: '💪 Added Muscle-to-Fat (MF) Ratio & Macho Score (MS) to Body Composition',
+    ja: '🎯 限界到達度ゲージの縮尺改善 ＆ MSスコア評価基準のFFMI連動・最適化',
+    en: '🎯 Potential Gauge Scale Refinement & FFMI-Aligned Macho Score Tiers',
   },
   notes: {
     ja: [
-      '脂肪1kgに対する筋肉量（筋肉の密度）を表す「MF比（筋肉・脂肪比）」の算出と評価表示を追加しました。',
-      'FFMIと体脂肪率の絞りボーナスを加味した総合評価「マッチョ評価スコア（MS）」の算出と20.0突破判定を追加しました。',
-      '今日の体組成カードに8枠グリッドで両指標を追加し、測定ガイドおよび推移グラフ・履歴リストにも対応しました。',
+      '骨格筋限界ゲージの縮尺を0〜100%基準に統一し、進捗バーと95%目標マーカーの視覚的一致を改善しました。',
+      'マッチョ評価スコア（MS）の評価目安をFFMI基準（筋肉量水準）と厳密に連動させ、実態に即した評価区分（20.0: 細マッチョ/引き締まり、21.5+: 筋肉質、23.0+: 本格マッチョ）へ見直しました。',
     ],
     en: [
-      'Added calculation and evaluation for Muscle-to-Fat Ratio (MF Ratio), reflecting muscle density per 1kg of body fat.',
-      'Added Macho Score (MS), a comprehensive rating combining FFMI with low body fat bonuses and a 20.0+ milestone indicator.',
-      'Integrated both metrics into the 8-stat summary grid, measurement guide modal, and history trend charts.',
+      'Standardized the muscle potential gauge to an absolute 0-100% scale for precise visual alignment with the 95% target marker.',
+      'Aligned Macho Score evaluation tiers directly with official FFMI muscle mass benchmarks (20.0: Lean/Fit, 21.5+: Muscular, 23.0+: Athletic Macho).',
     ],
   },
 };
