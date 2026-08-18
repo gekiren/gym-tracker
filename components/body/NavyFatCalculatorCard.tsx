@@ -86,32 +86,36 @@ export default function NavyFatCalculatorCard({
 
   // 入力変更ハンドラ（即時State更新 ＆ バックグラウンド永続化）
   const handleNeckChange = (val: string) => {
-    setNeckStr(val);
-    const num = parseFloat(val);
+    const sanitized = val.replace(',', '.');
+    setNeckStr(sanitized);
+    const num = parseFloat(sanitized);
     if (!isNaN(num) && num > 0) {
       saveLastMeasurements({ neck: num });
     }
   };
 
   const handleWaistChange = (val: string) => {
-    setWaistStr(val);
-    const num = parseFloat(val);
+    const sanitized = val.replace(',', '.');
+    setWaistStr(sanitized);
+    const num = parseFloat(sanitized);
     if (!isNaN(num) && num > 0) {
       saveLastMeasurements({ waist: num });
     }
   };
 
   const handleHipChange = (val: string) => {
-    setHipStr(val);
-    const num = parseFloat(val);
+    const sanitized = val.replace(',', '.');
+    setHipStr(sanitized);
+    const num = parseFloat(sanitized);
     if (!isNaN(num) && num > 0) {
       saveLastMeasurements({ hip: num });
     }
   };
 
   const handleHeightChange = (val: string) => {
-    setHeightStr(val);
-    const num = parseFloat(val);
+    const sanitized = val.replace(',', '.');
+    setHeightStr(sanitized);
+    const num = parseFloat(sanitized);
     if (!isNaN(num) && num > 0) {
       saveLastMeasurements({ height: num });
     }
@@ -178,7 +182,7 @@ export default function NavyFatCalculatorCard({
           <View style={styles.inputWrap}>
             <TextInput
               style={styles.textInput}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
               placeholder="38.0"
               placeholderTextColor={Theme.colors.textMuted}
               value={neckStr}
@@ -194,7 +198,7 @@ export default function NavyFatCalculatorCard({
           <View style={styles.inputWrap}>
             <TextInput
               style={styles.textInput}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
               placeholder="80.0"
               placeholderTextColor={Theme.colors.textMuted}
               value={waistStr}
@@ -211,7 +215,7 @@ export default function NavyFatCalculatorCard({
             <View style={styles.inputWrap}>
               <TextInput
                 style={styles.textInput}
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 placeholder="90.0"
                 placeholderTextColor={Theme.colors.textMuted}
                 value={hipStr}
@@ -228,7 +232,7 @@ export default function NavyFatCalculatorCard({
           <View style={styles.inputWrap}>
             <TextInput
               style={styles.textInput}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
               placeholder="175.0"
               placeholderTextColor={Theme.colors.textMuted}
               value={heightStr}

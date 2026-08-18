@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.82',
+  version: '1.8.83',
   title: {
-    ja: '🧬 身長・想定体脂肪率の完全永続化＆同期強化',
-    en: '🧬 Height & Target Body Fat Persistence & Sync',
+    ja: '🧬 測定値入力の小数点入力対応（decimal-pad）',
+    en: '🧬 Decimal Keyboard Support for Body Measurements',
   },
   notes: {
     ja: [
-      '身長および想定体脂肪率の自動永続化に対応し、カード間での双方向同期・画面変更後の保持を強化しました。',
+      '手首、足首、身長、首回り、ウエストなどの測定値入力欄で小数点が入力できるようキーボード設定を改善しました。',
     ],
     en: [
-      'Persisted height and target body fat percentage with full cross-card synchronization.',
+      'Enabled decimal keyboard input for wrist, ankle, height, neck, waist and circumference measurements.',
     ],
   },
 };

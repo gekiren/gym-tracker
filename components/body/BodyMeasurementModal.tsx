@@ -225,11 +225,11 @@ export default function BodyMeasurementModal({
                 <View style={styles.inputWrap}>
                   <TextInput
                     style={styles.textInput}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="70.5"
                     placeholderTextColor={Theme.colors.textMuted}
                     value={weight}
-                    onChangeText={setWeight}
+                    onChangeText={(val) => setWeight(val.replace(',', '.'))}
                   />
                   <Text style={styles.inputUnit}>kg</Text>
                 </View>
@@ -240,11 +240,11 @@ export default function BodyMeasurementModal({
                 <View style={styles.inputWrap}>
                   <TextInput
                     style={styles.textInput}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="15.0"
                     placeholderTextColor={Theme.colors.textMuted}
                     value={bodyFatRate}
-                    onChangeText={setBodyFatRate}
+                    onChangeText={(val) => setBodyFatRate(val.replace(',', '.'))}
                   />
                   <Text style={styles.inputUnit}>%</Text>
                 </View>
@@ -255,11 +255,11 @@ export default function BodyMeasurementModal({
                 <View style={styles.inputWrap}>
                   <TextInput
                     style={styles.textInput}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="32.0"
                     placeholderTextColor={Theme.colors.textMuted}
                     value={muscleMass}
-                    onChangeText={setMuscleMass}
+                    onChangeText={(val) => setMuscleMass(val.replace(',', '.'))}
                   />
                   <Text style={styles.inputUnit}>kg</Text>
                 </View>
@@ -270,11 +270,11 @@ export default function BodyMeasurementModal({
                 <View style={styles.inputWrap}>
                   <TextInput
                     style={styles.textInput}
-                    keyboardType="numeric"
-                    placeholder="175"
+                    keyboardType="decimal-pad"
+                    placeholder="175.0"
                     placeholderTextColor={Theme.colors.textMuted}
                     value={height}
-                    onChangeText={setHeight}
+                    onChangeText={(val) => setHeight(val.replace(',', '.'))}
                   />
                   <Text style={styles.inputUnit}>cm</Text>
                 </View>
@@ -289,11 +289,11 @@ export default function BodyMeasurementModal({
                 <View style={styles.inputWrap}>
                   <TextInput
                     style={styles.textInput}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="38.0"
                     placeholderTextColor={Theme.colors.textMuted}
                     value={neck}
-                    onChangeText={setNeck}
+                    onChangeText={(val) => setNeck(val.replace(',', '.'))}
                   />
                   <Text style={styles.inputUnit}>cm</Text>
                 </View>
@@ -304,11 +304,11 @@ export default function BodyMeasurementModal({
                 <View style={styles.inputWrap}>
                   <TextInput
                     style={styles.textInput}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="80.0"
                     placeholderTextColor={Theme.colors.textMuted}
                     value={waist}
-                    onChangeText={setWaist}
+                    onChangeText={(val) => setWaist(val.replace(',', '.'))}
                   />
                   <Text style={styles.inputUnit}>cm</Text>
                 </View>
@@ -320,11 +320,11 @@ export default function BodyMeasurementModal({
                   <View style={styles.inputWrap}>
                     <TextInput
                       style={styles.textInput}
-                      keyboardType="numeric"
+                      keyboardType="decimal-pad"
                       placeholder="90.0"
                       placeholderTextColor={Theme.colors.textMuted}
                       value={hip}
-                      onChangeText={setHip}
+                      onChangeText={(val) => setHip(val.replace(',', '.'))}
                     />
                     <Text style={styles.inputUnit}>cm</Text>
                   </View>
@@ -336,11 +336,11 @@ export default function BodyMeasurementModal({
                 <View style={styles.inputWrap}>
                   <TextInput
                     style={styles.textInput}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="17.0"
                     placeholderTextColor={Theme.colors.textMuted}
                     value={wrist}
-                    onChangeText={setWrist}
+                    onChangeText={(val) => setWrist(val.replace(',', '.'))}
                   />
                   <Text style={styles.inputUnit}>cm</Text>
                 </View>
@@ -351,11 +351,11 @@ export default function BodyMeasurementModal({
                 <View style={styles.inputWrap}>
                   <TextInput
                     style={styles.textInput}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="22.0"
                     placeholderTextColor={Theme.colors.textMuted}
                     value={ankle}
-                    onChangeText={setAnkle}
+                    onChangeText={(val) => setAnkle(val.replace(',', '.'))}
                   />
                   <Text style={styles.inputUnit}>cm</Text>
                 </View>

@@ -77,32 +77,36 @@ export default function CaseyLimitCalculatorCard({
 
   // 入力変更ハンドラ（即時State更新 ＆ バックグラウンド永続化）
   const handleWristChange = (val: string) => {
-    setWristStr(val);
-    const num = parseFloat(val);
+    const sanitized = val.replace(',', '.');
+    setWristStr(sanitized);
+    const num = parseFloat(sanitized);
     if (!isNaN(num) && num > 0) {
       saveLastMeasurements({ wrist: num });
     }
   };
 
   const handleAnkleChange = (val: string) => {
-    setAnkleStr(val);
-    const num = parseFloat(val);
+    const sanitized = val.replace(',', '.');
+    setAnkleStr(sanitized);
+    const num = parseFloat(sanitized);
     if (!isNaN(num) && num > 0) {
       saveLastMeasurements({ ankle: num });
     }
   };
 
   const handleTargetFatChange = (val: string) => {
-    setTargetFatStr(val);
-    const num = parseFloat(val);
+    const sanitized = val.replace(',', '.');
+    setTargetFatStr(sanitized);
+    const num = parseFloat(sanitized);
     if (!isNaN(num) && num > 0) {
       saveLastMeasurements({ targetFatRate: num });
     }
   };
 
   const handleHeightChange = (val: string) => {
-    setHeightStr(val);
-    const num = parseFloat(val);
+    const sanitized = val.replace(',', '.');
+    setHeightStr(sanitized);
+    const num = parseFloat(sanitized);
     if (!isNaN(num) && num > 0) {
       saveLastMeasurements({ height: num });
     }
@@ -164,7 +168,7 @@ export default function CaseyLimitCalculatorCard({
           <View style={styles.inputWrap}>
             <TextInput
               style={styles.textInput}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
               placeholder="17.0"
               placeholderTextColor={Theme.colors.textMuted}
               value={wristStr}
@@ -180,7 +184,7 @@ export default function CaseyLimitCalculatorCard({
           <View style={styles.inputWrap}>
             <TextInput
               style={styles.textInput}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
               placeholder="22.0"
               placeholderTextColor={Theme.colors.textMuted}
               value={ankleStr}
@@ -196,7 +200,7 @@ export default function CaseyLimitCalculatorCard({
           <View style={styles.inputWrap}>
             <TextInput
               style={styles.textInput}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
               placeholder="10"
               placeholderTextColor={Theme.colors.textMuted}
               value={targetFatStr}
@@ -212,7 +216,7 @@ export default function CaseyLimitCalculatorCard({
           <View style={styles.inputWrap}>
             <TextInput
               style={styles.textInput}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
               placeholder="175.0"
               placeholderTextColor={Theme.colors.textMuted}
               value={heightStr}
