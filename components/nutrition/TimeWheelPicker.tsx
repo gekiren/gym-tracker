@@ -1,13 +1,16 @@
-import React, { useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
+  Modal,
+  FlatList,
   Platform,
+  TouchableWithoutFeedback,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { runOnJS, useSharedValue } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../src/theme';
@@ -18,14 +21,12 @@ interface Props {
   label?: string;
 }
 
-interface DigitColumnProps {
-  value: number;
-  min: number;
-  max: number;
-  padZero?: boolean;
-  onChange: (val: number) => void;
-  isPureBlack?: boolean;
-}
+const ITEM_HEIGHT = 46;
+const VISIBLE_ITEMS = 3; // 画面内に表示する項目数
+const WHEEL_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS; // 138px
+
+const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0..23
+const MINUTES = Array.from({ length: 60 }, (_, i) => i); // 0..59
 
 const triggerHaptic = () => {
   if (Platform.OS !== 'web') {
@@ -33,226 +34,333 @@ const triggerHaptic = () => {
   }
 };
 
-// 各桁の上下スワイプ＆ボタン対応ホイールカラム
-function DigitColumn({
-  value,
-  min,
-  max,
-  padZero = false,
-  onChange,
-  isPureBlack,
-}: DigitColumnProps) {
-  const handleStep = useCallback((step: number) => {
-    // step: +1 (上へ/次へ) または -1 (下へ/前へ)
-    let next = value + step;
-    if (next > max) next = min;
-    if (next < min) next = max;
-    onChange(next);
-    triggerHaptic();
-  }, [value, min, max, onChange]);
+interface WheelColumnProps {
+  data: number[];
+  selectedValue: number;
+  onSelect: (val: number) => void;
+  unit: string;
+  padZero?: boolean;
+}
 
-  const lastStep = useSharedValue(0);
-  const stepThreshold = 16; // 16pxドラッグごとに1ステップ変化
+function WheelColumn({
+  data,
+  selectedValue,
+  onSelect,
+  unit,
+  padZero = true,
+}: WheelColumnProps) {
+  const flatListRef = useRef<FlatList<number>>(null);
+  const isUserScrollingRef = useRef(false);
 
-  const panGesture = Gesture.Pan()
-    .activeOffsetY([-4, 4])
-    .failOffsetX([-30, 30])
-    .shouldCancelWhenOutside(false)
-    .onStart(() => {
-      lastStep.value = 0;
-    })
-    .onUpdate((event) => {
-      // 上にドラッグ（-translationY）で数値増加、下にドラッグで数値減少
-      const delta = -event.translationY;
-      const currentStep = Math.trunc(delta / stepThreshold);
-      if (currentStep !== lastStep.value) {
-        const diff = currentStep - lastStep.value;
-        lastStep.value = currentStep;
-        runOnJS(handleStep)(diff);
+  // 初期位置合わせ
+  useEffect(() => {
+    const idx = data.indexOf(selectedValue);
+    if (idx >= 0 && flatListRef.current) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToOffset({
+          offset: idx * ITEM_HEIGHT,
+          animated: false,
+        });
+      }, 50);
+    }
+  }, []);
+
+  const handleMomentumScrollEnd = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetY = e.nativeEvent.contentOffset.y;
+      const index = Math.round(offsetY / ITEM_HEIGHT);
+      const clampedIndex = Math.max(0, Math.min(index, data.length - 1));
+      const val = data[clampedIndex];
+      if (val !== undefined && val !== selectedValue) {
+        onSelect(val);
+        triggerHaptic();
       }
-    })
-    .onEnd(() => {
-      lastStep.value = 0;
+      isUserScrollingRef.current = false;
+    },
+    [data, selectedValue, onSelect]
+  );
+
+  const handleScrollEndDrag = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetY = e.nativeEvent.contentOffset.y;
+      const index = Math.round(offsetY / ITEM_HEIGHT);
+      const clampedIndex = Math.max(0, Math.min(index, data.length - 1));
+      const val = data[clampedIndex];
+      if (val !== undefined && val !== selectedValue) {
+        onSelect(val);
+        triggerHaptic();
+      }
+    },
+    [data, selectedValue, onSelect]
+  );
+
+  const handleItemPress = (item: number, index: number) => {
+    flatListRef.current?.scrollToOffset({
+      offset: index * ITEM_HEIGHT,
+      animated: true,
     });
+    onSelect(item);
+    triggerHaptic();
+  };
 
-  // 表示用の前後の数値
-  const prevVal = value === min ? max : value - 1;
-  const nextVal = value === max ? min : value + 1;
-
-  const format = (v: number) => (padZero && v < 10 ? `0${v}` : String(v));
+  const getItemLayout = (_: any, index: number) => ({
+    length: ITEM_HEIGHT,
+    offset: ITEM_HEIGHT * index,
+    index,
+  });
 
   return (
-    <View style={styles.columnContainer}>
-      {/* 上タップボタン */}
-      <TouchableOpacity
-        style={styles.arrowBtn}
-        onPress={() => handleStep(1)}
-        activeOpacity={0.6}
-        hitSlop={{ top: 10, bottom: 6, left: 10, right: 10 }}
-      >
-        <Ionicons name="chevron-up" size={16} color="#60a5fa" />
-      </TouchableOpacity>
+    <View style={styles.wheelColumnContainer}>
+      <Text style={styles.columnUnitText}>{unit}</Text>
+      <View style={styles.wheelWrapper}>
+        {/* 中央のハイライト枠 */}
+        <View pointerEvents="none" style={styles.selectionHighlight} />
 
-      {/* スワイプエリア (GestureDetector) */}
-      <GestureDetector gesture={panGesture}>
-        <View
-          style={[
-            styles.wheelCard,
-            isPureBlack && { backgroundColor: '#050505', borderColor: '#262626' },
-          ]}
-        >
-          <Text style={styles.ghostDigit}>{format(nextVal)}</Text>
-          <View style={styles.activeDigitWrapper}>
-            <Text style={styles.activeDigit}>{format(value)}</Text>
-          </View>
-          <Text style={styles.ghostDigit}>{format(prevVal)}</Text>
-        </View>
-      </GestureDetector>
-
-      {/* 下タップボタン */}
-      <TouchableOpacity
-        style={styles.arrowBtn}
-        onPress={() => handleStep(-1)}
-        activeOpacity={0.6}
-        hitSlop={{ top: 6, bottom: 10, left: 10, right: 10 }}
-      >
-        <Ionicons name="chevron-down" size={16} color="#60a5fa" />
-      </TouchableOpacity>
+        <FlatList
+          ref={flatListRef}
+          data={data}
+          keyExtractor={(item) => String(item)}
+          snapToInterval={ITEM_HEIGHT}
+          decelerationRate="fast"
+          showsVerticalScrollIndicator={false}
+          getItemLayout={getItemLayout}
+          contentContainerStyle={{
+            paddingVertical: ITEM_HEIGHT, // 上下に1項目分の余白で中央配置
+          }}
+          onScrollBeginDrag={() => {
+            isUserScrollingRef.current = true;
+          }}
+          onMomentumScrollEnd={handleMomentumScrollEnd}
+          onScrollEndDrag={handleScrollEndDrag}
+          renderItem={({ item, index }) => {
+            const isSelected = item === selectedValue;
+            const text = padZero ? String(item).padStart(2, '0') : String(item);
+            return (
+              <TouchableOpacity
+                style={styles.wheelItem}
+                onPress={() => handleItemPress(item, index)}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.wheelItemText,
+                    isSelected && styles.wheelItemTextSelected,
+                  ]}
+                >
+                  {text}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
     </View>
   );
 }
 
-export default function TimeWheelPicker({ value, onChange, label = '時間設定' }: Props) {
+export default function TimeWheelPicker({
+  value,
+  onChange,
+  label = '食事時間',
+}: Props) {
   const { backgroundTheme } = useAppTheme();
   const isPureBlack = backgroundTheme === 'pureBlack';
 
-  // "HH:mm" のパース
-  const [hourStr, minStr] = (value || '12:00').split(':');
-  const h24 = parseInt(hourStr, 10) || 0;
-  const m = parseInt(minStr, 10) || 0;
+  const [modalVisible, setModalVisible] = useState(false);
 
-  const isPm = h24 >= 12;
-  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
-  const minuteTens = Math.floor((m % 60) / 10);
-  const minuteOnes = (m % 60) % 10;
+  // 一時選択ステート
+  const [tempHour, setTempHour] = useState(12);
+  const [tempMinute, setTempMinute] = useState(0);
 
-  // 12時間制・AM/PMから24時間制文字列を生成して親へ通知
-  const updateTime = (newIsPm: boolean, newH12: number, newTens: number, newOnes: number) => {
-    let finalH24 = 0;
-    if (newIsPm) {
-      finalH24 = newH12 === 12 ? 12 : newH12 + 12;
-    } else {
-      finalH24 = newH12 === 12 ? 0 : newH12;
-    }
-    const finalMin = newTens * 10 + newOnes;
-    const result = `${String(finalH24).padStart(2, '0')}:${String(finalMin).padStart(2, '0')}`;
-    onChange(result);
+  // "HH:mm" からパース
+  const parseCurrentTime = (timeStr: string) => {
+    const [hStr, mStr] = (timeStr || '12:00').split(':');
+    const h = parseInt(hStr, 10);
+    const m = parseInt(mStr, 10);
+    return {
+      hour: isNaN(h) ? 12 : Math.max(0, Math.min(23, h)),
+      minute: isNaN(m) ? 0 : Math.max(0, Math.min(59, m)),
+    };
   };
 
-  const handleToggleAmPm = (pm: boolean) => {
+  const openModal = () => {
+    const { hour, minute } = parseCurrentTime(value);
+    setTempHour(hour);
+    setTempMinute(minute);
+    setModalVisible(true);
     triggerHaptic();
-    updateTime(pm, h12, minuteTens, minuteOnes);
   };
 
-  const handleChangeHour = (newH: number) => {
-    updateTime(isPm, newH, minuteTens, minuteOnes);
+  const handleSave = () => {
+    const formatted = `${String(tempHour).padStart(2, '0')}:${String(tempMinute).padStart(2, '0')}`;
+    onChange(formatted);
+    setModalVisible(false);
+    triggerHaptic();
   };
 
-  const handleChangeTens = (newTens: number) => {
-    updateTime(isPm, h12, newTens, minuteOnes);
+  const handleCancel = () => {
+    setModalVisible(false);
   };
 
-  const handleChangeOnes = (newOnes: number) => {
-    updateTime(isPm, h12, minuteTens, newOnes);
+  // プリセット適用
+  const applyPresetMinutesAgo = (minsAgo: number) => {
+    const now = new Date();
+    if (minsAgo > 0) {
+      now.setMinutes(now.getMinutes() - minsAgo);
+    }
+    const h = now.getHours();
+    const m = now.getMinutes();
+    setTempHour(h);
+    setTempMinute(m);
+    triggerHaptic();
   };
+
+  const displayTime = value || '12:00';
+  const { hour: curH } = parseCurrentTime(displayTime);
+  const isPm = curH >= 12;
+  const h12 = curH % 12 === 0 ? 12 : curH % 12;
+  const ampmStr = isPm ? '午後' : '午前';
 
   return (
     <View style={styles.container}>
-      {Boolean(label) && (
-        <View style={styles.labelRow}>
-          <Text style={styles.label}>⏰ {label}</Text>
-          <Text style={styles.display24h}>
-            {String(h24).padStart(2, '0')}:{String(m).padStart(2, '0')} (24H)
-          </Text>
-        </View>
-      )}
-
-      <View
+      {/* インラインのタップ可能な時間表示カード */}
+      <TouchableOpacity
         style={[
-          styles.pickerContainer,
+          styles.triggerCard,
           isPureBlack && { backgroundColor: '#0a0a0a', borderColor: '#1f1f1f' },
         ]}
+        onPress={openModal}
+        activeOpacity={0.7}
       >
-        {/* AM / PM 切替ボタン */}
-        <View style={styles.ampmColumn}>
-          <TouchableOpacity
-            style={[
-              styles.ampmBtn,
-              !isPm && styles.ampmBtnActive,
-              isPureBlack && !isPm && { backgroundColor: '#1e3a8a', borderColor: '#3b82f6' },
-            ]}
-            onPress={() => handleToggleAmPm(false)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.ampmText, !isPm && styles.ampmTextActive]}>AM</Text>
-            <Text style={[styles.ampmSubText, !isPm && styles.ampmSubTextActive]}>午前</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.ampmBtn,
-              isPm && styles.ampmBtnActive,
-              isPureBlack && isPm && { backgroundColor: '#1e3a8a', borderColor: '#3b82f6' },
-            ]}
-            onPress={() => handleToggleAmPm(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.ampmText, isPm && styles.ampmTextActive]}>PM</Text>
-            <Text style={[styles.ampmSubText, isPm && styles.ampmSubTextActive]}>午後</Text>
-          </TouchableOpacity>
+        <View style={styles.triggerLeft}>
+          <Text style={styles.triggerLabel}>⏰ {label}</Text>
+          <Text style={styles.triggerSubText}>
+            {ampmStr} {h12}:{displayTime.split(':')[1] || '00'}
+          </Text>
         </View>
 
-        {/* 時間 (1〜12) */}
-        <View style={styles.unitGroup}>
-          <Text style={styles.unitLabel}>時</Text>
-          <DigitColumn
-            value={h12}
-            min={1}
-            max={12}
-            padZero={false}
-            onChange={handleChangeHour}
-            isPureBlack={isPureBlack}
-          />
+        <View style={styles.triggerRight}>
+          <View style={styles.timeBadge}>
+            <Text style={styles.timeBadgeText}>{displayTime}</Text>
+          </View>
+          <Ionicons name="create-outline" size={18} color="#38bdf8" />
         </View>
+      </TouchableOpacity>
 
-        <Text style={styles.separator}>:</Text>
+      {/* 専用のドラムロール式時間設定モーダル */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCancel}
+      >
+        <TouchableWithoutFeedback onPress={handleCancel}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View
+                style={[
+                  styles.modalCard,
+                  isPureBlack && { backgroundColor: '#080808', borderColor: '#262626' },
+                ]}
+              >
+                {/* モーダルヘッダー */}
+                <View style={styles.modalHeader}>
+                  <View style={styles.modalTitleRow}>
+                    <Ionicons name="time-outline" size={20} color="#38bdf8" />
+                    <Text style={styles.modalTitle}>食事時間を設定</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={handleCancel}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Ionicons name="close" size={22} color="#94a3b8" />
+                  </TouchableOpacity>
+                </View>
 
-        {/* 分の十の位 (0〜5) */}
-        <View style={styles.unitGroup}>
-          <Text style={styles.unitLabel}>分 (十の位)</Text>
-          <DigitColumn
-            value={minuteTens}
-            min={0}
-            max={5}
-            padZero={false}
-            onChange={handleChangeTens}
-            isPureBlack={isPureBlack}
-          />
-        </View>
+                {/* 現在選択中の時間の大きなプレビュー */}
+                <View style={styles.previewContainer}>
+                  <Text style={styles.previewText}>
+                    {String(tempHour).padStart(2, '0')}:
+                    {String(tempMinute).padStart(2, '0')}
+                  </Text>
+                  <Text style={styles.previewSubText}>
+                    {tempHour >= 12 ? '午後' : '午前'}{' '}
+                    {tempHour % 12 === 0 ? 12 : tempHour % 12}:
+                    {String(tempMinute).padStart(2, '0')}
+                  </Text>
+                </View>
 
-        {/* 分の一の位 (0〜9) */}
-        <View style={styles.unitGroup}>
-          <Text style={styles.unitLabel}>分 (一の位)</Text>
-          <DigitColumn
-            value={minuteOnes}
-            min={0}
-            max={9}
-            padZero={false}
-            onChange={handleChangeOnes}
-            isPureBlack={isPureBlack}
-          />
-        </View>
-      </View>
+                {/* クイックプリセットボタン */}
+                <View style={styles.presetRow}>
+                  <TouchableOpacity
+                    style={styles.presetBtn}
+                    onPress={() => applyPresetMinutesAgo(0)}
+                  >
+                    <Text style={styles.presetBtnText}>現在時刻</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.presetBtn}
+                    onPress={() => applyPresetMinutesAgo(15)}
+                  >
+                    <Text style={styles.presetBtnText}>15分前</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.presetBtn}
+                    onPress={() => applyPresetMinutesAgo(30)}
+                  >
+                    <Text style={styles.presetBtnText}>30分前</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.presetBtn}
+                    onPress={() => applyPresetMinutesAgo(60)}
+                  >
+                    <Text style={styles.presetBtnText}>1時間前</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* ドラムロールホイールエリア */}
+                <View style={styles.wheelsContainer}>
+                  <WheelColumn
+                    key={`hour-${tempHour}`}
+                    data={HOURS}
+                    selectedValue={tempHour}
+                    onSelect={setTempHour}
+                    unit="時 (00-23)"
+                  />
+
+                  <Text style={styles.colonSeparator}>:</Text>
+
+                  <WheelColumn
+                    key={`min-${tempMinute}`}
+                    data={MINUTES}
+                    selectedValue={tempMinute}
+                    onSelect={setTempMinute}
+                    unit="分 (00-59)"
+                  />
+                </View>
+
+                {/* アクションボタン */}
+                <View style={styles.modalActions}>
+                  <TouchableOpacity
+                    style={styles.cancelBtn}
+                    onPress={handleCancel}
+                  >
+                    <Text style={styles.cancelBtnText}>キャンセル</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.confirmBtn}
+                    onPress={handleSave}
+                  >
+                    <Ionicons name="checkmark" size={18} color="#ffffff" style={{ marginRight: 4 }} />
+                    <Text style={styles.confirmBtnText}>決定</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }
@@ -261,129 +369,220 @@ const styles = StyleSheet.create({
   container: {
     marginVertical: 6,
   },
-  labelRow: {
+  triggerCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#94a3b8',
-  },
-  display24h: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#38bdf8',
-    backgroundColor: '#0369a122',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  pickerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#1e293b',
-    borderRadius: 14,
+    borderRadius: 12,
     paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingHorizontal: 14,
     borderWidth: 1,
     borderColor: '#334155',
+  },
+  triggerLeft: {
+    flexDirection: 'column',
+    gap: 2,
+  },
+  triggerLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#e2e8f0',
+  },
+  triggerSubText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#64748b',
+  },
+  triggerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
-  ampmColumn: {
-    flexDirection: 'column',
-    gap: 6,
-    marginRight: 6,
-  },
-  ampmBtn: {
-    paddingVertical: 6,
+  timeBadge: {
+    backgroundColor: '#0369a133',
     paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#0284c7',
+  },
+  timeBadgeText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#38bdf8',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: '#0f172a',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#334155',
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  modalTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#f8fafc',
+  },
+  previewContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    backgroundColor: '#1e293b55',
+    borderRadius: 12,
+    marginBottom: 14,
+  },
+  previewText: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#38bdf8',
+    letterSpacing: 2,
+  },
+  previewSubText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#94a3b8',
+    marginTop: 2,
+  },
+  presetRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 6,
+    marginBottom: 14,
+  },
+  presetBtn: {
+    flex: 1,
+    backgroundColor: '#1e293b',
+    paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#334155',
-    backgroundColor: '#0f172a',
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 52,
   },
-  ampmBtnActive: {
-    backgroundColor: '#0284c7',
-    borderColor: '#38bdf8',
+  presetBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#cbd5e1',
   },
-  ampmText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#64748b',
+  wheelsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1e293b88',
+    borderRadius: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+    marginBottom: 18,
   },
-  ampmTextActive: {
-    color: '#ffffff',
-  },
-  ampmSubText: {
-    fontSize: 9,
-    fontWeight: '500',
-    color: '#475569',
-    marginTop: 1,
-  },
-  ampmSubTextActive: {
-    color: '#e0f2fe',
-  },
-  unitGroup: {
+  wheelColumnContainer: {
+    width: 90,
     alignItems: 'center',
   },
-  unitLabel: {
-    fontSize: 10,
-    fontWeight: '600',
+  columnUnitText: {
+    fontSize: 11,
+    fontWeight: '700',
     color: '#64748b',
     marginBottom: 4,
   },
-  columnContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+  wheelWrapper: {
+    height: WHEEL_HEIGHT,
+    width: '100%',
+    position: 'relative',
+    overflow: 'hidden',
   },
-  arrowBtn: {
-    padding: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
+  selectionHighlight: {
+    position: 'absolute',
+    top: ITEM_HEIGHT,
+    left: 4,
+    right: 4,
+    height: ITEM_HEIGHT,
+    backgroundColor: '#38bdf822',
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#38bdf8',
+    zIndex: 1,
   },
-  wheelCard: {
-    width: 48,
-    height: 74,
-    backgroundColor: '#0f172a',
+  wheelItem: {
+    height: ITEM_HEIGHT,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  wheelItemText: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#64748b',
+  },
+  wheelItemTextSelected: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#f8fafc',
+  },
+  colonSeparator: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#38bdf8',
+    marginTop: 18,
+    marginHorizontal: 4,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: 12,
     borderRadius: 10,
+    backgroundColor: '#1e293b',
     borderWidth: 1,
     borderColor: '#334155',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-    overflow: 'hidden',
+    justifyContent: 'center',
   },
-  ghostDigit: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#475569',
-    opacity: 0.6,
+  cancelBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#94a3b8',
   },
-  activeDigitWrapper: {
-    backgroundColor: '#38bdf81a',
-    width: '90%',
-    paddingVertical: 2,
-    borderRadius: 6,
+  confirmBtn: {
+    flex: 1.3,
+    flexDirection: 'row',
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#0284c7',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  activeDigit: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#f8fafc',
-  },
-  separator: {
-    fontSize: 22,
+  confirmBtnText: {
+    fontSize: 14,
     fontWeight: '700',
-    color: '#64748b',
-    marginTop: 16,
-    marginHorizontal: -2,
+    color: '#ffffff',
   },
 });
+
