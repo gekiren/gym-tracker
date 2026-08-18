@@ -73,7 +73,7 @@ export const useRoutineDraftStore = create<RoutineDraftState>((set) => ({
           set_number: nextNum,
           weight: lastSet ? lastSet.weight : null,
           reps: lastSet ? lastSet.reps : null,
-          rpe: null
+          rpe: lastSet ? lastSet.rpe : null
         };
         return { ...ex, sets: [...ex.sets, newSet] };
       }
