@@ -22,6 +22,7 @@ interface CompactSwipeableInputProps {
   sensitivity?: number;
   minValue?: number;
   maxValue?: number;
+  allowedValues?: number[];
   placeholder?: string;
   placeholderTextColor?: string;
   style?: any;
@@ -44,6 +45,7 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   sensitivity = 32,
   minValue = 0,
   maxValue = 9999,
+  allowedValues,
   placeholder = '-',
   placeholderTextColor = 'rgba(255,255,255,0.2)',
   style,
@@ -87,6 +89,7 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   const translationX = useSharedValue(0);
   const isDragging = useSharedValue(false);
   const startValue = useSharedValue(0);
+  const startIndex = useSharedValue(0);
   const lastStep = useSharedValue(0);
 
   useEffect(() => {
@@ -121,6 +124,20 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
         parsed = 0;
       }
       startValue.value = parsed;
+
+      if (allowedValues && allowedValues.length > 0) {
+        let closestIdx = 0;
+        let minDiff = Infinity;
+        for (let i = 0; i < allowedValues.length; i++) {
+          const diff = Math.abs(allowedValues[i] - parsed);
+          if (diff < minDiff) {
+            minDiff = diff;
+            closestIdx = i;
+          }
+        }
+        startIndex.value = closestIdx;
+      }
+
       lastStep.value = 0;
       translationX.value = 0;
       isDragging.value = true;
@@ -131,9 +148,18 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
 
       if (currentStep !== lastStep.value) {
         lastStep.value = currentStep;
-        const calculated = startValue.value + currentStep * step;
-        const clamped = Math.min(Math.max(calculated, minValue), maxValue);
-        runOnJS(handleValueChange)(clamped);
+        if (allowedValues && allowedValues.length > 0) {
+          const targetIdx = Math.min(
+            Math.max(startIndex.value + currentStep, 0),
+            allowedValues.length - 1
+          );
+          const calculated = allowedValues[targetIdx];
+          runOnJS(handleValueChange)(calculated);
+        } else {
+          const calculated = startValue.value + currentStep * step;
+          const clamped = Math.min(Math.max(calculated, minValue), maxValue);
+          runOnJS(handleValueChange)(clamped);
+        }
       }
     })
     .onEnd(() => {
