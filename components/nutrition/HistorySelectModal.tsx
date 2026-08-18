@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { MealLog } from '../../src/db/types';
 import { useAppTheme } from '../../src/theme';
+import { getDefaultMealType } from '../../src/utils/nutritionUtils';
 
 interface Props {
   visible: boolean;
@@ -52,7 +53,7 @@ export default function HistorySelectModal({
       const now = new Date();
       await onSelect({
         date: selectedDate,
-        meal_type: item.meal_type,
+        meal_type: item.meal_type || getDefaultMealType(now),
         meal_time: now.toTimeString().slice(0, 5),
         name: item.name,
         calories: item.calories,

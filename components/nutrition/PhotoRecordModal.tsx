@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -63,6 +63,7 @@ import { analyzeMealImage, NutritionAIResult } from '../../src/services/aiCoachS
 import { copyAIDebugLogsToClipboard } from '../../src/utils/debugLogStore';
 import { MealLog } from '../../src/db/types';
 import { useAppTheme } from '../../src/theme';
+import { getDefaultMealType, getCurrentTimeStr } from '../../src/utils/nutritionUtils';
 import TimeWheelPicker from './TimeWheelPicker';
 
 const MEAL_TYPES = [
@@ -71,13 +72,6 @@ const MEAL_TYPES = [
   { key: 'dinner',   label: '🌙 夕食' },
   { key: 'snack',    label: '☕ 間食' },
 ] as const;
-
-const getCurrentTimeStr = () => {
-  const now = new Date();
-  const h = String(now.getHours()).padStart(2, '0');
-  const m = String(now.getMinutes()).padStart(2, '0');
-  return `${h}:${m}`;
-};
 
 interface Props {
   visible: boolean;
@@ -94,10 +88,17 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
   const [base64Data, setBase64Data] = useState<string | null>(null);
   const [userMemo, setUserMemo] = useState('');
-  const [mealType, setMealType] = useState<string>('dinner');
+  const [mealType, setMealType] = useState<string>(getDefaultMealType());
   const [mealTime, setMealTime] = useState<string>(getCurrentTimeStr());
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiResult, setAiResult] = useState<NutritionAIResult | null>(null);
+
+  useEffect(() => {
+    if (visible) {
+      setMealType(getDefaultMealType());
+      setMealTime(getCurrentTimeStr());
+    }
+  }, [visible]);
 
   // 編集用数値フィールド
   const [mealName, setMealName] = useState('');
@@ -130,7 +131,7 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
     setMultiplier(1.0);
     setShowCustomMultiplierInput(false);
     setCustomMultiplierText('');
-    setMealType('dinner');
+    setMealType(getDefaultMealType());
     setMealTime(getCurrentTimeStr());
   };
 
