@@ -170,7 +170,12 @@ export default {
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
             
             try {
-              // 画像解析は12秒で個別タイムアウト制御
+              // 画像解析は5秒で個別タイムアウト制御
+              const generationConfig = { maxOutputTokens: 2048 };
+              if (modelName.includes("3.7")) {
+                generationConfig.thinkingConfig = { thinkingBudget: 0 };
+              }
+
               const response = await fetchWithTimeout(geminiUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -185,9 +190,9 @@ export default {
                     }
                   ],
                   systemInstruction: { parts: [{ text: visionSystemInstruction }] },
-                  generationConfig: { maxOutputTokens: 2048 }
+                  generationConfig
                 })
-              }, 12000);
+              }, 5000);
 
               if (response.ok) {
                 const result = await response.json();
@@ -251,7 +256,7 @@ export default {
                 ],
                 response_format: { type: "json_object" }
               })
-            }, 10000);
+            }, 5000);
 
             if (deepseekResponse.ok) {
               const dsData = await deepseekResponse.json();
@@ -319,16 +324,21 @@ export default {
           for (const modelName of geminiModels) {
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
             try {
-              // テキスト栄養解析は8秒で個別タイムアウト制御
+              // テキスト栄養解析は4秒で個別タイムアウト制御
+              const generationConfig = { maxOutputTokens: 1024 };
+              if (modelName.includes("3.7")) {
+                generationConfig.thinkingConfig = { thinkingBudget: 0 };
+              }
+
               const response = await fetchWithTimeout(geminiUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   contents: [{ role: "user", parts: [{ text: textInput || message }] }],
                   systemInstruction: { parts: [{ text: textNutritionInstruction }] },
-                  generationConfig: { maxOutputTokens: 1024 }
+                  generationConfig
                 })
-              }, 8000);
+              }, 4000);
 
               if (response.ok) {
                 const result = await response.json();
@@ -379,7 +389,7 @@ export default {
                 ],
                 response_format: { type: "json_object" }
               })
-            }, 10000);
+            }, 5000);
 
             if (dsResponse.ok) {
               const dsData = await dsResponse.json();
@@ -439,20 +449,31 @@ export default {
       const geminiModels = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
       let chatFallbackHistory = [];
 
+      const aiMode = payload.ai_mode || "quick";
+
       if (env.GEMINI_API_KEY) {
         for (const modelName of geminiModels) {
           const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
           try {
-            // AIコーチチャットは8秒で個別タイムアウト制御
+            // AIコーチチャットはquickなら5秒、thinkingなら15秒で個別制御
+            const generationConfig = { maxOutputTokens: 2048 };
+            if (modelName.includes("3.7")) {
+              if (aiMode === "thinking") {
+                generationConfig.thinkingConfig = { thinkingBudget: 2048 };
+              } else {
+                generationConfig.thinkingConfig = { thinkingBudget: 0 };
+              }
+            }
+
             const response = await fetchWithTimeout(geminiUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 contents: [{ role: "user", parts: [{ text: promptContext }] }],
                 systemInstruction: { parts: [{ text: systemInstruction }] },
-                generationConfig: { maxOutputTokens: 2048 }
+                generationConfig
               })
-            }, 8000);
+            }, aiMode === "thinking" ? 15000 : 5000);
 
             if (response.ok) {
               const result = await response.json();
@@ -497,7 +518,7 @@ export default {
                 { role: "user", content: promptContext }
               ]
             })
-          }, 12000);
+          }, 6000);
 
           if (dsResponse.ok) {
             const dsData = await dsResponse.json();

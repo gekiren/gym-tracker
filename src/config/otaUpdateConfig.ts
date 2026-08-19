@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.92',
+  version: '1.8.93',
   title: {
-    ja: '⭐ Markdown一括取り込み画面での外部AI連携機能追加',
-    en: '⭐ Added External AI Integration in Markdown Import',
+    ja: '⚡ AI食事写真解析の高速化 ＆ タイムアウト改善',
+    en: '⚡ Faster AI Meal Photo Analysis & Timeout Fix',
   },
   notes: {
     ja: [
-      'MD一括取り込み画面からワンタップでChatGPT等の外部AIを開けるアクセスボタンを追加しました。',
-      '栄養目標設定画面で、アクセスする外部AIのURLを自由にカスタマイズ（ChatGPT/Claude/Gemini/Perplexity等）できるようになりました。',
+      '食事写真および食品ラベルのAI解析速度を大幅に高速化しました。',
+      '画像送信サイズの軽量化とタイムアウト制御の適正化により、待機時間やエラーを削減しました。',
     ],
     en: [
-      'Added a quick access button in the Markdown Import screen to directly open external AI services like ChatGPT.',
-      'You can now customize the target AI service URL (ChatGPT, Claude, Gemini, Perplexity, etc.) in the Nutrition Settings screen.',
+      'Significantly sped up AI nutrition analysis for meal photos and food labels.',
+      'Optimized image compression and timeout management to reduce waiting times and errors.',
     ],
   },
 };
