@@ -150,12 +150,12 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
       const ImageManipulator = safeGetImageManipulator();
       if (ImageManipulator && ImageManipulator.manipulateAsync) {
         try {
-          // カメラの超高画質写真を幅800px・圧縮率0.5にリサイズ（送信サイズを約80KBに軽量化）
+          // カメラの写真を幅600px・圧縮率0.4にリサイズ（送信サイズを約35KBに軽量化し高速化）
           const manipFormat = (ImageManipulator.SaveFormat?.JPEG || 'jpeg') as any;
           const manipResult = await ImageManipulator.manipulateAsync(
             uri,
-            [{ resize: { width: 800 } }],
-            { compress: 0.5, format: manipFormat, base64: true }
+            [{ resize: { width: 600 } }],
+            { compress: 0.4, format: manipFormat, base64: true }
           );
           if (manipResult.uri) {
             setSelectedImageUri(manipResult.uri);
