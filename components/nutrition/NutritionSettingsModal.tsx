@@ -78,6 +78,9 @@ export default function NutritionSettingsModal({
   const [activityLevel, setActivityLevel] = useState<'sedentary' | 'light' | 'moderate' | 'active' | 'veryActive'>('moderate');
   const [goalType, setGoalType] = useState<'cut' | 'maintain' | 'bulk'>('maintain');
 
+  // 外部AI連携URL
+  const [aiUrl, setAiUrl] = useState(userGoals.ai_url || 'https://chatgpt.com');
+
   const [isSaving, setIsSaving] = useState(false);
 
   // Mifflin-St Jeor 式による BMR & TDEE 計算
@@ -161,6 +164,8 @@ export default function NutritionSettingsModal({
 
       setTargetHours(String(autophagyConfig.target_hours || 16));
       setAutophagyEnabled(!!autophagyConfig.enabled);
+
+      setAiUrl(userGoals.ai_url || 'https://chatgpt.com');
     }
   }, [visible, userGoals, autophagyConfig]);
 
@@ -346,6 +351,7 @@ export default function NutritionSettingsModal({
           c: parseFloat(ratioC) || 60,
         },
         fat_per_weight: parseFloat(mode3FatPerKg) || 0.7,
+        ai_url: aiUrl.trim() || 'https://chatgpt.com',
       };
 
       await onSaveGoals(finalGoals);
@@ -906,7 +912,7 @@ export default function NutritionSettingsModal({
             </View>
 
             {/* オートファジー目標時間・有効無効 */}
-            <View style={styles.card}>
+            <View style={[styles.card, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
               <Text style={styles.cardTitle}>⏳ オートファジー絶食タイマー設定</Text>
               <View style={styles.switchRow}>
                 <Text style={styles.switchLabel}>オートファジー機能を有効化</Text>
@@ -919,13 +925,65 @@ export default function NutritionSettingsModal({
 
               <Text style={styles.label}>目標絶食時間 (時間)</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' }]}
                 keyboardType="numeric"
                 value={targetHours}
                 onChangeText={setTargetHours}
                 placeholder="16"
                 placeholderTextColor="#475569"
               />
+            </View>
+
+            {/* 🤖 外部AI連携URL設定 (MD一括取り込み用) */}
+            <View style={[styles.card, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
+              <Text style={styles.cardTitle}>🤖 外部AI連携URL設定 (MD一括取り込み用)</Text>
+              <Text style={styles.hintText}>
+                Markdown一括取り込み画面の「AIを開く」ボタンから直接アクセスする外部AIサービスのURLを設定できます。
+              </Text>
+
+              <Text style={styles.label}>連携先AIのURL</Text>
+              <TextInput
+                style={[styles.input, isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' }]}
+                value={aiUrl}
+                onChangeText={setAiUrl}
+                placeholder="https://chatgpt.com"
+                placeholderTextColor="#475569"
+                keyboardType="url"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+
+              {/* プリセットチップ */}
+              <Text style={[styles.label, { marginTop: 10 }]}>クイック設定 (代表的なAI)</Text>
+              <View style={[styles.row, { gap: 6 }]}>
+                {[
+                  { name: 'ChatGPT', url: 'https://chatgpt.com' },
+                  { name: 'Claude', url: 'https://claude.ai' },
+                  { name: 'Gemini', url: 'https://gemini.google.com' },
+                  { name: 'Perplexity', url: 'https://www.perplexity.ai' },
+                  { name: 'Grok', url: 'https://x.com/i/grok' },
+                ].map((item) => (
+                  <TouchableOpacity
+                    key={item.name}
+                    style={[
+                      styles.chipBtn,
+                      aiUrl.trim() === item.url && styles.chipBtnActive,
+                      { paddingVertical: 6, paddingHorizontal: 8 },
+                    ]}
+                    onPress={() => setAiUrl(item.url)}
+                  >
+                    <Text
+                      style={[
+                        styles.chipBtnText,
+                        aiUrl.trim() === item.url && styles.chipBtnTextActive,
+                        { fontSize: 11 },
+                      ]}
+                    >
+                      {item.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
             {/* 保存ボタン */}

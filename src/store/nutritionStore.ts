@@ -68,6 +68,7 @@ const DEFAULT_GOALS: NutritionGoals = {
   weight: 65,
   activity_level: 'moderate',
   goal_type: 'maintain',
+  ai_url: 'https://chatgpt.com',
 };
 
 const DEFAULT_AUTOPHAGY: AutophagyConfig = {

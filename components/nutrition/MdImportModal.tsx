@@ -9,6 +9,7 @@ import {
   ScrollView,
   Alert,
   Platform,
+  Linking,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { MealLog } from '../../src/db/types';
@@ -42,14 +43,37 @@ interface Props {
   onClose: () => void;
   onImport: (logs: Omit<MealLog, 'id'>[]) => Promise<void>;
   selectedDate: string;
+  aiUrl?: string;
 }
 
-export default function MdImportModal({ visible, onClose, onImport, selectedDate }: Props) {
+export default function MdImportModal({ visible, onClose, onImport, selectedDate, aiUrl }: Props) {
   const { backgroundTheme } = useAppTheme();
   const isPureBlack = backgroundTheme === 'pureBlack';
 
   const [mdText, setMdText] = useState('');
   const [copied, setCopied] = useState(false);
+
+  const sanitizeUrl = (url?: string) => {
+    let target = (url || '').trim();
+    if (!target) return 'https://chatgpt.com';
+    if (!/^https?:\/\//i.test(target)) {
+      target = 'https://' + target;
+    }
+    return target;
+  };
+
+  const handleOpenAiUrl = async () => {
+    const targetUrl = sanitizeUrl(aiUrl);
+    try {
+      await Linking.openURL(targetUrl);
+    } catch (err) {
+      console.warn('Failed to open AI URL:', err);
+      Alert.alert(
+        'URLアクセスエラー',
+        `登録されたURL (${targetUrl}) を開くことができませんでした。\n栄養目標設定画面で正しいURLを設定してください。`
+      );
+    }
+  };
 
   const handleCopyPrompt = async () => {
     try {
@@ -57,7 +81,14 @@ export default function MdImportModal({ visible, onClose, onImport, selectedDate
       setCopied(true);
       Alert.alert(
         'コピー完了 📋',
-        'AI栄養士用のプロンプトをクリップボードにコピーしました！\n\nChatGPTやClaude等の外部AIに写真やテキストを添付してこのプロンプトを渡すことで、アプリへ一括取り込み可能な形式のテキストが生成されます。'
+        'AI栄養士用のプロンプトをクリップボードにコピーしました！\n\n登録したAIを開いて、写真やテキストと一緒にこのプロンプトを渡してください。',
+        [
+          { text: '閉じる', style: 'cancel' },
+          {
+            text: '🌐 AIを開く',
+            onPress: handleOpenAiUrl,
+          },
+        ]
       );
       setTimeout(() => {
         setCopied(false);
@@ -143,15 +174,27 @@ export default function MdImportModal({ visible, onClose, onImport, selectedDate
                 <Text style={styles.promptTitle}>🤖 外部AI用プロンプト</Text>
                 <Text style={styles.promptSubtitle}>ChatGPTやClaudeに食事写真・メモを解析させる専用プロンプト</Text>
               </View>
-              <TouchableOpacity
-                style={[styles.copyBtn, copied && styles.copyBtnSuccess]}
-                onPress={handleCopyPrompt}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.copyBtnText}>
-                  {copied ? '✓ クリップボードにコピーしました' : '📋 AIプロンプトをコピー'}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.promptBtnRow}>
+                <TouchableOpacity
+                  style={[styles.copyBtn, copied && styles.copyBtnSuccess, { flex: 1.2 }]}
+                  onPress={handleCopyPrompt}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.copyBtnText} numberOfLines={1}>
+                    {copied ? '✓ コピー完了' : '📋 プロンプトコピー'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.openAiBtn}
+                  onPress={handleOpenAiUrl}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.openAiBtnText} numberOfLines={1}>
+                    🌐 AIを開く
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <Text style={[styles.hint, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f', borderWidth: 1 }]}>
@@ -218,6 +261,11 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     lineHeight: 15,
   },
+  promptBtnRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
   copyBtn: {
     backgroundColor: '#0284c7',
     borderRadius: 8,
@@ -230,6 +278,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#059669',
   },
   copyBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  openAiBtn: {
+    flex: 0.9,
+    backgroundColor: '#8b5cf6',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  openAiBtnText: {
     color: '#ffffff',
     fontSize: 13,
     fontWeight: '700',
