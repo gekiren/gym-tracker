@@ -357,8 +357,8 @@ export const analyzeMealImage = async (
     if (proxySecret) headers['Authorization'] = `Bearer ${proxySecret}`;
 
     const promptMessage = userMemo.trim()
-      ? `【食事メモ】${userMemo}\nこの食事の写真から料理名、推定カロリー、PFC（タンパク質・脂質・炭水化物・塩分・食物繊維）のバランスを分析して回答してください。`
-      : 'この食事の写真から料理名、推定カロリー、PFC（タンパク質・脂質・炭水化物・塩分・食物繊維）のバランスを分析して回答してください。';
+      ? `【食事メモ】${userMemo}\nこの食事の写真、または食品パッケージ・栄養成分表示ラベルから、料理名/食品名、推定カロリー、PFC（タンパク質・脂質・炭水化物・塩分・食物繊維）の数値を正確に分析・抽出して回答してください。`
+      : 'この食事の写真、または食品パッケージ・栄養成分表示ラベルから、料理名/食品名、推定カロリー、PFC（タンパク質・脂質・炭水化物・塩分・食物繊維）の数値を正確に分析・抽出して回答してください。';
 
     const requestPayload = {
       message: promptMessage,

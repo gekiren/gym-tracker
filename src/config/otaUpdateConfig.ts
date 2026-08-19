@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.90',
+  version: '1.8.91',
   title: {
-    ja: '⭐ 食事ログ編集画面へのお気に入り機能追加・カードUI整理',
-    en: '⭐ Add to Favorites from Meal Edit Screen & Cleaner Card UI',
+    ja: '⭐ AI食事・栄養成分表示ラベルの画像認識精度向上',
+    en: '⭐ Improved Nutrition Label & Packaging Image Recognition',
   },
   notes: {
     ja: [
-      '食事ログ編集画面から直接お気に入りの登録・解除ができるようになりました。',
-      '食事ログ一覧カードのボタン構成をスッキリ整理し、操作性を向上させました。',
+      '食品パッケージ裏面の栄養成分表示表や商品ラベルの読み取り精度を大幅に向上させました。',
     ],
     en: [
-      'You can now add or remove items from Favorites directly from the Meal Edit modal.',
-      'Refined the meal log card buttons for a cleaner layout and improved usability.',
+      'Significantly improved recognition accuracy for nutrition fact labels and product packaging.',
     ],
   },
 };
