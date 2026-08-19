@@ -184,7 +184,7 @@ export default {
                     {
                       role: "user",
                       parts: [
-                        { inline_data: { mime_type: mimeType, data: base64Content } },
+                        { inlineData: { mimeType: mimeType, data: base64Content } },
                         { text: message || "この写真の食事内容と栄養成分を解析してください。" }
                       ]
                     }
