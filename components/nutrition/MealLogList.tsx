@@ -28,28 +28,21 @@ const FILTER_TABS = [
 
 interface Props {
   mealLogs: MealLog[];
-  favorites: MealFavorite[];
+  favorites?: MealFavorite[];
   onDeleteMeal: (id: number) => void;
   onEditMeal: (log: MealLog) => void;
-  onToggleFavorite: (log: MealLog) => void;
+  onToggleFavorite?: (log: MealLog) => void;
   onPreviewPhoto?: (uri: string) => void;
 }
 
 export default function MealLogList({
   mealLogs,
-  favorites,
   onDeleteMeal,
   onEditMeal,
-  onToggleFavorite,
   onPreviewPhoto,
 }: Props) {
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-
-  const isFav = (name: string) => {
-    const clean = (name || '').trim().toLowerCase();
-    return favorites.some((f) => (f.name || '').trim().toLowerCase() === clean);
-  };
 
   const filteredLogs = useMemo(() => {
     return mealLogs.filter((log) => {
@@ -131,7 +124,6 @@ export default function MealLogList({
         filteredLogs.map((log, idx) => {
           const typeLabel = MEAL_TYPE_LABELS[log.meal_type ?? ''] ?? '🍴 食事';
           const typeColor = MEAL_TYPE_COLORS[log.meal_type ?? ''] ?? '#3b82f6';
-          const favorited = isFav(log.name);
           const displayTime =
             log.meal_time ||
             (log.created_at ? new Date(log.created_at).toTimeString().slice(0, 5) : '');
@@ -178,15 +170,6 @@ export default function MealLogList({
 
               {/* アクションボタン */}
               <View style={styles.actionRow}>
-                <TouchableOpacity
-                  style={[styles.actionBtn, favorited && styles.favActiveBtn]}
-                  onPress={() => onToggleFavorite(log)}
-                >
-                  <Text style={[styles.actionBtnText, favorited && styles.favActiveText]}>
-                    {favorited ? '★ お気に入り解除' : '☆ お気に入り追加'}
-                  </Text>
-                </TouchableOpacity>
-
                 <TouchableOpacity style={styles.actionBtn} onPress={() => onEditMeal(log)}>
                   <Text style={styles.actionBtnText}>✏️ 編集</Text>
                 </TouchableOpacity>
@@ -318,8 +301,6 @@ const styles = StyleSheet.create({
     borderColor: '#334155',
   },
   actionBtnText: { fontSize: 11, fontWeight: '600', color: '#94a3b8' },
-  favActiveBtn: { backgroundColor: '#f59e0b22', borderColor: '#f59e0b' },
-  favActiveText: { color: '#f59e0b', fontWeight: '700' },
   deleteBtn: { borderColor: '#ef444455' },
   deleteBtnText: { fontSize: 11, fontWeight: '600', color: '#f87171' },
 });

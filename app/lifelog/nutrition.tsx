@@ -300,10 +300,8 @@ export default function NutritionScreen() {
         ) : (
           <MealLogList
             mealLogs={mealLogs}
-            favorites={favorites}
             onDeleteMeal={(id) => setDeletingMealId(id)}
             onEditMeal={(log) => setEditingLog(log)}
-            onToggleFavorite={handleToggleFavorite}
           />
         )}
 

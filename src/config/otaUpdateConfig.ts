@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.89',
+  version: '1.8.90',
   title: {
-    ja: '🥗 食事記録時の食事区分自動判定機能の追加',
-    en: '🥗 Auto-Selected Meal Types Based on Current Time',
+    ja: '⭐ 食事ログ編集画面へのお気に入り機能追加・カードUI整理',
+    en: '⭐ Add to Favorites from Meal Edit Screen & Cleaner Card UI',
   },
   notes: {
     ja: [
-      '食事の追加・記録時に、現在時刻に基づいて朝食・昼食・間食・夕食が自動的に初期選択されるようになりました。',
+      '食事ログ編集画面から直接お気に入りの登録・解除ができるようになりました。',
+      '食事ログ一覧カードのボタン構成をスッキリ整理し、操作性を向上させました。',
     ],
     en: [
-      'Meal types (Breakfast, Lunch, Snack, Dinner) are now automatically pre-selected based on the current time when logging meals.',
+      'You can now add or remove items from Favorites directly from the Meal Edit modal.',
+      'Refined the meal log card buttons for a cleaner layout and improved usability.',
     ],
   },
 };
