@@ -366,6 +366,7 @@ export default function NutritionScreen() {
         onClose={() => setShowMdModal(false)}
         onImport={handleImportMd}
         selectedDate={selectedDate}
+        aiUrl={safeGoals.ai_url}
       />
 
       <NutritionSettingsModal

@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.91',
+  version: '1.8.92',
   title: {
-    ja: '⭐ AI食事・栄養成分表示ラベルの画像認識精度向上',
-    en: '⭐ Improved Nutrition Label & Packaging Image Recognition',
+    ja: '⭐ Markdown一括取り込み画面での外部AI連携機能追加',
+    en: '⭐ Added External AI Integration in Markdown Import',
   },
   notes: {
     ja: [
-      '食品パッケージ裏面の栄養成分表示表や商品ラベルの読み取り精度を大幅に向上させました。',
+      'MD一括取り込み画面からワンタップでChatGPT等の外部AIを開けるアクセスボタンを追加しました。',
+      '栄養目標設定画面で、アクセスする外部AIのURLを自由にカスタマイズ（ChatGPT/Claude/Gemini/Perplexity等）できるようになりました。',
     ],
     en: [
-      'Significantly improved recognition accuracy for nutrition fact labels and product packaging.',
+      'Added a quick access button in the Markdown Import screen to directly open external AI services like ChatGPT.',
+      'You can now customize the target AI service URL (ChatGPT, Claude, Gemini, Perplexity, etc.) in the Nutrition Settings screen.',
     ],
   },
 };

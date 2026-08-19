@@ -200,6 +200,7 @@ export interface NutritionGoals {
   setting_mode?: 'cal_pfc' | 'pfc_p' | 'cal_p_weight_f' | 'manual';
   pfc_ratio?: { p: number; f: number; c: number };
   fat_per_weight?: number;
+  ai_url?: string;
 }
 
 export interface AutophagyConfig {
