@@ -39,11 +39,37 @@ export default {
       return new Response(null, {
         headers: {
           "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
           "Access-Control-Max-Age": "86400",
         },
       });
+    }
+
+    const url = new URL(request.url);
+
+    // 1.5. List available models endpoint (GET /api/models)
+    if (request.method === "GET" && url.pathname.endsWith("/models")) {
+      if (!env.GEMINI_API_KEY) {
+        return new Response(JSON.stringify({ error: "GEMINI_API_KEY is not configured" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+      try {
+        const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${env.GEMINI_API_KEY}`;
+        const listRes = await fetch(listUrl);
+        const listData = await listRes.json();
+        return new Response(JSON.stringify(listData, null, 2), {
+          status: listRes.status,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: String(err) }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
     }
 
     if (request.method !== "POST") {
@@ -54,7 +80,6 @@ export default {
     }
 
     try {
-      const url = new URL(request.url);
       const isNutritionImageEndpoint = url.pathname.endsWith("/nutrition-image");
       const isNutritionTextEndpoint = url.pathname.endsWith("/nutrition");
 
@@ -160,8 +185,14 @@ export default {
   "advice": "筋トレや健康管理に役立つプロの短文アドバイス（100文字程度）"
 }`;
 
-        // DEVELOPMENT_RULES.md 準拠のマルチモーダル画像解析モデルリスト (3.7-flash 優先 ➔ 3.6-flash ➔ 3.5-flash ➔ 2.5-flash ➔ 2.5-flash-lite)
-        const geminiModels = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+        // Google公式実在モデルによる高速多重冗長化: gemini-3.7-flash ➔ gemini-3.6-flash ➔ gemini-3.5-flash ➔ gemini-2.5-flash ➔ gemini-flash-latest
+        const geminiModels = [
+          "gemini-3.7-flash",
+          "gemini-3.6-flash",
+          "gemini-3.5-flash",
+          "gemini-2.5-flash",
+          "gemini-flash-latest"
+        ];
         let lastErrorText = "";
         let fallbackHistory = [];
 
@@ -170,11 +201,11 @@ export default {
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
             
             try {
-              // 画像解析は5秒で個別タイムアウト制御
-              const generationConfig = { maxOutputTokens: 2048 };
-              if (modelName.includes("3.7")) {
-                generationConfig.thinkingConfig = { thinkingBudget: 0 };
-              }
+              // 各モデル8秒でタイムアウト制御（通常1〜2秒で即時完了、混雑時は即座に次モデルへバトンタッチ）
+              const generationConfig = { 
+                maxOutputTokens: 2048,
+                responseMimeType: "application/json"
+              };
 
               const response = await fetchWithTimeout(geminiUrl, {
                 method: "POST",
@@ -184,15 +215,15 @@ export default {
                     {
                       role: "user",
                       parts: [
-                        { inlineData: { mimeType: mimeType, data: base64Content } },
-                        { text: message || "この写真の食事内容と栄養成分を解析してください。" }
+                        { text: message || "この写真の食事内容と栄養成分を解析してください。" },
+                        { inlineData: { mimeType: mimeType, data: base64Content } }
                       ]
                     }
                   ],
                   systemInstruction: { parts: [{ text: visionSystemInstruction }] },
                   generationConfig
                 })
-              }, 5000);
+              }, 8000);
 
               if (response.ok) {
                 const result = await response.json();
@@ -209,7 +240,7 @@ export default {
                   return new Response(JSON.stringify({ 
                     success: true, 
                     ...parsedJson,
-                    debugInfo: { workerVersion: "v1.8.0", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
+                    debugInfo: { workerVersion: "v1.8.7", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -220,7 +251,7 @@ export default {
                     success: true, 
                     reply: rawText, 
                     mealName: "食事写真",
-                    debugInfo: { workerVersion: "v1.8.0", modelUsed: modelName, parseError: true, rawSnippet: rawText.substring(0, 100) }
+                    debugInfo: { workerVersion: "v1.8.7", modelUsed: modelName, parseError: true, rawSnippet: rawText.substring(0, 100) }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -230,6 +261,7 @@ export default {
                 lastErrorText = await response.text();
                 console.error(`Gemini Vision API error (${modelName}):`, response.status, lastErrorText);
                 fallbackHistory.push({ model: modelName, status: response.status, error: lastErrorText.substring(0, 150) });
+                // 503, 429 等が発生した場合は待たずに直ちに次の実在モデルへ切り替え
               }
             } catch (fetchErr) {
               console.error(`Fetch exception for ${modelName}:`, fetchErr);
@@ -238,52 +270,8 @@ export default {
           }
         }
 
-        // DeepSeek へのテキストフォールバック（画像モデル全滅時）
-        const fallbackText = userMemo || ocrHintText || message;
-        if (env.DEEPSEEK_API_KEY && (fallbackText?.trim() || userMemo?.trim() || ocrHintText?.trim() || message?.trim())) {
-          try {
-            const deepseekResponse = await fetchWithTimeout("https://api.deepseek.com/chat/completions", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${env.DEEPSEEK_API_KEY}`
-              },
-              body: JSON.stringify({
-                model: "deepseek-v4-pro",
-                messages: [
-                  { role: "system", content: visionSystemInstruction },
-                  { role: "user", content: `【補足メモ/テキスト】${fallbackText}\nこの食事内容から料理名、推定カロリー、PFCバランスをJSONで回答してください。` }
-                ],
-                response_format: { type: "json_object" }
-              })
-            }, 5000);
-
-            if (deepseekResponse.ok) {
-              const dsData = await deepseekResponse.json();
-              let dsText = dsData?.choices?.[0]?.message?.content || "";
-              dsText = dsText.replace(/```json/g, "").replace(/```/g, "").trim();
-              const parsedJson = JSON.parse(dsText);
-
-              if (env.AI_LIMIT_KV) {
-                await env.AI_LIMIT_KV.put(today, (dailyCount + 1).toString(), { expirationTtl: 86400 * 2 });
-              }
-
-              return new Response(JSON.stringify({
-                success: true,
-                ...parsedJson,
-                debugInfo: { workerVersion: "v1.8.0", modelUsed: "deepseek-v4-pro (text fallback)", fallbackHistory }
-              }), {
-                status: 200,
-                headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-              });
-            }
-          } catch (dsErr) {
-            console.error("DeepSeek fallback error:", dsErr);
-            fallbackHistory.push({ model: "deepseek-v4-pro", error: String(dsErr?.message || dsErr) });
-          }
-        }
-
-        // すべてのフォールバックが失敗した場合のエラーレスポンス (status: 500)
+        // すべてのGeminiモデルが失敗した場合のエラーレスポンス (エラー詳細をadviceに直結)
+        const detailedErrReason = fallbackHistory.map(h => `${h.model}: ${h.status ? `HTTP ${h.status}` : ''} ${h.error || ''}`.trim()).join(' | ');
         return new Response(JSON.stringify({
           success: false,
           isFood: false,
@@ -294,8 +282,9 @@ export default {
           carbs: 0,
           sodium: 0,
           fiber: 0,
-          advice: "AIによる画像解析時に一時的なエラーが発生しました。時間を置いて再実行してください。",
-          debugInfo: { workerVersion: "v1.8.0", fallbackHistory, lastError: lastErrorText }
+          advice: `AI画像解析エラー (${detailedErrReason || lastErrorText || '接続失敗'})`,
+          error: detailedErrReason || lastErrorText,
+          debugInfo: { workerVersion: "v1.8.4", fallbackHistory, lastError: lastErrorText }
         }), {
           status: 500,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }

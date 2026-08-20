@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.93',
+  version: '1.8.94',
   title: {
-    ja: '⚡ AI食事写真解析の高速化 ＆ タイムアウト改善',
-    en: '⚡ Faster AI Meal Photo Analysis & Timeout Fix',
+    ja: '⚡ AI食事写真解析の安定性向上 ＆ エラー表示改善',
+    en: '⚡ Enhanced AI Meal Photo Analysis & Error Handling',
   },
   notes: {
     ja: [
-      '食事写真および食品ラベルのAI解析速度を大幅に高速化しました。',
-      '画像送信サイズの軽量化とタイムアウト制御の適正化により、待機時間やエラーを削減しました。',
+      '食事写真および栄養成分ラベルのAI解析タイムアウトと安定性を向上しました。',
+      'AI通信エラー発生時の詳細メッセージ表示を改善しました。',
     ],
     en: [
-      'Significantly sped up AI nutrition analysis for meal photos and food labels.',
-      'Optimized image compression and timeout management to reduce waiting times and errors.',
+      'Improved timeout management and stability for AI meal photo analysis.',
+      'Enhanced detailed error messages during AI communication.',
     ],
   },
 };

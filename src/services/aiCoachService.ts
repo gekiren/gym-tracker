@@ -379,6 +379,12 @@ export const analyzeMealImage = async (
 
     if (!response.ok) {
       const errText = await response.text();
+      let parsedAdvice = '';
+      try {
+        const errJson = JSON.parse(errText);
+        parsedAdvice = errJson?.advice || errJson?.error || '';
+      } catch (_) {}
+
       recordAIDebugLog({
         type: 'image_analysis',
         endpointUrl: NUTRITION_IMAGE_URL,
@@ -386,9 +392,9 @@ export const analyzeMealImage = async (
         success: false,
         requestSummary: requestPayload,
         responseRaw: errText,
-        errorMessage: `HTTP ${response.status}: ${errText}`,
+        errorMessage: parsedAdvice ? `HTTP ${response.status}: ${parsedAdvice}` : `HTTP ${response.status}: ${errText}`,
       });
-      throw new Error(`Nutrition image API error: ${response.status}`);
+      throw new Error(parsedAdvice || `AIによる画像解析時にエラーが発生しました (HTTP ${response.status})`);
     }
 
     const data = await response.json();
