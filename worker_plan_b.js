@@ -39,11 +39,37 @@ export default {
       return new Response(null, {
         headers: {
           "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
           "Access-Control-Max-Age": "86400",
         },
       });
+    }
+
+    const url = new URL(request.url);
+
+    // 1.5. List available models endpoint (GET /api/models)
+    if (request.method === "GET" && url.pathname.endsWith("/models")) {
+      if (!env.GEMINI_API_KEY) {
+        return new Response(JSON.stringify({ error: "GEMINI_API_KEY is not configured" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+      try {
+        const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${env.GEMINI_API_KEY}`;
+        const listRes = await fetch(listUrl);
+        const listData = await listRes.json();
+        return new Response(JSON.stringify(listData, null, 2), {
+          status: listRes.status,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: String(err) }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
     }
 
     if (request.method !== "POST") {
@@ -54,7 +80,6 @@ export default {
     }
 
     try {
-      const url = new URL(request.url);
       const isNutritionImageEndpoint = url.pathname.endsWith("/nutrition-image");
       const isNutritionTextEndpoint = url.pathname.endsWith("/nutrition");
 
@@ -160,11 +185,13 @@ export default {
   "advice": "筋トレや健康管理に役立つプロの短文アドバイス（100文字程度）"
 }`;
 
-        // 高速2〜3段構成: gemini-3.7-flash (プライマリ) ➔ gemini-2.5-flash ➔ gemini-2.5-flash-lite
+        // Google公式実在モデルによる高速多重冗長化: gemini-3.7-flash ➔ gemini-3.6-flash ➔ gemini-3.5-flash ➔ gemini-2.5-flash ➔ gemini-flash-latest
         const geminiModels = [
           "gemini-3.7-flash",
+          "gemini-3.6-flash",
+          "gemini-3.5-flash",
           "gemini-2.5-flash",
-          "gemini-2.5-flash-lite"
+          "gemini-flash-latest"
         ];
         let lastErrorText = "";
         let fallbackHistory = [];
@@ -174,7 +201,7 @@ export default {
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
             
             try {
-              // 各モデル12秒でタイムアウト制御（通常1〜2秒で完了）
+              // 各モデル8秒でタイムアウト制御（通常1〜2秒で即時完了、混雑時は即座に次モデルへバトンタッチ）
               const generationConfig = { 
                 maxOutputTokens: 2048,
                 responseMimeType: "application/json"
@@ -196,7 +223,7 @@ export default {
                   systemInstruction: { parts: [{ text: visionSystemInstruction }] },
                   generationConfig
                 })
-              }, 12000);
+              }, 8000);
 
               if (response.ok) {
                 const result = await response.json();
@@ -213,7 +240,7 @@ export default {
                   return new Response(JSON.stringify({ 
                     success: true, 
                     ...parsedJson,
-                    debugInfo: { workerVersion: "v1.8.3", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
+                    debugInfo: { workerVersion: "v1.8.7", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -224,7 +251,7 @@ export default {
                     success: true, 
                     reply: rawText, 
                     mealName: "食事写真",
-                    debugInfo: { workerVersion: "v1.8.3", modelUsed: modelName, parseError: true, rawSnippet: rawText.substring(0, 100) }
+                    debugInfo: { workerVersion: "v1.8.7", modelUsed: modelName, parseError: true, rawSnippet: rawText.substring(0, 100) }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -234,6 +261,7 @@ export default {
                 lastErrorText = await response.text();
                 console.error(`Gemini Vision API error (${modelName}):`, response.status, lastErrorText);
                 fallbackHistory.push({ model: modelName, status: response.status, error: lastErrorText.substring(0, 150) });
+                // 503, 429 等が発生した場合は待たずに直ちに次の実在モデルへ切り替え
               }
             } catch (fetchErr) {
               console.error(`Fetch exception for ${modelName}:`, fetchErr);
@@ -256,7 +284,7 @@ export default {
           fiber: 0,
           advice: `AI画像解析エラー (${detailedErrReason || lastErrorText || '接続失敗'})`,
           error: detailedErrReason || lastErrorText,
-          debugInfo: { workerVersion: "v1.8.3", fallbackHistory, lastError: lastErrorText }
+          debugInfo: { workerVersion: "v1.8.4", fallbackHistory, lastError: lastErrorText }
         }), {
           status: 500,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
