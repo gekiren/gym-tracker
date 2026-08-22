@@ -207,6 +207,10 @@ ${contextStr}`;
         addLog(`指定されたマイクデバイスを使用します: ${deviceId}`);
       }
 
+      if (!navigator?.mediaDevices?.getUserMedia) {
+        throw new Error('お使いのブラウザまたは接続環境（非HTTPS等）ではマイクがサポートされていません。');
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: audioConstraints,
       });

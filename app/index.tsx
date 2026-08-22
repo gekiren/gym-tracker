@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Dimensions, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
@@ -644,8 +644,6 @@ export default function DashboardScreen() {
         {isLoadingLifelog && (
           <ActivityIndicator size="small" color={Theme.colors.primary} style={{ marginBottom: 12 }} />
         )}
-
-
 
         {/* Dynamic Feature Cards List */}
         {(() => {

@@ -231,6 +231,15 @@ export default function WorkoutHomeScreen() {
           </TouchableOpacity>
         )}
 
+        <TouchableOpacity 
+          style={[styles.primaryButton, { backgroundColor: '#8a2be2', marginTop: 8 }]} 
+          activeOpacity={0.8}
+          onPress={() => router.push('/ai-sync?data=%7B%22workouts%22%3A%5B%5D%2C%22waters%22%3A%5B%7B%22amount_ml%22%3A2000%2C%22has_caffeine%22%3Afalse%7D%5D%2C%22meals%22%3A%5B%5D%2C%22dailyNotes%22%3A%5B%5D%7D')}
+        >
+          <Ionicons name="sync" size={24} color="#fff" style={{ marginRight: 8 }} />
+          <Text style={styles.primaryButtonText}>AI Sync テスト</Text>
+        </TouchableOpacity>
+
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t('ui.home.my_routines')}</Text>

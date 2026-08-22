@@ -67,9 +67,10 @@
     >    `Stop-Process -Name java -Force -ErrorAction SilentlyContinue`
     > 2. **クリーンネイティブビルドの生成 (プロジェクトルートで実行):**
     >    `npx expo prebuild --clean --platform android`
-    > 3. **チャンネルの自動注入 ＆ 署名設定・properties生成 (プロジェクトルートで実行):**
-    >    以下を実行して、`AndroidManifest.xml` へのチャンネル注入、`build.gradle` へのリリース署名設定の追加、および `expo-updates.properties` の生成を自動で行います：
+    > 3. **チャンネルの自動注入 ＆ 署名設定・MAX_PATH回避設定 (プロジェクトルートで実行):**
+    >    以下を実行して、`AndroidManifest.xml` へのチャンネル注入、`build.gradle` へのリリース署名設定の追加、`expo-updates.properties` の生成、および **Windows の MAX_PATH (260文字制限) を回避するためのビルド出力先短縮リダイレクト（`C:/t/TreNote/app`）の追加** を自動で行います：
     >    `powershell -ExecutionPolicy Bypass -File .\scripts\inject-channel.ps1`
+    >    *(※ ステージング用の場合は `-channelName staging` を指定)*
     > 4. **署名設定の追加 (androidディレクトリへ移動):**
     >    `cd android` して、`gradle.properties` の末尾に以下の本番署名キー設定を一時的に追記するよう指示します：
     >    ```properties
@@ -80,11 +81,15 @@
     > 5. **ビルド実行 (Sentry無効化・Gradleリセット):**
     >    `.\gradlew --stop`
     >    `$env:SENTRY_DISABLE_AUTO_UPLOAD = "true"`
-    >    `.\gradlew bundleRelease`
+    >    `.\gradlew bundleRelease` （※APK作成時は `.\gradlew assembleRelease`）
     > 6. **生成ファイルと後片付け:**
-    >    ファイルは `android/app/build/outputs/bundle/release/app-release.aab` に生成されることを伝える。ビルド後は追記したパスワード等の変更をGitで元に戻す（破棄する）よう指示する。
+    >    ファイルは `C:\t\TreNote\app\outputs\bundle\release\app-release.aab` （または `android/app/build/outputs/...`）に生成されることを伝える。ビルド後は追記したパスワード等の変更をGitで元に戻す（破棄する）よう指示する。
     > 
-    > **ローカルビルドでのOTAチャンネル設定の内部仕様と解決策 (expo-updatesのバグ対策):**
+    > **ローカルビルドでの必須設定と MAX_PATH 制限対策 (inject-channel.ps1 の役割):**
+    > 
+    > 1. **Windows MAX_PATH (260文字制限) 回避リダイレクト:**
+    >    `react-native-keyboard-controller` などの C++ / CMake モジュールは深い階層にオブジェクトファイル（`.o`）を生成するため、Windows の 260 文字制限に衝突してビルドエラー（`ninja: error: Stat(...): Filename longer than 260 characters`）になります。
+    >    `scripts/inject-channel.ps1` は `android/app/build.gradle` に `buildDir = "C:/t/TreNote/app"` および `buildStagingDirectory = file("C:/t/TreNote/app/.cxx")` を自動注入し、中間出力パスを短縮することでこのエラーを完全に回避します。**`prebuild` 実行後は例外なく必ず本スクリプトを実行してください。**
     > 
     > Androidのローカルビルドにおいて、JS側で `Updates.channel` が `null` (N/A) となり、OTAアップデートが受信できなくなる問題に対する恒久的な解決策と注意点は以下の通りです。
     > 

@@ -1,788 +1,893 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
-import { useWorkoutStore } from '../../src/store/workoutStore';
-import { useSettingsStore } from '../../src/store/settingsStore';
-import { consumeAIToken, getAITokensBalance, refundAIToken } from '../../src/db/database';
-import { sendMessageToAICoach } from '../../src/services/aiCoachService';
-import { useTranslation } from 'react-i18next';
-import { translateExercise } from '../../src/i18n';
-import { useLocalSearchParams, router } from 'expo-router';
-import { AI_CONFIG } from '../../src/config/aiConfig';
-import * as Updates from 'expo-updates';
-
-interface ChatMessage {
-  id: string;
-  text: string;
-  sender: 'user' | 'ai' | 'system';
-  timestamp: Date;
-}
-
-export default function CoachScreen() {
-  const { t } = useTranslation();
-  const settings = useSettingsStore(state => state.settings);
-  const setAITokensBalance = useSettingsStore(state => state.setAITokensBalance);
-  const setAiChatMode = useSettingsStore(state => state.setAiChatMode);
-  
-  const currentAiChatMode = settings.aiChatMode || 'quick';
-  
-  const isPremium = settings.isPremium;
-  const isEarly = settings.isEarlyAdopter;
-  const isBasic = !isPremium && !isEarly;
-
-  const params = useLocalSearchParams<{ contextPrompt?: string; prefillMessage?: string; title?: string }>();
-
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputVal, setInputVal] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [activeContext, setActiveContext] = useState<string | null>(null);
-  const [contextTitle, setContextTitle] = useState<string | null>(null);
-  const [showDebugAccordion, setShowDebugAccordion] = useState(false);
-  const [lastCompiledContext, setLastCompiledContext] = useState<string | null>(null);
-
-  const showDebugContextUI = Updates.channel !== 'production' && settings.enableAiDebugContext;
-
-  const scrollViewRef = useRef<ScrollView>(null);
-
-  // 1. Initialize & load greeting message
-  useEffect(() => {
-    // Add default welcoming message
-    setMessages([
-      {
-        id: 'welcome',
-        text: t('ui.coach.welcome_msg'),
-        sender: 'ai',
-        timestamp: new Date(),
-      },
-    ]);
-  }, []);
-
-  // 2. Handle context injection via route parameters (Sparkles buttons entry point)
-  useEffect(() => {
-    if (params.contextPrompt) {
-      setActiveContext(params.contextPrompt);
-      const displayTitle = params.title ? translateExercise(params.title) : null;
-      setContextTitle(displayTitle || t('ui.coach.default_context_title'));
-      
-      if (params.prefillMessage) {
-        setInputVal(params.prefillMessage);
-      }
-
-      // Add system message into the chat showing context was linked
-      const contextLinkedMsg: ChatMessage = {
-        id: `system-context-${Date.now()}`,
-        text: t('ui.coach.context_loaded_msg', { title: displayTitle || t('ui.coach.default_workout_title') }),
-        sender: 'system',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, contextLinkedMsg].slice(-100));
-      scrollToBottom();
-    }
-  }, [params.contextPrompt, params.prefillMessage, params.title]);
-
-  if (AI_CONFIG.status !== 'active') {
-    return (
-      <View style={styles.maintenanceContainer}>
-        <View style={styles.maintenanceCard}>
-          <View style={styles.maintenanceIconOuter}>
-            <Ionicons name="build" size={42} color={Theme.colors.primary} />
-          </View>
-          <Text style={styles.maintenanceHeader}>
-            {t('ui.coach.maintenance_title')}
-          </Text>
-          <Text style={styles.maintenanceBody}>
-            {t('ui.coach.maintenance_body')}
-          </Text>
-          <Text style={styles.maintenanceFooter}>
-            {t('ui.coach.maintenance_footer')}
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  };
-
-  const handleSend = async (customMessage?: string) => {
-    const textToSend = (customMessage || inputVal).trim();
-    if (!textToSend || loading) return;
-
-    // Consume token atomically before API request
-    let consumed = false;
-    try {
-      consumed = await consumeAIToken();
-    } catch (e) {
-      console.warn('Failed to consume token', e);
-    }
-
-    if (!consumed) {
-      return; // Block submission if quota is exhausted
-    }
-
-    // Update token balance UI state immediately
-    try {
-      const updatedBalance = await getAITokensBalance();
-      setAITokensBalance(updatedBalance);
-    } catch (e) {
-      console.warn('Failed to update balance UI', e);
-    }
-
-    // Add user message
-    const userMsg: ChatMessage = {
-      id: `user-${Date.now()}`,
-      text: textToSend,
-      sender: 'user',
-      timestamp: new Date(),
-    };
-    setMessages(prev => [...prev, userMsg].slice(-100));
-    setInputVal('');
-    setLoading(true);
-    scrollToBottom();
-
-    try {
-      // Call service to get advice with current AI chat mode
-      const response = await sendMessageToAICoach(
-        textToSend,
-        activeContext || undefined,
-        settings.bodyWeight,
-        settings.weightUnit,
-        currentAiChatMode
-      );
-
-      if (response.compiledContext) {
-        setLastCompiledContext(response.compiledContext);
-      }
-
-      // If failed, refund token
-      if (!response.success) {
-        try {
-          await refundAIToken();
-          const updatedBalance = await getAITokensBalance();
-          setAITokensBalance(updatedBalance);
-        } catch (e) {
-          console.warn('Failed to refund token', e);
-        }
-      }
-
-      // Add AI response
-      const aiMsg: ChatMessage = {
-        id: `ai-${Date.now()}`,
-        text: response.reply,
-        sender: 'ai',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, aiMsg].slice(-100));
-    } catch (err) {
-      console.error('Error in AI Coach interaction:', err);
-      // Refund token on exception
-      try {
-        await refundAIToken();
-        const updatedBalance = await getAITokensBalance();
-        setAITokensBalance(updatedBalance);
-      } catch (e) {
-        console.warn('Failed to refund token', e);
-      }
-      // Add error message to chat
-      const errorMsg: ChatMessage = {
-        id: `error-${Date.now()}`,
-        text: t('ui.coach.system_error'),
-        sender: 'ai',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, errorMsg].slice(-100));
-    } finally {
-      setLoading(false);
-      scrollToBottom();
-    }
-  };
-
-  const handleChipPress = (chipType: 'full_analysis' | 'analysis' | 'proposal' | 'rpe' | 'stance') => {
-    let prompt = '';
-    if (chipType === 'full_analysis') {
-      prompt = '本日の筋トレ実績、食事のPFCバランス、水分摂取量、時間管理などのログ全体を踏まえた総合的なアドバイスと改善フィードバックをお願いします。';
-    } else if (chipType === 'analysis') {
-      prompt = t('ui.coach.chip_analysis_prompt');
-    } else if (chipType === 'proposal') {
-      prompt = t('ui.coach.chip_proposal_prompt');
-    } else if (chipType === 'rpe') {
-      prompt = t('ui.coach.chip_rpe_prompt');
-    } else if (chipType === 'stance') {
-      prompt = t('ui.coach.chip_stance_prompt');
-    }
-
-    setInputVal(prompt);
-  };
-
-  const handleClearContext = () => {
-    setActiveContext(null);
-    setContextTitle(null);
-    setInputVal('');
-    
-    // Add local clearance system message
-    setMessages(prev => [
-      ...prev,
-      {
-        id: `system-clear-${Date.now()}`,
-        text: t('ui.coach.context_cleared_msg'),
-        sender: 'system',
-        timestamp: new Date(),
-      }
-    ]);
-    scrollToBottom();
-  };
-
-  const isQuotaExhausted = settings.aiTokensBalance === 0;
-
-  return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.select({ ios: 90, android: 120 })}
-    >
-      {/* Top Warning Banner if out of tokens */}
-      {isQuotaExhausted && (
-        <TouchableOpacity 
-          style={styles.warningBanner} 
-          onPress={() => isBasic && router.push('/(tabs)/profile')}
-          activeOpacity={isBasic ? 0.8 : 1}
-        >
-          <Ionicons name="alert-circle" size={18} color="#fff" style={{ marginRight: 6 }} />
-          <Text style={styles.warningText}>
-            {isBasic 
-              ? t('ui.coach.basic_quota_exhausted')
-              : t('ui.profile.quota_exhausted_alert')
-            }
-          </Text>
-          {isBasic && (
-            <Ionicons name="chevron-forward" size={14} color="#fff" style={{ marginLeft: 4 }} />
-          )}
-        </TouchableOpacity>
-      )}
-
-      {/* Active Context Linked Badge */}
-      {activeContext && (
-        <View style={styles.contextBadge}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-            <Ionicons name="link" size={16} color={Theme.colors.primary} style={{ marginRight: 6 }} />
-            <Text style={styles.contextBadgeText} numberOfLines={1}>
-              {t('ui.coach.linked_context', { title: contextTitle })}
-            </Text>
-          </View>
-          <TouchableOpacity style={styles.clearContextBtn} onPress={handleClearContext}>
-            <Ionicons name="close-circle" size={18} color={Theme.colors.textMuted} />
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Debug Context Preview Banner (Staging/Dev default) */}
-      {showDebugContextUI && (
-        <View style={styles.debugContextContainer}>
-          <TouchableOpacity
-            style={styles.debugContextHeader}
-            onPress={() => setShowDebugAccordion(!showDebugAccordion)}
-            activeOpacity={0.7}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-              <Ionicons name="bug-outline" size={15} color="#FFB74D" style={{ marginRight: 6 }} />
-              <Text style={styles.debugContextTitle}>
-                🔍 AI送信コンテキスト詳細 ({lastCompiledContext ? `${lastCompiledContext.length}文字` : '未送信'})
-              </Text>
-            </View>
-            <Ionicons
-              name={showDebugAccordion ? 'chevron-up' : 'chevron-down'}
-              size={16}
-              color="#FFB74D"
-            />
-          </TouchableOpacity>
-
-          {showDebugAccordion && (
-            <View style={styles.debugContextContent}>
-              <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled>
-                <Text style={styles.debugContextText}>
-                  {lastCompiledContext || activeContext || 'まだAIへの送信が行われていません。メッセージを送信すると実際に渡されたプロンプト全文が表示されます。'}
-                </Text>
-              </ScrollView>
-            </View>
-          )}
-        </View>
-      )}
-
-      {/* Scrollable Message List */}
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.chatArea}
-        contentContainerStyle={styles.chatContent}
-        showsVerticalScrollIndicator={true}
-      >
-        {messages.map(msg => {
-          const isUser = msg.sender === 'user';
-          const isSystem = msg.sender === 'system';
-          
-          if (isSystem) {
-            return (
-              <View key={msg.id} style={styles.systemBubble}>
-                <Text style={styles.systemBubbleText}>{msg.text}</Text>
-              </View>
-            );
-          }
-
-          return (
-            <View
-              key={msg.id}
-              style={[
-                styles.bubbleContainer,
-                isUser ? styles.bubbleRight : styles.bubbleLeft,
-              ]}
-            >
-              <View
-                style={[
-                  styles.bubble,
-                  isUser ? styles.bubbleUser : styles.bubbleAI,
-                ]}
-              >
-                {!isUser && (
-                  <View style={styles.aiSideAccent} />
-                )}
-                <Text style={[styles.bubbleText, isUser ? styles.bubbleTextUser : styles.bubbleTextAI]}>
-                  {msg.text}
-                </Text>
-              </View>
-            </View>
-          );
-        })}
-
-        {/* Pulsing Loading Spinner while waiting for AI */}
-        {loading && (
-          <View style={[styles.bubbleContainer, styles.bubbleLeft]}>
-            <View style={[styles.bubble, styles.bubbleAI, styles.loadingBubble]}>
-              <View style={styles.aiSideAccent} />
-              <ActivityIndicator size="small" color={Theme.colors.primary} style={{ marginRight: 10 }} />
-              <Text style={styles.loadingText}>
-                {currentAiChatMode === 'thinking'
-                  ? t('ui.coach.analyzing_thinking')
-                  : t('ui.coach.analyzing_quick')
-                }
-              </Text>
-            </View>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* Mode Selector Toggle Bar */}
-      {!isQuotaExhausted && (
-        <View style={styles.modeToggleContainer}>
-          <Text style={styles.modeLabelText}>
-            {t('ui.coach.mode_label')}
-          </Text>
-          <View style={styles.modeToggleGroup}>
-            <TouchableOpacity
-              style={[
-                styles.modeBtn,
-                currentAiChatMode === 'quick' && styles.modeBtnActiveQuick,
-              ]}
-              onPress={() => setAiChatMode('quick')}
-              disabled={loading}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="flash"
-                size={13}
-                color={currentAiChatMode === 'quick' ? '#FFD700' : Theme.colors.textMuted}
-                style={{ marginRight: 4 }}
-              />
-              <Text
-                style={[
-                  styles.modeBtnText,
-                  currentAiChatMode === 'quick' && styles.modeBtnTextActive,
-                ]}
-              >
-                {t('ui.coach.mode_quick')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.modeBtn,
-                currentAiChatMode === 'thinking' && styles.modeBtnActiveThinking,
-              ]}
-              onPress={() => setAiChatMode('thinking')}
-              disabled={loading}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="bulb"
-                size={13}
-                color={currentAiChatMode === 'thinking' ? '#BB86FC' : Theme.colors.textMuted}
-                style={{ marginRight: 4 }}
-              />
-              <Text
-                style={[
-                  styles.modeBtnText,
-                  currentAiChatMode === 'thinking' && styles.modeBtnTextActive,
-                ]}
-              >
-                {t('ui.coach.mode_thinking')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
-      {/* Horizontal Suggestions Chips (Hidden if quota exhausted) */}
-      {!isQuotaExhausted && !loading && (
-        <View style={styles.chipsOuter}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipsContainer}
-          >
-            <TouchableOpacity
-              style={[styles.chip, { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: '#4facfe', borderWidth: 1 }]}
-              onPress={() => handleChipPress('full_analysis')}
-            >
-              <Text style={[styles.chipText, { color: '#4facfe', fontWeight: 'bold' }]}>🌟 本日の総合アドバイス（筋トレ・食事・ライフ）</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.chip} onPress={() => handleChipPress('analysis')}>
-              <Text style={styles.chipText}>📊 {t('ui.coach.chip_analysis')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.chip} onPress={() => handleChipPress('proposal')}>
-              <Text style={styles.chipText}>🔥 {t('ui.coach.chip_proposal')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.chip} onPress={() => handleChipPress('rpe')}>
-              <Text style={styles.chipText}>💡 {t('ui.coach.chip_rpe')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.chip} onPress={() => handleChipPress('stance')}>
-              <Text style={styles.chipText}>📐 {t('ui.coach.chip_stance')}</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-      )}
-
-      {/* Footer Text Input Form */}
-      <View style={styles.inputForm}>
-        <TextInput
-          style={[
-            styles.textInput,
-            isQuotaExhausted && styles.textInputDisabled,
-          ]}
-          value={inputVal}
-          onChangeText={setInputVal}
-          placeholder={
-            isQuotaExhausted 
-              ? (isBasic ? '今月の利用枠（5回）が終了しました。アップグレードしてください' : t('ui.profile.quota_exhausted_alert'))
-              : t('ui.coach.input_placeholder')
-          }
-          placeholderTextColor={isQuotaExhausted ? Theme.colors.danger : Theme.colors.textMuted}
-          editable={!isQuotaExhausted && !loading}
-          multiline={true}
-          maxLength={500}
-        />
-        <TouchableOpacity
-          style={[
-            styles.sendBtn,
-            (inputVal.trim() === '' || isQuotaExhausted || loading) && styles.sendBtnDisabled,
-          ]}
-          onPress={() => handleSend()}
-          disabled={inputVal.trim() === '' || isQuotaExhausted || loading}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="send" size={18} color="#fff" />
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
-  
-  // Warning Banner
-  warningBanner: {
-    backgroundColor: Theme.colors.danger,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  warningText: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
-
-  // Context Linked Badge
-  contextBadge: {
-    backgroundColor: 'rgba(79, 172, 254, 0.1)',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(79, 172, 254, 0.2)',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  contextBadgeText: { color: Theme.colors.primary, fontSize: 13, fontWeight: 'bold' },
-  clearContextBtn: { padding: 2 },
-
-  // Chat Area
-  chatArea: { flex: 1 },
-  chatContent: { padding: Theme.spacing.md, paddingBottom: 24 },
-  
-  // Bubble Containers
-  bubbleContainer: { flexDirection: 'row', width: '100%', marginBottom: 16 },
-  bubbleRight: { justifyContent: 'flex-end' },
-  bubbleLeft: { justifyContent: 'flex-start' },
-
-  // Chat Bubbles
-  bubble: {
-    maxWidth: '82%',
-    borderRadius: Theme.borderRadius.md,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  bubbleUser: {
-    backgroundColor: Theme.colors.primary,
-    borderBottomRightRadius: 2,
-  },
-  bubbleAI: {
-    backgroundColor: Theme.colors.card,
-    borderBottomLeftRadius: 2,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-    paddingLeft: 20, // offset for left side vertical accent bar
-  },
-  aiSideAccent: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-    backgroundColor: Theme.colors.primary,
-  },
-  bubbleText: { fontSize: 15, lineHeight: 22 },
-  bubbleTextUser: { color: '#fff' },
-  bubbleTextAI: { color: Theme.colors.text },
-
-  // System Message Bubble
-  systemBubble: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-    padding: 10,
-    marginVertical: 12,
-    alignItems: 'center',
-  },
-  systemBubbleText: { color: Theme.colors.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 18 },
-
-  // Loading Bubble
-  loadingBubble: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-  },
-  loadingText: { color: Theme.colors.textMuted, fontSize: 14 },
-
-  // Suggestions Chips
-  chipsOuter: { backgroundColor: Theme.colors.background, paddingVertical: 8 },
-  chipsContainer: { paddingHorizontal: Theme.spacing.md, gap: 8 },
-  chip: {
-    backgroundColor: '#1c1c1e',
-    borderRadius: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  chipText: { color: Theme.colors.text, fontSize: 13, fontWeight: '600' },
-
-  // Mode Selector Toggle Bar
-  modeToggleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Theme.spacing.md,
-    paddingTop: 8,
-    paddingBottom: 4,
-    backgroundColor: Theme.colors.background,
-  },
-  modeLabelText: {
-    color: Theme.colors.textMuted,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  modeToggleGroup: {
-    flexDirection: 'row',
-    backgroundColor: '#1a1a1c',
-    borderRadius: 16,
-    padding: 3,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  modeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 13,
-  },
-  modeBtnActiveQuick: {
-    backgroundColor: 'rgba(255, 215, 0, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.4)',
-  },
-  modeBtnActiveThinking: {
-    backgroundColor: 'rgba(187, 134, 252, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(187, 134, 252, 0.4)',
-  },
-  modeBtnText: {
-    color: Theme.colors.textMuted,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  modeBtnTextActive: {
-    color: Theme.colors.text,
-    fontWeight: 'bold',
-  },
-
-  // Footer Input Form
-  inputForm: {
-    flexDirection: 'row',
-    padding: Theme.spacing.md,
-    backgroundColor: Theme.colors.card,
-    borderTopWidth: 1,
-    borderTopColor: Theme.colors.border,
-    alignItems: 'center',
-    gap: 12,
-  },
-  textInput: {
-    flex: 1,
-    backgroundColor: '#121212',
-    color: Theme.colors.text,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    fontSize: 15,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-    maxHeight: 100,
-  },
-  textInputDisabled: {
-    backgroundColor: 'rgba(239, 83, 80, 0.05)',
-    borderColor: Theme.colors.danger,
-    color: Theme.colors.danger,
-  },
-  sendBtn: {
-    backgroundColor: Theme.colors.primary,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sendBtnDisabled: {
-    backgroundColor: '#222',
-    opacity: 0.5,
-  },
-  
-  // Maintenance styles
-  maintenanceContainer: {
-    flex: 1,
-    backgroundColor: Theme.colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Theme.spacing.lg,
-  },
-  maintenanceCard: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(79, 172, 254, 0.2)',
-    padding: 28,
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 340,
-    shadowColor: Theme.colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 5,
-  },
-  maintenanceIconOuter: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(79, 172, 254, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(79, 172, 254, 0.2)',
-  },
-  maintenanceHeader: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Theme.colors.text,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  maintenanceBody: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: Theme.colors.textMuted,
-    textAlign: 'center',
-    marginBottom: 14,
-  },
-  maintenanceFooter: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: Theme.colors.primary,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-
-  // Debug Context Banner
-  debugContextContainer: {
-    backgroundColor: 'rgba(255, 183, 77, 0.08)',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 183, 77, 0.25)',
-  },
-  debugContextHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  debugContextTitle: {
-    color: '#FFB74D',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  debugContextContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-  },
-  debugContextText: {
-    color: '#E0E0E0',
-    fontSize: 11,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    lineHeight: 16,
-  },
-});
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Theme } from '../../src/theme';
+import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
+import { consumeAIToken, getAITokensBalance, refundAIToken } from '../../src/db/database';
+import { sendMessageToAICoach } from '../../src/services/aiCoachService';
+import { useTranslation } from 'react-i18next';
+import { translateExercise } from '../../src/i18n';
+import { useLocalSearchParams, router } from 'expo-router';
+import { AI_CONFIG } from '../../src/config/aiConfig';
+import * as Updates from 'expo-updates';
+import { WebView } from 'react-native-webview';
+import { saveWorkout } from '../../src/db/repositories/workoutRepository';
+import { getExercises, addCustomExercise } from '../../src/db/repositories/exerciseRepository';
+import { addWaterLog, addTimeLog } from '../../src/db/repositories/lifelogRepository';
+import { addMealLog } from '../../src/db/repositories/nutritionRepository';
+import { Alert } from 'react-native';
+
+
+interface ChatMessage {
+  id: string;
+  text: string;
+  sender: 'user' | 'ai' | 'system';
+  timestamp: Date;
+}
+
+export default function CoachScreen() {
+  const { t } = useTranslation();
+  const settings = useSettingsStore(state => state.settings);
+  const setAITokensBalance = useSettingsStore(state => state.setAITokensBalance);
+  const setAiChatMode = useSettingsStore(state => state.setAiChatMode);
+  
+  const currentAiChatMode = settings.aiChatMode || 'quick';
+  
+  const isPremium = settings.isPremium;
+  const isEarly = settings.isEarlyAdopter;
+  const isBasic = !isPremium && !isEarly;
+
+  const params = useLocalSearchParams<{ contextPrompt?: string; prefillMessage?: string; title?: string }>();
+
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputVal, setInputVal] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [activeContext, setActiveContext] = useState<string | null>(null);
+  const [contextTitle, setContextTitle] = useState<string | null>(null);
+  const [showDebugAccordion, setShowDebugAccordion] = useState(false);
+  const [lastCompiledContext, setLastCompiledContext] = useState<string | null>(null);
+
+  const showDebugContextUI = Updates.channel !== 'production' && settings.enableAiDebugContext;
+
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // === WebView & Live Audio State ===
+  const [activeTab, setActiveTab] = useState<'text' | 'live'>('live'); // ライブモードをデフォルトに
+  const webViewRef = useRef<WebView>(null);
+
+  const handleWebViewMessage = async (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.type === 'SYNC_DATA') {
+        const payload = data.data;
+        Alert.alert(
+          'データ一括保存',
+          'AIコンパニオンからデータを受信しました。保存しますか？',
+          [
+            { text: 'キャンセル', style: 'cancel' },
+            { 
+              text: '保存', 
+              onPress: async () => {
+                try {
+                  let saveCount = 0;
+                  // 水分
+                  for (const w of payload.waters || []) {
+                    if (w.amount_ml) { await addWaterLog(w.amount_ml, w.has_caffeine || false); saveCount++; }
+                  }
+                  // 食事
+                  for (const m of payload.meals || []) {
+                    if (m.food_name) { await addMealLog(m.food_name, m.calories || 0, m.protein_g, m.fat_g, m.carbs_g); saveCount++; }
+                  }
+                  // ワークアウト
+                  for (const w of payload.workouts || []) {
+                    const workoutId = `workout_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                    const existingExercises = await getExercises();
+                    const newExercises = [];
+                    for (const we of w.exercises || []) {
+                      let exId = we.exerciseId;
+                      if (!exId && we.name) {
+                        const matched = existingExercises.find(e => e.name.toLowerCase() === we.name.toLowerCase() || e.name_ja?.toLowerCase() === we.name.toLowerCase());
+                        if (matched) exId = matched.id;
+                        else {
+                          exId = `ex_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                          await addCustomExercise({ id: exId, name: we.name, target_muscle_group: 'other' });
+                        }
+                      }
+                      newExercises.push({
+                        id: `we_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                        exerciseId: exId,
+                        orderIndex: newExercises.length,
+                        sets: we.sets?.map((s: any) => ({
+                          id: `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, weight: s.weight || 0, reps: s.reps || 0, isWarmup: false, isCompleted: true
+                        })) || []
+                      });
+                    }
+                    await saveWorkout({ id: workoutId, title: 'AI記録ワークアウト', startTime: Date.now() - 3600000, endTime: Date.now(), status: 'completed', exercises: newExercises });
+                    saveCount++;
+                  }
+                  // メモ
+                  for (const n of payload.dailyNotes || []) {
+                    await addTimeLog('memo', Date.now(), 0, n); saveCount++;
+                  }
+                  Alert.alert('完了', `${saveCount} 件のデータを保存しました！`);
+                } catch (e) {
+                  console.error('Save error:', e); Alert.alert('エラー', '保存中にエラーが発生しました。');
+                }
+              }
+            }
+          ]
+        );
+      }
+    } catch (err) {
+      console.error('WebView msg err', err);
+    }
+  };
+
+
+  // 1. Initialize & load greeting message
+  useEffect(() => {
+    // Add default welcoming message
+    setMessages([
+      {
+        id: 'welcome',
+        text: t('ui.coach.welcome_msg'),
+        sender: 'ai',
+        timestamp: new Date(),
+      },
+    ]);
+  }, []);
+
+  // 2. Handle context injection via route parameters (Sparkles buttons entry point)
+  useEffect(() => {
+    if (params.contextPrompt) {
+      setActiveContext(params.contextPrompt);
+      const displayTitle = params.title ? translateExercise(params.title) : null;
+      setContextTitle(displayTitle || t('ui.coach.default_context_title'));
+      
+      if (params.prefillMessage) {
+        setInputVal(params.prefillMessage);
+      }
+
+      // Add system message into the chat showing context was linked
+      const contextLinkedMsg: ChatMessage = {
+        id: `system-context-${Date.now()}`,
+        text: t('ui.coach.context_loaded_msg', { title: displayTitle || t('ui.coach.default_workout_title') }),
+        sender: 'system',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, contextLinkedMsg].slice(-100));
+      scrollToBottom();
+    }
+  }, [params.contextPrompt, params.prefillMessage, params.title]);
+
+  if (AI_CONFIG.status !== 'active') {
+    return (
+      <View style={styles.maintenanceContainer}>
+        <View style={styles.maintenanceCard}>
+          <View style={styles.maintenanceIconOuter}>
+            <Ionicons name="build" size={42} color={Theme.colors.primary} />
+          </View>
+          <Text style={styles.maintenanceHeader}>
+            {t('ui.coach.maintenance_title')}
+          </Text>
+          <Text style={styles.maintenanceBody}>
+            {t('ui.coach.maintenance_body')}
+          </Text>
+          <Text style={styles.maintenanceFooter}>
+            {t('ui.coach.maintenance_footer')}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  };
+
+  const handleSend = async (customMessage?: string) => {
+    const textToSend = (customMessage || inputVal).trim();
+    if (!textToSend || loading) return;
+
+    // Consume token atomically before API request
+    let consumed = false;
+    try {
+      consumed = await consumeAIToken();
+    } catch (e) {
+      console.warn('Failed to consume token', e);
+    }
+
+    if (!consumed) {
+      return; // Block submission if quota is exhausted
+    }
+
+    // Update token balance UI state immediately
+    try {
+      const updatedBalance = await getAITokensBalance();
+      setAITokensBalance(updatedBalance);
+    } catch (e) {
+      console.warn('Failed to update balance UI', e);
+    }
+
+    // Add user message
+    const userMsg: ChatMessage = {
+      id: `user-${Date.now()}`,
+      text: textToSend,
+      sender: 'user',
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, userMsg].slice(-100));
+    setInputVal('');
+    setLoading(true);
+    scrollToBottom();
+
+    try {
+      // Call service to get advice with current AI chat mode
+      const response = await sendMessageToAICoach(
+        textToSend,
+        activeContext || undefined,
+        settings.bodyWeight,
+        settings.weightUnit,
+        currentAiChatMode
+      );
+
+      if (response.compiledContext) {
+        setLastCompiledContext(response.compiledContext);
+      }
+
+      // If failed, refund token
+      if (!response.success) {
+        try {
+          await refundAIToken();
+          const updatedBalance = await getAITokensBalance();
+          setAITokensBalance(updatedBalance);
+        } catch (e) {
+          console.warn('Failed to refund token', e);
+        }
+      }
+
+      // Add AI response
+      const aiMsg: ChatMessage = {
+        id: `ai-${Date.now()}`,
+        text: response.reply,
+        sender: 'ai',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, aiMsg].slice(-100));
+    } catch (err) {
+      console.error('Error in AI Coach interaction:', err);
+      // Refund token on exception
+      try {
+        await refundAIToken();
+        const updatedBalance = await getAITokensBalance();
+        setAITokensBalance(updatedBalance);
+      } catch (e) {
+        console.warn('Failed to refund token', e);
+      }
+      // Add error message to chat
+      const errorMsg: ChatMessage = {
+        id: `error-${Date.now()}`,
+        text: t('ui.coach.system_error'),
+        sender: 'ai',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMsg].slice(-100));
+    } finally {
+      setLoading(false);
+      scrollToBottom();
+    }
+  };
+
+  const handleChipPress = (chipType: 'full_analysis' | 'analysis' | 'proposal' | 'rpe' | 'stance') => {
+    let prompt = '';
+    if (chipType === 'full_analysis') {
+      prompt = '本日の筋トレ実績、食事のPFCバランス、水分摂取量、時間管理などのログ全体を踏まえた総合的なアドバイスと改善フィードバックをお願いします。';
+    } else if (chipType === 'analysis') {
+      prompt = t('ui.coach.chip_analysis_prompt');
+    } else if (chipType === 'proposal') {
+      prompt = t('ui.coach.chip_proposal_prompt');
+    } else if (chipType === 'rpe') {
+      prompt = t('ui.coach.chip_rpe_prompt');
+    } else if (chipType === 'stance') {
+      prompt = t('ui.coach.chip_stance_prompt');
+    }
+
+    setInputVal(prompt);
+  };
+
+  const handleClearContext = () => {
+    setActiveContext(null);
+    setContextTitle(null);
+    setInputVal('');
+    
+    // Add local clearance system message
+    setMessages(prev => [
+      ...prev,
+      {
+        id: `system-clear-${Date.now()}`,
+        text: t('ui.coach.context_cleared_msg'),
+        sender: 'system',
+        timestamp: new Date(),
+      }
+    ]);
+    scrollToBottom();
+  };
+
+  const isQuotaExhausted = settings.aiTokensBalance === 0;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+      <View style={{ flexDirection: 'row', backgroundColor: '#1a1a1c', padding: 4, marginHorizontal: 16, marginTop: 40, borderRadius: 8 }}>
+        <TouchableOpacity style={{ flex: 1, paddingVertical: 8, alignItems: 'center', backgroundColor: activeTab === 'live' ? Theme.colors.primary : 'transparent', borderRadius: 6 }} onPress={() => setActiveTab('live')}>
+          <Text style={{ color: activeTab === 'live' ? '#fff' : Theme.colors.textMuted, fontWeight: 'bold', fontSize: 13 }}>音声コンパニオン</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={{ flex: 1, paddingVertical: 8, alignItems: 'center', backgroundColor: activeTab === 'text' ? Theme.colors.primary : 'transparent', borderRadius: 6 }} onPress={() => setActiveTab('text')}>
+          <Text style={{ color: activeTab === 'text' ? '#fff' : Theme.colors.textMuted, fontWeight: 'bold', fontSize: 13 }}>AI コーチ (テキスト)</Text>
+        </TouchableOpacity>
+      </View>
+
+      {activeTab === 'live' ? (
+        <WebView 
+          ref={webViewRef}
+          source={{ uri: 'https://gym-tracker-ai-companion.toshi-diyil.workers.dev' }}
+          style={{ flex: 1, marginTop: 8, backgroundColor: Theme.colors.background }}
+          onMessage={handleWebViewMessage}
+          allowsInlineMediaPlayback={true}
+          mediaPlaybackRequiresUserAction={false}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          onPermissionRequest={(request) => request.grant()}
+        />
+      ) : (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.select({ ios: 90, android: 120 })}
+    >
+      {/* Top Warning Banner if out of tokens */}
+      {isQuotaExhausted && (
+        <TouchableOpacity 
+          style={styles.warningBanner} 
+          onPress={() => isBasic && router.push('/(tabs)/profile')}
+          activeOpacity={isBasic ? 0.8 : 1}
+        >
+          <Ionicons name="alert-circle" size={18} color="#fff" style={{ marginRight: 6 }} />
+          <Text style={styles.warningText}>
+            {isBasic 
+              ? t('ui.coach.basic_quota_exhausted')
+              : t('ui.profile.quota_exhausted_alert')
+            }
+          </Text>
+          {isBasic && (
+            <Ionicons name="chevron-forward" size={14} color="#fff" style={{ marginLeft: 4 }} />
+          )}
+        </TouchableOpacity>
+      )}
+
+      {/* Active Context Linked Badge */}
+      {activeContext && (
+        <View style={styles.contextBadge}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <Ionicons name="link" size={16} color={Theme.colors.primary} style={{ marginRight: 6 }} />
+            <Text style={styles.contextBadgeText} numberOfLines={1}>
+              {t('ui.coach.linked_context', { title: contextTitle })}
+            </Text>
+          </View>
+          <TouchableOpacity style={styles.clearContextBtn} onPress={handleClearContext}>
+            <Ionicons name="close-circle" size={18} color={Theme.colors.textMuted} />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Debug Context Preview Banner (Staging/Dev default) */}
+      {showDebugContextUI && (
+        <View style={styles.debugContextContainer}>
+          <TouchableOpacity
+            style={styles.debugContextHeader}
+            onPress={() => setShowDebugAccordion(!showDebugAccordion)}
+            activeOpacity={0.7}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+              <Ionicons name="bug-outline" size={15} color="#FFB74D" style={{ marginRight: 6 }} />
+              <Text style={styles.debugContextTitle}>
+                🔍 AI送信コンテキスト詳細 ({lastCompiledContext ? `${lastCompiledContext.length}文字` : '未送信'})
+              </Text>
+            </View>
+            <Ionicons
+              name={showDebugAccordion ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color="#FFB74D"
+            />
+          </TouchableOpacity>
+
+          {showDebugAccordion && (
+            <View style={styles.debugContextContent}>
+              <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled>
+                <Text style={styles.debugContextText}>
+                  {lastCompiledContext || activeContext || 'まだAIへの送信が行われていません。メッセージを送信すると実際に渡されたプロンプト全文が表示されます。'}
+                </Text>
+              </ScrollView>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Scrollable Message List */}
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.chatArea}
+        contentContainerStyle={styles.chatContent}
+        showsVerticalScrollIndicator={true}
+      >
+        {messages.map(msg => {
+          const isUser = msg.sender === 'user';
+          const isSystem = msg.sender === 'system';
+          
+          if (isSystem) {
+            return (
+              <View key={msg.id} style={styles.systemBubble}>
+                <Text style={styles.systemBubbleText}>{msg.text}</Text>
+              </View>
+            );
+          }
+
+          return (
+            <View
+              key={msg.id}
+              style={[
+                styles.bubbleContainer,
+                isUser ? styles.bubbleRight : styles.bubbleLeft,
+              ]}
+            >
+              <View
+                style={[
+                  styles.bubble,
+                  isUser ? styles.bubbleUser : styles.bubbleAI,
+                ]}
+              >
+                {!isUser && (
+                  <View style={styles.aiSideAccent} />
+                )}
+                <Text style={[styles.bubbleText, isUser ? styles.bubbleTextUser : styles.bubbleTextAI]}>
+                  {msg.text}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
+
+        {/* Pulsing Loading Spinner while waiting for AI */}
+        {loading && (
+          <View style={[styles.bubbleContainer, styles.bubbleLeft]}>
+            <View style={[styles.bubble, styles.bubbleAI, styles.loadingBubble]}>
+              <View style={styles.aiSideAccent} />
+              <ActivityIndicator size="small" color={Theme.colors.primary} style={{ marginRight: 10 }} />
+              <Text style={styles.loadingText}>
+                {currentAiChatMode === 'thinking'
+                  ? t('ui.coach.analyzing_thinking')
+                  : t('ui.coach.analyzing_quick')
+                }
+              </Text>
+            </View>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Mode Selector Toggle Bar */}
+      {!isQuotaExhausted && (
+        <View style={styles.modeToggleContainer}>
+          <Text style={styles.modeLabelText}>
+            {t('ui.coach.mode_label')}
+          </Text>
+          <View style={styles.modeToggleGroup}>
+            <TouchableOpacity
+              style={[
+                styles.modeBtn,
+                currentAiChatMode === 'quick' && styles.modeBtnActiveQuick,
+              ]}
+              onPress={() => setAiChatMode('quick')}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="flash"
+                size={13}
+                color={currentAiChatMode === 'quick' ? '#FFD700' : Theme.colors.textMuted}
+                style={{ marginRight: 4 }}
+              />
+              <Text
+                style={[
+                  styles.modeBtnText,
+                  currentAiChatMode === 'quick' && styles.modeBtnTextActive,
+                ]}
+              >
+                {t('ui.coach.mode_quick')}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.modeBtn,
+                currentAiChatMode === 'thinking' && styles.modeBtnActiveThinking,
+              ]}
+              onPress={() => setAiChatMode('thinking')}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="bulb"
+                size={13}
+                color={currentAiChatMode === 'thinking' ? '#BB86FC' : Theme.colors.textMuted}
+                style={{ marginRight: 4 }}
+              />
+              <Text
+                style={[
+                  styles.modeBtnText,
+                  currentAiChatMode === 'thinking' && styles.modeBtnTextActive,
+                ]}
+              >
+                {t('ui.coach.mode_thinking')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Horizontal Suggestions Chips (Hidden if quota exhausted) */}
+      {!isQuotaExhausted && !loading && (
+        <View style={styles.chipsOuter}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipsContainer}
+          >
+            <TouchableOpacity
+              style={[styles.chip, { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: '#4facfe', borderWidth: 1 }]}
+              onPress={() => handleChipPress('full_analysis')}
+            >
+              <Text style={[styles.chipText, { color: '#4facfe', fontWeight: 'bold' }]}>🌟 本日の総合アドバイス（筋トレ・食事・ライフ）</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.chip} onPress={() => handleChipPress('analysis')}>
+              <Text style={styles.chipText}>📊 {t('ui.coach.chip_analysis')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.chip} onPress={() => handleChipPress('proposal')}>
+              <Text style={styles.chipText}>🔥 {t('ui.coach.chip_proposal')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.chip} onPress={() => handleChipPress('rpe')}>
+              <Text style={styles.chipText}>💡 {t('ui.coach.chip_rpe')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.chip} onPress={() => handleChipPress('stance')}>
+              <Text style={styles.chipText}>📐 {t('ui.coach.chip_stance')}</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      )}
+
+      {/* Footer Text Input Form */}
+      <View style={styles.inputForm}>
+        <TextInput
+          style={[
+            styles.textInput,
+            isQuotaExhausted && styles.textInputDisabled,
+          ]}
+          value={inputVal}
+          onChangeText={setInputVal}
+          placeholder={
+            isQuotaExhausted 
+              ? (isBasic ? '今月の利用枠（5回）が終了しました。アップグレードしてください' : t('ui.profile.quota_exhausted_alert'))
+              : t('ui.coach.input_placeholder')
+          }
+          placeholderTextColor={isQuotaExhausted ? Theme.colors.danger : Theme.colors.textMuted}
+          editable={!isQuotaExhausted && !loading}
+          multiline={true}
+          maxLength={500}
+        />
+        <TouchableOpacity
+          style={[
+            styles.sendBtn,
+            (inputVal.trim() === '' || isQuotaExhausted || loading) && styles.sendBtnDisabled,
+          ]}
+          onPress={() => handleSend()}
+          disabled={inputVal.trim() === '' || isQuotaExhausted || loading}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="send" size={18} color="#fff" />
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Theme.colors.background },
+  
+  // Warning Banner
+  warningBanner: {
+    backgroundColor: Theme.colors.danger,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  warningText: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
+
+  // Context Linked Badge
+  contextBadge: {
+    backgroundColor: 'rgba(79, 172, 254, 0.1)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(79, 172, 254, 0.2)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  contextBadgeText: { color: Theme.colors.primary, fontSize: 13, fontWeight: 'bold' },
+  clearContextBtn: { padding: 2 },
+
+  // Chat Area
+  chatArea: { flex: 1 },
+  chatContent: { padding: Theme.spacing.md, paddingBottom: 24 },
+  
+  // Bubble Containers
+  bubbleContainer: { flexDirection: 'row', width: '100%', marginBottom: 16 },
+  bubbleRight: { justifyContent: 'flex-end' },
+  bubbleLeft: { justifyContent: 'flex-start' },
+
+  // Chat Bubbles
+  bubble: {
+    maxWidth: '82%',
+    borderRadius: Theme.borderRadius.md,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  bubbleUser: {
+    backgroundColor: Theme.colors.primary,
+    borderBottomRightRadius: 2,
+  },
+  bubbleAI: {
+    backgroundColor: Theme.colors.card,
+    borderBottomLeftRadius: 2,
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
+    paddingLeft: 20, // offset for left side vertical accent bar
+  },
+  aiSideAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    backgroundColor: Theme.colors.primary,
+  },
+  bubbleText: { fontSize: 15, lineHeight: 22 },
+  bubbleTextUser: { color: '#fff' },
+  bubbleTextAI: { color: Theme.colors.text },
+
+  // System Message Bubble
+  systemBubble: {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
+    padding: 10,
+    marginVertical: 12,
+    alignItems: 'center',
+  },
+  systemBubbleText: { color: Theme.colors.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 18 },
+
+  // Loading Bubble
+  loadingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+  },
+  loadingText: { color: Theme.colors.textMuted, fontSize: 14 },
+
+  // Suggestions Chips
+  chipsOuter: { backgroundColor: Theme.colors.background, paddingVertical: 8 },
+  chipsContainer: { paddingHorizontal: Theme.spacing.md, gap: 8 },
+  chip: {
+    backgroundColor: '#1c1c1e',
+    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
+  },
+  chipText: { color: Theme.colors.text, fontSize: 13, fontWeight: '600' },
+
+  // Mode Selector Toggle Bar
+  modeToggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Theme.spacing.md,
+    paddingTop: 8,
+    paddingBottom: 4,
+    backgroundColor: Theme.colors.background,
+  },
+  modeLabelText: {
+    color: Theme.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  modeToggleGroup: {
+    flexDirection: 'row',
+    backgroundColor: '#1a1a1c',
+    borderRadius: 16,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
+  },
+  modeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 13,
+  },
+  modeBtnActiveQuick: {
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.4)',
+  },
+  modeBtnActiveThinking: {
+    backgroundColor: 'rgba(187, 134, 252, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(187, 134, 252, 0.4)',
+  },
+  modeBtnText: {
+    color: Theme.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  modeBtnTextActive: {
+    color: Theme.colors.text,
+    fontWeight: 'bold',
+  },
+
+  // Footer Input Form
+  inputForm: {
+    flexDirection: 'row',
+    padding: Theme.spacing.md,
+    backgroundColor: Theme.colors.card,
+    borderTopWidth: 1,
+    borderTopColor: Theme.colors.border,
+    alignItems: 'center',
+    gap: 12,
+  },
+  textInput: {
+    flex: 1,
+    backgroundColor: '#121212',
+    color: Theme.colors.text,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
+    maxHeight: 100,
+  },
+  textInputDisabled: {
+    backgroundColor: 'rgba(239, 83, 80, 0.05)',
+    borderColor: Theme.colors.danger,
+    color: Theme.colors.danger,
+  },
+  sendBtn: {
+    backgroundColor: Theme.colors.primary,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendBtnDisabled: {
+    backgroundColor: '#222',
+    opacity: 0.5,
+  },
+  
+  // Maintenance styles
+  maintenanceContainer: {
+    flex: 1,
+    backgroundColor: Theme.colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Theme.spacing.lg,
+  },
+  maintenanceCard: {
+    backgroundColor: Theme.colors.card,
+    borderRadius: Theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(79, 172, 254, 0.2)',
+    padding: 28,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 340,
+    shadowColor: Theme.colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+  maintenanceIconOuter: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(79, 172, 254, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(79, 172, 254, 0.2)',
+  },
+  maintenanceHeader: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Theme.colors.text,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  maintenanceBody: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: Theme.colors.textMuted,
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  maintenanceFooter: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: Theme.colors.primary,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
+  // Debug Context Banner
+  debugContextContainer: {
+    backgroundColor: 'rgba(255, 183, 77, 0.08)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 183, 77, 0.25)',
+  },
+  debugContextHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  debugContextTitle: {
+    color: '#FFB74D',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  debugContextContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  debugContextText: {
+    color: '#E0E0E0',
+    fontSize: 11,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    lineHeight: 16,
+  },
+});

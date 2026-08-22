@@ -18,6 +18,14 @@ import {
   Smartphone,
 } from 'lucide-react';
 
+declare global {
+  interface Window {
+    ReactNativeWebView?: {
+      postMessage: (message: string) => void;
+    };
+  }
+}
+
 export default function App() {
   const [apiKey, setApiKey] = useState<string>(() => {
     return localStorage.getItem('gemini_api_key') || '';
@@ -50,15 +58,22 @@ export default function App() {
   
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
+  const [isSecureContextSupported] = useState<boolean>(() => {
+    return typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
+  });
 
   useEffect(() => {
-    navigator.mediaDevices.enumerateDevices().then((deviceInfos) => {
-      const audioInputs = deviceInfos.filter((d) => d.kind === 'audioinput');
-      setDevices(audioInputs);
-      if (audioInputs.length > 0) {
-        setSelectedDeviceId(audioInputs[0].deviceId);
-      }
-    });
+    if (navigator?.mediaDevices?.enumerateDevices) {
+      navigator.mediaDevices.enumerateDevices().then((deviceInfos) => {
+        const audioInputs = deviceInfos.filter((d) => d.kind === 'audioinput');
+        setDevices(audioInputs);
+        if (audioInputs.length > 0) {
+          setSelectedDeviceId(audioInputs[0].deviceId);
+        }
+      }).catch((e) => {
+        console.warn('enumerateDevices failed:', e);
+      });
+    }
   }, []);
 
   const {
@@ -103,16 +118,10 @@ export default function App() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const hasData =
-    extractedData.workouts.length > 0 ||
-    extractedData.waters.length > 0 ||
-    extractedData.meals.length > 0 ||
+  const hasData = extractedData.workouts.length > 0 || 
+    extractedData.waters.length > 0 || 
+    extractedData.meals.length > 0 || 
     extractedData.dailyNotes.length > 0;
-
-  // TreNoteアプリへのディープリンクURL
-  const deepLinkUrl = `gymtracker://ai-sync?data=${encodeURIComponent(
-    JSON.stringify(extractedData)
-  )}`;
 
   return (
     <div style={styles.container}>
@@ -143,6 +152,14 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      {!isSecureContextSupported && (
+        <div style={{ backgroundColor: '#7f1d1d', color: '#fecaca', padding: '12px 16px', borderRadius: 8, margin: '12px 20px 0 20px', fontSize: 13, lineHeight: 1.5, border: '1px solid #ef4444' }}>
+          <strong>⚠️ ブラウザのマイク利用制限について:</strong><br />
+          現在 <code>http://192.168...</code>（非HTTPS）で接続されているため、ブラウザのセキュリティ機能によりマイクがブロックされています。<br />
+          マイク音声対話を行う場合は、<strong>PC上のブラウザ（<code>http://localhost:5173</code>）</strong> で音声を吹き込んでデータを抽出し、生成された「TreNote アプリに転送」リンクをご利用ください。
+        </div>
+      )}
 
       {/* API Key Modal / Expand Area */}
       {showKeyInput && (
@@ -537,7 +554,22 @@ export default function App() {
             {/* Sync Action Area */}
             <div style={styles.syncActionBox}>
               <a
-                href={hasData ? deepLinkUrl : '#'}
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (!hasData) return;
+                  
+                  // ReactNative の WebView 環境かをチェック
+                  if (window.ReactNativeWebView) {
+                    const payload = JSON.stringify({
+                      type: 'SYNC_DATA',
+                      data: extractedData
+                    });
+                    window.ReactNativeWebView.postMessage(payload);
+                  } else {
+                    alert('この機能はTreNoteアプリ内でのみ利用可能です。');
+                  }
+                }}
                 style={{
                   ...styles.syncButton,
                   opacity: hasData ? 1 : 0.5,
@@ -545,7 +577,7 @@ export default function App() {
                 }}
               >
                 <Smartphone size={18} />
-                <span>TreNote アプリに転送して保存</span>
+                <span>TreNote アプリに保存</span>
               </a>
 
               <button
