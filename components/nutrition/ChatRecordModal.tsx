@@ -65,7 +65,7 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
     setShowCustomMultiplierInput(false);
     setCustomMultiplierText('');
     try {
-      const res = await analyzeMealText(textInput.trim(), 'gemini');
+      const res = await analyzeMealText(textInput.trim());
       setResult(res);
     } catch (err: any) {
       Alert.alert(

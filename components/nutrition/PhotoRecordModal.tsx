@@ -256,7 +256,7 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
     setIsAnalyzing(true);
     setAiResult(null);
     try {
-      const res = await analyzeMealImage(b64, '', userMemo, 'gemini');
+      const res = await analyzeMealImage(b64, '', userMemo);
       setAiResult(res);
       setMealName(res.mealName);
       applyMultiplier(res, multiplier);

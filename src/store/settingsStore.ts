@@ -26,7 +26,7 @@ export interface ApplicationSettings {
   crashConsent: 'agreed' | 'declined' | 'unset';
   keepAwake: boolean;
   alwaysOneSet: boolean;
-  preferredAiModel: 'gemini' | 'deepseek';
+  preferredAiModel: 'gemini' | 'gemma-31b' | 'gemma-26b' | 'deepseek';
   aiChatMode: 'quick' | 'thinking';
   enableAiDebugContext: boolean;
   backgroundTheme: 'dark' | 'pureBlack';
@@ -48,7 +48,7 @@ export interface LoadSettingsPayload {
   isEarlyAdopter?: boolean;
   keepAwake?: boolean;
   alwaysOneSet?: boolean;
-  preferredAiModel?: 'gemini' | 'deepseek';
+  preferredAiModel?: 'gemini' | 'gemma-31b' | 'gemma-26b' | 'deepseek';
   aiChatMode?: 'quick' | 'thinking';
   enableAiDebugContext?: boolean;
   backgroundTheme?: 'dark' | 'pureBlack';
@@ -62,7 +62,7 @@ export interface SettingsState {
   setKeepAwake: (keepAwake: boolean) => void;
   setAlwaysOneSet: (alwaysOneSet: boolean) => void;
   setBackgroundTheme: (theme: 'dark' | 'pureBlack') => void;
-  setPreferredAiModel: (model: 'gemini' | 'deepseek') => void;
+  setPreferredAiModel: (model: 'gemini' | 'gemma-31b' | 'gemma-26b' | 'deepseek') => void;
   setAiChatMode: (mode: 'quick' | 'thinking') => void;
   setEnableAiDebugContext: (enabled: boolean) => void;
   setFeatureConfig: (order: FeatureId[], visibility: Record<FeatureId, boolean>) => void;
@@ -191,7 +191,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     }));
   },
 
-  setPreferredAiModel: (model: 'gemini' | 'deepseek') => {
+  setPreferredAiModel: (model: 'gemini' | 'gemma-31b' | 'gemma-26b' | 'deepseek') => {
     saveSetting('preferred_ai_model', model).catch(e => console.warn('Failed to save preferred_ai_model setting', e));
     set((state) => ({
       settings: { ...state.settings, preferredAiModel: model }
