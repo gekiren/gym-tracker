@@ -5,7 +5,7 @@
       "ja": "./locales/ja.json"
     },
     "slug": "gym-tracker",
-    "version": "1.3.2",
+    "version": "1.3.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "gymtracker",
@@ -28,7 +28,7 @@
     },
     "android": {
       "package": "com.gekirennomad.trenote",
-      "versionCode": 39,
+      "versionCode": 40,
       "permissions": [
         "com.android.vending.BILLING",
         "android.permission.SCHEDULE_EXACT_ALARM",
@@ -50,6 +50,8 @@
         "android.permission.health.READ_HYDRATION",
         "android.permission.health.READ_BASAL_METABOLIC_RATE",
         "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.READ_MEDIA_IMAGES"
       ],
       "adaptiveIcon": {
