@@ -263,14 +263,16 @@ export const buildWorkoutCoachPrompt = (workoutData: {
 /**
  * テキスト入力による食事栄養解析
  * @param textInput 例: "ラーメン大盛りと餃子3個"
- * @param preferredModel 'gemini' | 'deepseek' (Gemini 3.6 Flash / DeepSeek V4 Pro)
+ * @param preferredModel 'gemini' | 'gemma-31b' | 'gemma-26b' | 'deepseek'
  */
 export const analyzeMealText = async (
   textInput: string,
-  preferredModel: string = 'gemini'
+  preferredModel?: string
 ): Promise<NutritionAIResult> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 45000);
+
+  const activeModel = preferredModel || useSettingsStore.getState().settings.preferredAiModel || 'gemini';
 
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -280,7 +282,7 @@ export const analyzeMealText = async (
     const response = await fetch(NUTRITION_TEXT_URL, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ textInput, preferredModel }),
+      body: JSON.stringify({ textInput, preferredModel: activeModel }),
       signal: controller.signal,
     });
 
@@ -296,7 +298,7 @@ export const analyzeMealText = async (
       endpointUrl: NUTRITION_TEXT_URL,
       status: response.status,
       success: true,
-      requestSummary: { textInput, preferredModel },
+      requestSummary: { textInput, preferredModel: activeModel },
       responseRaw: data,
     });
 
@@ -324,7 +326,7 @@ export const analyzeMealText = async (
       type: 'text_analysis',
       endpointUrl: NUTRITION_TEXT_URL,
       success: false,
-      requestSummary: { textInput, preferredModel },
+      requestSummary: { textInput, preferredModel: activeModel },
       errorMessage: friendlyErrMsg,
     });
 
@@ -340,16 +342,18 @@ export const analyzeMealText = async (
  * @param base64Image data:image/jpeg;base64,... 形式
  * @param ocrHintText オンデバイスOCRで事前抽出したテキスト（任意）
  * @param userMemo ユーザーが入力した補足メモ（任意）
- * @param preferredModel 'gemini' | 'deepseek' (Gemini 3.6 Flash / DeepSeek V4 Pro)
+ * @param preferredModel 'gemini' | 'gemma-31b' | 'gemma-26b' | 'deepseek'
  */
 export const analyzeMealImage = async (
   base64Image: string,
   ocrHintText: string = '',
   userMemo: string = '',
-  preferredModel: string = 'gemini'
+  preferredModel?: string
 ): Promise<NutritionAIResult> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 45000); // 画像解析は時間がかかるため長めに
+
+  const activeModel = preferredModel || useSettingsStore.getState().settings.preferredAiModel || 'gemini';
 
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -365,7 +369,7 @@ export const analyzeMealImage = async (
       image: base64Image,
       ocrHintText,
       userMemo,
-      preferredModel,
+      preferredModel: activeModel,
     };
 
     const response = await fetch(NUTRITION_IMAGE_URL, {

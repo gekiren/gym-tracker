@@ -995,14 +995,88 @@ export default function DeveloperMenuScreen() {
                     color={preferredAiModel === 'gemini' ? Theme.colors.primary : Theme.colors.textMuted} 
                     style={{ marginRight: 8 }}
                   />
-                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: Theme.colors.text }}>Gemini 3.6 Flash</Text>
+                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: Theme.colors.text }}>Gemini 3.7 / 3.5 Flash</Text>
                 </View>
                 <View style={{ backgroundColor: 'rgba(79, 172, 254, 0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
-                  <Text style={{ fontSize: 11, color: Theme.colors.primary, fontWeight: 'bold' }}>推奨・高速</Text>
+                  <Text style={{ fontSize: 11, color: Theme.colors.primary, fontWeight: 'bold' }}>標準・推奨</Text>
                 </View>
               </View>
               <Text style={{ fontSize: 12, color: Theme.colors.textMuted, lineHeight: 17, paddingLeft: 28 }}>
-                Googleの最新軽量AI。超高速な応答速度と高いトレーニング理解度でスマートにアドバイスします。
+                Googleの最高性能フラッグシップ。高速かつ正確な日本語と高いトレーニング・栄養理解度で応答します。
+              </Text>
+            </TouchableOpacity>
+
+            {/* Gemma 4 31B Option */}
+            <TouchableOpacity
+              style={[
+                {
+                  backgroundColor: '#121214',
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: Theme.colors.border,
+                  padding: 12,
+                },
+                preferredAiModel === 'gemma-31b' && {
+                  borderColor: '#00E676',
+                  backgroundColor: 'rgba(0, 230, 118, 0.08)',
+                }
+              ]}
+              activeOpacity={0.8}
+              onPress={() => setPreferredAiModel('gemma-31b')}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons 
+                    name={preferredAiModel === 'gemma-31b' ? 'radio-button-on' : 'radio-button-off'} 
+                    size={20} 
+                    color={preferredAiModel === 'gemma-31b' ? '#00E676' : Theme.colors.textMuted} 
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: Theme.colors.text }}>Gemma 4 31B (AI Studio)</Text>
+                </View>
+                <View style={{ backgroundColor: 'rgba(0, 230, 118, 0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
+                  <Text style={{ fontSize: 11, color: '#00E676', fontWeight: 'bold' }}>実験・31B</Text>
+                </View>
+              </View>
+              <Text style={{ fontSize: 12, color: Theme.colors.textMuted, lineHeight: 17, paddingLeft: 28 }}>
+                Googleの最新オープンモデル Gemma 4 (31B Instruct)。AI Studio 無料枠で動作する大型オープンウェイトモデルです。
+              </Text>
+            </TouchableOpacity>
+
+            {/* Gemma 4 26B Option */}
+            <TouchableOpacity
+              style={[
+                {
+                  backgroundColor: '#121214',
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: Theme.colors.border,
+                  padding: 12,
+                },
+                preferredAiModel === 'gemma-26b' && {
+                  borderColor: '#FFAB00',
+                  backgroundColor: 'rgba(255, 171, 0, 0.08)',
+                }
+              ]}
+              activeOpacity={0.8}
+              onPress={() => setPreferredAiModel('gemma-26b')}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons 
+                    name={preferredAiModel === 'gemma-26b' ? 'radio-button-on' : 'radio-button-off'} 
+                    size={20} 
+                    color={preferredAiModel === 'gemma-26b' ? '#FFAB00' : Theme.colors.textMuted} 
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: Theme.colors.text }}>Gemma 4 26B (AI Studio)</Text>
+                </View>
+                <View style={{ backgroundColor: 'rgba(255, 171, 0, 0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
+                  <Text style={{ fontSize: 11, color: '#FFAB00', fontWeight: 'bold' }}>実験・26B</Text>
+                </View>
+              </View>
+              <Text style={{ fontSize: 12, color: Theme.colors.textMuted, lineHeight: 17, paddingLeft: 28 }}>
+                Googleの最新オープンモデル Gemma 4 (26B MoE/A4B)。軽量かつ効率的なアーキテクチャの実験モデルです。
               </Text>
             </TouchableOpacity>
 

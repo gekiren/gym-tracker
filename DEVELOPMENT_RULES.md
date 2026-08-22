@@ -258,15 +258,23 @@
 ## 5. AIパーソナルトレーナー（AI Trainer）および Gemini API の仕様
 
 ### ① 使用する最新モデルの絶対的な指定および多重モデル自動フォールバック構成
-- 使用する公式プライマリモデルは **`gemini-3.7-flash`** です。最優先モデルとして常に指定・維持してください。
-- サーバー（Cloudflare Workers プロキシ）およびドキュメントのモデル名は、常に `gemini-3.7-flash` を指定・維持してください。
-- 429 (Quota制限) や API エラーが発生した場合は、Worker 内で以下の順序で自動リトライ・即時切替を行う多重冗長化仕様となっています：
-  1. **`gemini-3.7-flash`** (プライマリ / 10,000 RPD / 最優先)
-  2. **`gemini-3.6-flash`** (セカンダリ / 10,000 RPD)
-  3. **`gemini-3.5-flash`** (サード / 10,000 RPD)
-  4. **`gemini-2.5-flash`** (フォールバック1 / 10,000 RPD)
-  5. **`gemini-2.5-flash-lite`** (フォールバック2 / **RPD 無制限**)
-  6. **`deepseek-v4-pro`** (DeepSeek API / テキスト最終フォールバック)
+- **AI Coach チャット (`/api/chat`) ＆ 画像栄養解析 (`/api/nutrition-image`)**:
+  - 使用する公式プライマリモデルは **`gemini-3.7-flash`** です。最優先モデルとして常に指定・維持してください。
+  - 429 (Quota制限) や API エラーが発生した場合は、Worker 内で以下の順序で自動リトライ・即時切替を行う多重冗長化仕様となっています：
+    1. **`gemini-3.7-flash`** (プライマリ / 10,000 RPD / 最優先)
+    2. **`gemini-3.6-flash`** (セカンダリ / 10,000 RPD)
+    3. **`gemini-3.5-flash`** (サード / 10,000 RPD)
+    4. **`gemini-3.5-flash-lite`** (クォータリ / 安定版 Lite)
+    5. **`gemini-3.1-flash-lite`** (フォールバック1 / 高速版 Lite)
+    6. **`gemini-flash-lite-latest`** (最終フォールバック / 最新Lite)
+    7. **`deepseek-v4-pro`** (DeepSeek API / 緊急フォールバック)
+
+- **テキスト食事・栄養解析 (`/api/nutrition`)**:
+  - 高速応答・低リソース消費に最適化された軽量 Lite モデルの多重構成を採用：
+    1. **`gemini-3.5-flash-lite`** (プライマリ / 検証済みの安定版)
+    2. **`gemini-3.1-flash-lite`** (セカンダリ / 高互換な高速版)
+    3. **`gemini-flash-lite-latest`** (セーフティネット / 最新Lite)
+    4. **`deepseek-v4-pro`** (DeepSeek API / 最終フォールバック)
 
 ### ② サーバー（Worker）接続仕様
 - クライアント側（`aiCoachService.ts`）の接続先は、必ず実際に稼働しているユーザー様のプロキシアドレス `https://gym-tracker-ai-proxy.toshi-diyil.workers.dev/api/chat` を参照・維持してください。テスト用のプレースホルダーへの変更は絶対に行わないでください。

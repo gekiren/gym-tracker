@@ -1,9 +1,9 @@
 /**
- * Cloudflare Worker Proxy for Gemini 3.7 Flash & Multi-Model Fallback (Gemini 3.6/3.5/2.5/2.5-Lite & DeepSeek)
- * (gym-tracker AI Coach & Nutrition Vision Analysis - Plan B / v1.8.0)
+ * Cloudflare Worker Proxy for Gemini & Gemma 4 & Multi-Model Fallback
+ * (gym-tracker AI Coach & Nutrition Vision Analysis - Plan B / v1.9.0)
  *
  * ENDPOINTS SUPPORTED:
- * - /api/chat : Fitness AI Coach text chat
+ * - /api/chat : Fitness AI Coach text chat (Gemini / Gemma 4 / DeepSeek)
  * - /api/nutrition-image : Image-based nutrition analysis (returns structured JSON)
  * - /api/nutrition : Text-based nutrition analysis (returns structured JSON)
  */
@@ -87,6 +87,7 @@ export default {
       const payload = await request.json();
       const { message, image, imageBase64, textInput, workout_history, user_weight, weight_unit, language, ocrHintText, userMemo } = payload;
       const rawImageData = image || imageBase64;
+      const reqPreferredModel = payload.preferredModel || payload.preferred_model || '';
 
       // 3. Security check: Protect from empty or invalid requests
       if (!message && !textInput && !rawImageData) {
@@ -185,23 +186,34 @@ export default {
   "advice": "筋トレや健康管理に役立つプロの短文アドバイス（100文字程度）"
 }`;
 
-        // Google公式実在モデルによる高速多重冗長化: gemini-3.7-flash ➔ gemini-3.6-flash ➔ gemini-3.5-flash ➔ gemini-2.5-flash ➔ gemini-flash-latest
+        // Google公式実在モデルによる高速多重冗長化: gemini-3.7-flash ➔ gemini-3.6-flash ➔ gemini-3.5-flash ➔ gemini-3.5-flash-lite ➔ gemini-3.1-flash-lite ➔ gemini-flash-lite-latest
         const geminiModels = [
           "gemini-3.7-flash",
           "gemini-3.6-flash",
           "gemini-3.5-flash",
-          "gemini-2.5-flash",
-          "gemini-flash-latest"
+          "gemini-3.5-flash-lite",
+          "gemini-3.1-flash-lite",
+          "gemini-flash-lite-latest"
         ];
+
+        // Gemma 実験モデルの優先注入（ステージング設定対応）
+        let activeModels = [...geminiModels];
+        if (reqPreferredModel === 'gemma-31b' || reqPreferredModel === 'gemma-4-31b-it') {
+          activeModels = ['gemma-4-31b-it', ...geminiModels.filter(m => m !== 'gemma-4-31b-it')];
+        } else if (reqPreferredModel === 'gemma-26b' || reqPreferredModel === 'gemma-4-26b-a4b-it') {
+          activeModels = ['gemma-4-26b-a4b-it', ...geminiModels.filter(m => m !== 'gemma-4-26b-a4b-it')];
+        }
+
         let lastErrorText = "";
         let fallbackHistory = [];
 
         if (env.GEMINI_API_KEY) {
-          for (const modelName of geminiModels) {
+          for (const modelName of activeModels) {
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
             
             try {
-              // 各モデル8秒でタイムアウト制御（通常1〜2秒で即時完了、混雑時は即座に次モデルへバトンタッチ）
+              // 各モデル8秒（Gemmaは25秒）でタイムアウト制御
+              const timeoutMs = modelName.includes('gemma') ? 25000 : 8000;
               const generationConfig = { 
                 maxOutputTokens: 2048,
                 responseMimeType: "application/json"
@@ -223,7 +235,7 @@ export default {
                   systemInstruction: { parts: [{ text: visionSystemInstruction }] },
                   generationConfig
                 })
-              }, 8000);
+              }, timeoutMs);
 
               if (response.ok) {
                 const result = await response.json();
@@ -240,7 +252,7 @@ export default {
                   return new Response(JSON.stringify({ 
                     success: true, 
                     ...parsedJson,
-                    debugInfo: { workerVersion: "v1.8.7", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
+                    debugInfo: { workerVersion: "v1.9.0", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -306,14 +318,29 @@ export default {
   "advice": "栄養アドバイス"
 }`;
 
-        const geminiModels = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+        // テキスト栄養解析専用の高速・軽量3段階モデル構成: gemini-3.5-flash-lite ➔ gemini-3.1-flash-lite ➔ gemini-flash-lite-latest
+        const geminiModels = [
+          "gemini-3.5-flash-lite",
+          "gemini-3.1-flash-lite",
+          "gemini-flash-lite-latest"
+        ];
+
+        // Gemma 実験モデルの優先注入（ステージング設定対応）
+        let activeModels = [...geminiModels];
+        if (reqPreferredModel === 'gemma-31b' || reqPreferredModel === 'gemma-4-31b-it') {
+          activeModels = ['gemma-4-31b-it', ...geminiModels.filter(m => m !== 'gemma-4-31b-it')];
+        } else if (reqPreferredModel === 'gemma-26b' || reqPreferredModel === 'gemma-4-26b-a4b-it') {
+          activeModels = ['gemma-4-26b-a4b-it', ...geminiModels.filter(m => m !== 'gemma-4-26b-a4b-it')];
+        }
+
         let fallbackHistory = [];
 
         if (env.GEMINI_API_KEY) {
-          for (const modelName of geminiModels) {
+          for (const modelName of activeModels) {
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
             try {
-              // テキスト栄養解析は8秒で個別タイムアウト制御
+              // Gemmaは大型モデルのため25秒、標準Flash-Liteは8秒でタイムアウト制御
+              const timeoutMs = modelName.includes('gemma') ? 25000 : 8000;
               const response = await fetchWithTimeout(geminiUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -322,7 +349,7 @@ export default {
                   systemInstruction: { parts: [{ text: textNutritionInstruction }] },
                   generationConfig: { maxOutputTokens: 1024 }
                 })
-              }, 8000);
+              }, timeoutMs);
 
               if (response.ok) {
                 const result = await response.json();
@@ -337,7 +364,7 @@ export default {
                   return new Response(JSON.stringify({
                     success: true,
                     ...parsedJson,
-                    debugInfo: { workerVersion: "v1.8.0", modelUsed: modelName, fallbackHistory }
+                    debugInfo: { workerVersion: "v1.9.0", modelUsed: modelName, fallbackHistory }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -430,14 +457,73 @@ export default {
         ? `[User Context]\n- Body Weight: ${user_weight || "Not set"}\n\n${contextHeader}\n${workout_history || "No history available"}\n\n[User Message]\n${message}`
         : `【ユーザー情報】\n- 体重: ${user_weight || "未設定"}\n\n${contextHeader}\n${workout_history || "履歴なし"}\n\n【ユーザーの質問】\n${message}`;
 
-      const geminiModels = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+      // AI Coachチャット用モデル冗長化: gemini-3.7-flash ➔ gemini-3.6-flash ➔ gemini-3.5-flash ➔ gemini-3.5-flash-lite ➔ gemini-3.1-flash-lite ➔ gemini-flash-lite-latest
+      const geminiModels = [
+        "gemini-3.7-flash",
+        "gemini-3.6-flash",
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
+        "gemini-flash-lite-latest"
+      ];
+
+      // Gemma 実験モデルの優先注入（ステージング設定対応）
+      let activeModels = [...geminiModels];
+      if (reqPreferredModel === 'gemma-31b' || reqPreferredModel === 'gemma-4-31b-it') {
+        activeModels = ['gemma-4-31b-it', ...geminiModels.filter(m => m !== 'gemma-4-31b-it')];
+      } else if (reqPreferredModel === 'gemma-26b' || reqPreferredModel === 'gemma-4-26b-a4b-it') {
+        activeModels = ['gemma-4-26b-a4b-it', ...geminiModels.filter(m => m !== 'gemma-4-26b-a4b-it')];
+      }
+
       let chatFallbackHistory = [];
 
+      // DeepSeek 優先指定時の先行実行
+      if (reqPreferredModel === 'deepseek' && env.DEEPSEEK_API_KEY) {
+        try {
+          const dsResponse = await fetchWithTimeout("https://api.deepseek.com/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${env.DEEPSEEK_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: "deepseek-v4-pro",
+              messages: [
+                { role: "system", content: systemInstruction },
+                { role: "user", content: promptContext }
+              ]
+            })
+          }, 12000);
+
+          if (dsResponse.ok) {
+            const dsData = await dsResponse.json();
+            const reply = dsData?.choices?.[0]?.message?.content;
+            if (reply) {
+              if (env.AI_LIMIT_KV) {
+                await env.AI_LIMIT_KV.put(today, (dailyCount + 1).toString(), { expirationTtl: 86400 * 2 });
+              }
+              return new Response(JSON.stringify({
+                success: true,
+                reply,
+                debugInfo: { workerVersion: "v1.9.0", modelUsed: "deepseek-v4-pro (preferred)", chatFallbackHistory }
+              }), {
+                status: 200,
+                headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+              });
+            }
+          }
+        } catch (dsErr) {
+          console.error("Preferred DeepSeek chat error, falling back to Gemini:", dsErr);
+          chatFallbackHistory.push({ model: "deepseek-v4-pro (preferred)", error: String(dsErr?.message || dsErr) });
+        }
+      }
+
       if (env.GEMINI_API_KEY) {
-        for (const modelName of geminiModels) {
+        for (const modelName of activeModels) {
           const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
           try {
-            // AIコーチチャットは8秒で個別タイムアウト制御
+            // Gemmaは大型モデルのため25秒、標準Flashは8秒でタイムアウト制御
+            const timeoutMs = modelName.includes('gemma') ? 25000 : 8000;
             const response = await fetchWithTimeout(geminiUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -446,7 +532,7 @@ export default {
                 systemInstruction: { parts: [{ text: systemInstruction }] },
                 generationConfig: { maxOutputTokens: 2048 }
               })
-            }, 8000);
+            }, timeoutMs);
 
             if (response.ok) {
               const result = await response.json();
@@ -458,7 +544,7 @@ export default {
                 return new Response(JSON.stringify({
                   success: true,
                   reply,
-                  debugInfo: { workerVersion: "v1.8.0", modelUsed: modelName, chatFallbackHistory }
+                  debugInfo: { workerVersion: "v1.9.0", modelUsed: modelName, chatFallbackHistory }
                 }), {
                   status: 200,
                   headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
