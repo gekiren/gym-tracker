@@ -195,21 +195,33 @@ ${contextStr}`;
 
     try {
       addLog('マイクストリームの初期化を開始...');
-      const audioConstraints: MediaTrackConstraints = {
-        channelCount: 1,
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      };
-      
-      if (deviceId) {
-        audioConstraints.deviceId = { exact: deviceId };
-        addLog(`指定されたマイクデバイスを使用します: ${deviceId}`);
+      let stream: MediaStream;
+      try {
+        const audioConstraints: MediaTrackConstraints = {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        };
+        
+        if (deviceId && deviceId !== 'default' && deviceId !== '') {
+          audioConstraints.deviceId = { exact: deviceId };
+          addLog(`指定されたマイクデバイスを使用します: ${deviceId}`);
+        } else {
+          addLog('標準マイクを使用します');
+        }
+
+        if (!navigator?.mediaDevices?.getUserMedia) {
+          throw new Error('お使いのブラウザまたは接続環境（非HTTPS等）ではマイクがサポートされていません。');
+        }
+
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: audioConstraints,
+        });
+      } catch (err: any) {
+        addLog(`マイク初期取得失敗 (${err.message}) -> 基本設定(audio: true)で再試行中...`);
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: audioConstraints,
-      });
       micStreamRef.current = stream;
 
       const AudioCtx =
