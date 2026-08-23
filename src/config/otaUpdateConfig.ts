@@ -11,7 +11,7 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.96',
+  version: '1.8.97',
   title: {
     ja: '🎙️ 音声AIアシスタントのデータ一括保存機能改善',
     en: '🎙️ Improved AI Assistant Data Sync & Storage',
