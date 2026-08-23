@@ -9,6 +9,7 @@ export interface DayLifelogData {
   timeLogs: any[];
   habitLogs: any[];
   routineLogs?: any[];
+  bodyCompositionLog?: any;
 }
 
 export interface ExerciseHistoryItem {
@@ -191,7 +192,8 @@ export const formatDailyLogToObsidianMarkdown = (
   waterLogs: any[],
   timeLogs: any[],
   habitLogs: any[],
-  routineLogs?: any[]
+  routineLogs?: any[],
+  bodyCompositionLog?: any
 ): string => {
   let md = `## 🏋️ TreNote Log (${dateStr})\n\n`;
 
@@ -259,6 +261,10 @@ export const formatDailyLogToObsidianMarkdown = (
       }
     });
     md += `\n`;
+  }
+
+  if (bodyCompositionLog && bodyCompositionLog.memo) {
+    md += `### 📝 雑記・体調メモ\n\n${bodyCompositionLog.memo}\n\n`;
   }
 
   return md;
@@ -361,7 +367,17 @@ export const fetchDayLifelogData = async (
     }
   }
 
-  return { workouts, waterLogs, timeLogs, habitLogs, routineLogs };
+  let bodyCompositionLog: any = null;
+  const bodyLogs = await conn.getAllAsync<any>('SELECT * FROM body_composition_logs');
+  const matchedBodyLog = bodyLogs.find(b => {
+    const bDateISO = normalizeToDateISO(b.date);
+    return bDateISO === targetDateISO;
+  });
+  if (matchedBodyLog) {
+    bodyCompositionLog = matchedBodyLog;
+  }
+
+  return { workouts, waterLogs, timeLogs, habitLogs, routineLogs, bodyCompositionLog };
 };
 
 /**

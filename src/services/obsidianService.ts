@@ -530,7 +530,7 @@ export const syncLifelogToObsidian = async (force: boolean = false): Promise<boo
       await writeOrAppendFileToVault(habitsFolderUri, `${todayStr}_habits.md`, habitMd, false, settings.vaultUri);
     }
 
-    if (dayData.workouts.length > 0 || (dayData.routineLogs && dayData.routineLogs.length > 0)) {
+    if (dayData.workouts.length > 0 || (dayData.routineLogs && dayData.routineLogs.length > 0) || dayData.bodyCompositionLog) {
       hasAnyData = true;
     }
 
@@ -544,7 +544,8 @@ export const syncLifelogToObsidian = async (force: boolean = false): Promise<boo
       dayData.waterLogs,
       dayData.timeLogs,
       dayData.habitLogs,
-      dayData.routineLogs
+      dayData.routineLogs,
+      dayData.bodyCompositionLog
     );
     let success = false;
 
@@ -767,7 +768,8 @@ export const exportAllDataToObsidian = async (): Promise<ObsidianExportResult> =
         dayData.waterLogs,
         dayData.timeLogs,
         dayData.habitLogs,
-        dayData.routineLogs
+        dayData.routineLogs,
+        dayData.bodyCompositionLog
       );
 
       let success = false;
