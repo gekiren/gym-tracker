@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "ai-companion-web",
-  "compatibility_date": "2026-08-20",
+  "compatibility_date": "2026-08-20", "main": "src/worker.ts",
   "observability": {
     "enabled": true
   },

@@ -10,7 +10,6 @@ import {
   Droplets,
   Utensils,
   BookOpen,
-  Key,
   Volume2,
   Trash2,
   Copy,
@@ -93,17 +92,11 @@ export default function App() {
     sendTextMessage,
     setExtractedData,
   } = useGeminiLive({
-    apiKey,
     initialContext,
     voiceName,
     modelName,
   });
 
-  useEffect(() => {
-    if (apiKey) {
-      localStorage.setItem('gemini_api_key', apiKey);
-    }
-  }, [apiKey]);
 
   const handleClearData = () => {
     setExtractedData({
@@ -141,19 +134,7 @@ export default function App() {
           </div>
         </div>
 
-        <div style={styles.headerRight}>
-          <button
-            style={styles.iconButton}
-            onClick={() => setShowKeyInput(!showKeyInput)}
-            title="APIキー設定"
-          >
-            <Key size={18} color={apiKey ? '#10b981' : '#f59e0b'} />
-            <span style={{ fontSize: 13, marginLeft: 6 }}>
-              {apiKey ? 'API Key 設定済' : 'API Key 未設定'}
-            </span>
-          </button>
-        </div>
-      </header>
+        </header>
 
       {!isSecureContextSupported && (
         <div style={{ backgroundColor: '#7f1d1d', color: '#fecaca', padding: '12px 16px', borderRadius: 8, margin: '12px 20px 0 20px', fontSize: 13, lineHeight: 1.5, border: '1px solid #ef4444' }}>

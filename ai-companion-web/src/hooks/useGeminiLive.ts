@@ -15,18 +15,13 @@ import {
   PCMStreamPlayer,
 } from '../utils/audioUtils';
 
-const GEMINI_LIVE_URL =
-  'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
-
 interface UseGeminiLiveOptions {
-  apiKey: string;
   initialContext?: InitialContext;
   voiceName?: string;
   modelName?: string;
 }
 
 export function useGeminiLive({
-  apiKey,
   initialContext,
   voiceName = 'Aoede',
   modelName = 'models/gemini-3.1-flash-live-preview',
@@ -372,11 +367,6 @@ ${contextStr}`;
   // 接続処理
   const connect = useCallback(async (deviceId?: string) => {
     isExplicitDisconnectRef.current = false;
-    const trimmedKey = apiKey.trim();
-    if (!trimmedKey) {
-      setStatusText('Gemini APIキーを入力してください');
-      return;
-    }
 
     setIsConnecting(true);
     setStatusText('接続中...');
@@ -386,8 +376,10 @@ ${contextStr}`;
     await startMicStreaming(deviceId);
 
     try {
-      const url = `${GEMINI_LIVE_URL}?key=${trimmedKey}`;
-      console.log('Gemini Live へ接続試行中...', url);
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const url = `${wsProtocol}//${window.location.host}/api/gemini-ws`;
+      
+      console.log('Gemini Live API (Proxy) へ接続試行中...', url);
       const ws = new WebSocket(url);
       wsRef.current = ws;
 
@@ -597,7 +589,7 @@ ${contextStr}`;
       setStatusText(`接続に失敗しました: ${err?.message || err}`);
       setIsConnecting(false);
     }
-  }, [apiKey, buildSystemInstruction, functionDeclarations, modelName, startMicStreaming, stopMicStreaming, voiceName]);
+  }, [buildSystemInstruction, functionDeclarations, modelName, startMicStreaming, stopMicStreaming, voiceName]);
 
   // 切断処理
   const disconnect = useCallback(() => {
