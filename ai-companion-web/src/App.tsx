@@ -204,7 +204,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Control Banner */}
+      {/* 1. 接続状態 (Control Banner) */}
       <div style={styles.controlBanner} className="res-banner">
         <div style={styles.statusSection} className="res-status-section">
           <div>
@@ -334,281 +334,245 @@ export default function App() {
         </div>
       </div>
 
-      {/* Main Grid */}
-      <div style={styles.mainGrid} className="res-grid">
-        {/* Left Column: Live Audio Chat Visualizer & Context */}
-        <div style={styles.leftCol}>
-          {/* App Context Preview */}
-          <div style={styles.card}>
-            <h2 style={styles.cardTitle}>
-              <Smartphone size={16} color="#ff6b00" />
-              TreNote アプリからの前提データ
-            </h2>
-            <div style={styles.contextGrid}>
-              <div style={styles.contextItem}>
-                <span style={styles.contextLabel}>前回のトレーニング:</span>
-                <span style={styles.contextVal}>
-                  {initialContext.lastWorkout || '記録なし'}
-                </span>
-              </div>
-              <div style={styles.contextItem}>
-                <span style={styles.contextLabel}>今日の水分:</span>
-                <span style={styles.contextVal}>
-                  {initialContext.currentWaterMl || 0}ml / 目標 {initialContext.waterGoalMl || 2000}ml
-                </span>
-              </div>
-              <div style={styles.contextItem}>
-                <span style={styles.contextLabel}>体重:</span>
-                <span style={styles.contextVal}>
-                  {initialContext.bodyWeight ? `${initialContext.bodyWeight} kg` : '未設定'}
-                </span>
-              </div>
+      {/* 2. 対話ログ (Chat / Interaction Log) */}
+      <div style={styles.card}>
+        <h2 style={styles.cardTitle}>
+          <Volume2 size={16} color="#ff6b00" />
+          リアルタイム対話ログ
+        </h2>
+        <div style={styles.chatLog}>
+          {messages.length === 0 ? (
+            <div style={styles.emptyText}>
+              {isConnected
+                ? 'AIがあなたの声をお待ちしています。「ベンチプレス100kg10回やった」「水500ml飲んだ」など自由に話しかけてください。'
+                : '「音声対話を開始」ボタンを押すと、ハンズフリーで会話がスタートします。'}
             </div>
-          </div>
-
-          {/* Chat / Interaction Log */}
-          <div style={{ ...styles.card, flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <h2 style={styles.cardTitle}>
-              <Volume2 size={16} color="#ff6b00" />
-              リアルタイム対話ログ
-            </h2>
-            <div style={styles.chatLog}>
-              {messages.length === 0 ? (
-                <div style={styles.emptyText}>
-                  {isConnected
-                    ? 'AIがあなたの声をお待ちしています。「ベンチプレス100kg10回やった」「水500ml飲んだ」など自由に話しかけてください。'
-                    : '「音声対話を開始」ボタンを押すと、ハンズフリーで会話がスタートします。'}
-                </div>
-              ) : (
-                messages.map((m) => (
-                  <div
-                    key={m.id}
-                    style={{
-                      ...styles.chatBubble,
-                      alignSelf: m.sender === 'user' ? 'flex-end' : 'flex-start',
-                      backgroundColor:
-                        m.sender === 'user' ? themeTokens.accent : themeTokens.cardSubtle,
-                      border: m.sender === 'user' ? 'none' : `1px solid ${themeTokens.borderSubtle}`,
-                    }}
-                  >
-                    <div style={styles.bubbleSender}>
-                      {m.sender === 'user' ? 'あなた' : 'TreNote AI'}
-                    </div>
-                    <div style={{ color: '#ffffff' }}>{m.text}</div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Text Input Fallback / Test Form */}
-            {isConnected && (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (inputMessage.trim()) {
-                    sendTextMessage(inputMessage);
-                    setInputMessage('');
-                  }
-                }}
+          ) : (
+            messages.map((m) => (
+              <div
+                key={m.id}
                 style={{
-                  display: 'flex',
-                  gap: 8,
-                  marginTop: 12,
-                  paddingTop: 12,
-                  borderTop: `1px solid ${themeTokens.border}`,
+                  ...styles.chatBubble,
+                  alignSelf: m.sender === 'user' ? 'flex-end' : 'flex-start',
+                  backgroundColor:
+                    m.sender === 'user' ? themeTokens.accent : themeTokens.cardSubtle,
+                  border: m.sender === 'user' ? 'none' : `1px solid ${themeTokens.borderSubtle}`,
                 }}
               >
-                <input
-                  type="text"
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  placeholder="テキストでも話しかけられます（例: ベンチ100kg10回3セット）"
-                  style={{
-                    flex: 1,
-                    backgroundColor: themeTokens.inputBg,
-                    border: `1px solid ${themeTokens.border}`,
-                    borderRadius: 8,
-                    padding: '8px 12px',
-                    color: themeTokens.text,
-                    fontSize: 13,
-                  }}
-                />
-                <button
-                  type="submit"
-                  disabled={!inputMessage.trim()}
-                  style={{
-                    backgroundColor: themeTokens.accent,
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '8px 14px',
-                    fontWeight: 600,
-                    fontSize: 13,
-                    cursor: inputMessage.trim() ? 'pointer' : 'default',
-                    opacity: inputMessage.trim() ? 1 : 0.5,
-                  }}
-                >
-                  送信
-                </button>
-              </form>
-            )}
-          </div>
+                <div style={styles.bubbleSender}>
+                  {m.sender === 'user' ? 'あなた' : 'TreNote AI'}
+                </div>
+                <div style={{ color: '#ffffff' }}>{m.text}</div>
+              </div>
+            ))
+          )}
         </div>
 
-        {/* Right Column: Extracted Data (TreNote Sync Preview) */}
-        <div style={styles.rightCol}>
-          <div style={styles.card}>
-            <div style={styles.cardHeader}>
-              <h2 style={styles.cardTitle}>
-                <BookOpen size={16} color={themeTokens.primary} />
-                自動抽出データ（TreNote 転送プレビュー）
-              </h2>
-              {hasData && (
-                <button
-                  style={styles.clearButton}
-                  onClick={handleClearData}
-                  title="クリア"
-                >
-                  <Trash2 size={14} />
-                  <span>クリア</span>
-                </button>
-              )}
+        {/* Text Input Fallback / Test Form */}
+        {isConnected && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (inputMessage.trim()) {
+                sendTextMessage(inputMessage);
+                setInputMessage('');
+              }
+            }}
+            style={{
+              display: 'flex',
+              gap: 8,
+              marginTop: 12,
+              paddingTop: 12,
+              borderTop: `1px solid ${themeTokens.border}`,
+            }}
+          >
+            <input
+              type="text"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              placeholder="テキストでも話しかけられます（例: ベンチ100kg10回3セット）"
+              style={{
+                flex: 1,
+                backgroundColor: themeTokens.inputBg,
+                border: `1px solid ${themeTokens.border}`,
+                borderRadius: 8,
+                padding: '8px 12px',
+                color: themeTokens.text,
+                fontSize: 13,
+              }}
+            />
+            <button
+              type="submit"
+              disabled={!inputMessage.trim()}
+              style={{
+                backgroundColor: themeTokens.accent,
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 8,
+                padding: '8px 14px',
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: inputMessage.trim() ? 'pointer' : 'default',
+                opacity: inputMessage.trim() ? 1 : 0.5,
+              }}
+            >
+              送信
+            </button>
+          </form>
+        )}
+      </div>
+
+      {/* 3. 自動抽出データ (Extracted Data - TreNote Sync Preview) */}
+      <div style={styles.card}>
+        <div style={styles.cardHeader}>
+          <h2 style={styles.cardTitle}>
+            <BookOpen size={16} color={themeTokens.primary} />
+            自動抽出データ（TreNote 転送プレビュー）
+          </h2>
+          {hasData && (
+            <button
+              style={styles.clearButton}
+              onClick={handleClearData}
+              title="クリア"
+            >
+              <Trash2 size={14} />
+              <span>クリア</span>
+            </button>
+          )}
+        </div>
+
+        <p style={styles.cardDesc}>
+          会話の中から自動的に検出・構造化された記録です。
+        </p>
+
+        <div style={styles.extractedList}>
+          {/* Workouts */}
+          {extractedData.workouts.map((w) => (
+            <div key={w.id} style={styles.dataCard}>
+              <div style={styles.dataCardIcon}>
+                <Dumbbell size={18} color="#ff6b00" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={styles.dataCardTitle}>{w.exercise_name}</div>
+                <div style={styles.dataCardDetails}>
+                  {w.weight_kg !== undefined && `${w.weight_kg}kg `}
+                  {w.reps !== undefined && `× ${w.reps}回 `}
+                  {w.sets !== undefined && `(${w.sets}セット)`}
+                  {w.notes && ` - ${w.notes}`}
+                </div>
+              </div>
+              <span style={styles.badge}>筋トレ</span>
             </div>
+          ))}
 
-            <p style={styles.cardDesc}>
-              会話の中から自動的に検出・構造化された記録です。
-            </p>
-
-            <div style={styles.extractedList}>
-              {/* Workouts */}
-              {extractedData.workouts.map((w) => (
-                <div key={w.id} style={styles.dataCard}>
-                  <div style={styles.dataCardIcon}>
-                    <Dumbbell size={18} color="#ff6b00" />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={styles.dataCardTitle}>{w.exercise_name}</div>
-                    <div style={styles.dataCardDetails}>
-                      {w.weight_kg !== undefined && `${w.weight_kg}kg `}
-                      {w.reps !== undefined && `× ${w.reps}回 `}
-                      {w.sets !== undefined && `(${w.sets}セット)`}
-                      {w.notes && ` - ${w.notes}`}
-                    </div>
-                  </div>
-                  <span style={styles.badge}>筋トレ</span>
+          {/* Waters */}
+          {extractedData.waters.map((wt) => (
+            <div key={wt.id} style={styles.dataCard}>
+              <div style={styles.dataCardIcon}>
+                <Droplets size={18} color="#4facfe" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={styles.dataCardTitle}>水分摂取</div>
+                <div style={styles.dataCardDetails}>
+                  +{wt.amount_ml} ml
+                  {wt.has_caffeine ? '（カフェイン有）' : ''}
                 </div>
-              ))}
-
-              {/* Waters */}
-              {extractedData.waters.map((wt) => (
-                <div key={wt.id} style={styles.dataCard}>
-                  <div style={styles.dataCardIcon}>
-                    <Droplets size={18} color="#4facfe" />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={styles.dataCardTitle}>水分摂取</div>
-                    <div style={styles.dataCardDetails}>
-                      +{wt.amount_ml} ml
-                      {wt.has_caffeine ? '（カフェイン有）' : ''}
-                    </div>
-                  </div>
-                  <span style={{ ...styles.badge, backgroundColor: 'rgba(79, 172, 254, 0.15)', color: '#4facfe', borderColor: 'rgba(79, 172, 254, 0.3)' }}>
-                    水分
-                  </span>
-                </div>
-              ))}
-
-              {/* Meals */}
-              {extractedData.meals.map((m) => (
-                <div key={m.id} style={styles.dataCard}>
-                  <div style={styles.dataCardIcon}>
-                    <Utensils size={18} color="#4cd964" />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={styles.dataCardTitle}>{m.meal_name}</div>
-                    <div style={styles.dataCardDetails}>
-                      {m.calories ? `${m.calories} kcal ` : ''}
-                      {m.protein ? `(P: ${m.protein}g)` : ''}
-                    </div>
-                  </div>
-                  <span style={{ ...styles.badge, backgroundColor: 'rgba(76, 217, 100, 0.15)', color: '#4cd964', borderColor: 'rgba(76, 217, 100, 0.3)' }}>
-                    食事
-                  </span>
-                </div>
-              ))}
-
-              {/* Daily Notes */}
-              {extractedData.dailyNotes.map((n) => (
-                <div key={n.id} style={styles.dataCard}>
-                  <div style={styles.dataCardIcon}>
-                    <BookOpen size={18} color="#a78bfa" />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={styles.dataCardTitle}>デイリーノート</div>
-                    <div style={styles.dataCardDetails}>
-                      {n.condition && `【体調】${n.condition}\n`}
-                      {n.summary}
-                    </div>
-                  </div>
-                  <span style={{ ...styles.badge, backgroundColor: 'rgba(167, 139, 250, 0.15)', color: '#a78bfa', borderColor: 'rgba(167, 139, 250, 0.3)' }}>
-                    日記
-                  </span>
-                </div>
-              ))}
-
-              {!hasData && (
-                <div style={styles.emptyDataBox}>
-                  まだデータが記録されていません。音声でトレーニングや水分・食事の内容を伝えてみてください。
-                </div>
-              )}
+              </div>
+              <span style={{ ...styles.badge, backgroundColor: 'rgba(79, 172, 254, 0.15)', color: '#4facfe', borderColor: 'rgba(79, 172, 254, 0.3)' }}>
+                水分
+              </span>
             </div>
+          ))}
 
-            {/* Sync Action Area */}
-            <div style={styles.syncActionBox}>
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (!hasData) return;
-                  
-                  // ReactNative の WebView 環境かをチェック
-                  if (window.ReactNativeWebView) {
-                    const payload = JSON.stringify({
-                      type: 'SYNC_DATA',
-                      version: '1.0',
-                      timestamp: Date.now(),
-                      data: extractedData
-                    });
-                    window.ReactNativeWebView.postMessage(payload);
-                  } else {
-                    alert('この機能はTreNoteアプリ内でのみ利用可能です。');
-                  }
-                }}
-                style={{
-                  ...styles.syncButton,
-                  opacity: hasData ? 1 : 0.4,
-                  pointerEvents: hasData ? 'auto' : 'none',
-                }}
-              >
-                <Smartphone size={18} />
-                <span>TreNote アプリに保存</span>
-              </a>
-
-              <button
-                style={styles.copyButton}
-                onClick={handleCopyJson}
-                disabled={!hasData}
-              >
-                {copied ? <Check size={16} /> : <Copy size={16} />}
-                <span>{copied ? '完了' : 'JSON'}</span>
-              </button>
+          {/* Meals */}
+          {extractedData.meals.map((m) => (
+            <div key={m.id} style={styles.dataCard}>
+              <div style={styles.dataCardIcon}>
+                <Utensils size={18} color="#4cd964" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={styles.dataCardTitle}>{m.meal_name}</div>
+                <div style={styles.dataCardDetails}>
+                  {m.calories ? `${m.calories} kcal ` : ''}
+                  {m.protein ? `(P: ${m.protein}g)` : ''}
+                </div>
+              </div>
+              <span style={{ ...styles.badge, backgroundColor: 'rgba(76, 217, 100, 0.15)', color: '#4cd964', borderColor: 'rgba(76, 217, 100, 0.3)' }}>
+                食事
+              </span>
             </div>
-          </div>
+          ))}
+
+          {/* Daily Notes */}
+          {extractedData.dailyNotes.map((n) => (
+            <div key={n.id} style={styles.dataCard}>
+              <div style={styles.dataCardIcon}>
+                <BookOpen size={18} color="#a78bfa" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={styles.dataCardTitle}>デイリーノート</div>
+                <div style={styles.dataCardDetails}>
+                  {n.condition && `【体調】${n.condition}\n`}
+                  {n.summary}
+                </div>
+              </div>
+              <span style={{ ...styles.badge, backgroundColor: 'rgba(167, 139, 250, 0.15)', color: '#a78bfa', borderColor: 'rgba(167, 139, 250, 0.3)' }}>
+                日記
+              </span>
+            </div>
+          ))}
+
+          {!hasData && (
+            <div style={styles.emptyDataBox}>
+              まだデータが記録されていません。音声でトレーニングや水分・食事の内容を伝えてみてください。
+            </div>
+          )}
+        </div>
+
+        {/* Sync Action Area */}
+        <div style={styles.syncActionBox}>
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              if (!hasData) return;
+              
+              // ReactNative の WebView 環境かをチェック
+              if (window.ReactNativeWebView) {
+                const payload = JSON.stringify({
+                  type: 'SYNC_DATA',
+                  version: '1.0',
+                  timestamp: Date.now(),
+                  data: extractedData
+                });
+                window.ReactNativeWebView.postMessage(payload);
+              } else {
+                alert('この機能はTreNoteアプリ内でのみ利用可能です。');
+              }
+            }}
+            style={{
+              ...styles.syncButton,
+              opacity: hasData ? 1 : 0.4,
+              pointerEvents: hasData ? 'auto' : 'none',
+            }}
+          >
+            <Smartphone size={18} />
+            <span>TreNote アプリに保存</span>
+          </a>
+
+          <button
+            style={styles.copyButton}
+            onClick={handleCopyJson}
+            disabled={!hasData}
+          >
+            {copied ? <Check size={16} /> : <Copy size={16} />}
+            <span>{copied ? '完了' : 'JSON'}</span>
+          </button>
         </div>
       </div>
 
-      {/* Debug Logs Footer Card */}
-      <div style={{ ...styles.card, marginTop: 12 }}>
+      {/* 4. 動作ログ (Debug Logs Footer Card) */}
+      <div style={{ ...styles.card, marginTop: 4 }}>
         <div
           style={{
             display: 'flex',
@@ -664,7 +628,7 @@ const getStyles = (colors: ThemeColors): { [key: string]: React.CSSProperties } 
   container: {
     display: 'flex',
     flexDirection: 'column',
-    gap: 16,
+    gap: 14,
     backgroundColor: colors.background,
     minHeight: '100vh',
   },
@@ -672,7 +636,7 @@ const getStyles = (colors: ThemeColors): { [key: string]: React.CSSProperties } 
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 14,
+    paddingBottom: 12,
     borderBottom: `1px solid ${colors.border}`,
   },
   headerLeft: {
@@ -780,21 +744,6 @@ const getStyles = (colors: ThemeColors): { [key: string]: React.CSSProperties } 
     fontWeight: 600,
     cursor: 'pointer',
   },
-  mainGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1.1fr 1fr',
-    gap: 16,
-    minHeight: 480,
-  },
-  leftCol: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 16,
-  },
-  rightCol: {
-    display: 'flex',
-    flexDirection: 'column',
-  },
   card: {
     backgroundColor: colors.card,
     borderRadius: 12,
@@ -832,43 +781,20 @@ const getStyles = (colors: ThemeColors): { [key: string]: React.CSSProperties } 
     fontSize: 12,
     cursor: 'pointer',
   },
-  contextGrid: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 6,
-    marginTop: 10,
-  },
-  contextItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: 13,
-    backgroundColor: colors.cardSubtle,
-    padding: '8px 12px',
-    borderRadius: 8,
-    border: `1px solid ${colors.borderSubtle}`,
-  },
-  contextLabel: {
-    color: colors.textMuted,
-  },
-  contextVal: {
-    color: colors.text,
-    fontWeight: 600,
-  },
   chatLog: {
-    flex: 1,
     display: 'flex',
     flexDirection: 'column',
     gap: 10,
-    marginTop: 12,
-    maxHeight: 320,
+    marginTop: 10,
+    maxHeight: 240,
     overflowY: 'auto',
-    paddingRight: 6,
+    paddingRight: 4,
   },
   emptyText: {
     fontSize: 13,
     color: colors.textMuted,
     textAlign: 'center',
-    padding: '40px 16px',
+    padding: '24px 16px',
     lineHeight: 1.6,
   },
   chatBubble: {
@@ -889,9 +815,9 @@ const getStyles = (colors: ThemeColors): { [key: string]: React.CSSProperties } 
     display: 'flex',
     flexDirection: 'column',
     gap: 10,
-    maxHeight: 360,
+    maxHeight: 280,
     overflowY: 'auto',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   dataCard: {
     display: 'flex',
@@ -932,7 +858,7 @@ const getStyles = (colors: ThemeColors): { [key: string]: React.CSSProperties } 
   },
   emptyDataBox: {
     textAlign: 'center',
-    padding: '40px 16px',
+    padding: '28px 16px',
     fontSize: 13,
     color: colors.textMuted,
     backgroundColor: colors.cardSubtle,
@@ -942,7 +868,7 @@ const getStyles = (colors: ThemeColors): { [key: string]: React.CSSProperties } 
   syncActionBox: {
     display: 'flex',
     gap: 10,
-    paddingTop: 14,
+    paddingTop: 12,
     borderTop: `1px solid ${colors.border}`,
   },
   syncButton: {
