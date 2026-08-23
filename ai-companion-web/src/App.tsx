@@ -200,8 +200,6 @@ export default function App() {
               >
                 <option value="models/gemini-3.1-flash-live-preview">Gemini 3.1 Flash Live (最新・推奨)</option>
                 <option value="models/gemini-2.5-flash-native-audio-preview-12-2025">Gemini 2.5 Flash Native Audio</option>
-                <option value="gemini-3.1-flash-live-preview">Gemini 3.1 Flash Live (prefix無)</option>
-                <option value="gemini-2.5-flash-native-audio-preview-12-2025">Gemini 2.5 Flash Native Audio (prefix無)</option>
               </select>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} className="res-select-group">
