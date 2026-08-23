@@ -30,14 +30,16 @@ export function useFeatureSwipe(currentPath: string) {
   const currentIndex = sequence.indexOf(currentPath);
 
   const onSwipeLeft = () => {
-    if (currentIndex !== -1 && currentIndex < sequence.length - 1) {
-      router.replace(sequence[currentIndex + 1] as any);
+    if (currentIndex !== -1 && sequence.length > 1) {
+      const nextIndex = (currentIndex + 1) % sequence.length;
+      router.replace(sequence[nextIndex] as any);
     }
   };
 
   const onSwipeRight = () => {
-    if (currentIndex !== -1 && currentIndex > 0) {
-      router.replace(sequence[currentIndex - 1] as any);
+    if (currentIndex !== -1 && sequence.length > 1) {
+      const prevIndex = (currentIndex - 1 + sequence.length) % sequence.length;
+      router.replace(sequence[prevIndex] as any);
     }
   };
 
