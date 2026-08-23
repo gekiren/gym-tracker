@@ -108,9 +108,11 @@ export async function processAndSaveCompanionData(payload: any): Promise<SyncRes
     }
 
     if (newExercises.length > 0) {
-      const nowTime = new Date().toISOString();
-      const pastTime = new Date(Date.now() - 3600000).toISOString();
-      await saveWorkout('AI記録ワークアウト', pastTime, nowTime, null, newExercises);
+      const firstTs = Number(payload.workouts[0]?.timestamp) || (Date.now() - 1800000);
+      const endTs = Date.now();
+      const startTime = new Date(firstTs).toISOString();
+      const endTime = new Date(endTs).toISOString();
+      await saveWorkout('AI記録ワークアウト', startTime, endTime, null, newExercises);
       workoutCount++;
     }
   }
@@ -163,11 +165,27 @@ export async function processAndSaveCompanionData(payload: any): Promise<SyncRes
       .map((item: any) => (typeof item === 'string' ? item.trim() : item?.memory_item?.trim()))
       .filter(Boolean);
     if (newItems.length > 0) {
-      const updatedMemory = currentMemory
-        ? `${currentMemory}\n${newItems.join('\n')}`
-        : newItems.join('\n');
-      useSettingsStore.getState().setAiCompanionMemory(updatedMemory);
-      memoryCount = newItems.length;
+      const MEMORY_MAX_CHARS = 5000;
+      // 重複排除: 既存メモリに含まれている行は追記しない
+      const existingLines = new Set(
+        currentMemory.split('\n').map((l: string) => l.trim()).filter(Boolean)
+      );
+      const deduped = newItems.filter((item: string) => !existingLines.has(item.trim()));
+      if (deduped.length > 0) {
+        const combined = currentMemory
+          ? `${currentMemory}\n${deduped.join('\n')}`
+          : deduped.join('\n');
+        // 5000字を超えた場合は古い記憶を先頭から切り捨て
+        let finalMemory = combined;
+        if (combined.length > MEMORY_MAX_CHARS) {
+          const sliced = combined.slice(combined.length - MEMORY_MAX_CHARS);
+          // 行の途中から始まらないよう、最初の改行以降から使用
+          const firstNewline = sliced.indexOf('\n');
+          finalMemory = firstNewline >= 0 ? sliced.slice(firstNewline + 1) : sliced;
+        }
+        useSettingsStore.getState().setAiCompanionMemory(finalMemory);
+        memoryCount = deduped.length;
+      }
     }
   }
 
