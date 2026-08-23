@@ -39,10 +39,10 @@ export default function App() {
       }
     } catch (_) {}
     return {
-      lastWorkout: 'ベンチプレス 90kg 10reps x 3sets',
-      currentWaterMl: 400,
+      lastWorkout: null,
+      currentWaterMl: 0,
       waterGoalMl: 2000,
-      bodyWeight: 72.5,
+      bodyWeight: null,
       date: new Date().toISOString().split('T')[0],
     };
   });
@@ -283,20 +283,19 @@ export default function App() {
               <div style={styles.contextItem}>
                 <span style={styles.contextLabel}>前回のトレーニング:</span>
                 <span style={styles.contextVal}>
-                  {initialContext.lastWorkout || 'なし'}
+                  {initialContext.lastWorkout || '記録なし'}
                 </span>
               </div>
               <div style={styles.contextItem}>
                 <span style={styles.contextLabel}>今日の水分:</span>
                 <span style={styles.contextVal}>
-                  {initialContext.currentWaterMl}ml / 目標
-                  {initialContext.waterGoalMl}ml
+                  {initialContext.currentWaterMl || 0}ml / 目標 {initialContext.waterGoalMl || 2000}ml
                 </span>
               </div>
               <div style={styles.contextItem}>
                 <span style={styles.contextLabel}>体重:</span>
                 <span style={styles.contextVal}>
-                  {initialContext.bodyWeight} kg
+                  {initialContext.bodyWeight ? `${initialContext.bodyWeight} kg` : '未設定'}
                 </span>
               </div>
             </div>

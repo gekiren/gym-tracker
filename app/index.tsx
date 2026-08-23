@@ -64,6 +64,7 @@ export default function DashboardScreen() {
 
   // 音声AIアシスタント
   const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
+  const [aiCompanionUrl, setAiCompanionUrl] = useState('https://ai-companion-web.toshi-diyil.workers.dev');
 
   const handleOpenVoiceAssistant = async () => {
     if (Platform.OS === 'android') {
@@ -85,6 +86,16 @@ export default function DashboardScreen() {
         console.warn('Mic permission error', err);
       }
     }
+
+    const contextData = {
+      lastWorkout: lastWorkoutSummary ? `${lastWorkoutSummary.title || 'トレーニング'} (${lastWorkoutSummary.dateStr}) 計${lastWorkoutSummary.totalSets}セット` : null,
+      currentWaterMl: daySummary?.water.amount || 0,
+      waterGoalMl: daySummary?.water.goal || 2000,
+      bodyWeight: settings.bodyWeight || null,
+      date: getTodayStr(),
+    };
+    
+    setAiCompanionUrl(`https://ai-companion-web.toshi-diyil.workers.dev?context=${encodeURIComponent(JSON.stringify(contextData))}`);
     setShowVoiceAssistant(true);
   };
 
@@ -760,7 +771,7 @@ export default function DashboardScreen() {
             <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 17, flex: 1 }}>音声AIアシスタント</Text>
           </View>
           <WebView
-            source={{ uri: 'https://ai-companion-web.toshi-diyil.workers.dev' }}
+            source={{ uri: aiCompanionUrl }}
             style={{ flex: 1, backgroundColor: '#000' }}
             allowsInlineMediaPlayback={true}
             mediaPlaybackRequiresUserAction={false}
