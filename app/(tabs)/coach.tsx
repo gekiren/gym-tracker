@@ -22,10 +22,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { AI_CONFIG } from '../../src/config/aiConfig';
 import * as Updates from 'expo-updates';
 import { WebView } from 'react-native-webview';
-import { saveWorkout } from '../../src/db/repositories/workoutRepository';
-import { getExercises, addCustomExercise } from '../../src/db/repositories/exerciseRepository';
-import { addWaterLog, addTimeLog } from '../../src/db/repositories/lifelogRepository';
-import { addMealLog } from '../../src/db/repositories/nutritionRepository';
+import { handleCompanionWebViewMessage } from '../../src/services/aiCompanionSyncService';
 import { Alert } from 'react-native';
 
 
@@ -66,75 +63,10 @@ export default function CoachScreen() {
   const [activeTab, setActiveTab] = useState<'text' | 'live'>('live'); // ライブモードをデフォルトに
   const webViewRef = useRef<WebView>(null);
 
-  const handleWebViewMessage = async (event: any) => {
-    try {
-      const data = JSON.parse(event.nativeEvent.data);
-      if (data.type === 'SYNC_DATA') {
-        const payload = data.data;
-        Alert.alert(
-          'データ一括保存',
-          'AIコンパニオンからデータを受信しました。保存しますか？',
-          [
-            { text: 'キャンセル', style: 'cancel' },
-            { 
-              text: '保存', 
-              onPress: async () => {
-                try {
-                  let saveCount = 0;
-                  // 水分
-                  for (const w of payload.waters || []) {
-                    if (w.amount_ml) { await addWaterLog(w.amount_ml, w.has_caffeine || false); saveCount++; }
-                  }
-                  // 食事
-                  for (const m of payload.meals || []) {
-                    if (m.food_name) { await addMealLog(m.food_name, m.calories || 0, m.protein_g, m.fat_g, m.carbs_g); saveCount++; }
-                  }
-                  // ワークアウト
-                  for (const w of payload.workouts || []) {
-                    const workoutId = `workout_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                    const existingExercises = await getExercises();
-                    const newExercises = [];
-                    for (const we of w.exercises || []) {
-                      let exId = we.exerciseId;
-                      if (!exId && we.name) {
-                        const matched = existingExercises.find(e => e.name.toLowerCase() === we.name.toLowerCase() || e.name_ja?.toLowerCase() === we.name.toLowerCase());
-                        if (matched) exId = matched.id;
-                        else {
-                          exId = `ex_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                          await addCustomExercise({ id: exId, name: we.name, target_muscle_group: 'other' });
-                        }
-                      }
-                      newExercises.push({
-                        id: `we_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                        exerciseId: exId,
-                        orderIndex: newExercises.length,
-                        sets: we.sets?.map((s: any) => ({
-                          id: `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, weight: s.weight || 0, reps: s.reps || 0, isWarmup: false, isCompleted: true
-                        })) || []
-                      });
-                    }
-                    await saveWorkout({ id: workoutId, title: 'AI記録ワークアウト', startTime: Date.now() - 3600000, endTime: Date.now(), status: 'completed', exercises: newExercises });
-                    saveCount++;
-                  }
-                  // メモ
-                  for (const n of payload.dailyNotes || []) {
-                    await addTimeLog('memo', Date.now(), 0, n); saveCount++;
-                  }
-                  Alert.alert('完了', `${saveCount} 件のデータを保存しました！`);
-                } catch (e) {
-                  console.error('Save error:', e); Alert.alert('エラー', '保存中にエラーが発生しました。');
-                }
-              }
-            }
-          ]
-        );
-      }
-    } catch (err) {
-      console.error('WebView msg err', err);
-    }
-  };
-
-
+  const handleWebViewMessage = (event: any) => {
+    handleCompanionWebViewMessage(event);
+  };
+
   // 1. Initialize & load greeting message
   useEffect(() => {
     // Add default welcoming message
@@ -349,7 +281,7 @@ export default function CoachScreen() {
           mediaPlaybackRequiresUserAction={false}
           javaScriptEnabled={true}
           domStorageEnabled={true}
-          onPermissionRequest={(request) => request.grant()}
+          {...({ onPermissionRequest: (request: any) => (request as any)?.grant?.() } as any)}
         />
       ) : (
     <KeyboardAvoidingView

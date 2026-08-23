@@ -4,8 +4,8 @@
   font-weight: 400;
 
   color-scheme: dark;
-  color: #f3f4f6;
-  background-color: #0f172a;
+  color: #ffffff;
+  background-color: #121212;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -24,7 +24,7 @@ body {
   display: flex;
   min-width: 320px;
   min-height: 100vh;
-  background: radial-gradient(circle at top right, #1e293b, #0f172a);
+  background-color: transparent;
 }
 
 #root {
@@ -40,14 +40,14 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: rgba(255, 255, 255, 0.05);
 }
 ::-webkit-scrollbar-thumb {
-  background: #475569;
+  background: #333333;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #555555;
 }
 
 /* Animations */
@@ -68,4 +68,31 @@ body {
 
 .animate-pulse-ring {
   animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* === スマホ向けレイアウト調整 === */
+.res-title { font-size: 20px !important; }
+.res-subtitle { display: block !important; }
+.res-banner { flex-direction: row !important; align-items: center !important; gap: 0 !important; }
+.res-voice-select { flex-wrap: nowrap !important; }
+.res-select { width: auto !important; }
+.res-select-group { width: auto !important; }
+.res-action-btns { flex-direction: row !important; width: auto !important; }
+.res-btn { width: auto !important; justify-content: center !important; }
+.res-grid { grid-template-columns: 1.1fr 1fr !important; min-height: 480px !important; }
+
+@media (max-width: 900px) {
+  #root {
+    max-width: 100%;
+    padding: 10px 10px;
+  }
+  .res-title { font-size: 15px !important; }
+  .res-subtitle { display: none !important; }
+  .res-banner { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; }
+  .res-voice-select { flex-wrap: wrap !important; gap: 8px !important; }
+  .res-select { width: 100% !important; }
+  .res-select-group { width: 100% !important; }
+  .res-action-btns { flex-direction: column !important; width: 100% !important; }
+  .res-btn { width: 100% !important; justify-content: center !important; }
+  .res-grid { grid-template-columns: 1fr !important; min-height: auto !important; }
 }

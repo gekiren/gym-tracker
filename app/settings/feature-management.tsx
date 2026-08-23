@@ -56,9 +56,16 @@ const FEATURE_METAS: Record<FeatureId, FeatureMeta> = {
     icon: 'repeat',
     iconColor: '#4caf50',
   },
+  voice_ai: {
+    id: 'voice_ai',
+    title: '音声AIアシスタント',
+    desc: 'Gemini Live API による音声リアルタイム対話・自動記録',
+    icon: 'mic',
+    iconColor: '#64b4ff',
+  },
 };
 
-const DEFAULT_ORDER: FeatureId[] = ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine'];
+const DEFAULT_ORDER: FeatureId[] = ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'voice_ai'];
 const DEFAULT_VISIBILITY: Record<FeatureId, boolean> = {
   workout: true,
   body: true,
@@ -66,6 +73,7 @@ const DEFAULT_VISIBILITY: Record<FeatureId, boolean> = {
   nutrition: true,
   zikan: true,
   routine: true,
+  voice_ai: true,
 };
 
 export default function FeatureManagementScreen() {

@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.94',
+  version: '1.8.98',
   title: {
-    ja: '⚡ AI食事写真解析の安定性向上 ＆ エラー表示改善',
-    en: '⚡ Enhanced AI Meal Photo Analysis & Error Handling',
+    ja: '🎙️ 音声AIアシスタントをダッシュボードに統合',
+    en: '🎙️ Voice AI Assistant Integrated into Dashboard',
   },
   notes: {
     ja: [
-      '食事写真および栄養成分ラベルのAI解析タイムアウトと安定性を向上しました。',
-      'AI通信エラー発生時の詳細メッセージ表示を改善しました。',
+      '音声AIアシスタント機能をアプリトップのダッシュボードに移設しました。水分・栄養・筋トレと同じ機能カードとして表示されます。',
+      '設定画面の「機能管理」から音声AIアシスタントカードの表示/非表示を切り替えられるようになりました。',
     ],
     en: [
-      'Improved timeout management and stability for AI meal photo analysis.',
-      'Enhanced detailed error messages during AI communication.',
+      'Voice AI Assistant has been moved to the main dashboard alongside water, nutrition, and workout cards.',
+      'You can now toggle the Voice AI Assistant card visibility from Settings > Feature Management.',
     ],
   },
 };

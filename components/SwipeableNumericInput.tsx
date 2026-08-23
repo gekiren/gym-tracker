@@ -11,6 +11,7 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../src/theme';
+import { useIsKeyboardVisible } from '../src/hooks/useKeyboardVisible';
 
 interface SwipeableNumericInputProps {
   label: string;
@@ -36,6 +37,7 @@ export default function SwipeableNumericInput({
   keyboardType = 'numeric',
 }: SwipeableNumericInputProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const isKeyboardVisible = useIsKeyboardVisible();
   const [sel, setSel] = useState<{ start: number; end: number } | undefined>(undefined);
   const inputRef = useRef<TextInput>(null);
 
@@ -71,6 +73,7 @@ export default function SwipeableNumericInput({
 
   // Drag Gesture (Pan)
   const panGesture = Gesture.Pan()
+    .enabled(!isEditing && !isKeyboardVisible)
     .onStart(() => {
       const parsed = parseFloat(value) || 0;
       startValue.value = parsed;

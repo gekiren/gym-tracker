@@ -9,6 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Theme } from '../../src/theme';
+import { useIsKeyboardVisible } from '../../src/hooks/useKeyboardVisible';
 
 export interface CompactSwipeableInputHandle {
   focus: () => void;
@@ -61,6 +62,7 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   keyboardType = 'numeric',
 }, ref) => {
   const [isEditing, setIsEditing] = useState(false);
+  const isKeyboardVisible = useIsKeyboardVisible();
   const localInputRef = useRef<TextInput>(null);
 
   const focusInput = () => {
@@ -115,7 +117,7 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   };
 
   const panGesture = Gesture.Pan()
-    .enabled(!disabled && !isEditing)
+    .enabled(!disabled && !isEditing && !isKeyboardVisible)
     .activeOffsetX([-8, 8])
     .failOffsetY([-12, 12])
     .onStart(() => {

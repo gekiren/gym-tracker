@@ -46,9 +46,10 @@ export interface ChatMessage {
 }
 
 export interface InitialContext {
-  lastWorkout?: string;
+  lastWorkout?: string | null;
   currentWaterMl?: number;
   waterGoalMl?: number;
-  bodyWeight?: number;
+  bodyWeight?: number | null;
+  theme?: 'dark' | 'pureBlack';
   date?: string;
 }
