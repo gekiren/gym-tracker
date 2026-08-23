@@ -192,20 +192,23 @@ export default function App() {
 
       {/* Control Banner */}
       <div style={styles.controlBanner} className="res-banner">
-        <div style={styles.statusSection}>
-          <div
-            style={{
-              ...styles.statusDot,
-              backgroundColor: isConnected
-                ? '#10b981'
-                : isConnecting
-                ? '#f59e0b'
-                : '#64748b',
-              boxShadow: isConnected ? '0 0 12px #10b981' : 'none',
-            }}
-          />
+        <div style={styles.statusSection} className="res-status-section">
           <div>
-            <div style={styles.statusLabel}>{statusText}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div
+                style={{
+                  ...styles.statusDot,
+                  backgroundColor: isConnected
+                    ? '#10b981'
+                    : isConnecting
+                    ? '#f59e0b'
+                    : '#64748b',
+                  boxShadow: isConnected ? '0 0 12px #10b981' : 'none',
+                }}
+              />
+              <div style={styles.statusLabel}>{statusText}</div>
+            </div>
+            
             <div style={styles.voiceSelectWrapper} className="res-voice-select">
               <select
                 value={modelName}
@@ -220,40 +223,43 @@ export default function App() {
                 <option value="gemini-2.5-flash-native-audio-preview-12-2025">Gemini 2.5 Flash Native Audio (prefix無)</option>
               </select>
 
-              <Volume2 size={14} color="#94a3b8" />
-              <select
-                value={voiceName}
-                onChange={(e) => setVoiceName(e.target.value)}
-                disabled={isConnected || isConnecting}
-                style={styles.select}
-                className="res-select"
-              >
-                <option value="Aoede">音声: Aoede (落ち着いた女性)</option>
-                <option value="Puck">音声: Puck (明るい男性)</option>
-                <option value="Charon">音声: Charon (深みのある男性)</option>
-                <option value="Kore">音声: Kore (クリアな女性)</option>
-                <option value="Fenrir">音声: Fenrir (力強い男性)</option>
-              </select>
-            </div>
-            
-            {/* Microphone Selection */}
-            {!isConnected && devices.length > 0 && (
-              <div style={{ ...styles.voiceSelectWrapper, marginTop: 8 }}>
-                <Mic size={14} color="#94a3b8" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} className="res-select-group">
+                <Volume2 size={14} color="#94a3b8" />
                 <select
-                  value={selectedDeviceId}
-                  onChange={(e) => setSelectedDeviceId(e.target.value)}
-                  disabled={isConnecting}
-                  style={{ ...styles.select, width: '100%', maxWidth: 300 }}
+                  value={voiceName}
+                  onChange={(e) => setVoiceName(e.target.value)}
+                  disabled={isConnected || isConnecting}
+                  style={{...styles.select, flex: 1}}
+                  className="res-select"
                 >
-                  {devices.map((d) => (
-                    <option key={d.deviceId} value={d.deviceId}>
-                      {d.label || `マイク ${d.deviceId.substring(0, 5)}...`}
-                    </option>
-                  ))}
+                  <option value="Aoede">音声: Aoede (落ち着いた女性)</option>
+                  <option value="Puck">音声: Puck (明るい男性)</option>
+                  <option value="Charon">音声: Charon (深みのある男性)</option>
+                  <option value="Kore">音声: Kore (クリアな女性)</option>
+                  <option value="Fenrir">音声: Fenrir (力強い男性)</option>
                 </select>
               </div>
-            )}
+
+              {/* Microphone Selection */}
+              {!isConnected && devices.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} className="res-select-group">
+                  <Mic size={14} color="#94a3b8" />
+                  <select
+                    value={selectedDeviceId}
+                    onChange={(e) => setSelectedDeviceId(e.target.value)}
+                    disabled={isConnecting}
+                    style={{...styles.select, flex: 1}}
+                    className="res-select"
+                  >
+                    {devices.map((d) => (
+                      <option key={d.deviceId} value={d.deviceId}>
+                        {d.label || `マイク ${d.deviceId.substring(0, 5)}...`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
