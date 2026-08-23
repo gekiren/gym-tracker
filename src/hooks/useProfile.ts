@@ -93,7 +93,7 @@ export function useProfile() {
       {
         id: 'account',
         title: 'プラン & アプリ情報',
-        desc: `AI残高: ${settings.aiTokensBalance} 回 • 環境設定 • バージョン`,
+        desc: 'プラン管理 • 環境設定 • バージョン',
         icon: 'person-circle-outline',
         iconColor: '#4facfe',
         route: '/settings/account',
@@ -115,9 +115,17 @@ export function useProfile() {
         route: '/settings/obsidian',
       },
       {
+        id: 'widget-launcher',
+        title: 'ウィジェット設定',
+        desc: 'クイックランチャーの項目をカスタマイズ',
+        icon: 'apps-outline',
+        iconColor: '#4facfe',
+        route: '/settings/widget-launcher',
+      },
+      {
         id: 'ai-memory',
-        title: 'AIの記憶・プロフィール',
-        desc: '音声AIアシスタントのパーソナライズ記憶の確認・編集',
+        title: 'AIアシスタント',
+        desc: `AI残高: ${settings.aiTokensBalance} 回 • 音声対話・記憶の確認・編集`,
         icon: 'sparkles-outline',
         iconColor: '#38bdf8',
         route: '/settings/ai-memory',
@@ -130,8 +138,6 @@ export function useProfile() {
         iconColor: '#ff9800',
         route: '/settings/backup',
       },
-
-
       {
         id: 'data-management',
         title: 'データ管理',

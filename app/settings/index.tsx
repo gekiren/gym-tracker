@@ -40,17 +40,6 @@ export default function SettingsScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.menuGrid}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/settings/widget-launcher')}>
-            <View style={styles.menuIconContainer}>
-              <Ionicons name="apps" size={24} color={Theme.colors.primary} />
-            </View>
-            <View style={styles.menuTextContainer}>
-              <Text style={styles.menuTitle}>ウィジェット設定</Text>
-              <Text style={styles.menuDesc}>クイックランチャーの項目をカスタマイズ</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} />
-          </TouchableOpacity>
-
           {menuItems.map(item => (
             <ProfileMenuCard key={item.id} item={item} onPress={handleNavigate} />
           ))}
@@ -89,35 +78,4 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
   content: { padding: Theme.spacing.md, paddingBottom: 60 },
   menuGrid: { gap: Theme.spacing.md },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Theme.colors.card,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  menuIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(79, 172, 254, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  menuTextContainer: {
-    flex: 1,
-  },
-  menuTitle: {
-    color: Theme.colors.text,
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  menuDesc: {
-    color: Theme.colors.textMuted,
-    fontSize: 12,
-  },
 });

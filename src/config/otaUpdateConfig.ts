@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.102',
+  version: '1.8.103',
   title: {
-    ja: '🚀 クイックランチャーウィジェット設定の機能選択UI改善',
-    en: '🚀 Quick Launcher Widget Settings UI Improvements',
+    ja: '🚀 アプリ設定メニューの整理とAIアシスタント設定統合',
+    en: '🚀 Settings Menu Reorganization & AI Assistant Integration',
   },
   notes: {
     ja: [
-      'ウィジェット設定画面において、機能選択ダイアログを専用モーダルに刷新しました。',
-      'AI音声アシスタントや体組成を含む全8項目が確実に選択できるようになりました。',
+      'ウィジェット設定のメニュー位置を調整し、デザインスタイルを他のメニューと統一しました。',
+      'AIトレーナー設定（利用枠残高）を「AIアシスタント」画面へ統合し、より分かりやすく管理できるように改善しました。',
     ],
     en: [
-      'Revamped the feature selection dialog in widget settings to a custom modal.',
-      'All 8 features including Voice AI Assistant and Body Composition can now be selected.',
+      'Adjusted the menu position of Widget Settings and unified its design style.',
+      'Integrated AI Trainer settings (token balance) into the AI Assistant screen for better management.',
     ],
   },
 };
