@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.97',
+  version: '1.8.98',
   title: {
-    ja: '🎙️ 音声AIアシスタントのデータ一括保存機能改善',
-    en: '🎙️ Improved AI Assistant Data Sync & Storage',
+    ja: '🎙️ 音声AIアシスタントをダッシュボードに統合',
+    en: '🎙️ Voice AI Assistant Integrated into Dashboard',
   },
   notes: {
     ja: [
-      '音声AIアシスタントから筋トレ・食事・水分・メモデータをTreNote本体へ確実に一括保存できるよう連携処理を最適化しました。',
-      'データ保存完了時に各カテゴリの保存件数をポップアップ表示し、スムーズにダッシュボードへ戻るよう改善しました。',
+      '音声AIアシスタント機能をアプリトップのダッシュボードに移設しました。水分・栄養・筋トレと同じ機能カードとして表示されます。',
+      '設定画面の「機能管理」から音声AIアシスタントカードの表示/非表示を切り替えられるようになりました。',
     ],
     en: [
-      'Optimized data sync between the AI Voice Assistant and TreNote database for workouts, meals, water, and daily notes.',
-      'Added detailed save count summary popup and streamlined the return flow to dashboard upon save completion.',
+      'Voice AI Assistant has been moved to the main dashboard alongside water, nutrition, and workout cards.',
+      'You can now toggle the Voice AI Assistant card visibility from Settings > Feature Management.',
     ],
   },
 };

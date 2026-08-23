@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { saveSetting } from '../db/database';
 import { computeIsPremium } from '../utils/subscriptionUtils';
 
-export type FeatureId = 'workout' | 'water' | 'nutrition' | 'zikan' | 'routine' | 'body';
+export type FeatureId = 'workout' | 'water' | 'nutrition' | 'zikan' | 'routine' | 'body' | 'voice_ai';
 
 export interface ApplicationSettings {
   defaultRest: number;
@@ -105,7 +105,7 @@ export const initialSettings: ApplicationSettings = {
   aiChatMode: 'quick',
   enableAiDebugContext: true,
   backgroundTheme: 'dark',
-  featureOrder: ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine'],
+  featureOrder: ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'voice_ai'],
   featureVisibility: {
     workout: true,
     body: true,
@@ -113,6 +113,7 @@ export const initialSettings: ApplicationSettings = {
     nutrition: true,
     zikan: true,
     routine: true,
+    voice_ai: true,
   },
 };
 

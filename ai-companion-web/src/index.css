@@ -69,3 +69,11 @@ body {
 .animate-pulse-ring {
   animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* === スマホ向けレイアウト調整 === */
+@media (max-width: 600px) {
+  #root {
+    max-width: 100%;
+    padding: 10px 10px;
+  }
+}

@@ -88,7 +88,7 @@ export default function RootLayout() {
       const { finalPremiumUntil, finalTokensBalance, expired, isEarlyAdopter } = await initSubscriptionAndTokens(storedSettings);
 
       // 4.5 機能管理設定（表示順・表示ON/OFF）
-      const ALL_FEATURES: FeatureId[] = ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine'];
+      const ALL_FEATURES: FeatureId[] = ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'voice_ai'];
       let featureOrder: FeatureId[] = ALL_FEATURES;
       if (storedSettings['feature_order']) {
         try {
@@ -105,7 +105,7 @@ export default function RootLayout() {
         }
       }
 
-      let featureVisibility: Record<FeatureId, boolean> = { workout: true, body: true, water: true, nutrition: true, zikan: true, routine: true };
+      let featureVisibility: Record<FeatureId, boolean> = { workout: true, body: true, water: true, nutrition: true, zikan: true, routine: true, voice_ai: true };
       if (storedSettings['feature_visibility']) {
         try {
           const parsed = JSON.parse(storedSettings['feature_visibility']);

@@ -1,5 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Alert, PermissionsAndroid, Platform } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Alert } from 'react-native';
 import { useState, useCallback, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useNavigation } from 'expo-router';
@@ -10,7 +9,6 @@ import { useSettingsStore } from '../../src/store/settingsStore';
 import { getRoutines, getPreviousWorkoutSets, getPersonalRecords, saveSetting } from '../../src/db/database';
 import { translateExercise } from '../../src/i18n';
 import { readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../../src/services/crashReporterService';
-import { handleCompanionWebViewMessage } from '../../src/services/aiCompanionSyncService';
 
 export default function WorkoutHomeScreen() {
   const { colors } = useAppTheme();
@@ -28,34 +26,6 @@ export default function WorkoutHomeScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isNewUser, setIsNewUser] = useState(settings.needsStyleSelection);
   const [isSendingCrash, setIsSendingCrash] = useState(false);
-  const [showAssistant, setShowAssistant] = useState(false);
-
-  const handleOpenAssistant = async () => {
-    if (Platform.OS === 'android') {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-          {
-            title: 'マイクの権限',
-            message: '音声AIアシスタントで会話するためにマイクの許可が必要です。',
-            buttonPositive: '許可する',
-            buttonNegative: 'キャンセル',
-          }
-        );
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          Alert.alert('マイク権限が必要です', 'マイクの権限が許可されていないため、音声対話を使用できません。設定画面からマイクを許可してください。');
-          return;
-        }
-      } catch (err) {
-        console.warn('Mic permission error', err);
-      }
-    }
-    setShowAssistant(true);
-  };
-
-  const handleWebViewMessage = (event: any) => {
-    handleCompanionWebViewMessage(event, () => setShowAssistant(false));
-  };
 
   // Configure navigation header dynamics (Dashboard Back Button)
   useEffect(() => {
@@ -260,55 +230,6 @@ export default function WorkoutHomeScreen() {
             <Ionicons name="play-circle" size={24} color="#fff" style={{ marginLeft: 8 }} />
           </TouchableOpacity>
         )}
-
-        {/* 音声AIアシスタント */}
-        <TouchableOpacity
-          style={{ backgroundColor: '#1a1a2e', borderRadius: 12, padding: 16, marginTop: 12, borderWidth: 1, borderColor: 'rgba(100, 180, 255, 0.3)', flexDirection: 'row', alignItems: 'center' }}
-          activeOpacity={0.8}
-          onPress={handleOpenAssistant}
-        >
-          <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(100, 180, 255, 0.15)', justifyContent: 'center', alignItems: 'center', marginRight: 14 }}>
-            <Ionicons name="mic" size={24} color="#64b4ff" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>音声AIアシスタント</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, marginTop: 2 }}>話すだけでトレーニング・食事を記録</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.4)" />
-        </TouchableOpacity>
-
-        {/* Assistant Modal */}
-        <Modal
-          visible={showAssistant}
-          animationType="slide"
-          onRequestClose={() => setShowAssistant(false)}
-        >
-          <View style={{ flex: 1, backgroundColor: '#000' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 48, paddingHorizontal: 16, paddingBottom: 8, backgroundColor: '#0d0d0d', borderBottomWidth: 1, borderBottomColor: '#222' }}>
-              <TouchableOpacity onPress={() => setShowAssistant(false)} style={{ padding: 8, marginRight: 8 }}>
-                <Ionicons name="close" size={26} color="#fff" />
-              </TouchableOpacity>
-              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 17, flex: 1 }}>音声AIアシスタント</Text>
-            </View>
-            <WebView
-              source={{ uri: 'https://gym-tracker-ai-companion.toshi-diyil.workers.dev' }}
-              style={{ flex: 1, backgroundColor: '#000' }}
-              allowsInlineMediaPlayback={true}
-              mediaPlaybackRequiresUserAction={false}
-              javaScriptEnabled={true}
-              domStorageEnabled={true}
-              mediaCapturePermissionGrantType="grant"
-              onMessage={handleWebViewMessage}
-              {...({ onPermissionRequest: (request: any) => {
-                try {
-                  request.grant(request.resources);
-                } catch (e) {
-                  console.warn('Permission grant error:', e);
-                }
-              } } as any)}
-            />
-          </View>
-        </Modal>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>

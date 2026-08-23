@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Dimensions, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Dimensions, Alert, Platform, PermissionsAndroid } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +16,7 @@ import * as Updates from 'expo-updates';
 import { readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../src/services/crashReporterService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LifelogDateHeader } from '../components/LifelogDateHeader';
+import { handleCompanionWebViewMessage } from '../src/services/aiCompanionSyncService';
 
 const { width } = Dimensions.get('window');
 
@@ -59,6 +61,36 @@ export default function DashboardScreen() {
   const [isNewUser, setIsNewUser] = useState(settings.needsStyleSelection);
   const [lastWorkoutSummary, setLastWorkoutSummary] = useState<LastWorkoutSummary | null>(null);
   const [isDebugExpanded, setIsDebugExpanded] = useState(false);
+
+  // 音声AIアシスタント
+  const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
+
+  const handleOpenVoiceAssistant = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          {
+            title: 'マイクの権限',
+            message: '音声AIアシスタントで会話するためにマイクの許可が必要です。',
+            buttonPositive: '許可する',
+            buttonNegative: 'キャンセル',
+          }
+        );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert('マイク権限が必要です', 'マイクの権限が許可されていないため、音声対話を使用できません。設定画面からマイクを許可してください。');
+          return;
+        }
+      } catch (err) {
+        console.warn('Mic permission error', err);
+      }
+    }
+    setShowVoiceAssistant(true);
+  };
+
+  const handleVoiceAssistantWebViewMessage = (event: any) => {
+    handleCompanionWebViewMessage(event, () => setShowVoiceAssistant(false));
+  };
 
   // Date Formatting helper
   const getTodayStr = () => {
@@ -628,6 +660,29 @@ export default function DashboardScreen() {
           </React.Fragment>
         );
 
+      case 'voice_ai':
+        return (
+          <TouchableOpacity
+            key="voice_ai"
+            style={styles.card}
+            activeOpacity={0.85}
+            onPress={handleOpenVoiceAssistant}
+          >
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconContainer, { backgroundColor: 'rgba(100, 180, 255, 0.15)' }]}>
+                <Ionicons name="mic" size={24} color="#64b4ff" />
+              </View>
+              <Text style={styles.cardTitle}>音声AIアシスタント</Text>
+              <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
+            </View>
+            <View style={styles.cardBody}>
+              <Text style={styles.inactiveText}>
+                話すだけでトレーニング・食事・水分を記録。Gemini Live API による音声リアルタイム対話。
+              </Text>
+            </View>
+          </TouchableOpacity>
+        );
+
       default:
         return null;
     }
@@ -649,7 +704,7 @@ export default function DashboardScreen() {
         {(() => {
           const activeOrder: FeatureId[] = featureOrder && featureOrder.length > 0 
             ? featureOrder 
-            : ['workout', 'water', 'nutrition', 'zikan', 'routine'];
+            : ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'voice_ai'];
           const visibleFeatures = activeOrder.filter((id: FeatureId) =>
             featureVisibility ? featureVisibility[id] !== false : true
           );
@@ -690,6 +745,39 @@ export default function DashboardScreen() {
         </TouchableOpacity>
 
       </ScrollView>
+
+      {/* 音声AIアシスタント Modal */}
+      <Modal
+        visible={showVoiceAssistant}
+        animationType="slide"
+        onRequestClose={() => setShowVoiceAssistant(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: '#000' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 48, paddingHorizontal: 16, paddingBottom: 8, backgroundColor: '#0d0d0d', borderBottomWidth: 1, borderBottomColor: '#222' }}>
+            <TouchableOpacity onPress={() => setShowVoiceAssistant(false)} style={{ padding: 8, marginRight: 8 }}>
+              <Ionicons name="close" size={26} color="#fff" />
+            </TouchableOpacity>
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 17, flex: 1 }}>音声AIアシスタント</Text>
+          </View>
+          <WebView
+            source={{ uri: 'https://gym-tracker-ai-companion.toshi-diyil.workers.dev' }}
+            style={{ flex: 1, backgroundColor: '#000' }}
+            allowsInlineMediaPlayback={true}
+            mediaPlaybackRequiresUserAction={false}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            mediaCapturePermissionGrantType="grant"
+            onMessage={handleVoiceAssistantWebViewMessage}
+            {...({ onPermissionRequest: (request: any) => {
+              try {
+                request.grant(request.resources);
+              } catch (e) {
+                console.warn('Permission grant error:', e);
+              }
+            } } as any)}
+          />
+        </View>
+      </Modal>
 
       {/* Onboarding Unit Selection Modal */}
       <Modal visible={settings.needsUnitSelection} animationType="fade" transparent={true}>
