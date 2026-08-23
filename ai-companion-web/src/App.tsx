@@ -26,12 +26,7 @@ declare global {
 }
 
 export default function App() {
-  const [apiKey, setApiKey] = useState<string>(() => {
-    return localStorage.getItem('gemini_api_key') || '';
-  });
-  const [modelName, setModelName] = useState<string>('models/gemini-3.1-flash-live-preview');
   const [voiceName, setVoiceName] = useState<string>('Aoede');
-  const [showKeyInput, setShowKeyInput] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
 
   // URLパラメータからTreNoteのコンテキストを取得（連携時用）
@@ -94,7 +89,6 @@ export default function App() {
   } = useGeminiLive({
     initialContext,
     voiceName,
-    modelName,
   });
 
 
@@ -144,32 +138,7 @@ export default function App() {
         </div>
       )}
 
-      {/* API Key Modal / Expand Area */}
-      {showKeyInput && (
-        <div style={styles.apiKeyBox}>
-          <label style={styles.label}>
-            Gemini API Key (Google AI Studio で取得したAPIキー):
-          </label>
-          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="AIzaSy..."
-              style={styles.input}
-            />
-            <button
-              style={styles.buttonPrimary}
-              onClick={() => setShowKeyInput(false)}
-            >
-              保存して閉じる
-            </button>
-          </div>
-          <p style={styles.hint}>
-            ※ APIキーはお使いのブラウザ（LocalStorage）にのみ安全に保存され、直接GoogleのLive APIサーバーと通信します。
-          </p>
-        </div>
-      )}
+
 
       {/* Control Banner */}
       <div style={styles.controlBanner} className="res-banner">
@@ -191,17 +160,6 @@ export default function App() {
             </div>
             
             <div style={styles.voiceSelectWrapper} className="res-voice-select">
-              <select
-                value={modelName}
-                onChange={(e) => setModelName(e.target.value)}
-                disabled={isConnected || isConnecting}
-                style={styles.select}
-                className="res-select"
-              >
-                <option value="models/gemini-3.1-flash-live-preview">Gemini 3.1 Flash Live (最新・推奨)</option>
-                <option value="models/gemini-2.5-flash-native-audio-preview-12-2025">Gemini 2.5 Flash Native Audio</option>
-              </select>
-
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} className="res-select-group">
                 <Volume2 size={14} color="#94a3b8" />
                 <select

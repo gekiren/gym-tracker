@@ -15,17 +15,23 @@ import {
   PCMStreamPlayer,
 } from '../utils/audioUtils';
 
+export const LIVE_MODELS = [
+  { id: 'models/gemini-3.1-flash-live-preview', label: 'Gemini 3.1 Flash Live' },
+  { id: 'models/gemini-2.5-flash-native-audio-preview-12-2025', label: 'Gemini 2.5 Flash Native Audio' },
+];
+
 interface UseGeminiLiveOptions {
   initialContext?: InitialContext;
   voiceName?: string;
-  modelName?: string;
 }
 
 export function useGeminiLive({
   initialContext,
   voiceName = 'Aoede',
-  modelName = 'models/gemini-3.1-flash-live-preview',
 }: UseGeminiLiveOptions) {
+  const [activeModelName, setActiveModelName] = useState<string>(LIVE_MODELS[0].label);
+  const currentModelIndexRef = useRef<number>(0);
+  const isSetupCompleteRef = useRef<boolean>(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -365,11 +371,21 @@ ${contextStr}`;
   }, []);
 
   // 接続処理
-  const connect = useCallback(async (deviceId?: string) => {
+  const connect = useCallback(async (deviceId?: string, forceModelIndex?: number) => {
     isExplicitDisconnectRef.current = false;
 
+    if (forceModelIndex !== undefined) {
+      currentModelIndexRef.current = forceModelIndex;
+    } else {
+      currentModelIndexRef.current = 0;
+    }
+
+    const currentModel = LIVE_MODELS[currentModelIndexRef.current] || LIVE_MODELS[0];
+    setActiveModelName(currentModel.label);
+    isSetupCompleteRef.current = false;
+
     setIsConnecting(true);
-    setStatusText('接続中...');
+    setStatusText(`接続中 (${currentModel.label})...`);
     playerRef.current.init();
 
     // ユーザー操作の瞬間にマイクとAudioContextを確実に起動
@@ -379,18 +395,37 @@ ${contextStr}`;
       const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const url = `${wsProtocol}//${window.location.host}/api/gemini-ws`;
       
-      console.log('Gemini Live API (Proxy) へ接続試行中...', url);
+      console.log(`Gemini Live API へ接続試行中 [${currentModel.label}]...`, url);
       const ws = new WebSocket(url);
       wsRef.current = ws;
 
+      const triggerFallback = (reason: string) => {
+        if (!isExplicitDisconnectRef.current && !isSetupCompleteRef.current && currentModelIndexRef.current < LIVE_MODELS.length - 1) {
+          const nextIndex = currentModelIndexRef.current + 1;
+          const nextModel = LIVE_MODELS[nextIndex];
+          addLog(`【自動フォールバック】${currentModel.label} でのエラー (${reason}) を検知。${nextModel.label} へ自動切り替え再接続します...`);
+          setStatusText(`フォールバック中: ${nextModel.label}...`);
+          try {
+            ws.close();
+          } catch (_) {}
+          setTimeout(() => {
+            if (!isExplicitDisconnectRef.current) {
+              connect(deviceId, nextIndex);
+            }
+          }, 400);
+          return true;
+        }
+        return false;
+      };
+
       ws.onopen = () => {
-        console.log('Gemini Live WebSocket 接続成功. Setup を送信します...');
-        setStatusText('初期化中...');
+        console.log(`Gemini Live WebSocket 接続成功 (${currentModel.label}). Setup を送信します...`);
+        setStatusText(`初期化中 (${currentModel.label})...`);
 
         // 1. Setup メッセージの送信
         const setupMessage = {
           setup: {
-            model: modelName,
+            model: currentModel.id,
             generationConfig: {
               responseModalities: ['AUDIO'],
               speechConfig: {
@@ -424,12 +459,21 @@ ${contextStr}`;
 
           console.log('[Gemini Live WS Msg]:', Object.keys(data).join(', '), data);
 
+          // エラーレスポンス検知
+          if (data.error) {
+            addLog(`【Geminiエラー受信】${JSON.stringify(data.error)}`);
+            if (triggerFallback(data.error.message || 'API Error')) {
+              return;
+            }
+          }
+
           // セットアップ完了
           if (data.setupComplete) {
-            addLog('Gemini Live Setup 完了！音声対話を開始できます。');
+            isSetupCompleteRef.current = true;
+            addLog(`Gemini Live Setup 完了！[稼働モデル: ${currentModel.label}] 音声対話を開始できます。`);
             setIsConnected(true);
             setIsConnecting(false);
-            setStatusText('音声対話中（いつでも話しかけてください）');
+            setStatusText(`音声対話中 [${currentModel.label}]`);
             return;
           }
 
@@ -556,6 +600,9 @@ ${contextStr}`;
 
       ws.onerror = (err) => {
         console.error('WebSocket エラー:', err);
+        if (triggerFallback('WebSocket onerror')) {
+          return;
+        }
         setStatusText('通信エラーが発生しました');
         setIsConnecting(false);
         setIsConnected(false);
@@ -566,13 +613,18 @@ ${contextStr}`;
         console.log('WebSocket 切断 code:', event.code, 'reason:', event.reason);
         const reasonDetail = event.reason ? ` (${event.reason})` : '';
 
-        // 意図的な切断でなく、タイムアウト等で切断された場合はセッションを自動維持
+        // セットアップ前の異常切断ならフォールバックを試みる
+        if (triggerFallback(`onclose code: ${event.code}${reasonDetail}`)) {
+          return;
+        }
+
+        // 稼働中のタイムアウト等の切断は現在のモデルを維持して自動再接続
         if (!isExplicitDisconnectRef.current && (event.code === 1000 || event.code === 1006)) {
           console.log('セッション維持のための自動再接続を即時実行します...');
           setStatusText('セッション維持中（再接続）...');
           setTimeout(() => {
             if (!isExplicitDisconnectRef.current) {
-              connect();
+              connect(deviceId, currentModelIndexRef.current);
             }
           }, 300);
           return;
@@ -589,7 +641,7 @@ ${contextStr}`;
       setStatusText(`接続に失敗しました: ${err?.message || err}`);
       setIsConnecting(false);
     }
-  }, [buildSystemInstruction, functionDeclarations, modelName, startMicStreaming, stopMicStreaming, voiceName]);
+  }, [addLog, buildSystemInstruction, functionDeclarations, startMicStreaming, stopMicStreaming, voiceName]);
 
   // 切断処理
   const disconnect = useCallback(() => {
@@ -655,6 +707,7 @@ ${contextStr}`;
     messages,
     extractedData,
     statusText,
+    activeModelName,
     debugLogs,
     connect,
     disconnect,
