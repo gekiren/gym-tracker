@@ -32,6 +32,7 @@ export interface ApplicationSettings {
   backgroundTheme: 'dark' | 'pureBlack';
   featureOrder: FeatureId[];
   featureVisibility: Record<FeatureId, boolean>;
+  aiCompanionMemory: string;
 }
 
 export interface LoadSettingsPayload {
@@ -54,6 +55,7 @@ export interface LoadSettingsPayload {
   backgroundTheme?: 'dark' | 'pureBlack';
   featureOrder?: FeatureId[];
   featureVisibility?: Record<FeatureId, boolean>;
+  aiCompanionMemory?: string;
 }
 
 export interface SettingsState {
@@ -76,6 +78,7 @@ export interface SettingsState {
   removeCustomStance: (stance: string) => void;
   setDisplayFields: (fields: Partial<{ showRpe: boolean; show1RM: boolean; showVolume: boolean; showStance: boolean }>) => void;
   setCrashConsent: (consent: 'agreed' | 'declined' | 'unset') => void;
+  setAiCompanionMemory: (memory: string) => void;
   resetSettings: () => void;
 }
 
@@ -115,6 +118,7 @@ export const initialSettings: ApplicationSettings = {
     routine: true,
     voice_ai: true,
   },
+  aiCompanionMemory: '',
 };
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -141,6 +145,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       backgroundTheme,
       featureOrder,
       featureVisibility,
+      aiCompanionMemory,
     } = payload;
     const finalNeedsUnitSelection = needsUnitSelection !== undefined ? needsUnitSelection : state.settings.needsUnitSelection;
     const finalBodyWeight = bodyWeight !== undefined ? bodyWeight : state.settings.bodyWeight;
@@ -157,6 +162,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const finalBackgroundTheme = backgroundTheme !== undefined ? backgroundTheme : state.settings.backgroundTheme;
     const finalFeatureOrder = featureOrder !== undefined ? featureOrder : state.settings.featureOrder;
     const finalFeatureVisibility = featureVisibility !== undefined ? featureVisibility : state.settings.featureVisibility;
+    const finalAiCompanionMemory = aiCompanionMemory !== undefined ? aiCompanionMemory : state.settings.aiCompanionMemory;
 
     const isPremium = computeIsPremium(finalPremiumUntil, finalIsEarlyAdopter);
     return {
@@ -181,6 +187,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         backgroundTheme: finalBackgroundTheme,
         featureOrder: finalFeatureOrder,
         featureVisibility: finalFeatureVisibility,
+        aiCompanionMemory: finalAiCompanionMemory,
       }
     };
   }),
@@ -280,6 +287,13 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setAlwaysOneSet: (alwaysOneSet) => set((state) => ({
     settings: { ...state.settings, alwaysOneSet }
   })),
+
+  setAiCompanionMemory: (memory: string) => {
+    saveSetting('ai_companion_memory', memory).catch(e => console.warn('Failed to save ai_companion_memory setting', e));
+    set((state) => ({
+      settings: { ...state.settings, aiCompanionMemory: memory }
+    }));
+  },
 
   resetSettings: () => set({
     settings: {

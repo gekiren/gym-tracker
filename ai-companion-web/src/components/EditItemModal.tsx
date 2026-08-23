@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, Check, Dumbbell, Droplets, Utensils, BookOpen } from 'lucide-react';
-import type { WorkoutRecord, WaterRecord, MealRecord, DailyNoteRecord, ExtractedData } from '../types';
+import { X, Check, Dumbbell, Droplets, Utensils, BookOpen, Sparkles } from 'lucide-react';
+import type { WorkoutRecord, WaterRecord, MealRecord, DailyNoteRecord, MemoryRecord, ExtractedData } from '../types';
 
 export interface ThemeColors {
   background: string;
@@ -22,7 +22,8 @@ export type EditTarget =
   | { category: 'workouts'; item: WorkoutRecord }
   | { category: 'waters'; item: WaterRecord }
   | { category: 'meals'; item: MealRecord }
-  | { category: 'dailyNotes'; item: DailyNoteRecord };
+  | { category: 'dailyNotes'; item: DailyNoteRecord }
+  | { category: 'memoryUpdates'; item: MemoryRecord };
 
 interface EditItemModalProps {
   target: EditTarget;
@@ -55,6 +56,8 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
 
   const [condition, setCondition] = useState((item as DailyNoteRecord).condition || '');
   const [summary, setSummary] = useState((item as DailyNoteRecord).summary || '');
+
+  const [memoryItem, setMemoryItem] = useState((item as MemoryRecord).memory_item || '');
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,6 +94,12 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
         summary: summary.trim() || 'メモなし',
       };
       onSave('dailyNotes', updated);
+    } else if (category === 'memoryUpdates') {
+      const updated: MemoryRecord = {
+        ...item,
+        memory_item: memoryItem.trim() || '記憶アイテム',
+      };
+      onSave('memoryUpdates', updated);
     }
   };
 
@@ -104,6 +113,8 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
         return { title: '食事記録の編集', icon: <Utensils size={18} color="#4cd964" /> };
       case 'dailyNotes':
         return { title: 'デイリーノートの編集', icon: <BookOpen size={18} color="#a78bfa" /> };
+      case 'memoryUpdates':
+        return { title: '記憶・プロフィールの編集', icon: <Sparkles size={18} color="#38bdf8" /> };
     }
   };
 
@@ -357,6 +368,20 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
                 />
               </div>
             </>
+          )}
+
+          {category === 'memoryUpdates' && (
+            <div style={fieldGroupStyle}>
+              <label style={labelStyle}>記憶する情報・プロフィール</label>
+              <textarea
+                rows={4}
+                value={memoryItem}
+                onChange={(e) => setMemoryItem(e.target.value)}
+                style={{ ...inputStyle, resize: 'vertical' }}
+                placeholder="例: 右肩を痛めているためプレス系は軽めにする"
+                required
+              />
+            </div>
           )}
 
           {/* Action Buttons */}

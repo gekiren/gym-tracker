@@ -3,6 +3,7 @@ import { addMealLog } from '../db/repositories/nutritionRepository';
 import { getExercises, addCustomExercise } from '../db/repositories/exerciseRepository';
 import { saveWorkout } from '../db/repositories/workoutRepository';
 import { getBodyLogByDate, insertBodyLog, updateBodyLog } from '../db/repositories/bodyRepository';
+import { useSettingsStore } from '../store/settingsStore';
 import { Alert } from 'react-native';
 
 export interface SyncResult {
@@ -10,6 +11,7 @@ export interface SyncResult {
   mealCount: number;
   workoutCount: number;
   noteCount: number;
+  memoryCount: number;
   total: number;
 }
 
@@ -153,12 +155,29 @@ export async function processAndSaveCompanionData(payload: any): Promise<SyncRes
     }
   }
 
-  const total = waterCount + mealCount + workoutCount + noteCount;
+  // 5. 記憶（パーソナライズメモリ）保存
+  let memoryCount = 0;
+  if (payload?.memoryUpdates && Array.isArray(payload.memoryUpdates) && payload.memoryUpdates.length > 0) {
+    const currentMemory = useSettingsStore.getState().settings.aiCompanionMemory || '';
+    const newItems = payload.memoryUpdates
+      .map((item: any) => (typeof item === 'string' ? item.trim() : item?.memory_item?.trim()))
+      .filter(Boolean);
+    if (newItems.length > 0) {
+      const updatedMemory = currentMemory
+        ? `${currentMemory}\n${newItems.join('\n')}`
+        : newItems.join('\n');
+      useSettingsStore.getState().setAiCompanionMemory(updatedMemory);
+      memoryCount = newItems.length;
+    }
+  }
+
+  const total = waterCount + mealCount + workoutCount + noteCount + memoryCount;
   return {
     waterCount,
     mealCount,
     workoutCount,
     noteCount,
+    memoryCount,
     total,
   };
 }
@@ -181,9 +200,18 @@ export function handleCompanionWebViewMessage(
             onPress: async () => {
               try {
                 const res = await processAndSaveCompanionData(payload);
+                const summaryParts = [
+                  `水: ${res.waterCount}件`,
+                  `食: ${res.mealCount}件`,
+                  `筋: ${res.workoutCount}件`,
+                  `メモ: ${res.noteCount}件`,
+                ];
+                if (res.memoryCount > 0) {
+                  summaryParts.push(`記憶: ${res.memoryCount}件`);
+                }
                 Alert.alert(
                   '完了',
-                  `データを保存しました！\n水: ${res.waterCount}件 / 食: ${res.mealCount}件 / 筋: ${res.workoutCount}件 / メモ: ${res.noteCount}件`,
+                  `データを保存しました！\n${summaryParts.join(' / ')}`,
                   [
                     {
                       text: 'OK',

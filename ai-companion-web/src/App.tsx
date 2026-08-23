@@ -16,6 +16,7 @@ import {
   Check,
   Smartphone,
   Pencil,
+  Sparkles,
 } from 'lucide-react';
 import { EditItemModal, type EditTarget } from './components/EditItemModal';
 
@@ -24,6 +25,7 @@ declare global {
     ReactNativeWebView?: {
       postMessage: (message: string) => void;
     };
+    __TRENOTE_CONTEXT__?: InitialContext;
   }
 }
 
@@ -82,9 +84,12 @@ export default function App() {
   const [voiceName, setVoiceName] = useState<string>('Aoede');
   const [copied, setCopied] = useState<boolean>(false);
 
-  // URLパラメータからTreNoteのコンテキストを取得（連携時用）
+  // TreNoteからのコンテキストを取得（1. JS注入優先、2. URLパラメータフォールバック）
   const [initialContext] = useState<InitialContext>(() => {
     try {
+      if (typeof window !== 'undefined' && window.__TRENOTE_CONTEXT__) {
+        return window.__TRENOTE_CONTEXT__;
+      }
       const urlParams = new URLSearchParams(window.location.search);
       const ctxParam = urlParams.get('context');
       if (ctxParam) {
@@ -98,12 +103,16 @@ export default function App() {
       bodyWeight: null,
       theme: 'dark',
       date: new Date().toISOString().split('T')[0],
+      memory: '',
     };
   });
 
   // テーマモードの決定 (URLパラメータ または context から取得)
   const themeMode: 'dark' | 'pureBlack' = useMemo(() => {
     try {
+      if (typeof window !== 'undefined' && window.__TRENOTE_CONTEXT__?.theme) {
+        return window.__TRENOTE_CONTEXT__.theme;
+      }
       const urlParams = new URLSearchParams(window.location.search);
       const urlTheme = urlParams.get('theme') as 'dark' | 'pureBlack';
       if (urlTheme === 'pureBlack' || urlTheme === 'dark') return urlTheme;
@@ -170,6 +179,7 @@ export default function App() {
       waters: [],
       meals: [],
       dailyNotes: [],
+      memoryUpdates: [],
     });
   };
 
@@ -196,10 +206,12 @@ export default function App() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const hasData = extractedData.workouts.length > 0 || 
-    extractedData.waters.length > 0 || 
-    extractedData.meals.length > 0 || 
-    extractedData.dailyNotes.length > 0;
+  const hasData =
+    extractedData.workouts.length > 0 ||
+    extractedData.waters.length > 0 ||
+    extractedData.meals.length > 0 ||
+    extractedData.dailyNotes.length > 0 ||
+    (extractedData.memoryUpdates && extractedData.memoryUpdates.length > 0);
 
   return (
     <div style={styles.container}>
@@ -627,6 +639,42 @@ export default function App() {
                   type="button"
                   style={styles.cardActionButton}
                   onClick={() => handleDeleteItem('dailyNotes', n.id)}
+                  title="削除"
+                >
+                  <Trash2 size={13} color={themeTokens.danger} />
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {/* Memory / Profile Updates */}
+          {(extractedData.memoryUpdates || []).map((mem) => (
+            <div key={mem.id} style={styles.dataCard}>
+              <div style={styles.dataCardIcon}>
+                <Sparkles size={18} color="#38bdf8" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={styles.dataCardTitle}>記憶・プロフィール</div>
+                <div style={styles.dataCardDetails}>
+                  {mem.memory_item}
+                </div>
+              </div>
+              <div style={styles.cardActionGroup}>
+                <span style={{ ...styles.badge, backgroundColor: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.3)' }}>
+                  記憶
+                </span>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => setEditingTarget({ category: 'memoryUpdates', item: mem })}
+                  title="編集"
+                >
+                  <Pencil size={13} color={themeTokens.textMuted} />
+                </button>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => handleDeleteItem('memoryUpdates', mem.id)}
                   title="削除"
                 >
                   <Trash2 size={13} color={themeTokens.danger} />

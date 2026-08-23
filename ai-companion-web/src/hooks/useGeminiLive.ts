@@ -42,6 +42,7 @@ export function useGeminiLive({
     waters: [],
     meals: [],
     dailyNotes: [],
+    memoryUpdates: [],
   });
   const [statusText, setStatusText] = useState('未接続');
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
@@ -163,6 +164,21 @@ export function useGeminiLive({
         required: ['summary'],
       },
     },
+    {
+      name: 'update_user_memory',
+      description:
+        'ユーザーの個人的な好み、習慣、目標、身体的特徴、怪我・体調の注意点、生活パターンなど、次回の会話以降も覚えておくべき重要なパーソナライズ情報を保存・更新する。ユーザーが自分自身について語った際に呼び出す。',
+      parameters: {
+        type: 'object',
+        properties: {
+          memory_item: {
+            type: 'string',
+            description: 'AIが次回以降も覚えておくべきユーザー情報（例: 「右肩を痛めているためプレス系は軽めにする」「水筒の容量は600ml」「朝型で午前中にトレーニングする」）',
+          },
+        },
+        required: ['memory_item'],
+      },
+    },
   ];
 
   // システムプロンプト生成
@@ -174,6 +190,9 @@ export function useGeminiLive({
       if (initialContext.currentWaterMl !== undefined)
         contextStr += `- 今日の現在の水分: ${initialContext.currentWaterMl}ml / 目標${initialContext.waterGoalMl || 2000}ml\n`;
       if (initialContext.bodyWeight) contextStr += `- 現在の体重: ${initialContext.bodyWeight}kg\n`;
+      if (initialContext.memory && initialContext.memory.trim()) {
+        contextStr += `- 🧠 【ユーザーの記憶・プロフィール（これまでに学習した情報）】:\n${initialContext.memory.trim()}\n`;
+      }
     }
 
     return `あなたは筋トレ＆ライフログ記録アプリ『TreNote』の専属ライフログ・サポーターです。
@@ -198,9 +217,13 @@ export function useGeminiLive({
 
 4. 【前提データとアドバイスの活用】
    ${contextStr ? `${contextStr}
-   ※上記の前提データは、ユーザーから「今日のおすすめメニューは？」「水分足りてる？」「アドバイスある？」など意見や質問を求められた際に参照し、的確に助言してください。求められていない時は無理に前提データに触れず、ユーザーの話を心地よく聞くことを優先してください。` : ''}
+   ※上記の前提データ（過去の記憶含む）は、ユーザーから「今日のおすすめメニューは？」「水分足りてる？」「アドバイスある？」など意見や質問を求められた際に参照し、的確に助言してください。求められていない時は無理に前提データに触れず、ユーザーの話を心地よく聞くことを優先してください。` : ''}
 
-5. 【音声対話の最適化】
+5. 【パーソナライズと記憶の自動学習】
+   ・上記の【ユーザーの記憶・プロフィール】が存在する場合は、ユーザーの好みや怪我・体調の注意点などを踏まえて、親身でパーソナライズされた受け答えをしてください。
+   ・対話の中で、ユーザーの新たな好み、生活習慣、身体的特徴、怪我の箇所、水筒のサイズなどを知った場合は、【update_user_memory】ツールを呼び出して記録してください。（例:「右肩の痛みの件、覚えておきますね！」）
+
+6. 【音声対話の最適化】
    返答はすべて音声として読み上げられるため、1〜2文程度の簡潔でテンポの良い文章で話してください。`;
   }, [initialContext]);
 
@@ -588,6 +611,16 @@ export function useGeminiLive({
                 setExtractedData((prev) => ({
                   ...prev,
                   dailyNotes: [...prev.dailyNotes, newNote],
+                }));
+              } else if (name === 'update_user_memory') {
+                const newMem = {
+                  id: Math.random().toString(36).substring(7),
+                  memory_item: args.memory_item,
+                  timestamp: now,
+                };
+                setExtractedData((prev) => ({
+                  ...prev,
+                  memoryUpdates: [...(prev.memoryUpdates || []), newMem],
                 }));
               }
 

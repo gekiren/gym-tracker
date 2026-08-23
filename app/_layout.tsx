@@ -117,6 +117,8 @@ export default function RootLayout() {
         }
       }
 
+      const aiCompanionMemory = storedSettings['ai_companion_memory'] || '';
+
       // 5. ストアへの設定ロード
       useSettingsStore.getState().loadSettings({
         defaultRest,
@@ -138,6 +140,7 @@ export default function RootLayout() {
         backgroundTheme,
         featureOrder,
         featureVisibility,
+        aiCompanionMemory,
       });
       if (expired) {
         useWorkoutStore.getState().setShouldShowPaywall(true);

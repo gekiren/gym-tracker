@@ -11,19 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.98',
+  version: '1.8.99',
   title: {
-    ja: '🎙️ 音声AIアシスタントをダッシュボードに統合',
-    en: '🎙️ Voice AI Assistant Integrated into Dashboard',
+    ja: '🧠 音声AIアシスタントのパーソナライズ（記憶）機能を追加',
+    en: '🧠 AI Voice Assistant Personalization & Memory Support',
   },
   notes: {
     ja: [
-      '音声AIアシスタント機能をアプリトップのダッシュボードに移設しました。水分・栄養・筋トレと同じ機能カードとして表示されます。',
-      '設定画面の「機能管理」から音声AIアシスタントカードの表示/非表示を切り替えられるようになりました。',
+      '音声AIアシスタントに対話を通じて好みや生活習慣、怪我の注意点などを学習・記憶するパーソナライズ機能を追加しました。',
+      'アプリ設定に「AIの記憶・プロフィール」画面を追加し、記憶された内容の確認や手動編集・消去ができるようになりました。',
+      'WebViewデータ受け渡しをJS直接注入方式に刷新し、長文の記憶データも安定して引き継がれます。',
     ],
     en: [
-      'Voice AI Assistant has been moved to the main dashboard alongside water, nutrition, and workout cards.',
-      'You can now toggle the Voice AI Assistant card visibility from Settings > Feature Management.',
+      'Added personalization and memory capabilities to Voice AI Assistant, allowing it to remember preferences, habits, and conditions.',
+      'Added a new "AI Memory & Profile" screen in Settings for reviewing, editing, and clearing stored memories.',
+      'Upgraded context bridging to direct JS injection for limitless, seamless memory handling.',
     ],
   },
 };
