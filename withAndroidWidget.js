@@ -46,6 +46,17 @@ const ZIKAN_LARGE_RECEIVER_XML = `
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/zikan_widget_large_info"/>
         </receiver>`;
 
+const QUICK_LAUNCHER_RECEIVER_TAG = '<receiver android:name=".QuickLauncherWidget"';
+
+const QUICK_LAUNCHER_RECEIVER_XML = `
+        <receiver android:name=".QuickLauncherWidget" android:exported="true" android:label="@string/quick_launcher_widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="com.gekirennomad.trenote.ACTION_UPDATE_QUICK_LAUNCHER"/>
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/quick_launcher_widget_info"/>
+        </receiver>`;
+
 // Strings XML tags and strings
 const STRINGS_RESOURCE_MARKER = '</resources>';
 
@@ -57,7 +68,9 @@ const STRINGS_PATCHES = [
   { tag: 'name="zikan_widget_small_description"', value: '  <string name="zikan_widget_small_description">TreNote - 24\u6642\u9593\u9023\u7d9a\u8a18\u9332\u3092\u6253\u523b\u3059\u308b</string>' },
   { tag: 'name="zikan_widget_small_label"', value: '  <string name="zikan_widget_small_label">TreNote - 24H\u9023\u7d9a\u8a18\u9332</string>' },
   { tag: 'name="zikan_widget_large_description"', value: '  <string name="zikan_widget_large_description">TreNote - 24\u6642\u9593\u8a18\u9332\u306e\u958b\u59cb\u30fb\u7d42\u4e86</string>' },
-  { tag: 'name="zikan_widget_large_label"', value: '  <string name="zikan_widget_large_label">TreNote - 24H\u901a\u5e38\u8a18\u9332</string>' }
+  { tag: 'name="zikan_widget_large_label"', value: '  <string name="zikan_widget_large_label">TreNote - 24H\u901a\u5e38\u8a18\u9332</string>' },
+  { tag: 'name="quick_launcher_widget_description"', value: '  <string name="quick_launcher_widget_description">TreNote - \u7e261\u6a2a5\u30af\u30a4\u30c3\u30af\u30e9\u30f3\u30c1\u30e3\u30fc</string>' },
+  { tag: 'name="quick_launcher_widget_label"', value: '  <string name="quick_launcher_widget_label">TreNote - \u30af\u30a4\u30c3\u30af\u30e9\u30f3\u30c1\u30e3\u30fc</string>' }
 ];
 
 /**
@@ -139,6 +152,17 @@ const withAndroidWidget = (config) => {
         'app', 'src', 'main', 'res', 'layout',
         'widget_zikan_large.xml'
       );
+      const quickLauncherLayoutDest = path.join(
+        androidRoot,
+        'app', 'src', 'main', 'res', 'layout',
+        'widget_quick_launcher.xml'
+      );
+      const quickLauncherKtDest = path.join(
+        androidRoot,
+        'app', 'src', 'main', 'java',
+        'com', 'gekirennomad', 'trenote',
+        'QuickLauncherWidget.kt'
+      );
       const xmlDir = path.join(
         androidRoot,
         'app', 'src', 'main', 'res', 'xml'
@@ -147,6 +171,7 @@ const withAndroidWidget = (config) => {
       const waterXmlDest = path.join(xmlDir, 'water_widget_info.xml');
       const zikanSmallXmlDest = path.join(xmlDir, 'zikan_widget_small_info.xml');
       const zikanLargeXmlDest = path.join(xmlDir, 'zikan_widget_large_info.xml');
+      const quickLauncherXmlDest = path.join(xmlDir, 'quick_launcher_widget_info.xml');
       const drawableDir = path.join(
         androidRoot,
         'app', 'src', 'main', 'res', 'drawable'
@@ -179,10 +204,13 @@ const withAndroidWidget = (config) => {
       const waterLayoutSrc = path.join(sourceDir, 'water_widget.xml');
       const zikanSmallLayoutSrc = path.join(sourceDir, 'widget_zikan_small.xml');
       const zikanLargeLayoutSrc = path.join(sourceDir, 'widget_zikan_large.xml');
+      const quickLauncherLayoutSrc = path.join(sourceDir, 'widget_quick_launcher.xml');
+      const quickLauncherKtSrc = path.join(sourceDir, 'QuickLauncherWidget.kt');
       const xmlSrc = path.join(sourceDir, 'gym_tracker_widget_info.xml');
       const waterXmlSrc = path.join(sourceDir, 'water_widget_info.xml');
       const zikanSmallXmlSrc = path.join(sourceDir, 'zikan_widget_small_info.xml');
       const zikanLargeXmlSrc = path.join(sourceDir, 'zikan_widget_large_info.xml');
+      const quickLauncherXmlSrc = path.join(sourceDir, 'quick_launcher_widget_info.xml');
       const bgDrawableSrc = path.join(sourceDir, 'widget_background.xml');
       const btnDrawableSrc = path.join(sourceDir, 'widget_button_round.xml');
       const btnStartDrawableSrc = path.join(sourceDir, 'widget_btn_start.xml');
@@ -296,6 +324,36 @@ const withAndroidWidget = (config) => {
         console.warn(`[withAndroidWidget] Source not found: ${zikanLargeXmlSrc}`);
       }
 
+      // --- Copy QuickLauncher files ---
+      if (fs.existsSync(quickLauncherKtSrc)) {
+        fs.mkdirSync(path.dirname(quickLauncherKtDest), { recursive: true });
+        fs.copyFileSync(quickLauncherKtSrc, quickLauncherKtDest);
+        console.log('[withAndroidWidget] Copied QuickLauncherWidget.kt');
+      }
+      if (fs.existsSync(quickLauncherLayoutSrc)) {
+        fs.mkdirSync(path.dirname(quickLauncherLayoutDest), { recursive: true });
+        fs.copyFileSync(quickLauncherLayoutSrc, quickLauncherLayoutDest);
+        console.log('[withAndroidWidget] Copied widget_quick_launcher.xml');
+      }
+      if (fs.existsSync(quickLauncherXmlSrc)) {
+        fs.mkdirSync(xmlDir, { recursive: true });
+        fs.copyFileSync(quickLauncherXmlSrc, quickLauncherXmlDest);
+        console.log('[withAndroidWidget] Copied quick_launcher_widget_info.xml');
+      }
+
+      // Copy all icons for QuickLauncher
+      const iconsDir = path.join(sourceDir, 'icons');
+      if (fs.existsSync(iconsDir)) {
+        fs.mkdirSync(drawableDir, { recursive: true });
+        const iconFiles = fs.readdirSync(iconsDir);
+        for (const file of iconFiles) {
+          if (file.endsWith('.xml')) {
+            fs.copyFileSync(path.join(iconsDir, file), path.join(drawableDir, file));
+          }
+        }
+        console.log('[withAndroidWidget] Copied QuickLauncher icons');
+      }
+
       // --- Copy widget drawables ---
       if (fs.existsSync(bgDrawableSrc)) {
         fs.mkdirSync(drawableDir, { recursive: true });
@@ -367,6 +425,15 @@ const withAndroidWidget = (config) => {
           manifest = manifest.replace('</application>', `${ZIKAN_LARGE_RECEIVER_XML}\n    </application>`);
           modified = true;
           console.log('[withAndroidWidget] Patched AndroidManifest.xml with ZikanWidgetLarge <receiver>.');
+        }
+
+        // Apply QuickLauncherWidget patch
+        if (manifest.includes(QUICK_LAUNCHER_RECEIVER_TAG)) {
+          console.log('[withAndroidWidget] QuickLauncherWidget <receiver> already present in AndroidManifest.xml. Skipping.');
+        } else if (manifest.includes('</application>')) {
+          manifest = manifest.replace('</application>', `${QUICK_LAUNCHER_RECEIVER_XML}\n    </application>`);
+          modified = true;
+          console.log('[withAndroidWidget] Patched AndroidManifest.xml with QuickLauncherWidget <receiver>.');
         }
 
         if (modified) {
@@ -452,6 +519,12 @@ const withAndroidWidget = (config) => {
         component = ComponentName(this@MainActivity, ZikanWidgetLarge::class.java)
       }
       sendBroadcast(intentLarge)
+
+      // Quick Launcher
+      val intentLauncher = Intent("com.gekirennomad.trenote.ACTION_UPDATE_QUICK_LAUNCHER").apply {
+        component = ComponentName(this@MainActivity, QuickLauncherWidget::class.java)
+      }
+      sendBroadcast(intentLauncher)
     } catch (e: Exception) {
       e.printStackTrace()
     }

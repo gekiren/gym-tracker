@@ -1,0 +1,101 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="60dp"
+    android:orientation="horizontal"
+    android:background="@drawable/widget_background"
+    android:padding="8dp"
+    android:id="@+id/widget_root"
+    android:baselineAligned="false">
+
+    <!-- Slot 0 -->
+    <LinearLayout
+        android:id="@+id/ql_slot_0"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="?android:attr/selectableItemBackgroundBorderless">
+        
+        <ImageView
+            android:id="@+id/ql_icon_0"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_ql_workout"
+            android:tint="#FFFFFF" />
+    </LinearLayout>
+
+    <!-- Slot 1 -->
+    <LinearLayout
+        android:id="@+id/ql_slot_1"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="?android:attr/selectableItemBackgroundBorderless">
+        
+        <ImageView
+            android:id="@+id/ql_icon_1"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_ql_water"
+            android:tint="#FFFFFF" />
+    </LinearLayout>
+
+    <!-- Slot 2 -->
+    <LinearLayout
+        android:id="@+id/ql_slot_2"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="?android:attr/selectableItemBackgroundBorderless">
+        
+        <ImageView
+            android:id="@+id/ql_icon_2"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_ql_nutrition"
+            android:tint="#FFFFFF" />
+    </LinearLayout>
+
+    <!-- Slot 3 -->
+    <LinearLayout
+        android:id="@+id/ql_slot_3"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="?android:attr/selectableItemBackgroundBorderless">
+        
+        <ImageView
+            android:id="@+id/ql_icon_3"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_ql_zikan"
+            android:tint="#FFFFFF" />
+    </LinearLayout>
+
+    <!-- Slot 4 -->
+    <LinearLayout
+        android:id="@+id/ql_slot_4"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="?android:attr/selectableItemBackgroundBorderless">
+        
+        <ImageView
+            android:id="@+id/ql_icon_4"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_ql_routine"
+            android:tint="#FFFFFF" />
+    </LinearLayout>
+
+</LinearLayout>

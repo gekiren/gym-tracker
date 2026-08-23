@@ -11,23 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.101',
+  version: '1.8.102',
   title: {
-    ja: '⚡ 音声AIアシスタントの記録精度＆記憶保存の信頼性向上',
-    en: '⚡ Voice AI Assistant Precision & Storage Reliability',
+    ja: '🚀 クイックランチャーウィジェット設定の機能選択UI改善',
+    en: '🚀 Quick Launcher Widget Settings UI Improvements',
   },
   notes: {
     ja: [
-      '音声AIアシスタントのツール判定ルールを強化し、プロテイン飲料や水分の自動判別精度を向上しました。',
-      'リアルタイム対話のフォールバックモデルを3段階体制に拡充しました。',
-      '音声AIで記録された筋トレワークアウトの保存時刻が実際の会話時刻に同期するよう改善しました。',
-      '設定画面でのAI記憶の保存・初期化におけるエラーハンドリングを強化しました。',
+      'ウィジェット設定画面において、機能選択ダイアログを専用モーダルに刷新しました。',
+      'AI音声アシスタントや体組成を含む全8項目が確実に選択できるようになりました。',
     ],
     en: [
-      'Enhanced tool recognition rules to accurately distinguish protein drinks from plain water.',
-      'Expanded live model fallback to a robust 3-tier architecture.',
-      'Improved workout save timestamps to reflect actual conversation time.',
-      'Reinforced error handling and status feedback for AI memory settings.',
+      'Revamped the feature selection dialog in widget settings to a custom modal.',
+      'All 8 features including Voice AI Assistant and Body Composition can now be selected.',
     ],
   },
 };
