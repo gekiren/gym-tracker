@@ -15,7 +15,9 @@ import {
   Copy,
   Check,
   Smartphone,
+  Pencil,
 } from 'lucide-react';
+import { EditItemModal, type EditTarget } from './components/EditItemModal';
 
 declare global {
   interface Window {
@@ -160,6 +162,8 @@ export default function App() {
     voiceName,
   });
 
+  const [editingTarget, setEditingTarget] = useState<EditTarget | null>(null);
+
   const handleClearData = () => {
     setExtractedData({
       workouts: [],
@@ -167,6 +171,23 @@ export default function App() {
       meals: [],
       dailyNotes: [],
     });
+  };
+
+  const handleDeleteItem = (category: keyof typeof extractedData, id: string) => {
+    setExtractedData((prev) => ({
+      ...prev,
+      [category]: (prev[category] as any[]).filter((item: any) => item.id !== id),
+    }));
+  };
+
+  const handleSaveEdit = (category: keyof typeof extractedData, updatedItem: any) => {
+    setExtractedData((prev) => ({
+      ...prev,
+      [category]: (prev[category] as any[]).map((item: any) =>
+        item.id === updatedItem.id ? updatedItem : item
+      ),
+    }));
+    setEditingTarget(null);
   };
 
   const handleCopyJson = () => {
@@ -481,7 +502,25 @@ export default function App() {
                   {w.notes && ` - ${w.notes}`}
                 </div>
               </div>
-              <span style={styles.badge}>筋トレ</span>
+              <div style={styles.cardActionGroup}>
+                <span style={styles.badge}>筋トレ</span>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => setEditingTarget({ category: 'workouts', item: w })}
+                  title="編集"
+                >
+                  <Pencil size={13} color={themeTokens.textMuted} />
+                </button>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => handleDeleteItem('workouts', w.id)}
+                  title="削除"
+                >
+                  <Trash2 size={13} color={themeTokens.danger} />
+                </button>
+              </div>
             </div>
           ))}
 
@@ -498,9 +537,27 @@ export default function App() {
                   {wt.has_caffeine ? '（カフェイン有）' : ''}
                 </div>
               </div>
-              <span style={{ ...styles.badge, backgroundColor: 'rgba(79, 172, 254, 0.15)', color: '#4facfe', borderColor: 'rgba(79, 172, 254, 0.3)' }}>
-                水分
-              </span>
+              <div style={styles.cardActionGroup}>
+                <span style={{ ...styles.badge, backgroundColor: 'rgba(79, 172, 254, 0.15)', color: '#4facfe', borderColor: 'rgba(79, 172, 254, 0.3)' }}>
+                  水分
+                </span>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => setEditingTarget({ category: 'waters', item: wt })}
+                  title="編集"
+                >
+                  <Pencil size={13} color={themeTokens.textMuted} />
+                </button>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => handleDeleteItem('waters', wt.id)}
+                  title="削除"
+                >
+                  <Trash2 size={13} color={themeTokens.danger} />
+                </button>
+              </div>
             </div>
           ))}
 
@@ -517,9 +574,27 @@ export default function App() {
                   {m.protein ? `(P: ${m.protein}g)` : ''}
                 </div>
               </div>
-              <span style={{ ...styles.badge, backgroundColor: 'rgba(76, 217, 100, 0.15)', color: '#4cd964', borderColor: 'rgba(76, 217, 100, 0.3)' }}>
-                食事
-              </span>
+              <div style={styles.cardActionGroup}>
+                <span style={{ ...styles.badge, backgroundColor: 'rgba(76, 217, 100, 0.15)', color: '#4cd964', borderColor: 'rgba(76, 217, 100, 0.3)' }}>
+                  食事
+                </span>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => setEditingTarget({ category: 'meals', item: m })}
+                  title="編集"
+                >
+                  <Pencil size={13} color={themeTokens.textMuted} />
+                </button>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => handleDeleteItem('meals', m.id)}
+                  title="削除"
+                >
+                  <Trash2 size={13} color={themeTokens.danger} />
+                </button>
+              </div>
             </div>
           ))}
 
@@ -536,9 +611,27 @@ export default function App() {
                   {n.summary}
                 </div>
               </div>
-              <span style={{ ...styles.badge, backgroundColor: 'rgba(167, 139, 250, 0.15)', color: '#a78bfa', borderColor: 'rgba(167, 139, 250, 0.3)' }}>
-                日記
-              </span>
+              <div style={styles.cardActionGroup}>
+                <span style={{ ...styles.badge, backgroundColor: 'rgba(167, 139, 250, 0.15)', color: '#a78bfa', borderColor: 'rgba(167, 139, 250, 0.3)' }}>
+                  日記
+                </span>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => setEditingTarget({ category: 'dailyNotes', item: n })}
+                  title="編集"
+                >
+                  <Pencil size={13} color={themeTokens.textMuted} />
+                </button>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => handleDeleteItem('dailyNotes', n.id)}
+                  title="削除"
+                >
+                  <Trash2 size={13} color={themeTokens.danger} />
+                </button>
+              </div>
             </div>
           ))}
 
@@ -640,6 +733,16 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {/* Edit Item Modal */}
+      {editingTarget && (
+        <EditItemModal
+          target={editingTarget}
+          themeTokens={themeTokens}
+          onSave={handleSaveEdit}
+          onClose={() => setEditingTarget(null)}
+        />
+      )}
     </div>
   );
 }
@@ -893,6 +996,25 @@ const getStyles = (colors: ThemeColors): { [key: string]: React.CSSProperties } 
     borderRadius: 6,
     fontWeight: 600,
     border: '1px solid rgba(255, 107, 0, 0.3)',
+  },
+  cardActionGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    marginLeft: 8,
+  },
+  cardActionButton: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    border: `1px solid ${colors.borderSubtle}`,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    cursor: 'pointer',
+    padding: 0,
+    transition: 'all 0.15s ease',
   },
   emptyDataBox: {
     textAlign: 'center',
