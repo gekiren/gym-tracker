@@ -14,6 +14,7 @@ import { saveWorkout } from '../../src/db/repositories/workoutRepository';
 import { getExercises, addCustomExercise } from '../../src/db/repositories/exerciseRepository';
 import { addWaterLog, addTimeLog } from '../../src/db/repositories/lifelogRepository';
 import { addMealLog } from '../../src/db/repositories/nutritionRepository';
+import { getBodyLogByDate, insertBodyLog, updateBodyLog } from '../../src/db/repositories/bodyRepository';
 
 export default function WorkoutHomeScreen() {
   const { colors } = useAppTheme();
@@ -70,49 +71,134 @@ export default function WorkoutHomeScreen() {
               text: '保存', 
               onPress: async () => {
                 try {
-                  let saveCount = 0;
+                  let waterCount = 0;
+                  let mealCount = 0;
+                  let workoutCount = 0;
+                  let noteCount = 0;
+
                   // 水分
                   for (const w of payload.waters || []) {
-                    if (w.amount_ml) { await addWaterLog(w.amount_ml, w.has_caffeine || false); saveCount++; }
+                    if (w.amount_ml) {
+                      const dateStr = new Date(w.timestamp || Date.now()).toISOString().split("T")[0];
+                      await addWaterLog(Number(w.amount_ml), w.timestamp || Date.now(), dateStr, w.has_caffeine ? 100 : 0);
+                      waterCount++;
+                    }
                   }
+                  
                   // 食事
                   for (const m of payload.meals || []) {
-                    if (m.food_name) { await addMealLog(m.food_name, m.calories || 0, m.protein_g, m.fat_g, m.carbs_g); saveCount++; }
+                    if (m.meal_name) {
+                      const dateStr = new Date(m.timestamp || Date.now()).toISOString().split("T")[0];
+                      await addMealLog({
+                        date: dateStr,
+                        meal_type: m.meal_type || "snack",
+                        meal_time: "12:00",
+                        name: m.meal_name,
+                        calories: Number(m.calories) || 0,
+                        protein: Number(m.protein) || 0,
+                        fat: 0,
+                        carbs: 0,
+                        sodium: 0,
+                        fiber: 0,
+                        created_at: m.timestamp || Date.now()
+                      });
+                      mealCount++;
+                    }
                   }
+
                   // ワークアウト
-                  for (const w of payload.workouts || []) {
-                    const workoutId = `workout_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                    const existingExercises = await getExercises();
+                  if (payload.workouts && payload.workouts.length > 0) {
+                    const existingExercises: any[] = (await getExercises()) || [];
                     const newExercises = [];
-                    for (const we of w.exercises || []) {
-                      let exId = we.exerciseId;
-                      if (!exId && we.name) {
-                        const matched = existingExercises.find(e => e.name.toLowerCase() === we.name.toLowerCase() || e.name_ja?.toLowerCase() === we.name.toLowerCase());
-                        if (matched) exId = matched.id;
+                    
+                    for (const w of payload.workouts) {
+                      let exId = null;
+                      if (w.exercise_name) {
+                        const matched = existingExercises.find((e: any) => e.name?.toLowerCase() === w.exercise_name.toLowerCase() || e.name_ja?.toLowerCase() === w.exercise_name.toLowerCase());
+                        if (matched) exId = (matched as any).id;
                         else {
-                          exId = `ex_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                          await addCustomExercise({ id: exId, name: we.name, target_muscle_group: 'other' });
+                          exId = await addCustomExercise(w.exercise_name, 'other', '自重');
                         }
                       }
-                      newExercises.push({
-                        id: `we_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                        exerciseId: exId,
-                        orderIndex: newExercises.length,
-                        sets: we.sets?.map((s: any) => ({
-                          id: `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, weight: s.weight || 0, reps: s.reps || 0, isWarmup: false, isCompleted: true
-                        })) || []
-                      });
+                      
+                      if (exId) {
+                        const setsCount = Number(w.sets) || 1;
+                        const setsArray = [];
+                        for (let i = 1; i <= setsCount; i++) {
+                          setsArray.push({
+                            set_number: i,
+                            weight: Number(w.weight_kg) || 0,
+                            reps: Number(w.reps) || 0,
+                            rpe: null,
+                            is_completed: true,
+                            rest_seconds: null,
+                            work_seconds: null,
+                            side: null,
+                            variation: null,
+                            stance: null
+                          });
+                        }
+                        
+                        newExercises.push({
+                          exercise_id: exId,
+                          sort_order: newExercises.length,
+                          notes: w.notes || null,
+                          sets: setsArray
+                        });
+                      }
                     }
-                    await saveWorkout({ id: workoutId, title: 'AI記録ワークアウト', startTime: Date.now() - 3600000, endTime: Date.now(), status: 'completed', exercises: newExercises });
-                    saveCount++;
+                    
+                    if (newExercises.length > 0) {
+                      const nowTime = new Date().toISOString();
+                      const pastTime = new Date(Date.now() - 3600000).toISOString();
+                      await saveWorkout('AI記録ワークアウト', pastTime, nowTime, null, newExercises);
+                      workoutCount++;
+                    }
                   }
-                  // メモ
+
+                  // メモ・体調
                   for (const n of payload.dailyNotes || []) {
-                    await addTimeLog('memo', Date.now(), 0, n); saveCount++;
+                    if (n.summary || n.condition) {
+                      const dateStr = new Date(n.timestamp || Date.now()).toISOString().split("T")[0];
+                      const memoText = [n.condition ? `体調: ${n.condition}` : '', n.summary].filter(Boolean).join('\n');
+                      
+                      const existingBodyLog = await getBodyLogByDate(dateStr);
+                      if (existingBodyLog) {
+                        const updatedMemo = existingBodyLog.memo ? `${existingBodyLog.memo}\n\n[AI メモ]\n${memoText}` : `[AI メモ]\n${memoText}`;
+                        await updateBodyLog({ ...existingBodyLog, memo: updatedMemo });
+                      } else {
+                        await insertBodyLog({
+                          date: dateStr,
+                          weight: null,
+                          body_fat_rate: null,
+                          muscle_mass: null,
+                          lbm: null,
+                          height: null,
+                          neck: null,
+                          waist: null,
+                          hip: null,
+                          wrist: null,
+                          ankle: null,
+                          gender: 'male',
+                          source: 'manual',
+                          memo: `[AI メモ]\n${memoText}`,
+                          created_at: n.timestamp || Date.now()
+                        });
+                      }
+                      noteCount++;
+                    }
                   }
-                  Alert.alert('完了', `${saveCount} 件のデータを保存しました！`);
+                  
+                  const total = waterCount + mealCount + workoutCount + noteCount;
+                  Alert.alert('完了', `データを保存しました！\n水: ${waterCount}件 / 食: ${mealCount}件 / 筋: ${workoutCount}件 / メモ: ${noteCount}件`, [
+                    {
+                      text: 'OK',
+                      onPress: () => setShowAssistant(false)
+                    }
+                  ]);
                 } catch (e) {
-                  console.error('Save error:', e); Alert.alert('エラー', '保存中にエラーが発生しました。');
+                  console.error('Save error:', e); 
+                  Alert.alert('エラー', '保存中にエラーが発生しました。');
                 }
               }
             }
@@ -366,13 +452,13 @@ export default function WorkoutHomeScreen() {
               domStorageEnabled={true}
               mediaCapturePermissionGrantType="grant"
               onMessage={handleWebViewMessage}
-              onPermissionRequest={(request) => {
+              {...({ onPermissionRequest: (request: any) => {
                 try {
                   request.grant(request.resources);
                 } catch (e) {
                   console.warn('Permission grant error:', e);
                 }
-              }}
+              } } as any)}
             />
           </View>
         </Modal>

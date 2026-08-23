@@ -83,42 +83,51 @@ export default function CoachScreen() {
                   let saveCount = 0;
                   // 水分
                   for (const w of payload.waters || []) {
-                    if (w.amount_ml) { await addWaterLog(w.amount_ml, w.has_caffeine || false); saveCount++; }
+                    if (w.amount_ml) { await addWaterLog(w.amount_ml, Date.now(), new Date().toISOString().split("T")[0], w.has_caffeine ? 100 : 0); saveCount++; }
                   }
                   // 食事
                   for (const m of payload.meals || []) {
-                    if (m.food_name) { await addMealLog(m.food_name, m.calories || 0, m.protein_g, m.fat_g, m.carbs_g); saveCount++; }
+                    if (m.food_name) { await addMealLog({ date: new Date().toISOString().split("T")[0], meal_type: "snack", meal_time: "12:00", name: m.food_name, calories: m.calories || 0, protein: m.protein_g, fat: m.fat_g, carbs: m.carbs_g, sodium: 0, fiber: 0, created_at: Date.now() }); saveCount++; }
                   }
                   // ワークアウト
                   for (const w of payload.workouts || []) {
                     const workoutId = `workout_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                    const existingExercises = await getExercises();
+                    const existingExercises: any[] = (await getExercises()) || [];
                     const newExercises = [];
                     for (const we of w.exercises || []) {
                       let exId = we.exerciseId;
                       if (!exId && we.name) {
-                        const matched = existingExercises.find(e => e.name.toLowerCase() === we.name.toLowerCase() || e.name_ja?.toLowerCase() === we.name.toLowerCase());
-                        if (matched) exId = matched.id;
+                        const matched = existingExercises.find((e: any) => e.name?.toLowerCase() === we.name.toLowerCase() || e.name_ja?.toLowerCase() === we.name.toLowerCase());
+                        if (matched) exId = (matched as any).id;
                         else {
                           exId = `ex_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                          await addCustomExercise({ id: exId, name: we.name, target_muscle_group: 'other' });
+                          exId = await addCustomExercise(we.name, 'other', '自重');
                         }
                       }
-                      newExercises.push({
-                        id: `we_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                        exerciseId: exId,
-                        orderIndex: newExercises.length,
-                        sets: we.sets?.map((s: any) => ({
-                          id: `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, weight: s.weight || 0, reps: s.reps || 0, isWarmup: false, isCompleted: true
-                        })) || []
-                      });
+                      newExercises.push({
+      exercise_id: exId,
+      sort_order: newExercises.length,
+      notes: null,
+      sets: we.sets?.map((s: any, sIdx: number) => ({
+        set_number: sIdx + 1,
+        weight: s.weight || 0,
+        reps: s.reps || 0,
+        rpe: null,
+        is_completed: true,
+        rest_seconds: null,
+        work_seconds: null,
+        side: null,
+        variation: null,
+        stance: null
+      })) || []
+    });
                     }
-                    await saveWorkout({ id: workoutId, title: 'AI記録ワークアウト', startTime: Date.now() - 3600000, endTime: Date.now(), status: 'completed', exercises: newExercises });
+                    await saveWorkout('AI記録ワークアウト', new Date(Date.now() - 3600000).toISOString(), new Date().toISOString(), null, newExercises);
                     saveCount++;
                   }
                   // メモ
                   for (const n of payload.dailyNotes || []) {
-                    await addTimeLog('memo', Date.now(), 0, n); saveCount++;
+                    await addTimeLog(n || 'memo', '00:00', '00:00', new Date().toISOString().split("T")[0], 0); saveCount++;
                   }
                   Alert.alert('完了', `${saveCount} 件のデータを保存しました！`);
                 } catch (e) {
@@ -349,7 +358,7 @@ export default function CoachScreen() {
           mediaPlaybackRequiresUserAction={false}
           javaScriptEnabled={true}
           domStorageEnabled={true}
-          onPermissionRequest={(request) => request.grant()}
+          {...({ onPermissionRequest: (request: any) => (request as any)?.grant?.() } as any)}
         />
       ) : (
     <KeyboardAvoidingView

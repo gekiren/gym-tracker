@@ -563,6 +563,8 @@ export default function App() {
                   if (window.ReactNativeWebView) {
                     const payload = JSON.stringify({
                       type: 'SYNC_DATA',
+                      version: '1.0',
+                      timestamp: Date.now(),
                       data: extractedData
                     });
                     window.ReactNativeWebView.postMessage(payload);

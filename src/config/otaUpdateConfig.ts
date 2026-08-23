@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.94',
+  version: '1.8.96',
   title: {
-    ja: '⚡ AI食事写真解析の安定性向上 ＆ エラー表示改善',
-    en: '⚡ Enhanced AI Meal Photo Analysis & Error Handling',
+    ja: '🎙️ 音声AIアシスタントのデータ一括保存機能改善',
+    en: '🎙️ Improved AI Assistant Data Sync & Storage',
   },
   notes: {
     ja: [
-      '食事写真および栄養成分ラベルのAI解析タイムアウトと安定性を向上しました。',
-      'AI通信エラー発生時の詳細メッセージ表示を改善しました。',
+      '音声AIアシスタントから筋トレ・食事・水分・メモデータをTreNote本体へ確実に一括保存できるよう連携処理を最適化しました。',
+      'データ保存完了時に各カテゴリの保存件数をポップアップ表示し、スムーズにダッシュボードへ戻るよう改善しました。',
     ],
     en: [
-      'Improved timeout management and stability for AI meal photo analysis.',
-      'Enhanced detailed error messages during AI communication.',
+      'Optimized data sync between the AI Voice Assistant and TreNote database for workouts, meals, water, and daily notes.',
+      'Added detailed save count summary popup and streamlined the return flow to dashboard upon save completion.',
     ],
   },
 };
