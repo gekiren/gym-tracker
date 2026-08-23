@@ -7,7 +7,6 @@ import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { AccountCard } from '../../components/profile/AccountCard';
-import { AiCoachSection } from '../../components/profile/AiCoachSection';
 import { PromoCodeModal } from '../../components/profile/PromoCodeModal';
 import { PaywallModal } from '../../components/active-workout/PaywallModal';
 import { AppInfoSection } from '../../components/profile/AppInfoSection';
@@ -38,8 +37,6 @@ export default function AccountSettingsScreen() {
 
   const isPremium = settings.isPremium;
   const isEarly = settings.isEarlyAdopter;
-  const isBasic = !isPremium && !isEarly;
-  const maxTokens = (isPremium || isEarly) ? 20 : 5;
 
   useEffect(() => {
     setCrashConsent(settings.crashConsent);
@@ -175,15 +172,6 @@ export default function AccountSettingsScreen() {
           onPressPromo={handlePromoPress}
           t={t}
         />
-
-        <View style={{ marginTop: Theme.spacing.md }}>
-          <AiCoachSection
-            aiTokensBalance={settings.aiTokensBalance}
-            maxTokens={maxTokens}
-            isBasic={isBasic}
-            t={t}
-          />
-        </View>
 
         {/* Environment & Preferences Section */}
         <View style={{ marginTop: Theme.spacing.md }}>

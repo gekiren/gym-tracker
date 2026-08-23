@@ -12,20 +12,29 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Theme } from '../../src/theme';
 import { useSettingsStore } from '../../src/store/settingsStore';
+import { AiCoachSection } from '../../components/profile/AiCoachSection';
 
 export default function AiMemorySettingsScreen() {
-  const aiCompanionMemory = useSettingsStore((state) => state.settings.aiCompanionMemory);
+  const { t } = useTranslation();
+  const settings = useSettingsStore((state) => state.settings);
+  const aiCompanionMemory = settings.aiCompanionMemory;
   const setAiCompanionMemory = useSettingsStore((state) => state.setAiCompanionMemory);
   const [memoryText, setMemoryText] = useState(aiCompanionMemory || '');
   const [isSaving, setIsSaving] = useState(false);
+
+  const isPremium = settings.isPremium;
+  const isEarly = settings.isEarlyAdopter;
+  const isBasic = !isPremium && !isEarly;
+  const maxTokens = (isPremium || isEarly) ? 20 : 5;
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
       await setAiCompanionMemory(memoryText);
-      Alert.alert('保存完了', 'AI音声アシスタントの記憶・プロフィールを更新しました。');
+      Alert.alert('保存完了', 'AIアシスタントのパーソナライズ記憶を更新しました。');
     } catch (e: any) {
       Alert.alert('エラー', `保存に失敗しました: ${e?.message || e}`);
     } finally {
@@ -71,11 +80,19 @@ export default function AiMemorySettingsScreen() {
           >
             <Ionicons name="chevron-back" size={24} color={Theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>AIの記憶・プロフィール</Text>
+          <Text style={styles.headerTitle}>AIアシスタント</Text>
           <View style={{ width: 24 }} />
         </View>
 
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          {/* AI Quota Section */}
+          <AiCoachSection
+            aiTokensBalance={settings.aiTokensBalance}
+            maxTokens={maxTokens}
+            isBasic={isBasic}
+            t={t}
+          />
+
           {/* Info Card */}
           <View style={styles.infoCard}>
             <View style={styles.iconRow}>

@@ -95,6 +95,13 @@
       </intent-filter>
       <meta-data android:name="android.appwidget.provider" android:resource="@xml/zikan_widget_large_info"/>
     </receiver>
+    <receiver android:name=".QuickLauncherWidget" android:exported="true" android:label="@string/quick_launcher_widget_label">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.gekirennomad.trenote.ACTION_UPDATE_QUICK_LAUNCHER"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/quick_launcher_widget_info"/>
+    </receiver>
     <activity-alias android:name="ViewPermissionUsageActivity" android:exported="true" android:targetActivity=".MainActivity" android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
       <intent-filter>
         <action android:name="android.intent.action.VIEW_PERMISSION_USAGE"/>
