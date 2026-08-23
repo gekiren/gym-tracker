@@ -766,6 +766,7 @@ export default function DashboardScreen() {
             mediaPlaybackRequiresUserAction={false}
             javaScriptEnabled={true}
             domStorageEnabled={true}
+            scalesPageToFit={false}
             mediaCapturePermissionGrantType="grant"
             onMessage={handleVoiceAssistantWebViewMessage}
             {...({ onPermissionRequest: (request: any) => {
