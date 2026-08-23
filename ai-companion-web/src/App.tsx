@@ -85,7 +85,7 @@ export default function App() {
   const [copied, setCopied] = useState<boolean>(false);
 
   // TreNoteからのコンテキストを取得（1. JS注入優先、2. URLパラメータフォールバック）
-  const [initialContext] = useState<InitialContext>(() => {
+  const [initialContext, setInitialContext] = useState<InitialContext>(() => {
     try {
       if (typeof window !== 'undefined' && window.__TRENOTE_CONTEXT__) {
         return window.__TRENOTE_CONTEXT__;
@@ -106,6 +106,13 @@ export default function App() {
       memory: '',
     };
   });
+
+  // 遅延注入された場合のフォールバック同期
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.__TRENOTE_CONTEXT__) {
+      setInitialContext(window.__TRENOTE_CONTEXT__);
+    }
+  }, []);
 
   // テーマモードの決定 (URLパラメータ または context から取得)
   const themeMode: 'dark' | 'pureBlack' = useMemo(() => {

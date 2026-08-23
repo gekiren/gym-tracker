@@ -78,7 +78,7 @@ export interface SettingsState {
   removeCustomStance: (stance: string) => void;
   setDisplayFields: (fields: Partial<{ showRpe: boolean; show1RM: boolean; showVolume: boolean; showStance: boolean }>) => void;
   setCrashConsent: (consent: 'agreed' | 'declined' | 'unset') => void;
-  setAiCompanionMemory: (memory: string) => void;
+  setAiCompanionMemory: (memory: string) => Promise<void>;
   resetSettings: () => void;
 }
 
@@ -288,8 +288,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     settings: { ...state.settings, alwaysOneSet }
   })),
 
-  setAiCompanionMemory: (memory: string) => {
-    saveSetting('ai_companion_memory', memory).catch(e => console.warn('Failed to save ai_companion_memory setting', e));
+  setAiCompanionMemory: async (memory: string) => {
+    await saveSetting('ai_companion_memory', memory);
     set((state) => ({
       settings: { ...state.settings, aiCompanionMemory: memory }
     }));

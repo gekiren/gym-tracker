@@ -21,10 +21,10 @@ export default function AiMemorySettingsScreen() {
   const [memoryText, setMemoryText] = useState(aiCompanionMemory || '');
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
     try {
-      setAiCompanionMemory(memoryText);
+      await setAiCompanionMemory(memoryText);
       Alert.alert('保存完了', 'AI音声アシスタントの記憶・プロフィールを更新しました。');
     } catch (e: any) {
       Alert.alert('エラー', `保存に失敗しました: ${e?.message || e}`);
@@ -42,10 +42,14 @@ export default function AiMemorySettingsScreen() {
         {
           text: '消去する',
           style: 'destructive',
-          onPress: () => {
-            setMemoryText('');
-            setAiCompanionMemory('');
-            Alert.alert('消去完了', 'AIの記憶をすべて消去しました。');
+          onPress: async () => {
+            try {
+              setMemoryText('');
+              await setAiCompanionMemory('');
+              Alert.alert('消去完了', 'AIの記憶をすべて消去しました。');
+            } catch (e: any) {
+              Alert.alert('エラー', `消去に失敗しました: ${e?.message || e}`);
+            }
           },
         },
       ]
