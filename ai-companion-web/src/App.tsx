@@ -191,11 +191,31 @@ export default function App() {
           <div>
             <h1 style={styles.title} className="res-title">TreNote 音声AIパートナー</h1>
             <p style={styles.subtitle} className="res-subtitle">
-              Gemini Live API (リアルタイム音声対話・自動ログ記録)
+              水・栄養・トレーニング・雑記を話すだけでリアルタイム自動記録
             </p>
           </div>
         </div>
       </header>
+
+      {/* 4大記録カテゴリーの提示チップ */}
+      <div style={styles.categoryChipsRow}>
+        <div style={{...styles.categoryChip, borderColor: 'rgba(79, 172, 254, 0.3)', backgroundColor: 'rgba(79, 172, 254, 0.08)'}}>
+          <Droplets size={13} color="#4facfe" />
+          <span style={{color: '#4facfe'}}>💧 水</span>
+        </div>
+        <div style={{...styles.categoryChip, borderColor: 'rgba(76, 217, 100, 0.3)', backgroundColor: 'rgba(76, 217, 100, 0.08)'}}>
+          <Utensils size={13} color="#4cd964" />
+          <span style={{color: '#4cd964'}}>🥗 栄養</span>
+        </div>
+        <div style={{...styles.categoryChip, borderColor: 'rgba(255, 107, 0, 0.3)', backgroundColor: 'rgba(255, 107, 0, 0.08)'}}>
+          <Dumbbell size={13} color="#ff6b00" />
+          <span style={{color: '#ff8c33'}}>🏋️ トレーニング</span>
+        </div>
+        <div style={{...styles.categoryChip, borderColor: 'rgba(167, 139, 250, 0.3)', backgroundColor: 'rgba(167, 139, 250, 0.08)'}}>
+          <BookOpen size={13} color="#a78bfa" />
+          <span style={{color: '#a78bfa'}}>📝 雑記・メモ</span>
+        </div>
+      </div>
 
       {!isSecureContextSupported && (
         <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#fca5a5', padding: '12px 16px', borderRadius: 8, margin: '8px 0', fontSize: 13, lineHeight: 1.5, border: '1px solid rgba(239, 68, 68, 0.3)' }}>
@@ -344,8 +364,8 @@ export default function App() {
           {messages.length === 0 ? (
             <div style={styles.emptyText}>
               {isConnected
-                ? 'AIがあなたの声をお待ちしています。「ベンチプレス100kg10回やった」「水500ml飲んだ」など自由に話しかけてください。'
-                : '「音声対話を開始」ボタンを押すと、ハンズフリーで会話がスタートします。'}
+                ? 'AIがあなたの声をお待ちしています。「水」「栄養」「トレーニング」「雑記（メモ・気づき）」について自由にお話しください。\n例: 「水500ml」「プロテイン飲んだ」「ベンチプレス80kg10回3セット」「肩の調子がすごく良い」'
+                : '「音声対話を開始」ボタンを押すと、ハンズフリーで会話がスタートします。\n水・栄養・トレーニング・雑記（体調・メモ）を話すだけで自動で分類・記録されます。'}
             </div>
           ) : (
             messages.map((m) => (
@@ -662,6 +682,24 @@ const getStyles = (colors: ThemeColors): { [key: string]: React.CSSProperties } 
   subtitle: {
     fontSize: 12,
     color: colors.textMuted,
+  },
+  categoryChipsRow: {
+    display: 'flex',
+    gap: 8,
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    marginTop: -4,
+    marginBottom: 4,
+  },
+  categoryChip: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 5,
+    padding: '4px 10px',
+    borderRadius: 8,
+    border: '1px solid',
+    fontSize: 12,
+    fontWeight: 600,
   },
   controlBanner: {
     display: 'flex',
