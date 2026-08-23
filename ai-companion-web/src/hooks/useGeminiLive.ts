@@ -67,19 +67,38 @@ export function useGeminiLive({
   // ツールの定義
   const functionDeclarations = [
     {
+      name: 'record_water',
+      description:
+        '水分摂取量を保存する。「水」「お茶」「コーヒー」「水分」「〇〇ml」など飲料・水分の摂取報告があった際に最優先で呼び出す。',
+      parameters: {
+        type: 'object',
+        properties: {
+          amount_ml: {
+            type: 'integer',
+            description: '摂取した水分の量（ml単位。例: 200, 500。指定がない場合はコップ1杯=200mlなど常識的な推定値）',
+          },
+          has_caffeine: {
+            type: 'boolean',
+            description: 'コーヒーやお茶、エナジードリンクなどカフェインを含む飲料かどうか',
+          },
+        },
+        required: ['amount_ml'],
+      },
+    },
+    {
       name: 'record_workout',
       description:
-        '筋トレの記録（種目名、重量、回数、セット数など）を保存する。ユーザーがトレーニング内容を話した際に呼び出す。',
+        '筋トレの記録（種目名、重量、回数、セット数など）を保存する。ユーザーが明確にトレーニング種目や重量・回数を話した際のみ呼び出す。※「水」や飲料・食事の報告には絶対に使用しないこと。',
       parameters: {
         type: 'object',
         properties: {
           exercise_name: {
             type: 'string',
-            description: 'トレーニング種目名（例: ベンチプレス, スクワット, ダンベルカール）',
+            description: 'トレーニング種目名（例: ベンチプレス, スクワット, ダンベルカール, 腕立て伏せ）',
           },
           weight_kg: {
             type: 'number',
-            description: '使用した重量（kg）。自重の場合は0または省略。',
+            description: '使用した重量（kg）。自重種目の場合は0または省略。',
           },
           reps: {
             type: 'integer',
@@ -95,25 +114,6 @@ export function useGeminiLive({
           },
         },
         required: ['exercise_name'],
-      },
-    },
-    {
-      name: 'record_water',
-      description:
-        '水分摂取量を保存する。お水、お茶、コーヒーなどを飲んだ報告があった際に呼び出す。',
-      parameters: {
-        type: 'object',
-        properties: {
-          amount_ml: {
-            type: 'integer',
-            description: '摂取した水分の量（ml単位。例: 200, 500）',
-          },
-          has_caffeine: {
-            type: 'boolean',
-            description: 'コーヒーやエナジードリンクなどカフェインを含むか',
-          },
-        },
-        required: ['amount_ml'],
       },
     },
     {
@@ -153,7 +153,7 @@ export function useGeminiLive({
         properties: {
           condition: {
             type: 'string',
-            description: '体調や気分の要約（例: 良好, 肩に筋肉痛あり）',
+            description: '体調や気分の要約（例: 良好, 肩に筋肉痛あり, 少し疲労感）',
           },
           summary: {
             type: 'string',
@@ -176,15 +176,28 @@ export function useGeminiLive({
       if (initialContext.bodyWeight) contextStr += `- 現在の体重: ${initialContext.bodyWeight}kg\n`;
     }
 
-    return `あなたは筋トレ＆ライフログ記録アプリ『TreNote』の専属AIパートナーです。
-親しみやすく明るいトーン（友達のような丁寧語）でユーザーと音声対話してください。
+    return `あなたは筋トレ＆ライフログ記録アプリ『TreNote』の専属ライフログ・サポーターです。
+ユーザーのトレーニング、食事、水分摂取、体調管理をトータルで支える、温かく気配り上手なパートナーとして丁寧語で音声対話してください。
 
-【あなたの役割】
-1. ユーザーから今日のトレーニング、食事、水分、体調をヒアリングし、自然な会話を通じてデイリーログを作成します。
-2. ユーザーが「〇〇やった」「水飲んだ」「〇〇食べた」と話したら、即座に対応するツール（record_workout, record_water, record_meal, record_daily_note）を呼び出して記録してください。
-3. TreNoteの前提データをもとに、あなたから自発的に「昨日の筋肉痛はどうですか？」「今日はお水飲めましたか？」などの質問を投げかけて会話をリードしてください。
-4. 返答は音声として読み上げられるため、1〜2文程度で簡潔に話してください。
-${contextStr}`;
+【あなたの役割と会話ルール】
+1. 【最初の挨拶とリード】
+   対話の開始時は「お疲れ様です！今日は何をされましたか？」などと温かく声をかけ、ユーザーが今日の筋トレや水分、食事、体調について自然に話し始められるようリードしてください。
+
+2. 【即時記録と正確な復唱（必須）】
+   ユーザーが活動内容を話したら、即座に対応するツール（record_water, record_workout, record_meal, record_daily_note）を呼び出して記録してください。
+   音声認識の誤認を防ぎユーザーに安心感を与えるため、記録時は必ず内容を短く復唱してください。
+   （例:「ベンチプレス80kgを10回、3セット記録しました！」「お水350ml記録しました！」「プロテインを記録しました！」）
+
+3. 【ツール呼び出しの厳格な判別ルール】
+   ・「水」「お茶」「コーヒー」「〇〇ml飲んだ」など水分に関する言葉が出た場合は、絶対に筋トレ種目（record_workout）と誤認せず、必ず【record_water】を呼び出してください。
+   ・「プロテイン」「ご飯」「〇〇食べた」などは【record_meal】、種目名や「〇〇kg」「〇〇回」が含まれる場合のみ【record_workout】を呼び出してください。
+
+4. 【前提データとアドバイスの活用】
+   ${contextStr ? `${contextStr}
+   ※上記の前提データは、ユーザーから「今日のおすすめメニューは？」「水分足りてる？」「アドバイスある？」など意見や質問を求められた際に参照し、的確に助言してください。求められていない時は無理に前提データに触れず、ユーザーの話を心地よく聞くことを優先してください。` : ''}
+
+5. 【音声対話の最適化】
+   返答はすべて音声として読み上げられるため、1〜2文程度の簡潔でテンポの良い文章で話してください。`;
   }, [initialContext]);
 
   const isMicRunningRef = useRef<boolean>(false);
