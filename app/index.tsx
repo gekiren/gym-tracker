@@ -92,6 +92,7 @@ export default function DashboardScreen() {
       currentWaterMl: daySummary?.water.amount || 0,
       waterGoalMl: daySummary?.water.goal || 2000,
       bodyWeight: settings.bodyWeight || null,
+      theme: settings.backgroundTheme || 'dark',
       date: getTodayStr(),
     };
     
@@ -763,16 +764,16 @@ export default function DashboardScreen() {
         animationType="slide"
         onRequestClose={() => setShowVoiceAssistant(false)}
       >
-        <View style={{ flex: 1, backgroundColor: '#000' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 48, paddingHorizontal: 16, paddingBottom: 8, backgroundColor: '#0d0d0d', borderBottomWidth: 1, borderBottomColor: '#222' }}>
+        <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 48, paddingHorizontal: 16, paddingBottom: 8, backgroundColor: Theme.colors.card, borderBottomWidth: 1, borderBottomColor: Theme.colors.border }}>
             <TouchableOpacity onPress={() => setShowVoiceAssistant(false)} style={{ padding: 8, marginRight: 8 }}>
-              <Ionicons name="close" size={26} color="#fff" />
+              <Ionicons name="close" size={26} color={Theme.colors.text} />
             </TouchableOpacity>
-            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 17, flex: 1 }}>音声AIアシスタント</Text>
+            <Text style={{ color: Theme.colors.text, fontWeight: 'bold', fontSize: 17, flex: 1 }}>音声AIアシスタント</Text>
           </View>
           <WebView
             source={{ uri: aiCompanionUrl }}
-            style={{ flex: 1, backgroundColor: '#000' }}
+            style={{ flex: 1, backgroundColor: Theme.colors.background }}
             allowsInlineMediaPlayback={true}
             mediaPlaybackRequiresUserAction={false}
             javaScriptEnabled={true}
