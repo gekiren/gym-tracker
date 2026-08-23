@@ -62,16 +62,7 @@ export default function App() {
     return typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
   });
 
-  // スマホ判定（WebView内の画面幅 <= 600px でスマホレイアウトに切替）
-  const [isMobile, setIsMobile] = useState<boolean>(() => {
-    return typeof window !== 'undefined' && window.innerWidth <= 600;
-  });
 
-  useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth <= 600);
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
 
   useEffect(() => {
     if (navigator?.mediaDevices?.enumerateDevices) {
@@ -143,8 +134,8 @@ export default function App() {
             <Dumbbell size={20} color="#ff6b00" />
           </div>
           <div>
-            <h1 style={{ ...styles.title, fontSize: isMobile ? 15 : 20 }}>TreNote AI Live Companion</h1>
-            <p style={{ ...styles.subtitle, display: isMobile ? 'none' : 'block' }}>
+            <h1 style={styles.title} className="res-title">TreNote AI Live Companion</h1>
+            <p style={styles.subtitle} className="res-subtitle">
               Gemini Multimodal Live API (音声リアルタイム対話・自動記録)
             </p>
           </div>
@@ -200,12 +191,7 @@ export default function App() {
       )}
 
       {/* Control Banner */}
-      <div style={{
-        ...styles.controlBanner,
-        flexDirection: isMobile ? 'column' : 'row',
-        alignItems: isMobile ? 'stretch' : 'center',
-        gap: isMobile ? 12 : undefined,
-      }}>
+      <div style={styles.controlBanner} className="res-banner">
         <div style={styles.statusSection}>
           <div
             style={{
@@ -220,12 +206,13 @@ export default function App() {
           />
           <div>
             <div style={styles.statusLabel}>{statusText}</div>
-            <div style={{ ...styles.voiceSelectWrapper, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+            <div style={styles.voiceSelectWrapper} className="res-voice-select">
               <select
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
                 disabled={isConnected || isConnecting}
-                style={{ ...styles.select, width: isMobile ? '100%' : undefined }}
+                style={styles.select}
+                className="res-select"
               >
                 <option value="models/gemini-3.1-flash-live-preview">Gemini 3.1 Flash Live (最新・推奨)</option>
                 <option value="models/gemini-2.5-flash-native-audio-preview-12-2025">Gemini 2.5 Flash Native Audio</option>
@@ -238,7 +225,8 @@ export default function App() {
                 value={voiceName}
                 onChange={(e) => setVoiceName(e.target.value)}
                 disabled={isConnected || isConnecting}
-                style={{ ...styles.select, width: isMobile ? '100%' : undefined }}
+                style={styles.select}
+                className="res-select"
               >
                 <option value="Aoede">音声: Aoede (落ち着いた女性)</option>
                 <option value="Puck">音声: Puck (明るい男性)</option>
@@ -269,11 +257,7 @@ export default function App() {
           </div>
         </div>
 
-        <div style={{
-          ...styles.actionButtons,
-          flexDirection: isMobile ? 'column' : 'row',
-          width: isMobile ? '100%' : undefined,
-        }}>
+        <div style={styles.actionButtons} className="res-action-btns">
           {isConnected ? (
             <>
               {/* Mic Volume Level Meter */}
@@ -311,12 +295,8 @@ export default function App() {
               </div>
 
               <button
-                style={{
-                  ...styles.muteButton,
-                  backgroundColor: isMuted ? '#ef4444' : '#334155',
-                  width: isMobile ? '100%' : undefined,
-                  justifyContent: isMobile ? 'center' : undefined,
-                }}
+                style={{...styles.muteButton, backgroundColor: isMuted ? '#ef4444' : '#334155'}}
+                className="res-btn"
                 onClick={toggleMute}
               >
                 {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
@@ -324,11 +304,8 @@ export default function App() {
               </button>
 
               <button
-                style={{
-                  ...styles.disconnectButton,
-                  width: isMobile ? '100%' : undefined,
-                  justifyContent: isMobile ? 'center' : undefined,
-                }}
+                style={styles.disconnectButton}
+                className="res-btn"
                 onClick={disconnect}
               >
                 <PhoneOff size={20} />
@@ -337,12 +314,8 @@ export default function App() {
             </>
           ) : (
             <button
-              style={{
-                ...styles.connectButton,
-                opacity: isConnecting ? 0.7 : 1,
-                width: isMobile ? '100%' : undefined,
-                justifyContent: isMobile ? 'center' : undefined,
-              }}
+              style={{...styles.connectButton, opacity: isConnecting ? 0.7 : 1}}
+              className="res-btn"
               disabled={isConnecting}
               onClick={() => connect(selectedDeviceId)}
             >
@@ -354,11 +327,7 @@ export default function App() {
       </div>
 
       {/* Main Grid */}
-      <div style={{
-        ...styles.mainGrid,
-        gridTemplateColumns: isMobile ? '1fr' : '1.1fr 1fr',
-        minHeight: isMobile ? 'auto' : 480,
-      }}>
+      <div style={styles.mainGrid} className="res-grid">
         {/* Left Column: Live Audio Chat Visualizer & Context */}
         <div style={styles.leftCol}>
           {/* App Context Preview */}

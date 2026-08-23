@@ -760,7 +760,7 @@ export default function DashboardScreen() {
             <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 17, flex: 1 }}>音声AIアシスタント</Text>
           </View>
           <WebView
-            source={{ uri: 'https://gym-tracker-ai-companion.toshi-diyil.workers.dev' }}
+            source={{ uri: 'https://ai-companion-web.toshi-diyil.workers.dev' }}
             style={{ flex: 1, backgroundColor: '#000' }}
             allowsInlineMediaPlayback={true}
             mediaPlaybackRequiresUserAction={false}

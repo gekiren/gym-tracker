@@ -71,9 +71,26 @@ body {
 }
 
 /* === スマホ向けレイアウト調整 === */
-@media (max-width: 600px) {
+.res-title { font-size: 20px !important; }
+.res-subtitle { display: block !important; }
+.res-banner { flex-direction: row !important; align-items: center !important; gap: 0 !important; }
+.res-voice-select { flex-wrap: nowrap !important; }
+.res-select { width: auto !important; }
+.res-action-btns { flex-direction: row !important; width: auto !important; }
+.res-btn { width: auto !important; justify-content: center !important; }
+.res-grid { grid-template-columns: 1.1fr 1fr !important; min-height: 480px !important; }
+
+@media (max-width: 900px) {
   #root {
     max-width: 100%;
     padding: 10px 10px;
   }
+  .res-title { font-size: 15px !important; }
+  .res-subtitle { display: none !important; }
+  .res-banner { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; }
+  .res-voice-select { flex-wrap: wrap !important; }
+  .res-select { width: 100% !important; }
+  .res-action-btns { flex-direction: column !important; width: 100% !important; }
+  .res-btn { width: 100% !important; justify-content: center !important; }
+  .res-grid { grid-template-columns: 1fr !important; min-height: auto !important; }
 }
