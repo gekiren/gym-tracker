@@ -10,6 +10,8 @@ import { LifelogDateHeader } from '../../components/LifelogDateHeader';
 import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { PanGestureHandler } from 'react-native-gesture-handler';
+import { useFeatureSwipe } from '../../hooks/useFeatureSwipe';
 
 export default function HabitScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
@@ -18,6 +20,7 @@ export default function HabitScreen() {
   const webViewTabRef = useRef<WebViewTabRef>(null);
   const { t } = useTranslation();
   const isFocused = useIsFocused();
+  const { panHandlerProps } = useFeatureSwipe('/lifelog/habit');
 
   const getTodayStr = () => {
     const date = new Date();
@@ -43,38 +46,40 @@ export default function HabitScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
-      <Stack.Screen
-        options={{
-          title: '習慣カウンター',
-          headerStyle: { backgroundColor: Theme.colors.background },
-          headerTintColor: Theme.colors.text,
-          headerTitleStyle: { fontWeight: 'bold' },
-          headerRight: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
-              <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ padding: 6, marginRight: 6 }}>
-                <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleOpenManageModal} style={{ padding: 6 }}>
-                <Ionicons name="settings-outline" size={22} color={Theme.colors.primary} />
-              </TouchableOpacity>
-            </View>
-          ),
-        }}
-      />
-      {showHistory ? (
-        <LifelogHistoryTab type="habit" t={t} />
-      ) : isFocused ? (
-        <>
-          {!isModalVisible && <LifelogDateHeader type="habit" />}
-          <WebViewTab
-            ref={webViewTabRef}
-            html={HabitCounterHTML}
-            currentDate={targetDate}
-            onModalStateChange={(visible) => setIsModalVisible(visible)}
-          />
-        </>
-      ) : null}
-    </View>
+    <PanGestureHandler {...panHandlerProps}>
+      <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+        <Stack.Screen
+          options={{
+            title: '習慣カウンター',
+            headerStyle: { backgroundColor: Theme.colors.background },
+            headerTintColor: Theme.colors.text,
+            headerTitleStyle: { fontWeight: 'bold' },
+            headerRight: () => (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+                <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ padding: 6, marginRight: 6 }}>
+                  <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleOpenManageModal} style={{ padding: 6 }}>
+                  <Ionicons name="settings-outline" size={22} color={Theme.colors.primary} />
+                </TouchableOpacity>
+              </View>
+            ),
+          }}
+        />
+        {showHistory ? (
+          <LifelogHistoryTab type="habit" t={t} />
+        ) : isFocused ? (
+          <>
+            {!isModalVisible && <LifelogDateHeader type="habit" />}
+            <WebViewTab
+              ref={webViewTabRef}
+              html={HabitCounterHTML}
+              currentDate={targetDate}
+              onModalStateChange={(visible) => setIsModalVisible(visible)}
+            />
+          </>
+        ) : null}
+      </View>
+    </PanGestureHandler>
   );
 }

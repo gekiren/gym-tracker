@@ -10,6 +10,8 @@ import { LifelogDateHeader } from '../../components/LifelogDateHeader';
 import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { PanGestureHandler } from 'react-native-gesture-handler';
+import { useFeatureSwipe } from '../../hooks/useFeatureSwipe';
 
 export default function RoutineScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
@@ -19,6 +21,7 @@ export default function RoutineScreen() {
   const webViewTabRef = useRef<WebViewTabRef>(null);
   const { t } = useTranslation();
   const isFocused = useIsFocused();
+  const { panHandlerProps } = useFeatureSwipe('/lifelog/routine');
 
   const isExecuting = activeRoutineState?.isExecuting || false;
 
@@ -86,43 +89,45 @@ export default function RoutineScreen() {
   const targetDate = currentDate || getTodayStr();
 
   return (
-    <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
-      <Stack.Screen
-        options={{
-          title: 'ルーティン管理',
-          headerStyle: { backgroundColor: Theme.colors.background },
-          headerTintColor: Theme.colors.text,
-          headerTitleStyle: { fontWeight: 'bold' },
-          headerLeft: () => (
-            <TouchableOpacity onPress={handleBack} style={{ marginLeft: 8, padding: 4 }}>
-              <Ionicons name="arrow-back" size={24} color={Theme.colors.primary} />
-            </TouchableOpacity>
-          ),
-          headerRight: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
-              <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ padding: 6, marginRight: 6 }}>
-                <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
+    <PanGestureHandler {...panHandlerProps}>
+      <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+        <Stack.Screen
+          options={{
+            title: 'ルーティン管理',
+            headerStyle: { backgroundColor: Theme.colors.background },
+            headerTintColor: Theme.colors.text,
+            headerTitleStyle: { fontWeight: 'bold' },
+            headerLeft: () => (
+              <TouchableOpacity onPress={handleBack} style={{ marginLeft: 8, padding: 4 }}>
+                <Ionicons name="arrow-back" size={24} color={Theme.colors.primary} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleOpenManageView} style={{ padding: 6 }}>
-                <Ionicons name="settings-outline" size={22} color={Theme.colors.primary} />
-              </TouchableOpacity>
-            </View>
-          ),
-        }}
-      />
-      {showHistory ? (
-        <LifelogHistoryTab type="routine" t={t} />
-      ) : isFocused ? (
-        <>
-          {!isModalVisible && <LifelogDateHeader type="routine" />}
-          <WebViewTab
-            ref={webViewTabRef}
-            html={RoutineTrackerHTML}
-            currentDate={targetDate}
-            onModalStateChange={(visible) => setIsModalVisible(visible)}
-          />
-        </>
-      ) : null}
-    </View>
+            ),
+            headerRight: () => (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+                <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ padding: 6, marginRight: 6 }}>
+                  <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleOpenManageView} style={{ padding: 6 }}>
+                  <Ionicons name="settings-outline" size={22} color={Theme.colors.primary} />
+                </TouchableOpacity>
+              </View>
+            ),
+          }}
+        />
+        {showHistory ? (
+          <LifelogHistoryTab type="routine" t={t} />
+        ) : isFocused ? (
+          <>
+            {!isModalVisible && <LifelogDateHeader type="routine" />}
+            <WebViewTab 
+              ref={webViewTabRef}
+              html={RoutineTrackerHTML} 
+              currentDate={targetDate} 
+              onModalStateChange={(visible) => setIsModalVisible(visible)}
+            />
+          </>
+        ) : null}
+      </View>
+    </PanGestureHandler>
   );
 }
