@@ -17,6 +17,8 @@ import { Theme, useAppTheme } from '../../src/theme';
 import { useNutritionStore } from '../../src/store/nutritionStore';
 import { MealLog, MealFavorite, NutritionGoals, AutophagyConfig } from '../../src/db/types';
 import { getDefaultMealType } from '../../src/utils/nutritionUtils';
+import { PanGestureHandler } from 'react-native-gesture-handler';
+import { useFeatureSwipe } from '../../hooks/useFeatureSwipe';
 
 // コンポーネントインポート
 import NutritionSummaryCard from '../../components/nutrition/NutritionSummaryCard';
@@ -41,6 +43,7 @@ export default function NutritionScreen() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const { t } = useTranslation();
+  const { panHandlerProps } = useFeatureSwipe('/lifelog/nutrition');
 
   const [showHistory, setShowHistory] = useState(false);
 
@@ -191,10 +194,11 @@ export default function NutritionScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen
-        options={{
-          title: '🥗 栄養＆食事管理',
+    <PanGestureHandler {...panHandlerProps}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Stack.Screen
+          options={{
+            title: '🥗 栄養＆食事管理',
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.text,
           headerTitleStyle: { fontWeight: 'bold' },
@@ -402,7 +406,8 @@ export default function NutritionScreen() {
         }}
         onCancel={() => setDeletingMealId(null)}
       />
-    </View>
+      </View>
+    </PanGestureHandler>
   );
 }
 

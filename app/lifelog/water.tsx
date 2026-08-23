@@ -10,6 +10,8 @@ import { LifelogDateHeader } from '../../components/LifelogDateHeader';
 import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { PanGestureHandler } from 'react-native-gesture-handler';
+import { useFeatureSwipe } from '../../hooks/useFeatureSwipe';
 
 export default function WaterScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
@@ -20,6 +22,7 @@ export default function WaterScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const isFocused = useIsFocused();
+  const { panHandlerProps } = useFeatureSwipe('/lifelog/water');
 
   const getTodayStr = () => {
     const date = new Date();
@@ -69,38 +72,40 @@ export default function WaterScreen() {
   }, [targetDate, isFocused]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
-      <Stack.Screen
-        options={{
-          title: '水分補給',
-          headerStyle: { backgroundColor: Theme.colors.background },
-          headerTintColor: Theme.colors.text,
-          headerTitleStyle: { fontWeight: 'bold' },
-          headerRight: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
-              <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ padding: 6, marginRight: 6 }}>
-                <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleOpenSettingsModal} style={{ padding: 6 }}>
-                <Ionicons name="settings-outline" size={22} color={Theme.colors.primary} />
-              </TouchableOpacity>
-            </View>
-          ),
-        }}
-      />
-      {showHistory ? (
-        <LifelogHistoryTab type="water" t={t} />
-      ) : (
-        <>
-          {!isModalVisible && <LifelogDateHeader type="water" />}
-          <WebViewTab
-            ref={webViewTabRef}
-            html={WaterHTML}
-            currentDate={targetDate}
-            onModalStateChange={(visible) => setIsModalVisible(visible)}
-          />
-        </>
-      )}
-    </View>
+    <PanGestureHandler {...panHandlerProps}>
+      <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+        <Stack.Screen
+          options={{
+            title: '水分補給',
+            headerStyle: { backgroundColor: Theme.colors.background },
+            headerTintColor: Theme.colors.text,
+            headerTitleStyle: { fontWeight: 'bold' },
+            headerRight: () => (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+                <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ padding: 6, marginRight: 6 }}>
+                  <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleOpenSettingsModal} style={{ padding: 6 }}>
+                  <Ionicons name="settings-outline" size={22} color={Theme.colors.primary} />
+                </TouchableOpacity>
+              </View>
+            ),
+          }}
+        />
+        {showHistory ? (
+          <LifelogHistoryTab type="water" t={t} />
+        ) : (
+          <>
+            {!isModalVisible && <LifelogDateHeader type="water" />}
+            <WebViewTab
+              ref={webViewTabRef}
+              html={WaterHTML}
+              currentDate={targetDate}
+              onModalStateChange={(visible) => setIsModalVisible(visible)}
+            />
+          </>
+        )}
+      </View>
+    </PanGestureHandler>
   );
 }

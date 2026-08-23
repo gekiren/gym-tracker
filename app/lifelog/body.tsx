@@ -18,6 +18,8 @@ import { Theme, useAppTheme } from '../../src/theme';
 import { useBodyStore } from '../../src/store/bodyStore';
 import { useLifelogStore } from '../../src/store/lifelogStore';
 import { BodyCompositionLog } from '../../src/types/bodyComposition';
+import { PanGestureHandler } from 'react-native-gesture-handler';
+import { useFeatureSwipe } from '../../hooks/useFeatureSwipe';
 
 // Components
 import BodySummaryCard from '../../components/body/BodySummaryCard';
@@ -34,6 +36,7 @@ export default function BodyCompositionScreen() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const { t } = useTranslation();
+  const { panHandlerProps } = useFeatureSwipe('/lifelog/body');
 
   // Zustand Store Selectors (Performance optimization)
   const currentLog = useBodyStore((state) => state.currentLog);
@@ -172,11 +175,12 @@ export default function BodyCompositionScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
-      <Stack.Screen
-        options={{
-          title: '体組成 ＆ 筋肥大限界',
-          headerStyle: { backgroundColor: Theme.colors.background },
+    <PanGestureHandler {...panHandlerProps}>
+      <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+        <Stack.Screen
+          options={{
+            title: '体組成 ＆ 筋肥大限界',
+            headerStyle: { backgroundColor: Theme.colors.background },
           headerTintColor: Theme.colors.text,
           headerTitleStyle: { fontWeight: 'bold' },
           headerRight: () => (
@@ -294,7 +298,8 @@ export default function BodyCompositionScreen() {
 
       {/* 身体測定ガイドモーダル */}
       <BodyGuideModal visible={showGuideModal} onClose={() => setShowGuideModal(false)} />
-    </View>
+      </View>
+    </PanGestureHandler>
   );
 }
 

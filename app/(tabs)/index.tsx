@@ -9,6 +9,8 @@ import { useSettingsStore } from '../../src/store/settingsStore';
 import { getRoutines, getPreviousWorkoutSets, getPersonalRecords, saveSetting } from '../../src/db/database';
 import { translateExercise } from '../../src/i18n';
 import { readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../../src/services/crashReporterService';
+import { PanGestureHandler } from 'react-native-gesture-handler';
+import { useFeatureSwipe } from '../../hooks/useFeatureSwipe';
 
 export default function WorkoutHomeScreen() {
   const { colors } = useAppTheme();
@@ -213,8 +215,11 @@ export default function WorkoutHomeScreen() {
     }
   };
 
+  const { panHandlerProps } = useFeatureSwipe('/(tabs)');
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <PanGestureHandler {...panHandlerProps}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
         {isActive ? (
           <TouchableOpacity style={[styles.primaryButton, { backgroundColor: Theme.colors.success || '#4caf50' }]} activeOpacity={0.8} onPress={() => router.push('/active-workout')}>
@@ -373,7 +378,8 @@ export default function WorkoutHomeScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+      </View>
+    </PanGestureHandler>
   );
 }
 
