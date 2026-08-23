@@ -65,6 +65,8 @@ export default function DashboardScreen() {
   // 音声AIアシスタント
   const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
   const [aiCompanionUrl, setAiCompanionUrl] = useState('https://ai-companion-web.toshi-diyil.workers.dev');
+  const [aiCompanionInjectedJs, setAiCompanionInjectedJs] = useState('');
+  const [aiCompanionKey, setAiCompanionKey] = useState(0);
 
   const handleOpenVoiceAssistant = async () => {
     if (Platform.OS === 'android') {
@@ -94,9 +96,13 @@ export default function DashboardScreen() {
       bodyWeight: settings.bodyWeight || null,
       theme: settings.backgroundTheme || 'dark',
       date: getTodayStr(),
+      memory: settings.aiCompanionMemory || '',
     };
     
-    setAiCompanionUrl(`https://ai-companion-web.toshi-diyil.workers.dev?context=${encodeURIComponent(JSON.stringify(contextData))}`);
+    const injectedJs = `window.__TRENOTE_CONTEXT__ = ${JSON.stringify(contextData)};true;`;
+    setAiCompanionInjectedJs(injectedJs);
+    setAiCompanionUrl('https://ai-companion-web.toshi-diyil.workers.dev');
+    setAiCompanionKey((prev) => prev + 1);
     setShowVoiceAssistant(true);
   };
 
@@ -772,7 +778,9 @@ export default function DashboardScreen() {
             <Text style={{ color: Theme.colors.text, fontWeight: 'bold', fontSize: 17, flex: 1 }}>音声AIアシスタント</Text>
           </View>
           <WebView
+            key={aiCompanionKey}
             source={{ uri: aiCompanionUrl }}
+            injectedJavaScriptBeforeContentLoaded={aiCompanionInjectedJs}
             style={{ flex: 1, backgroundColor: Theme.colors.background }}
             allowsInlineMediaPlayback={true}
             mediaPlaybackRequiresUserAction={false}

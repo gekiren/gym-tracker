@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import type {
   ExtractedData,
   ChatMessage,
@@ -18,6 +18,7 @@ import {
 export const LIVE_MODELS = [
   { id: 'models/gemini-3.1-flash-live-preview', label: 'Gemini 3.1 Flash Live' },
   { id: 'models/gemini-2.5-flash-native-audio-preview-12-2025', label: 'Gemini 2.5 Flash Native Audio' },
+  { id: 'models/gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash Live' },
 ];
 
 interface UseGeminiLiveOptions {
@@ -35,6 +36,7 @@ export function useGeminiLive({
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const isMutedRef = useRef<boolean>(false);
   const [micVolume, setMicVolume] = useState<number>(0);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [extractedData, setExtractedData] = useState<ExtractedData>({
@@ -42,6 +44,7 @@ export function useGeminiLive({
     waters: [],
     meals: [],
     dailyNotes: [],
+    memoryUpdates: [],
   });
   const [statusText, setStatusText] = useState('未接続');
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
@@ -65,11 +68,11 @@ export function useGeminiLive({
   const playerRef = useRef<PCMStreamPlayer>(new PCMStreamPlayer(24000));
 
   // ツールの定義
-  const functionDeclarations = [
+  const functionDeclarations = useMemo(() => [
     {
       name: 'record_water',
       description:
-        '水分摂取量を保存する。「水」「お茶」「コーヒー」「水分」「〇〇ml」など飲料・水分の摂取報告があった際に最優先で呼び出す。',
+        '水分摂取量を保存する。「水」「お茶」「コーヒー」「水分」「〇〇ml」など飲料・水分の摂取報告があった際に最優先で呼び出す。※プロテイン飲料は record_meal を使用すること。',
       parameters: {
         type: 'object',
         properties: {
@@ -88,7 +91,7 @@ export function useGeminiLive({
     {
       name: 'record_workout',
       description:
-        '筋トレの記録（種目名、重量、回数、セット数など）を保存する。ユーザーが明確にトレーニング種目や重量・回数を話した際のみ呼び出す。※「水」や飲料・食事の報告には絶対に使用しないこと。',
+        '筋トレの記録（種目名、重量、回数、セット数など）を保存する。ユーザーが明確にトレーニング種目や重量・回数を話した際のみ呼び出す。※「水」や飲料・食事・プロテインの報告には絶対に使用しないこと。',
       parameters: {
         type: 'object',
         properties: {
@@ -119,13 +122,13 @@ export function useGeminiLive({
     {
       name: 'record_meal',
       description:
-        '食事内容を保存する。食べたものや間食、プロテインの摂取報告があった際に呼び出す。',
+        '食事・栄養・プロテインの摂取内容を保存する。食べたものや間食、プロテイン飲料・サプリメントの摂取報告があった際に呼び出す。',
       parameters: {
         type: 'object',
         properties: {
           meal_name: {
             type: 'string',
-            description: '食べたもの・料理名（例: 鶏胸肉と白米, プロテイン）',
+            description: '食べたもの・料理名（例: 鶏胸肉と白米, プロテインシェイク）',
           },
           meal_type: {
             type: 'string',
@@ -147,7 +150,7 @@ export function useGeminiLive({
     {
       name: 'record_daily_note',
       description:
-        '今日の体調、筋肉痛の箇所、睡眠感、モチベーションなどの日記メモを保存する。',
+        '今日の体調、筋肉痛の箇所、睡眠感、モチベーションなどの日記メモ・雑記を保存する。',
       parameters: {
         type: 'object',
         properties: {
@@ -163,7 +166,22 @@ export function useGeminiLive({
         required: ['summary'],
       },
     },
-  ];
+    {
+      name: 'update_user_memory',
+      description:
+        'ユーザーの個人的な好み、習慣、目標、身体的特徴、怪我・体調の注意点、生活パターンなど、次回の会話以降も覚えておくべき重要なパーソナライズ情報を保存・更新する。ユーザーが自分自身について語った際に呼び出す。重要な情報のみ簡潔に記録すること。',
+      parameters: {
+        type: 'object',
+        properties: {
+          memory_item: {
+            type: 'string',
+            description: 'AIが次回以降も覚えておくべきユーザー情報（例: 「右肩を痛めているためプレス系は軽めにする」「水筒の容量は600ml」「朝型で午前中にトレーニングする」）',
+          },
+        },
+        required: ['memory_item'],
+      },
+    },
+  ], []);
 
   // システムプロンプト生成
   const buildSystemInstruction = useCallback(() => {
@@ -174,6 +192,9 @@ export function useGeminiLive({
       if (initialContext.currentWaterMl !== undefined)
         contextStr += `- 今日の現在の水分: ${initialContext.currentWaterMl}ml / 目標${initialContext.waterGoalMl || 2000}ml\n`;
       if (initialContext.bodyWeight) contextStr += `- 現在の体重: ${initialContext.bodyWeight}kg\n`;
+      if (initialContext.memory && initialContext.memory.trim()) {
+        contextStr += `- 🧠 【ユーザーの記憶・プロフィール（これまでに学習した情報）】:\n${initialContext.memory.trim()}\n`;
+      }
     }
 
     return `あなたは筋トレ＆ライフログ記録アプリ『TreNote』の専属ライフログ・サポーターです。
@@ -198,9 +219,13 @@ export function useGeminiLive({
 
 4. 【前提データとアドバイスの活用】
    ${contextStr ? `${contextStr}
-   ※上記の前提データは、ユーザーから「今日のおすすめメニューは？」「水分足りてる？」「アドバイスある？」など意見や質問を求められた際に参照し、的確に助言してください。求められていない時は無理に前提データに触れず、ユーザーの話を心地よく聞くことを優先してください。` : ''}
+   ※上記の前提データ（過去の記憶含む）は、ユーザーから「今日のおすすめメニューは？」「水分足りてる？」「アドバイスある？」など意見や質問を求められた際に参照し、的確に助言してください。求められていない時は無理に前提データに触れず、ユーザーの話を心地よく聞くことを優先してください。` : ''}
 
-5. 【音声対話の最適化】
+5. 【パーソナライズと記憶の自動学習】
+   ・上記の【ユーザーの記憶・プロフィール】が存在する場合は、ユーザーの好みや怪我・体調の注意点などを踏まえて、親身でパーソナライズされた受け答えをしてください。
+   ・対話の中で、ユーザーの新たな好み、生活習慣、身体的特徴、怪我の箇所、水筒のサイズなどを知った場合は、【update_user_memory】ツールを呼び出して記録してください。（例:「右肩の痛みの件、覚えておきますね！」）
+
+6. 【音声対話の最適化】
    返答はすべて音声として読み上げられるため、1〜2文程度の簡潔でテンポの良い文章で話してください。`;
   }, [initialContext]);
 
@@ -289,7 +314,7 @@ export function useGeminiLive({
       let maxPeak = 0;
 
       const handleAudioData = (inputData: Float32Array) => {
-        if (isMuted) return;
+        if (isMutedRef.current) return;
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
 
         // 最大振幅の測定（マイクが無音かどうかの判定）
@@ -347,7 +372,7 @@ export function useGeminiLive({
       addLog(`マイク取得エラー: ${err?.message || err}`);
       setStatusText('マイクのアクセス許可が必要です');
     }
-  }, [addLog, isMuted]);
+  }, [addLog]);
 
   // マイクの停止
   const stopMicStreaming = useCallback(() => {
@@ -589,6 +614,16 @@ export function useGeminiLive({
                   ...prev,
                   dailyNotes: [...prev.dailyNotes, newNote],
                 }));
+              } else if (name === 'update_user_memory') {
+                const newMem = {
+                  id: Math.random().toString(36).substring(7),
+                  memory_item: args.memory_item,
+                  timestamp: now,
+                };
+                setExtractedData((prev) => ({
+                  ...prev,
+                  memoryUpdates: [...(prev.memoryUpdates || []), newMem],
+                }));
               }
 
               functionResponses.push({
@@ -639,6 +674,7 @@ export function useGeminiLive({
         if (!isExplicitDisconnectRef.current && (event.code === 1000 || event.code === 1006)) {
           console.log('セッション維持のための自動再接続を即時実行します...');
           setStatusText('セッション維持中（再接続）...');
+          stopMicStreaming();
           setTimeout(() => {
             if (!isExplicitDisconnectRef.current) {
               connect(deviceId, currentModelIndexRef.current);
@@ -669,6 +705,8 @@ export function useGeminiLive({
     }
     stopMicStreaming();
     playerRef.current.stopAll();
+    isMutedRef.current = false;
+    setIsMuted(false);
     setIsConnected(false);
     setIsConnecting(false);
     setStatusText('切断しました');
@@ -676,7 +714,11 @@ export function useGeminiLive({
 
   // ミュートの切り替え
   const toggleMute = useCallback(() => {
-    setIsMuted((prev) => !prev);
+    setIsMuted((prev) => {
+      const next = !prev;
+      isMutedRef.current = next;
+      return next;
+    });
   }, []);
 
   // テキストメッセージの送信（テストおよび併用用）

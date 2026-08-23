@@ -3,6 +3,7 @@ import { addMealLog } from '../db/repositories/nutritionRepository';
 import { getExercises, addCustomExercise } from '../db/repositories/exerciseRepository';
 import { saveWorkout } from '../db/repositories/workoutRepository';
 import { getBodyLogByDate, insertBodyLog, updateBodyLog } from '../db/repositories/bodyRepository';
+import { useSettingsStore } from '../store/settingsStore';
 import { Alert } from 'react-native';
 
 export interface SyncResult {
@@ -10,6 +11,7 @@ export interface SyncResult {
   mealCount: number;
   workoutCount: number;
   noteCount: number;
+  memoryCount: number;
   total: number;
 }
 
@@ -106,9 +108,11 @@ export async function processAndSaveCompanionData(payload: any): Promise<SyncRes
     }
 
     if (newExercises.length > 0) {
-      const nowTime = new Date().toISOString();
-      const pastTime = new Date(Date.now() - 3600000).toISOString();
-      await saveWorkout('AI記録ワークアウト', pastTime, nowTime, null, newExercises);
+      const firstTs = Number(payload.workouts[0]?.timestamp) || (Date.now() - 1800000);
+      const endTs = Date.now();
+      const startTime = new Date(firstTs).toISOString();
+      const endTime = new Date(endTs).toISOString();
+      await saveWorkout('AI記録ワークアウト', startTime, endTime, null, newExercises);
       workoutCount++;
     }
   }
@@ -153,12 +157,45 @@ export async function processAndSaveCompanionData(payload: any): Promise<SyncRes
     }
   }
 
-  const total = waterCount + mealCount + workoutCount + noteCount;
+  // 5. 記憶（パーソナライズメモリ）保存
+  let memoryCount = 0;
+  if (payload?.memoryUpdates && Array.isArray(payload.memoryUpdates) && payload.memoryUpdates.length > 0) {
+    const currentMemory = useSettingsStore.getState().settings.aiCompanionMemory || '';
+    const newItems = payload.memoryUpdates
+      .map((item: any) => (typeof item === 'string' ? item.trim() : item?.memory_item?.trim()))
+      .filter(Boolean);
+    if (newItems.length > 0) {
+      const MEMORY_MAX_CHARS = 5000;
+      // 重複排除: 既存メモリに含まれている行は追記しない
+      const existingLines = new Set(
+        currentMemory.split('\n').map((l: string) => l.trim()).filter(Boolean)
+      );
+      const deduped = newItems.filter((item: string) => !existingLines.has(item.trim()));
+      if (deduped.length > 0) {
+        const combined = currentMemory
+          ? `${currentMemory}\n${deduped.join('\n')}`
+          : deduped.join('\n');
+        // 5000字を超えた場合は古い記憶を先頭から切り捨て
+        let finalMemory = combined;
+        if (combined.length > MEMORY_MAX_CHARS) {
+          const sliced = combined.slice(combined.length - MEMORY_MAX_CHARS);
+          // 行の途中から始まらないよう、最初の改行以降から使用
+          const firstNewline = sliced.indexOf('\n');
+          finalMemory = firstNewline >= 0 ? sliced.slice(firstNewline + 1) : sliced;
+        }
+        useSettingsStore.getState().setAiCompanionMemory(finalMemory);
+        memoryCount = deduped.length;
+      }
+    }
+  }
+
+  const total = waterCount + mealCount + workoutCount + noteCount + memoryCount;
   return {
     waterCount,
     mealCount,
     workoutCount,
     noteCount,
+    memoryCount,
     total,
   };
 }
@@ -181,9 +218,18 @@ export function handleCompanionWebViewMessage(
             onPress: async () => {
               try {
                 const res = await processAndSaveCompanionData(payload);
+                const summaryParts = [
+                  `水: ${res.waterCount}件`,
+                  `食: ${res.mealCount}件`,
+                  `筋: ${res.workoutCount}件`,
+                  `メモ: ${res.noteCount}件`,
+                ];
+                if (res.memoryCount > 0) {
+                  summaryParts.push(`記憶: ${res.memoryCount}件`);
+                }
                 Alert.alert(
                   '完了',
-                  `データを保存しました！\n水: ${res.waterCount}件 / 食: ${res.mealCount}件 / 筋: ${res.workoutCount}件 / メモ: ${res.noteCount}件`,
+                  `データを保存しました！\n${summaryParts.join(' / ')}`,
                   [
                     {
                       text: 'OK',

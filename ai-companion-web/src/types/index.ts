@@ -31,11 +31,18 @@ export interface DailyNoteRecord {
   timestamp: number;
 }
 
+export interface MemoryRecord {
+  id: string;
+  memory_item: string;
+  timestamp: number;
+}
+
 export interface ExtractedData {
   workouts: WorkoutRecord[];
   waters: WaterRecord[];
   meals: MealRecord[];
   dailyNotes: DailyNoteRecord[];
+  memoryUpdates: MemoryRecord[];
 }
 
 export interface ChatMessage {
@@ -52,4 +59,5 @@ export interface InitialContext {
   bodyWeight?: number | null;
   theme?: 'dark' | 'pureBlack';
   date?: string;
+  memory?: string;
 }

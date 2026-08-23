@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { getDB, getSettings, saveSetting, loadFullWorkoutData, getWaterLogs } from '../db/database';
 import i18n, { translateExercise, translateStance } from '../i18n';
 import { DailyHealthData, formatHealthDataToMarkdown } from './healthService';
+import { useSettingsStore } from '../store/settingsStore';
 
 export type ObsidianExportMode = 'dedicated' | 'append' | 'individual';
 
@@ -786,6 +787,17 @@ export const exportAllDataToObsidian = async (): Promise<ObsidianExportResult> =
     } catch (e) {
       console.error(`Failed to export data for date ${dateStr}:`, e);
       failCount++;
+    }
+  }
+
+  // AI プロフィール・パーソナライズ記憶ノートの出力
+  const aiMemory = useSettingsStore.getState().settings.aiCompanionMemory;
+  if (aiMemory && aiMemory.trim()) {
+    try {
+      const profileMd = `---\ntype: ai_profile\nupdated: ${format(new Date(), 'yyyy-MM-dd HH:mm:ss')}\n---\n\n# 🧠 TreNote AI Companion Profile & Memory\n\n> 音声AIアシスタントが対話を通じて学習・記憶したユーザー情報です。\n\n${aiMemory.trim()}\n`;
+      await writeOrAppendFileToVault(settings.vaultUri, 'TreNote_AI_Profile.md', profileMd, false);
+    } catch (err) {
+      console.warn('Failed to export AI profile to Obsidian', err);
     }
   }
 

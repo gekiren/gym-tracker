@@ -115,6 +115,14 @@ export function useProfile() {
         route: '/settings/obsidian',
       },
       {
+        id: 'ai-memory',
+        title: 'AIの記憶・プロフィール',
+        desc: '音声AIアシスタントのパーソナライズ記憶の確認・編集',
+        icon: 'sparkles-outline',
+        iconColor: '#38bdf8',
+        route: '/settings/ai-memory',
+      },
+      {
         id: 'backup',
         title: 'バックアップ・復元',
         desc: 'SQLiteデータベースの保存と復元',

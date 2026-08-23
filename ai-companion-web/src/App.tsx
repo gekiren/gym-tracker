@@ -15,13 +15,17 @@ import {
   Copy,
   Check,
   Smartphone,
+  Pencil,
+  Sparkles,
 } from 'lucide-react';
+import { EditItemModal, type EditTarget } from './components/EditItemModal';
 
 declare global {
   interface Window {
     ReactNativeWebView?: {
       postMessage: (message: string) => void;
     };
+    __TRENOTE_CONTEXT__?: InitialContext;
   }
 }
 
@@ -80,9 +84,12 @@ export default function App() {
   const [voiceName, setVoiceName] = useState<string>('Aoede');
   const [copied, setCopied] = useState<boolean>(false);
 
-  // URLパラメータからTreNoteのコンテキストを取得（連携時用）
-  const [initialContext] = useState<InitialContext>(() => {
+  // TreNoteからのコンテキストを取得（1. JS注入優先、2. URLパラメータフォールバック）
+  const [initialContext, setInitialContext] = useState<InitialContext>(() => {
     try {
+      if (typeof window !== 'undefined' && window.__TRENOTE_CONTEXT__) {
+        return window.__TRENOTE_CONTEXT__;
+      }
       const urlParams = new URLSearchParams(window.location.search);
       const ctxParam = urlParams.get('context');
       if (ctxParam) {
@@ -96,12 +103,23 @@ export default function App() {
       bodyWeight: null,
       theme: 'dark',
       date: new Date().toISOString().split('T')[0],
+      memory: '',
     };
   });
+
+  // 遅延注入された場合のフォールバック同期
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.__TRENOTE_CONTEXT__) {
+      setInitialContext(window.__TRENOTE_CONTEXT__);
+    }
+  }, []);
 
   // テーマモードの決定 (URLパラメータ または context から取得)
   const themeMode: 'dark' | 'pureBlack' = useMemo(() => {
     try {
+      if (typeof window !== 'undefined' && window.__TRENOTE_CONTEXT__?.theme) {
+        return window.__TRENOTE_CONTEXT__.theme;
+      }
       const urlParams = new URLSearchParams(window.location.search);
       const urlTheme = urlParams.get('theme') as 'dark' | 'pureBlack';
       if (urlTheme === 'pureBlack' || urlTheme === 'dark') return urlTheme;
@@ -160,13 +178,33 @@ export default function App() {
     voiceName,
   });
 
+  const [editingTarget, setEditingTarget] = useState<EditTarget | null>(null);
+
   const handleClearData = () => {
     setExtractedData({
       workouts: [],
       waters: [],
       meals: [],
       dailyNotes: [],
+      memoryUpdates: [],
     });
+  };
+
+  const handleDeleteItem = (category: keyof typeof extractedData, id: string) => {
+    setExtractedData((prev) => ({
+      ...prev,
+      [category]: (prev[category] as any[]).filter((item: any) => item.id !== id),
+    }));
+  };
+
+  const handleSaveEdit = (category: keyof typeof extractedData, updatedItem: any) => {
+    setExtractedData((prev) => ({
+      ...prev,
+      [category]: (prev[category] as any[]).map((item: any) =>
+        item.id === updatedItem.id ? updatedItem : item
+      ),
+    }));
+    setEditingTarget(null);
   };
 
   const handleCopyJson = () => {
@@ -175,10 +213,12 @@ export default function App() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const hasData = extractedData.workouts.length > 0 || 
-    extractedData.waters.length > 0 || 
-    extractedData.meals.length > 0 || 
-    extractedData.dailyNotes.length > 0;
+  const hasData =
+    extractedData.workouts.length > 0 ||
+    extractedData.waters.length > 0 ||
+    extractedData.meals.length > 0 ||
+    extractedData.dailyNotes.length > 0 ||
+    (extractedData.memoryUpdates && extractedData.memoryUpdates.length > 0);
 
   return (
     <div style={styles.container}>
@@ -481,7 +521,25 @@ export default function App() {
                   {w.notes && ` - ${w.notes}`}
                 </div>
               </div>
-              <span style={styles.badge}>筋トレ</span>
+              <div style={styles.cardActionGroup}>
+                <span style={styles.badge}>筋トレ</span>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => setEditingTarget({ category: 'workouts', item: w })}
+                  title="編集"
+                >
+                  <Pencil size={13} color={themeTokens.textMuted} />
+                </button>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => handleDeleteItem('workouts', w.id)}
+                  title="削除"
+                >
+                  <Trash2 size={13} color={themeTokens.danger} />
+                </button>
+              </div>
             </div>
           ))}
 
@@ -498,9 +556,27 @@ export default function App() {
                   {wt.has_caffeine ? '（カフェイン有）' : ''}
                 </div>
               </div>
-              <span style={{ ...styles.badge, backgroundColor: 'rgba(79, 172, 254, 0.15)', color: '#4facfe', borderColor: 'rgba(79, 172, 254, 0.3)' }}>
-                水分
-              </span>
+              <div style={styles.cardActionGroup}>
+                <span style={{ ...styles.badge, backgroundColor: 'rgba(79, 172, 254, 0.15)', color: '#4facfe', borderColor: 'rgba(79, 172, 254, 0.3)' }}>
+                  水分
+                </span>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => setEditingTarget({ category: 'waters', item: wt })}
+                  title="編集"
+                >
+                  <Pencil size={13} color={themeTokens.textMuted} />
+                </button>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => handleDeleteItem('waters', wt.id)}
+                  title="削除"
+                >
+                  <Trash2 size={13} color={themeTokens.danger} />
+                </button>
+              </div>
             </div>
           ))}
 
@@ -517,9 +593,27 @@ export default function App() {
                   {m.protein ? `(P: ${m.protein}g)` : ''}
                 </div>
               </div>
-              <span style={{ ...styles.badge, backgroundColor: 'rgba(76, 217, 100, 0.15)', color: '#4cd964', borderColor: 'rgba(76, 217, 100, 0.3)' }}>
-                食事
-              </span>
+              <div style={styles.cardActionGroup}>
+                <span style={{ ...styles.badge, backgroundColor: 'rgba(76, 217, 100, 0.15)', color: '#4cd964', borderColor: 'rgba(76, 217, 100, 0.3)' }}>
+                  食事
+                </span>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => setEditingTarget({ category: 'meals', item: m })}
+                  title="編集"
+                >
+                  <Pencil size={13} color={themeTokens.textMuted} />
+                </button>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => handleDeleteItem('meals', m.id)}
+                  title="削除"
+                >
+                  <Trash2 size={13} color={themeTokens.danger} />
+                </button>
+              </div>
             </div>
           ))}
 
@@ -536,9 +630,63 @@ export default function App() {
                   {n.summary}
                 </div>
               </div>
-              <span style={{ ...styles.badge, backgroundColor: 'rgba(167, 139, 250, 0.15)', color: '#a78bfa', borderColor: 'rgba(167, 139, 250, 0.3)' }}>
-                日記
-              </span>
+              <div style={styles.cardActionGroup}>
+                <span style={{ ...styles.badge, backgroundColor: 'rgba(167, 139, 250, 0.15)', color: '#a78bfa', borderColor: 'rgba(167, 139, 250, 0.3)' }}>
+                  日記
+                </span>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => setEditingTarget({ category: 'dailyNotes', item: n })}
+                  title="編集"
+                >
+                  <Pencil size={13} color={themeTokens.textMuted} />
+                </button>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => handleDeleteItem('dailyNotes', n.id)}
+                  title="削除"
+                >
+                  <Trash2 size={13} color={themeTokens.danger} />
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {/* Memory / Profile Updates */}
+          {(extractedData.memoryUpdates || []).map((mem) => (
+            <div key={mem.id} style={styles.dataCard}>
+              <div style={styles.dataCardIcon}>
+                <Sparkles size={18} color="#38bdf8" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={styles.dataCardTitle}>記憶・プロフィール</div>
+                <div style={styles.dataCardDetails}>
+                  {mem.memory_item}
+                </div>
+              </div>
+              <div style={styles.cardActionGroup}>
+                <span style={{ ...styles.badge, backgroundColor: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.3)' }}>
+                  記憶
+                </span>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => setEditingTarget({ category: 'memoryUpdates', item: mem })}
+                  title="編集"
+                >
+                  <Pencil size={13} color={themeTokens.textMuted} />
+                </button>
+                <button
+                  type="button"
+                  style={styles.cardActionButton}
+                  onClick={() => handleDeleteItem('memoryUpdates', mem.id)}
+                  title="削除"
+                >
+                  <Trash2 size={13} color={themeTokens.danger} />
+                </button>
+              </div>
             </div>
           ))}
 
@@ -640,6 +788,16 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {/* Edit Item Modal */}
+      {editingTarget && (
+        <EditItemModal
+          target={editingTarget}
+          themeTokens={themeTokens}
+          onSave={handleSaveEdit}
+          onClose={() => setEditingTarget(null)}
+        />
+      )}
     </div>
   );
 }
@@ -893,6 +1051,25 @@ const getStyles = (colors: ThemeColors): { [key: string]: React.CSSProperties } 
     borderRadius: 6,
     fontWeight: 600,
     border: '1px solid rgba(255, 107, 0, 0.3)',
+  },
+  cardActionGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    marginLeft: 8,
+  },
+  cardActionButton: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    border: `1px solid ${colors.borderSubtle}`,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    cursor: 'pointer',
+    padding: 0,
+    transition: 'all 0.15s ease',
   },
   emptyDataBox: {
     textAlign: 'center',
