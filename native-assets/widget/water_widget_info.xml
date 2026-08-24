@@ -6,7 +6,7 @@
     android:targetCellWidth="2"
     android:targetCellHeight="1"
     android:updatePeriodMillis="0"
-    android:previewImage="@mipmap/ic_launcher"
+    android:previewImage="@drawable/widget_preview_water"
     android:widgetCategory="home_screen"
     android:initialLayout="@layout/water_widget"
     android:description="@string/water_widget_description"

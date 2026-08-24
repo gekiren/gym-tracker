@@ -6,7 +6,7 @@
     android:targetCellWidth="1"
     android:targetCellHeight="1"
     android:updatePeriodMillis="0"
-    android:previewImage="@mipmap/ic_launcher"
+    android:previewImage="@drawable/widget_preview_zikan_small"
     android:widgetCategory="home_screen"
     android:initialLayout="@layout/widget_zikan_small"
     android:description="@string/zikan_widget_small_description"
