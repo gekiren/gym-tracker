@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { Theme, useAppTheme } from '../../src/theme';
 import { useNutritionStore } from '../../src/store/nutritionStore';
 import { MealLog, MealFavorite, NutritionGoals, AutophagyConfig } from '../../src/db/types';
-import { getDefaultMealType } from '../../src/utils/nutritionUtils';
+import { getDefaultMealType, getCurrentTimeStr } from '../../src/utils/nutritionUtils';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useFeatureSwipe } from '../../hooks/useFeatureSwipe';
 
@@ -155,8 +155,8 @@ export default function NutritionScreen() {
     const now = new Date();
     await addMeal({
       date: selectedDate,
-      meal_type: fav.meal_type || getDefaultMealType(now),
-      meal_time: now.toTimeString().slice(0, 5),
+      meal_type: getDefaultMealType(now),
+      meal_time: getCurrentTimeStr(now),
       name: fav.name,
       calories: fav.calories,
       protein: fav.protein,

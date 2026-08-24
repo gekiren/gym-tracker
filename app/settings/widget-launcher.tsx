@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Theme } from '../../src/theme';
 import { FeatureId } from '../../src/store/settingsStore';
@@ -9,12 +9,13 @@ import { getSettings, saveSetting } from '../../src/db/database';
 interface SlotConfig {
   id: FeatureId | 'empty';
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  iconType?: 'ionic' | 'material';
+  icon: string;
   description?: string;
 }
 
 const FEATURE_OPTIONS: SlotConfig[] = [
-  { id: 'workout', label: '筋トレ', icon: 'barbell', description: 'ワークアウト記録' },
+  { id: 'workout', label: '筋トレ', iconType: 'material', icon: 'arm-flex', description: 'ワークアウト記録' },
   { id: 'body', label: '体組成', icon: 'body', description: '体重・体脂肪率' },
   { id: 'water', label: '水分', icon: 'water', description: '水分補給記録' },
   { id: 'nutrition', label: '栄養', icon: 'restaurant', description: '食事・PFC管理' },
@@ -23,6 +24,13 @@ const FEATURE_OPTIONS: SlotConfig[] = [
   { id: 'voice_ai', label: 'AI音声アシスタント', icon: 'mic', description: 'AIトレーナー音声対話' },
   { id: 'empty', label: '(空欄)', icon: 'close-circle-outline', description: 'この枠を非表示' }
 ];
+
+function SlotIcon({ config, size, color }: { config: SlotConfig; size: number; color: string }) {
+  if (config.iconType === 'material') {
+    return <MaterialCommunityIcons name={config.icon as any} size={size} color={color} />;
+  }
+  return <Ionicons name={config.icon as any} size={size} color={color} />;
+}
 
 export default function WidgetLauncherSettingsScreen() {
   const [slots, setSlots] = useState<(FeatureId | 'empty')[]>(['workout', 'water', 'nutrition', 'zikan', 'routine']);
@@ -138,7 +146,7 @@ export default function WidgetLauncherSettingsScreen() {
               if (!config) return null;
               return (
                 <View key={`preview-${i}`} style={styles.previewSlot}>
-                  <Ionicons name={config.icon} size={24} color="#FFF" />
+                  <SlotIcon config={config} size={24} color={Theme.colors.primary} />
                 </View>
               );
             })}
@@ -156,7 +164,11 @@ export default function WidgetLauncherSettingsScreen() {
                 
                 <TouchableOpacity style={styles.featureSelectBtn} onPress={() => openFeaturePicker(index)}>
                   <View style={styles.featureIconContainer}>
-                    <Ionicons name={config.icon} size={20} color={config.id === 'empty' ? Theme.colors.textMuted : Theme.colors.primary} />
+                    <SlotIcon 
+                      config={config} 
+                      size={20} 
+                      color={config.id === 'empty' ? Theme.colors.textMuted : Theme.colors.primary} 
+                    />
                   </View>
                   <Text style={[styles.featureText, config.id === 'empty' && styles.featureTextEmpty]}>
                     {config.label}
@@ -215,8 +227,8 @@ export default function WidgetLauncherSettingsScreen() {
                     activeOpacity={0.7}
                   >
                     <View style={[styles.modalItemIconContainer, isSelected && styles.modalItemIconContainerSelected]}>
-                      <Ionicons 
-                        name={item.icon} 
+                      <SlotIcon 
+                        config={item} 
                         size={22} 
                         color={item.id === 'empty' ? Theme.colors.textMuted : isSelected ? '#FFF' : Theme.colors.primary} 
                       />

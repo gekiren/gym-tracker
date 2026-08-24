@@ -67,12 +67,6 @@
         <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
       </intent-filter>
     </activity>
-    <receiver android:name=".GymTrackerWidget" android:exported="true" android:label="@string/gym_widget_label">
-      <intent-filter>
-        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
-      </intent-filter>
-      <meta-data android:name="android.appwidget.provider" android:resource="@xml/gym_tracker_widget_info"/>
-    </receiver>
     <receiver android:name=".WaterWidgetProvider" android:exported="true" android:label="@string/water_widget_label">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
@@ -86,14 +80,6 @@
         <action android:name="com.gekirennomad.trenote.ACTION_PUNCH_SMALL"/>
       </intent-filter>
       <meta-data android:name="android.appwidget.provider" android:resource="@xml/zikan_widget_small_info"/>
-    </receiver>
-    <receiver android:name=".ZikanWidgetLarge" android:exported="true" android:label="@string/zikan_widget_large_label">
-      <intent-filter>
-        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
-        <action android:name="com.gekirennomad.trenote.ACTION_START_LARGE"/>
-        <action android:name="com.gekirennomad.trenote.ACTION_END_LARGE"/>
-      </intent-filter>
-      <meta-data android:name="android.appwidget.provider" android:resource="@xml/zikan_widget_large_info"/>
     </receiver>
     <receiver android:name=".QuickLauncherWidget" android:exported="true" android:label="@string/quick_launcher_widget_label">
       <intent-filter>
