@@ -43,7 +43,7 @@ export default `<!DOCTYPE html>
     console.error("Failed to copy from __INITIAL_WEBVIEW_DATA__", e);
   }
 
-  const mockLocalStorage = {
+  const appStorage = {
     getItem: function(key) {
       return storageStore.hasOwnProperty(key) ? storageStore[key] : null;
     },
@@ -100,16 +100,7 @@ export default `<!DOCTYPE html>
     }
   };
 
-  // window.localStorageをモックで上書き
-  try {
-    Object.defineProperty(window, 'localStorage', {
-      value: mockLocalStorage,
-      writable: true,
-      configurable: true
-    });
-  } catch (e) {
-    console.error("Failed to override window.localStorage", e);
-  }
+  window.appStorage = appStorage;
 })();
 </script>
 
@@ -1025,9 +1016,10 @@ function init() {
 
 // --- Data Management ---
 function loadData() {
+    const storage = window.appStorage || { getItem: () => null, setItem: () => {} };
     // Load Settings
     try {
-        const savedSettings = localStorage.getItem(SETTINGS_KEY);
+        const savedSettings = storage.getItem(SETTINGS_KEY);
         if (savedSettings) {
             const parsed = JSON.parse(savedSettings);
             let presets = (parsed && parsed.presets) || [...DEFAULT_PRESETS];
@@ -1054,7 +1046,7 @@ function loadData() {
 
     // Load History
     try {
-        const savedData = localStorage.getItem(STORAGE_KEY);
+        const savedData = storage.getItem(STORAGE_KEY);
         if (savedData) {
             state.intakeHistory = JSON.parse(savedData) || [];
         }
@@ -1065,11 +1057,13 @@ function loadData() {
 }
 
 function saveData() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.intakeHistory));
+    const storage = window.appStorage || { getItem: () => null, setItem: () => {} };
+    storage.setItem(STORAGE_KEY, JSON.stringify(state.intakeHistory));
 }
 
 function saveSettings() {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    const storage = window.appStorage || { getItem: () => null, setItem: () => {} };
+    storage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
 
 // --- Logic ---

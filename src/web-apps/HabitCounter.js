@@ -43,7 +43,7 @@ export default `<!DOCTYPE html>
     console.error("Failed to copy from __INITIAL_WEBVIEW_DATA__", e);
   }
 
-  const mockLocalStorage = {
+  const appStorage = {
     getItem: function(key) {
       return storageStore.hasOwnProperty(key) ? storageStore[key] : null;
     },
@@ -100,16 +100,7 @@ export default `<!DOCTYPE html>
     }
   };
 
-  // window.localStorageをモックで上書き
-  try {
-    Object.defineProperty(window, 'localStorage', {
-      value: mockLocalStorage,
-      writable: true,
-      configurable: true
-    });
-  } catch (e) {
-    console.error("Failed to override window.localStorage", e);
-  }
+  window.appStorage = appStorage;
 })();
 </script>
 
@@ -973,8 +964,9 @@ if (document.readyState === 'loading') {
 }
 
 function loadData() {
-    const savedItems = localStorage.getItem('habit-items');
-    const savedLogs = localStorage.getItem('habit-logs');
+    const storage = window.appStorage || { getItem: () => null, setItem: () => {} };
+    const savedItems = storage.getItem('habit-items');
+    const savedLogs = storage.getItem('habit-logs');
 
     if (savedItems) {
         try {
@@ -1012,8 +1004,9 @@ function loadData() {
 }
 
 function saveData() {
-    localStorage.setItem('habit-items', JSON.stringify(items));
-    localStorage.setItem('habit-logs', JSON.stringify(logs));
+    const storage = window.appStorage || { getItem: () => null, setItem: () => {} };
+    storage.setItem('habit-items', JSON.stringify(items));
+    storage.setItem('habit-logs', JSON.stringify(logs));
 }
 
 function notifyModalState(show) {

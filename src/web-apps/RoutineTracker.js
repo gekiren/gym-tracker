@@ -43,7 +43,7 @@ export default `<!DOCTYPE html>
     console.error("Failed to copy from __INITIAL_WEBVIEW_DATA__", e);
   }
 
-  const mockLocalStorage = {
+  const appStorage = {
     getItem: function(key) {
       return storageStore.hasOwnProperty(key) ? storageStore[key] : null;
     },
@@ -100,16 +100,7 @@ export default `<!DOCTYPE html>
     }
   };
 
-  // window.localStorageをモックで上書き
-  try {
-    Object.defineProperty(window, 'localStorage', {
-      value: mockLocalStorage,
-      writable: true,
-      configurable: true
-    });
-  } catch (e) {
-    console.error("Failed to override window.localStorage", e);
-  }
+  window.appStorage = appStorage;
 })();
 </script>
 
@@ -662,7 +653,8 @@ const STORAGE_KEY = 'routine_tracker_data';
 
 function getRoutines() {
     try {
-        const data = localStorage.getItem(STORAGE_KEY);
+        const storage = window.appStorage || { getItem: () => null, setItem: () => {} };
+        const data = storage.getItem(STORAGE_KEY);
         if (!data) return [];
         let parsed = JSON.parse(data);
         if (typeof parsed === 'string') {
@@ -679,7 +671,8 @@ function getRoutines() {
 
 function saveRoutines(routines) {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(routines));
+        const storage = window.appStorage || { getItem: () => null, setItem: () => {} };
+        storage.setItem(STORAGE_KEY, JSON.stringify(routines));
     } catch (e) {
         showAlert("エラー", "データの保存に失敗しました: " + e.message);
     }
