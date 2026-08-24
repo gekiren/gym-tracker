@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.104',
+  version: '1.8.105',
   title: {
-    ja: '🥗 栄養管理のクイックお気に入り追加機能の改善',
-    en: '🥗 Improved Quick Favorite Meal Logging',
+    ja: '💬 AIコーチ（テキスト）画面への一本化',
+    en: '💬 AI Coach Chat Streamlining',
   },
   notes: {
     ja: [
-      'クイックお気に入りから記録する際、追加した現在時刻（朝食・昼食・間食・夕食）に合わせて適切な食事区分で正しく記録されるように修正しました。',
+      'トレーナータブをAIコーチ（テキスト）専用画面に一本化し、開いてすぐにチャット相談ができるように改善しました。',
     ],
     en: [
-      'Fixed an issue where meals added from quick favorites were not assigned to the current meal category (breakfast/lunch/snack/dinner) based on the time of addition.',
+      'Streamlined the Coach tab into a dedicated AI text chat interface for instant consultations.',
     ],
   },
 };
