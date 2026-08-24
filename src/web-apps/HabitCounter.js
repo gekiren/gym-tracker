@@ -39,11 +39,21 @@ export default `<!DOCTYPE html>
         }
       }
     }
+    // DEBUG: Report initialization state
+    try {
+      if (window.ReactNativeWebView) {
+        const habitVal = storageStore['habit-items'];
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'WEB_DEBUG',
+          message: '[HabitCounter] init storageStore. habit-items type=' + (typeof habitVal) + ' len=' + (habitVal ? String(habitVal).length : 0) + ' __INITIAL_WEBVIEW_DATA__ keys=' + (initData ? Object.keys(initData).join(',') : 'NULL')
+        }));
+      }
+    } catch (e) {}
   } catch (e) {
     console.error("Failed to copy from __INITIAL_WEBVIEW_DATA__", e);
   }
 
-  const mockLocalStorage = {
+  const appStorage = {
     getItem: function(key) {
       return storageStore.hasOwnProperty(key) ? storageStore[key] : null;
     },
@@ -100,16 +110,7 @@ export default `<!DOCTYPE html>
     }
   };
 
-  // window.localStorageをモックで上書き
-  try {
-    Object.defineProperty(window, 'localStorage', {
-      value: mockLocalStorage,
-      writable: true,
-      configurable: true
-    });
-  } catch (e) {
-    console.error("Failed to override window.localStorage", e);
-  }
+  window.appStorage = appStorage;
 })();
 </script>
 
@@ -973,8 +974,9 @@ if (document.readyState === 'loading') {
 }
 
 function loadData() {
-    const savedItems = localStorage.getItem('habit-items');
-    const savedLogs = localStorage.getItem('habit-logs');
+    const storage = window.appStorage || { getItem: () => null, setItem: () => {} };
+    const savedItems = storage.getItem('habit-items');
+    const savedLogs = storage.getItem('habit-logs');
 
     if (savedItems) {
         try {
@@ -1012,8 +1014,9 @@ function loadData() {
 }
 
 function saveData() {
-    localStorage.setItem('habit-items', JSON.stringify(items));
-    localStorage.setItem('habit-logs', JSON.stringify(logs));
+    const storage = window.appStorage || { getItem: () => null, setItem: () => {} };
+    storage.setItem('habit-items', JSON.stringify(items));
+    storage.setItem('habit-logs', JSON.stringify(logs));
 }
 
 function notifyModalState(show) {
@@ -1320,7 +1323,7 @@ function deleteItemFromManage(id) {
     const item = items.find(i => i.id === id);
     if (!item) return;
 
-    showConfirm('習慣の削除', 'この習慣とこれまでの記録をすべて削除しますか？\nこの操作は取り消せません。', () => {
+    showConfirm('習慣の削除', 'この習慣とこれまでの記録をすべて削除しますか？\\nこの操作は取り消せません。', () => {
         items = items.filter(i => i.id !== id);
         logs = logs.filter(log => log.itemId !== id);
         saveData();
@@ -1451,7 +1454,7 @@ function saveEditCount() {
 function deleteItem() {
     if (!editingItemId) return;
 
-    showConfirm('習慣の削除', 'この習慣とこれまでの記録をすべて削除しますか？\nこの操作は取り消せません。', () => {
+    showConfirm('習慣の削除', 'この習慣とこれまでの記録をすべて削除しますか？\\nこの操作は取り消せません。', () => {
         items = items.filter(item => item.id !== editingItemId);
         logs = logs.filter(log => log.itemId !== editingItemId);
         saveData();

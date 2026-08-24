@@ -43,7 +43,7 @@ export default `<!DOCTYPE html>
     console.error("Failed to copy from __INITIAL_WEBVIEW_DATA__", e);
   }
 
-  const mockLocalStorage = {
+  const appStorage = {
     getItem: function(key) {
       return storageStore.hasOwnProperty(key) ? storageStore[key] : null;
     },
@@ -100,16 +100,7 @@ export default `<!DOCTYPE html>
     }
   };
 
-  // window.localStorageをモックで上書き
-  try {
-    Object.defineProperty(window, 'localStorage', {
-      value: mockLocalStorage,
-      writable: true,
-      configurable: true
-    });
-  } catch (e) {
-    console.error("Failed to override window.localStorage", e);
-  }
+  window.appStorage = appStorage;
 })();
 </script>
 
@@ -707,12 +698,13 @@ const modalTagList = document.getElementById('modal-tag-list');
 const modalCloseBtn = document.getElementById('modal-close-btn');
 
 // State
-let isContinuousMode = JSON.parse(localStorage.getItem('zikankanri_continuous_mode')) || false;
+const storage = window.appStorage || { getItem: () => null, setItem: () => {} };
+let isContinuousMode = JSON.parse(storage.getItem('zikankanri_continuous_mode')) || false;
 let isSimultaneousMode = false;
 let editingId = null; // Track if we are editing an existing log
-let logs = JSON.parse(localStorage.getItem('zikankanri_logs')) || [];
-let templates = JSON.parse(localStorage.getItem('zikankanri_templates')) || [];
-let defaultTags = JSON.parse(localStorage.getItem('zikankanri_tags')) || ["睡眠", "仕事", "食事", "移動", "休憩", "家事", "運動", "学習"];
+let logs = JSON.parse(storage.getItem('zikankanri_logs')) || [];
+let templates = JSON.parse(storage.getItem('zikankanri_templates')) || [];
+let defaultTags = JSON.parse(storage.getItem('zikankanri_tags')) || ["睡眠", "仕事", "食事", "移動", "休憩", "家事", "運動", "学習"];
 
 // 共通の日付クレンジング関数
 function sanitizeDate(dateStr) {
@@ -931,7 +923,7 @@ function renderModalTags() {
         delBtn.onclick = () => {
             if (confirm(\`タグ「\${tag}」を削除しますか？\`)) {
                 defaultTags = defaultTags.filter(t => t !== tag);
-                localStorage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
+                storage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
                 renderModalTags();
                 // If the deleted tag was in the input, clear it
                 if (activityNameInput.value === tag) {
@@ -955,7 +947,7 @@ function moveTag(index, direction) {
     defaultTags[index] = defaultTags[targetIndex];
     defaultTags[targetIndex] = temp;
 
-    localStorage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
+    storage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
     renderModalTags();
 }
 
@@ -967,7 +959,7 @@ function addModalTag() {
         return;
     }
     defaultTags.push(val);
-    localStorage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
+    storage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
     renderModalTags();
     modalNewTagInput.value = '';
 }
@@ -1015,7 +1007,7 @@ toggleContinuousBtn.addEventListener('click', () => {
 
 function setContinuousMode(enabled) {
     isContinuousMode = enabled;
-    localStorage.setItem('zikankanri_continuous_mode', JSON.stringify(isContinuousMode));
+    storage.setItem('zikankanri_continuous_mode', JSON.stringify(isContinuousMode));
     if (isContinuousMode) {
         continuousStatusSpan.textContent = "ON";
         toggleContinuousBtn.classList.remove('btn-secondary');
@@ -1497,7 +1489,7 @@ saveTemplateBtn.addEventListener('click', () => {
             name,
             data: logsForDate
         });
-        localStorage.setItem('zikankanri_templates', JSON.stringify(templates));
+        storage.setItem('zikankanri_templates', JSON.stringify(templates));
         renderTemplates();
     }
 });
@@ -1801,7 +1793,7 @@ function renderTemplates() {
 
 // Helpers
 function saveLogs() {
-    localStorage.setItem('zikankanri_logs', JSON.stringify(logs));
+    storage.setItem('zikankanri_logs', JSON.stringify(logs));
 }
 
 function deleteLog(id) {

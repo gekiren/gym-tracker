@@ -118,17 +118,6 @@ class ZikanWidgetSmall : AppWidgetProvider() {
         for (widgetId in allWidgetIdsSmall) {
             updateAppWidget(context, appWidgetManager, widgetId)
         }
-
-        // LargeWidgetも更新する
-        val thisWidgetLarge = ComponentName(context, ZikanWidgetLarge::class.java)
-        val allWidgetIdsLarge = appWidgetManager.getAppWidgetIds(thisWidgetLarge)
-        for (widgetId in allWidgetIdsLarge) {
-            val intentLarge = Intent(context, ZikanWidgetLarge::class.java).apply {
-                action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(widgetId))
-            }
-            context.sendBroadcast(intentLarge)
-        }
     }
 
     private fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {

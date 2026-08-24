@@ -97,6 +97,12 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
         return;
       }
 
+      if (message.type === 'WEB_DEBUG') {
+        console.log(`[WebView DEBUG]: ${message.message}`);
+        addSyncDiagnosticLog(`[WEB_DEBUG] ${message.message}`);
+        return;
+      }
+
       if (message.type === 'MODAL_STATE_CHANGE') {
         const { visible } = message;
         console.log(`[WebViewTab] MODAL_STATE_CHANGE visible=${visible}`);
@@ -131,9 +137,12 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
             (function() {
               window.isInitialSync = true;
               try {
+                var storage = window.appStorage || (typeof localStorage !== 'undefined' ? localStorage : null);
                 var rawVal = ${JSON.stringify(responseValue)};
                 var parsedVal = typeof rawVal === 'string' ? rawVal : JSON.stringify(rawVal);
-                localStorage.setItem('${key}', parsedVal);
+                if (storage && typeof storage.setItem === 'function') {
+                  storage.setItem('${key}', parsedVal);
+                }
               } catch (e) {}
               if (typeof loadData === 'function') loadData();
               if (typeof render === 'function') render();
@@ -210,11 +219,12 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
       }));
       const injectScript = `
         (function() {
-          if (typeof localStorage !== 'undefined') {
+          var storage = window.appStorage || (typeof localStorage !== 'undefined' ? localStorage : null);
+          if (storage && typeof storage.setItem === 'function') {
             window.isInitialSync = true;
             var existing = [];
             try {
-              var saved = localStorage.getItem('hydration_data_v1');
+              var saved = storage.getItem('hydration_data_v1');
               if (saved) {
                 existing = JSON.parse(saved) || [];
               }
@@ -230,7 +240,7 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
             var newLogs = ${JSON.stringify(formattedLogs)};
             var merged = filtered.concat(newLogs);
             
-            localStorage.setItem('hydration_data_v1', JSON.stringify(merged));
+            storage.setItem('hydration_data_v1', JSON.stringify(merged));
             if (typeof loadData === 'function' && typeof updateUI === 'function') {
               loadData();
               updateUI();
@@ -281,12 +291,13 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
 
       const injectScript = `
         (function() {
-          if (typeof localStorage !== 'undefined') {
+          var storage = window.appStorage || (typeof localStorage !== 'undefined' ? localStorage : null);
+          if (storage && typeof storage.setItem === 'function') {
             window.isInitialSync = true;
-            localStorage.setItem('zikankanri_logs', JSON.stringify(${JSON.stringify(formattedLogs)}));
+            storage.setItem('zikankanri_logs', JSON.stringify(${JSON.stringify(formattedLogs)}));
             if (typeof logs !== 'undefined') {
               try {
-                var savedLogs = localStorage.getItem('zikankanri_logs');
+                var savedLogs = storage.getItem('zikankanri_logs');
                 var parsedLogs = JSON.parse(savedLogs);
                 if (typeof parsedLogs === 'string') parsedLogs = JSON.parse(parsedLogs);
                 logs = Array.isArray(parsedLogs) ? parsedLogs : [];
@@ -318,9 +329,10 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
 
       const injectScript = `
         (function() {
-          if (typeof localStorage !== 'undefined') {
+          var storage = window.appStorage || (typeof localStorage !== 'undefined' ? localStorage : null);
+          if (storage && typeof storage.setItem === 'function') {
             window.isInitialSync = true;
-            localStorage.setItem('habit-items', JSON.stringify(${JSON.stringify(formattedItems)}));
+            storage.setItem('habit-items', JSON.stringify(${JSON.stringify(formattedItems)}));
             if (typeof loadData === 'function') {
               loadData();
             }

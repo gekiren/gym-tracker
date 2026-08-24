@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.109',
+  version: '2.0.0',
   title: {
-    ja: '✨ 習慣カウンターのタップ操作および安定性の改善',
-    en: '✨ Habit Counter Touch Responsiveness & Stability Fix',
+    ja: '🚀 TreNote v2.0.0 メジャーアップデート',
+    en: '🚀 TreNote v2.0.0 Major Update',
   },
   notes: {
     ja: [
-      '習慣カウンター画面において、習慣の追加ボタンや設定アイコンがタップしても反応しなかった不具合を修正しました。',
-      'データの同期処理を最適化し、各種ライフログの安定性を向上させました。',
+      'ライフログ機能（水分・習慣・時間管理）の安定性と操作性を大幅に向上しました。',
+      'パフォーマンスの最適化および全体の安定性を改善しました。',
     ],
     en: [
-      'Fixed an issue where tapping the add habit card or settings icon in Habit Counter had no response.',
-      'Optimized lifelog data synchronization for improved app stability.',
+      'Significantly improved lifelog stability and responsiveness (Water, Habits, Time Tracking).',
+      'Optimized overall performance and app stability.',
     ],
   },
 };

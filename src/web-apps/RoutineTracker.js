@@ -39,11 +39,21 @@ export default `<!DOCTYPE html>
         }
       }
     }
+    // DEBUG: Report initialization state
+    try {
+      if (window.ReactNativeWebView) {
+        const routineVal = storageStore['routine_tracker_data'];
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'WEB_DEBUG',
+          message: '[RoutineTracker] init storageStore. routine_tracker_data type=' + (typeof routineVal) + ' len=' + (routineVal ? String(routineVal).length : 0) + ' __INITIAL_WEBVIEW_DATA__ keys=' + (initData ? Object.keys(initData).join(',') : 'NULL')
+        }));
+      }
+    } catch (e) {}
   } catch (e) {
     console.error("Failed to copy from __INITIAL_WEBVIEW_DATA__", e);
   }
 
-  const mockLocalStorage = {
+  const appStorage = {
     getItem: function(key) {
       return storageStore.hasOwnProperty(key) ? storageStore[key] : null;
     },
@@ -100,16 +110,7 @@ export default `<!DOCTYPE html>
     }
   };
 
-  // window.localStorageをモックで上書き
-  try {
-    Object.defineProperty(window, 'localStorage', {
-      value: mockLocalStorage,
-      writable: true,
-      configurable: true
-    });
-  } catch (e) {
-    console.error("Failed to override window.localStorage", e);
-  }
+  window.appStorage = appStorage;
 })();
 </script>
 
@@ -662,8 +663,16 @@ const STORAGE_KEY = 'routine_tracker_data';
 
 function getRoutines() {
     try {
-        const data = localStorage.getItem(STORAGE_KEY);
-        return data ? JSON.parse(data) : [];
+        const storage = window.appStorage || { getItem: () => null, setItem: () => {} };
+        const data = storage.getItem(STORAGE_KEY);
+        if (!data) return [];
+        let parsed = JSON.parse(data);
+        if (typeof parsed === 'string') {
+            try {
+                parsed = JSON.parse(parsed);
+            } catch (e) {}
+        }
+        return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
         console.error("Storage access failed:", e);
         return [];
@@ -672,7 +681,8 @@ function getRoutines() {
 
 function saveRoutines(routines) {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(routines));
+        const storage = window.appStorage || { getItem: () => null, setItem: () => {} };
+        storage.setItem(STORAGE_KEY, JSON.stringify(routines));
     } catch (e) {
         showAlert("エラー", "データの保存に失敗しました: " + e.message);
     }
@@ -1485,7 +1495,6 @@ function formatTime(sec) {
     return \`\${m}:\${s}\`;
 }
 
-let confirmCallback = null;
 const confirmModal = document.getElementById('confirm-modal');
 const confirmOkBtn = document.getElementById('confirm-ok-btn');
 const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
