@@ -33,7 +33,6 @@ export const initDB = async (): Promise<SQLite.SQLiteDatabase> => {
   if (existingPromise) return existingPromise;
 
   const promise = (async () => {
-    await checkAndRepairDB();
     const dbInstance = await _initDBInternal();
     // 起動完了後にバックグラウンドで日次自動バックアップを作成
     createDailyBackup().catch((err) => console.warn('[DB_BACKUP] Background backup failed:', err));
@@ -45,7 +44,14 @@ export const initDB = async (): Promise<SQLite.SQLiteDatabase> => {
 };
 
 const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
-  const _db = await SQLite.openDatabaseAsync('gymtracker.db');
+  let _db = await SQLite.openDatabaseAsync('gymtracker.db');
+
+  // DBの整合性チェック・修復
+  const checkResult = await checkAndRepairDB(_db);
+  if (checkResult === 'restored') {
+    // バックアップから復元された場合は再度接続を開く
+    _db = await SQLite.openDatabaseAsync('gymtracker.db');
+  }
 
   // Create tables if they don't exist
   await _db.execAsync(`

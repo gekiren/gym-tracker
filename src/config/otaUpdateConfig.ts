@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.104',
+  version: '1.8.109',
   title: {
-    ja: '🥗 栄養管理のクイックお気に入り追加機能の改善',
-    en: '🥗 Improved Quick Favorite Meal Logging',
+    ja: '✨ 習慣カウンターのタップ操作および安定性の改善',
+    en: '✨ Habit Counter Touch Responsiveness & Stability Fix',
   },
   notes: {
     ja: [
-      'クイックお気に入りから記録する際、追加した現在時刻（朝食・昼食・間食・夕食）に合わせて適切な食事区分で正しく記録されるように修正しました。',
+      '習慣カウンター画面において、習慣の追加ボタンや設定アイコンがタップしても反応しなかった不具合を修正しました。',
+      'データの同期処理を最適化し、各種ライフログの安定性を向上させました。',
     ],
     en: [
-      'Fixed an issue where meals added from quick favorites were not assigned to the current meal category (breakfast/lunch/snack/dinner) based on the time of addition.',
+      'Fixed an issue where tapping the add habit card or settings icon in Habit Counter had no response.',
+      'Optimized lifelog data synchronization for improved app stability.',
     ],
   },
 };

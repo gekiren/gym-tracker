@@ -52,9 +52,16 @@ const FEATURE_METAS: Record<FeatureId, FeatureMeta> = {
   routine: {
     id: 'routine',
     title: 'ルーティン管理',
-    desc: '日々の習慣・ルーティンの達成記録',
+    desc: '日々のルーティンの達成記録',
     icon: 'repeat',
     iconColor: '#4caf50',
+  },
+  habit: {
+    id: 'habit',
+    title: '習慣カウンター',
+    desc: '日々の習慣・行動のタップカウントと継続記録',
+    icon: 'checkmark-circle',
+    iconColor: '#e91e63',
   },
   voice_ai: {
     id: 'voice_ai',
@@ -65,7 +72,7 @@ const FEATURE_METAS: Record<FeatureId, FeatureMeta> = {
   },
 };
 
-const DEFAULT_ORDER: FeatureId[] = ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'voice_ai'];
+const DEFAULT_ORDER: FeatureId[] = ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'habit', 'voice_ai'];
 const DEFAULT_VISIBILITY: Record<FeatureId, boolean> = {
   workout: true,
   body: true,
@@ -73,6 +80,7 @@ const DEFAULT_VISIBILITY: Record<FeatureId, boolean> = {
   nutrition: true,
   zikan: true,
   routine: true,
+  habit: true,
   voice_ai: true,
 };
 
@@ -88,10 +96,16 @@ export default function FeatureManagementScreen() {
 
   useEffect(() => {
     if (currentOrder && currentOrder.length > 0) {
-      setOrder(currentOrder);
+      const mergedOrder = [...currentOrder];
+      DEFAULT_ORDER.forEach(id => {
+        if (!mergedOrder.includes(id)) {
+          mergedOrder.push(id);
+        }
+      });
+      setOrder(mergedOrder);
     }
     if (currentVisibility) {
-      setVisibility(currentVisibility);
+      setVisibility({ ...DEFAULT_VISIBILITY, ...currentVisibility });
     }
   }, [currentOrder, currentVisibility]);
 
@@ -183,7 +197,7 @@ export default function FeatureManagementScreen() {
                   <Text style={[styles.featureTitle, !isVisible && styles.textDisabled]}>
                     {meta.title}
                   </Text>
-                  <Text style={styles.featureDesc} numberOfLines={1}>
+                  <Text style={styles.featureDesc}>
                     {meta.desc}
                   </Text>
                 </View>
@@ -307,6 +321,8 @@ const styles = StyleSheet.create({
   featureDesc: {
     fontSize: 12,
     color: Theme.colors.textMuted,
+    lineHeight: 16,
+    marginTop: 2,
   },
   orderControls: {
     flexDirection: 'row',

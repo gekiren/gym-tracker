@@ -20,7 +20,8 @@ const FEATURE_OPTIONS: SlotConfig[] = [
   { id: 'water', label: '水分', icon: 'water', description: '水分補給記録' },
   { id: 'nutrition', label: '栄養', icon: 'restaurant', description: '食事・PFC管理' },
   { id: 'zikan', label: '時間', icon: 'time', description: '24H時間記録' },
-  { id: 'routine', label: 'ルーティン', icon: 'repeat', description: '習慣チェック' },
+  { id: 'routine', label: 'ルーティン', icon: 'repeat', description: 'ルーティン達成記録' },
+  { id: 'habit', label: '習慣', icon: 'checkmark-circle', description: '習慣カウンター' },
   { id: 'voice_ai', label: 'AI音声アシスタント', icon: 'mic', description: 'AIトレーナー音声対話' },
   { id: 'empty', label: '(空欄)', icon: 'close-circle-outline', description: 'この枠を非表示' }
 ];

@@ -295,9 +295,23 @@ h1 {
     overflow-y: auto;
 }
 
+.hidden {
+    display: none !important;
+}
+
 .modal.hidden {
+    display: none !important;
     opacity: 0;
     pointer-events: none;
+}
+
+.modal.modal-center {
+    align-items: center !important;
+    padding-top: 0 !important;
+}
+
+.modal.modal-high-z {
+    z-index: 200 !important;
 }
 
 .modal-content.glass {
@@ -770,6 +784,18 @@ header {
         </div>
     </div>
 
+    <!-- Confirm / Alert Modal -->
+    <div id="confirm-modal" class="modal modal-center modal-high-z hidden">
+        <div class="modal-content glass" style="max-width: 340px; padding: 24px; box-sizing: border-box;">
+            <h2 id="confirm-title" style="margin-top: 0; margin-bottom: 12px; font-size: 1.15rem;">習慣の削除</h2>
+            <p id="confirm-message" style="color: rgba(255, 255, 255, 0.85); font-size: 0.95rem; line-height: 1.5; margin: 0 0 20px 0; white-space: pre-wrap;">この習慣とこれまでの記録をすべて削除しますか？\nこの操作は取り消せません。</p>
+            <div class="modal-actions" style="gap: 12px;">
+                <button id="confirm-cancel-btn" class="text-btn" style="background: rgba(255, 255, 255, 0.1); border-radius: 12px; flex: 1; padding: 12px; color: #fff;">キャンセル</button>
+                <button id="confirm-ok-btn" class="primary-btn" style="background: var(--danger-color, #ff6b6b); border-radius: 12px; flex: 1; padding: 12px;">削除</button>
+            </div>
+        </div>
+    </div>
+
     <script>
 // State
 let items = [];
@@ -875,6 +901,61 @@ const closeManageBtn = document.getElementById('close-manage');
 const closeManageXBtn = document.getElementById('close-manage-x');
 const manageList = document.getElementById('manage-list');
 
+// Confirm Modal Elements
+const confirmModal = document.getElementById('confirm-modal');
+const confirmTitle = document.getElementById('confirm-title');
+const confirmMessage = document.getElementById('confirm-message');
+const confirmOkBtn = document.getElementById('confirm-ok-btn');
+const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+let confirmCallback = null;
+
+function showConfirm(title, msg, onOk, okText = "削除", cancelText = "キャンセル", isDanger = true) {
+    if (confirmTitle) confirmTitle.innerText = title;
+    if (confirmMessage) confirmMessage.innerText = msg;
+    if (confirmOkBtn) {
+        confirmOkBtn.innerText = okText;
+        confirmOkBtn.style.background = isDanger ? 'var(--danger-color, #ff6b6b)' : 'var(--primary-color, #6c5ce7)';
+    }
+    if (confirmCancelBtn) {
+        confirmCancelBtn.innerText = cancelText;
+        confirmCancelBtn.style.display = 'block';
+    }
+    confirmCallback = onOk;
+    if (confirmModal) confirmModal.classList.remove('hidden');
+}
+
+function showAlert(title, msg, onOk = null, okText = "OK") {
+    if (confirmTitle) confirmTitle.innerText = title;
+    if (confirmMessage) confirmMessage.innerText = msg;
+    if (confirmOkBtn) {
+        confirmOkBtn.innerText = okText;
+        confirmOkBtn.style.background = 'var(--primary-color, #6c5ce7)';
+    }
+    if (confirmCancelBtn) {
+        confirmCancelBtn.style.display = 'none';
+    }
+    confirmCallback = onOk;
+    if (confirmModal) confirmModal.classList.remove('hidden');
+}
+
+if (confirmOkBtn) {
+    confirmOkBtn.onclick = () => {
+        if (confirmModal) confirmModal.classList.add('hidden');
+        if (confirmCallback) {
+            const cb = confirmCallback;
+            confirmCallback = null;
+            cb();
+        }
+    };
+}
+
+if (confirmCancelBtn) {
+    confirmCancelBtn.onclick = () => {
+        if (confirmModal) confirmModal.classList.add('hidden');
+        confirmCallback = null;
+    };
+}
+
 // Selected Color State
 let selectedColor = 'linear-gradient(135deg, #FF6B6B, #EE5253)'; // default
 
@@ -895,8 +976,39 @@ function loadData() {
     const savedItems = localStorage.getItem('habit-items');
     const savedLogs = localStorage.getItem('habit-logs');
 
-    if (savedItems) items = JSON.parse(savedItems);
-    if (savedLogs) logs = JSON.parse(savedLogs);
+    if (savedItems) {
+        try {
+            let parsed = JSON.parse(savedItems);
+            if (typeof parsed === 'string') {
+                try {
+                    parsed = JSON.parse(parsed);
+                } catch (e) {}
+            }
+            items = Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            console.error('Failed to parse habit-items:', e);
+            items = [];
+        }
+    } else {
+        items = [];
+    }
+
+    if (savedLogs) {
+        try {
+            let parsed = JSON.parse(savedLogs);
+            if (typeof parsed === 'string') {
+                try {
+                    parsed = JSON.parse(parsed);
+                } catch (e) {}
+            }
+            logs = Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            console.error('Failed to parse habit-logs:', e);
+            logs = [];
+        }
+    } else {
+        logs = [];
+    }
 }
 
 function saveData() {
@@ -1208,13 +1320,13 @@ function deleteItemFromManage(id) {
     const item = items.find(i => i.id === id);
     if (!item) return;
 
-    if (confirm('この習慣とこれまでの記録をすべて削除しますか？\\nこの操作は取り消せません。')) {
+    showConfirm('習慣の削除', 'この習慣とこれまでの記録をすべて削除しますか？\nこの操作は取り消せません。', () => {
         items = items.filter(i => i.id !== id);
         logs = logs.filter(log => log.itemId !== id);
         saveData();
         render();
         renderManageList();
-    }
+    });
 }
 
 function toggleItemVisibility(id) {
@@ -1339,13 +1451,13 @@ function saveEditCount() {
 function deleteItem() {
     if (!editingItemId) return;
 
-    if (confirm('この習慣とこれまでの記録をすべて削除しますか？\\nこの操作は取り消せません。')) {
+    showConfirm('習慣の削除', 'この習慣とこれまでの記録をすべて削除しますか？\nこの操作は取り消せません。', () => {
         items = items.filter(item => item.id !== editingItemId);
         logs = logs.filter(log => log.itemId !== editingItemId);
         saveData();
         render();
         editModal.classList.add('hidden');
-    }
+    });
 }
 
 
