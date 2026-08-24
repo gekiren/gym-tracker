@@ -663,7 +663,14 @@ const STORAGE_KEY = 'routine_tracker_data';
 function getRoutines() {
     try {
         const data = localStorage.getItem(STORAGE_KEY);
-        return data ? JSON.parse(data) : [];
+        if (!data) return [];
+        let parsed = JSON.parse(data);
+        if (typeof parsed === 'string') {
+            try {
+                parsed = JSON.parse(parsed);
+            } catch (e) {}
+        }
+        return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
         console.error("Storage access failed:", e);
         return [];

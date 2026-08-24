@@ -134,142 +134,173 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
 
   try {
     // 1. Water logs & settings
-    const waterLogsRows = await db.getAllAsync<{ amount: number; timestamp: number; date: string; caffeine: number | null }>(
-      'SELECT amount, timestamp, date, caffeine FROM water_logs WHERE date >= ? ORDER BY timestamp ASC',
-      [cutoffDate]
-    );
-    data['hydration_data_v1'] = JSON.stringify(waterLogsRows.map((row) => ({
-      id: row.timestamp,
-      timestamp: row.timestamp,
-      amount: row.amount,
-      caffeine: row.caffeine || 0,
-      date: row.date,
-    })));
+    try {
+      const waterLogsRows = await db.getAllAsync<{ amount: number; timestamp: number; date: string; caffeine: number | null }>(
+        'SELECT amount, timestamp, date, caffeine FROM water_logs WHERE date >= ? ORDER BY timestamp ASC',
+        [cutoffDate]
+      );
+      data['hydration_data_v1'] = JSON.stringify(waterLogsRows.map((row) => ({
+        id: row.timestamp,
+        timestamp: row.timestamp,
+        amount: row.amount,
+        caffeine: row.caffeine || 0,
+        date: row.date,
+      })));
 
-    const waterSettingsRow = await db.getFirstAsync<{ value: string }>(
-      "SELECT value FROM settings WHERE key = 'hydration_settings_v1'"
-    );
-    if (waterSettingsRow) {
-      try {
-        const parsed = JSON.parse(waterSettingsRow.value);
-        if (parsed && typeof parsed.caffeineLimit !== 'number') {
-          const caffeineLimit = await getCaffeineLimit();
-          parsed.caffeineLimit = caffeineLimit;
+      const waterSettingsRow = await db.getFirstAsync<{ value: string }>(
+        "SELECT value FROM settings WHERE key = 'hydration_settings_v1'"
+      );
+      if (waterSettingsRow) {
+        try {
+          const parsed = JSON.parse(waterSettingsRow.value);
+          if (parsed && typeof parsed.caffeineLimit !== 'number') {
+            const caffeineLimit = await getCaffeineLimit();
+            parsed.caffeineLimit = caffeineLimit;
+          }
+          if (parsed && typeof parsed.widgetQuickAddAmount !== 'number') {
+            // Check if we have individual key, else default 200
+            const widgetAmountRow = await db.getFirstAsync<{ value: string }>(
+              "SELECT value FROM settings WHERE key = 'widget_quick_add_amount'"
+            );
+            parsed.widgetQuickAddAmount = widgetAmountRow ? parseInt(widgetAmountRow.value, 10) : 200;
+          }
+          data['hydration_settings_v1'] = parsed;
+        } catch {
+          data['hydration_settings_v1'] = null;
         }
-        if (parsed && typeof parsed.widgetQuickAddAmount !== 'number') {
-          // Check if we have individual key, else default 200
-          const widgetAmountRow = await db.getFirstAsync<{ value: string }>(
-            "SELECT value FROM settings WHERE key = 'widget_quick_add_amount'"
-          );
-          parsed.widgetQuickAddAmount = widgetAmountRow ? parseInt(widgetAmountRow.value, 10) : 200;
-        }
-        data['hydration_settings_v1'] = parsed;
-      } catch {
-        data['hydration_settings_v1'] = null;
+      } else {
+        const waterGoalRow = await db.getFirstAsync<{ value: string }>(
+          "SELECT value FROM settings WHERE key = 'water_goal'"
+        );
+        const goal = waterGoalRow ? parseInt(waterGoalRow.value, 10) : 2000;
+        const caffeineLimit = await getCaffeineLimit();
+        const widgetAmountRow = await db.getFirstAsync<{ value: string }>(
+          "SELECT value FROM settings WHERE key = 'widget_quick_add_amount'"
+        );
+        const widgetQuickAddAmount = widgetAmountRow ? parseInt(widgetAmountRow.value, 10) : 200;
+        data['hydration_settings_v1'] = { goal, presets: [200, 300, 500], caffeineLimit, widgetQuickAddAmount };
       }
-    } else {
-      const waterGoalRow = await db.getFirstAsync<{ value: string }>(
-        "SELECT value FROM settings WHERE key = 'water_goal'"
-      );
-      const goal = waterGoalRow ? parseInt(waterGoalRow.value, 10) : 2000;
-      const caffeineLimit = await getCaffeineLimit();
-      const widgetAmountRow = await db.getFirstAsync<{ value: string }>(
-        "SELECT value FROM settings WHERE key = 'widget_quick_add_amount'"
-      );
-      const widgetQuickAddAmount = widgetAmountRow ? parseInt(widgetAmountRow.value, 10) : 200;
-      data['hydration_settings_v1'] = { goal, presets: [200, 300, 500], caffeineLimit, widgetQuickAddAmount };
+    } catch (e) {
+      console.warn('[getInitialDataForWebView] Failed to load water data:', e);
     }
 
     // 2. Time logs, templates, tags
-    // --- Widget punches integration (Directly save to SQLite first) ---
-    await syncWidgetPunches();
+    try {
+      // --- Widget punches integration (Directly save to SQLite first) ---
+      await syncWidgetPunches();
 
-    // 2. Time logs, templates, tags
-    const timeLogsRows = await db.getAllAsync<{
-      id: number;
-      activity_name: string;
-      start_time: string;
-      end_time: string;
-      date: string;
-      duration_minutes: number;
-    }>(
-      'SELECT id, activity_name, start_time, end_time, date, duration_minutes FROM time_logs WHERE date >= ? ORDER BY start_time ASC',
-      [cutoffDate]
-    );
+      const timeLogsRows = await db.getAllAsync<{
+        id: number;
+        activity_name: string;
+        start_time: string;
+        end_time: string;
+        date: string;
+        duration_minutes: number;
+      }>(
+        'SELECT id, activity_name, start_time, end_time, date, duration_minutes FROM time_logs WHERE date >= ? ORDER BY start_time ASC',
+        [cutoffDate]
+      );
 
-    const timeLogsMap: Record<string, any> = {};
-    timeLogsRows.forEach((row) => {
-      const key = `${row.date}_${row.start_time}_${row.end_time}`;
-      if (!timeLogsMap[key]) {
-        timeLogsMap[key] = {
-          id: row.id,
-          date: row.date,
-          start: row.start_time,
-          end: row.end_time,
-          rows: [],
-        };
-      }
-      timeLogsMap[key].rows.push(row);
-    });
+      const timeLogsMap: Record<string, any> = {};
+      timeLogsRows.forEach((row) => {
+        const key = `${row.date}_${row.start_time}_${row.end_time}`;
+        if (!timeLogsMap[key]) {
+          timeLogsMap[key] = {
+            id: row.id,
+            date: row.date,
+            start: row.start_time,
+            end: row.end_time,
+            rows: [],
+          };
+        }
+        timeLogsMap[key].rows.push(row);
+      });
 
-    data['zikankanri_logs'] = Object.values(timeLogsMap).map((group: any) => {
-      const totalDuration = group.rows.reduce((sum: number, r: any) => sum + r.duration_minutes, 0);
-      const items = group.rows.map((r: any) => {
-        const percent = totalDuration > 0 ? Math.round((r.duration_minutes / totalDuration) * 100) : 100;
+      data['zikankanri_logs'] = Object.values(timeLogsMap).map((group: any) => {
+        const totalDuration = group.rows.reduce((sum: number, r: any) => sum + r.duration_minutes, 0);
+        const items = group.rows.map((r: any) => {
+          const percent = totalDuration > 0 ? Math.round((r.duration_minutes / totalDuration) * 100) : 100;
+          return {
+            name: r.activity_name,
+            percent,
+          };
+        });
         return {
-          name: r.activity_name,
-          percent,
+          id: group.id,
+          date: group.date,
+          start: group.start,
+          end: group.end,
+          items,
         };
       });
-      return {
-        id: group.id,
-        date: group.date,
-        start: group.start,
-        end: group.end,
-        items,
-      };
-    });
+    } catch (e) {
+      console.warn('[getInitialDataForWebView] Failed to load time logs:', e);
+    }
 
-    const templatesRow = await db.getFirstAsync<{ value: string }>(
-      "SELECT value FROM settings WHERE key = 'zikankanri_templates'"
-    );
-    data['zikankanri_templates'] = templatesRow ? JSON.parse(templatesRow.value) : null;
+    try {
+      const templatesRow = await db.getFirstAsync<{ value: string }>(
+        "SELECT value FROM settings WHERE key = 'zikankanri_templates'"
+      );
+      data['zikankanri_templates'] = templatesRow && templatesRow.value ? JSON.parse(templatesRow.value) : null;
+    } catch (e) {
+      console.warn('[getInitialDataForWebView] Failed to parse zikankanri_templates:', e);
+      data['zikankanri_templates'] = null;
+    }
 
-    const tagsRow = await db.getFirstAsync<{ value: string }>(
-      "SELECT value FROM settings WHERE key = 'zikankanri_tags'"
-    );
-    data['zikankanri_tags'] = tagsRow ? JSON.parse(tagsRow.value) : null;
+    try {
+      const tagsRow = await db.getFirstAsync<{ value: string }>(
+        "SELECT value FROM settings WHERE key = 'zikankanri_tags'"
+      );
+      data['zikankanri_tags'] = tagsRow && tagsRow.value ? JSON.parse(tagsRow.value) : null;
+    } catch (e) {
+      console.warn('[getInitialDataForWebView] Failed to parse zikankanri_tags:', e);
+      data['zikankanri_tags'] = null;
+    }
 
-    const continuousModeRow = await db.getFirstAsync<{ value: string }>(
-      "SELECT value FROM settings WHERE key = 'zikankanri_continuous_mode'"
-    );
-    data['zikankanri_continuous_mode'] = continuousModeRow ? continuousModeRow.value : null;
+    try {
+      const continuousModeRow = await db.getFirstAsync<{ value: string }>(
+        "SELECT value FROM settings WHERE key = 'zikankanri_continuous_mode'"
+      );
+      data['zikankanri_continuous_mode'] = continuousModeRow ? continuousModeRow.value : null;
+    } catch (e) {
+      console.warn('[getInitialDataForWebView] Failed to get zikankanri_continuous_mode:', e);
+      data['zikankanri_continuous_mode'] = null;
+    }
 
     // 3. Habit items and logs
-    const habitItemsRows = await db.getAllAsync<{ id: number; name: string; color: string; created_at: number }>(
-      'SELECT * FROM habit_items ORDER BY sort_order ASC, created_at ASC'
-    );
-    data['habit-items'] = habitItemsRows.map((row) => ({
-      id: String(row.id),
-      name: row.name,
-      color: row.color,
-      createdAt: row.created_at,
-    }));
+    try {
+      const habitItemsRows = await db.getAllAsync<{ id: number; name: string; color: string; created_at: number }>(
+        'SELECT * FROM habit_items ORDER BY sort_order ASC, created_at ASC'
+      );
+      data['habit-items'] = habitItemsRows.map((row) => ({
+        id: String(row.id),
+        name: row.name,
+        color: row.color,
+        createdAt: row.created_at,
+      }));
 
-    const habitLogsRows = await db.getAllAsync<{ habit_item_id: number; timestamp: number }>(
-      'SELECT habit_item_id, timestamp FROM habit_logs WHERE date >= ? ORDER BY timestamp ASC',
-      [cutoffDate]
-    );
-    data['habit-logs'] = habitLogsRows.map((row) => ({
-      itemId: String(row.habit_item_id),
-      timestamp: row.timestamp,
-    }));
+      const habitLogsRows = await db.getAllAsync<{ habit_item_id: number; timestamp: number }>(
+        'SELECT habit_item_id, timestamp FROM habit_logs WHERE date >= ? ORDER BY timestamp ASC',
+        [cutoffDate]
+      );
+      data['habit-logs'] = habitLogsRows.map((row) => ({
+        itemId: String(row.habit_item_id),
+        timestamp: row.timestamp,
+      }));
+    } catch (e) {
+      console.warn('[getInitialDataForWebView] Failed to load habit items and logs:', e);
+    }
 
     // 4. Routine tracker data
-    const routineRow = await db.getFirstAsync<{ value: string }>(
-      "SELECT value FROM settings WHERE key = 'routine_tracker_data'"
-    );
-    data['routine_tracker_data'] = routineRow ? JSON.parse(routineRow.value) : null;
+    try {
+      const routineRow = await db.getFirstAsync<{ value: string }>(
+        "SELECT value FROM settings WHERE key = 'routine_tracker_data'"
+      );
+      data['routine_tracker_data'] = routineRow && routineRow.value ? JSON.parse(routineRow.value) : null;
+    } catch (e) {
+      console.warn('[getInitialDataForWebView] Failed to parse routine_tracker_data:', e);
+      data['routine_tracker_data'] = null;
+    }
 
   } catch (e) {
     console.error('Failed to prepare initial data for WebView:', e);
@@ -292,7 +323,15 @@ export const handleWebViewMessage = async (
   try {
     if (key === 'hydration_data_v1') {
       console.log(`[SyncService] Received hydration_data_v1. Value length: ${value.length}`);
-      const logs = JSON.parse(value) as Array<{ id: number; timestamp: number; amount: number; date: string; caffeine?: number }>;
+      let logs: Array<{ id: number; timestamp: number; amount: number; date: string; caffeine?: number }> = [];
+      try {
+        let parsed = JSON.parse(value);
+        if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+        logs = Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.warn('[SyncService] Failed to parse hydration_data_v1:', e);
+        logs = [];
+      }
       console.log(`[SyncService] Parsed logs count: ${logs.length}. Logs:`, JSON.stringify(logs));
 
       const existingCountRow = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM water_logs');
@@ -327,37 +366,50 @@ export const handleWebViewMessage = async (
         [value]
       );
 
-      const settings = JSON.parse(value);
-      if (settings && typeof settings.widgetQuickAddAmount === 'number') {
-        await db.runAsync(
-          "INSERT OR REPLACE INTO settings (key, value) VALUES ('widget_quick_add_amount', ?)",
-          [String(settings.widgetQuickAddAmount)]
-        );
-      }
-      if (settings && typeof settings.goal === 'number') {
-        await db.runAsync(
-          "INSERT OR REPLACE INTO settings (key, value) VALUES ('water_goal', ?)",
-          [String(settings.goal)]
-        );
-        await useLifelogStore.getState().updateWaterGoal(settings.goal);
-      }
-      if (settings && typeof settings.caffeineLimit === 'number') {
-        await db.runAsync(
-          "INSERT OR REPLACE INTO settings (key, value) VALUES ('caffeine_limit', ?)",
-          [String(settings.caffeineLimit)]
-        );
-        await useLifelogStore.getState().updateCaffeineLimit(settings.caffeineLimit);
+      try {
+        let settings = JSON.parse(value);
+        if (typeof settings === 'string') settings = JSON.parse(settings);
+        if (settings && typeof settings.widgetQuickAddAmount === 'number') {
+          await db.runAsync(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES ('widget_quick_add_amount', ?)",
+            [String(settings.widgetQuickAddAmount)]
+          );
+        }
+        if (settings && typeof settings.goal === 'number') {
+          await db.runAsync(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES ('water_goal', ?)",
+            [String(settings.goal)]
+          );
+          await useLifelogStore.getState().updateWaterGoal(settings.goal);
+        }
+        if (settings && typeof settings.caffeineLimit === 'number') {
+          await db.runAsync(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES ('caffeine_limit', ?)",
+            [String(settings.caffeineLimit)]
+          );
+          await useLifelogStore.getState().updateCaffeineLimit(settings.caffeineLimit);
+        }
+      } catch (e) {
+        console.warn('[SyncService] Failed to parse hydration_settings_v1:', e);
       }
     } 
     
     else if (key === 'zikankanri_logs') {
-      const logs = JSON.parse(value) as Array<{
+      let logs: Array<{
         id: number;
         date: string;
         start: string;
         end: string;
         items: Array<{ name: string; percent: number }>;
-      }>;
+      }> = [];
+      try {
+        let parsed = JSON.parse(value);
+        if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+        logs = Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.warn('[SyncService] Failed to parse zikankanri_logs:', e);
+        logs = [];
+      }
 
       const existingCountRow = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM time_logs');
       const existingCount = existingCountRow?.count || 0;
@@ -409,7 +461,15 @@ export const handleWebViewMessage = async (
     } 
     
     else if (key === 'habit-items') {
-      const items = JSON.parse(value) as Array<{ id: string; name: string; color: string; createdAt: number }>;
+      let items: Array<{ id: string; name: string; color: string; createdAt: number }> = [];
+      try {
+        let parsed = JSON.parse(value);
+        if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+        items = Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.warn('[SyncService] Failed to parse habit-items:', e);
+        items = [];
+      }
       addSyncDiagnosticLog(`Received habit-items from WebView. Count: ${items.length}`);
 
       const existingRows = await db.getAllAsync<{ id: number; name: string; created_at: number }>(
@@ -486,7 +546,15 @@ export const handleWebViewMessage = async (
     } 
     
     else if (key === 'habit-logs') {
-      const logs = JSON.parse(value) as Array<{ itemId: string; timestamp: number }>;
+      let logs: Array<{ itemId: string; timestamp: number }> = [];
+      try {
+        let parsed = JSON.parse(value);
+        if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+        logs = Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.warn('[SyncService] Failed to parse habit-logs:', e);
+        logs = [];
+      }
       addSyncDiagnosticLog(`Received habit-logs from WebView. Incoming count: ${logs.length}`);
 
       const existingCountRow = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM habit_logs');
