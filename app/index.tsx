@@ -537,95 +537,95 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         );
 
-      case 'routine':
+      case 'habit':
         return (
-          <React.Fragment key="routine">
-            {/* Habits Card */}
-            <View style={styles.card}>
-              <TouchableOpacity 
-                style={styles.cardHeader}
-                activeOpacity={0.7}
-                onPress={() => router.push('/lifelog/habit')}
-              >
-                <View style={[styles.iconContainer, { backgroundColor: 'rgba(233, 30, 99, 0.15)' }]}>
-                  <Ionicons name="checkmark-circle" size={24} color="#e91e63" />
-                </View>
-                <Text style={styles.cardTitle}>習慣カウンター</Text>
-                <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-              </TouchableOpacity>
+          <View key="habit" style={styles.card}>
+            <TouchableOpacity 
+              style={styles.cardHeader}
+              activeOpacity={0.7}
+              onPress={() => router.push('/lifelog/habit')}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: 'rgba(233, 30, 99, 0.15)' }]}>
+                <Ionicons name="checkmark-circle" size={24} color="#e91e63" />
+              </View>
+              <Text style={styles.cardTitle}>習慣カウンター</Text>
+              <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
+            </TouchableOpacity>
 
-              <View style={styles.cardBody}>
-                {daySummary?.habits && daySummary.habits.length > 0 ? (
-                  <View style={styles.habitList}>
-                    {daySummary.habits.slice(0, 3).map((habit) => (
-                      <View key={habit.id} style={styles.habitRow}>
+            <View style={styles.cardBody}>
+              {daySummary?.habits && daySummary.habits.length > 0 ? (
+                <View style={styles.habitList}>
+                  {daySummary.habits.slice(0, 3).map((habit) => (
+                    <View key={habit.id} style={styles.habitRow}>
+                      <TouchableOpacity
+                        style={styles.habitMainClickArea}
+                        onPress={() => router.push('/lifelog/habit')}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.habitInfo}>
+                          <View style={[styles.habitColorDot, { backgroundColor: habit.color || '#fff' }]} />
+                          <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
+                        </View>
+                        <Text style={styles.habitCount}>{habit.count} 回</Text>
+                      </TouchableOpacity>
+                      <View style={styles.habitActionContainer}>
                         <TouchableOpacity
-                          style={styles.habitMainClickArea}
-                          onPress={() => router.push('/lifelog/habit')}
+                          style={styles.habitAddBtn}
+                          onPress={() => handleIncrementHabit(habit.id)}
                           activeOpacity={0.7}
                         >
-                          <View style={styles.habitInfo}>
-                            <View style={[styles.habitColorDot, { backgroundColor: habit.color || '#fff' }]} />
-                            <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
-                          </View>
-                          <Text style={styles.habitCount}>{habit.count} 回</Text>
+                          <Ionicons name="add" size={16} color="#fff" />
                         </TouchableOpacity>
-                        <View style={styles.habitActionContainer}>
-                          <TouchableOpacity
-                            style={styles.habitAddBtn}
-                            onPress={() => handleIncrementHabit(habit.id)}
-                            activeOpacity={0.7}
-                          >
-                            <Ionicons name="add" size={16} color="#fff" />
-                          </TouchableOpacity>
-                        </View>
                       </View>
-                    ))}
-                  </View>
-                ) : (
-                  <Text style={styles.emptyText}>習慣が登録されていません</Text>
-                )}
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.emptyText}>習慣が登録されていません</Text>
+              )}
+            </View>
+          </View>
+        );
+
+      case 'routine':
+        return (
+          <TouchableOpacity 
+            key="routine"
+            style={styles.card} 
+            activeOpacity={0.9}
+            onPress={() => router.push('/lifelog/routine')}
+          >
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconContainer, { backgroundColor: 'rgba(76, 175, 80, 0.15)' }]}>
+                <Ionicons name="repeat" size={24} color="#4caf50" />
               </View>
+              <Text style={styles.cardTitle}>ルーティン管理</Text>
+              <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
             </View>
 
-            {/* Routine Tracker Card */}
-            <TouchableOpacity 
-              style={styles.card} 
-              activeOpacity={0.9}
-              onPress={() => router.push('/lifelog/routine')}
-            >
-              <View style={styles.cardHeader}>
-                <View style={[styles.iconContainer, { backgroundColor: 'rgba(76, 175, 80, 0.15)' }]}>
-                  <Ionicons name="repeat" size={24} color="#4caf50" />
-                </View>
-                <Text style={styles.cardTitle}>ルーティン管理</Text>
-                <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
+            <View style={styles.cardBody}>
+              <View style={styles.routineSummaryRow}>
+                <Ionicons name="checkmark-done-circle-outline" size={20} color="#4caf50" style={{ marginRight: 6 }} />
+                <Text style={styles.routineSummaryText}>
+                  完了したルーティン:
+                </Text>
               </View>
-
-              <View style={styles.cardBody}>
-                <View style={styles.routineSummaryRow}>
-                  <Ionicons name="checkmark-done-circle-outline" size={20} color="#4caf50" style={{ marginRight: 6 }} />
-                  <Text style={styles.routineSummaryText}>
-                    完了したルーティン:
-                  </Text>
+              {daySummary?.completedRoutineNames && daySummary.completedRoutineNames.length > 0 ? (
+                <View style={{ marginTop: 8, paddingLeft: 26 }}>
+                  {daySummary.completedRoutineNames.map((name, index) => (
+                    <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                      <Ionicons name="checkmark" size={14} color="#4caf50" style={{ marginRight: 6 }} />
+                      <Text style={{ color: Theme.colors.text, fontSize: 15 }}>{name}</Text>
+                    </View>
+                  ))}
                 </View>
-                {daySummary?.completedRoutineNames && daySummary.completedRoutineNames.length > 0 ? (
-                  <View style={{ marginTop: 8, paddingLeft: 26 }}>
-                    {daySummary.completedRoutineNames.map((name, index) => (
-                      <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                        <Ionicons name="checkmark" size={14} color="#4caf50" style={{ marginRight: 6 }} />
-                        <Text style={{ color: Theme.colors.text, fontSize: 15 }}>{name}</Text>
-                      </View>
-                    ))}
-                  </View>
-                ) : (
-                  <View style={{ marginTop: 8, paddingLeft: 26 }}>
-                    <Text style={{ color: Theme.colors.textMuted, fontSize: 14 }}>なし</Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-          </React.Fragment>
+              ) : (
+                <View style={{ marginTop: 8, paddingLeft: 26 }}>
+                  <Text style={{ color: Theme.colors.textMuted, fontSize: 14 }}>なし</Text>
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
         );
 
       case 'voice_ai':
@@ -672,7 +672,7 @@ export default function DashboardScreen() {
         {(() => {
           const activeOrder: FeatureId[] = featureOrder && featureOrder.length > 0 
             ? featureOrder 
-            : ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'voice_ai'];
+            : ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'habit', 'voice_ai'];
           const visibleFeatures = activeOrder.filter((id: FeatureId) =>
             featureVisibility ? featureVisibility[id] !== false : true
           );

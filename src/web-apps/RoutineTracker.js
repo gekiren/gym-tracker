@@ -120,7 +120,7 @@ export default `<!DOCTYPE html>
     (function() {
       if (window.__BACKGROUND_THEME__ === 'pureBlack') {
         var style = document.createElement('style');
-        style.innerHTML = 'body { background-color: #000000 !important; color: #ffffff !important; } .card, .routine-card, .routine-item, .item-card, div[class*="card"] { background-color: #080808 !important; border: 1px solid #1f1f1f !important; } .text-muted, small, span.sub { color: #888888 !important; }';
+        style.innerHTML = 'body { background-color: #000000 !important; color: #ffffff !important; } .card, .routine-card, .routine-item, .item-card, div[class*="card"], .confirm-content { background-color: #080808 !important; border: 1px solid #1f1f1f !important; } .text-muted, small, span.sub { color: #888888 !important; }';
         document.head.appendChild(style);
       }
     })();
@@ -258,6 +258,11 @@ h2 {
     overflow-y: auto;
 }
 
+.modal.modal-center {
+    align-items: center !important;
+    padding-top: 0 !important;
+}
+
 .hidden {
     display: none !important;
 }
@@ -274,6 +279,60 @@ h2 {
     max-width: 400px;
     max-height: 85vh;
     overflow-y: auto;
+}
+
+.confirm-content {
+    background-color: #1e1e1e;
+    padding: 24px;
+    border-radius: 16px;
+    width: 85%;
+    max-width: 340px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+    border: 1px solid #333;
+    animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-sizing: border-box;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.92); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.confirm-title {
+    color: #ffffff;
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-top: 0;
+    margin-bottom: 12px;
+}
+
+.confirm-message {
+    color: #d0d0d0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0 0 20px 0;
+    white-space: pre-wrap;
+}
+
+.confirm-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.confirm-actions button {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.confirm-actions button:active {
+    transform: scale(0.97);
+    opacity: 0.85;
 }
 
 .modal-actions {
@@ -296,11 +355,18 @@ h2 {
 }
 
 .btn-cancel {
-    background: #555;
+    background: #444446;
+    color: #ffffff;
 }
 
 .btn-danger {
-    background: #c92a2a;
+    background: #dc2626;
+    color: #ffffff;
+}
+
+.btn-confirm-ok {
+    background: #2563eb;
+    color: #ffffff;
 }
 
 .text-center {
@@ -440,12 +506,6 @@ h2 {
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2693/2693507.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        window.onerror = function (msg, url, line) {
-            alert("Error: " + msg + "\\nLine: " + line);
-            return false;
-        };
-    </script>
 </head>
 
 <body>
@@ -569,13 +629,13 @@ h2 {
         </div>
 
         <!-- 汎用確認・アラートモーダル -->
-        <div id="confirm-modal" class="modal hidden">
-            <div class="modal-content text-center">
-                <h2 id="confirm-title">Confirm</h2>
-                <p id="confirm-message">Message</p>
-                <div class="modal-actions">
-                    <button id="confirm-cancel-btn" class="btn-cancel">Cancel</button>
-                    <button id="confirm-ok-btn" class="btn-danger">OK</button>
+        <div id="confirm-modal" class="modal modal-center hidden">
+            <div class="confirm-content text-center">
+                <h3 id="confirm-title" class="confirm-title">確認</h3>
+                <p id="confirm-message" class="confirm-message">メッセージ</p>
+                <div class="confirm-actions">
+                    <button id="confirm-cancel-btn" class="btn-cancel">キャンセル</button>
+                    <button id="confirm-ok-btn" class="btn-danger">削除</button>
                 </div>
             </div>
         </div>
@@ -614,7 +674,7 @@ function saveRoutines(routines) {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(routines));
     } catch (e) {
-        alert("Failed to save data. " + e.message);
+        showAlert("エラー", "データの保存に失敗しました: " + e.message);
     }
 }
 
@@ -845,7 +905,9 @@ function loadRoutines() {
 
             const targetDateStr = window.__TARGET_DATE__;
             const isCompleted = isRoutineCompletedOnTargetDate(r, targetDateStr);
-            const checkmark = isCompleted ? '<span style="font-size: 24px; color: #51cf66; margin-left: 10px; flex-shrink: 0;">✅</span>' : '';
+            const checkmark = isCompleted 
+                ? '<div style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #4cd964; box-shadow: 0 2px 8px rgba(76, 217, 100, 0.4); margin-left: 12px; flex-shrink: 0;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>' 
+                : '';
             
             // Format task list
             const totalSeconds = r.tasks ? r.tasks.reduce((sum, t) => sum + t.estimated_seconds, 0) : 0;
@@ -894,22 +956,29 @@ function loadRoutines() {
                 }
 
                 const isHidden = r.hidden === true;
-                const visibilityBtn = \`<button class="icon-btn" style="background: \${isHidden ? '#c53030' : '#444'};" onclick="event.stopPropagation(); toggleVisibility('\${r.id}')">\${isHidden ? '💤' : '💡'}</button>\`;
+                const visibilityBtn = \`<button class="icon-btn" style="background: \${isHidden ? '#c53030' : '#444'}; margin-left: 0;" onclick="event.stopPropagation(); toggleVisibility('\${r.id}')">\${isHidden ? '💤' : '💡'}</button>\`;
 
                 const isFirst = idx === 0;
                 const isLast = idx === routines.length - 1;
-                const upBtn = \`<button class="icon-btn" \${isFirst ? 'disabled style="opacity:0.3; cursor:default;"' : ''} onclick="event.stopPropagation(); moveRoutine('\${r.id}', 'up')">▲</button>\`;
-                const downBtn = \`<button class="icon-btn" \${isLast ? 'disabled style="opacity:0.3; cursor:default;"' : ''} onclick="event.stopPropagation(); moveRoutine('\${r.id}', 'down')">▼</button>\`;
+                const upBtn = \`<button class="icon-btn" style="margin-left: 0;" \${isFirst ? 'disabled style="opacity:0.3; cursor:default; margin-left: 0;"' : ''} onclick="event.stopPropagation(); moveRoutine('\${r.id}', 'up')">▲</button>\`;
+                const downBtn = \`<button class="icon-btn" style="margin-left: 0;" \${isLast ? 'disabled style="opacity:0.3; cursor:default; margin-left: 0;"' : ''} onclick="event.stopPropagation(); moveRoutine('\${r.id}', 'down')">▼</button>\`;
+
+                card.style.flexDirection = 'column';
+                card.style.alignItems = 'stretch';
+                card.style.justifyContent = 'center';
+                card.style.padding = '14px 16px';
+                card.style.gap = '12px';
 
                 card.innerHTML = \`
-                    <span style="font-weight:bold; flex-grow:1; font-size:18px;">\${r.name}\${isHidden ? ' <span style="font-size:12px; color:#ff6b6b; font-weight:normal;">(非表示)</span>' : ''}</span>
-                    <div style="display:flex; align-items:center;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+                        <span style="font-weight:bold; font-size:17px; color:#ffffff; word-break:break-word; line-height:1.4;">\${r.name}\${isHidden ? ' <span style="font-size:12px; color:#ff6b6b; font-weight:normal;">(非表示)</span>' : ''}</span>
+                    </div>
+                    <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px; width:100%;">
                         \${upBtn}
                         \${downBtn}
-                        <button class="icon-btn" onclick="event.stopPropagation(); showHistory('\${r.id}')">🕒</button>
-                        <button class="icon-btn" onclick="event.stopPropagation(); openEditModal('\${r.id}')">✎</button>
+                        <button class="icon-btn" style="margin-left: 0;" onclick="event.stopPropagation(); openEditModal('\${r.id}')">✎</button>
                         \${visibilityBtn}
-                        <button class="icon-btn delete-btn" onclick="event.stopPropagation(); confirmDelete('\${r.id}')">🗑</button>
+                        <button class="icon-btn delete-btn" style="margin-left: 0;" onclick="event.stopPropagation(); confirmDelete('\${r.id}')">🗑</button>
                     </div>
                 \`;
                 card.onclick = () => openEditModal(r.id);
@@ -933,7 +1002,7 @@ async function handleTaskImageInput(input, imgPreview) {
             input.setAttribute('data-base64', resized); // Store in DOM temporarily
         } catch (err) {
             console.error(err);
-            alert("画像処理エラー");
+            showAlert("画像エラー", "画像処理中にエラーが発生しました");
         }
     }
 }
@@ -1002,7 +1071,7 @@ document.getElementById('routine-image-input').addEventListener('change', async 
             const resized = await resizeImage(e.target.files[0]);
             handleImagePreview(resized);
         } catch (err) {
-            alert("画像の読み込みに失敗しました");
+            showAlert("画像エラー", "画像の読み込みに失敗しました");
             console.error(err);
         }
     }
@@ -1096,7 +1165,7 @@ function saveNewRoutine() {
     const autoUpdate = document.getElementById('auto-update-estimates').checked;
     const autoAdvance = document.getElementById('auto-advance').checked;
 
-    if (!name) return alert("名前は必須です");
+    if (!name) return showAlert("入力エラー", "ルーティン名を入力してください");
 
     const tasks = [];
     newTaskList.querySelectorAll('.task-input-row').forEach(row => {
@@ -1118,7 +1187,7 @@ function saveNewRoutine() {
         }
     });
 
-    if (tasks.length === 0) return alert("最低1つのタスクを追加してください");
+    if (tasks.length === 0) return showAlert("入力エラー", "最低1つのタスクを追加してください");
 
     const routines = getRoutines();
 
@@ -1148,12 +1217,12 @@ function saveNewRoutine() {
 }
 
 function confirmDelete(id) {
-    if (confirm("本当にこのルーティンを削除しますか？")) {
+    showConfirm("ルーティンの削除", "本当にこのルーティンを削除しますか？", () => {
         const routines = getRoutines();
         const filtered = routines.filter(r => r.id !== id);
         saveRoutines(filtered);
         loadRoutines();
-    }
+    }, "削除", "キャンセル", true);
 }
 
 // --- History ---
@@ -1219,7 +1288,7 @@ function toggleHistoryDetails(el) {
 function prepareRoutine(id) {
     const routines = getRoutines();
     currentRoutine = routines.find(r => r.id === id);
-    if (!currentRoutine || !currentRoutine.tasks.length) return alert("Task error");
+    if (!currentRoutine || !currentRoutine.tasks.length) return showAlert("エラー", "ルーティンにタスクが登録されていません");
 
     currentTaskIndex = 0;
     taskLogs = [];
@@ -1416,22 +1485,51 @@ function formatTime(sec) {
     return \`\${m}:\${s}\`;
 }
 
+let confirmCallback = null;
 const confirmModal = document.getElementById('confirm-modal');
-function showConfirm(title, msg, onOk) {
+const confirmOkBtn = document.getElementById('confirm-ok-btn');
+const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+
+function showConfirm(title, msg, onOk, okText = "削除", cancelText = "キャンセル", isDanger = true) {
     document.getElementById('confirm-title').innerText = title;
     document.getElementById('confirm-message').innerText = msg;
-    confirmModal.classList.remove('hidden');
+    confirmOkBtn.innerText = okText;
+    confirmCancelBtn.innerText = cancelText;
+    confirmCancelBtn.style.display = 'block';
+
+    if (isDanger) {
+        confirmOkBtn.className = 'btn-danger';
+    } else {
+        confirmOkBtn.className = 'btn-confirm-ok';
+    }
 
     confirmCallback = onOk;
+    confirmModal.classList.remove('hidden');
 }
 
-document.getElementById('confirm-ok-btn').onclick = () => {
-    if (confirmCallback) confirmCallback();
+function showAlert(title, msg, onOk = null, okText = "OK") {
+    document.getElementById('confirm-title').innerText = title;
+    document.getElementById('confirm-message').innerText = msg;
+    confirmOkBtn.innerText = okText;
+    confirmOkBtn.className = 'btn-confirm-ok';
+    confirmCancelBtn.style.display = 'none';
+
+    confirmCallback = onOk;
+    confirmModal.classList.remove('hidden');
+}
+
+confirmOkBtn.onclick = () => {
+    confirmModal.classList.add('hidden');
+    if (confirmCallback) {
+        const cb = confirmCallback;
+        confirmCallback = null;
+        cb();
+    }
+};
+
+confirmCancelBtn.onclick = () => {
     confirmModal.classList.add('hidden');
     confirmCallback = null;
-};
-document.getElementById('confirm-cancel-btn').onclick = () => {
-    confirmModal.classList.add('hidden');
 };
 
 // Start
