@@ -1323,7 +1323,7 @@ function deleteItemFromManage(id) {
     const item = items.find(i => i.id === id);
     if (!item) return;
 
-    showConfirm('習慣の削除', 'この習慣とこれまでの記録をすべて削除しますか？\nこの操作は取り消せません。', () => {
+    showConfirm('習慣の削除', 'この習慣とこれまでの記録をすべて削除しますか？\\nこの操作は取り消せません。', () => {
         items = items.filter(i => i.id !== id);
         logs = logs.filter(log => log.itemId !== id);
         saveData();
@@ -1454,7 +1454,7 @@ function saveEditCount() {
 function deleteItem() {
     if (!editingItemId) return;
 
-    showConfirm('習慣の削除', 'この習慣とこれまでの記録をすべて削除しますか？\nこの操作は取り消せません。', () => {
+    showConfirm('習慣の削除', 'この習慣とこれまでの記録をすべて削除しますか？\\nこの操作は取り消せません。', () => {
         items = items.filter(item => item.id !== editingItemId);
         logs = logs.filter(log => log.itemId !== editingItemId);
         saveData();

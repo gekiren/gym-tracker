@@ -1495,7 +1495,6 @@ function formatTime(sec) {
     return \`\${m}:\${s}\`;
 }
 
-let confirmCallback = null;
 const confirmModal = document.getElementById('confirm-modal');
 const confirmOkBtn = document.getElementById('confirm-ok-btn');
 const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
