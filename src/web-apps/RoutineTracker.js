@@ -39,6 +39,16 @@ export default `<!DOCTYPE html>
         }
       }
     }
+    // DEBUG: Report initialization state
+    try {
+      if (window.ReactNativeWebView) {
+        const routineVal = storageStore['routine_tracker_data'];
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'WEB_DEBUG',
+          message: '[RoutineTracker] init storageStore. routine_tracker_data type=' + (typeof routineVal) + ' len=' + (routineVal ? String(routineVal).length : 0) + ' __INITIAL_WEBVIEW_DATA__ keys=' + (initData ? Object.keys(initData).join(',') : 'NULL')
+        }));
+      }
+    } catch (e) {}
   } catch (e) {
     console.error("Failed to copy from __INITIAL_WEBVIEW_DATA__", e);
   }

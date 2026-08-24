@@ -97,6 +97,12 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
         return;
       }
 
+      if (message.type === 'WEB_DEBUG') {
+        console.log(`[WebView DEBUG]: ${message.message}`);
+        addSyncDiagnosticLog(`[WEB_DEBUG] ${message.message}`);
+        return;
+      }
+
       if (message.type === 'MODAL_STATE_CHANGE') {
         const { visible } = message;
         console.log(`[WebViewTab] MODAL_STATE_CHANGE visible=${visible}`);
