@@ -130,7 +130,11 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
           const injectScript = `
             (function() {
               window.isInitialSync = true;
-              localStorage.setItem('${key}', ${JSON.stringify(responseValue)});
+              try {
+                var rawVal = ${JSON.stringify(responseValue)};
+                var parsedVal = typeof rawVal === 'string' ? rawVal : JSON.stringify(rawVal);
+                localStorage.setItem('${key}', parsedVal);
+              } catch (e) {}
               if (typeof loadData === 'function') loadData();
               if (typeof render === 'function') render();
               window.isInitialSync = false;
@@ -279,10 +283,13 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
         (function() {
           if (typeof localStorage !== 'undefined') {
             window.isInitialSync = true;
-            localStorage.setItem('zikankanri_logs', ${JSON.stringify(JSON.stringify(formattedLogs))});
+            localStorage.setItem('zikankanri_logs', JSON.stringify(${JSON.stringify(formattedLogs)}));
             if (typeof logs !== 'undefined') {
               try {
-                logs = JSON.parse(localStorage.getItem('zikankanri_logs')) || [];
+                var savedLogs = localStorage.getItem('zikankanri_logs');
+                var parsedLogs = JSON.parse(savedLogs);
+                if (typeof parsedLogs === 'string') parsedLogs = JSON.parse(parsedLogs);
+                logs = Array.isArray(parsedLogs) ? parsedLogs : [];
               } catch (e) {}
             }
             if (typeof renderLogs === 'function') {
@@ -313,7 +320,7 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
         (function() {
           if (typeof localStorage !== 'undefined') {
             window.isInitialSync = true;
-            localStorage.setItem('habit-items', ${JSON.stringify(JSON.stringify(formattedItems))});
+            localStorage.setItem('habit-items', JSON.stringify(${JSON.stringify(formattedItems)}));
             if (typeof loadData === 'function') {
               loadData();
             }

@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '1.8.105',
+  version: '1.8.109',
   title: {
-    ja: '💬 AIコーチ（テキスト）画面への一本化',
-    en: '💬 AI Coach Chat Streamlining',
+    ja: '✨ 習慣カウンターのタップ操作および安定性の改善',
+    en: '✨ Habit Counter Touch Responsiveness & Stability Fix',
   },
   notes: {
     ja: [
-      'トレーナータブをAIコーチ（テキスト）専用画面に一本化し、開いてすぐにチャット相談ができるように改善しました。',
+      '習慣カウンター画面において、習慣の追加ボタンや設定アイコンがタップしても反応しなかった不具合を修正しました。',
+      'データの同期処理を最適化し、各種ライフログの安定性を向上させました。',
     ],
     en: [
-      'Streamlined the Coach tab into a dedicated AI text chat interface for instant consultations.',
+      'Fixed an issue where tapping the add habit card or settings icon in Habit Counter had no response.',
+      'Optimized lifelog data synchronization for improved app stability.',
     ],
   },
 };
