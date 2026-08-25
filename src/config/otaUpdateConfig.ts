@@ -11,21 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.3',
+  version: '2.0.4',
   title: {
-    ja: '🥗 食事写真のタップ拡大 ＆ 過去写真ギャラリー（写真削除対応）',
-    en: '🥗 Meal Photo Zoom & Photo Gallery (With Photo Deletion)',
+    ja: '🥗 ヘッダー表示 ＆ 写真のパン移動・ピンチズーム改善',
+    en: '🥗 Header Layout & Photo Pan/Zoom Improvements',
   },
   notes: {
     ja: [
-      '食事ログの写真をタップして全画面で拡大表示（ズーム・移動）できるようになりました。',
-      '過去の食事写真をまとめて一覧閲覧できる写真ギャラリー機能を新設しました。',
-      'ギャラリーおよび拡大画面から写真データのみ（記録は維持）を削除できるようになりました。',
+      '写真拡大画面およびギャラリー画面におけるヘッダーとステータスバーの重なり・裏透けを修正しました。',
+      '全画面写真でのピンチズーム・ダブルタップ拡大後のドラッグ移動（パン表示）を両OSで滑らかに動作するよう改善しました。',
     ],
     en: [
-      'Added full-screen photo zoom viewer when tapping meal photos.',
-      'Added a Photo Gallery to view all past meal photos in one place.',
-      'Supports deleting photo data only while keeping the meal log intact.',
+      'Fixed header overlap and status bar area in photo viewer and gallery.',
+      'Improved pinch zoom, double tap, and drag pan navigation for full-screen photo viewer on both Android and iOS.',
     ],
   },
 };

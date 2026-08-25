@@ -10,7 +10,9 @@ import {
   TextInput,
   Dimensions,
   SafeAreaView,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { MealLog } from '../../src/db/types';
 import { ConfirmModal } from '../ui/ConfirmModal';
@@ -55,6 +57,7 @@ export default function PhotoGalleryModal({
   onPreviewPhoto,
   onDeletePhoto,
 }: Props) {
+  const insets = useSafeAreaInsets();
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
@@ -161,9 +164,11 @@ export default function PhotoGalleryModal({
       onRequestClose={onClose}
       transparent={false}
     >
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#0f172a" />
+
         {/* モーダルヘッダー */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
           <View style={styles.headerTitleRow}>
             <Ionicons name="images-outline" size={22} color="#38bdf8" style={{ marginRight: 8 }} />
             <Text style={styles.title}>📷 過去の写真ギャラリー</Text>
@@ -256,7 +261,7 @@ export default function PhotoGalleryModal({
           onConfirm={handleConfirmDelete}
           onCancel={() => setDeletingLogId(null)}
         />
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 }
