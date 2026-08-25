@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.6',
+  version: '2.0.7',
   title: {
-    ja: '🥗 ネイティブピンチジェスチャーによる全画面写真ズーム完全対応',
-    en: '🥗 Native Pinch Gesture Zoom Support for Fullscreen Photo Viewer',
+    ja: '🥗 写真拡大ジェスチャー（ピンチ・ダブルタップ）の無反応バグ修正',
+    en: '🥗 Fix Unresponsive Photo Zoom Gestures',
   },
   notes: {
     ja: [
-      'PinchGestureHandler（ネイティブピンチジェスチャー）を採用し、Android端末においても2本指のピンチ操作（ピンチイン・ピンチアウト）が100%確実に滑らかに動くよう抜本改修しました。',
+      'Androidの実機にて、写真拡大画面のピンチ操作およびダブルタップ操作が全く反応しなくなっていたバグを修正し、全てのジェスチャーが確実に動作するよう対応しました。',
     ],
     en: [
-      'Rebuilt photo viewer with native PinchGestureHandler for 100% reliable and smooth 2-finger pinch zoom on Android and iOS.',
+      'Fixed a bug where pinch and double-tap gestures became unresponsive on Android photo viewer. All gestures now work reliably.',
     ],
   },
 };

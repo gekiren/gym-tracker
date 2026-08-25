@@ -15,6 +15,7 @@ import {
   PinchGestureHandler,
   PanGestureHandler,
   TapGestureHandler,
+  GestureHandlerRootView,
   State,
   PinchGestureHandlerGestureEvent,
   PanGestureHandlerGestureEvent,
@@ -186,7 +187,7 @@ export default function ImagePreviewModal({
       transparent={false}
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
+      <GestureHandlerRootView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#000000" />
 
         {/* 不透過ヘッダー */}
@@ -267,7 +268,7 @@ export default function ImagePreviewModal({
             </TouchableOpacity>
           )}
         </View>
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
