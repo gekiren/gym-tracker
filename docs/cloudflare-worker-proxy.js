@@ -461,11 +461,11 @@ export default {
         ? ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash-lite"]
         : ["gemini-3.5-flash-lite", "gemini-2.5-flash-lite"];
 
-      // Gemma 実験モデルの優先注入（ステージング設定対応）
+      // Gemma 実験モデルの優先注入 (gemma-4-26b-a4b-it最優先 ➔ Geminiチェーン)
       let activeModels = [...geminiModels];
       if (reqPreferredModel === 'gemma-31b' || reqPreferredModel === 'gemma-4-31b-it') {
         activeModels = ['gemma-4-31b-it', ...geminiModels.filter(m => m !== 'gemma-4-31b-it')];
-      } else if (reqPreferredModel === 'gemma-26b' || reqPreferredModel === 'gemma-4-26b-a4b-it') {
+      } else if (reqPreferredModel === 'gemma' || reqPreferredModel === 'gemma-26b' || reqPreferredModel === 'gemma-4-26b-a4b-it') {
         activeModels = ['gemma-4-26b-a4b-it', ...geminiModels.filter(m => m !== 'gemma-4-26b-a4b-it')];
       }
 
