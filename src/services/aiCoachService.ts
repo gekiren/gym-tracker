@@ -124,8 +124,13 @@ export const sendMessageToAICoach = async (
   weightUnit?: string,
   aiMode: 'quick' | 'thinking' = 'quick'
 ): Promise<AICoachResponse> => {
+  const preferredModel = useSettingsStore.getState().settings.preferredAiModel || 'gemini-3.5-flash-lite';
+  const isGemmaSelected = preferredModel.toLowerCase().includes('gemma');
+  
+  const baseTimeout = aiMode === 'thinking' ? 45000 : 28000;
+  const timeoutSeconds = isGemmaSelected ? baseTimeout + 25000 : baseTimeout;
+
   const controller = new AbortController();
-  const timeoutSeconds = aiMode === 'thinking' ? 45000 : 28000;
   const timeoutId = setTimeout(() => controller.abort(), timeoutSeconds);
 
   try {
@@ -136,7 +141,6 @@ export const sendMessageToAICoach = async (
 
     const bodyWeightStr = userWeight ? `${userWeight} ${weightUnit}` : '未設定';
     const lang = i18next.language || 'ja';
-    const preferredModel = useSettingsStore.getState().settings.preferredAiModel || 'gemini-3.5-flash-lite';
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
