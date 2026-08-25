@@ -52,8 +52,14 @@ export default function ImagePreviewModal({
   const pinchScale = useRef(new Animated.Value(1)).current;
   const scale = Animated.multiply(baseScale, pinchScale);
 
-  const translateX = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(0)).current;
+  // ドラッグ追従用のネイティブAnimated
+  const panX = useRef(new Animated.Value(0)).current;
+  const panY = useRef(new Animated.Value(0)).current;
+  const offsetX = useRef(new Animated.Value(0)).current;
+  const offsetY = useRef(new Animated.Value(0)).current;
+  const translateX = Animated.add(offsetX, panX);
+  const translateY = Animated.add(offsetY, panY);
+  
   const lastOffset = useRef({ x: 0, y: 0 });
   const currentBaseScale = useRef(1);
 
@@ -77,15 +83,17 @@ export default function ImagePreviewModal({
       Animated.parallel([
         Animated.spring(baseScale, { toValue: 1, useNativeDriver: true }),
         Animated.spring(pinchScale, { toValue: 1, useNativeDriver: true }),
-        Animated.spring(translateX, { toValue: 0, useNativeDriver: true }),
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true }),
+        Animated.spring(offsetX, { toValue: 0, useNativeDriver: true }),
+        Animated.spring(offsetY, { toValue: 0, useNativeDriver: true }),
       ]).start();
     } else {
       baseScale.setValue(1);
       pinchScale.setValue(1);
-      translateX.setValue(0);
-      translateY.setValue(0);
+      offsetX.setValue(0);
+      offsetY.setValue(0);
     }
+    panX.setValue(0);
+    panY.setValue(0);
     lastOffset.current = { x: 0, y: 0 };
     currentBaseScale.current = 1;
   };
@@ -111,47 +119,60 @@ export default function ImagePreviewModal({
 
       if (finalScale === 1) {
         Animated.parallel([
-          Animated.spring(translateX, { toValue: 0, useNativeDriver: true }),
-          Animated.spring(translateY, { toValue: 0, useNativeDriver: true }),
+          Animated.spring(offsetX, { toValue: 0, useNativeDriver: true }),
+          Animated.spring(offsetY, { toValue: 0, useNativeDriver: true }),
         ]).start();
         lastOffset.current = { x: 0, y: 0 };
       }
     }
   };
 
-  // 2. ネイティブパン（ドラッグ）イベント
-  const onPanGestureEvent = (event: PanGestureHandlerGestureEvent) => {
-    if (currentBaseScale.current <= 1) return;
-
-    const { translationX, translationY } = event.nativeEvent;
-    const maxTx = (SCREEN_WIDTH * (currentBaseScale.current - 1)) / 2;
-    const maxTy = (SCREEN_HEIGHT * (currentBaseScale.current - 1)) / 2;
-
-    const nextX = lastOffset.current.x + translationX;
-    const nextY = lastOffset.current.y + translationY;
-
-    const clampedX = Math.max(-maxTx, Math.min(maxTx, nextX));
-    const clampedY = Math.max(-maxTy, Math.min(maxTy, nextY));
-
-    translateX.setValue(clampedX);
-    translateY.setValue(clampedY);
-  };
+  // 2. ネイティブパン（ドラッグ）イベント (リアルタイム追従)
+  const onPanGestureEvent = Animated.event(
+    [
+      {
+        nativeEvent: {
+          translationX: panX,
+          translationY: panY,
+        },
+      },
+    ],
+    { useNativeDriver: true }
+  );
 
   const onPanHandlerStateChange = (event: PanGestureHandlerGestureEvent) => {
-    if (event.nativeEvent.state === State.END) {
+    if (event.nativeEvent.state === State.END || event.nativeEvent.state === State.CANCELLED) {
       const { translationX, translationY } = event.nativeEvent;
-      const maxTx = (SCREEN_WIDTH * (currentBaseScale.current - 1)) / 2;
-      const maxTy = (SCREEN_HEIGHT * (currentBaseScale.current - 1)) / 2;
-
+      
       const nextX = lastOffset.current.x + translationX;
       const nextY = lastOffset.current.y + translationY;
 
-      const clampedX = Math.max(-maxTx, Math.min(maxTx, nextX));
-      const clampedY = Math.max(-maxTy, Math.min(maxTy, nextY));
+      let clampedX = nextX;
+      let clampedY = nextY;
 
+      // 拡大時のみバウンダリ制限を適用
+      if (currentBaseScale.current > 1) {
+        const maxTx = (SCREEN_WIDTH * (currentBaseScale.current - 1)) / 2;
+        const maxTy = (SCREEN_HEIGHT * (currentBaseScale.current - 1)) / 2;
+        clampedX = Math.max(-maxTx, Math.min(maxTx, nextX));
+        clampedY = Math.max(-maxTy, Math.min(maxTy, nextY));
+      } else {
+        // 拡大されていない時は移動させない
+        clampedX = 0;
+        clampedY = 0;
+      }
+
+      // 次のドラッグオフセットに反映し、panX/panYをリセット
       lastOffset.current = { x: clampedX, y: clampedY };
-      translateX.setValue(clampedX);
-      translateY.setValue(clampedY);
+      
+      panX.setValue(0);
+      panY.setValue(0);
+      
+      // 指を離した時にバウンダリ外ならスプリングで戻す
+      Animated.parallel([
+        Animated.spring(offsetX, { toValue: clampedX, useNativeDriver: true }),
+        Animated.spring(offsetY, { toValue: clampedY, useNativeDriver: true }),
+      ]).start();
     }
   };
 
@@ -166,8 +187,8 @@ export default function ImagePreviewModal({
         pinchScale.setValue(1);
         lastOffset.current = { x: 0, y: 0 };
         Animated.parallel([
-          Animated.spring(translateX, { toValue: 0, useNativeDriver: true }),
-          Animated.spring(translateY, { toValue: 0, useNativeDriver: true }),
+          Animated.spring(offsetX, { toValue: 0, useNativeDriver: true }),
+          Animated.spring(offsetY, { toValue: 0, useNativeDriver: true }),
         ]).start();
       }
     }

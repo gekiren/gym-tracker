@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.7',
+  version: '2.0.8',
   title: {
-    ja: '🥗 写真拡大ジェスチャー（ピンチ・ダブルタップ）の無反応バグ修正',
-    en: '🥗 Fix Unresponsive Photo Zoom Gestures',
+    ja: '🥗 写真拡大時のドラッグ移動のリアルタイム追従対応',
+    en: '🥗 Real-time Drag Panning for Photo Viewer',
   },
   notes: {
     ja: [
-      'Androidの実機にて、写真拡大画面のピンチ操作およびダブルタップ操作が全く反応しなくなっていたバグを修正し、全てのジェスチャーが確実に動作するよう対応しました。',
+      '写真拡大後のドラッグ（パン）移動が、指の動きに合わせて遅延なくリアルタイムに滑らかに追従するよう、ジェスチャー制御をネイティブドライバへ直結最適化しました。',
     ],
     en: [
-      'Fixed a bug where pinch and double-tap gestures became unresponsive on Android photo viewer. All gestures now work reliably.',
+      'Optimized drag panning during photo zoom to track finger movements smoothly and in real-time using the native animated driver.',
     ],
   },
 };
