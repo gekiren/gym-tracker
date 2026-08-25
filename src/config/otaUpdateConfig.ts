@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.4',
+  version: '2.0.5',
   title: {
-    ja: '🥗 ヘッダー表示 ＆ 写真のパン移動・ピンチズーム改善',
-    en: '🥗 Header Layout & Photo Pan/Zoom Improvements',
+    ja: '🥗 写真拡大プレビューの2本指ピンチ操作レスポンス改善',
+    en: '🥗 Photo Pinch Zoom Responsiveness Improvements',
   },
   notes: {
     ja: [
-      '写真拡大画面およびギャラリー画面におけるヘッダーとステータスバーの重なり・裏透けを修正しました。',
-      '全画面写真でのピンチズーム・ダブルタップ拡大後のドラッグ移動（パン表示）を両OSで滑らかに動作するよう改善しました。',
+      '全画面写真拡大における2本指でのピンチイン・ピンチアウト（ズームイン/ズームアウト）操作が即座に滑らかに反応するようマルチタッチ検知を最適化しました。',
     ],
     en: [
-      'Fixed header overlap and status bar area in photo viewer and gallery.',
-      'Improved pinch zoom, double tap, and drag pan navigation for full-screen photo viewer on both Android and iOS.',
+      'Optimized multi-touch gesture detection for instant and smooth 2-finger pinch zoom response on full-screen photo viewer.',
     ],
   },
 };

@@ -5,7 +5,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   Dimensions,
   StatusBar,
   PanResponder,
@@ -27,6 +26,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // 2点間の距離計算ヘルパー（ピンチズーム用）
 function getTouchesDistance(touches: any[]) {
+  if (!touches || touches.length < 2) return 0;
   const [t1, t2] = touches;
   const dx = t1.pageX - t2.pageX;
   const dy = t1.pageY - t2.pageY;
@@ -99,6 +99,8 @@ export default function ImagePreviewModal({
     scaleRef.current = 1;
     translateXRef.current = 0;
     translateYRef.current = 0;
+    initialPinchDistRef.current = null;
+    lastTouchPosRef.current = null;
   };
 
   // ドラッグ可動域（バウンダリ）制限計算
@@ -125,57 +127,68 @@ export default function ImagePreviewModal({
     }
   };
 
-  // PanResponder によるピンチ ＆ パン移動
+  // PanResponder によるピンチ ＆ パン移動（リアルタイム2本指検出最適化版）
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt, gestureState) => {
+      onPanResponderGrant: (evt) => {
         const touches = evt.nativeEvent.touches;
-        if (touches && touches.length === 2) {
+        if (touches && touches.length >= 2) {
           initialPinchDistRef.current = getTouchesDistance(touches);
           initialScaleRef.current = scaleRef.current;
         } else if (touches && touches.length === 1) {
+          initialPinchDistRef.current = null;
           lastTouchPosRef.current = { x: touches[0].pageX, y: touches[0].pageY };
         }
       },
       onPanResponderMove: (evt, gestureState) => {
         const touches = evt.nativeEvent.touches;
 
-        // 1. ピンチズーム（2本指操作）
-        if (touches && touches.length === 2) {
-          const dist = getTouchesDistance(touches);
-          if (initialPinchDistRef.current && initialPinchDistRef.current > 0) {
-            const ratio = dist / initialPinchDistRef.current;
-            let newScale = initialScaleRef.current * ratio;
-            newScale = Math.max(0.8, Math.min(4.5, newScale));
-            scaleAnim.setValue(newScale);
+        // 1. 2本指ピンチ操作
+        if (touches && touches.length >= 2) {
+          const currentDist = getTouchesDistance(touches);
+          if (currentDist > 0) {
+            // 後から2本指になった場合の初期動的セット
+            if (!initialPinchDistRef.current || initialPinchDistRef.current <= 0) {
+              initialPinchDistRef.current = currentDist;
+              initialScaleRef.current = scaleRef.current;
+            } else {
+              const ratio = currentDist / initialPinchDistRef.current;
+              let newScale = initialScaleRef.current * ratio;
+              newScale = Math.max(0.8, Math.min(4.5, newScale));
+              scaleAnim.setValue(newScale);
 
-            // スケール変更に伴うパン可動制限の適用
-            const clamped = clampTranslation(
-              translateXRef.current,
-              translateYRef.current,
-              newScale
-            );
-            translateXAnim.setValue(clamped.x);
-            translateYAnim.setValue(clamped.y);
+              // スケール変更に伴うパン可動制限の適用
+              const clamped = clampTranslation(
+                translateXRef.current,
+                translateYRef.current,
+                newScale
+              );
+              translateXAnim.setValue(clamped.x);
+              translateYAnim.setValue(clamped.y);
+            }
           }
         }
-        // 2. パン・ドラッグ移動（1本指または拡大中の操作）
-        else if (touches && touches.length === 1 && scaleRef.current > 1) {
-          if (lastTouchPosRef.current) {
-            const dx = touches[0].pageX - lastTouchPosRef.current.x;
-            const dy = touches[0].pageY - lastTouchPosRef.current.y;
-            lastTouchPosRef.current = { x: touches[0].pageX, y: touches[0].pageY };
+        // 2. 1本指ドラッグ（パン移動）
+        else if (touches && touches.length === 1) {
+          initialPinchDistRef.current = null; // ピンチ解除
 
-            const nextTx = translateXRef.current + dx;
-            const nextTy = translateYRef.current + dy;
-            const clamped = clampTranslation(nextTx, nextTy, scaleRef.current);
+          if (scaleRef.current > 1) {
+            if (lastTouchPosRef.current) {
+              const dx = touches[0].pageX - lastTouchPosRef.current.x;
+              const dy = touches[0].pageY - lastTouchPosRef.current.y;
+              lastTouchPosRef.current = { x: touches[0].pageX, y: touches[0].pageY };
 
-            translateXAnim.setValue(clamped.x);
-            translateYAnim.setValue(clamped.y);
-          } else {
-            lastTouchPosRef.current = { x: touches[0].pageX, y: touches[0].pageY };
+              const nextTx = translateXRef.current + dx;
+              const nextTy = translateYRef.current + dy;
+              const clamped = clampTranslation(nextTx, nextTy, scaleRef.current);
+
+              translateXAnim.setValue(clamped.x);
+              translateYAnim.setValue(clamped.y);
+            } else {
+              lastTouchPosRef.current = { x: touches[0].pageX, y: touches[0].pageY };
+            }
           }
         }
       },
@@ -184,8 +197,8 @@ export default function ImagePreviewModal({
         lastTouchPosRef.current = null;
 
         // タップ判定 (ダブルタップ検知)
-        const isTap = Math.abs(gestureState.dx) < 5 && Math.abs(gestureState.dy) < 5;
-        if (isTap && evt.nativeEvent.touches.length === 0) {
+        const isTap = Math.abs(gestureState.dx) < 6 && Math.abs(gestureState.dy) < 6;
+        if (isTap && (!evt.nativeEvent.touches || evt.nativeEvent.touches.length === 0)) {
           const now = Date.now();
           if (now - lastTapTimeRef.current < 300) {
             handleDoubleTap();
