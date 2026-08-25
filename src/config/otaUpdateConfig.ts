@@ -11,21 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.0',
+  version: '2.0.9',
   title: {
-    ja: '✨ クイックランチャー7枠拡張 ＆ ウィジェット表示改善',
-    en: '✨ 7-Slot Quick Launcher & Widget Fixes',
+    ja: '🥗 写真拡大ドラッグ移動の指リアルタイム追従を完全実装',
+    en: '🥗 Real-time Finger-tracking Drag Panning for Photo Viewer',
   },
   notes: {
     ja: [
-      'ホーム画面の「クイックランチャー」ウィジェットが最大7枠に拡張されました。',
-      'ウィジェット追加画面の文字化け（Unicode表記）を修正しました。',
-      'クイックランチャーの筋トレアイコンのデザインおよび全体の表示品質を改善しました。',
+      '写真拡大後のドラッグ（パン）移動を、setOffset/flattenOffset パターンとネイティブドライバ直結で再実装。指を動かすたびに遅延ゼロで写真がリアルタイムに追従するよう完全対応しました。',
     ],
     en: [
-      'Expanded the Home Screen Quick Launcher widget to up to 7 customizable slots.',
-      'Fixed text character encoding issues on the widget preview/addition screen.',
-      'Improved the workout icon design and overall widget visual quality.',
+      'Rebuilt drag panning with setOffset/flattenOffset pattern and native driver. Photo now tracks finger movements instantly and in real-time with zero delay.',
     ],
   },
 };
