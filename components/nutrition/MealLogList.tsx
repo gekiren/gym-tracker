@@ -32,7 +32,7 @@ interface Props {
   onDeleteMeal: (id: number) => void;
   onEditMeal: (log: MealLog) => void;
   onToggleFavorite?: (log: MealLog) => void;
-  onPreviewPhoto?: (uri: string) => void;
+  onPreviewPhoto?: (log: MealLog) => void;
 }
 
 export default function MealLogList({
@@ -143,12 +143,20 @@ export default function MealLogList({
 
               {/* 写真プレビュー */}
               {Boolean(log.photo_url) && (
-                <TouchableOpacity onPress={() => onPreviewPhoto?.(log.photo_url!)}>
+                <TouchableOpacity
+                  onPress={() => onPreviewPhoto?.(log)}
+                  activeOpacity={0.85}
+                  style={styles.photoContainer}
+                >
                   <Image
                     source={{ uri: log.photo_url! }}
                     style={styles.photoThumb}
                     resizeMode="cover"
                   />
+                  <View style={styles.zoomOverlayBadge}>
+                    <Ionicons name="scan-outline" size={14} color="#ffffff" />
+                    <Text style={styles.zoomOverlayText}>タップで拡大</Text>
+                  </View>
                 </TouchableOpacity>
               )}
 
@@ -272,12 +280,32 @@ const styles = StyleSheet.create({
   timeText: { fontSize: 11, fontWeight: '600', color: '#888888', marginRight: 8 },
   mealName: { flex: 1, fontSize: 15, fontWeight: '700', color: '#ffffff' },
   caloriesText: { fontSize: 15, fontWeight: '700', color: '#10b981' },
+  photoContainer: {
+    position: 'relative',
+    marginBottom: 8,
+  },
   photoThumb: {
     width: '100%',
-    height: 140,
+    height: 160,
     borderRadius: 10,
-    marginBottom: 8,
     backgroundColor: '#0f172a',
+  },
+  zoomOverlayBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  zoomOverlayText: {
+    fontSize: 11,
+    color: '#ffffff',
+    fontWeight: '600',
   },
   pfcRow: {
     flexDirection: 'row',

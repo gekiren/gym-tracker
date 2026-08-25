@@ -11,21 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.0',
+  version: '2.0.3',
   title: {
-    ja: '✨ クイックランチャー7枠拡張 ＆ ウィジェット表示改善',
-    en: '✨ 7-Slot Quick Launcher & Widget Fixes',
+    ja: '🥗 食事写真のタップ拡大 ＆ 過去写真ギャラリー（写真削除対応）',
+    en: '🥗 Meal Photo Zoom & Photo Gallery (With Photo Deletion)',
   },
   notes: {
     ja: [
-      'ホーム画面の「クイックランチャー」ウィジェットが最大7枠に拡張されました。',
-      'ウィジェット追加画面の文字化け（Unicode表記）を修正しました。',
-      'クイックランチャーの筋トレアイコンのデザインおよび全体の表示品質を改善しました。',
+      '食事ログの写真をタップして全画面で拡大表示（ズーム・移動）できるようになりました。',
+      '過去の食事写真をまとめて一覧閲覧できる写真ギャラリー機能を新設しました。',
+      'ギャラリーおよび拡大画面から写真データのみ（記録は維持）を削除できるようになりました。',
     ],
     en: [
-      'Expanded the Home Screen Quick Launcher widget to up to 7 customizable slots.',
-      'Fixed text character encoding issues on the widget preview/addition screen.',
-      'Improved the workout icon design and overall widget visual quality.',
+      'Added full-screen photo zoom viewer when tapping meal photos.',
+      'Added a Photo Gallery to view all past meal photos in one place.',
+      'Supports deleting photo data only while keeping the meal log intact.',
     ],
   },
 };

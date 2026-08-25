@@ -164,7 +164,7 @@ export interface MealLog {
   carbs: number;
   sodium: number;
   fiber: number;
-  photo_url?: string;
+  photo_url?: string | null;
   memo?: string;
   created_at: number;
 }

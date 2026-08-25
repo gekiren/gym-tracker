@@ -38,6 +38,7 @@ interface NutritionState {
   loadAllHistory: () => Promise<void>;
   addMeal: (log: Omit<MealLog, 'id'>) => Promise<void>;
   updateMeal: (id: number, log: Partial<Omit<MealLog, 'id'>>) => Promise<void>;
+  removeMealPhoto: (id: number) => Promise<void>;
   deleteMeal: (id: number) => Promise<void>;
   loadFavorites: () => Promise<void>;
   addFavoriteFromLog: (fav: Omit<MealFavorite, 'id'>) => Promise<void>;
@@ -137,8 +138,25 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
         const logs = await getMealLogsByDate(date);
         set({ mealLogs: logs });
       }
+      const allLogs = await getAllMealLogs();
+      set({ allHistoryLogs: allLogs });
     } catch (e) {
       console.warn('useNutritionStore: updateMeal failed', e);
+    }
+  },
+
+  removeMealPhoto: async (id: number) => {
+    try {
+      await updateMealLog(id, { photo_url: null });
+      const date = get().selectedDate;
+      if (date) {
+        const logs = await getMealLogsByDate(date);
+        set({ mealLogs: logs });
+      }
+      const allLogs = await getAllMealLogs();
+      set({ allHistoryLogs: allLogs });
+    } catch (e) {
+      console.warn('useNutritionStore: removeMealPhoto failed', e);
     }
   },
 

@@ -34,6 +34,8 @@ import AutophagyCard from '../../components/nutrition/AutophagyCard';
 import NutritionHistoryChart from '../../components/nutrition/NutritionHistoryChart';
 import MdImportModal from '../../components/nutrition/MdImportModal';
 import NutritionSettingsModal from '../../components/nutrition/NutritionSettingsModal';
+import ImagePreviewModal from '../../components/nutrition/ImagePreviewModal';
+import PhotoGalleryModal from '../../components/nutrition/PhotoGalleryModal';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
 
@@ -59,6 +61,7 @@ export default function NutritionScreen() {
   const loadAllHistory = useNutritionStore((state) => state.loadAllHistory);
   const addMeal = useNutritionStore((state) => state.addMeal);
   const updateMeal = useNutritionStore((state) => state.updateMeal);
+  const removeMealPhoto = useNutritionStore((state) => state.removeMealPhoto);
   const deleteMeal = useNutritionStore((state) => state.deleteMeal);
   const loadFavorites = useNutritionStore((state) => state.loadFavorites);
   const addFavoriteFromLog = useNutritionStore((state) => state.addFavoriteFromLog);
@@ -89,6 +92,9 @@ export default function NutritionScreen() {
   const [showMdModal, setShowMdModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showManageFavsModal, setShowManageFavsModal] = useState(false);
+  const [showPhotoGalleryModal, setShowPhotoGalleryModal] = useState(false);
+  const [previewLog, setPreviewLog] = useState<MealLog | null>(null);
+  const [deletingPhotoLog, setDeletingPhotoLog] = useState<MealLog | null>(null);
   const [editingLog, setEditingLog] = useState<MealLog | null>(null);
   const [deletingMealId, setDeletingMealId] = useState<number | null>(null);
 
@@ -268,14 +274,22 @@ export default function NutritionScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* 行2: 2個ボタン */}
+          {/* 行2: 3個ボタン */}
           <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={[styles.actionGridBtn, { backgroundColor: '#0e7490' }]}
+              onPress={() => setShowPhotoGalleryModal(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.actionGridBtnText}>🖼️ 過去写真</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={[styles.actionGridBtn, { backgroundColor: '#3730a3' }]}
               onPress={() => setShowHistoryModal(true)}
               activeOpacity={0.8}
             >
-              <Text style={styles.actionGridBtnText}>⭐ 履歴から記録</Text>
+              <Text style={styles.actionGridBtnText}>⭐ 履歴記録</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -283,7 +297,7 @@ export default function NutritionScreen() {
               onPress={() => setShowMdModal(true)}
               activeOpacity={0.8}
             >
-              <Text style={styles.actionGridBtnText}>📋 MD一括取り込み</Text>
+              <Text style={styles.actionGridBtnText}>📋 MD一括</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -306,6 +320,7 @@ export default function NutritionScreen() {
             mealLogs={mealLogs}
             onDeleteMeal={(id) => setDeletingMealId(id)}
             onEditMeal={(log) => setEditingLog(log)}
+            onPreviewPhoto={(log) => setPreviewLog(log)}
           />
         )}
 
@@ -390,6 +405,45 @@ export default function NutritionScreen() {
         onUpdateFavorite={updateFavoriteItem}
         onDeleteFavorite={deleteFavoriteById}
         onUpdateOrder={updateFavoritesOrder}
+      />
+
+      {/* 写真拡大プレビューモーダル */}
+      <ImagePreviewModal
+        visible={previewLog !== null}
+        imageUri={previewLog?.photo_url || null}
+        log={previewLog}
+        onClose={() => setPreviewLog(null)}
+        onDeletePhoto={(log) => {
+          setDeletingPhotoLog(log);
+        }}
+      />
+
+      {/* 過去写真ギャラリーモーダル */}
+      <PhotoGalleryModal
+        visible={showPhotoGalleryModal}
+        historyLogs={allHistoryLogs || []}
+        onClose={() => setShowPhotoGalleryModal(false)}
+        onPreviewPhoto={(log) => setPreviewLog(log)}
+        onDeletePhoto={async (id) => {
+          await removeMealPhoto(id);
+        }}
+      />
+
+      {/* 写真のみ削除確認モーダル（プレビュー画面からの削除時用） */}
+      <ConfirmModal
+        visible={deletingPhotoLog !== null}
+        title="写真のみ削除"
+        message="この食事ログの写真のみを削除しますか？\n（食事の記録データ自体は保持されます）"
+        confirmText="写真のみ削除"
+        type="danger"
+        onConfirm={async () => {
+          if (deletingPhotoLog !== null) {
+            await removeMealPhoto(deletingPhotoLog.id);
+            setDeletingPhotoLog(null);
+            setPreviewLog(null);
+          }
+        }}
+        onCancel={() => setDeletingPhotoLog(null)}
       />
 
       <ConfirmModal
