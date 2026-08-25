@@ -13,17 +13,19 @@ export interface OTAUpdateConfig {
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
   version: '2.0.0',
   title: {
-    ja: '🚀 TreNote v2.0.0 メジャーアップデート',
-    en: '🚀 TreNote v2.0.0 Major Update',
+    ja: '✨ クイックランチャー7枠拡張 ＆ ウィジェット表示改善',
+    en: '✨ 7-Slot Quick Launcher & Widget Fixes',
   },
   notes: {
     ja: [
-      'ライフログ機能（水分・習慣・時間管理）の安定性と操作性を大幅に向上しました。',
-      'パフォーマンスの最適化および全体の安定性を改善しました。',
+      'ホーム画面の「クイックランチャー」ウィジェットが最大7枠に拡張されました。',
+      'ウィジェット追加画面の文字化け（Unicode表記）を修正しました。',
+      'クイックランチャーの筋トレアイコンのデザインおよび全体の表示品質を改善しました。',
     ],
     en: [
-      'Significantly improved lifelog stability and responsiveness (Water, Habits, Time Tracking).',
-      'Optimized overall performance and app stability.',
+      'Expanded the Home Screen Quick Launcher widget to up to 7 customizable slots.',
+      'Fixed text character encoding issues on the widget preview/addition screen.',
+      'Improved the workout icon design and overall widget visual quality.',
     ],
   },
 };

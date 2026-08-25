@@ -34,7 +34,7 @@ function SlotIcon({ config, size, color }: { config: SlotConfig; size: number; c
 }
 
 export default function WidgetLauncherSettingsScreen() {
-  const [slots, setSlots] = useState<(FeatureId | 'empty')[]>(['workout', 'water', 'nutrition', 'zikan', 'routine']);
+  const [slots, setSlots] = useState<(FeatureId | 'empty')[]>(['workout', 'water', 'nutrition', 'zikan', 'routine', 'body', 'voice_ai']);
   const [loading, setLoading] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
   const [selectingSlotIndex, setSelectingSlotIndex] = useState<number | null>(null);
@@ -47,10 +47,10 @@ export default function WidgetLauncherSettingsScreen() {
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            // Fill up to 5
+            // Fill up to 7
             const loadedSlots = [...parsed];
-            while (loadedSlots.length < 5) loadedSlots.push('empty');
-            setSlots(loadedSlots.slice(0, 5));
+            while (loadedSlots.length < 7) loadedSlots.push('empty');
+            setSlots(loadedSlots.slice(0, 7));
           }
         }
       } catch (e) {
@@ -123,7 +123,7 @@ export default function WidgetLauncherSettingsScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>ウィジェット設定 (5枠)</Text>
+        <Text style={styles.headerTitle}>ウィジェット設定 (7枠)</Text>
         <TouchableOpacity 
           style={[styles.saveBtn, !hasChanges && styles.saveBtnDisabled]} 
           onPress={handleSave}
@@ -133,9 +133,9 @@ export default function WidgetLauncherSettingsScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 60 }}>
         <Text style={styles.description}>
-          ホーム画面の「クイックランチャー（縦1×横5）」ウィジェットに表示する機能とその順番を設定します。不要な枠は「(空欄)」に設定すると非表示になり、他のアイコンが詰めて表示されます。
+          ホーム画面の「クイックランチャー（縦1×横7）」ウィジェットに表示する機能とその順番を設定します。不要な枠は「(空欄)」に設定すると非表示になり、他のアイコンが詰めて表示されます。
         </Text>
 
         <View style={styles.previewContainer}>

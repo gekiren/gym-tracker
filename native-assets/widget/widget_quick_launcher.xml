@@ -98,4 +98,40 @@
             android:tint="#4facfe" />
     </LinearLayout>
 
+    <!-- Slot 5 -->
+    <LinearLayout
+        android:id="@+id/ql_slot_5"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="?android:attr/selectableItemBackgroundBorderless">
+        
+        <ImageView
+            android:id="@+id/ql_icon_5"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_ql_body"
+            android:tint="#4facfe" />
+    </LinearLayout>
+
+    <!-- Slot 6 -->
+    <LinearLayout
+        android:id="@+id/ql_slot_6"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="?android:attr/selectableItemBackgroundBorderless">
+        
+        <ImageView
+            android:id="@+id/ql_icon_6"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_ql_voice_ai"
+            android:tint="#4facfe" />
+    </LinearLayout>
+
 </LinearLayout>
