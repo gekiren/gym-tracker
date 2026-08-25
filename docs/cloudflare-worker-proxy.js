@@ -187,13 +187,10 @@ export default {
 }`;
 
         // Google公式実在モデルによる高速多重冗長化: gemini-3.7-flash ➔ gemini-3.6-flash ➔ gemini-3.5-flash ➔ gemini-3.5-flash-lite ➔ gemini-3.1-flash-lite ➔ gemini-flash-lite-latest
+        // 2段階高速・安定モデル構成: gemini-3.5-flash-lite ➔ gemini-2.5-flash-lite
         const geminiModels = [
-          "gemini-3.7-flash",
-          "gemini-3.6-flash",
-          "gemini-3.5-flash",
           "gemini-3.5-flash-lite",
-          "gemini-3.1-flash-lite",
-          "gemini-flash-lite-latest"
+          "gemini-2.5-flash-lite"
         ];
 
         // Gemma 実験モデルの優先注入（ステージング設定対応）
@@ -212,8 +209,8 @@ export default {
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
             
             try {
-              // 各モデル8秒（Gemmaは25秒）でタイムアウト制御
-              const timeoutMs = modelName.includes('gemma') ? 25000 : 8000;
+              // 各モデル12秒（Gemmaは25秒）でタイムアウト制御
+              const timeoutMs = modelName.includes('gemma') ? 25000 : 12000;
               const generationConfig = { 
                 maxOutputTokens: 2048,
                 responseMimeType: "application/json"
@@ -252,7 +249,7 @@ export default {
                   return new Response(JSON.stringify({ 
                     success: true, 
                     ...parsedJson,
-                    debugInfo: { workerVersion: "v1.9.0", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
+                    debugInfo: { workerVersion: "v2.0.0", modelUsed: modelName, fallbackHistory, timestamp: new Date().toISOString() }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -263,7 +260,7 @@ export default {
                     success: true, 
                     reply: rawText, 
                     mealName: "食事写真",
-                    debugInfo: { workerVersion: "v1.8.7", modelUsed: modelName, parseError: true, rawSnippet: rawText.substring(0, 100) }
+                    debugInfo: { workerVersion: "v2.0.0", modelUsed: modelName, parseError: true, rawSnippet: rawText.substring(0, 100) }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -273,7 +270,6 @@ export default {
                 lastErrorText = await response.text();
                 console.error(`Gemini Vision API error (${modelName}):`, response.status, lastErrorText);
                 fallbackHistory.push({ model: modelName, status: response.status, error: lastErrorText.substring(0, 150) });
-                // 503, 429 等が発生した場合は待たずに直ちに次の実在モデルへ切り替え
               }
             } catch (fetchErr) {
               console.error(`Fetch exception for ${modelName}:`, fetchErr);
@@ -282,7 +278,7 @@ export default {
           }
         }
 
-        // すべてのGeminiモデルが失敗した場合のエラーレスポンス (エラー詳細をadviceに直結)
+        // すべてのGeminiモデルが失敗した場合のエラーレスポンス
         const detailedErrReason = fallbackHistory.map(h => `${h.model}: ${h.status ? `HTTP ${h.status}` : ''} ${h.error || ''}`.trim()).join(' | ');
         return new Response(JSON.stringify({
           success: false,
@@ -296,7 +292,7 @@ export default {
           fiber: 0,
           advice: `AI画像解析エラー (${detailedErrReason || lastErrorText || '接続失敗'})`,
           error: detailedErrReason || lastErrorText,
-          debugInfo: { workerVersion: "v1.8.4", fallbackHistory, lastError: lastErrorText }
+          debugInfo: { workerVersion: "v2.0.0", fallbackHistory, lastError: lastErrorText }
         }), {
           status: 500,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -318,11 +314,10 @@ export default {
   "advice": "栄養アドバイス"
 }`;
 
-        // テキスト栄養解析専用の高速・軽量3段階モデル構成: gemini-3.5-flash-lite ➔ gemini-3.1-flash-lite ➔ gemini-flash-lite-latest
+        // テキスト栄養解析専用モデル構成: gemini-3.5-flash-lite ➔ gemini-2.5-flash-lite
         const geminiModels = [
           "gemini-3.5-flash-lite",
-          "gemini-3.1-flash-lite",
-          "gemini-flash-lite-latest"
+          "gemini-2.5-flash-lite"
         ];
 
         // Gemma 実験モデルの優先注入（ステージング設定対応）
@@ -339,8 +334,8 @@ export default {
           for (const modelName of activeModels) {
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
             try {
-              // Gemmaは大型モデルのため25秒、標準Flash-Liteは8秒でタイムアウト制御
-              const timeoutMs = modelName.includes('gemma') ? 25000 : 8000;
+              // 各モデル12秒（Gemmaは25秒）でタイムアウト制御
+              const timeoutMs = modelName.includes('gemma') ? 25000 : 12000;
               const response = await fetchWithTimeout(geminiUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -364,7 +359,7 @@ export default {
                   return new Response(JSON.stringify({
                     success: true,
                     ...parsedJson,
-                    debugInfo: { workerVersion: "v1.9.0", modelUsed: modelName, fallbackHistory }
+                    debugInfo: { workerVersion: "v2.0.0", modelUsed: modelName, fallbackHistory }
                   }), {
                     status: 200,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -383,8 +378,8 @@ export default {
           }
         }
 
-        // DeepSeek フォールバック
-        if (env.DEEPSEEK_API_KEY) {
+        // DeepSeek 優先指定時の先行実行 (ユーザー明示指示時のみ)
+        if (reqPreferredModel === 'deepseek' && env.DEEPSEEK_API_KEY) {
           try {
             const dsResponse = await fetchWithTimeout("https://api.deepseek.com/chat/completions", {
               method: "POST",
@@ -400,7 +395,7 @@ export default {
                 ],
                 response_format: { type: "json_object" }
               })
-            }, 10000);
+            }, 12000);
 
             if (dsResponse.ok) {
               const dsData = await dsResponse.json();
@@ -415,7 +410,7 @@ export default {
               return new Response(JSON.stringify({
                 success: true,
                 ...parsedJson,
-                debugInfo: { workerVersion: "v1.8.0", modelUsed: "deepseek-v4-pro", fallbackHistory }
+                debugInfo: { workerVersion: "v2.0.0", modelUsed: "deepseek-v4-pro (preferred)", fallbackHistory }
               }), {
                 status: 200,
                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -437,7 +432,7 @@ export default {
           sodium: 0,
           fiber: 0,
           advice: "AIによるテキスト栄養解析時に一時的なエラーが発生しました。時間を置いて再実行してください。",
-          debugInfo: { workerVersion: "v1.8.0", fallbackHistory }
+          debugInfo: { workerVersion: "v2.0.0", fallbackHistory }
         }), {
           status: 500,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -457,15 +452,14 @@ export default {
         ? `[User Context]\n- Body Weight: ${user_weight || "Not set"}\n\n${contextHeader}\n${workout_history || "No history available"}\n\n[User Message]\n${message}`
         : `【ユーザー情報】\n- 体重: ${user_weight || "未設定"}\n\n${contextHeader}\n${workout_history || "履歴なし"}\n\n【ユーザーの質問】\n${message}`;
 
-      // AI Coachチャット用モデル冗長化: gemini-3.7-flash ➔ gemini-3.6-flash ➔ gemini-3.5-flash ➔ gemini-3.5-flash-lite ➔ gemini-3.1-flash-lite ➔ gemini-flash-lite-latest
-      const geminiModels = [
-        "gemini-3.7-flash",
-        "gemini-3.6-flash",
-        "gemini-3.5-flash",
-        "gemini-3.5-flash-lite",
-        "gemini-3.1-flash-lite",
-        "gemini-flash-lite-latest"
-      ];
+      const aiMode = payload.ai_mode || payload.aiMode || "quick";
+      const isThinkingMode = aiMode === "thinking";
+
+      // 思考対話: gemini-3.5-flash ➔ gemini-3.5-flash-lite ➔ gemini-2.5-flash-lite
+      // クイック対話: gemini-3.5-flash-lite ➔ gemini-2.5-flash-lite
+      const geminiModels = isThinkingMode
+        ? ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash-lite"]
+        : ["gemini-3.5-flash-lite", "gemini-2.5-flash-lite"];
 
       // Gemma 実験モデルの優先注入（ステージング設定対応）
       let activeModels = [...geminiModels];
@@ -477,7 +471,7 @@ export default {
 
       let chatFallbackHistory = [];
 
-      // DeepSeek 優先指定時の先行実行
+      // DeepSeek 優先指定時の先行実行 (ユーザー明示指示時のみ)
       if (reqPreferredModel === 'deepseek' && env.DEEPSEEK_API_KEY) {
         try {
           const dsResponse = await fetchWithTimeout("https://api.deepseek.com/chat/completions", {
@@ -505,7 +499,7 @@ export default {
               return new Response(JSON.stringify({
                 success: true,
                 reply,
-                debugInfo: { workerVersion: "v1.9.0", modelUsed: "deepseek-v4-pro (preferred)", chatFallbackHistory }
+                debugInfo: { workerVersion: "v2.0.0", modelUsed: "deepseek-v4-pro (preferred)", chatFallbackHistory }
               }), {
                 status: 200,
                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -522,8 +516,8 @@ export default {
         for (const modelName of activeModels) {
           const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
           try {
-            // Gemmaは大型モデルのため25秒、標準Flashは8秒でタイムアウト制御
-            const timeoutMs = modelName.includes('gemma') ? 25000 : 8000;
+            // Gemmaは25秒、思考対話は15秒、クイック対話は12秒でタイムアウト制御
+            const timeoutMs = modelName.includes('gemma') ? 25000 : (isThinkingMode ? 15000 : 12000);
             const response = await fetchWithTimeout(geminiUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -544,7 +538,7 @@ export default {
                 return new Response(JSON.stringify({
                   success: true,
                   reply,
-                  debugInfo: { workerVersion: "v1.9.0", modelUsed: modelName, chatFallbackHistory }
+                  debugInfo: { workerVersion: "v2.0.0", modelUsed: modelName, chatFallbackHistory }
                 }), {
                   status: 200,
                   headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -561,51 +555,10 @@ export default {
         }
       }
 
-      // DeepSeek チャットフォールバック
-      if (env.DEEPSEEK_API_KEY) {
-        try {
-          const dsResponse = await fetchWithTimeout("https://api.deepseek.com/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${env.DEEPSEEK_API_KEY}`
-            },
-            body: JSON.stringify({
-              model: "deepseek-v4-pro",
-              messages: [
-                { role: "system", content: systemInstruction },
-                { role: "user", content: promptContext }
-              ]
-            })
-          }, 12000);
-
-          if (dsResponse.ok) {
-            const dsData = await dsResponse.json();
-            const reply = dsData?.choices?.[0]?.message?.content;
-            if (reply) {
-              if (env.AI_LIMIT_KV) {
-                await env.AI_LIMIT_KV.put(today, (dailyCount + 1).toString(), { expirationTtl: 86400 * 2 });
-              }
-              return new Response(JSON.stringify({
-                success: true,
-                reply,
-                debugInfo: { workerVersion: "v1.8.0", modelUsed: "deepseek-v4-pro", chatFallbackHistory }
-              }), {
-                status: 200,
-                headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-              });
-            }
-          }
-        } catch (dsErr) {
-          console.error("DeepSeek chat fallback error:", dsErr);
-          chatFallbackHistory.push({ model: "deepseek-v4-pro", error: String(dsErr?.message || dsErr) });
-        }
-      }
-
       return new Response(JSON.stringify({ 
         success: false, 
         error: "AI Service Error",
-        debugInfo: { workerVersion: "v1.8.0", chatFallbackHistory }
+        debugInfo: { workerVersion: "v2.0.0", chatFallbackHistory }
       }), {
         status: 500,
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }

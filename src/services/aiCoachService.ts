@@ -125,7 +125,7 @@ export const sendMessageToAICoach = async (
   aiMode: 'quick' | 'thinking' = 'quick'
 ): Promise<AICoachResponse> => {
   const controller = new AbortController();
-  const timeoutSeconds = aiMode === 'thinking' ? 45000 : 25000;
+  const timeoutSeconds = aiMode === 'thinking' ? 45000 : 28000;
   const timeoutId = setTimeout(() => controller.abort(), timeoutSeconds);
 
   try {
@@ -136,7 +136,7 @@ export const sendMessageToAICoach = async (
 
     const bodyWeightStr = userWeight ? `${userWeight} ${weightUnit}` : '未設定';
     const lang = i18next.language || 'ja';
-    const preferredModel = useSettingsStore.getState().settings.preferredAiModel || 'gemini-3.7-flash';
+    const preferredModel = useSettingsStore.getState().settings.preferredAiModel || 'gemini-3.5-flash-lite';
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -270,9 +270,9 @@ export const analyzeMealText = async (
   preferredModel?: string
 ): Promise<NutritionAIResult> => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 45000);
+  const timeoutId = setTimeout(() => controller.abort(), 28000);
 
-  const activeModel = preferredModel || useSettingsStore.getState().settings.preferredAiModel || 'gemini';
+  const activeModel = preferredModel || useSettingsStore.getState().settings.preferredAiModel || 'gemini-3.5-flash-lite';
 
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -319,7 +319,7 @@ export const analyzeMealText = async (
 
     const isAbort = err?.name === 'AbortError' || err?.message === 'Aborted' || err?.message === 'AbortError';
     const friendlyErrMsg = isAbort
-      ? '接続タイムアウトが発生しました（45秒超過）。通信環境を確認するか、再度お試しください。'
+      ? '接続タイムアウトが発生しました（28秒超過）。通信環境を確認するか、再度お試しください。'
       : (err?.message || String(err));
 
     recordAIDebugLog({
@@ -351,9 +351,9 @@ export const analyzeMealImage = async (
   preferredModel?: string
 ): Promise<NutritionAIResult> => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 45000); // 画像解析は時間がかかるため長めに
+  const timeoutId = setTimeout(() => controller.abort(), 28000);
 
-  const activeModel = preferredModel || useSettingsStore.getState().settings.preferredAiModel || 'gemini';
+  const activeModel = preferredModel || useSettingsStore.getState().settings.preferredAiModel || 'gemini-3.5-flash-lite';
 
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
