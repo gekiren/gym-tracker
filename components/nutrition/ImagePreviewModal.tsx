@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -7,11 +7,19 @@ import {
   TouchableOpacity,
   Dimensions,
   StatusBar,
-  PanResponder,
   Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import {
+  PinchGestureHandler,
+  PanGestureHandler,
+  TapGestureHandler,
+  State,
+  PinchGestureHandlerGestureEvent,
+  PanGestureHandlerGestureEvent,
+  TapGestureHandlerGestureEvent,
+} from 'react-native-gesture-handler';
 import { MealLog } from '../../src/db/types';
 
 interface Props {
@@ -24,15 +32,6 @@ interface Props {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// 2点間の距離計算ヘルパー（ピンチズーム用）
-function getTouchesDistance(touches: any[]) {
-  if (!touches || touches.length < 2) return 0;
-  const [t1, t2] = touches;
-  const dx = t1.pageX - t2.pageX;
-  const dy = t1.pageY - t2.pageY;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
 export default function ImagePreviewModal({
   visible,
   imageUri,
@@ -42,194 +41,136 @@ export default function ImagePreviewModal({
 }: Props) {
   const insets = useSafeAreaInsets();
 
-  // アニメーション・トランスフォーム値
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const translateXAnim = useRef(new Animated.Value(0)).current;
-  const translateYAnim = useRef(new Animated.Value(0)).current;
+  // ジェスチャーRef
+  const pinchRef = useRef<PinchGestureHandler>(null);
+  const panRef = useRef<PanGestureHandler>(null);
+  const doubleTapRef = useRef<TapGestureHandler>(null);
 
-  // 現在の値を保持するRef
-  const scaleRef = useRef(1);
-  const translateXRef = useRef(0);
-  const translateYRef = useRef(0);
+  // Animated 値 (ネイティブアタッチメント用)
+  const baseScale = useRef(new Animated.Value(1)).current;
+  const pinchScale = useRef(new Animated.Value(1)).current;
+  const scale = Animated.multiply(baseScale, pinchScale);
 
-  // ジェスチャー状態管理Ref
-  const initialPinchDistRef = useRef<number | null>(null);
-  const initialScaleRef = useRef(1);
-  const lastTouchPosRef = useRef<{ x: number; y: number } | null>(null);
-  const lastTapTimeRef = useRef<number>(0);
+  const translateX = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
+  const lastOffset = useRef({ x: 0, y: 0 });
+  const currentBaseScale = useRef(1);
 
-  // Animated の値を State/Ref にリアルタイム同期
+  // Animated 値の記録
   useEffect(() => {
-    const subScale = scaleAnim.addListener(({ value }) => {
-      scaleRef.current = value;
+    const sub = baseScale.addListener(({ value }) => {
+      currentBaseScale.current = value;
     });
-    const subX = translateXAnim.addListener(({ value }) => {
-      translateXRef.current = value;
-    });
-    const subY = translateYAnim.addListener(({ value }) => {
-      translateYRef.current = value;
-    });
-
-    return () => {
-      scaleAnim.removeListener(subScale);
-      translateXAnim.removeListener(subX);
-      translateYAnim.removeListener(subY);
-    };
+    return () => baseScale.removeListener(sub);
   }, []);
 
-  // モーダル非表示時に状態リセット
+  // モーダル非表示時のリセット
   useEffect(() => {
     if (!visible) {
-      resetTransform();
+      resetAll();
     }
   }, [visible]);
 
-  const resetTransform = (animated = false) => {
+  const resetAll = (animated = false) => {
     if (animated) {
       Animated.parallel([
-        Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }),
-        Animated.spring(translateXAnim, { toValue: 0, useNativeDriver: true }),
-        Animated.spring(translateYAnim, { toValue: 0, useNativeDriver: true }),
+        Animated.spring(baseScale, { toValue: 1, useNativeDriver: true }),
+        Animated.spring(pinchScale, { toValue: 1, useNativeDriver: true }),
+        Animated.spring(translateX, { toValue: 0, useNativeDriver: true }),
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true }),
       ]).start();
     } else {
-      scaleAnim.setValue(1);
-      translateXAnim.setValue(0);
-      translateYAnim.setValue(0);
+      baseScale.setValue(1);
+      pinchScale.setValue(1);
+      translateX.setValue(0);
+      translateY.setValue(0);
     }
-    scaleRef.current = 1;
-    translateXRef.current = 0;
-    translateYRef.current = 0;
-    initialPinchDistRef.current = null;
-    lastTouchPosRef.current = null;
+    lastOffset.current = { x: 0, y: 0 };
+    currentBaseScale.current = 1;
   };
 
-  // ドラッグ可動域（バウンダリ）制限計算
-  const clampTranslation = (tx: number, ty: number, currentScale: number) => {
-    if (currentScale <= 1) return { x: 0, y: 0 };
-    const maxTx = (SCREEN_WIDTH * (currentScale - 1)) / 2;
-    const maxTy = (SCREEN_HEIGHT * (currentScale - 1)) / 2;
-    const clampedX = Math.max(-maxTx, Math.min(maxTx, tx));
-    const clampedY = Math.max(-maxTy, Math.min(maxTy, ty));
-    return { x: clampedX, y: clampedY };
-  };
+  // 1. ネイティブピンチイベント
+  const onPinchGestureEvent = Animated.event(
+    [{ nativeEvent: { scale: pinchScale } }],
+    { useNativeDriver: true }
+  );
 
-  // ダブルタップでの拡大・元サイズ切替
-  const handleDoubleTap = () => {
-    if (scaleRef.current > 1.2) {
-      resetTransform(true);
-    } else {
-      const targetScale = 2.5;
-      Animated.parallel([
-        Animated.spring(scaleAnim, { toValue: targetScale, useNativeDriver: true }),
-        Animated.spring(translateXAnim, { toValue: 0, useNativeDriver: true }),
-        Animated.spring(translateYAnim, { toValue: 0, useNativeDriver: true }),
-      ]).start();
-    }
-  };
+  const onPinchHandlerStateChange = (event: PinchGestureHandlerGestureEvent) => {
+    if (event.nativeEvent.state === State.END) {
+      let finalScale = currentBaseScale.current * event.nativeEvent.scale;
+      // スケール制限 (1.0 〜 4.0)
+      if (finalScale < 1) {
+        finalScale = 1;
+      } else if (finalScale > 4) {
+        finalScale = 4;
+      }
 
-  // PanResponder によるピンチ ＆ パン移動（リアルタイム2本指検出最適化版）
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt) => {
-        const touches = evt.nativeEvent.touches;
-        if (touches && touches.length >= 2) {
-          initialPinchDistRef.current = getTouchesDistance(touches);
-          initialScaleRef.current = scaleRef.current;
-        } else if (touches && touches.length === 1) {
-          initialPinchDistRef.current = null;
-          lastTouchPosRef.current = { x: touches[0].pageX, y: touches[0].pageY };
-        }
-      },
-      onPanResponderMove: (evt, gestureState) => {
-        const touches = evt.nativeEvent.touches;
+      baseScale.setValue(finalScale);
+      pinchScale.setValue(1);
 
-        // 1. 2本指ピンチ操作
-        if (touches && touches.length >= 2) {
-          const currentDist = getTouchesDistance(touches);
-          if (currentDist > 0) {
-            // 後から2本指になった場合の初期動的セット
-            if (!initialPinchDistRef.current || initialPinchDistRef.current <= 0) {
-              initialPinchDistRef.current = currentDist;
-              initialScaleRef.current = scaleRef.current;
-            } else {
-              const ratio = currentDist / initialPinchDistRef.current;
-              let newScale = initialScaleRef.current * ratio;
-              newScale = Math.max(0.8, Math.min(4.5, newScale));
-              scaleAnim.setValue(newScale);
-
-              // スケール変更に伴うパン可動制限の適用
-              const clamped = clampTranslation(
-                translateXRef.current,
-                translateYRef.current,
-                newScale
-              );
-              translateXAnim.setValue(clamped.x);
-              translateYAnim.setValue(clamped.y);
-            }
-          }
-        }
-        // 2. 1本指ドラッグ（パン移動）
-        else if (touches && touches.length === 1) {
-          initialPinchDistRef.current = null; // ピンチ解除
-
-          if (scaleRef.current > 1) {
-            if (lastTouchPosRef.current) {
-              const dx = touches[0].pageX - lastTouchPosRef.current.x;
-              const dy = touches[0].pageY - lastTouchPosRef.current.y;
-              lastTouchPosRef.current = { x: touches[0].pageX, y: touches[0].pageY };
-
-              const nextTx = translateXRef.current + dx;
-              const nextTy = translateYRef.current + dy;
-              const clamped = clampTranslation(nextTx, nextTy, scaleRef.current);
-
-              translateXAnim.setValue(clamped.x);
-              translateYAnim.setValue(clamped.y);
-            } else {
-              lastTouchPosRef.current = { x: touches[0].pageX, y: touches[0].pageY };
-            }
-          }
-        }
-      },
-      onPanResponderRelease: (evt, gestureState) => {
-        initialPinchDistRef.current = null;
-        lastTouchPosRef.current = null;
-
-        // タップ判定 (ダブルタップ検知)
-        const isTap = Math.abs(gestureState.dx) < 6 && Math.abs(gestureState.dy) < 6;
-        if (isTap && (!evt.nativeEvent.touches || evt.nativeEvent.touches.length === 0)) {
-          const now = Date.now();
-          if (now - lastTapTimeRef.current < 300) {
-            handleDoubleTap();
-            lastTapTimeRef.current = 0;
-            return;
-          }
-          lastTapTimeRef.current = now;
-        }
-
-        // スケール端数クランプ (1.0 未満は 1.0 に戻す、4.0 超は 4.0 に固定)
-        let finalScale = scaleRef.current;
-        if (finalScale < 1) {
-          finalScale = 1;
-        } else if (finalScale > 4.0) {
-          finalScale = 4.0;
-        }
-
-        const clamped = clampTranslation(
-          translateXRef.current,
-          translateYRef.current,
-          finalScale
-        );
-
+      if (finalScale === 1) {
         Animated.parallel([
-          Animated.spring(scaleAnim, { toValue: finalScale, useNativeDriver: true }),
-          Animated.spring(translateXAnim, { toValue: clamped.x, useNativeDriver: true }),
-          Animated.spring(translateYAnim, { toValue: clamped.y, useNativeDriver: true }),
+          Animated.spring(translateX, { toValue: 0, useNativeDriver: true }),
+          Animated.spring(translateY, { toValue: 0, useNativeDriver: true }),
         ]).start();
-      },
-    })
-  ).current;
+        lastOffset.current = { x: 0, y: 0 };
+      }
+    }
+  };
+
+  // 2. ネイティブパン（ドラッグ）イベント
+  const onPanGestureEvent = (event: PanGestureHandlerGestureEvent) => {
+    if (currentBaseScale.current <= 1) return;
+
+    const { translationX, translationY } = event.nativeEvent;
+    const maxTx = (SCREEN_WIDTH * (currentBaseScale.current - 1)) / 2;
+    const maxTy = (SCREEN_HEIGHT * (currentBaseScale.current - 1)) / 2;
+
+    const nextX = lastOffset.current.x + translationX;
+    const nextY = lastOffset.current.y + translationY;
+
+    const clampedX = Math.max(-maxTx, Math.min(maxTx, nextX));
+    const clampedY = Math.max(-maxTy, Math.min(maxTy, nextY));
+
+    translateX.setValue(clampedX);
+    translateY.setValue(clampedY);
+  };
+
+  const onPanHandlerStateChange = (event: PanGestureHandlerGestureEvent) => {
+    if (event.nativeEvent.state === State.END) {
+      const { translationX, translationY } = event.nativeEvent;
+      const maxTx = (SCREEN_WIDTH * (currentBaseScale.current - 1)) / 2;
+      const maxTy = (SCREEN_HEIGHT * (currentBaseScale.current - 1)) / 2;
+
+      const nextX = lastOffset.current.x + translationX;
+      const nextY = lastOffset.current.y + translationY;
+
+      const clampedX = Math.max(-maxTx, Math.min(maxTx, nextX));
+      const clampedY = Math.max(-maxTy, Math.min(maxTy, nextY));
+
+      lastOffset.current = { x: clampedX, y: clampedY };
+      translateX.setValue(clampedX);
+      translateY.setValue(clampedY);
+    }
+  };
+
+  // 3. ダブルタップイベント
+  const onDoubleTapStateChange = (event: TapGestureHandlerGestureEvent) => {
+    if (event.nativeEvent.state === State.ACTIVE) {
+      if (currentBaseScale.current > 1.2) {
+        resetAll(true);
+      } else {
+        const targetScale = 2.5;
+        baseScale.setValue(targetScale);
+        pinchScale.setValue(1);
+        lastOffset.current = { x: 0, y: 0 };
+        Animated.parallel([
+          Animated.spring(translateX, { toValue: 0, useNativeDriver: true }),
+          Animated.spring(translateY, { toValue: 0, useNativeDriver: true }),
+        ]).start();
+      }
+    }
+  };
 
   if (!visible || !imageUri) return null;
 
@@ -264,22 +205,49 @@ export default function ImagePreviewModal({
           </TouchableOpacity>
         </View>
 
-        {/* パン＆ズーム可能画像メイン領域 */}
-        <View style={styles.imageViewerBox} {...panResponder.panHandlers}>
-          <Animated.Image
-            source={{ uri: imageUri }}
-            style={[
-              styles.image,
-              {
-                transform: [
-                  { scale: scaleAnim },
-                  { translateX: translateXAnim },
-                  { translateY: translateYAnim },
-                ],
-              },
-            ]}
-            resizeMode="contain"
-          />
+        {/* ネイティブジェスチャーメイン領域 (Pinch + Pan + DoubleTap) */}
+        <View style={styles.imageViewerBox}>
+          <TapGestureHandler
+            ref={doubleTapRef}
+            numberOfTaps={2}
+            onHandlerStateChange={onDoubleTapStateChange}
+          >
+            <Animated.View style={styles.gestureContainer}>
+              <PanGestureHandler
+                ref={panRef}
+                simultaneousHandlers={[pinchRef]}
+                waitFor={doubleTapRef}
+                onGestureEvent={onPanGestureEvent}
+                onHandlerStateChange={onPanHandlerStateChange}
+              >
+                <Animated.View style={styles.gestureContainer}>
+                  <PinchGestureHandler
+                    ref={pinchRef}
+                    simultaneousHandlers={[panRef]}
+                    onGestureEvent={onPinchGestureEvent}
+                    onHandlerStateChange={onPinchHandlerStateChange}
+                  >
+                    <Animated.View style={styles.gestureContainer}>
+                      <Animated.Image
+                        source={{ uri: imageUri }}
+                        style={[
+                          styles.image,
+                          {
+                            transform: [
+                              { scale },
+                              { translateX },
+                              { translateY },
+                            ],
+                          },
+                        ]}
+                        resizeMode="contain"
+                      />
+                    </Animated.View>
+                  </PinchGestureHandler>
+                </Animated.View>
+              </PanGestureHandler>
+            </Animated.View>
+          </TapGestureHandler>
         </View>
 
         {/* 不透過フッター */}
@@ -345,6 +313,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+  },
+  gestureContainer: {
+    flex: 1,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT * 0.75,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   image: {
     width: SCREEN_WIDTH,
