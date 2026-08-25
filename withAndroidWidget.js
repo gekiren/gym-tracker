@@ -1,4 +1,4 @@
-﻿const { withDangerousMod } = require('@expo/config-plugins');
+const { withDangerousMod } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
@@ -39,12 +39,12 @@ const QUICK_LAUNCHER_RECEIVER_XML = `
 const STRINGS_RESOURCE_MARKER = '</resources>';
 
 const STRINGS_PATCHES = [
-  { tag: 'name="water_widget_description"', value: '  <string name="water_widget_description">TreNote - \\u6c34\\u5206\\u88dc\\u7d66\\u3092\\u8a18\\u9332\\u3059\\u308b</string>' },
-  { tag: 'name="water_widget_label"', value: '  <string name="water_widget_label">TreNote - \\u6c34\\u5206\\u88dc\\u7d66</string>' },
-  { tag: 'name="zikan_widget_small_description"', value: '  <string name="zikan_widget_small_description">TreNote - 24\\u6642\\u9593\\u9023\\u7d9a\\u8a18\\u9332\\u3092\\u6253\\u523b\\u3059\\u308b</string>' },
-  { tag: 'name="zikan_widget_small_label"', value: '  <string name="zikan_widget_small_label">TreNote - 24H\\u9023\\u7d9a\\u8a18\\u9332</string>' },
-  { tag: 'name="quick_launcher_widget_description"', value: '  <string name="quick_launcher_widget_description">TreNote - \\u7e261\\u6a2a5\\u30af\\u30a4\\u30c3\\u30af\\u30e9\\u30f3\\u30c1\\u30e3\\u30fc</string>' },
-  { tag: 'name="quick_launcher_widget_label"', value: '  <string name="quick_launcher_widget_label">TreNote - \\u30af\\u30a4\\u30c3\\u30af\\u30e9\\u30f3\\u30c1\\u30e3\\u30fc</string>' }
+  { tag: 'name="water_widget_description"', value: '  <string name="water_widget_description">TreNote - 水分補給を記録する</string>' },
+  { tag: 'name="water_widget_label"', value: '  <string name="water_widget_label">TreNote - 水分補給</string>' },
+  { tag: 'name="zikan_widget_small_description"', value: '  <string name="zikan_widget_small_description">TreNote - 24時間連続記録を打刻する</string>' },
+  { tag: 'name="zikan_widget_small_label"', value: '  <string name="zikan_widget_small_label">TreNote - 24H連続記録</string>' },
+  { tag: 'name="quick_launcher_widget_description"', value: '  <string name="quick_launcher_widget_description">TreNote - 縦1横7クイックランチャー</string>' },
+  { tag: 'name="quick_launcher_widget_label"', value: '  <string name="quick_launcher_widget_label">TreNote - クイックランチャー</string>' }
 ];
 
 /**

@@ -46,8 +46,8 @@ class QuickLauncherWidget : AppWidgetProvider() {
 
         thread {
             val db = getDatabase(context, writable = false)
-            // Default slots
-            var slots = listOf("workout", "water", "nutrition", "zikan", "routine")
+            // Default slots (7 slots)
+            var slots = listOf("workout", "water", "nutrition", "zikan", "routine", "body", "voice_ai")
 
             if (db != null) {
                 try {
@@ -60,8 +60,8 @@ class QuickLauncherWidget : AppWidgetProvider() {
                             for (i in 0 until jsonArray.length()) {
                                 loadedSlots.add(jsonArray.getString(i))
                             }
-                            // Keep max 5
-                            slots = loadedSlots.take(5)
+                            // Keep max 7
+                            slots = loadedSlots.take(7)
                         }
                     }
                     cursor.close()
@@ -77,7 +77,9 @@ class QuickLauncherWidget : AppWidgetProvider() {
                 R.id.ql_slot_1,
                 R.id.ql_slot_2,
                 R.id.ql_slot_3,
-                R.id.ql_slot_4
+                R.id.ql_slot_4,
+                R.id.ql_slot_5,
+                R.id.ql_slot_6
             )
             
             val slotIconIds = intArrayOf(
@@ -85,7 +87,9 @@ class QuickLauncherWidget : AppWidgetProvider() {
                 R.id.ql_icon_1,
                 R.id.ql_icon_2,
                 R.id.ql_icon_3,
-                R.id.ql_icon_4
+                R.id.ql_icon_4,
+                R.id.ql_icon_5,
+                R.id.ql_icon_6
             )
 
             // Define features mapping
@@ -99,7 +103,7 @@ class QuickLauncherWidget : AppWidgetProvider() {
                 "voice_ai" to Pair(R.drawable.ic_ql_voice_ai, "gymtracker://lifelog/voice-assistant")
             )
 
-            for (i in 0 until 5) {
+            for (i in 0 until 7) {
                 val layoutId = slotLayoutIds[i]
                 val iconId = slotIconIds[i]
 
