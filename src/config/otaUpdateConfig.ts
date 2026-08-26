@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.18',
+  version: '2.0.19',
   title: {
-    ja: '📈 推移グラフの目標破線ライン描画＆期間移動を修正',
-    en: '📈 Fix Target Dashed Line & Navigation in Trend Chart',
+    ja: '🎯 習慣履歴グラフで目標破線ライン＆達成度を表示',
+    en: '🎯 Display Target Dashed Line in Habit History Chart',
   },
   notes: {
     ja: [
-      '推移グラフ内の目標破線ラインが確実に表示されるよう配置を修正し、過去の週への遡り・移動ができるよう改善しました。',
+      '習慣カウンターの履歴画面（折れ線グラフ）に目標破線ラインと目標達成度バッジが表示されるようになりました。',
     ],
     en: [
-      'Fixed the target dashed line rendering in the trend chart and improved historical week navigation.',
+      'Added a dashed target line and goal achievement badges to the habit counter history line chart.',
     ],
   },
 };

@@ -576,14 +576,44 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
   let goalY: number | null = null;
   let targetGoal: number | null = null;
 
+  // Scale multiplier for day/week/month/year
+  const scaleMultiplier = chartScale === 'day' ? 1 : chartScale === 'week' ? 7 : chartScale === 'month' ? 30 : 365;
+
   if (type === 'water' && chartMetric === 'amount' && waterGoal > 0) {
-    targetGoal = waterGoal;
+    targetGoal = waterGoal * scaleMultiplier;
   } else if (type === 'nutrition' && nutritionGoals) {
-    if (chartMetric === 'calories' && nutritionGoals.calories > 0) targetGoal = nutritionGoals.calories;
-    else if (chartMetric === 'protein' && nutritionGoals.protein > 0) targetGoal = nutritionGoals.protein;
-    else if (chartMetric === 'fat' && nutritionGoals.fat > 0) targetGoal = nutritionGoals.fat;
-    else if (chartMetric === 'carbs' && nutritionGoals.carbs > 0) targetGoal = nutritionGoals.carbs;
+    if (chartMetric === 'calories' && nutritionGoals.calories > 0) targetGoal = nutritionGoals.calories * scaleMultiplier;
+    else if (chartMetric === 'protein' && nutritionGoals.protein > 0) targetGoal = nutritionGoals.protein * scaleMultiplier;
+    else if (chartMetric === 'fat' && nutritionGoals.fat > 0) targetGoal = nutritionGoals.fat * scaleMultiplier;
+    else if (chartMetric === 'carbs' && nutritionGoals.carbs > 0) targetGoal = nutritionGoals.carbs * scaleMultiplier;
+  } else if (type === 'habit') {
+    if (selectedFilter !== 'all') {
+      const selectedItem = habitItems.find((h) => String(h.id) === selectedFilter);
+      const itemTarget = selectedItem ? (selectedItem.target_count || (selectedItem as any).targetCount || 0) : 0;
+      if (itemTarget > 0) {
+        targetGoal = itemTarget * scaleMultiplier;
+      }
+    } else {
+      const totalTarget = habitItems.reduce((sum, h) => {
+        if (h.is_hidden === 1) return sum;
+        return sum + (h.target_count || (h as any).targetCount || 0);
+      }, 0);
+      if (totalTarget > 0) {
+        targetGoal = totalTarget * scaleMultiplier;
+      }
+    }
   }
+
+  const getGoalLabelText = () => {
+    if (!targetGoal) return '';
+    if (type === 'water') return `目標 ${Math.round(targetGoal)}ml`;
+    if (type === 'nutrition') {
+      if (chartMetric === 'calories') return `目標 ${Math.round(targetGoal)}kcal`;
+      return `目標 ${targetGoal.toFixed(1)}g`;
+    }
+    if (type === 'habit') return `目標 ${Math.round(targetGoal)}回`;
+    return `目標 ${targetGoal}`;
+  };
 
   if (targetGoal !== null && targetGoal > 0) {
     maxVal = Math.max(maxVal, targetGoal * 1.15);
@@ -1111,29 +1141,29 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                         </LinearGradient>
                       </Defs>
 
-                      {/* Goal Line Target Baseline (Water Goal時) */}
-                      {goalY !== null && (
+                      {/* Goal Line Target Baseline */}
+                      {goalY !== null && targetGoal !== null && (
                         <>
                           <Line
                             x1={0}
                             y1={goalY}
                             x2={svgWidth}
                             y2={goalY}
-                            stroke={Theme.colors.primary}
-                            strokeOpacity={0.4}
+                            stroke={type === 'habit' ? '#55efc4' : Theme.colors.primary}
+                            strokeOpacity={0.6}
                             strokeDasharray="4,4"
                             strokeWidth={1.5}
                           />
                           <SvgText
                             x={svgWidth - 10}
                             y={goalY - 6}
-                            fill={Theme.colors.primary}
+                            fill={type === 'habit' ? '#55efc4' : Theme.colors.primary}
                             fontSize={10}
                             fontWeight="600"
-                            opacity={0.8}
+                            opacity={0.9}
                             textAnchor="end"
                           >
-                            目標 {waterGoal}ml
+                            {getGoalLabelText()}
                           </SvgText>
                         </>
                       )}
