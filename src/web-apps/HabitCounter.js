@@ -756,20 +756,14 @@ header {
     <!-- Edit Count Modal -->
     <div id="edit-modal" class="modal hidden">
         <div class="modal-content glass">
-            <h2>回数の修正・目標設定</h2>
+            <h2>回数の修正</h2>
             <p id="edit-item-name" class="date-label">項目名</p>
-            <div class="counter-control">
+            <div class="counter-control" style="margin-bottom: 20px;">
                 <button id="decrease-count" class="circle-btn">-</button>
                 <span id="edit-count-value" class="count-display">0</span>
                 <button id="increase-count" class="circle-btn">+</button>
             </div>
-            <div style="margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <span style="font-size: 0.9rem; opacity: 0.85;">1日の目標:</span>
-                <input type="number" id="edit-target-input" placeholder="未設定" min="0" style="width: 80px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.08); color: white; font-size: 0.95rem; text-align: center; margin-bottom: 0;">
-                <span style="font-size: 0.9rem; opacity: 0.85;">回</span>
-            </div>
-            <div class="modal-actions">
-                <button id="delete-item" class="text-btn" style="color: var(--danger-color);">削除</button>
+            <div class="modal-actions" style="justify-content: flex-end; gap: 12px;">
                 <button id="cancel-edit" class="text-btn">キャンセル</button>
                 <button id="save-edit" class="primary-btn">保存</button>
             </div>
@@ -1151,7 +1145,9 @@ function notifyDateChanged(dateObj) {
     });
 
     saveEditBtn.addEventListener('click', saveEditCount);
-    deleteBtn.addEventListener('click', deleteItem);
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', deleteItem);
+    }
 
     // Manage Modal Buttons
     manageBtn.addEventListener('click', showManageModal);
@@ -1170,6 +1166,21 @@ function notifyDateChanged(dateObj) {
 }
 
 function closeManageModal() {
+    // 画面上の全目標入力欄の最新値を確実に items に反映
+    if (manageList) {
+        const inputs = manageList.querySelectorAll('.manage-target-input');
+        inputs.forEach(input => {
+            const container = input.closest('.manage-item-container');
+            if (container && container.id) {
+                const id = container.id.replace('manage-item-', '');
+                const item = items.find(i => i.id === id);
+                if (item) {
+                    const num = parseInt(input.value, 10);
+                    item.targetCount = (!isNaN(num) && num > 0) ? num : 0;
+                }
+            }
+        });
+    }
     saveData();
     manageModal.classList.add('hidden');
     notifyModalState(false);
@@ -1446,28 +1457,14 @@ function openEditModal(id) {
     const count = getCountForDate(id, editingDate);
 
     const isToday = currentDateStr === getTodayStr();
-    editItemName.textContent = \`\${item.name} (\${isToday ? '今日' : currentDateStr})\`;
+    editItemName.textContent = item.name + ' (' + (isToday ? '今日' : currentDateStr) + ')';
     editCountValue.textContent = count;
-
-    const editTargetInput = document.getElementById('edit-target-input');
-    if (editTargetInput) {
-        editTargetInput.value = item.targetCount || '';
-    }
 
     editModal.classList.remove('hidden');
 }
 
 function saveEditCount() {
     if (!editingItemId) return;
-
-    const item = items.find(i => i.id === editingItemId);
-    if (item) {
-        const editTargetInput = document.getElementById('edit-target-input');
-        if (editTargetInput) {
-            const num = parseInt(editTargetInput.value, 10);
-            item.targetCount = (!isNaN(num) && num > 0) ? num : 0;
-        }
-    }
 
     const targetCount = parseInt(editCountValue.textContent);
     const itemLogs = logs.filter(log => log.itemId === editingItemId);

@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.14',
+  version: '2.0.15',
   title: {
-    ja: '🎯 習慣カウンター目標値保存バグの最終修正',
-    en: '🎯 Final Fix for Habit Target Value Persistence',
+    ja: '⚙️ 習慣カウンターの設定メニュー統合・UI整理',
+    en: '⚙️ Habit Counter Settings Integration & UI Cleanup',
   },
   notes: {
     ja: [
-      'データベースの構造不整合を修復する処理が過去の更新履歴によってスキップされてしまう問題を解決し、確実に目標値が保存されるよう修正しました。',
+      'カード長押し時の設定メニュー（目標設定・削除）を右上の歯車（習慣の管理）に完全統合し、長押しは回数修正専用にシンプル化しました。',
     ],
     en: [
-      'Resolved an issue where database schema repairs were skipped due to previous update history, ensuring target values are reliably persisted.',
+      'Integrated habit target settings and deletion into the manage settings gear icon, making card long-press exclusively for count adjustments.',
     ],
   },
 };
