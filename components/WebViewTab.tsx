@@ -325,6 +325,8 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
         name: item.name,
         color: item.color,
         createdAt: item.created_at,
+        targetCount: item.target_count || 0,
+        visible: item.is_hidden === 1 ? false : true,
       }));
 
       const injectScript = `
