@@ -13,6 +13,7 @@ import type ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { generateShareText, copyShareTextToClipboard } from '../services/shareService';
 import { exportWorkoutToObsidian } from '../services/obsidianService';
+import { awardWorkoutCompletionPoints, recordFeatureAction } from '../services/featureUnlockService';
 
 export function useWorkoutCompletion() {
   const { t, i18n } = useTranslation();
@@ -73,7 +74,7 @@ export function useWorkoutCompletion() {
     }
   }, []);
 
-  // Completion Data check & Obsidian export
+  // Completion Data check & Obsidian export & Point award
   useEffect(() => {
     if (!completionData) {
       router.replace('/(tabs)/history');
@@ -81,6 +82,9 @@ export function useWorkoutCompletion() {
       exportWorkoutToObsidian(completionData.workout.id).catch(err => {
         console.warn('Obsidian export failed in background:', err);
       });
+      // ワークアウト完了ポイント (+2P) および 初回/デイリーポイント付与
+      recordFeatureAction('workout');
+      awardWorkoutCompletionPoints();
     }
   }, [completionData]);
 

@@ -6,6 +6,11 @@ import { useTranslation } from 'react-i18next';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore, FeatureId } from '../src/store/settingsStore';
+import { useFeatureUnlockStore, isFeatureUnlockedHelper } from '../src/store/featureUnlockStore';
+import { ALL_FEATURE_IDS, getUnlockCost } from '../src/constants/featureUnlockConstants';
+import { InitialFeatureSelectModal } from '../components/InitialFeatureSelectModal';
+import { FeatureUnlockModal } from '../components/FeatureUnlockModal';
+import { PointBadge } from '../components/PointBadge';
 import { useLifelogStore } from '../src/store/lifelogStore';
 import { useNutritionStore } from '../src/store/nutritionStore';
 import { useBodyStore } from '../src/store/bodyStore';
@@ -53,6 +58,20 @@ export default function DashboardScreen() {
   const latestBodyLog = useBodyStore(state => state.latestLog);
   const savedBodyMeasurements = useBodyStore(state => state.savedMeasurements);
   const loadBodyData = useBodyStore(state => state.loadBodyData);
+
+  // Feature Unlock Store
+  const pointsBalance = useFeatureUnlockStore(state => state.pointsBalance);
+  const unlockedFeatures = useFeatureUnlockStore(state => state.unlockedFeatures);
+  const forceUnlockAll = useFeatureUnlockStore(state => state.forceUnlockAll);
+  const hasCompletedInitialSelection = useFeatureUnlockStore(state => state.hasCompletedInitialSelection);
+  const setInitialFeatures = useFeatureUnlockStore(state => state.setInitialFeatures);
+  const pendingUnlockFeature = useFeatureUnlockStore(state => state.pendingUnlockFeature);
+  const setPendingUnlockFeature = useFeatureUnlockStore(state => state.setPendingUnlockFeature);
+  const pendingPointNotice = useFeatureUnlockStore(state => state.pendingPointNotice);
+  const clearPendingPointNotice = useFeatureUnlockStore(state => state.clearPendingPointNotice);
+
+  const isPremium = settings.isPremium;
+  const isEarlyAdopter = settings.isEarlyAdopter;
 
   // Local state for onboarding/modals
   const [isSendingCrash, setIsSendingCrash] = useState(false);
@@ -661,6 +680,22 @@ export default function DashboardScreen() {
       {/* Date Switcher Header */}
       <LifelogDateHeader style={{ paddingTop: insets.top + 16, paddingBottom: 16 }} type="workout" />
 
+      {/* P-Points & Status Bar */}
+      <View style={styles.pointStatusBar}>
+        <View style={styles.pointStatusLeft}>
+          <Text style={styles.pointStatusLabel}>Pポイント残高:</Text>
+          <PointBadge />
+        </View>
+        <TouchableOpacity
+          style={styles.manageFeaturesLink}
+          onPress={() => router.push('/settings/feature-management')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.manageFeaturesLinkText}>機能の追加・管理</Text>
+          <Ionicons name="chevron-forward" size={14} color={Theme.colors.primary} />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         
         {/* Loading Indicator */}
@@ -673,7 +708,13 @@ export default function DashboardScreen() {
           const activeOrder: FeatureId[] = featureOrder && featureOrder.length > 0 
             ? featureOrder 
             : ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'habit', 'voice_ai'];
-          const visibleFeatures = activeOrder.filter((id: FeatureId) =>
+          
+          // 解放されている機能のみフィルタリング
+          const unlockedList = activeOrder.filter((id: FeatureId) =>
+            isFeatureUnlockedHelper(id, unlockedFeatures, forceUnlockAll, isPremium, isEarlyAdopter)
+          );
+
+          const visibleFeatures = unlockedList.filter((id: FeatureId) =>
             featureVisibility ? featureVisibility[id] !== false : true
           );
 
@@ -691,6 +732,31 @@ export default function DashboardScreen() {
 
           return visibleFeatures.map((id) => renderFeatureCard(id as FeatureId));
         })()}
+
+        {/* Unlock New Feature CTA Card (When not all features are unlocked) */}
+        {!isPremium && !isEarlyAdopter && !forceUnlockAll && unlockedFeatures.length < ALL_FEATURE_IDS.length && (
+          <TouchableOpacity
+            style={styles.unlockCtaCard}
+            activeOpacity={0.8}
+            onPress={() => router.push('/settings/feature-management')}
+          >
+            <View style={styles.unlockCtaIconBg}>
+              <Ionicons name="key-outline" size={24} color="#ffd700" />
+            </View>
+            <View style={{ flex: 1, marginRight: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.unlockCtaTitle}>新しい機能を開放する</Text>
+                <View style={styles.unlockCtaBadge}>
+                  <Text style={styles.unlockCtaBadgeText}>あと {ALL_FEATURE_IDS.length - unlockedFeatures.length} 機能</Text>
+                </View>
+              </View>
+              <Text style={styles.unlockCtaDesc}>
+                貯まった Pポイントを使って、好きな機能をアンロックできます（次: {getUnlockCost(unlockedFeatures.length)} P）
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#ffd700" />
+          </TouchableOpacity>
+        )}
 
         {/* App Settings Access Card */}
         <TouchableOpacity 
@@ -713,6 +779,59 @@ export default function DashboardScreen() {
         </TouchableOpacity>
 
       </ScrollView>
+
+      {/* Initial Feature Selection Modal (For new users / before selecting 2 features) */}
+      <InitialFeatureSelectModal
+        visible={!settings.needsUnitSelection && !settings.needsStyleSelection && !isPremium && !isEarlyAdopter && !hasCompletedInitialSelection}
+        onComplete={(selected) => {
+          setInitialFeatures(selected);
+          // 選択した2つを表示状態にも同期
+          const newVisibility: Record<FeatureId, boolean> = {
+            workout: selected.includes('workout'),
+            water: selected.includes('water'),
+            nutrition: selected.includes('nutrition'),
+            body: selected.includes('body'),
+            routine: selected.includes('routine'),
+            habit: selected.includes('habit'),
+            zikan: selected.includes('zikan'),
+            voice_ai: selected.includes('voice_ai'),
+          };
+          useSettingsStore.getState().setFeatureConfig(
+            [...selected, ...ALL_FEATURE_IDS.filter(id => !selected.includes(id))],
+            newVisibility
+          );
+        }}
+      />
+
+      {/* Feature Unlock Celebration Modal */}
+      <FeatureUnlockModal
+        featureId={pendingUnlockFeature}
+        onClose={() => setPendingUnlockFeature(null)}
+      />
+
+      {/* Point Award Notice Modal / Toast */}
+      {pendingPointNotice && (
+        <Modal visible={!!pendingPointNotice} transparent={true} animationType="fade">
+          <TouchableOpacity
+            style={styles.pointNoticeBg}
+            activeOpacity={1}
+            onPress={clearPendingPointNotice}
+          >
+            <View style={styles.pointNoticeCard}>
+              <View style={styles.pointNoticeIcon}>
+                <Ionicons name="diamond" size={28} color="#ffd700" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.pointNoticeTitle}>{pendingPointNotice.title}</Text>
+                <Text style={styles.pointNoticeDesc}>{pendingPointNotice.desc || `+${pendingPointNotice.points} P 獲得！`}</Text>
+              </View>
+              <TouchableOpacity style={styles.pointNoticeBtn} onPress={clearPendingPointNotice}>
+                <Text style={styles.pointNoticeBtnText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
 
       {/* Onboarding Unit Selection Modal */}
       <Modal visible={settings.needsUnitSelection} animationType="fade" transparent={true}>
@@ -1096,5 +1215,145 @@ const styles = StyleSheet.create({
   crashConsentBtn: { backgroundColor: '#007aff', paddingVertical: 16, borderRadius: Theme.borderRadius.md, alignItems: 'center', width: '100%', justifyContent: 'center' },
   crashConsentBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   crashDeclineBtn: { backgroundColor: '#121212', paddingVertical: 12, borderRadius: Theme.borderRadius.md, alignItems: 'center', borderWidth: 1, borderColor: '#262626', width: '100%', justifyContent: 'center' },
-  crashDeclineBtnText: { color: '#555555', fontSize: 14, fontWeight: 'bold' }
+  crashDeclineBtnText: { color: '#555555', fontSize: 14, fontWeight: 'bold' },
+
+  // P-Point Status Bar
+  pointStatusBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  pointStatusLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  pointStatusLabel: {
+    fontSize: 12,
+    color: Theme.colors.textMuted,
+    fontWeight: '500',
+  },
+  manageFeaturesLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(79, 172, 254, 0.1)',
+  },
+  manageFeaturesLinkText: {
+    fontSize: 12,
+    color: Theme.colors.primary,
+    fontWeight: '600',
+  },
+
+  // Unlock CTA Card
+  unlockCtaCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 215, 0, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.25)',
+    borderRadius: 14,
+    padding: 14,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  unlockCtaIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  unlockCtaTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  unlockCtaBadge: {
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 6,
+  },
+  unlockCtaBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#ffd700',
+  },
+  unlockCtaDesc: {
+    fontSize: 11,
+    color: Theme.colors.textMuted,
+    lineHeight: 15,
+    marginTop: 3,
+  },
+
+  // Point Award Notice Modal
+  pointNoticeBg: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingTop: 80,
+    paddingHorizontal: 16,
+  },
+  pointNoticeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Theme.colors.card,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.4)',
+    shadowColor: '#ffd700',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+    maxWidth: 420,
+    width: '100%',
+  },
+  pointNoticeIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  pointNoticeTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#ffd700',
+    marginBottom: 2,
+  },
+  pointNoticeDesc: {
+    fontSize: 12,
+    color: Theme.colors.text,
+  },
+  pointNoticeBtn: {
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    borderColor: 'rgba(255, 215, 0, 0.4)',
+    borderWidth: 1,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  pointNoticeBtnText: {
+    color: '#ffd700',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
 });

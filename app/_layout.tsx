@@ -28,6 +28,7 @@ import {
   initStanceSettings,
   initBackgroundSyncServices,
 } from '../src/services/appInitializationService';
+import { initFeatureUnlockState } from '../src/services/featureUnlockService';
 
 // アプリの起動時にグローバルエラーハンドラを登録
 registerGlobalErrorHandler();
@@ -159,6 +160,9 @@ export default function RootLayout() {
       // 6. スタンス設定の移行・読み込み
       const finalStances = await initStanceSettings(storedSettings);
       useSettingsStore.getState().loadCustomStances(finalStances);
+
+      // 6.5 機能開放＆Pポイントの初期化とレトロアクティブ計算
+      await initFeatureUnlockState(storedSettings);
 
       console.log('Database initialized successfully with settings', storedSettings);
       setDbReady(true);
