@@ -7,6 +7,7 @@ export type FeatureId = 'workout' | 'water' | 'nutrition' | 'zikan' | 'routine' 
 export interface ApplicationSettings {
   defaultRest: number;
   autoRest: boolean;
+  timerNotification: boolean;
   timerVibrate: boolean;
   weightUnit: 'kg' | 'lbs';
   needsUnitSelection: boolean;
@@ -38,6 +39,7 @@ export interface ApplicationSettings {
 export interface LoadSettingsPayload {
   defaultRest: number;
   autoRest: boolean;
+  timerNotification?: boolean;
   timerVibrate: boolean;
   weightUnit: 'kg' | 'lbs';
   needsUnitSelection?: boolean;
@@ -61,6 +63,7 @@ export interface LoadSettingsPayload {
 export interface SettingsState {
   settings: ApplicationSettings;
   loadSettings: (payload: LoadSettingsPayload) => void;
+  setTimerNotification: (timerNotification: boolean) => void;
   setKeepAwake: (keepAwake: boolean) => void;
   setAlwaysOneSet: (alwaysOneSet: boolean) => void;
   setBackgroundTheme: (theme: 'dark' | 'pureBlack') => void;
@@ -85,6 +88,7 @@ export interface SettingsState {
 export const initialSettings: ApplicationSettings = {
   defaultRest: 90,
   autoRest: true,
+  timerNotification: true,
   timerVibrate: true,
   weightUnit: 'kg',
   needsUnitSelection: false,
@@ -129,6 +133,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const {
       defaultRest,
       autoRest,
+      timerNotification,
       timerVibrate,
       weightUnit,
       needsUnitSelection,
@@ -148,6 +153,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       featureVisibility,
       aiCompanionMemory,
     } = payload;
+    const finalTimerNotification = timerNotification !== undefined ? timerNotification : state.settings.timerNotification;
     const finalNeedsUnitSelection = needsUnitSelection !== undefined ? needsUnitSelection : state.settings.needsUnitSelection;
     const finalBodyWeight = bodyWeight !== undefined ? bodyWeight : state.settings.bodyWeight;
     const finalNeedsStyleSelection = needsStyleSelection !== undefined ? needsStyleSelection : state.settings.needsStyleSelection;
@@ -171,6 +177,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         ...state.settings,
         defaultRest,
         autoRest,
+        timerNotification: finalTimerNotification,
         timerVibrate,
         weightUnit,
         needsUnitSelection: finalNeedsUnitSelection,
@@ -192,6 +199,10 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       }
     };
   }),
+
+  setTimerNotification: (timerNotification: boolean) => set((state) => ({
+    settings: { ...state.settings, timerNotification }
+  })),
 
   setBackgroundTheme: (theme: 'dark' | 'pureBlack') => {
     saveSetting('background_theme', theme).catch(e => console.warn('Failed to save background_theme setting', e));

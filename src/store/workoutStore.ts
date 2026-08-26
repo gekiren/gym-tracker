@@ -406,8 +406,13 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   },
 
   startRestTimer: (seconds) => {
+    const settings = useSettingsStore.getState().settings;
+    if (settings.timerNotification) {
+      scheduleRestTimer(seconds);
+    } else {
+      cancelRestTimer();
+    }
     const endTime = Date.now() + seconds * 1000;
-    scheduleRestTimer(seconds);
     set({
       restTimer: { isActive: true, remaining: seconds, endTime }
     });
@@ -426,7 +431,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     
     // Reschedule notification
     cancelRestTimer();
-    if (newRemaining > 0) {
+    const settings = useSettingsStore.getState().settings;
+    if (newRemaining > 0 && settings.timerNotification) {
       scheduleRestTimer(newRemaining);
     }
 

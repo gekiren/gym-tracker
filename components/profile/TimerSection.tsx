@@ -8,6 +8,8 @@ const REST_OPTIONS = [30, 60, 90, 120, 150, 180, 240, 300]; // in seconds
 interface TimerSectionProps {
   autoRest: boolean;
   onUpdateAuto: (val: boolean) => void;
+  timerNotification: boolean;
+  onUpdateNotification: (val: boolean) => void;
   timerVibrate: boolean;
   onUpdateVibrate: (val: boolean) => void;
   keepAwake: boolean;
@@ -20,6 +22,8 @@ interface TimerSectionProps {
 export const TimerSection: React.FC<TimerSectionProps> = ({
   autoRest,
   onUpdateAuto,
+  timerNotification,
+  onUpdateNotification,
   timerVibrate,
   onUpdateVibrate,
   keepAwake,
@@ -51,6 +55,19 @@ export const TimerSection: React.FC<TimerSectionProps> = ({
           <Switch
             value={autoRest}
             onValueChange={onUpdateAuto}
+            trackColor={{ false: '#333', true: Theme.colors.primary }}
+            thumbColor={'#fff'}
+          />
+        </View>
+
+        <View style={styles.settingRow}>
+          <View style={{ flex: 1, paddingRight: 16 }}>
+            <Text style={styles.settingLabel}>{t('ui.profile.timer_notification')}</Text>
+            <Text style={styles.settingDesc}>{t('ui.profile.timer_notification_desc')}</Text>
+          </View>
+          <Switch
+            value={timerNotification}
+            onValueChange={onUpdateNotification}
             trackColor={{ false: '#333', true: Theme.colors.primary }}
             thumbColor={'#fff'}
           />
