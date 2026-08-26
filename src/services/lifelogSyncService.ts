@@ -238,6 +238,16 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
     }
 
     try {
+      const plansRow = await db.getFirstAsync<{ value: string }>(
+        "SELECT value FROM settings WHERE key = 'zikankanri_plans'"
+      );
+      data['zikankanri_plans'] = plansRow && plansRow.value ? JSON.parse(plansRow.value) : null;
+    } catch (e) {
+      console.warn('[getInitialDataForWebView] Failed to parse zikankanri_plans:', e);
+      data['zikankanri_plans'] = null;
+    }
+
+    try {
       const templatesRow = await db.getFirstAsync<{ value: string }>(
         "SELECT value FROM settings WHERE key = 'zikankanri_templates'"
       );
@@ -439,6 +449,13 @@ export const handleWebViewMessage = async (
       });
 
       await useLifelogStore.getState().loadTimeData(currentDate);
+    } 
+    
+    else if (key === 'zikankanri_plans') {
+      await db.runAsync(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES ('zikankanri_plans', ?)",
+        [value]
+      );
     } 
     
     else if (key === 'zikankanri_templates') {
