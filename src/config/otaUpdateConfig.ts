@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.20',
+  version: '2.0.21',
   title: {
-    ja: '📳 ルーティン管理のタイマーバイブレーション通知対応',
-    en: '📳 Timer Vibration Notification in Routine Tracker',
+    ja: '✨ ルーティン作成・編集画面のモダンUIデザイン刷新',
+    en: '✨ Modern UI Redesign for Routine Editor',
   },
   notes: {
     ja: [
-      'ルーティン実行時のタイマー終了時および残り3/2/1秒前のバイブレーション通知に対応しました。設定はルーティンごとにON/OFFを切り替えられます。',
+      'ルーティン作成・編集画面のUIをTreNoteの洗練されたモダンデザインに合わせて大幅刷新しました（カスタム画像ピッカー、iOS風トグルスイッチ、タスク番号付き2段カード、タスク追加ボタンなど）。',
     ],
     en: [
-      'Added countdown vibration alerts (3/2/1 sec before end and at 0 sec) for routine tracker tasks. Can be toggled per routine.',
+      'Redesigned the routine editor with a modern dark UI including a custom image picker, iOS-style toggle switches, streamlined task cards, and an enhanced Add Task button.',
     ],
   },
 };

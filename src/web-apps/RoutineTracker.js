@@ -121,125 +121,180 @@ export default `<!DOCTYPE html>
     (function() {
       if (window.__BACKGROUND_THEME__ === 'pureBlack') {
         var style = document.createElement('style');
-        style.innerHTML = 'body { background-color: #000000 !important; color: #ffffff !important; } .card, .routine-card, .routine-item, .item-card, div[class*="card"], .confirm-content { background-color: #080808 !important; border: 1px solid #1f1f1f !important; } .text-muted, small, span.sub { color: #888888 !important; }';
+        style.innerHTML = 'body { background-color: #000000 !important; color: #ffffff !important; } .card, .routine-card, .routine-item, .item-card, div[class*="card"], .confirm-content, .modal-content { background-color: #080808 !important; border: 1px solid #1f1f1f !important; } .task-card, .setting-row { background-color: #111113 !important; border-color: #222226 !important; } .form-input, .task-name-input, .task-time-input-min, .task-time-input-sec { background-color: #000000 !important; border-color: #2a2a2e !important; } .text-muted, small, span.sub { color: #888888 !important; }';
         document.head.appendChild(style);
       }
     })();
     </script>
     <style>
+:root {
+    --bg-color: #121212;
+    --card-bg: #1e1e24;
+    --card-inner-bg: #26262d;
+    --input-bg: #18181c;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --border-focus: #4facfe;
+    --primary-color: #2563eb;
+    --primary-gradient: linear-gradient(135deg, #4facfe 0%, #00c6fb 100%);
+    --danger-color: #ef4444;
+    --danger-bg: rgba(239, 68, 68, 0.15);
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0ab;
+    --text-muted: #71717a;
+    --radius-lg: 16px;
+    --radius-md: 10px;
+    --radius-sm: 6px;
+}
+
 body {
-    background-color: #121212;
-    color: #e0e0e0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     margin: 0;
-    padding: 20px;
+    padding: 20px 16px;
     display: flex;
     justify-content: center;
     min-height: 100vh;
     box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
 }
 
 #app {
     width: 100%;
     max-width: 480px;
-    /* スマホ向け幅 */
     padding-bottom: 80px;
-    /* FAB用スペース */
 }
 
-h1,
-h2 {
+h1, h2 {
     color: #ffffff;
     margin-bottom: 20px;
     text-align: center;
+    font-weight: 700;
+    letter-spacing: -0.3px;
 }
 
 /* Routine Card */
 .routine-card {
-    background: #333;
-    padding: 15px;
-    margin: 10px 0;
-    border-radius: 12px;
+    background: #1e1e24;
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     touch-action: manipulation;
     min-height: 80px;
-    /* Increased for image visibility */
     background-size: cover;
     background-position: center;
-    transition: transform 0.1s;
+    transition: transform 0.15s ease, border-color 0.2s;
 }
 
 .routine-card:active {
-    background: #444;
+    background: #282830;
     transform: scale(0.98);
 }
 
 .icon-btn {
     padding: 8px 12px;
     margin-left: 5px;
-    background: #444;
-    border: none;
+    background: #33333d;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: white;
-    border-radius: 6px;
-    font-size: 16px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.icon-btn:active {
+    background: #444452;
 }
 
 .delete-btn {
-    background: #c92a2a;
+    background: var(--danger-bg);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--danger-color);
 }
 
 /* FAB (Floating Action Button) */
 .floating-fab {
     position: fixed;
     bottom: 30px;
-    right: 30px;
-    width: 60px;
-    height: 60px;
-    border-radius: 30px;
-    background: #2563eb;
+    right: 24px;
+    width: 58px;
+    height: 58px;
+    border-radius: 29px;
+    background: var(--primary-gradient);
     color: white;
     border: none;
-    font-size: 24px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    font-size: 26px;
+    box-shadow: 0 6px 16px rgba(0, 198, 251, 0.35);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 100;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.floating-fab:active {
+    transform: scale(0.92);
 }
 
 /* Timer */
 #timer {
-    font-size: 64px;
-    font-weight: bold;
-    margin: 40px 0;
-    color: #51cf66;
+    font-size: 68px;
+    font-weight: 800;
+    margin: 36px 0;
+    color: #4cd964;
     text-align: center;
+    letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 20px rgba(76, 217, 100, 0.3);
 }
 
 .btn-large-primary {
     width: 100%;
-    padding: 20px;
-    background: #2563eb;
+    padding: 16px;
+    background: var(--primary-gradient);
     color: white;
     border: none;
-    border-radius: 12px;
-    font-size: 20px;
-    font-weight: bold;
+    border-radius: var(--radius-md);
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(79, 172, 254, 0.3);
+    transition: opacity 0.15s, transform 0.1s;
+}
+
+.btn-large-primary:active {
+    opacity: 0.9;
+    transform: scale(0.98);
 }
 
 .btn-large-secondary {
     width: 100%;
-    padding: 15px;
-    background: #444;
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    margin-top: 20px;
+    padding: 14px;
+    background: #2a2a32;
+    border: 1px solid var(--border-color);
+    color: #e0e0e8;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.btn-large-secondary:active {
+    background: #363640;
 }
 
 /* Modal */
@@ -249,11 +304,14 @@ h2 {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding-top: max(40px, 6vh);
+    padding-top: max(24px, 4vh);
+    padding-bottom: 24px;
     box-sizing: border-box;
     z-index: 1000;
     overflow-y: auto;
@@ -273,23 +331,35 @@ h2 {
 }
 
 .modal-content {
-    background-color: #1e1e1e;
-    padding: 25px;
-    border-radius: 16px;
-    width: 90%;
-    max-width: 400px;
-    max-height: 85vh;
+    background-color: #1c1c22;
+    padding: 24px 20px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    width: 92%;
+    max-width: 440px;
+    max-height: 90vh;
     overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.65);
+    box-sizing: border-box;
+}
+
+.modal-content h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-top: 0;
+    margin-bottom: 18px;
+    color: #ffffff;
+    letter-spacing: -0.2px;
 }
 
 .confirm-content {
-    background-color: #1e1e1e;
+    background-color: #1c1c22;
     padding: 24px;
-    border-radius: 16px;
-    width: 85%;
+    border-radius: 18px;
+    width: 88%;
     max-width: 340px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
-    border: 1px solid #333;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     box-sizing: border-box;
 }
@@ -308,7 +378,7 @@ h2 {
 }
 
 .confirm-message {
-    color: #d0d0d0;
+    color: #c0c0cb;
     font-size: 0.95rem;
     line-height: 1.5;
     margin: 0 0 20px 0;
@@ -324,7 +394,7 @@ h2 {
     flex: 1;
     padding: 12px 16px;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
@@ -338,35 +408,46 @@ h2 {
 
 .modal-actions {
     display: flex;
-    gap: 10px;
-    margin-top: 20px;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .modal-actions button {
     flex: 1;
-    padding: 12px;
+    padding: 14px;
     border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    color: white;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.15s;
+}
+
+.modal-actions button:active {
+    transform: scale(0.98);
 }
 
 .btn-save {
-    background: #2563eb;
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: 0 4px 14px rgba(79, 172, 254, 0.35);
 }
 
 .btn-cancel {
-    background: #444446;
-    color: #ffffff;
+    background: #2a2a32;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #d0d0d8;
 }
 
 .btn-danger {
-    background: #dc2626;
+    background: var(--danger-color);
     color: #ffffff;
 }
 
 .btn-confirm-ok {
-    background: #2563eb;
+    background: var(--primary-gradient);
     color: #ffffff;
 }
 
@@ -374,63 +455,418 @@ h2 {
     text-align: center;
 }
 
-/* Inputs */
-.full-width-input {
-    width: 100%;
-    padding: 12px;
-    background: #333;
-    border: 1px solid #444;
-    color: white;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    box-sizing: border-box;
+/* Modern Form Controls */
+.form-group {
+    margin-bottom: 16px;
 }
 
-.task-input-row {
+.form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.full-width-input,
+.form-input {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: #ffffff;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.full-width-input:focus,
+.form-input:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.25);
+    outline: none;
+}
+
+.full-width-input::placeholder,
+.form-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Custom Image Upload Box */
+.image-upload-section {
+    margin-bottom: 16px;
+}
+
+.custom-file-upload-btn {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.custom-file-upload-btn:active {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--border-focus);
+    color: #ffffff;
+}
+
+.image-preview-wrapper {
+    position: relative;
+    margin-top: 10px;
+    background: #141418;
+    border-radius: var(--radius-md);
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.image-preview-wrapper img {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.image-preview-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.image-preview-info span {
+    font-size: 12px;
+    color: #a0a0ab;
+}
+
+.image-action-btns {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-mini-action {
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #2a2a32;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.btn-mini-action.danger {
+    background: var(--danger-bg);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--danger-color);
+}
+
+/* Settings Switch Rows (iOS Style) */
+.settings-group {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    margin-bottom: 12px;
-    background: #252525;
-    padding: 10px;
-    border-radius: 8px;
+    margin-bottom: 20px;
 }
 
-.task-options-row {
+.setting-row {
+    background: var(--card-inner-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.setting-row:active {
+    background: #2e2e38;
+}
+
+.setting-info {
+    flex: 1;
+}
+
+.setting-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    display: block;
+    line-height: 1.3;
+}
+
+.setting-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 2px;
+    line-height: 1.3;
+}
+
+/* Toggle Switch Element */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 26px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #3e3e48;
+    border-radius: 26px;
+    transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-slider::before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: var(--primary-gradient);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(18px);
+}
+
+/* Task Cards */
+.task-list-section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 8px;
 }
 
-.task-input-row input {
-    background: #333;
-    border: 1px solid #444;
-    color: white;
-    padding: 8px;
+.task-list-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.task-card {
+    background: var(--card-inner-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: border-color 0.2s;
+}
+
+.task-card:focus-within {
+    border-color: rgba(79, 172, 254, 0.4);
+}
+
+.task-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.task-index-badge {
+    width: 22px;
+    height: 22px;
     border-radius: 6px;
+    background: rgba(79, 172, 254, 0.15);
+    color: #4facfe;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .task-name-input {
-    flex-grow: 2;
+    flex: 1;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: #ffffff;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.task-name-input:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2);
+    outline: none;
+}
+
+.task-name-input::placeholder {
+    color: var(--text-muted);
+}
+
+.task-delete-btn {
+    width: 32px;
+    height: 32px;
+    background: var(--danger-bg);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: var(--danger-color);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: background 0.15s, transform 0.1s;
+}
+
+.task-delete-btn:active {
+    background: rgba(239, 68, 68, 0.3);
+    transform: scale(0.92);
+}
+
+.task-card-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.task-image-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.task-img-btn {
+    padding: 5px 10px;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.task-img-btn:active {
+    background: #2e2e38;
+}
+
+.task-thumb-img {
+    height: 30px;
+    width: 30px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+}
+
+.task-time-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .task-time-input-min,
 .task-time-input-sec {
-    width: 50px;
+    width: 44px;
+    padding: 5px 4px;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: #ffffff;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
     text-align: center;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
 }
 
-.remove-task-btn {
-    background: #ff6b6b;
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 6px;
-    color: white;
-    font-size: 20px;
+.task-time-input-min:focus,
+.task-time-input-sec:focus {
+    border-color: var(--border-focus);
+    outline: none;
+}
+
+.task-time-unit {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-right: 4px;
+}
+
+.task-time-unit:last-child {
+    margin-right: 0;
+}
+
+/* + Add Task Button */
+.add-task-btn {
+    width: 100%;
+    padding: 12px;
+    background: rgba(79, 172, 254, 0.08);
+    border: 1px dashed #4facfe;
+    border-radius: var(--radius-md);
+    color: #4facfe;
+    font-size: 14px;
+    font-weight: 700;
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    margin-top: 6px;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+}
+
+.add-task-btn:active {
+    background: rgba(79, 172, 254, 0.18);
+    transform: scale(0.99);
 }
 
 .chart-container {
@@ -535,46 +971,86 @@ h2 {
         <!-- ルーティン作成モーダル -->
         <div id="create-modal" class="modal hidden">
             <div class="modal-content">
-                <h2 id="modal-title">Create Routine</h2>
+                <h2 id="modal-title">ルーティン作成</h2>
                 <input type="hidden" id="edit-routine-id">
-                <input type="text" id="new-routine-name" placeholder="ルーティン名" class="full-width-input">
+                
+                <div class="form-group">
+                    <label class="form-label" for="new-routine-name">ルーティン名</label>
+                    <input type="text" id="new-routine-name" placeholder="例: 朝のストレッチ" class="form-input">
+                </div>
 
                 <!-- Image Upload -->
-                <div style="margin-bottom: 15px;">
-                    <label style="display:block; margin-bottom:5px; color:#aaa; font-size:14px;">画像を選択 (任意)</label>
-                    <input type="file" id="routine-image-input" accept="image/*" style="color:#ccc;">
-                    <div id="image-preview-container" style="margin-top:10px; display:none;">
-                        <img id="image-preview" src=""
-                            style="max-width:100%; max-height:200px; border-radius:8px; object-fit:cover;">
-                        <button onclick="clearImage()"
-                            style="margin-top:5px; background:#444; color:white; border:none; padding:5px 10px; border-radius:4px;">削除</button>
+                <div class="image-upload-section">
+                    <label class="form-label">カバー画像 (任意)</label>
+                    <input type="file" id="routine-image-input" accept="image/*" style="display: none;">
+                    <div id="image-upload-trigger-btn" class="custom-file-upload-btn" onclick="document.getElementById('routine-image-input').click()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <span>画像を選択 / アップロード</span>
+                    </div>
+                    <div id="image-preview-container" class="image-preview-wrapper" style="display: none;">
+                        <img id="image-preview" src="" alt="Preview">
+                        <div class="image-preview-info">
+                            <span>カバー画像を設定中</span>
+                            <div class="image-action-btns">
+                                <button type="button" class="btn-mini-action" onclick="document.getElementById('routine-image-input').click()">変更</button>
+                                <button type="button" class="btn-mini-action danger" onclick="clearImage()">削除</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px; color: #ccc;">
-                    <input type="checkbox" id="auto-update-estimates" checked style="width: auto; margin: 0;">
-                    <label for="auto-update-estimates" style="font-size: 14px;">完了後に時間を自動更新する</label>
+                <!-- Settings Switches (iOS Style) -->
+                <div class="settings-group">
+                    <label class="setting-row" for="auto-update-estimates">
+                        <div class="setting-info">
+                            <span class="setting-title">完了後に時間を自動更新</span>
+                            <span class="setting-desc">実績時間を次回の目安時間に反映します</span>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="auto-update-estimates" checked>
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </label>
+
+                    <label class="setting-row" for="auto-advance">
+                        <div class="setting-info">
+                            <span class="setting-title">自動で次のタスクに進む</span>
+                            <span class="setting-desc">タイマー終了時に自動で次タスクへ切り替え</span>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="auto-advance">
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </label>
+
+                    <label class="setting-row" for="enable-vibration">
+                        <div class="setting-info">
+                            <span class="setting-title">バイブレーション通知</span>
+                            <span class="setting-desc">タイマー終了時に振動でお知らせします</span>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="enable-vibration" checked>
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </label>
                 </div>
 
-                <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px; color: #ccc;">
-                    <input type="checkbox" id="auto-advance" style="width: auto; margin: 0;">
-                    <label for="auto-advance" style="font-size: 14px;">時間になったら自動で次のタスクに移る</label>
+                <!-- Task List Section -->
+                <div class="task-list-section-header">
+                    <span class="task-list-section-title">タスク一覧</span>
                 </div>
-
-                <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px; color: #ccc;">
-                    <input type="checkbox" id="enable-vibration" checked style="width: auto; margin: 0;">
-                    <label for="enable-vibration" style="font-size: 14px;">タイマー終了時にバイブで通知する</label>
-                </div>
-
                 <div id="new-task-list" class="task-list-container">
                     <!-- タスク入力欄 -->
                 </div>
 
-                <button id="add-task-btn" onclick="addTaskInput()" class="btn-secondary">+ Add Task</button>
+                <button id="add-task-btn" type="button" onclick="addTaskInput()" class="add-task-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>タスクを追加</span>
+                </button>
 
                 <div class="modal-actions">
-                    <button onclick="closeModal()" class="btn-cancel">Cancel</button>
-                    <button onclick="saveNewRoutine()" class="btn-save">Save</button>
+                    <button type="button" onclick="closeModal()" class="btn-cancel">キャンセル</button>
+                    <button type="button" onclick="saveNewRoutine()" class="btn-save">保存する</button>
                 </div>
             </div>
         </div>
@@ -1026,6 +1502,7 @@ function loadRoutines() {
 // --- Create/Edit Modal ---
 const modal = document.getElementById('create-modal');
 const newTaskList = document.getElementById('new-task-list');
+
 // Reuse resizeImage, but specialized for task inputs
 async function handleTaskImageInput(input, imgPreview) {
     if (input.files && input.files[0]) {
@@ -1041,6 +1518,35 @@ async function handleTaskImageInput(input, imgPreview) {
     }
 }
 
+function removeTaskImage(img) {
+    img.src = '';
+    img.style.display = 'none';
+    const picker = img.closest('.task-image-picker');
+    if (picker) {
+        const fileInput = picker.querySelector('input[type="file"]');
+        if (fileInput) {
+            fileInput.value = '';
+            fileInput.removeAttribute('data-base64');
+        }
+    }
+}
+
+function removeTaskRow(btn) {
+    const card = btn.closest('.task-card') || btn.closest('.task-input-row');
+    if (card) {
+        card.remove();
+        updateTaskIndices();
+    }
+}
+
+function updateTaskIndices() {
+    const rows = newTaskList.querySelectorAll('.task-card');
+    rows.forEach((row, index) => {
+        const badge = row.querySelector('.task-index-badge');
+        if (badge) badge.innerText = String(index + 1);
+    });
+}
+
 document.getElementById('create-routine-btn').onclick = () => openModal();
 
 // --- Image Handling ---
@@ -1048,12 +1554,14 @@ let currentImageBase64 = null;
 
 function handleImagePreview(base64) {
     const previewContainer = document.getElementById('image-preview-container');
+    const triggerBtn = document.getElementById('image-upload-trigger-btn');
     const previewImg = document.getElementById('image-preview');
 
     if (base64) {
         currentImageBase64 = base64;
         previewImg.src = base64;
-        previewContainer.style.display = 'block';
+        previewContainer.style.display = 'flex';
+        if (triggerBtn) triggerBtn.style.display = 'none';
     } else {
         clearImage();
     }
@@ -1061,9 +1569,14 @@ function handleImagePreview(base64) {
 
 function clearImage() {
     currentImageBase64 = null;
-    document.getElementById('routine-image-input').value = ""; // Reset file input
-    document.getElementById('image-preview').src = "";
-    document.getElementById('image-preview-container').style.display = 'none';
+    const fileInput = document.getElementById('routine-image-input');
+    if (fileInput) fileInput.value = ""; // Reset file input
+    const previewImg = document.getElementById('image-preview');
+    if (previewImg) previewImg.src = "";
+    const previewContainer = document.getElementById('image-preview-container');
+    if (previewContainer) previewContainer.style.display = 'none';
+    const triggerBtn = document.getElementById('image-upload-trigger-btn');
+    if (triggerBtn) triggerBtn.style.display = 'flex';
 }
 
 function resizeImage(file) {
@@ -1162,26 +1675,34 @@ function openEditModal(id) {
 function addTaskInput(name = "", seconds = 300, imageBase64 = null) {
     const min = Math.floor(seconds / 60);
     const sec = seconds % 60;
+    const taskCount = newTaskList.querySelectorAll('.task-card').length + 1;
 
     const div = document.createElement('div');
-    div.className = 'task-input-row';
+    div.className = 'task-card task-input-row';
     div.innerHTML = \`
-        <div style="width:100%;">
-            <input type="text" class="task-name-input full-width" placeholder="タスク名" value="\${name}" style="margin-bottom:0;">
+        <div class="task-card-header">
+            <div class="task-index-badge">\${taskCount}</div>
+            <input type="text" class="task-name-input" placeholder="タスク名 (例: ストレッチ)" value="\${name}">
+            <button type="button" class="task-delete-btn remove-task-btn" onclick="removeTaskRow(this)" title="削除">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
         </div>
         
-        <div class="task-options-row">
-            <div style="display:flex; align-items:center; gap:8px;">
-                <button type="button" class="icon-btn" onclick="this.nextElementSibling.click()" style="padding:6px 10px; font-size:16px;">📷</button>
-                <input type="file" accept="image/*" style="display:none;" onchange="handleTaskImageInput(this, this.parentNode.nextElementSibling)">
-                <img src="\${imageBase64 || ''}" style="height:35px; width:35px; object-fit:cover; border-radius:4px; display:\${imageBase64 ? 'block' : 'none'}; cursor:pointer;" onclick="this.src=''; this.style.display='none'; this.previousElementSibling.previousElementSibling.setAttribute('data-base64', '');">
+        <div class="task-card-body">
+            <div class="task-image-picker">
+                <button type="button" class="task-img-btn" onclick="this.nextElementSibling.click()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                    <span>画像</span>
+                </button>
+                <input type="file" accept="image/*" style="display:none;" onchange="handleTaskImageInput(this, this.parentNode.querySelector('.task-thumb-img'))">
+                <img class="task-thumb-img" src="\${imageBase64 || ''}" style="display:\${imageBase64 ? 'block' : 'none'};" title="タップして画像を削除" onclick="removeTaskImage(this)">
             </div>
 
-            <div style="display:flex; align-items:center; gap:5px;">
-                <input type="tel" class="task-time-input-min" placeholder="分" value="\${min}">
-                <span>:</span>
-                <input type="tel" class="task-time-input-sec" placeholder="秒" value="\${sec}">
-                <button class="remove-task-btn" onclick="this.closest('.task-input-row').remove()">×</button>
+            <div class="task-time-wrapper">
+                <input type="tel" class="task-time-input-min" placeholder="0" value="\${min}">
+                <span class="task-time-unit">分</span>
+                <input type="tel" class="task-time-input-sec" placeholder="0" value="\${sec}">
+                <span class="task-time-unit">秒</span>
             </div>
         </div>
     \`;
@@ -1189,7 +1710,7 @@ function addTaskInput(name = "", seconds = 300, imageBase64 = null) {
     // Initialize data attribute if existing image
     if (imageBase64) {
         const fileInput = div.querySelector('input[type="file"]');
-        fileInput.setAttribute('data-base64', imageBase64);
+        if (fileInput) fileInput.setAttribute('data-base64', imageBase64);
     }
 
     newTaskList.appendChild(div);
