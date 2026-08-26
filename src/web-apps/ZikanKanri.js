@@ -123,6 +123,8 @@ export default `<!DOCTYPE html>
   --surface-color: #1E1E1E;
   --primary-color: #6d28d9;
   --primary-variant: #3700B3;
+  --plan-color: #2563EB;
+  --plan-variant: #1D4ED8;
   --secondary-color: #03DAC6;
   --text-primary: #FFFFFF;
   --text-secondary: #B0B0B0;
@@ -169,7 +171,6 @@ h1 {
   margin: 0 auto;
   padding: 16px;
   padding-bottom: 80px;
-  /* Space for FAB or footer */
 }
 
 /* Cards */
@@ -198,40 +199,42 @@ textarea {
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 1rem;
-  color-scheme: dark;
+  box-sizing: border-box;
 }
 
 input:focus,
-select:focus {
-  outline: 2px solid var(--primary-color);
-  border-color: transparent;
-}
-
-label {
-  display: block;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  margin-bottom: 4px;
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
 }
 
 /* Buttons */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   width: 100%;
-  padding: 14px;
+  padding: 12px;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
+  text-align: center;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn:active {
+  transform: scale(0.98);
 }
 
 .btn-primary {
   background-color: var(--primary-color);
-  color: #000;
+  color: var(--text-primary);
+}
+
+.btn-plan {
+  background-color: var(--plan-color);
+  color: var(--text-primary);
 }
 
 .btn-secondary {
@@ -240,14 +243,10 @@ label {
   color: var(--primary-color);
 }
 
-.btn:active {
-  opacity: 0.8;
-}
-
-/* Utility Classes */
+/* Flex utilities */
 .flex-row {
   display: flex;
-  gap: 8px;
+  gap: var(--spacing-unit);
   align-items: center;
 }
 
@@ -259,32 +258,44 @@ label {
   display: none !important;
 }
 
-/* List Items */
-.log-item {
+/* Mode Switch Segmented Control */
+.mode-tab-group {
   display: flex;
-  justify-content: space-between;
-  padding: 12px 0;
-  border-bottom: 1px solid #333;
+  background-color: #181818;
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 16px;
+  border: 1px solid #333;
+  gap: 4px;
 }
 
-.log-item:last-child {
-  border-bottom: none;
-}
-
-.time-badge {
-  background-color: #333;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 0.9rem;
-}
-
-/* Sliders for Weight */
-.slider-container {
+.mode-tab {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 7px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  justify-content: center;
+  gap: 6px;
+}
+
+.mode-tab.active-actual {
+  background-color: var(--primary-color);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(109, 40, 217, 0.4);
+}
+
+.mode-tab.active-plan {
+  background-color: var(--plan-color);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
 }
 
 /* Tags */
@@ -292,11 +303,12 @@ label {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .tag-chip {
   background-color: #2C2C2C;
+  color: var(--text-primary);
   border: 1px solid #444;
   padding: 6px 12px;
   border-radius: 16px;
@@ -305,29 +317,19 @@ label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  transition: all 0.2s;
 }
 
 .tag-chip.selected {
   background-color: var(--primary-color);
-  color: #000;
+  color: #fff;
   border-color: var(--primary-color);
 }
 
-.tag-chip .delete-btn {
-  color: var(--text-secondary);
-  font-weight: bold;
-  font-size: 1.1rem;
-  padding: 0 2px;
-  line-height: 1;
-  transition: color 0.2s;
-}
-
-.tag-chip .delete-btn:hover {
-  color: var(--error-color);
-}
-
-.no-margin {
-  margin-bottom: 0 !important;
+.tag-chip.plan-selected {
+  background-color: var(--plan-color);
+  color: #fff;
+  border-color: var(--plan-color);
 }
 
 /* Simultaneous rows */
@@ -360,16 +362,184 @@ label {
   color: var(--primary-color);
 }
 
-/* Pie Chart */
+/* Log Item & Plan Item */
+.log-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background-color: #262626;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border-left: 4px solid var(--primary-color);
+}
+
+.plan-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background-color: rgba(37, 99, 235, 0.08);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  border-left: 4px solid var(--plan-color);
+}
+
+.time-badge {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #a78bfa;
+  font-family: monospace;
+}
+
+.plan-time-badge {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #93c5fd;
+  font-family: monospace;
+}
+
+.btn-copy-plan {
+  background-color: #059669;
+  border: 1px solid #10b981;
+  color: #ffffff;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: opacity 0.2s;
+  width: auto;
+  margin-right: 6px;
+  margin-bottom: 0;
+}
+
+.btn-copy-plan:active {
+  opacity: 0.8;
+}
+
+/* Summary & Habit Score Cards */
+.summary-nav-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 8px;
+}
+
+.summary-nav-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.summary-nav-btn.active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.score-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.score-card {
+  background: #262626;
+  border-radius: 8px;
+  padding: 10px 6px;
+  text-align: center;
+  border: 1px solid #383838;
+}
+
+.score-card .val {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #a78bfa;
+}
+
+.score-card .lbl {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* Plan vs Actual Comparison Table */
+.diff-badge {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.diff-badge.match { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
+.diff-badge.short { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
+.diff-badge.over { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; }
+.diff-badge.unplanned { background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid #ec4899; }
+.diff-badge.pending { background: rgba(107, 114, 128, 0.2); color: #9ca3af; border: 1px solid #6b7280; }
+
+.compare-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #2e2e2e;
+}
+
+.compare-row:last-child {
+  border-bottom: none;
+}
+
+.compare-left {
+  flex: 1;
+}
+
+.compare-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.compare-meta {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.compare-right {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+/* Pie Chart Container */
 .pie-chart-container {
   display: flex;
   justify-content: center;
-  margin: 20px 0;
+  margin: 16px 0;
 }
 
 .pie-chart {
   width: 100%;
-  max-width: 300px;
+  max-width: 320px;
   position: relative;
 }
 
@@ -380,7 +550,7 @@ label {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.75);
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -513,6 +683,7 @@ label {
 .edit-tag-delete-btn:hover {
   opacity: 0.8;
 }
+
 header {
   display: none !important;
 }
@@ -536,20 +707,30 @@ header {
     <div class="container">
         <!-- Input Section -->
         <section class="card" id="input-section">
+            <!-- Mode Switch Segmented Control -->
+            <div class="mode-tab-group">
+                <button type="button" id="mode-actual-tab" class="mode-tab active-actual" onclick="switchInputMode('actual')">
+                    ⏱ 実績を記録
+                </button>
+                <button type="button" id="mode-plan-tab" class="mode-tab" onclick="switchInputMode('plan')">
+                    📅 予定を作成
+                </button>
+            </div>
+
             <div class="flex-row justify-between" style="margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                 <div class="flex-row" style="gap: 8px; flex-wrap: wrap;">
-                    <button id="toggle-continuous" class="btn btn-secondary"
+                    <button type="button" id="toggle-continuous" class="btn btn-secondary"
                         style="width: auto; padding: 6px 12px; font-size: 0.8rem;">
                         連続記録モード: <span id="continuous-status">OFF</span>
                     </button>
-                    <button id="toggle-simultaneous" class="btn btn-secondary"
+                    <button type="button" id="toggle-simultaneous" class="btn btn-secondary"
                         style="width: auto; padding: 6px 12px; font-size: 0.8rem;">
                         同時進行モード: <span id="simultaneous-status">OFF</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Tag list (Visible in both modes) -->
+            <!-- Tag list -->
             <div id="tag-selection-container" style="margin-bottom: 16px;">
                 <label id="tag-selection-label">活動内容</label>
                 <div class="tags" id="quick-list">
@@ -568,7 +749,7 @@ header {
                 <div id="simultaneous-list" style="margin-bottom: 12px;">
                     <!-- Javascript will add rows dynamically here -->
                 </div>
-                <button id="add-simultaneous-row" class="btn btn-secondary" style="margin-top: 8px;">+ 活動を追加</button>
+                <button type="button" id="add-simultaneous-row" class="btn btn-secondary" style="margin-top: 8px;">+ 活動を追加</button>
             </div>
 
             <!-- Memo Input -->
@@ -579,36 +760,57 @@ header {
 
             <!-- Time Input -->
             <div style="margin-top: 16px;">
-                <label>時間</label>
+                <label id="time-input-label">時間</label>
                 <div class="flex-row">
                     <input type="time" id="start-time">
                     <span>~</span>
                     <input type="time" id="end-time">
                 </div>
-                <div class="flex-row" style="margin-top:8px;">
-                    <button class="btn btn-secondary" id="set-now-start">現在時刻を開始に</button>
-                    <button class="btn btn-secondary" id="set-now-end">現在時刻を終了に</button>
+                <div class="flex-row" style="margin-top:8px;" id="time-quick-set-row">
+                    <button type="button" class="btn btn-secondary" id="set-now-start">現在時刻を開始に</button>
+                    <button type="button" class="btn btn-secondary" id="set-now-end">現在時刻を終了に</button>
                 </div>
             </div>
 
-            <button id="save-btn" class="btn btn-primary" style="margin-top: 24px;">記録する</button>
+            <button type="button" id="save-btn" class="btn btn-primary" style="margin-top: 24px;">記録する</button>
+        </section>
+
+        <!-- Plans Section (今日の予定) -->
+        <section class="card" id="plan-section">
+            <div class="flex-row justify-between" style="align-items: center;">
+                <h3>今日の予定 (Plan)</h3>
+                <button type="button" id="copy-all-plans-btn" class="btn btn-secondary"
+                    style="width: auto; font-size: 0.8rem; padding: 4px 10px; border-color: #2563EB; color: #93c5fd;">
+                    一括で実績に反映
+                </button>
+            </div>
+            <div id="plan-list" style="margin-top: 10px;">
+                <!-- Javascript will populate this -->
+                <div style="text-align:center; color: var(--text-secondary); padding: 16px;">
+                    予定はまだありません（上部の「予定を作成」から追加できます）
+                </div>
+            </div>
         </section>
 
         <!-- Templates Section -->
         <section class="card">
-            <div class="flex-row justify-between">
+            <div class="flex-row justify-between" style="flex-wrap: wrap; gap: 6px; align-items: center;">
                 <h3>テンプレート</h3>
-                <button id="save-template-btn" class="btn btn-secondary"
-                    style="width:auto; font-size: 0.8rem;">今日の記録を保存</button>
+                <div class="flex-row" style="gap: 6px; margin-bottom: 0;">
+                    <button type="button" id="save-plan-template-btn" class="btn btn-secondary"
+                        style="width:auto; font-size: 0.78rem; padding: 4px 8px; border-color: #2563EB; color: #93c5fd;">予定を保存</button>
+                    <button type="button" id="save-template-btn" class="btn btn-secondary"
+                        style="width:auto; font-size: 0.78rem; padding: 4px 8px;">実績を保存</button>
+                </div>
             </div>
-            <div id="template-list" class="tags">
+            <div id="template-list" class="tags" style="margin-top: 10px;">
                 <!-- Javascript will populate -->
             </div>
         </section>
 
-        <!-- Log List -->
-        <section class="card">
-            <h3>今日の記録</h3>
+        <!-- Log List (今日の実績) -->
+        <section class="card" id="log-section">
+            <h3>今日の記録 (Actual)</h3>
             <div id="log-list">
                 <!-- Javascript will populate this -->
                 <div style="text-align:center; color: var(--text-secondary); padding: 20px;">
@@ -617,26 +819,60 @@ header {
             </div>
         </section>
 
-        <!-- Summary -->
-        <section class="card">
-            <div class="flex-row justify-between">
-                <h3>今日の集計</h3>
-                <button id="export-md-btn" class="btn btn-secondary"
+        <!-- Summary & Plan vs Actual Comparison -->
+        <section class="card" id="summary-section">
+            <div class="flex-row justify-between" style="align-items: center;">
+                <h3>今日の集計 ＆ 予実比較</h3>
+                <button type="button" id="export-md-btn" class="btn btn-secondary"
                     style="width: auto; font-size: 0.8rem; padding: 4px 12px;">MD出力</button>
             </div>
+
+            <!-- Summary Navigation Tabs -->
+            <div class="summary-nav-tabs" style="margin-top: 12px;">
+                <button type="button" id="tab-summary-compare" class="summary-nav-btn active" onclick="switchSummaryTab('compare')">
+                    ⚖ 予実比較（予定 vs 実績）
+                </button>
+                <button type="button" id="tab-summary-actual" class="summary-nav-btn" onclick="switchSummaryTab('actual')">
+                    📊 実績内訳
+                </button>
+            </div>
+
+            <!-- 24h Dual Ring Timeline Chart -->
             <div class="pie-chart-container">
                 <div id="summary-pie-chart" class="pie-chart"></div>
             </div>
-            <div id="summary-list">
+
+            <!-- Score Summary Cards -->
+            <div id="score-summary-container" class="score-summary-grid">
                 <!-- Javascript will populate -->
+            </div>
+
+            <!-- Compare Tab Content -->
+            <div id="summary-compare-view">
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">
+                    活動別の予定・実績差異
+                </div>
+                <div id="summary-compare-list">
+                    <!-- Javascript will populate -->
+                </div>
+            </div>
+
+            <!-- Actual Breakdown Tab Content -->
+            <div id="summary-actual-view" class="hidden">
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">
+                    実績の活動別内訳
+                </div>
+                <div id="summary-list">
+                    <!-- Javascript will populate -->
+                </div>
             </div>
         </section>
 
         <!-- Export/Clear -->
         <section style="margin-top: 20px; text-align: center;">
-            <button id="clear-day-btn"
-                style="background:none; border:none; color: var(--error-color); text-decoration: underline; cursor: pointer;">
-                今日のデータをリセット
+            <button type="button" id="clear-day-btn"
+                style="background:none; border:none; color: var(--error-color); text-decoration: underline; cursor: pointer; font-size: 0.95rem;">
+                今日のデータをリセット...
             </button>
         </section>
     </div>
@@ -649,19 +885,61 @@ header {
                 <span id="close-modal-btn" style="cursor: pointer; font-size: 1.5rem; font-weight: bold; color: var(--text-secondary);">&times;</span>
             </div>
             <div class="modal-body">
-                <!-- Add Tag Input Form -->
                 <div class="flex-row" style="margin-bottom: 16px;">
                     <input type="text" id="modal-new-tag-input" placeholder="新しいタグ名を入力" style="flex: 1; margin-bottom: 0;">
-                    <button id="modal-add-tag-btn" class="btn btn-secondary" style="width: auto; padding: 12px 20px; white-space: nowrap; margin-bottom: 0;">追加</button>
+                    <button type="button" id="modal-add-tag-btn" class="btn btn-secondary" style="width: auto; padding: 12px 20px; white-space: nowrap; margin-bottom: 0;">追加</button>
                 </div>
-                <!-- Current Tags List -->
                 <label>現在のタグ一覧 (クリックで削除)</label>
                 <div id="modal-tag-list" class="edit-tag-list">
                     <!-- Javascript will populate this -->
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="modal-close-btn" class="btn btn-primary" style="margin-bottom: 0; width: auto; padding: 8px 16px;">完了</button>
+                <button type="button" id="modal-close-btn" class="btn btn-primary" style="margin-bottom: 0; width: auto; padding: 8px 16px;">完了</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template Action Modal -->
+    <div id="template-action-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="template-modal-title">テンプレート適用</h3>
+                <span id="close-template-modal-btn" style="cursor: pointer; font-size: 1.5rem; font-weight: bold; color: var(--text-secondary);">&times;</span>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
+                <p id="template-modal-desc" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px;"></p>
+                <button type="button" id="tmpl-apply-plan-btn" class="btn btn-plan" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    📅 今日の「予定」として読み込む
+                </button>
+                <button type="button" id="tmpl-apply-actual-btn" class="btn btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    ⏱ 今日の「実績」として読み込む
+                </button>
+                <button type="button" id="tmpl-delete-btn" class="btn btn-secondary" style="color: var(--error-color); border-color: var(--error-color); margin-top: 10px;">
+                    🗑 このテンプレートを削除
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Choice Modal -->
+    <div id="reset-choice-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>データのリセット</h3>
+                <span id="close-reset-modal-btn" style="cursor: pointer; font-size: 1.5rem; font-weight: bold; color: var(--text-secondary);">&times;</span>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
+                <p id="reset-modal-date" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px;">選択中の日のデータを消去します：</p>
+                <button type="button" id="reset-actual-only-btn" class="btn btn-secondary" style="border-color: var(--primary-color); color: #fff;">
+                    ⏱ 実績データのみ消去
+                </button>
+                <button type="button" id="reset-plan-only-btn" class="btn btn-secondary" style="border-color: var(--plan-color); color: #fff;">
+                    📅 予定データのみ消去
+                </button>
+                <button type="button" id="reset-all-btn" class="btn btn-secondary" style="border-color: var(--error-color); color: var(--error-color); margin-top: 6px;">
+                    ⚠️ 実績・予定の両方を消去
+                </button>
             </div>
         </div>
     </div>
@@ -675,6 +953,7 @@ const startTimeInput = document.getElementById('start-time');
 const endTimeInput = document.getElementById('end-time');
 const saveBtn = document.getElementById('save-btn');
 const logList = document.getElementById('log-list');
+const planList = document.getElementById('plan-list');
 const quickListNodesContainer = document.getElementById('quick-list');
 const toggleContinuousBtn = document.getElementById('toggle-continuous');
 const continuousStatusSpan = document.getElementById('continuous-status');
@@ -685,9 +964,15 @@ const simultaneousModeInputs = document.getElementById('simultaneous-mode-inputs
 const simultaneousList = document.getElementById('simultaneous-list');
 const addSimultaneousRowBtn = document.getElementById('add-simultaneous-row');
 const saveTemplateBtn = document.getElementById('save-template-btn');
+const savePlanTemplateBtn = document.getElementById('save-plan-template-btn');
 const templateList = document.getElementById('template-list');
 const clearDayBtn = document.getElementById('clear-day-btn');
 const currentDateInput = document.getElementById('current-date');
+const copyAllPlansBtn = document.getElementById('copy-all-plans-btn');
+
+// Mode Switch Elements
+const modeActualTab = document.getElementById('mode-actual-tab');
+const modePlanTab = document.getElementById('mode-plan-tab');
 
 // Modal Elements
 const tagEditModal = document.getElementById('tag-edit-modal');
@@ -697,28 +982,44 @@ const modalAddTagBtn = document.getElementById('modal-add-tag-btn');
 const modalTagList = document.getElementById('modal-tag-list');
 const modalCloseBtn = document.getElementById('modal-close-btn');
 
+// Template Modal
+const templateActionModal = document.getElementById('template-action-modal');
+const closeTemplateModalBtn = document.getElementById('close-template-modal-btn');
+const templateModalTitle = document.getElementById('template-modal-title');
+const templateModalDesc = document.getElementById('template-modal-desc');
+const tmplApplyPlanBtn = document.getElementById('tmpl-apply-plan-btn');
+const tmplApplyActualBtn = document.getElementById('tmpl-apply-actual-btn');
+const tmplDeleteBtn = document.getElementById('tmpl-delete-btn');
+
+// Reset Modal
+const resetChoiceModal = document.getElementById('reset-choice-modal');
+const closeResetModalBtn = document.getElementById('close-reset-modal-btn');
+const resetModalDate = document.getElementById('reset-modal-date');
+const resetActualOnlyBtn = document.getElementById('reset-actual-only-btn');
+const resetPlanOnlyBtn = document.getElementById('reset-plan-only-btn');
+const resetAllBtn = document.getElementById('reset-all-btn');
+
 // State
-const storage = window.appStorage || { getItem: () => null, setItem: () => {} };
+const storage = window.appStorage || { getItem: function() { return null; }, setItem: function() {} };
 let isContinuousMode = JSON.parse(storage.getItem('zikankanri_continuous_mode')) || false;
 let isSimultaneousMode = false;
-let editingId = null; // Track if we are editing an existing log
+let currentInputMode = 'actual';
+let editingId = null;
+let editingPlanId = null;
+let currentSummaryTab = 'compare';
+let selectedTemplateId = null;
+
 let logs = JSON.parse(storage.getItem('zikankanri_logs')) || [];
+let plans = JSON.parse(storage.getItem('zikankanri_plans')) || [];
 let templates = JSON.parse(storage.getItem('zikankanri_templates')) || [];
 let defaultTags = JSON.parse(storage.getItem('zikankanri_tags')) || ["睡眠", "仕事", "食事", "移動", "休憩", "家事", "運動", "学習"];
 
-// 共通の日付クレンジング関数
 function sanitizeDate(dateStr) {
     if (!dateStr || typeof dateStr !== 'string') return null;
-    
-    // スラッシュをハイフンに統一し、余計な空白をトリム
-    const cleaned = dateStr.replace(/\\//g, '-').trim();
-    
-    // YYYY-MM-DD 形式の正規表現チェック
-    if (/^\\d{4}-\\d{2}-\\d{2}$/.test(cleaned)) {
+    const cleaned = dateStr.replace(/\\\\//g, '-').trim();
+    if (/^\\\\d{4}-\\\\d{2}-\\\\d{2}$/.test(cleaned)) {
         return cleaned;
     }
-    
-    // YYYY-M-D 形式（1桁）の補正
     const parts = cleaned.split('-');
     if (parts.length === 3) {
         const y = parts[0];
@@ -735,7 +1036,6 @@ function sanitizeDate(dateStr) {
     return null;
 }
 
-// Initialize
 function init() {
     let dateVal = sanitizeDate(window.__TARGET_DATE__);
     if (dateVal) {
@@ -751,7 +1051,9 @@ function init() {
     setContinuousMode(isContinuousMode);
     updateDefaultStartTime();
     renderLogs();
+    renderPlans();
     renderTemplates();
+    renderSummary();
     registerSW();
 }
 
@@ -761,10 +1063,11 @@ if (document.readyState === 'loading') {
     init();
 }
 
-// Date Change Listener
-currentDateInput.addEventListener('change', () => {
+currentDateInput.addEventListener('change', function() {
     updateDefaultStartTime();
     renderLogs();
+    renderPlans();
+    renderSummary();
     notifyDateChanged();
 });
 
@@ -782,18 +1085,60 @@ function notifyDateChanged() {
     }
 }
 
+window.switchInputMode = function(mode) {
+    currentInputMode = mode;
+    if (mode === 'plan') {
+        modePlanTab.classList.add('active-plan');
+        modeActualTab.classList.remove('active-actual');
+        saveBtn.classList.remove('btn-primary');
+        saveBtn.classList.add('btn-plan');
+        saveBtn.textContent = editingPlanId ? "予定を更新" : "予定を追加";
+        document.getElementById('time-input-label').textContent = "予定時間";
+    } else {
+        modeActualTab.classList.add('active-actual');
+        modePlanTab.classList.remove('active-plan');
+        saveBtn.classList.remove('btn-plan');
+        saveBtn.classList.add('btn-primary');
+        saveBtn.textContent = editingId ? "更新する" : "記録する";
+        document.getElementById('time-input-label').textContent = "時間";
+    }
+    highlightTag(activityNameInput.value);
+};
+
+window.switchSummaryTab = function(tab) {
+    currentSummaryTab = tab;
+    const tabCompareBtn = document.getElementById('tab-summary-compare');
+    const tabActualBtn = document.getElementById('tab-summary-actual');
+    const compareView = document.getElementById('summary-compare-view');
+    const actualView = document.getElementById('summary-actual-view');
+
+    if (tab === 'compare') {
+        tabCompareBtn.classList.add('active');
+        tabActualBtn.classList.remove('active');
+        compareView.classList.remove('hidden');
+        actualView.classList.add('hidden');
+    } else {
+        tabActualBtn.classList.add('active');
+        tabCompareBtn.classList.remove('active');
+        actualView.classList.remove('hidden');
+        compareView.classList.add('hidden');
+    }
+};
+
 function highlightTag(tagName) {
-    document.querySelectorAll('#quick-list .tag-chip').forEach(c => {
+    const isPlan = (currentInputMode === 'plan');
+    document.querySelectorAll('#quick-list .tag-chip').forEach(function(c) {
         if (tagName && c.dataset.value === tagName) {
-            c.classList.add('selected');
+            c.classList.add(isPlan ? 'plan-selected' : 'selected');
+            c.classList.remove(isPlan ? 'selected' : 'plan-selected');
         } else {
-            c.classList.remove('selected');
+            c.classList.remove('selected', 'plan-selected');
         }
     });
 }
 
 function setActiveSimRow(rowElement) {
-    document.querySelectorAll('.simultaneous-row').forEach(row => {
+    document.querySelectorAll('.simultaneous-row').forEach(function(row) {
         row.classList.remove('active');
         const indicator = row.querySelector('.sim-active-indicator');
         if (indicator) {
@@ -830,11 +1175,9 @@ function selectTag(tagName) {
     }
 }
 
-// Init Tags
 function initTags() {
     quickListNodesContainer.innerHTML = '';
 
-    // Edit Button
     const editBtn = document.createElement('span');
     editBtn.className = 'tag-chip';
     editBtn.style.borderStyle = 'dashed';
@@ -842,16 +1185,15 @@ function initTags() {
     editBtn.onclick = openTagEditor;
     quickListNodesContainer.appendChild(editBtn);
 
-    defaultTags.forEach(tag => {
+    defaultTags.forEach(function(tag) {
         const chip = document.createElement('span');
         chip.className = 'tag-chip';
         chip.dataset.value = tag;
 
-        // Tag text element
         const textSpan = document.createElement('span');
         textSpan.textContent = tag;
         textSpan.style.cursor = 'pointer';
-        textSpan.addEventListener('click', () => {
+        textSpan.addEventListener('click', function() {
             selectTag(tag);
         });
         chip.appendChild(textSpan);
@@ -859,7 +1201,6 @@ function initTags() {
         quickListNodesContainer.insertBefore(chip, editBtn);
     });
 
-    // Restore selected state on render if active
     if (activityNameInput.value) {
         selectTag(activityNameInput.value);
     }
@@ -879,7 +1220,7 @@ function closeTagEditor() {
 
 function renderModalTags() {
     modalTagList.innerHTML = '';
-    defaultTags.forEach((tag, index) => {
+    defaultTags.forEach(function(tag, index) {
         const item = document.createElement('div');
         item.className = 'edit-tag-item';
 
@@ -893,39 +1234,35 @@ function renderModalTags() {
         rightContainer.style.gap = '6px';
         rightContainer.style.marginBottom = '0';
 
-        // Up button
         const upBtn = document.createElement('button');
         upBtn.className = 'edit-tag-move-btn';
         upBtn.innerHTML = '▲';
         if (index === 0) {
             upBtn.disabled = true;
         } else {
-            upBtn.onclick = () => moveTag(index, -1);
+            upBtn.onclick = function() { moveTag(index, -1); };
         }
         rightContainer.appendChild(upBtn);
 
-        // Down button
         const downBtn = document.createElement('button');
         downBtn.className = 'edit-tag-move-btn';
         downBtn.innerHTML = '▼';
         if (index === defaultTags.length - 1) {
             downBtn.disabled = true;
         } else {
-            downBtn.onclick = () => moveTag(index, 1);
+            downBtn.onclick = function() { moveTag(index, 1); };
         }
         rightContainer.appendChild(downBtn);
 
-        // Delete button
         const delBtn = document.createElement('button');
         delBtn.className = 'edit-tag-delete-btn';
         delBtn.style.marginLeft = '4px';
         delBtn.innerHTML = '&times;';
-        delBtn.onclick = () => {
-            if (confirm(\`タグ「\${tag}」を削除しますか？\`)) {
-                defaultTags = defaultTags.filter(t => t !== tag);
+        delBtn.onclick = function() {
+            if (confirm('タグ「' + tag + '」を削除しますか？')) {
+                defaultTags = defaultTags.filter(function(t) { return t !== tag; });
                 storage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
                 renderModalTags();
-                // If the deleted tag was in the input, clear it
                 if (activityNameInput.value === tag) {
                     activityNameInput.value = '';
                 }
@@ -941,12 +1278,9 @@ function renderModalTags() {
 function moveTag(index, direction) {
     const targetIndex = index + direction;
     if (targetIndex < 0 || targetIndex >= defaultTags.length) return;
-
-    // Swap tags
     const temp = defaultTags[index];
     defaultTags[index] = defaultTags[targetIndex];
     defaultTags[targetIndex] = temp;
-
     storage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
     renderModalTags();
 }
@@ -964,43 +1298,38 @@ function addModalTag() {
     modalNewTagInput.value = '';
 }
 
-// Bind modal events
 closeModalBtn.addEventListener('click', closeTagEditor);
 modalCloseBtn.addEventListener('click', closeTagEditor);
 modalAddTagBtn.addEventListener('click', addModalTag);
-modalNewTagInput.addEventListener('keydown', (e) => {
+modalNewTagInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
         e.preventDefault();
         addModalTag();
     }
 });
-tagEditModal.addEventListener('click', (e) => {
+tagEditModal.addEventListener('click', function(e) {
     if (e.target === tagEditModal) {
         closeTagEditor();
     }
 });
 
-// Service Worker Registration
 function registerSW() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
-            .then(res => console.log('SW registered'))
-            .catch(err => console.log('SW failed', err));
+            .then(function(res) { console.log('SW registered'); })
+            .catch(function(err) { console.log('SW failed', err); });
     }
 }
 
-// Event Listeners
-document.getElementById('set-now-start').addEventListener('click', () => {
+document.getElementById('set-now-start').addEventListener('click', function() {
     startTimeInput.value = getCurrentTimeStr();
 });
 
-document.getElementById('set-now-end').addEventListener('click', () => {
+document.getElementById('set-now-end').addEventListener('click', function() {
     endTimeInput.value = getCurrentTimeStr();
 });
 
-
-// Toggle Continuous Mode
-toggleContinuousBtn.addEventListener('click', () => {
+toggleContinuousBtn.addEventListener('click', function() {
     setContinuousMode(!isContinuousMode);
     updateDefaultStartTime();
 });
@@ -1019,8 +1348,7 @@ function setContinuousMode(enabled) {
     }
 }
 
-// Toggle Simultaneous Mode
-toggleSimultaneousBtn.addEventListener('click', () => {
+toggleSimultaneousBtn.addEventListener('click', function() {
     setSimultaneousMode(!isSimultaneousMode);
     if (isSimultaneousMode && simultaneousList.children.length === 0) {
         addSimultaneousRow('', 50);
@@ -1055,65 +1383,60 @@ function setSimultaneousMode(enabled) {
         toggleSimultaneousBtn.classList.remove('btn-primary');
         toggleSimultaneousBtn.classList.add('btn-secondary');
         if (tagLabel) tagLabel.textContent = "活動内容";
-        
         highlightTag(activityNameInput.value);
     }
 }
 
-// Add Simultaneous Row
-addSimultaneousRowBtn.addEventListener('click', () => {
+addSimultaneousRowBtn.addEventListener('click', function() {
     addSimultaneousRow();
 });
 
-function addSimultaneousRow(name = '', percent = 50) {
+function addSimultaneousRow(name, percent) {
+    if (name === undefined) name = '';
+    if (percent === undefined) percent = 50;
+
     const div = document.createElement('div');
     div.className = 'simultaneous-row flex-row';
     div.style.flexDirection = 'column';
     div.style.alignItems = 'stretch';
     div.style.gap = '6px';
-    div.innerHTML = \`
-        <!-- 1段目: 活動名と削除ボタン -->
-        <div class="flex-row" style="width: 100%; align-items: center;">
-            <span class="sim-active-indicator">○</span>
-            <input type="text" placeholder="活動名" class="sim-name" value="\${name}" style="flex: 1; margin-bottom: 0;">
-            <button class="btn btn-secondary sim-delete-btn" style="width: auto; padding: 12px 14px; margin-bottom: 0; margin-left: 8px;">×</button>
-        </div>
-        <!-- 2段目: 割合スライダー -->
-        <div class="flex-row" style="width: 100%; align-items: center; padding-left: 24px; gap: 12px;">
-            <span style="font-size: 0.85rem; color: var(--text-secondary); min-width: 35px;">割合:</span>
-            <input type="range" class="sim-percent" min="0" max="100" step="10" value="\${percent}" style="flex: 1; margin-bottom: 0; accent-color: var(--primary-color);">
-            <span class="sim-percent-text" style="min-width: 45px; text-align: right; font-family: monospace; font-size: 0.95rem; font-weight: 600; color: var(--primary-color);">\${percent}%</span>
-        </div>
-    \`;
+    div.innerHTML =
+        '<div class="flex-row" style="width: 100%; align-items: center;">' +
+            '<span class="sim-active-indicator">○</span>' +
+            '<input type="text" placeholder="活動名" class="sim-name" value="' + name + '" style="flex: 1; margin-bottom: 0;">' +
+            '<button type="button" class="btn btn-secondary sim-delete-btn" style="width: auto; padding: 12px 14px; margin-bottom: 0; margin-left: 8px;">×</button>' +
+        '</div>' +
+        '<div class="flex-row" style="width: 100%; align-items: center; padding-left: 24px; gap: 12px;">' +
+            '<span style="font-size: 0.85rem; color: var(--text-secondary); min-width: 35px;">割合:</span>' +
+            '<input type="range" class="sim-percent" min="0" max="100" step="10" value="' + percent + '" style="flex: 1; margin-bottom: 0; accent-color: var(--primary-color);">' +
+            '<span class="sim-percent-text" style="min-width: 45px; text-align: right; font-family: monospace; font-size: 0.95rem; font-weight: 600; color: var(--primary-color);">' + percent + '%</span>' +
+        '</div>';
 
-    // Click on row to set active
-    div.addEventListener('click', (e) => {
-        if (e.target.classList.contains('sim-delete-btn')) {
-            return;
-        }
+    div.addEventListener('click', function(e) {
+        if (e.target.classList.contains('sim-delete-btn')) return;
         setActiveSimRow(div);
     });
 
     const nameInput = div.querySelector('.sim-name');
-    nameInput.addEventListener('focus', () => {
+    nameInput.addEventListener('focus', function() {
         setActiveSimRow(div);
     });
-    nameInput.addEventListener('input', (e) => {
+    nameInput.addEventListener('input', function(e) {
         highlightTag(e.target.value);
     });
 
     const percentInput = div.querySelector('.sim-percent');
     const percentText = div.querySelector('.sim-percent-text');
-    percentInput.addEventListener('focus', () => {
+    percentInput.addEventListener('focus', function() {
         setActiveSimRow(div);
     });
-    percentInput.addEventListener('input', (e) => {
+    percentInput.addEventListener('input', function(e) {
         percentText.textContent = e.target.value + '%';
         setActiveSimRow(div);
     });
 
     const deleteBtn = div.querySelector('.sim-delete-btn');
-    deleteBtn.addEventListener('click', (e) => {
+    deleteBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         const isActive = div.classList.contains('active');
         div.remove();
@@ -1131,9 +1454,7 @@ function addSimultaneousRow(name = '', percent = 50) {
     setActiveSimRow(div);
 }
 
-// Save Entry
-// Save Entry
-saveBtn.addEventListener('click', () => {
+saveBtn.addEventListener('click', function() {
     const start = startTimeInput.value;
     const end = endTimeInput.value;
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
@@ -1144,14 +1465,13 @@ saveBtn.addEventListener('click', () => {
         return;
     }
 
-    // Build New Item Object
     let newItems = [];
     if (isSimultaneousMode) {
         const rows = document.querySelectorAll('.simultaneous-row');
-        rows.forEach(row => {
+        rows.forEach(function(row) {
             const name = row.querySelector('.sim-name').value.trim();
             const percent = parseInt(row.querySelector('.sim-percent').value) || 0;
-            newItems.push({ name: name || "", percent });
+            newItems.push({ name: name || "", percent: percent });
         });
         if (newItems.length === 0) {
             newItems.push({ name: "", percent: 100 });
@@ -1161,92 +1481,109 @@ saveBtn.addEventListener('click', () => {
         newItems.push({ name: name || "", percent: 100 });
     }
 
-    const hasTimeInterval = start && end;
-
-    if (hasTimeInterval) {
-        // Check for Overlaps
-        const newStartMins = timeToMins(start);
-        const newEndMins = timeToMins(end);
-        let effectiveEndMins = newEndMins;
-        if (effectiveEndMins < newStartMins) effectiveEndMins += 1440;
-
-        // Find overlapping logs (only checking against logs that have both start and end times)
-        const dayLogs = logs.filter(l => l.date === selectedDate && l.id !== editingId && l.start && l.end);
-        const overlaps = dayLogs.filter(l => {
-            const lS = timeToMins(l.start);
-            let lE = timeToMins(l.end);
-            if (lE < lS) lE += 1440;
-
-            return Math.max(lS, newStartMins) < Math.min(lE, effectiveEndMins);
-        });
-
-        if (overlaps.length > 0) {
-            // Handle Overlap
-            const targetLog = overlaps[0];
-
-            const confirmMerge = confirm(\`「\${targetLog.items.map(i => i.name).join('/')}」(\${targetLog.start}-\${targetLog.end}) と時間が重なっています。\\n重なっている部分を同時進行として記録しますか？\\n（キャンセルすると通常通り追加・更新します）\`);
-
-            if (confirmMerge) {
-                // Ask for ratio
-                const existingNames = targetLog.items.map(i => i.name).join('/');
-                const newNames = newItems.map(i => i.name).join('/');
-
-                const ratioStr = prompt(\`重複区間の割合を設定してください。\\n既存「\${existingNames}」の割合(%):\`, "50");
-                if (ratioStr === null) return;
-
-                const existingRatio = parseInt(ratioStr) || 50;
-                const newRatio = 100 - existingRatio;
-
-                // If editing, we first remove the old entry since we are merging into a new split structure
-                if (editingId) {
-                    logs = logs.filter(l => l.id !== editingId);
-                }
-
-                handleOverlapMerge(targetLog, { start, end, items: newItems, memo: memo }, selectedDate, existingRatio, newRatio);
-
-                // Clean up UI
-                resetForm(isContinuousMode ? end : getCurrentTimeStr());
-                return;
+    if (currentInputMode === 'plan') {
+        if (editingPlanId) {
+            const index = plans.findIndex(function(p) { return p.id === editingPlanId; });
+            if (index !== -1) {
+                plans[index] = {
+                    ...plans[index],
+                    date: selectedDate,
+                    start: start || "",
+                    end: end || "",
+                    items: newItems,
+                    memo: memo
+                };
             }
-        }
-    }
-
-    if (editingId) {
-        // Update Existing
-        const index = logs.findIndex(l => l.id === editingId);
-        if (index !== -1) {
-            logs[index] = {
-                ...logs[index],
+        } else {
+            const newPlan = {
+                id: Date.now(),
                 date: selectedDate,
                 start: start || "",
                 end: end || "",
                 items: newItems,
                 memo: memo
             };
+            plans.push(newPlan);
         }
+        savePlans();
+        renderPlans();
+        renderSummary();
+        resetForm(isContinuousMode ? (end || start || getCurrentTimeStr()) : getCurrentTimeStr());
     } else {
-        // Create New
-        const newEntry = {
-            id: Date.now(),
-            date: selectedDate,
-            start: start || "",
-            end: end || "",
-            items: newItems,
-            memo: memo
-        };
-        logs.push(newEntry);
-    }
+        const hasTimeInterval = start && end;
 
-    saveLogs();
-    renderLogs();
-    resetForm(isContinuousMode ? (end || start || getCurrentTimeStr()) : getCurrentTimeStr());
+        if (hasTimeInterval) {
+            const newStartMins = timeToMins(start);
+            const newEndMins = timeToMins(end);
+            let effectiveEndMins = newEndMins;
+            if (effectiveEndMins < newStartMins) effectiveEndMins += 1440;
+
+            const dayLogs = logs.filter(function(l) { return l.date === selectedDate && l.id !== editingId && l.start && l.end; });
+            const overlaps = dayLogs.filter(function(l) {
+                const lS = timeToMins(l.start);
+                let lE = timeToMins(l.end);
+                if (lE < lS) lE += 1440;
+                return Math.max(lS, newStartMins) < Math.min(lE, effectiveEndMins);
+            });
+
+            if (overlaps.length > 0) {
+                const targetLog = overlaps[0];
+                const confirmMerge = confirm('「' + targetLog.items.map(function(i) { return i.name; }).join('/') + '」(' + targetLog.start + '-' + targetLog.end + ') と時間が重なっています。\\\\n重なっている部分を同時進行として記録しますか？\\\\n（キャンセルすると通常通り追加・更新します）');
+
+                if (confirmMerge) {
+                    const existingNames = targetLog.items.map(function(i) { return i.name; }).join('/');
+                    const newNames = newItems.map(function(i) { return i.name; }).join('/');
+                    const ratioStr = prompt('重複区間の割合を設定してください。\\\\n既存「' + existingNames + '」の割合(%):', "50");
+                    if (ratioStr === null) return;
+
+                    const existingRatio = parseInt(ratioStr) || 50;
+                    const newRatio = 100 - existingRatio;
+
+                    if (editingId) {
+                        logs = logs.filter(function(l) { return l.id !== editingId; });
+                    }
+
+                    handleOverlapMerge(targetLog, { start: start, end: end, items: newItems, memo: memo }, selectedDate, existingRatio, newRatio);
+                    resetForm(isContinuousMode ? end : getCurrentTimeStr());
+                    return;
+                }
+            }
+        }
+
+        if (editingId) {
+            const index = logs.findIndex(function(l) { return l.id === editingId; });
+            if (index !== -1) {
+                logs[index] = {
+                    ...logs[index],
+                    date: selectedDate,
+                    start: start || "",
+                    end: end || "",
+                    items: newItems,
+                    memo: memo
+                };
+            }
+        } else {
+            const newEntry = {
+                id: Date.now(),
+                date: selectedDate,
+                start: start || "",
+                end: end || "",
+                items: newItems,
+                memo: memo
+            };
+            logs.push(newEntry);
+        }
+
+        saveLogs();
+        renderLogs();
+        renderSummary();
+        resetForm(isContinuousMode ? (end || start || getCurrentTimeStr()) : getCurrentTimeStr());
+    }
 });
 
 function handleOverlapMerge(existingLog, newLogObj, date, existingWeight, newWeight) {
-    // 1. Remove existing log
-    logs = logs.filter(l => l.id !== existingLog.id);
+    logs = logs.filter(function(l) { return l.id !== existingLog.id; });
 
-    // Convert times to mins
     const eS = timeToMins(existingLog.start);
     let eE = timeToMins(existingLog.end);
     if (eE < eS) eE += 1440;
@@ -1255,68 +1592,37 @@ function handleOverlapMerge(existingLog, newLogObj, date, existingWeight, newWei
     let nE = timeToMins(newLogObj.end);
     if (nE < nS) nE += 1440;
 
-    const points = [eS, eE, nS, nE].sort((a, b) => a - b);
-
-    // Overlap Range
     const overlapStart = Math.max(eS, nS);
     const overlapEnd = Math.min(eE, nE);
-
     const segments = [];
 
-    // Before Overlap (Existing)
     if (eS < overlapStart) {
-        segments.push({
-            start: eS, end: overlapStart, items: existingLog.items, memo: existingLog.memo
-        });
+        segments.push({ start: eS, end: overlapStart, items: existingLog.items, memo: existingLog.memo });
     }
-    // Before Overlap (New)
     if (nS < overlapStart) {
-        segments.push({
-            start: nS, end: overlapStart, items: newLogObj.items, memo: newLogObj.memo
-        });
+        segments.push({ start: nS, end: overlapStart, items: newLogObj.items, memo: newLogObj.memo });
     }
 
-    // Overlap
     if (overlapStart < overlapEnd) {
         let mergedItems = [];
-        existingLog.items.forEach(i => {
-            mergedItems.push({
-                name: i.name,
-                percent: Math.round(i.percent * (existingWeight / 100))
-            });
+        existingLog.items.forEach(function(i) {
+            mergedItems.push({ name: i.name, percent: Math.round(i.percent * (existingWeight / 100)) });
         });
-        newLogObj.items.forEach(i => {
-            mergedItems.push({
-                name: i.name,
-                percent: Math.round(i.percent * (newWeight / 100))
-            });
+        newLogObj.items.forEach(function(i) {
+            mergedItems.push({ name: i.name, percent: Math.round(i.percent * (newWeight / 100)) });
         });
-
-        // Merge memos if both exist
-        let mergedMemo = '';
-        const memos = [existingLog.memo, newLogObj.memo].filter(m => m && m.trim() !== '');
-        mergedMemo = memos.join(' / ');
-
-        segments.push({
-            start: overlapStart, end: overlapEnd, items: mergedItems, memo: mergedMemo
-        });
+        let mergedMemo = [existingLog.memo, newLogObj.memo].filter(function(m) { return m && m.trim() !== ''; }).join(' / ');
+        segments.push({ start: overlapStart, end: overlapEnd, items: mergedItems, memo: mergedMemo });
     }
 
-    // After Overlap (Existing)
     if (eE > overlapEnd) {
-        segments.push({
-            start: overlapEnd, end: eE, items: existingLog.items, memo: existingLog.memo
-        });
+        segments.push({ start: overlapEnd, end: eE, items: existingLog.items, memo: existingLog.memo });
     }
-    // After Overlap (New)
     if (nE > overlapEnd) {
-        segments.push({
-            start: overlapEnd, end: nE, items: newLogObj.items, memo: newLogObj.memo
-        });
+        segments.push({ start: overlapEnd, end: nE, items: newLogObj.items, memo: newLogObj.memo });
     }
 
-    // Create Logs from segments
-    segments.forEach(seg => {
+    segments.forEach(function(seg) {
         if (seg.end > seg.start) {
             logs.push({
                 id: Date.now() + Math.random(),
@@ -1331,46 +1637,139 @@ function handleOverlapMerge(existingLog, newLogObj, date, existingWeight, newWei
 
     saveLogs();
     renderLogs();
+    renderSummary();
 }
 
-function startEdit(id) {
-    const log = logs.find(l => l.id === id);
+window.startEdit = function(id) {
+    const log = logs.find(function(l) { return l.id === id; });
     if (!log) return;
 
     editingId = id;
+    editingPlanId = null;
+    switchInputMode('actual');
+
     saveBtn.textContent = "更新する";
-    saveBtn.classList.replace('btn-primary', 'btn-secondary'); // Visual cue? Or keep primary.
-    // Let's add a visual cue.
     saveBtn.style.border = "2px solid #BB86FC";
 
     startTimeInput.value = log.start;
     endTimeInput.value = log.end;
     activityMemoInput.value = log.memo || "";
 
-    // Determine Mode
     if (log.items.length > 1) {
         setSimultaneousMode(true);
         simultaneousList.innerHTML = '';
-        log.items.forEach(item => {
+        log.items.forEach(function(item) {
             addSimultaneousRow(item.name, item.percent);
         });
         const firstRow = simultaneousList.querySelector('.simultaneous-row');
-        if (firstRow) {
-            setActiveSimRow(firstRow);
-        }
+        if (firstRow) setActiveSimRow(firstRow);
     } else {
         setSimultaneousMode(false);
         selectTag(log.items[0].name);
     }
 
-    // Scroll top
     window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+};
+
+window.startEditPlan = function(id) {
+    const plan = plans.find(function(p) { return p.id === id; });
+    if (!plan) return;
+
+    editingPlanId = id;
+    editingId = null;
+    switchInputMode('plan');
+
+    saveBtn.textContent = "予定を更新";
+    saveBtn.style.border = "2px solid #93C5FD";
+
+    startTimeInput.value = plan.start;
+    endTimeInput.value = plan.end;
+    activityMemoInput.value = plan.memo || "";
+
+    if (plan.items.length > 1) {
+        setSimultaneousMode(true);
+        simultaneousList.innerHTML = '';
+        plan.items.forEach(function(item) {
+            addSimultaneousRow(item.name, item.percent);
+        });
+        const firstRow = simultaneousList.querySelector('.simultaneous-row');
+        if (firstRow) setActiveSimRow(firstRow);
+    } else {
+        setSimultaneousMode(false);
+        selectTag(plan.items[0].name);
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.copyPlanToActual = function(planId) {
+    const plan = plans.find(function(p) { return p.id === planId; });
+    if (!plan) return;
+
+    editingId = null;
+    editingPlanId = null;
+    switchInputMode('actual');
+
+    startTimeInput.value = plan.start;
+    endTimeInput.value = plan.end;
+    activityMemoInput.value = plan.memo || "";
+
+    if (plan.items.length > 1) {
+        setSimultaneousMode(true);
+        simultaneousList.innerHTML = '';
+        plan.items.forEach(function(item) {
+            addSimultaneousRow(item.name, item.percent);
+        });
+        const firstRow = simultaneousList.querySelector('.simultaneous-row');
+        if (firstRow) setActiveSimRow(firstRow);
+    } else {
+        setSimultaneousMode(false);
+        selectTag(plan.items[0].name);
+    }
+
+    saveBtn.textContent = "記録する";
+    saveBtn.style.border = "none";
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+copyAllPlansBtn.addEventListener('click', function() {
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const dayPlans = plans.filter(function(p) { return p.date === selectedDate; });
+
+    if (dayPlans.length === 0) {
+        alert('今日の予定がありません。');
+        return;
+    }
+
+    if (confirm('今日の予定（' + dayPlans.length + '件）を一括で実績として反映しますか？')) {
+        const newLogs = dayPlans.map(function(p) {
+            return {
+                id: Date.now() + Math.random(),
+                date: selectedDate,
+                start: p.start,
+                end: p.end,
+                items: p.items,
+                memo: p.memo
+            };
+        });
+
+        logs = logs.concat(newLogs);
+        saveLogs();
+        renderLogs();
+        renderSummary();
+    }
+});
 
 function resetForm(nextStart) {
     editingId = null;
-    saveBtn.textContent = "記録する";
+    editingPlanId = null;
     saveBtn.style.border = "none";
+
+    if (currentInputMode === 'plan') {
+        saveBtn.textContent = "予定を追加";
+    } else {
+        saveBtn.textContent = "記録する";
+    }
 
     if (nextStart !== undefined) {
         startTimeInput.value = nextStart;
@@ -1380,274 +1779,565 @@ function resetForm(nextStart) {
     endTimeInput.value = "";
     activityNameInput.value = "";
     activityMemoInput.value = "";
-    if (typeof newTagInput !== 'undefined') newTagInput.value = "";
-    simultaneousList.innerHTML = ''; // Clear rows
+    simultaneousList.innerHTML = '';
     if (isSimultaneousMode) {
         addSimultaneousRow('', 50);
         addSimultaneousRow('', 50);
     }
-    document.querySelectorAll('#quick-list .tag-chip').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('#quick-list .tag-chip').forEach(function(c) {
+        c.classList.remove('selected', 'plan-selected');
+    });
 }
 
-// Clear Data
-clearDayBtn.addEventListener('click', () => {
+clearDayBtn.addEventListener('click', function() {
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
-    if (confirm(\`\${selectedDate} のデータを全て消去しますか？\`)) {
-        logs = logs.filter(log => log.date !== selectedDate);
-        saveLogs();
-        renderLogs();
-        resetForm();
-    }
+    resetModalDate.textContent = selectedDate + ' のデータをリセットします：';
+    resetChoiceModal.classList.add('active');
 });
 
-// Export Markdown
+closeResetModalBtn.addEventListener('click', function() {
+    resetChoiceModal.classList.remove('active');
+});
+
+resetChoiceModal.addEventListener('click', function(e) {
+    if (e.target === resetChoiceModal) resetChoiceModal.classList.remove('active');
+});
+
+resetActualOnlyBtn.addEventListener('click', function() {
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    logs = logs.filter(function(log) { return log.date !== selectedDate; });
+    saveLogs();
+    renderLogs();
+    renderSummary();
+    resetChoiceModal.classList.remove('active');
+    resetForm();
+});
+
+resetPlanOnlyBtn.addEventListener('click', function() {
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    plans = plans.filter(function(p) { return p.date !== selectedDate; });
+    savePlans();
+    renderPlans();
+    renderSummary();
+    resetChoiceModal.classList.remove('active');
+    resetForm();
+});
+
+resetAllBtn.addEventListener('click', function() {
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    logs = logs.filter(function(log) { return log.date !== selectedDate; });
+    plans = plans.filter(function(p) { return p.date !== selectedDate; });
+    saveLogs();
+    savePlans();
+    renderLogs();
+    renderPlans();
+    renderSummary();
+    resetChoiceModal.classList.remove('active');
+    resetForm();
+});
+
 const exportMdBtn = document.getElementById('export-md-btn');
 if (exportMdBtn) {
-    exportMdBtn.addEventListener('click', () => {
+    exportMdBtn.addEventListener('click', function() {
         const selectedDate = currentDateInput.value.replace(/-/g, '/');
-        const targetLogs = logs.filter(l => l.date === selectedDate);
-        targetLogs.sort((a, b) => a.start.localeCompare(b.start));
+        const targetLogs = logs.filter(function(l) { return l.date === selectedDate; });
+        const targetPlans = plans.filter(function(p) { return p.date === selectedDate; });
+        targetLogs.sort(function(a, b) { return a.start.localeCompare(b.start); });
+        targetPlans.sort(function(a, b) { return a.start.localeCompare(b.start); });
 
-        if (targetLogs.length === 0) {
+        if (targetLogs.length === 0 && targetPlans.length === 0) {
             alert('データがありません。');
             return;
         }
 
-        // Calculate Totals
-        const totals = {};
-        let totalMins = 0;
-        targetLogs.forEach(log => {
+        const actualTotals = {};
+        let totalActualMins = 0;
+        targetLogs.forEach(function(log) {
             const duration = calculateDuration(log.start, log.end);
-            log.items.forEach(item => {
+            log.items.forEach(function(item) {
                 const minutes = duration * (item.percent / 100);
-                if (!totals[item.name]) totals[item.name] = 0;
-                totals[item.name] += minutes;
-                totalMins += minutes;
+                if (!actualTotals[item.name]) actualTotals[item.name] = 0;
+                actualTotals[item.name] += minutes;
+                totalActualMins += minutes;
             });
         });
 
-        const sortedTotals = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+        const planTotals = {};
+        let totalPlanMins = 0;
+        targetPlans.forEach(function(plan) {
+            const duration = calculateDuration(plan.start, plan.end);
+            plan.items.forEach(function(item) {
+                const minutes = duration * (item.percent / 100);
+                if (!planTotals[item.name]) planTotals[item.name] = 0;
+                planTotals[item.name] += minutes;
+                totalPlanMins += minutes;
+            });
+        });
 
-        // Generate MD
-        let md = \`# \${selectedDate} 活動記録\\n\\n\`;
+        const allNames = Array.from(new Set([...Object.keys(actualTotals), ...Object.keys(planTotals)]));
 
-        md += \`## 集計\\n\`;
-        md += \`| 活動 | 時間 (分) | 割合 |\\n\`;
-        md += \`| :--- | :---: | :---: |\\n\`;
+        let md = '# ' + selectedDate + ' 24時間活動・予実記録\\\\n\\\\n';
 
-        sortedTotals.forEach(([name, mins]) => {
-            const percent = totalMins > 0 ? Math.round((mins / totalMins) * 100) : 0;
+        md += '## 予実サマリー\\\\n';
+        md += '- **予定総時間**: ' + Math.round(totalPlanMins) + '分 (' + (totalPlanMins / 60).toFixed(1) + 'h)\\\\n';
+        md += '- **実績総時間**: ' + Math.round(totalActualMins) + '分 (' + (totalActualMins / 60).toFixed(1) + 'h)\\\\n';
+        const diffTotal = totalActualMins - totalPlanMins;
+        md += '- **時間差分**: ' + (diffTotal >= 0 ? '+' : '') + Math.round(diffTotal) + '分\\\\n\\\\n';
+
+        md += '## 活動別 予実対比\\\\n';
+        md += '| 活動名 | 予定 (分) | 実績 (分) | 差異 (分) | 状況 |\\\\n';
+        md += '| :--- | :---: | :---: | :---: | :---: |\\\\n';
+
+        allNames.forEach(function(name) {
+            const pMins = Math.round(planTotals[name] || 0);
+            const aMins = Math.round(actualTotals[name] || 0);
+            const diff = aMins - pMins;
+            const diffStr = diff >= 0 ? ('+' + diff) : String(diff);
+            let status = '予定通り';
+            if (pMins > 0 && aMins === 0) status = '未実施';
+            else if (pMins === 0 && aMins > 0) status = '予定外';
+            else if (diff > 5) status = '超過';
+            else if (diff < -5) status = '短縮';
+
             const displayName = name.trim() ? name : '(未設定)';
-            md += \`| \${displayName} | \${Math.round(mins)} | \${percent}% |\\n\`;
+            md += '| ' + displayName + ' | ' + pMins + ' | ' + aMins + ' | ' + diffStr + ' | ' + status + ' |\\\\n';
         });
 
-        md += \`\\n## 詳細ログ\\n\`;
-        targetLogs.forEach(log => {
-            const duration = calculateDuration(log.start, log.end);
-            let content = '';
-            if (log.items.length === 1) {
-                content = log.items[0].name.trim() || '(未設定)';
-            } else {
-                content = log.items.map(i => {
-                    const itemName = i.name.trim();
-                    return \`\${itemName || '(未設定)'}(\${i.percent}%)\`;
-                }).join(', ');
-            }
-            if (log.memo && log.memo.trim() !== '') {
-                content += \` [\${log.memo.trim()}]\`;
-            }
-            const timeStr = (log.start || '?') + ' - ' + (log.end || '?');
-            const durationStr = duration > 0 ? \` (\${duration}分)\` : '';
-            md += \`- **\${timeStr}**\${durationStr}: \${content}\\n\`;
-        });
+        if (targetPlans.length > 0) {
+            md += '\\\\n## 予定一覧 (Plans)\\\\n';
+            targetPlans.forEach(function(plan) {
+                const duration = calculateDuration(plan.start, plan.end);
+                let content = plan.items.map(function(i) { return i.name.trim() || '(未設定)'; }).join(' / ');
+                if (plan.memo && plan.memo.trim()) content += ' [' + plan.memo.trim() + ']';
+                md += '- **' + plan.start + ' - ' + plan.end + '** (' + duration + '分): ' + content + '\\\\n';
+            });
+        }
 
-        // Copy to clipboard
-        navigator.clipboard.writeText(md).then(() => {
-            alert('クリップボードにコピーしました！\\nGeminiなどに貼り付けて分析してください。');
-        }).catch(err => {
+        if (targetLogs.length > 0) {
+            md += '\\\\n## 実績ログ (Actual)\\\\n';
+            targetLogs.forEach(function(log) {
+                const duration = calculateDuration(log.start, log.end);
+                let content = log.items.map(function(i) { return i.name.trim() || '(未設定)'; }).join(' / ');
+                if (log.memo && log.memo.trim()) content += ' [' + log.memo.trim() + ']';
+                md += '- **' + log.start + ' - ' + log.end + '** (' + duration + '分): ' + content + '\\\\n';
+            });
+        }
+
+        navigator.clipboard.writeText(md).then(function() {
+            alert('クリップボードにコピーしました！\\\\nObsidianやGeminiに貼り付けて習慣化を分析してください。');
+        }).catch(function(err) {
             console.error('Copy failed', err);
             alert('コピーに失敗しました。');
-            console.log(md);
         });
     });
 }
 
-// Templates
-saveTemplateBtn.addEventListener('click', () => {
-    const selectedDate = currentDateInput.value.replace(/-/g, '/');
-    const logsForDate = logs.filter(l => l.date === selectedDate);
+saveTemplateBtn.addEventListener('click', function() {
+    saveTemplateFromCurrentDay('actual');
+});
 
-    if (logsForDate.length === 0) {
-        alert("保存する記録がありません。");
+savePlanTemplateBtn.addEventListener('click', function() {
+    saveTemplateFromCurrentDay('plan');
+});
+
+function saveTemplateFromCurrentDay(type) {
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const sourceData = (type === 'plan')
+        ? plans.filter(function(p) { return p.date === selectedDate; })
+        : logs.filter(function(l) { return l.date === selectedDate; });
+
+    const typeLabel = (type === 'plan') ? '予定' : '実績';
+
+    if (sourceData.length === 0) {
+        alert('保存する' + typeLabel + 'がありません。');
         return;
     }
 
-    const name = prompt("テンプレート名を入力してください (例: 平日パターン):");
+    const name = prompt(typeLabel + 'テンプレート名を入力してください (例: 平日ルーティン):');
     if (name) {
         templates.push({
             id: Date.now(),
-            name,
-            data: logsForDate
+            name: name,
+            type: type,
+            data: sourceData
         });
         storage.setItem('zikankanri_templates', JSON.stringify(templates));
         renderTemplates();
     }
-});
-
-function loadTemplate(templateId) {
-    const tmpl = templates.find(t => t.id == templateId);
-    if (!tmpl) return;
-
-    if (confirm(\`テンプレート「\${tmpl.name}」を読み込みますか？\\n現在選択中の日の記録は上書きされます。\`)) {
-        const selectedDate = currentDateInput.value.replace(/-/g, '/');
-
-        // Remove existing logs for this date
-        logs = logs.filter(l => l.date !== selectedDate);
-
-        // Add template logs with target date
-        const newLogs = tmpl.data.map(l => ({
-            ...l,
-            id: Date.now() + Math.random(), // New IDs
-            date: selectedDate
-        }));
-
-        logs = logs.concat(newLogs);
-
-        saveLogs();
-        renderLogs();
-        resetForm();
-    }
 }
 
-// Rendering
+function openTemplateModal(templateId) {
+    const tmpl = templates.find(function(t) { return t.id == templateId; });
+    if (!tmpl) return;
+
+    selectedTemplateId = templateId;
+    templateModalTitle.textContent = 'テンプレート: ' + tmpl.name;
+    templateModalDesc.textContent = '項目数: ' + (tmpl.data ? tmpl.data.length : 0) + '件';
+    templateActionModal.classList.add('active');
+}
+
+closeTemplateModalBtn.addEventListener('click', function() {
+    templateActionModal.classList.remove('active');
+});
+
+templateActionModal.addEventListener('click', function(e) {
+    if (e.target === templateActionModal) templateActionModal.classList.remove('active');
+});
+
+tmplApplyPlanBtn.addEventListener('click', function() {
+    if (selectedTemplateId) {
+        applyTemplate(selectedTemplateId, 'plan');
+        templateActionModal.classList.remove('active');
+    }
+});
+
+tmplApplyActualBtn.addEventListener('click', function() {
+    if (selectedTemplateId) {
+        applyTemplate(selectedTemplateId, 'actual');
+        templateActionModal.classList.remove('active');
+    }
+});
+
+tmplDeleteBtn.addEventListener('click', function() {
+    if (selectedTemplateId && confirm('このテンプレートを削除しますか？')) {
+        templates = templates.filter(function(t) { return t.id != selectedTemplateId; });
+        storage.setItem('zikankanri_templates', JSON.stringify(templates));
+        renderTemplates();
+        templateActionModal.classList.remove('active');
+    }
+});
+
+function applyTemplate(templateId, targetType) {
+    const tmpl = templates.find(function(t) { return t.id == templateId; });
+    if (!tmpl) return;
+
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const newItems = tmpl.data.map(function(l) {
+        return {
+            ...l,
+            id: Date.now() + Math.random(),
+            date: selectedDate
+        };
+    });
+
+    if (targetType === 'plan') {
+        plans = plans.filter(function(p) { return p.date !== selectedDate; }).concat(newItems);
+        savePlans();
+        renderPlans();
+    } else {
+        logs = logs.filter(function(l) { return l.date !== selectedDate; }).concat(newItems);
+        saveLogs();
+        renderLogs();
+    }
+
+    renderSummary();
+    resetForm();
+}
+
+function renderTemplates() {
+    templateList.innerHTML = '';
+    if (templates.length === 0) {
+        templateList.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;">テンプレートはありません</span>';
+        return;
+    }
+    templates.forEach(function(tmpl) {
+        const chip = document.createElement('span');
+        chip.className = 'tag-chip';
+        chip.textContent = tmpl.name;
+        chip.onclick = function() { openTemplateModal(tmpl.id); };
+        templateList.appendChild(chip);
+    });
+}
+
+function renderPlans() {
+    planList.innerHTML = '';
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const targetPlans = plans.filter(function(p) { return p.date === selectedDate; });
+    targetPlans.sort(function(a, b) { return a.start.localeCompare(b.start); });
+
+    if (targetPlans.length === 0) {
+        planList.innerHTML = '<div style="text-align:center; color: var(--text-secondary); padding: 16px;">予定はまだありません</div>';
+        return;
+    }
+
+    targetPlans.forEach(function(plan) {
+        const el = document.createElement('div');
+        el.className = 'plan-item';
+
+        let content = '';
+        if (plan.items.length === 1) {
+            const name = plan.items[0].name.trim();
+            content = name ? ('<strong>' + name + '</strong>') : '<span style="color: var(--text-secondary); font-style: italic;">(未設定)</span>';
+        } else {
+            content = '<div style="font-size:0.9rem;">' +
+                plan.items.map(function(i) {
+                    const name = i.name.trim() || '(未設定)';
+                    return name + ' (' + i.percent + '%)';
+                }).join(' / ') +
+                '</div>';
+        }
+
+        if (plan.memo && plan.memo.trim() !== '') {
+            content += '<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">📝 ' + plan.memo.trim() + '</div>';
+        }
+
+        const duration = calculateDuration(plan.start, plan.end);
+        const durationStr = duration > 0 ? (' (' + duration + '分)') : '';
+        const timeStr = (plan.start || '?') + ' - ' + (plan.end || '?');
+
+        const isEditing = (plan.id === editingPlanId);
+        const editClass = isEditing ? 'btn-plan' : 'btn-secondary';
+        const editText = isEditing ? '編集中' : '編集';
+
+        el.innerHTML =
+            '<div>' +
+                '<div class="plan-time-badge">' + timeStr + durationStr + '</div>' +
+                '<div style="margin-top: 4px;">' + content + '</div>' +
+            '</div>' +
+            '<div class="flex-row" style="margin-bottom: 0;">' +
+                '<button type="button" class="btn-copy-plan" onclick="copyPlanToActual(' + plan.id + ')">▶ 実績にコピー</button>' +
+                '<button type="button" class="btn ' + editClass + '" style="width: auto; padding: 4px 8px; font-size: 0.8rem; margin-right: 6px; border-color: #2563EB; color: #93c5fd;" onclick="startEditPlan(' + plan.id + ')">' + editText + '</button>' +
+                '<button type="button" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.8rem; border-color: #666; color: #888;" onclick="deletePlan(' + plan.id + ')">削除</button>' +
+            '</div>';
+        planList.appendChild(el);
+    });
+}
+
 function renderLogs() {
     logList.innerHTML = '';
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
-
-    const targetLogs = logs.filter(l => l.date === selectedDate);
-    targetLogs.sort((a, b) => a.start.localeCompare(b.start));
+    const targetLogs = logs.filter(function(l) { return l.date === selectedDate; });
+    targetLogs.sort(function(a, b) { return a.start.localeCompare(b.start); });
 
     if (targetLogs.length === 0) {
         logList.innerHTML = '<div style="text-align:center; color: var(--text-secondary); padding: 20px;">記録はまだありません</div>';
+        return;
     }
 
-    targetLogs.forEach(log => {
+    targetLogs.forEach(function(log) {
         const el = document.createElement('div');
         el.className = 'log-item';
 
         let content = '';
         if (log.items.length === 1) {
             const name = log.items[0].name.trim();
-            content = name ? \`<strong>\${name}</strong>\` : \`<span style="color: var(--text-secondary); font-style: italic;">(未設定)</span>\`;
+            content = name ? ('<strong>' + name + '</strong>') : '<span style="color: var(--text-secondary); font-style: italic;">(未設定)</span>';
         } else {
             content = '<div style="font-size:0.9rem;">' +
-                log.items.map(i => {
-                    const name = i.name.trim();
-                    const displayName = name ? name : '(未設定)';
-                    return \`\${displayName} (\${i.percent}%)\`;
+                log.items.map(function(i) {
+                    const name = i.name.trim() || '(未設定)';
+                    return name + ' (' + i.percent + '%)';
                 }).join(' / ') +
                 '</div>';
         }
 
         if (log.memo && log.memo.trim() !== '') {
-            content += \`<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">📝 \${log.memo.trim()}</div>\`;
+            content += '<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">📝 ' + log.memo.trim() + '</div>';
         }
 
         const duration = calculateDuration(log.start, log.end);
-        const durationStr = duration > 0 ? \` (\${duration}分)\` : '';
+        const durationStr = duration > 0 ? (' (' + duration + '分)') : '';
         const timeStr = (log.start || '?') + ' - ' + (log.end || '?');
 
-        // Edit Button Logic
         const isEditing = (log.id === editingId);
         const editClass = isEditing ? 'btn-primary' : 'btn-secondary';
         const editText = isEditing ? '編集中' : '編集';
 
-        el.innerHTML = \`
-            <div>
-                <div class="time-badge">\${timeStr}\${durationStr}</div>
-                <div style="margin-top: 4px;">\${content}</div>
-            </div>
-            <div class="flex-row">
-                <button class="btn \${editClass}" style="width: auto; padding: 4px 8px; font-size: 0.8rem; margin-right: 8px;" onclick="startEdit(\${log.id})">\${editText}</button>
-                <button class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.8rem; border-color: #666; color: #888;" onclick="deleteLog(\${log.id})">削除</button>
-            </div>
-        \`;
+        el.innerHTML =
+            '<div>' +
+                '<div class="time-badge">' + timeStr + durationStr + '</div>' +
+                '<div style="margin-top: 4px;">' + content + '</div>' +
+            '</div>' +
+            '<div class="flex-row" style="margin-bottom: 0;">' +
+                '<button type="button" class="btn ' + editClass + '" style="width: auto; padding: 4px 8px; font-size: 0.8rem; margin-right: 8px;" onclick="startEdit(' + log.id + ')">' + editText + '</button>' +
+                '<button type="button" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.8rem; border-color: #666; color: #888;" onclick="deleteLog(' + log.id + ')">削除</button>' +
+            '</div>';
         logList.appendChild(el);
     });
-
-    renderSummary(targetLogs);
 }
 
-function renderSummary(targetLogs) {
+function renderSummary() {
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const targetLogs = logs.filter(function(l) { return l.date === selectedDate; });
+    const targetPlans = plans.filter(function(p) { return p.date === selectedDate; });
+
     const summaryList = document.getElementById('summary-list');
+    const compareList = document.getElementById('summary-compare-list');
+    const scoreContainer = document.getElementById('score-summary-container');
     const pieChartContainer = document.getElementById('summary-pie-chart');
-    if (!summaryList || !pieChartContainer) return;
+
+    if (!summaryList || !compareList || !pieChartContainer) return;
 
     summaryList.innerHTML = '';
+    compareList.innerHTML = '';
+    scoreContainer.innerHTML = '';
 
-    // --- Aggregation for List ---
-    const totals = {};
-    targetLogs.forEach(log => {
+    const actualTotals = {};
+    let totalActualMins = 0;
+    targetLogs.forEach(function(log) {
         const duration = calculateDuration(log.start, log.end);
-        log.items.forEach(item => {
+        log.items.forEach(function(item) {
             const minutes = duration * (item.percent / 100);
-            if (!totals[item.name]) totals[item.name] = 0;
-            totals[item.name] += minutes;
+            if (!actualTotals[item.name]) actualTotals[item.name] = 0;
+            actualTotals[item.name] += minutes;
+            totalActualMins += minutes;
         });
     });
 
-    const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+    const planTotals = {};
+    let totalPlanMins = 0;
+    targetPlans.forEach(function(plan) {
+        const duration = calculateDuration(plan.start, plan.end);
+        plan.items.forEach(function(item) {
+            const minutes = duration * (item.percent / 100);
+            if (!planTotals[item.name]) planTotals[item.name] = 0;
+            planTotals[item.name] += minutes;
+            totalPlanMins += minutes;
+        });
+    });
 
-    // Render List
-    if (sorted.length === 0) {
-        summaryList.innerHTML = '<div style="text-align:center; color: var(--text-secondary); padding: 10px;">データなし</div>';
-        pieChartContainer.innerHTML = '';
-        pieChartContainer.style.background = 'none';
+    let matchMins = 0;
+    const allCategories = Array.from(new Set([...Object.keys(actualTotals), ...Object.keys(planTotals)]));
+    allCategories.forEach(function(name) {
+        const p = planTotals[name] || 0;
+        const a = actualTotals[name] || 0;
+        matchMins += Math.min(p, a);
+    });
+
+    const adherenceRate = totalPlanMins > 0 ? Math.min(100, Math.round((matchMins / totalPlanMins) * 100)) : (totalActualMins > 0 ? 100 : 0);
+
+    scoreContainer.innerHTML =
+        '<div class="score-card">' +
+            '<div class="val" style="color: #93c5fd;">' + Math.round(totalPlanMins) + '分</div>' +
+            '<div class="lbl">📅 予定総時間</div>' +
+        '</div>' +
+        '<div class="score-card">' +
+            '<div class="val" style="color: #c4b5fd;">' + Math.round(totalActualMins) + '分</div>' +
+            '<div class="lbl">⏱ 実績総時間</div>' +
+        '</div>' +
+        '<div class="score-card">' +
+            '<div class="val" style="color: ' + (adherenceRate >= 80 ? '#34d399' : (adherenceRate >= 50 ? '#fbbf24' : '#f87171')) + ';">' + adherenceRate + '%</div>' +
+            '<div class="lbl">🎯 予定遵守率</div>' +
+        '</div>';
+
+    if (allCategories.length === 0) {
+        compareList.innerHTML = '<div style="text-align:center; color: var(--text-secondary); padding: 10px;">データなし</div>';
+    } else {
+        const sortedCats = allCategories.sort(function(a, b) {
+            return ((planTotals[b] || 0) + (actualTotals[b] || 0)) - ((planTotals[a] || 0) + (actualTotals[a] || 0));
+        });
+
+        sortedCats.forEach(function(name) {
+            const pMins = Math.round(planTotals[name] || 0);
+            const aMins = Math.round(actualTotals[name] || 0);
+            const diff = aMins - pMins;
+
+            let badgeHtml = '';
+            if (pMins > 0 && aMins === 0) {
+                badgeHtml = '<span class="diff-badge pending">⚪ 未実施</span>';
+            } else if (pMins === 0 && aMins > 0) {
+                badgeHtml = '<span class="diff-badge unplanned">🟣 予定外 (+' + aMins + '分)</span>';
+            } else if (Math.abs(diff) <= 5) {
+                badgeHtml = '<span class="diff-badge match">🟢 予定通り</span>';
+            } else if (diff > 5) {
+                badgeHtml = '<span class="diff-badge over">🟠 +' + diff + '分 超過</span>';
+            } else {
+                badgeHtml = '<span class="diff-badge short">🔵 ' + diff + '分 短縮</span>';
+            }
+
+            const row = document.createElement('div');
+            row.className = 'compare-row';
+            const displayName = name.trim() ? name : '<span style="color: var(--text-secondary); font-style: italic;">(未設定)</span>';
+
+            row.innerHTML =
+                '<div class="compare-left">' +
+                    '<div class="compare-title">' + displayName + '</div>' +
+                    '<div class="compare-meta">予定: ' + pMins + '分 | 実績: ' + aMins + '分</div>' +
+                '</div>' +
+                '<div class="compare-right">' +
+                    badgeHtml +
+                '</div>';
+            compareList.appendChild(row);
+        });
+    }
+
+    const sortedActual = Object.entries(actualTotals).sort(function(a, b) { return b[1] - a[1]; });
+    if (sortedActual.length === 0) {
+        summaryList.innerHTML = '<div style="text-align:center; color: var(--text-secondary); padding: 10px;">実績データなし</div>';
+    } else {
+        sortedActual.forEach(function(entry) {
+            const name = entry[0];
+            const mins = entry[1];
+            const row = document.createElement('div');
+            row.className = 'flex-row justify-between';
+            row.style.padding = '8px 0';
+            row.style.borderBottom = '1px solid #333';
+            const displayName = name.trim() ? name : '<span style="color: var(--text-secondary); font-style: italic;">(未設定)</span>';
+            const pct = totalActualMins > 0 ? Math.round((mins / totalActualMins) * 100) : 0;
+            row.innerHTML = '<span style="display:flex; align-items:center; gap:8px;">' + displayName + ' <span style="font-size:0.8rem; color:var(--text-secondary);">(' + pct + '%)</span></span><span>' + Math.round(mins) + '分</span>';
+            summaryList.appendChild(row);
+        });
+    }
+
+    renderDualRingSVG(targetPlans, targetLogs);
+}
+
+function renderDualRingSVG(targetPlans, targetLogs) {
+    const pieChartContainer = document.getElementById('summary-pie-chart');
+    if (!pieChartContainer) return;
+
+    pieChartContainer.innerHTML = '';
+    pieChartContainer.style.background = 'none';
+
+    if (targetPlans.length === 0 && targetLogs.length === 0) {
         return;
     }
 
-    const colors = ['#FFCDD2', '#F8BBD0', '#E1BEE7', '#D1C4E9', '#C5CAE9', '#BBDEFB', '#B3E5FC', '#B2EBF2', '#B2DFDB', '#C8E6C9', '#DCEDC8', '#F0F4C3', '#FFF9C4', '#FFECB3', '#FFE0B2', '#FFCCBC'];
-
-    sorted.forEach(([name, mins], index) => {
-        const row = document.createElement('div');
-        row.className = 'flex-row justify-between';
-        row.style.padding = '8px 0';
-        row.style.borderBottom = '1px solid #333';
-        const displayName = name.trim() ? name : \`<span style="color: var(--text-secondary); font-style: italic;">(未設定)</span>\`;
-        row.innerHTML = \`<span style="display:flex; align-items:center; gap:8px;">\${displayName}</span><span>\${Math.round(mins)}分</span>\`;
-        summaryList.appendChild(row);
-    });
-
-    // --- Render SVG Chart (Timeline) ---
-    pieChartContainer.style.background = 'none';
-    pieChartContainer.innerHTML = '';
-
-    const size = 300;
+    const size = 320;
     const cx = size / 2;
     const cy = size / 2;
-    const radius = 100;
+    const outerRingOuterR = 120;
+    const outerRingInnerR = 100;
+    const innerCircleR = 92;
 
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("width", "100%");
     svg.setAttribute("height", "auto");
     svg.setAttribute("viewBox", "0 0 " + size + " " + size);
-    svg.style.maxWidth = "300px";
+    svg.style.maxWidth = "320px";
     svg.style.display = "block";
     svg.style.margin = "0 auto";
 
-    // Draw Background Circle (Optional, prevents gaps)
-    const bgCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    bgCircle.setAttribute("cx", cx);
-    bgCircle.setAttribute("cy", cy);
-    bgCircle.setAttribute("r", radius);
-    bgCircle.setAttribute("fill", "#2C2C2C");
-    svg.appendChild(bgCircle);
+    const bgOuter = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    bgOuter.setAttribute("cx", cx);
+    bgOuter.setAttribute("cy", cy);
+    bgOuter.setAttribute("r", outerRingOuterR);
+    bgOuter.setAttribute("fill", "#1E1E1E");
+    svg.appendChild(bgOuter);
 
-    // 1. Draw Hour Markers
+    const bgInner = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    bgInner.setAttribute("cx", cx);
+    bgInner.setAttribute("cy", cy);
+    bgInner.setAttribute("r", innerCircleR);
+    bgInner.setAttribute("fill", "#2C2C2C");
+    svg.appendChild(bgInner);
+
+    const colors = ['#FFCDD2', '#F8BBD0', '#E1BEE7', '#D1C4E9', '#C5CAE9', '#BBDEFB', '#B3E5FC', '#B2EBF2', '#B2DFDB', '#C8E6C9', '#DCEDC8', '#F0F4C3', '#FFF9C4', '#FFECB3', '#FFE0B2', '#FFCCBC'];
+    const activityColorMap = {};
+    let colorIdx = 0;
+
+    const getColor = function(name) {
+        if (!activityColorMap[name]) {
+            activityColorMap[name] = colors[colorIdx % colors.length];
+            colorIdx++;
+        }
+        return activityColorMap[name];
+    };
+
     for (let i = 0; i < 24; i++) {
-        const angle = (i * 15) - 90; // 0h = -90deg
+        const angle = (i * 15) - 90;
         const rad = angle * (Math.PI / 180);
-        const textR = radius + 25; // Outside
+        const textR = outerRingOuterR + 18;
         const x = cx + textR * Math.cos(rad);
         const y = cy + textR * Math.sin(rad);
 
@@ -1656,159 +2346,184 @@ function renderSummary(targetLogs) {
         text.setAttribute("y", y);
         text.setAttribute("text-anchor", "middle");
         text.setAttribute("dominant-baseline", "middle");
-        text.setAttribute("fill", "#FF8A65");
-        text.setAttribute("font-size", "12");
+        text.setAttribute("fill", (i % 6 === 0) ? "#a78bfa" : "#888888");
+        text.setAttribute("font-size", (i % 6 === 0) ? "11" : "9");
+        text.setAttribute("font-weight", (i % 6 === 0) ? "bold" : "normal");
         text.textContent = i;
         svg.appendChild(text);
     }
 
-    // 2. Draw Sectors
-    const activityColorMap = {};
-    let colorIdx = 0;
+    function createDonutArc(cx, cy, rOut, rIn, startAngle, endAngle) {
+        const sRad = startAngle * Math.PI / 180;
+        const eRad = endAngle * Math.PI / 180;
+        const x1 = cx + rOut * Math.cos(sRad);
+        const y1 = cy + rOut * Math.sin(sRad);
+        const x2 = cx + rOut * Math.cos(eRad);
+        const y2 = cy + rOut * Math.sin(eRad);
+        const x3 = cx + rIn * Math.cos(eRad);
+        const y3 = cy + rIn * Math.sin(eRad);
+        const x4 = cx + rIn * Math.cos(sRad);
+        const y4 = cy + rIn * Math.sin(sRad);
 
-    targetLogs.forEach(log => {
-        const primName = log.items[0].name;
-        if (!activityColorMap[primName]) {
-            activityColorMap[primName] = colors[colorIdx % colors.length];
-            colorIdx++;
-        }
-        const color = activityColorMap[primName];
+        const largeArc = (endAngle - startAngle) > 180 ? 1 : 0;
+        return 'M ' + x1 + ' ' + y1 + ' A ' + rOut + ' ' + rOut + ' 0 ' + largeArc + ' 1 ' + x2 + ' ' + y2 + ' L ' + x3 + ' ' + y3 + ' A ' + rIn + ' ' + rIn + ' 0 ' + largeArc + ' 0 ' + x4 + ' ' + y4 + ' Z';
+    }
 
-        const [sh, sm] = log.start.split(':').map(Number);
-        const [eh, em] = log.end.split(':').map(Number);
+    targetPlans.forEach(function(plan) {
+        const primName = plan.items[0].name;
+        const color = getColor(primName);
+        const [sh, sm] = plan.start.split(':').map(Number);
+        const [eh, em] = plan.end.split(':').map(Number);
+        let sMins = sh * 60 + sm;
+        let eMins = eh * 60 + em;
+        if (eMins < sMins) eMins += 1440;
 
-        let startMins = sh * 60 + sm;
-        let endMins = eh * 60 + em;
-        if (endMins < startMins) endMins += 1440; // Cross midnight
+        const sAngle = (sMins / 1440) * 360 - 90;
+        const eAngle = (eMins / 1440) * 360 - 90;
 
-        const startAngle = (startMins / 1440) * 360 - 90;
-        const endAngle = (endMins / 1440) * 360 - 90;
-
-        // Path definition
-        const x1 = cx + radius * Math.cos(startAngle * Math.PI / 180);
-        const y1 = cy + radius * Math.sin(startAngle * Math.PI / 180);
-        const x2 = cx + radius * Math.cos(endAngle * Math.PI / 180);
-        const y2 = cy + radius * Math.sin(endAngle * Math.PI / 180);
-
-        const largeArcFlag = (endAngle - startAngle) > 180 ? 1 : 0;
-
-        // If full circle? (1440 mins)
-        if (endMins - startMins >= 1440) {
-            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            circle.setAttribute("cx", cx);
-            circle.setAttribute("cy", cy);
-            circle.setAttribute("r", radius);
-            circle.setAttribute("fill", color);
-            svg.appendChild(circle);
-        } else {
-            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            const d = "M " + cx + " " + cy + " L " + x1 + " " + y1 + " A " + radius + " " + radius + " 0 " + largeArcFlag + " 1 " + x2 + " " + y2 + " Z";
-            path.setAttribute("d", d);
-            path.setAttribute("fill", color);
-            path.setAttribute("stroke", "#121212"); // Separator color matching bg
-            path.setAttribute("stroke-width", "1");
-            svg.appendChild(path);
-        }
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", createDonutArc(cx, cy, outerRingOuterR, outerRingInnerR, sAngle, eAngle));
+        path.setAttribute("fill", color);
+        path.setAttribute("fill-opacity", "0.85");
+        path.setAttribute("stroke", "#121212");
+        path.setAttribute("stroke-width", "1");
+        svg.appendChild(path);
     });
 
-    // 3. Draw Labels (rendered after all sectors to prevent overlapping sectors from hiding text)
-    const renderedLabels = [];
-    targetLogs.forEach(log => {
+    targetLogs.forEach(function(log) {
+        const primName = log.items[0].name;
+        const color = getColor(primName);
         const [sh, sm] = log.start.split(':').map(Number);
         const [eh, em] = log.end.split(':').map(Number);
+        let sMins = sh * 60 + sm;
+        let eMins = eh * 60 + em;
+        if (eMins < sMins) eMins += 1440;
 
-        let startMins = sh * 60 + sm;
-        let endMins = eh * 60 + em;
-        if (endMins < startMins) endMins += 1440; // Cross midnight
+        const sAngle = (sMins / 1440) * 360 - 90;
+        const eAngle = (eMins / 1440) * 360 - 90;
 
-        const startAngle = (startMins / 1440) * 360 - 90;
-        const endAngle = (endMins / 1440) * 360 - 90;
+        const x1 = cx + innerCircleR * Math.cos(sAngle * Math.PI / 180);
+        const y1 = cy + innerCircleR * Math.sin(sAngle * Math.PI / 180);
+        const x2 = cx + innerCircleR * Math.cos(eAngle * Math.PI / 180);
+        const y2 = cy + innerCircleR * Math.sin(eAngle * Math.PI / 180);
+        const largeArc = (eAngle - sAngle) > 180 ? 1 : 0;
 
-        const midAngle = (startAngle + endAngle) / 2;
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", 'M ' + cx + ' ' + cy + ' L ' + x1 + ' ' + y1 + ' A ' + innerCircleR + ' ' + innerCircleR + ' 0 ' + largeArc + ' 1 ' + x2 + ' ' + y2 + ' Z');
+        path.setAttribute("fill", color);
+        path.setAttribute("stroke", "#121212");
+        path.setAttribute("stroke-width", "1");
+        svg.appendChild(path);
+    });
+
+    const centerCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    centerCircle.setAttribute("cx", cx);
+    centerCircle.setAttribute("cy", cy);
+    centerCircle.setAttribute("r", "28");
+    centerCircle.setAttribute("fill", "#181818");
+    centerCircle.setAttribute("stroke", "#333");
+    centerCircle.setAttribute("stroke-width", "1");
+    svg.appendChild(centerCircle);
+
+    const centerText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    centerText.setAttribute("x", cx);
+    centerText.setAttribute("y", cy - 4);
+    centerText.setAttribute("text-anchor", "middle");
+    centerText.setAttribute("dominant-baseline", "middle");
+    centerText.setAttribute("fill", "#93c5fd");
+    centerText.setAttribute("font-size", "8");
+    centerText.textContent = "外:予定";
+    svg.appendChild(centerText);
+
+    const centerText2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    centerText2.setAttribute("x", cx);
+    centerText2.setAttribute("y", cy + 8);
+    centerText2.setAttribute("text-anchor", "middle");
+    centerText2.setAttribute("dominant-baseline", "middle");
+    centerText2.setAttribute("fill", "#c4b5fd");
+    centerText2.setAttribute("font-size", "8");
+    centerText2.textContent = "内:実績";
+    svg.appendChild(centerText2);
+
+    targetLogs.forEach(function(log) {
+        const [sh, sm] = log.start.split(':').map(Number);
+        const [eh, em] = log.end.split(':').map(Number);
+        let sMins = sh * 60 + sm;
+        let eMins = eh * 60 + em;
+        if (eMins < sMins) eMins += 1440;
+
+        const sAngle = (sMins / 1440) * 360 - 90;
+        const eAngle = (eMins / 1440) * 360 - 90;
+        const midAngle = (sAngle + eAngle) / 2;
         const midRad = midAngle * (Math.PI / 180);
 
-        let labelR = radius * 0.65;
-        const rCandidates = [radius * 0.65, radius * 0.4, radius * 0.85, radius * 0.25];
+        let labelR = innerCircleR * 0.65;
         let lx = cx + labelR * Math.cos(midRad);
         let ly = cy + labelR * Math.sin(midRad);
 
-        const isVisible = (endMins - startMins) >= 5;
+        const isVisible = (eMins - sMins) >= 15;
         let textContent = '';
         if (isVisible) {
-            textContent = log.items.map(i => i.name.trim()).filter(n => n !== '').join('/');
+            textContent = log.items.map(function(i) { return i.name.trim(); }).filter(function(n) { return n !== ''; }).join('/');
             if (textContent.length > 5) textContent = textContent.substring(0, 4) + '..';
         }
 
         if (isVisible && textContent) {
-            for (const rCand of rCandidates) {
-                labelR = rCand;
-                lx = cx + labelR * Math.cos(midRad);
-                ly = cy + labelR * Math.sin(midRad);
-
-                let hasCollision = false;
-                for (const pos of renderedLabels) {
-                    if (Math.abs(lx - pos.x) < 40 && Math.abs(ly - pos.y) < 15) {
-                        hasCollision = true;
-                        break;
-                    }
-                }
-                if (!hasCollision) {
-                    break;
-                }
-            }
-
             const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
             label.setAttribute("x", lx);
             label.setAttribute("y", ly);
             label.setAttribute("text-anchor", "middle");
             label.setAttribute("dominant-baseline", "middle");
-            label.setAttribute("fill", "#333"); // Dark text for pastel colors
+            label.setAttribute("fill", "#222");
             label.setAttribute("stroke", "#ffffff");
             label.setAttribute("stroke-width", "2");
             label.setAttribute("paint-order", "stroke fill");
-            label.setAttribute("stroke-linejoin", "round");
-            label.setAttribute("font-size", "12");
+            label.setAttribute("font-size", "10");
             label.setAttribute("font-weight", "bold");
             label.setAttribute("pointer-events", "none");
             label.textContent = textContent;
 
             svg.appendChild(label);
-            renderedLabels.push({ x: lx, y: ly });
         }
     });
 
     pieChartContainer.appendChild(svg);
 }
 
-function renderTemplates() {
-    templateList.innerHTML = '';
-    templates.forEach(tmpl => {
-        const chip = document.createElement('span');
-        chip.className = 'tag-chip';
-        chip.textContent = tmpl.name;
-        chip.onclick = () => loadTemplate(tmpl.id);
-        templateList.appendChild(chip);
-    });
-}
-
-// Helpers
 function saveLogs() {
     storage.setItem('zikankanri_logs', JSON.stringify(logs));
 }
 
+function savePlans() {
+    storage.setItem('zikankanri_plans', JSON.stringify(plans));
+}
+
 function deleteLog(id) {
-    if (confirm('削除しますか？')) {
+    if (confirm('実績記録を削除しますか？')) {
         const wasEditing = (editingId === id);
-        logs = logs.filter(l => l.id !== id);
+        logs = logs.filter(function(l) { return l.id !== id; });
         saveLogs();
         renderLogs();
-        if (wasEditing) {
-            resetForm();
-        } else {
-            updateDefaultStartTime();
-        }
+        renderSummary();
+        if (wasEditing) resetForm();
+        else updateDefaultStartTime();
     }
 }
+
+window.deleteLog = deleteLog;
+
+function deletePlan(id) {
+    if (confirm('予定を削除しますか？')) {
+        const wasEditing = (editingPlanId === id);
+        plans = plans.filter(function(p) { return p.id !== id; });
+        savePlans();
+        renderPlans();
+        renderSummary();
+        if (wasEditing) resetForm();
+    }
+}
+
+window.deletePlan = deletePlan;
 
 function getCurrentTimeStr() {
     const now = new Date();
@@ -1819,8 +2534,9 @@ function calculateDuration(start, end) {
     if (!start || !end) return 0;
     const [h1, m1] = start.split(':').map(Number);
     const [h2, m2] = end.split(':').map(Number);
-    const min1 = h1 * 60 + m1;
-    const min2 = h2 * 60 + m2;
+    let min1 = h1 * 60 + m1;
+    let min2 = h2 * 60 + m2;
+    if (min2 < min1) min2 += 1440;
     return min2 - min1;
 }
 
@@ -1831,22 +2547,23 @@ function timeToMins(timeStr) {
 }
 
 function minsToTime(mins) {
-    // mins usually < 1440, but if wraps, mod 1440
     let m = mins % 1440;
     if (m < 0) m += 1440;
     const h = Math.floor(m / 60);
     const min = m % 60;
-    return \`\${String(h).padStart(2, '0')}:\${String(min).padStart(2, '0')}\`;
+    return String(h).padStart(2, '0') + ':' + String(min).padStart(2, '0');
 }
 
 function updateDefaultStartTime() {
-    if (editingId !== null) return;
+    if (editingId !== null || editingPlanId !== null) return;
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
-    const dayLogs = logs.filter(l => l.date === selectedDate);
+    const dayLogs = (currentInputMode === 'plan')
+        ? plans.filter(function(p) { return p.date === selectedDate; })
+        : logs.filter(function(l) { return l.date === selectedDate; });
     
     if (isContinuousMode) {
         if (dayLogs.length > 0) {
-            dayLogs.sort((a, b) => a.start.localeCompare(b.start));
+            dayLogs.sort(function(a, b) { return a.start.localeCompare(b.start); });
             const lastLog = dayLogs[dayLogs.length - 1];
             startTimeInput.value = lastLog.end;
         } else {
@@ -1860,4 +2577,5 @@ function updateDefaultStartTime() {
 </script>
 </body>
 
-</html>`;
+</html>
+`;

@@ -320,6 +320,9 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
             if (typeof renderLogs === 'function') {
               renderLogs();
             }
+            if (typeof renderSummary === 'function') {
+              renderSummary();
+            }
             if (typeof updateDefaultStartTime === 'function') {
               updateDefaultStartTime();
             }
