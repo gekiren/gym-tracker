@@ -1248,21 +1248,28 @@ function renderManageList() {
         const hiddenBadge = isHidden ? ' <span style="font-size:0.75rem; opacity:0.6; color:#ffaaaa; margin-left:4px;">(非表示中)</span>' : '';
 
         li.innerHTML = \`
-            <div class="manage-item">
-                <div class="manage-reorder">
-                    <button class="manage-reorder-btn" onclick="moveItemUp('\${item.id}', event)" \${isFirst ? 'disabled' : ''}>▲</button>
-                    <button class="manage-reorder-btn" onclick="moveItemDown('\${item.id}', event)" \${isLast ? 'disabled' : ''}>▼</button>
+            <div class="manage-item" style="display: flex; flex-direction: column; gap: 8px; padding: 6px 0;">
+                <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                    <div class="manage-color-dot" style="background: \${item.color}" onclick="toggleColorPicker('\${item.id}')"></div>
+                    <input type="text" class="manage-input" value="\${escapeHtml(item.name)}" onchange="renameItem('\${item.id}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" style="flex: 1; width: 100%; font-size: 1.05rem; padding: 6px 10px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; color: white; outline: none; margin-bottom: 0 !important;" />
                 </div>
-                <div class="manage-color-dot" style="background: \${item.color}" onclick="toggleColorPicker('\${item.id}')"></div>
-                <input type="text" class="manage-input" value="\${escapeHtml(item.name)}" onchange="renameItem('\${item.id}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" />
-                <div style="display: flex; align-items: center; gap: 3px; font-size: 0.8rem; opacity: 0.85; margin-right: 2px;">
-                    <span>目標:</span>
-                    <input type="number" class="manage-target-input" value="\${item.targetCount || ''}" placeholder="なし" min="0" onchange="updateItemTarget('\${item.id}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" style="width: 44px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 6px; padding: 4px 2px; text-align: center; font-size: 0.85rem; outline: none; margin-bottom: 0 !important;" />
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding-left: 34px;">
+                    <div class="manage-reorder" style="flex-direction: row; gap: 4px;">
+                        <button class="manage-reorder-btn" onclick="moveItemUp('\${item.id}', event)" \${isFirst ? 'disabled' : ''} style="width: 32px; height: 32px; border-radius: 6px;">▲</button>
+                        <button class="manage-reorder-btn" onclick="moveItemDown('\${item.id}', event)" \${isLast ? 'disabled' : ''} style="width: 32px; height: 32px; border-radius: 6px;">▼</button>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px; font-size: 0.88rem; opacity: 0.9;">
+                        <span>目標:</span>
+                        <input type="number" class="manage-target-input" value="\${item.targetCount || ''}" placeholder="なし" min="0" onchange="updateItemTarget('\${item.id}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" style="width: 52px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.25); color: white; border-radius: 6px; padding: 4px 4px; text-align: center; font-size: 0.9rem; outline: none; margin-bottom: 0 !important;" />
+                        <span>回</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <button class="manage-visibility-btn \${isHidden ? 'is-hidden-item' : ''}" onclick="toggleItemVisibility('\${item.id}')" aria-label="表示・非表示" style="padding: 4px 6px;">\${eyeIcon}</button>
+                        <button class="manage-delete-btn" onclick="deleteItemFromManage('\${item.id}')" aria-label="削除" style="padding: 4px 6px;">🗑</button>
+                    </div>
                 </div>
-                <button class="manage-visibility-btn \${isHidden ? 'is-hidden-item' : ''}" onclick="toggleItemVisibility('\${item.id}')" aria-label="表示・非表示">\${eyeIcon}</button>
-                <button class="manage-delete-btn" onclick="deleteItemFromManage('\${item.id}')" aria-label="削除">🗑</button>
             </div>
-            <div id="color-picker-\${item.id}" class="manage-color-picker-inline hidden" style="padding-left: 40px; display: flex; gap: 8px; margin-top: 8px; margin-bottom: 8px;">
+            <div id="color-picker-\${item.id}" class="manage-color-picker-inline hidden" style="padding-left: 34px; display: flex; gap: 8px; margin-top: 8px; margin-bottom: 8px;">
                 \${COLOR_OPTIONS.map(c => '<div class="color-btn-mini ' + (item.color === c.value ? "selected" : "") + '" style="background: ' + c.value + '; width: 24px; height: 24px; border-radius: 50%; border: 2px solid ' + (item.color === c.value ? "white" : "transparent") + '; cursor: pointer;" onclick="changeItemColor(\\\'' + item.id + '\\\', \\\'' + c.value + '\\\')"></div>').join('')}
             </div>
         \`;
