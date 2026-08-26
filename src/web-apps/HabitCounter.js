@@ -447,14 +447,22 @@ input:focus {
 }
 
 .icon-btn-small {
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     color: white;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+.icon-btn-small:active {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 /* Detail View */
@@ -462,7 +470,7 @@ input:focus {
     display: flex;
     align-items: center;
     gap: 15px;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .text-btn-small {
@@ -475,13 +483,46 @@ input:focus {
 
 /* Trend Chart */
 .trend-chart {
+    position: relative;
+    width: 100%;
+    margin-bottom: 25px;
+    box-sizing: border-box;
+}
+
+.chart-plot-area {
+    position: relative;
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    height: 150px;
-    margin-bottom: 30px;
-    padding-top: 20px;
-    gap: 5px;
+    height: 140px;
+    width: 100%;
+    gap: 6px;
+    padding-top: 15px;
+    box-sizing: border-box;
+}
+
+.chart-target-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 2px dashed #55efc4;
+    pointer-events: none;
+    z-index: 5;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+}
+
+.chart-target-label {
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: #55efc4;
+    background: rgba(0, 0, 0, 0.75);
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(85, 239, 196, 0.5);
+    margin-top: -10px;
+    margin-right: 2px;
 }
 
 .chart-bar-container {
@@ -491,26 +532,43 @@ input:focus {
     align-items: center;
     justify-content: flex-end;
     height: 100%;
+    z-index: 2;
+}
+
+.chart-bar-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
 }
 
 .chart-bar {
     width: 80%;
+    max-width: 32px;
     background: var(--primary-gradient);
     border-radius: 4px 4px 0 0;
-    transition: height 0.5s ease;
+    transition: height 0.4s ease;
     min-height: 4px;
 }
 
+.chart-bar.is-completed {
+    background: linear-gradient(135deg, #55efc4, #00b894) !important;
+    box-shadow: 0 0 10px rgba(85, 239, 196, 0.5);
+}
+
 .chart-label {
-    font-size: 0.7rem;
-    margin-top: 5px;
-    opacity: 0.6;
+    font-size: 0.75rem;
+    margin-top: 6px;
+    opacity: 0.8;
+    text-align: center;
 }
 
 .chart-value {
-    font-size: 0.7rem;
-    margin-bottom: 2px;
+    font-size: 0.75rem;
+    margin-bottom: 4px;
     font-weight: bold;
+    text-align: center;
 }
 
 /* Edit Modal Controls */
@@ -1119,13 +1177,15 @@ function notifyDateChanged(dateObj) {
 }
 
     // Trend View Navigation
-    trendPrevBtn.addEventListener('click', () => {
-        currentTrendEndDate.setDate(currentTrendEndDate.getDate() - 7);
+    trendPrevBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentTrendEndDate = new Date(currentTrendEndDate.getTime() - 7 * 86400000);
         renderTrendChart(currentTrendItemId);
     });
 
-    trendNextBtn.addEventListener('click', () => {
-        currentTrendEndDate.setDate(currentTrendEndDate.getDate() + 7);
+    trendNextBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentTrendEndDate = new Date(currentTrendEndDate.getTime() + 7 * 86400000);
         renderTrendChart(currentTrendItemId);
     });
 
@@ -1654,9 +1714,15 @@ function showTrend(itemId) {
     if (!item) return;
 
     currentTrendItemId = itemId;
-    currentTrendEndDate = new Date(); // Reset to today initially
+    // 統計画面で選択中の日付を引き継いで表示（今日に固定化される問題を解消）
+    currentTrendEndDate = currentStatsDate ? new Date(currentStatsDate.getTime()) : new Date();
 
-    detailItemName.textContent = \`\${item.name} の推移\`;
+    const target = item.targetCount || 0;
+    const targetBadge = target > 0
+        ? '<span style="font-size: 0.8rem; font-weight: normal; opacity: 0.9; margin-left: 8px; background: rgba(85, 239, 196, 0.2); color: #55efc4; padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(85, 239, 196, 0.5);">目標: ' + target + '回/日</span>'
+        : '';
+
+    detailItemName.innerHTML = escapeHtml(item.name) + ' の推移 ' + targetBadge;
     statsViewMain.classList.add('hidden');
     statsViewDetail.classList.remove('hidden');
 
@@ -1665,24 +1731,43 @@ function showTrend(itemId) {
 
 function renderTrendChart(itemId) {
     trendChart.innerHTML = '';
+    const item = items.find(i => i.id === itemId);
+    const target = (item && item.targetCount) ? item.targetCount : 0;
+
     const days = 7;
     const endDate = currentTrendEndDate;
 
-    // Update labels to show range
-    const startDate = new Date(endDate);
-    startDate.setDate(endDate.getDate() - (days - 1));
-    trendDateRangeEl.textContent = \`\${startDate.getMonth() + 1}/\${startDate.getDate()} - \${endDate.getMonth() + 1}/\${endDate.getDate()}\`;
+    // 期間ラベルに年・月・日を表示
+    const startDate = new Date(endDate.getTime() - (days - 1) * 86400000);
+    const startStr = startDate.getFullYear() + '/' + (startDate.getMonth() + 1) + '/' + startDate.getDate();
+    const endStr = endDate.getFullYear() + '/' + (endDate.getMonth() + 1) + '/' + endDate.getDate();
+    trendDateRangeEl.textContent = startStr + ' - ' + endStr;
 
     let maxCount = 0;
     const data = [];
 
     // Calculate last 7 days ending at endDate
     for (let i = days - 1; i >= 0; i--) {
-        const d = new Date(endDate);
-        d.setDate(endDate.getDate() - i);
+        const d = new Date(endDate.getTime() - i * 86400000);
         const count = getCountForDate(itemId, d);
         if (count > maxCount) maxCount = count;
         data.push({ date: d, count: count });
+    }
+
+    const maxScale = Math.max(maxCount, target, 1);
+
+    // チャート描画用プロットエリアを作成（バーと目標線の高さを完全に一致させる）
+    const plotArea = document.createElement('div');
+    plotArea.className = 'chart-plot-area';
+
+    // Render Target Line if target is set
+    if (target > 0) {
+        const targetLine = document.createElement('div');
+        targetLine.className = 'chart-target-line';
+        const targetPercent = Math.min(100, Math.max(0, (target / maxScale) * 100));
+        targetLine.style.bottom = targetPercent + '%';
+        targetLine.innerHTML = '<span class="chart-target-label">目標 ' + target + '</span>';
+        plotArea.appendChild(targetLine);
     }
 
     // Render bars
@@ -1690,28 +1775,40 @@ function renderTrendChart(itemId) {
         const container = document.createElement('div');
         container.className = 'chart-bar-container';
 
-        const heightPercent = maxCount > 0 ? (d.count / maxCount) * 100 : 0;
-
-        // Date Label (e.g., "2/7")
-        const dateLabel = document.createElement('div');
-        dateLabel.className = 'chart-label';
-        dateLabel.textContent = \`\${d.date.getMonth() + 1}/\${d.date.getDate()}\`;
+        const isCompleted = target > 0 && d.count >= target;
+        const heightPercent = Math.min(100, (d.count / maxScale) * 100);
 
         // Value Label
         const valLabel = document.createElement('div');
         valLabel.className = 'chart-value';
-        valLabel.textContent = d.count;
+        valLabel.innerHTML = isCompleted ? d.count + ' <span style="color:#55efc4; font-size:0.75rem;">✓</span>' : String(d.count);
+
+        // Bar Wrapper & Bar
+        const barWrapper = document.createElement('div');
+        barWrapper.className = 'chart-bar-wrapper';
 
         const bar = document.createElement('div');
-        bar.className = 'chart-bar';
-        bar.style.height = \`\${Math.max(heightPercent, 1)}%\`; // Ensure at least a tiny bit visible
+        bar.className = 'chart-bar' + (isCompleted ? ' is-completed' : '');
+        if (item && item.color && !isCompleted) {
+            bar.style.background = item.color;
+        }
+        bar.style.height = Math.max(heightPercent, 2) + '%'; // 最低高さを確保
+
+        barWrapper.appendChild(bar);
+
+        // Date Label (e.g., "2/7")
+        const dateLabel = document.createElement('div');
+        dateLabel.className = 'chart-label';
+        dateLabel.textContent = (d.date.getMonth() + 1) + '/' + d.date.getDate();
 
         container.appendChild(valLabel);
-        container.appendChild(bar);
+        container.appendChild(barWrapper);
         container.appendChild(dateLabel);
 
-        trendChart.appendChild(container);
+        plotArea.appendChild(container);
     });
+
+    trendChart.appendChild(plotArea);
 }
 
 </script>
