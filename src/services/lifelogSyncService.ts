@@ -503,7 +503,8 @@ export const handleWebViewMessage = async (
       // 2. Insert or update items safely with sort_order and target_count
       for (let index = 0; index < items.length; index++) {
         const item = items[index];
-        const targetCount = typeof item.targetCount === 'number' ? Math.max(0, item.targetCount) : 0;
+        const parsedTarget = Number((item as any).targetCount ?? (item as any).target_count);
+        const targetCount = !isNaN(parsedTarget) && parsedTarget > 0 ? Math.floor(parsedTarget) : 0;
         // Find matching existing row (by ID, createdAt, or name)
         const matchedRow = existingRows.find((row) => isRowMatchingItem(row, item));
 

@@ -1155,14 +1155,8 @@ function notifyDateChanged(dateObj) {
 
     // Manage Modal Buttons
     manageBtn.addEventListener('click', showManageModal);
-    closeManageBtn.addEventListener('click', () => {
-        manageModal.classList.add('hidden');
-        render();
-    });
-    closeManageXBtn.addEventListener('click', () => {
-        manageModal.classList.add('hidden');
-        render();
-    });
+    closeManageBtn.addEventListener('click', closeManageModal);
+    closeManageXBtn.addEventListener('click', closeManageModal);
 
     // Close modals on outside click
     window.addEventListener('click', (e) => {
@@ -1170,11 +1164,16 @@ function notifyDateChanged(dateObj) {
         if (e.target === statsModal) { statsModal.classList.add('hidden'); notifyModalState(false); }
         if (e.target === editModal) { editModal.classList.add('hidden'); notifyModalState(false); }
         if (e.target === manageModal) {
-            manageModal.classList.add('hidden');
-            notifyModalState(false);
-            render();
+            closeManageModal();
         }
     });
+}
+
+function closeManageModal() {
+    saveData();
+    manageModal.classList.add('hidden');
+    notifyModalState(false);
+    render();
 }
 
 function addItem() {
@@ -1260,7 +1259,7 @@ function renderManageList() {
                     </div>
                     <div style="display: flex; align-items: center; gap: 4px; font-size: 0.88rem; opacity: 0.9;">
                         <span>目標:</span>
-                        <input type="number" class="manage-target-input" value="\${item.targetCount || ''}" placeholder="なし" min="0" onchange="updateItemTarget('\${item.id}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" style="width: 52px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.25); color: white; border-radius: 6px; padding: 4px 4px; text-align: center; font-size: 0.9rem; outline: none; margin-bottom: 0 !important;" />
+                        <input type="number" class="manage-target-input" value="\${item.targetCount || ''}" placeholder="なし" min="0" oninput="updateItemTarget('\${item.id}', this.value)" onchange="updateItemTarget('\${item.id}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" style="width: 52px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.25); color: white; border-radius: 6px; padding: 4px 4px; text-align: center; font-size: 0.9rem; outline: none; margin-bottom: 0 !important;" />
                         <span>回</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 4px;">
@@ -1283,7 +1282,6 @@ function updateItemTarget(id, val) {
         const num = parseInt(val, 10);
         item.targetCount = (!isNaN(num) && num > 0) ? num : 0;
         saveData();
-        render();
     }
 }
 window.updateItemTarget = updateItemTarget;

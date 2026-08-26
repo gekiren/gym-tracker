@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.11',
+  version: '2.0.12',
   title: {
-    ja: '🎯 習慣カウンターの目標値設定 ＆ 管理画面レイアウト改善',
-    en: '🎯 Habit Target Setting & Manage Modal Layout Improvements',
+    ja: '🎯 習慣カウンター目標値の永続化保存バグを完全修正',
+    en: '🎯 Complete Fix for Habit Target Value Persistence',
   },
   notes: {
     ja: [
-      '習慣カウンターで1日の目標回数が設定できるようになりました。習慣管理モーダルを2行レイアウトに刷新し、習慣名称が全幅でくっきり見やすくなりました。',
+      '習慣カウンターで目標値を設定後に画面やモーダルを閉じても、数値が消えずデータベースへ確実に永久保存されるよう修正しました。',
     ],
     en: [
-      'Added daily target settings for habits. Redesigned manage modal into 2-row layout to make habit names fully visible.',
+      'Fixed issue where habit target values were lost upon closing modal. Target values are now reliably persisted.',
     ],
   },
 };
