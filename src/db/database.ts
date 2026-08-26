@@ -165,7 +165,8 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       name TEXT NOT NULL,
       color TEXT NOT NULL,
       created_at INTEGER NOT NULL,
-      sort_order INTEGER DEFAULT 0
+      sort_order INTEGER DEFAULT 0,
+      target_count INTEGER DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS habit_logs (
@@ -331,6 +332,7 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
     if (settingsCountRow && settingsCountRow.count === 0) {
       await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['default_rest_timer', '90']);
       await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['auto_rest_timer', '1']);
+      await _db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?)', ['timer_notification', '1']);
     }
 
     await _db.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['initial_seeding_done', 'true']);

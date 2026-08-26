@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.9',
+  version: '2.0.10',
   title: {
-    ja: '🥗 写真拡大ドラッグ移動の指リアルタイム追従を完全実装',
-    en: '🥗 Real-time Finger-tracking Drag Panning for Photo Viewer',
+    ja: '🎯 習慣カウンターに目標値（目標回数）設定機能を追加',
+    en: '🎯 Added Target Goal Setting to Habit Counter',
   },
   notes: {
     ja: [
-      '写真拡大後のドラッグ（パン）移動を、setOffset/flattenOffset パターンとネイティブドライバ直結で再実装。指を動かすたびに遅延ゼロで写真がリアルタイムに追従するよう完全対応しました。',
+      '習慣カウンターで1日の目標回数が設定できるようになりました。目標達成度（進捗バー・達成チェックマーク）がひと目で確認できます。',
     ],
     en: [
-      'Rebuilt drag panning with setOffset/flattenOffset pattern and native driver. Photo now tracks finger movements instantly and in real-time with zero delay.',
+      'You can now set daily targets in the Habit Counter, with visual progress bars and completion checkmarks.',
     ],
   },
 };

@@ -269,7 +269,7 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
 
     // 3. Habit items and logs
     try {
-      const habitItemsRows = await db.getAllAsync<{ id: number; name: string; color: string; created_at: number }>(
+      const habitItemsRows = await db.getAllAsync<{ id: number; name: string; color: string; created_at: number; target_count?: number }>(
         'SELECT * FROM habit_items ORDER BY sort_order ASC, created_at ASC'
       );
       data['habit-items'] = habitItemsRows.map((row) => ({
@@ -277,6 +277,7 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
         name: row.name,
         color: row.color,
         createdAt: row.created_at,
+        targetCount: row.target_count || 0,
       }));
 
       const habitLogsRows = await db.getAllAsync<{ habit_item_id: number; timestamp: number }>(
@@ -461,7 +462,7 @@ export const handleWebViewMessage = async (
     } 
     
     else if (key === 'habit-items') {
-      let items: Array<{ id: string; name: string; color: string; createdAt: number }> = [];
+      let items: Array<{ id: string; name: string; color: string; createdAt: number; targetCount?: number }> = [];
       try {
         let parsed = JSON.parse(value);
         if (typeof parsed === 'string') parsed = JSON.parse(parsed);
@@ -499,30 +500,31 @@ export const handleWebViewMessage = async (
         }
       }
 
-      // 2. Insert or update items safely with sort_order
+      // 2. Insert or update items safely with sort_order and target_count
       for (let index = 0; index < items.length; index++) {
         const item = items[index];
+        const targetCount = typeof item.targetCount === 'number' ? Math.max(0, item.targetCount) : 0;
         // Find matching existing row (by ID, createdAt, or name)
         const matchedRow = existingRows.find((row) => isRowMatchingItem(row, item));
 
         if (matchedRow) {
-          // Update existing record using its SQLite ID and update sort_order
+          // Update existing record using its SQLite ID and update sort_order and target_count
           await db.runAsync(
-            'UPDATE habit_items SET name = ?, color = ?, sort_order = ? WHERE id = ?',
-            [item.name, item.color, index, matchedRow.id]
+            'UPDATE habit_items SET name = ?, color = ?, sort_order = ?, target_count = ? WHERE id = ?',
+            [item.name, item.color, index, targetCount, matchedRow.id]
           );
         } else {
-          // Insert new item with sort_order
+          // Insert new item with sort_order and target_count
           const numericId = parseInt(item.id, 10);
           if (!isNaN(numericId) && numericId > 0) {
             await db.runAsync(
-              'INSERT INTO habit_items (id, name, color, created_at, sort_order) VALUES (?, ?, ?, ?, ?)',
-              [numericId, item.name, item.color, item.createdAt || Date.now(), index]
+              'INSERT INTO habit_items (id, name, color, created_at, sort_order, target_count) VALUES (?, ?, ?, ?, ?, ?)',
+              [numericId, item.name, item.color, item.createdAt || Date.now(), index, targetCount]
             );
           } else {
             await db.runAsync(
-              'INSERT INTO habit_items (name, color, created_at, sort_order) VALUES (?, ?, ?, ?)',
-              [item.name, item.color, item.createdAt || Date.now(), index]
+              'INSERT INTO habit_items (name, color, created_at, sort_order, target_count) VALUES (?, ?, ?, ?, ?)',
+              [item.name, item.color, item.createdAt || Date.now(), index, targetCount]
             );
           }
         }
@@ -532,7 +534,7 @@ export const handleWebViewMessage = async (
       await useLifelogStore.getState().loadHabits(currentDate);
 
       // Return latest formatted habit items with SQLite IDs to update WebView localStorage
-      const updatedRows = await db.getAllAsync<{ id: number; name: string; color: string; created_at: number }>(
+      const updatedRows = await db.getAllAsync<{ id: number; name: string; color: string; created_at: number; target_count?: number }>(
         'SELECT * FROM habit_items ORDER BY sort_order ASC, created_at ASC'
       );
       const formattedUpdated = updatedRows.map((row) => ({
@@ -540,6 +542,7 @@ export const handleWebViewMessage = async (
         name: row.name,
         color: row.color,
         createdAt: row.created_at,
+        targetCount: row.target_count || 0,
       }));
       addSyncDiagnosticLog(`Updated habit-items in SQLite. Total items: ${updatedRows.length}`);
       return JSON.stringify(formattedUpdated);

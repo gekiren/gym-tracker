@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 
-export const DATABASE_VERSION = 8;
+export const DATABASE_VERSION = 9;
 
 export interface Migration {
   version: number;
@@ -231,6 +231,12 @@ export const MIGRATIONS: Migration[] = [
         );
         CREATE INDEX IF NOT EXISTS idx_body_composition_date ON body_composition_logs(date);
       `);
+    },
+  },
+  {
+    version: 9,
+    up: async (db) => {
+      await safeAddColumn(db, 'habit_items', 'target_count', 'INTEGER DEFAULT 0');
     },
   },
 ];
