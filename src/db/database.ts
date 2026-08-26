@@ -166,7 +166,8 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       color TEXT NOT NULL,
       created_at INTEGER NOT NULL,
       sort_order INTEGER DEFAULT 0,
-      target_count INTEGER DEFAULT 0
+      target_count INTEGER DEFAULT 0,
+      is_hidden INTEGER DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS habit_logs (

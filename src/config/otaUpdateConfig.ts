@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.12',
+  version: '2.0.13',
   title: {
-    ja: '🎯 習慣カウンター目標値の永続化保存バグを完全修正',
+    ja: '🎯 習慣カウンター目標値および表示状態の保存バグ修正',
     en: '🎯 Complete Fix for Habit Target Value Persistence',
   },
   notes: {
     ja: [
-      '習慣カウンターで目標値を設定後に画面やモーダルを閉じても、数値が消えずデータベースへ確実に永久保存されるよう修正しました。',
+      'データベースの構造不整合を修復し、目標数値と非表示設定が確実に保存・維持されるようになりました。',
     ],
     en: [
-      'Fixed issue where habit target values were lost upon closing modal. Target values are now reliably persisted.',
+      'Fixed a database schema issue to ensure habit target values and hidden settings are reliably persisted.',
     ],
   },
 };
