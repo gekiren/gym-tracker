@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo, useImperativeHandle, forwardRef } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text, AppState, AppStateStatus } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Text, AppState, AppStateStatus, Vibration } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getInitialDataForWebView, handleWebViewMessage, syncWidgetPunches, addSyncDiagnosticLog } from '../src/services/lifelogSyncService';
@@ -121,6 +121,20 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
         const { state } = message;
         console.log('[WebViewTab] ROUTINE_STATE_CHANGE state:', state);
         useLifelogStore.getState().setActiveRoutineState(state);
+        return;
+      }
+
+      if (message.type === 'VIBRATE') {
+        const { pattern } = message;
+        try {
+          if (pattern !== undefined && pattern !== null) {
+            Vibration.vibrate(pattern);
+          } else {
+            Vibration.vibrate(60);
+          }
+        } catch (e) {
+          console.error('[WebViewTab] Vibration error:', e);
+        }
         return;
       }
 

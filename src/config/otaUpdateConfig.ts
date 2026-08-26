@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.19',
+  version: '2.0.20',
   title: {
-    ja: '🎯 習慣履歴グラフで目標破線ライン＆達成度を表示',
-    en: '🎯 Display Target Dashed Line in Habit History Chart',
+    ja: '📳 ルーティン管理のタイマーバイブレーション通知対応',
+    en: '📳 Timer Vibration Notification in Routine Tracker',
   },
   notes: {
     ja: [
-      '習慣カウンターの履歴画面（折れ線グラフ）に目標破線ラインと目標達成度バッジが表示されるようになりました。',
+      'ルーティン実行時のタイマー終了時および残り3/2/1秒前のバイブレーション通知に対応しました。設定はルーティンごとにON/OFFを切り替えられます。',
     ],
     en: [
-      'Added a dashed target line and goal achievement badges to the habit counter history line chart.',
+      'Added countdown vibration alerts (3/2/1 sec before end and at 0 sec) for routine tracker tasks. Can be toggled per routine.',
     ],
   },
 };

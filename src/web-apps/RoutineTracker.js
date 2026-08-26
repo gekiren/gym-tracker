@@ -561,6 +561,11 @@ h2 {
                     <label for="auto-advance" style="font-size: 14px;">時間になったら自動で次のタスクに移る</label>
                 </div>
 
+                <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px; color: #ccc;">
+                    <input type="checkbox" id="enable-vibration" checked style="width: auto; margin: 0;">
+                    <label for="enable-vibration" style="font-size: 14px;">タイマー終了時にバイブで通知する</label>
+                </div>
+
                 <div id="new-task-list" class="task-list-container">
                     <!-- タスク入力欄 -->
                 </div>
@@ -763,6 +768,25 @@ let taskLogs = [];
 let chartInstance = null;
 let confirmCallback = null;
 let isExecuting = false;
+let lastVibratedRemaining = null;
+
+function triggerVibration(pattern) {
+    try {
+        if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'VIBRATE',
+                pattern: pattern
+            }));
+        }
+    } catch (e) {
+        console.error("Failed to send VIBRATE message:", e);
+    }
+    try {
+        if (navigator.vibrate) {
+            navigator.vibrate(pattern);
+        }
+    } catch (e) {}
+}
 
 function sendRoutineStateToRN() {
     try {
@@ -1099,6 +1123,7 @@ function openModal(isEdit = false) {
         document.getElementById('new-routine-name').value = "";
         document.getElementById('auto-update-estimates').checked = true; // Default ON
         document.getElementById('auto-advance').checked = false; // Default OFF
+        document.getElementById('enable-vibration').checked = true; // Default ON
         newTaskList.innerHTML = "";
         addTaskInput();
     }
@@ -1122,6 +1147,8 @@ function openEditModal(id) {
     document.getElementById('auto-update-estimates').checked = (routine.auto_update_estimates !== false);
     // Default to false if the property doesn't exist
     document.getElementById('auto-advance').checked = (routine.auto_advance === true);
+    // Default to true if the property doesn't exist
+    document.getElementById('enable-vibration').checked = (routine.enable_vibration !== false);
 
     // Set existing image
     if (routine.image) {
@@ -1174,6 +1201,7 @@ function saveNewRoutine() {
     const editId = document.getElementById('edit-routine-id').value;
     const autoUpdate = document.getElementById('auto-update-estimates').checked;
     const autoAdvance = document.getElementById('auto-advance').checked;
+    const enableVibration = document.getElementById('enable-vibration').checked;
 
     if (!name) return showAlert("入力エラー", "ルーティン名を入力してください");
 
@@ -1208,6 +1236,7 @@ function saveNewRoutine() {
             routines[index].tasks = tasks;
             routines[index].auto_update_estimates = autoUpdate;
             routines[index].auto_advance = autoAdvance;
+            routines[index].enable_vibration = enableVibration;
             routines[index].image = currentImageBase64; // Update image
         }
     } else {
@@ -1217,6 +1246,7 @@ function saveNewRoutine() {
             tasks: tasks,
             auto_update_estimates: autoUpdate,
             auto_advance: autoAdvance,
+            enable_vibration: enableVibration,
             image: currentImageBase64 // Save image
         });
     }
@@ -1312,10 +1342,18 @@ function prepareRoutine(id) {
         const totalSeconds = currentRoutine.tasks.reduce((sum, t) => sum + t.estimated_seconds, 0);
         const totalTimeStr = formatTime(totalSeconds);
         
-        let html = '<div style="font-weight: bold; color: #fff; margin-bottom: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding-bottom: 8px;">';
+        let html = '<div style="font-weight: bold; color: #fff; margin-bottom: 8px; display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding-bottom: 8px;">';
         html += '<span>タスク一覧 (' + currentRoutine.tasks.length + '件)</span>';
         html += '<span style="color: #51cf66;">想定時間: ' + totalTimeStr + '</span>';
         html += '</div>';
+
+        const isVibrate = (currentRoutine.enable_vibration !== false);
+        const isAutoAdv = (currentRoutine.auto_advance === true);
+        html += '<div style="display: flex; gap: 6px; margin-bottom: 10px; font-size: 11px;">';
+        html += '<span style="background: ' + (isVibrate ? 'rgba(81, 207, 102, 0.15)' : 'rgba(255, 255, 255, 0.05)') + '; color: ' + (isVibrate ? '#51cf66' : '#888') + '; padding: 2px 6px; border-radius: 4px;">📳 バイブ: ' + (isVibrate ? 'ON' : 'OFF') + '</span>';
+        html += '<span style="background: ' + (isAutoAdv ? 'rgba(37, 99, 235, 0.15)' : 'rgba(255, 255, 255, 0.05)') + '; color: ' + (isAutoAdv ? '#60a5fa' : '#888') + '; padding: 2px 6px; border-radius: 4px;">⏩ 自動進行: ' + (isAutoAdv ? 'ON' : 'OFF') + '</span>';
+        html += '</div>';
+
         html += '<div style="display: flex; flex-direction: column; gap: 8px;">';
         currentRoutine.tasks.forEach((t, idx) => {
             html += '<div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">';
@@ -1388,6 +1426,7 @@ function startTask() {
         remainingTasksEl.innerHTML = '進捗: <strong style="color: #fff;">' + (currentTaskIndex + 1) + '</strong> / ' + totalTasks + ' | 残り: <strong style="color: #fff;">' + remainingCount + '</strong>個 (約' + formatTime(remainingSeconds) + ')';
     }
 
+    lastVibratedRemaining = null;
     taskStartTime = Date.now();
 
     clearInterval(taskTimerInterval);
@@ -1424,6 +1463,18 @@ function updateTimer() {
         components.timer.innerText = \`+ \${formatTime(Math.abs(remaining))}\`;
     } else {
         components.timer.style.color = '#51cf66';
+    }
+
+    // バイブレーション判定（ルーティン設定で有効な場合）
+    const isVibrateEnabled = (currentRoutine && currentRoutine.enable_vibration !== false);
+    if (isVibrateEnabled && remaining !== lastVibratedRemaining) {
+        if (remaining === 3 || remaining === 2 || remaining === 1) {
+            triggerVibration(60);
+            lastVibratedRemaining = remaining;
+        } else if (remaining <= 0 && lastVibratedRemaining !== 0) {
+            triggerVibration([0, 500, 200, 500]);
+            lastVibratedRemaining = 0;
+        }
     }
 
     if (remaining <= 0 && currentRoutine.auto_advance) {
