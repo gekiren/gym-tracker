@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.16',
+  version: '2.0.17',
   title: {
-    ja: '🎯 習慣カウンター目標値保存バグの完全修正',
-    en: '🎯 Complete Fix for Habit Target Value Persistence',
+    ja: '📊 習慣カウンターの推移グラフで目標値を表示',
+    en: '📊 Display Target Values in Habit Counter Trend Chart',
   },
   notes: {
     ja: [
-      'タップするたびに目標値がリセットされる問題の根本原因（カウント後のデータ再注入に目標値が含まれていなかった）を修正しました。',
+      '推移グラフに目標ライン（破線）と目標バッジを表示し、各日の達成状況（✓マーク・達成カラー）がひと目でわかるようになりました。',
     ],
     en: [
-      'Fixed the root cause of target values resetting on each tap: the data re-injection after counting now correctly includes target values.',
+      'Added a dashed target line and target badge to the trend chart, allowing instant visualization of daily goal achievements.',
     ],
   },
 };

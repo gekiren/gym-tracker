@@ -475,6 +475,7 @@ input:focus {
 
 /* Trend Chart */
 .trend-chart {
+    position: relative;
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
@@ -484,6 +485,28 @@ input:focus {
     gap: 5px;
 }
 
+.chart-target-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 1.5px dashed rgba(85, 239, 196, 0.7);
+    pointer-events: none;
+    z-index: 1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+}
+
+.chart-target-label {
+    font-size: 0.65rem;
+    color: #55efc4;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 1px 4px;
+    border-radius: 4px;
+    margin-top: -8px;
+    margin-right: 2px;
+}
+
 .chart-bar-container {
     flex: 1;
     display: flex;
@@ -491,6 +514,7 @@ input:focus {
     align-items: center;
     justify-content: flex-end;
     height: 100%;
+    z-index: 2;
 }
 
 .chart-bar {
@@ -499,6 +523,11 @@ input:focus {
     border-radius: 4px 4px 0 0;
     transition: height 0.5s ease;
     min-height: 4px;
+}
+
+.chart-bar.is-completed {
+    background: linear-gradient(135deg, #55efc4, #00b894) !important;
+    box-shadow: 0 0 8px rgba(85, 239, 196, 0.4);
 }
 
 .chart-label {
@@ -1656,7 +1685,12 @@ function showTrend(itemId) {
     currentTrendItemId = itemId;
     currentTrendEndDate = new Date(); // Reset to today initially
 
-    detailItemName.textContent = \`\${item.name} の推移\`;
+    const target = item.targetCount || 0;
+    const targetBadge = target > 0
+        ? '<span style="font-size: 0.8rem; font-weight: normal; opacity: 0.85; margin-left: 6px; background: rgba(85, 239, 196, 0.2); color: #55efc4; padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(85, 239, 196, 0.4);">目標: ' + target + '回/日</span>'
+        : '';
+
+    detailItemName.innerHTML = escapeHtml(item.name) + ' の推移 ' + targetBadge;
     statsViewMain.classList.add('hidden');
     statsViewDetail.classList.remove('hidden');
 
@@ -1665,13 +1699,16 @@ function showTrend(itemId) {
 
 function renderTrendChart(itemId) {
     trendChart.innerHTML = '';
+    const item = items.find(i => i.id === itemId);
+    const target = (item && item.targetCount) ? item.targetCount : 0;
+
     const days = 7;
     const endDate = currentTrendEndDate;
 
     // Update labels to show range
     const startDate = new Date(endDate);
     startDate.setDate(endDate.getDate() - (days - 1));
-    trendDateRangeEl.textContent = \`\${startDate.getMonth() + 1}/\${startDate.getDate()} - \${endDate.getMonth() + 1}/\${endDate.getDate()}\`;
+    trendDateRangeEl.textContent = (startDate.getMonth() + 1) + '/' + startDate.getDate() + ' - ' + (endDate.getMonth() + 1) + '/' + endDate.getDate();
 
     let maxCount = 0;
     const data = [];
@@ -1685,26 +1722,42 @@ function renderTrendChart(itemId) {
         data.push({ date: d, count: count });
     }
 
+    const maxScale = Math.max(maxCount, target, 1);
+
+    // Render Target Line if target is set
+    if (target > 0) {
+        const targetLine = document.createElement('div');
+        targetLine.className = 'chart-target-line';
+        const targetPercent = (target / maxScale) * 100;
+        targetLine.style.bottom = 'calc(' + targetPercent + '% + 20px)'; // 20px is padding for dateLabel
+        targetLine.innerHTML = '<span class="chart-target-label">目標 ' + target + '</span>';
+        trendChart.appendChild(targetLine);
+    }
+
     // Render bars
     data.forEach(d => {
         const container = document.createElement('div');
         container.className = 'chart-bar-container';
 
-        const heightPercent = maxCount > 0 ? (d.count / maxCount) * 100 : 0;
+        const isCompleted = target > 0 && d.count >= target;
+        const heightPercent = (d.count / maxScale) * 100;
 
         // Date Label (e.g., "2/7")
         const dateLabel = document.createElement('div');
         dateLabel.className = 'chart-label';
-        dateLabel.textContent = \`\${d.date.getMonth() + 1}/\${d.date.getDate()}\`;
+        dateLabel.textContent = (d.date.getMonth() + 1) + '/' + d.date.getDate();
 
         // Value Label
         const valLabel = document.createElement('div');
         valLabel.className = 'chart-value';
-        valLabel.textContent = d.count;
+        valLabel.innerHTML = isCompleted ? d.count + ' <span style="color:#55efc4; font-size:0.75rem;">✓</span>' : String(d.count);
 
         const bar = document.createElement('div');
-        bar.className = 'chart-bar';
-        bar.style.height = \`\${Math.max(heightPercent, 1)}%\`; // Ensure at least a tiny bit visible
+        bar.className = 'chart-bar' + (isCompleted ? ' is-completed' : '');
+        if (item && item.color && !isCompleted) {
+            bar.style.background = item.color;
+        }
+        bar.style.height = Math.max(heightPercent, 2) + '%'; // Ensure at least a tiny bit visible
 
         container.appendChild(valLabel);
         container.appendChild(bar);
