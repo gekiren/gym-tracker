@@ -100,8 +100,8 @@ export function useProfile() {
       },
       {
         id: 'feature-management',
-        title: '機能管理',
-        desc: 'ダッシュボードの表示機能・表示順の設定',
+        title: '機能管理 ＆ 解放',
+        desc: 'Pポイントでの新機能アンロック・表示順の設定',
         icon: 'options-outline',
         iconColor: '#e91e63',
         route: '/settings/feature-management',

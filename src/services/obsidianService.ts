@@ -867,15 +867,15 @@ export const exportHealthDataToObsidian = async (
   }
 
   try {
-    const targetFolder = subFolderOverride || settings.folderDaily;
-    const dailyFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, targetFolder);
+    const targetFolder = subFolderOverride || settings.folderHealth;
+    const healthFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, targetFolder);
     const dateStr = healthData.date;
-    const fileName = settings.exportMode === 'append' ? `${dateStr}.md` : `TreNote_${dateStr}.md`;
+    const fileName = `${dateStr}_health.md`;
 
     const sectionHeader = '## 📊 ヘルスデータレポート';
     const newContent = formatHealthDataToMarkdown(healthData);
 
-    const files = await FileSystem.StorageAccessFramework.readDirectoryAsync(dailyFolderUri);
+    const files = await FileSystem.StorageAccessFramework.readDirectoryAsync(healthFolderUri);
     let targetFileUri: string | null = null;
 
     for (const fUri of files) {
@@ -891,7 +891,7 @@ export const exportHealthDataToObsidian = async (
       const updatedText = mergeSectionText(existingText, sectionHeader, newContent);
       await FileSystem.StorageAccessFramework.writeAsStringAsync(targetFileUri, updatedText);
     } else {
-      targetFileUri = await FileSystem.StorageAccessFramework.createFileAsync(dailyFolderUri, fileName, 'text/markdown');
+      targetFileUri = await FileSystem.StorageAccessFramework.createFileAsync(healthFolderUri, fileName, 'text/markdown');
       await FileSystem.StorageAccessFramework.writeAsStringAsync(targetFileUri, newContent);
     }
 

@@ -21,6 +21,7 @@ import {
   saveSetting,
 } from '../db/database';
 import { useSettingsStore } from './settingsStore';
+import { recordFeatureAction } from '../services/featureUnlockService';
 
 // ─── 型定義 ────────────────────────────────────────────
 
@@ -125,6 +126,7 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
         const logs = await getMealLogsByDate(date);
         set({ mealLogs: logs });
       }
+      recordFeatureAction('nutrition', log.date);
     } catch (e) {
       console.warn('useNutritionStore: addMeal failed', e);
     }

@@ -9,6 +9,7 @@ import {
 } from '../db/repositories/bodyRepository';
 import { fetchTodayHealthData } from '../services/healthService';
 import { getSettings, saveSetting } from '../db/database';
+import { recordFeatureAction } from '../services/featureUnlockService';
 
 export interface SavedBodyMeasurements {
   neck?: number | null;
@@ -152,6 +153,8 @@ export const useBodyStore = create<BodyState>((set, get) => ({
           })
           .catch(() => {});
       }
+
+      recordFeatureAction('body', log.date);
 
       return savedId;
     } catch (e: any) {

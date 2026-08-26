@@ -25,6 +25,7 @@ import {
   deleteLastHabitLog,
   getSettingValue,
 } from '../db/database';
+import { recordFeatureAction } from '../services/featureUnlockService';
 
 export interface HabitSummaryItem {
   id: number;
@@ -360,6 +361,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
     try {
       await addWaterLog(amount, Date.now(), date, caffeine);
       await get().loadWaterData(date);
+      recordFeatureAction('water', date);
     } catch (e) {
       console.warn('Failed to add water log:', e);
     }
@@ -420,6 +422,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
     try {
       await addTimeLog(activityName, startTime, endTime, date, durationMinutes);
       await get().loadTimeData(date);
+      recordFeatureAction('zikan', date);
     } catch (e) {
       console.warn('Failed to add time log:', e);
     }
@@ -508,6 +511,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
     try {
       await addHabitLog(habitItemId, Date.now(), date);
       await get().loadHabits(date);
+      recordFeatureAction('habit', date);
     } catch (e) {
       console.warn('Failed to add habit log:', e);
     }

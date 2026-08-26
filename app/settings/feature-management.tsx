@@ -4,73 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Theme } from '../../src/theme';
 import { useSettingsStore, FeatureId } from '../../src/store/settingsStore';
-
-interface FeatureMeta {
-  id: FeatureId;
-  title: string;
-  desc: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  iconColor: string;
-}
-
-const FEATURE_METAS: Record<FeatureId, FeatureMeta> = {
-  workout: {
-    id: 'workout',
-    title: '筋トレ',
-    desc: 'ワークアウトの記録・タイマー・履歴',
-    icon: 'barbell',
-    iconColor: '#4facfe',
-  },
-  body: {
-    id: 'body',
-    title: '体組成＆筋肥大限界',
-    desc: '体重・体脂肪率・骨格限界モデルの追跡',
-    icon: 'body',
-    iconColor: '#38bdf8',
-  },
-  water: {
-    id: 'water',
-    title: '水分管理',
-    desc: '毎日の水分摂取・カフェイン量の記録',
-    icon: 'water',
-    iconColor: '#00d2ff',
-  },
-  nutrition: {
-    id: 'nutrition',
-    title: '栄養＆食事管理',
-    desc: 'カロリーおよびPFCバランスの記録',
-    icon: 'restaurant',
-    iconColor: '#10b981',
-  },
-  zikan: {
-    id: 'zikan',
-    title: '24時間管理',
-    desc: '1日の時間内訳・行動ログ',
-    icon: 'time',
-    iconColor: '#ff9800',
-  },
-  routine: {
-    id: 'routine',
-    title: 'ルーティン管理',
-    desc: '日々のルーティンの達成記録',
-    icon: 'repeat',
-    iconColor: '#4caf50',
-  },
-  habit: {
-    id: 'habit',
-    title: '習慣カウンター',
-    desc: '日々の習慣・行動のタップカウントと継続記録',
-    icon: 'checkmark-circle',
-    iconColor: '#e91e63',
-  },
-  voice_ai: {
-    id: 'voice_ai',
-    title: '音声AIアシスタント',
-    desc: 'Gemini Live API による音声リアルタイム対話・自動記録',
-    icon: 'mic',
-    iconColor: '#64b4ff',
-  },
-};
+import { useFeatureUnlockStore, isFeatureUnlockedHelper } from '../../src/store/featureUnlockStore';
+import { ALL_FEATURE_IDS, FEATURE_UNLOCK_METAS, getUnlockCost } from '../../src/constants/featureUnlockConstants';
+import { PointBadge } from '../../components/PointBadge';
+import { FeatureUnlockModal } from '../../components/FeatureUnlockModal';
 
 const DEFAULT_ORDER: FeatureId[] = ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'habit', 'voice_ai'];
 const DEFAULT_VISIBILITY: Record<FeatureId, boolean> = {
@@ -88,6 +25,17 @@ export default function FeatureManagementScreen() {
   const currentOrder = useSettingsStore(state => state.settings.featureOrder);
   const currentVisibility = useSettingsStore(state => state.settings.featureVisibility);
   const setFeatureConfig = useSettingsStore(state => state.setFeatureConfig);
+  const isPremium = useSettingsStore(state => state.settings.isPremium);
+  const isEarlyAdopter = useSettingsStore(state => state.settings.isEarlyAdopter);
+
+  // Feature Unlock Store
+  const pointsBalance = useFeatureUnlockStore(state => state.pointsBalance);
+  const unlockedFeatures = useFeatureUnlockStore(state => state.unlockedFeatures);
+  const forceUnlockAll = useFeatureUnlockStore(state => state.forceUnlockAll);
+  const unlockFeature = useFeatureUnlockStore(state => state.unlockFeature);
+  const setForceUnlockAll = useFeatureUnlockStore(state => state.setForceUnlockAll);
+  const pendingUnlockFeature = useFeatureUnlockStore(state => state.pendingUnlockFeature);
+  const setPendingUnlockFeature = useFeatureUnlockStore(state => state.setPendingUnlockFeature);
 
   const [order, setOrder] = useState<FeatureId[]>(currentOrder || DEFAULT_ORDER);
   const [visibility, setVisibility] = useState<Record<FeatureId, boolean>>(
@@ -135,10 +83,45 @@ export default function FeatureManagementScreen() {
     setFeatureConfig(newOrder, visibility);
   }, [order, visibility, setFeatureConfig]);
 
+  const handleUnlockFeature = (id: FeatureId) => {
+    const meta = FEATURE_UNLOCK_METAS[id];
+    const cost = getUnlockCost(unlockedFeatures.length);
+
+    if (pointsBalance < cost) {
+      Alert.alert(
+        'Pポイントが不足しています',
+        `「${meta.title}」の開放には ${cost} P が必要です。（現在の所持: ${pointsBalance} P）\n\n日々の筋トレや水分補給などを記録してPポイントを獲得しましょう！`,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    Alert.alert(
+      '新機能の開放確認',
+      `${cost} P を消費して「${meta.title}」を開放しますか？\n（開放後の残高: ${pointsBalance - cost} P）`,
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: '開放する',
+          style: 'default',
+          onPress: () => {
+            const success = unlockFeature(id);
+            if (success) {
+              // 有効化も同時にONにする
+              const updatedVisibility = { ...visibility, [id]: true };
+              setVisibility(updatedVisibility);
+              setFeatureConfig(order, updatedVisibility);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleReset = useCallback(() => {
     Alert.alert(
-      '設定のリセット',
-      '表示順と表示/非表示の切り替えを初期状態（全表示・標準順）に戻しますか？',
+      '表示設定のリセット',
+      '表示順と表示/非表示の切り替えを初期状態に戻しますか？（※開放済みポイントや機能は維持されます）',
       [
         { text: 'キャンセル', style: 'cancel' },
         {
@@ -154,6 +137,12 @@ export default function FeatureManagementScreen() {
     );
   }, [setFeatureConfig]);
 
+  const unlockedCount = isPremium || isEarlyAdopter || forceUnlockAll
+    ? ALL_FEATURE_IDS.length
+    : unlockedFeatures.length;
+
+  const nextUnlockCost = getUnlockCost(unlockedFeatures.length);
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -165,79 +154,164 @@ export default function FeatureManagementScreen() {
         >
           <Ionicons name="chevron-back" size={24} color={Theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>機能管理</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>機能管理 ＆ 解放</Text>
+        <PointBadge />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Description Banner */}
-        <View style={styles.infoBanner}>
-          <Ionicons name="information-circle-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.infoText}>
-            ダッシュボードに表示する機能の選択（ON/OFF）と、表示順序を入れ替えることができます。
-          </Text>
+        {/* Progress Card */}
+        <View style={styles.statusCard}>
+          <View style={styles.statusHeader}>
+            <View>
+              <Text style={styles.statusTitle}>機能開放ステータス</Text>
+              <Text style={styles.statusSubtitle}>
+                {isPremium || isEarlyAdopter
+                  ? 'プレミアムプラン: 全機能フル解放中'
+                  : `解放済み: ${unlockedCount} / ${ALL_FEATURE_IDS.length} 機能`}
+              </Text>
+            </View>
+            <View style={styles.statusBadge}>
+              <Ionicons name="lock-open" size={16} color={Theme.colors.primary} style={{ marginRight: 4 }} />
+              <Text style={styles.statusBadgeText}>{unlockedCount}/{ALL_FEATURE_IDS.length}</Text>
+            </View>
+          </View>
+
+          {/* Progress Bar */}
+          <View style={styles.progressBarBg}>
+            <View
+              style={[
+                styles.progressBarFill,
+                { width: `${Math.min(100, (unlockedCount / ALL_FEATURE_IDS.length) * 100)}%` },
+              ]}
+            />
+          </View>
+
+          {!isPremium && !isEarlyAdopter && unlockedCount < ALL_FEATURE_IDS.length && !forceUnlockAll && (
+            <Text style={styles.nextCostHint}>
+              💡 次の機能開放に必要なポイント: <Text style={{ color: '#ffd700', fontWeight: 'bold' }}>{nextUnlockCost} P</Text>
+            </Text>
+          )}
         </View>
+
+        {/* Force Unlock Toggle (Manual Setting) */}
+        {!isPremium && !isEarlyAdopter && (
+          <View style={styles.forceUnlockCard}>
+            <View style={{ flex: 1, marginRight: 12 }}>
+              <Text style={styles.forceUnlockTitle}>すべての機能を常に解放</Text>
+              <Text style={styles.forceUnlockDesc}>
+                ポイントを消費せずに全機能を常に有効化します
+              </Text>
+            </View>
+            <Switch
+              value={forceUnlockAll}
+              onValueChange={setForceUnlockAll}
+              trackColor={{ false: '#3a3a3c', true: Theme.colors.primary }}
+              thumbColor={forceUnlockAll ? '#ffffff' : '#8e8e93'}
+            />
+          </View>
+        )}
 
         {/* Feature Item List */}
         <View style={styles.listContainer}>
           {order.map((id, index) => {
-            const meta = FEATURE_METAS[id];
+            const meta = FEATURE_UNLOCK_METAS[id];
             if (!meta) return null;
+
+            const isUnlocked = isFeatureUnlockedHelper(
+              id,
+              unlockedFeatures,
+              forceUnlockAll,
+              isPremium,
+              isEarlyAdopter
+            );
             const isVisible = visibility[id] !== false;
             const isFirst = index === 0;
             const isLast = index === order.length - 1;
 
             return (
-              <View key={id} style={[styles.featureCard, !isVisible && styles.featureCardDisabled]}>
-                <View style={[styles.iconBox, { backgroundColor: `${meta.iconColor}20` }]}>
-                  <Ionicons name={meta.icon} size={22} color={meta.iconColor} />
+              <View
+                key={id}
+                style={[
+                  styles.featureCard,
+                  !isUnlocked && styles.featureCardLocked,
+                  isUnlocked && !isVisible && styles.featureCardDisabled,
+                ]}
+              >
+                <View style={styles.iconColumn}>
+                  <View style={[styles.iconBox, { backgroundColor: meta.badgeColor }]}>
+                    <Ionicons name={meta.icon} size={22} color={meta.iconColor} />
+                  </View>
+                  {isUnlocked ? (
+                    <View style={styles.unlockedTag}>
+                      <Text style={styles.unlockedTagText}>解放済</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.lockedTag}>
+                      <Ionicons name="lock-closed" size={9} color="#ff9800" style={{ marginRight: 2 }} />
+                      <Text style={styles.lockedTagText}>未解放</Text>
+                    </View>
+                  )}
                 </View>
 
                 <View style={styles.featureInfo}>
-                  <Text style={[styles.featureTitle, !isVisible && styles.textDisabled]}>
+                  <Text style={[styles.featureTitle, (!isUnlocked || !isVisible) && styles.textDisabled]}>
                     {meta.title}
                   </Text>
-                  <Text style={styles.featureDesc}>
-                    {meta.desc}
+                  <Text style={styles.featureDesc} numberOfLines={2}>
+                    {meta.shortDesc}
                   </Text>
                 </View>
 
-                {/* Move Up / Down Buttons */}
-                <View style={styles.orderControls}>
-                  <TouchableOpacity
-                    style={[styles.reorderBtn, isFirst && styles.reorderBtnDisabled]}
-                    onPress={() => handleMoveUp(index)}
-                    disabled={isFirst}
-                    activeOpacity={0.6}
-                  >
-                    <Ionicons
-                      name="chevron-up"
-                      size={18}
-                      color={isFirst ? '#444' : Theme.colors.text}
-                    />
-                  </TouchableOpacity>
+                {isUnlocked ? (
+                  <>
+                    {/* Move Up / Down Buttons */}
+                    <View style={styles.orderControls}>
+                      <TouchableOpacity
+                        style={[styles.reorderBtn, isFirst && styles.reorderBtnDisabled]}
+                        onPress={() => handleMoveUp(index)}
+                        disabled={isFirst}
+                        activeOpacity={0.6}
+                      >
+                        <Ionicons
+                          name="chevron-up"
+                          size={18}
+                          color={isFirst ? '#444' : Theme.colors.text}
+                        />
+                      </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={[styles.reorderBtn, isLast && styles.reorderBtnDisabled]}
-                    onPress={() => handleMoveDown(index)}
-                    disabled={isLast}
-                    activeOpacity={0.6}
-                  >
-                    <Ionicons
-                      name="chevron-down"
-                      size={18}
-                      color={isLast ? '#444' : Theme.colors.text}
-                    />
-                  </TouchableOpacity>
-                </View>
+                      <TouchableOpacity
+                        style={[styles.reorderBtn, isLast && styles.reorderBtnDisabled]}
+                        onPress={() => handleMoveDown(index)}
+                        disabled={isLast}
+                        activeOpacity={0.6}
+                      >
+                        <Ionicons
+                          name="chevron-down"
+                          size={18}
+                          color={isLast ? '#444' : Theme.colors.text}
+                        />
+                      </TouchableOpacity>
+                    </View>
 
-                {/* ON/OFF Switch */}
-                <Switch
-                  value={isVisible}
-                  onValueChange={(val) => handleToggleVisibility(id, val)}
-                  trackColor={{ false: '#3a3a3c', true: Theme.colors.primary }}
-                  thumbColor={isVisible ? '#ffffff' : '#8e8e93'}
-                />
+                    {/* ON/OFF Switch */}
+                    <Switch
+                      value={isVisible}
+                      onValueChange={(val) => handleToggleVisibility(id, val)}
+                      trackColor={{ false: '#3a3a3c', true: Theme.colors.primary }}
+                      thumbColor={isVisible ? '#ffffff' : '#8e8e93'}
+                    />
+                  </>
+                ) : (
+                  /* Unlock Action Button */
+                  <TouchableOpacity
+                    style={styles.unlockActionBtn}
+                    onPress={() => handleUnlockFeature(id)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="key-outline" size={14} color="#ffd700" style={{ marginRight: 4 }} />
+                    <Text style={styles.unlockActionBtnText}>{nextUnlockCost} P で解放</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             );
           })}
@@ -246,9 +320,15 @@ export default function FeatureManagementScreen() {
         {/* Reset Button */}
         <TouchableOpacity style={styles.resetButton} onPress={handleReset} activeOpacity={0.7}>
           <Ionicons name="refresh-outline" size={18} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
-          <Text style={styles.resetButtonText}>初期設定に戻す</Text>
+          <Text style={styles.resetButtonText}>表示設定を初期化</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Feature Unlock Celebration Modal */}
+      <FeatureUnlockModal
+        featureId={pendingUnlockFeature}
+        onClose={() => setPendingUnlockFeature(null)}
+      />
     </View>
   );
 }
@@ -268,21 +348,78 @@ const styles = StyleSheet.create({
   backButton: { padding: 4 },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
   content: { padding: Theme.spacing.md, paddingBottom: 60 },
-  infoBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(79, 172, 254, 0.1)',
+  statusCard: {
+    backgroundColor: Theme.colors.card,
     borderRadius: Theme.borderRadius.md,
-    padding: 12,
+    padding: 16,
     marginBottom: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(79, 172, 254, 0.2)',
+    borderColor: Theme.colors.border,
   },
-  infoText: {
-    flex: 1,
-    color: Theme.colors.text,
-    fontSize: 13,
-    lineHeight: 18,
+  statusHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  statusTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 2,
+  },
+  statusSubtitle: {
+    fontSize: 12,
+    color: Theme.colors.textMuted,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(79, 172, 254, 0.15)',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+  },
+  statusBadgeText: {
+    color: Theme.colors.primary,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  progressBarBg: {
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: Theme.colors.primary,
+    borderRadius: 3,
+  },
+  nextCostHint: {
+    fontSize: 12,
+    color: Theme.colors.textMuted,
+    marginTop: 10,
+  },
+  forceUnlockCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: Theme.borderRadius.md,
+    padding: 14,
+    marginBottom: Theme.spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  forceUnlockTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 2,
+  },
+  forceUnlockDesc: {
+    fontSize: 11,
+    color: Theme.colors.textMuted,
   },
   listContainer: { gap: 12 },
   featureCard: {
@@ -294,8 +431,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Theme.colors.border,
   },
+  featureCardLocked: {
+    borderColor: 'rgba(255, 152, 0, 0.3)',
+    backgroundColor: 'rgba(255, 152, 0, 0.03)',
+  },
   featureCardDisabled: {
     opacity: 0.55,
+  },
+  iconColumn: {
+    alignItems: 'center',
+    width: 44,
+    marginRight: 12,
   },
   iconBox: {
     width: 38,
@@ -303,14 +449,13 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   featureInfo: {
     flex: 1,
     marginRight: 8,
   },
   featureTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
     color: Theme.colors.text,
     marginBottom: 2,
@@ -319,10 +464,37 @@ const styles = StyleSheet.create({
     color: Theme.colors.textMuted,
   },
   featureDesc: {
-    fontSize: 12,
+    fontSize: 11,
     color: Theme.colors.textMuted,
-    lineHeight: 16,
-    marginTop: 2,
+    lineHeight: 15,
+  },
+  unlockedTag: {
+    backgroundColor: 'rgba(76, 175, 80, 0.15)',
+    paddingVertical: 1,
+    paddingHorizontal: 4,
+    borderRadius: 4,
+    marginTop: 4,
+    alignItems: 'center',
+  },
+  unlockedTagText: {
+    color: '#4caf50',
+    fontSize: 9,
+    fontWeight: 'bold',
+  },
+  lockedTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 152, 0, 0.15)',
+    paddingVertical: 1,
+    paddingHorizontal: 4,
+    borderRadius: 4,
+    marginTop: 4,
+  },
+  lockedTagText: {
+    color: '#ff9800',
+    fontSize: 9,
+    fontWeight: 'bold',
   },
   orderControls: {
     flexDirection: 'row',
@@ -337,6 +509,21 @@ const styles = StyleSheet.create({
   },
   reorderBtnDisabled: {
     opacity: 0.3,
+  },
+  unlockActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    borderColor: 'rgba(255, 215, 0, 0.4)',
+    borderWidth: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+  unlockActionBtnText: {
+    color: '#ffd700',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   resetButton: {
     flexDirection: 'row',

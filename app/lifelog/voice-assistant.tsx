@@ -10,6 +10,7 @@ import { useLifelogStore } from '../../src/store/lifelogStore';
 import { getLastWorkoutSummary } from '../../src/db/database';
 import { handleCompanionWebViewMessage } from '../../src/services/aiCompanionSyncService';
 import { useFeatureSwipe } from '../../hooks/useFeatureSwipe';
+import { PointBadge } from '../../components/PointBadge';
 
 export default function VoiceAssistantScreen() {
   const { colors } = useAppTheme();
@@ -95,6 +96,7 @@ export default function VoiceAssistantScreen() {
             headerStyle: { backgroundColor: colors.background },
             headerTintColor: colors.text,
             headerTitleStyle: { fontWeight: 'bold' },
+            headerRight: () => <PointBadge style={{ marginRight: 8 }} />,
             headerLeft: () => (
               <TouchableOpacity
                 onPress={() => {

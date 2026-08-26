@@ -15,8 +15,11 @@ import { getSyncDiagnosticsLogs } from '../src/services/lifelogSyncService';
 import { showReviewDialog } from '../src/services/reviewService';
 import { saveCrashLog, readCrashLog } from '../src/services/crashReporterService';
 import { useWorkoutStore } from '../src/store/workoutStore';
-import { useSettingsStore } from '../src/store/settingsStore';
+import { useSettingsStore, FeatureId } from '../src/store/settingsStore';
 import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
+import { useFeatureUnlockStore } from '../src/store/featureUnlockStore';
+import { ALL_FEATURE_IDS, FEATURE_UNLOCK_METAS, POINT_REWARDS, getUnlockCost } from '../src/constants/featureUnlockConstants';
+import { FeatureUnlockModal } from '../components/FeatureUnlockModal';
 import * as Clipboard from 'expo-clipboard';
 import { getAIDebugLogs, clearAIDebugLogs, copyAIDebugLogsToClipboard } from '../src/utils/debugLogStore';
 import { useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
@@ -33,6 +36,18 @@ export default function DeveloperMenuScreen() {
   const setEnableAiDebugContext = useSettingsStore(state => state.setEnableAiDebugContext);
   const preferredAiModel = useSettingsStore(state => state.settings.preferredAiModel || 'gemini');
   const setPreferredAiModel = useSettingsStore(state => state.setPreferredAiModel);
+
+  // Feature Unlock Store hooks & states
+  const pointsBalance = useFeatureUnlockStore(state => state.pointsBalance);
+  const unlockedFeatures = useFeatureUnlockStore(state => state.unlockedFeatures);
+  const forceUnlockAll = useFeatureUnlockStore(state => state.forceUnlockAll);
+  const hasCompletedInitialSelection = useFeatureUnlockStore(state => state.hasCompletedInitialSelection);
+  const setForceUnlockAll = useFeatureUnlockStore(state => state.setForceUnlockAll);
+  const showPointNotice = useFeatureUnlockStore(state => state.showPointNotice);
+
+  const [previewUnlockFeature, setPreviewUnlockFeature] = useState<FeatureId | null>(null);
+  const [showCustomPointsModal, setShowCustomPointsModal] = useState(false);
+  const [customPointsInput, setCustomPointsInput] = useState('');
 
   const [isChecking, setIsChecking] = useState(false);
   const [lastAckId, setLastAckId] = useState<string>('Loading...');
@@ -452,6 +467,107 @@ export default function DeveloperMenuScreen() {
     }
   };
 
+  // P-Points & Feature Unlock Testing Handlers
+  const handleQuickAddPoints = async (amount: number) => {
+    try {
+      const next = Math.max(0, pointsBalance + amount);
+      useFeatureUnlockStore.getState().initializeStore({ pointsBalance: next });
+      await saveSetting('p_points_balance', String(next));
+      Alert.alert('ポイント操作完了', `${amount >= 0 ? '+' : ''}${amount} P を反映しました。\n（現在の残高: ${next} P）`);
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    }
+  };
+
+  const handleSetCustomPointsSubmit = async () => {
+    const val = parseInt(customPointsInput, 10);
+    if (isNaN(val) || val < 0) {
+      Alert.alert('入力エラー', '0以上の有効な数値を入力してください。');
+      return;
+    }
+    try {
+      useFeatureUnlockStore.getState().initializeStore({ pointsBalance: val });
+      await saveSetting('p_points_balance', String(val));
+      setShowCustomPointsModal(false);
+      setCustomPointsInput('');
+      Alert.alert('設定完了', `Pポイント残高を ${val} P に設定しました。`);
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    }
+  };
+
+  const handleUnlockAllFeatures = async () => {
+    try {
+      const all = [...ALL_FEATURE_IDS];
+      useFeatureUnlockStore.getState().initializeStore({ unlockedFeatures: all });
+      await saveSetting('unlocked_features', JSON.stringify(all));
+      Alert.alert('全機能アンロック', 'すべての機能（8/8）を解放状態に設定しました。');
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    }
+  };
+
+  const handleResetToDefaultTwoFeatures = async () => {
+    try {
+      const defaults: FeatureId[] = ['workout', 'water'];
+      useFeatureUnlockStore.getState().initializeStore({ unlockedFeatures: defaults });
+      await saveSetting('unlocked_features', JSON.stringify(defaults));
+      Alert.alert('リセット完了', '初期2機能（筋トレ・水分）のみ解放状態に戻しました。');
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    }
+  };
+
+  const handleToggleFeatureLock = async (id: FeatureId) => {
+    try {
+      const current = [...unlockedFeatures];
+      let next: FeatureId[];
+      if (current.includes(id)) {
+        if (current.length <= 1) {
+          Alert.alert('注意', '最低でも1つの機能は解放状態である必要があります。');
+          return;
+        }
+        next = current.filter(item => item !== id);
+      } else {
+        next = [...current, id];
+      }
+      useFeatureUnlockStore.getState().initializeStore({ unlockedFeatures: next });
+      await saveSetting('unlocked_features', JSON.stringify(next));
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    }
+  };
+
+  const handleResetInitialSelection = async () => {
+    try {
+      useFeatureUnlockStore.getState().initializeStore({ hasCompletedInitialSelection: false });
+      await saveSetting('has_completed_initial_feature_selection', 'false');
+      Alert.alert(
+        '初期選択リセット完了',
+        '初回2機能選択フラグをリセットしました。\n次回ホーム画面（ダッシュボード）表示時に初期選択モーダルが表示されます。'
+      );
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    }
+  };
+
+  const handleResetRecordBonuses = async () => {
+    try {
+      useFeatureUnlockStore.getState().initializeStore({
+        firstRecordedFeatures: [],
+        dailyRecordMap: {},
+      });
+      await saveSetting('first_recorded_features', JSON.stringify([]));
+      await saveSetting('daily_record_map', JSON.stringify({}));
+      Alert.alert(
+        'ボーナス履歴リセット完了',
+        '各機能の初回記録ボーナスフラグおよび当日の記録履歴をクリアしました。\n各機能で初記録ボーナス(+5P)や当日記録ボーナス(+1P)の再獲得テストが可能です。'
+      );
+    } catch (e: any) {
+      Alert.alert('エラー', e?.message || String(e));
+    }
+  };
+
   const [isImportingCSV, setIsImportingCSV] = useState(false);
   const [isImportingMD, setIsImportingMD] = useState(false);
   const [showMDTextModal, setShowMDTextModal] = useState(false);
@@ -779,6 +895,207 @@ export default function DeveloperMenuScreen() {
           </View>
         </View>
 
+        {/* P-Points & Feature Unlock Testing Section */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="sparkles" size={24} color="#ffd700" style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>⭐ Pポイント＆機能解放システム テスト</Text>
+          </View>
+          <Text style={styles.cardDesc}>
+            初期2機能選択フロー、Pポイント増減、機能アンロック演出、ボーナス獲得のデバッグユーティリティです。
+          </Text>
+
+          {/* Status Display */}
+          <View style={{ backgroundColor: 'rgba(255, 215, 0, 0.05)', borderRadius: 8, padding: 12, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.2)', marginBottom: 16 }}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>所持Pポイント残高</Text>
+              <Text style={[styles.infoValue, { color: '#ffd700', fontSize: 16, fontWeight: 'bold' }]}>
+                {pointsBalance} P
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>解放済み機能数</Text>
+              <Text style={styles.infoValue}>
+                {unlockedFeatures.length} / {ALL_FEATURE_IDS.length} 機能
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>初期2機能選択フラグ</Text>
+              <Text style={[styles.infoValue, { color: hasCompletedInitialSelection ? '#4faf54' : '#ff9800' }]}>
+                {hasCompletedInitialSelection ? '完了済 ✅' : '未完了（表示対象） ⏳'}
+              </Text>
+            </View>
+            <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+              <Text style={styles.infoLabel}>全機能強制解放モード</Text>
+              <Switch
+                value={forceUnlockAll}
+                onValueChange={(val) => setForceUnlockAll(val)}
+                trackColor={{ false: '#333', true: Theme.colors.primary }}
+                thumbColor="#fff"
+              />
+            </View>
+          </View>
+
+          {/* Section: Points Operation */}
+          <Text style={[styles.cardDesc, { fontWeight: 'bold', color: '#fff', marginBottom: 8 }]}>
+            💰 Pポイント残高の操作:
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 6, marginBottom: 8 }}>
+            <TouchableOpacity
+              style={[styles.btnOutline, { flex: 1, paddingVertical: 10, borderColor: '#ffd700', backgroundColor: 'rgba(255, 215, 0, 0.08)' }]}
+              onPress={() => handleQuickAddPoints(10)}
+            >
+              <Text style={[styles.btnOutlineText, { color: '#ffd700', fontSize: 13 }]}>+10 P</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.btnOutline, { flex: 1, paddingVertical: 10, borderColor: '#ffd700', backgroundColor: 'rgba(255, 215, 0, 0.08)' }]}
+              onPress={() => handleQuickAddPoints(50)}
+            >
+              <Text style={[styles.btnOutlineText, { color: '#ffd700', fontSize: 13 }]}>+50 P</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.btnOutline, { flex: 1, paddingVertical: 10, borderColor: '#ffd700', backgroundColor: 'rgba(255, 215, 0, 0.08)' }]}
+              onPress={() => handleQuickAddPoints(100)}
+            >
+              <Text style={[styles.btnOutlineText, { color: '#ffd700', fontSize: 13 }]}>+100 P</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+            <TouchableOpacity
+              style={[styles.btnOutline, { flex: 1, paddingVertical: 10 }]}
+              onPress={() => setShowCustomPointsModal(true)}
+            >
+              <Ionicons name="create-outline" size={16} color={Theme.colors.primary} style={{ marginRight: 4 }} />
+              <Text style={[styles.btnOutlineText, { fontSize: 12 }]}>任意の数値を設定</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.btnOutline, { flex: 1, paddingVertical: 10, borderColor: '#ff4d4f', backgroundColor: 'rgba(255, 77, 79, 0.05)' }]}
+              onPress={() => handleQuickAddPoints(-pointsBalance)}
+            >
+              <Ionicons name="trash-outline" size={16} color="#ff4d4f" style={{ marginRight: 4 }} />
+              <Text style={[styles.btnOutlineText, { color: '#ff4d4f', fontSize: 12 }]}>0 P にリセット</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Section: Batch Feature Unlock Operation */}
+          <Text style={[styles.cardDesc, { fontWeight: 'bold', color: '#fff', marginBottom: 8 }]}>
+            🔓 機能解放ステータスの一括操作:
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+            <TouchableOpacity
+              style={[styles.btnOutline, { flex: 1, paddingVertical: 10, borderColor: '#4faf54', backgroundColor: 'rgba(79, 175, 84, 0.08)' }]}
+              onPress={handleUnlockAllFeatures}
+            >
+              <Ionicons name="lock-open-outline" size={16} color="#4faf54" style={{ marginRight: 4 }} />
+              <Text style={[styles.btnOutlineText, { color: '#4faf54', fontSize: 12 }]}>全機能アンロック</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.btnOutline, { flex: 1, paddingVertical: 10, borderColor: '#ff9800', backgroundColor: 'rgba(255, 152, 0, 0.08)' }]}
+              onPress={handleResetToDefaultTwoFeatures}
+            >
+              <Ionicons name="refresh-outline" size={16} color="#ff9800" style={{ marginRight: 4 }} />
+              <Text style={[styles.btnOutlineText, { color: '#ff9800', fontSize: 12 }]}>初期2機能にリセット</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Section: Individual Feature Locks */}
+          <Text style={[styles.cardDesc, { fontWeight: 'bold', color: '#fff', marginBottom: 8 }]}>
+            🎯 個別機能のアンロック／ロック切替:
+          </Text>
+          <View style={{ gap: 6, marginBottom: 16 }}>
+            {ALL_FEATURE_IDS.map((id) => {
+              const meta = FEATURE_UNLOCK_METAS[id];
+              const isUnlocked = unlockedFeatures.includes(id);
+              return (
+                <TouchableOpacity
+                  key={id}
+                  style={[
+                    styles.infoRow,
+                    {
+                      paddingVertical: 8,
+                      paddingHorizontal: 10,
+                      backgroundColor: isUnlocked ? 'rgba(79, 172, 254, 0.06)' : 'rgba(255, 255, 255, 0.02)',
+                      borderRadius: 8,
+                      borderBottomWidth: 0,
+                    }
+                  ]}
+                  onPress={() => handleToggleFeatureLock(id)}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name={meta.icon} size={18} color={meta.iconColor} style={{ marginRight: 8 }} />
+                    <Text style={{ color: Theme.colors.text, fontSize: 13, fontWeight: '600' }}>
+                      {meta.title}
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={{ fontSize: 11, color: isUnlocked ? '#4faf54' : '#888', fontWeight: 'bold' }}>
+                      {isUnlocked ? '解放中 (タップで施錠)' : '未解放 (タップで解放)'}
+                    </Text>
+                    <Ionicons
+                      name={isUnlocked ? 'lock-open' : 'lock-closed'}
+                      size={16}
+                      color={isUnlocked ? '#4faf54' : '#888'}
+                    />
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Section: Flow & Bonus Resets */}
+          <Text style={[styles.cardDesc, { fontWeight: 'bold', color: '#fff', marginBottom: 8 }]}>
+            🔄 体験フロー ＆ ボーナス獲得のリセット:
+          </Text>
+          <View style={{ flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+            <TouchableOpacity
+              style={[styles.btnOutline, { borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.08)' }]}
+              onPress={handleResetInitialSelection}
+            >
+              <Ionicons name="sparkles-outline" size={18} color="#38bdf8" style={{ marginRight: 8 }} />
+              <Text style={[styles.btnOutlineText, { color: '#38bdf8', fontSize: 13 }]}>
+                初期2機能選択フラグをリセット (次回ホームで再表示)
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.btnOutline, { borderColor: '#e6a23c', backgroundColor: 'rgba(230, 162, 60, 0.08)' }]}
+              onPress={handleResetRecordBonuses}
+            >
+              <Ionicons name="ribbon-outline" size={18} color="#e6a23c" style={{ marginRight: 8 }} />
+              <Text style={[styles.btnOutlineText, { color: '#e6a23c', fontSize: 13 }]}>
+                初回・当日記録ボーナス履歴をリセット
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Section: Animation & Toast Preview */}
+          <Text style={[styles.cardDesc, { fontWeight: 'bold', color: '#fff', marginBottom: 8 }]}>
+            🎉 UI演出 ＆ 通知トーストのプレビュー:
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              style={[styles.btnOutline, { flex: 1, borderColor: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.08)' }]}
+              onPress={() => setPreviewUnlockFeature('nutrition')}
+            >
+              <Ionicons name="gift-outline" size={16} color="#a855f7" style={{ marginRight: 4 }} />
+              <Text style={[styles.btnOutlineText, { color: '#a855f7', fontSize: 12 }]}>
+                アンロック紙吹雪演出
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.btnOutline, { flex: 1, borderColor: '#ffd700', backgroundColor: 'rgba(255, 215, 0, 0.08)' }]}
+              onPress={() => showPointNotice(5, '初記録ボーナス！', '開発者メニューからのテスト通知 (+5P)')}
+            >
+              <Ionicons name="notifications-outline" size={16} color="#ffd700" style={{ marginRight: 4 }} />
+              <Text style={[styles.btnOutlineText, { color: '#ffd700', fontSize: 12 }]}>
+                ポイント獲得トースト
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Ads Testing Section */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
@@ -957,6 +1274,61 @@ export default function DeveloperMenuScreen() {
             </View>
           </View>
         </Modal>
+
+        {/* Modal for Custom Points Input */}
+        <Modal
+          visible={showCustomPointsModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowCustomPointsModal(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', padding: 20 }}>
+            <View style={{ backgroundColor: Theme.colors.card, borderRadius: 12, padding: 20, borderWidth: 1, borderColor: Theme.colors.border }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: Theme.colors.text }}>Pポイント残高の設定</Text>
+                <TouchableOpacity onPress={() => setShowCustomPointsModal(false)}>
+                  <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+              <Text style={{ fontSize: 13, color: Theme.colors.textMuted, marginBottom: 12 }}>
+                設定したいPポイント残高の数値を入力してください。
+              </Text>
+              <TextInput
+                style={{
+                  backgroundColor: 'rgba(0,0,0,0.3)',
+                  color: '#fff',
+                  borderRadius: 8,
+                  padding: 12,
+                  fontSize: 18,
+                  fontWeight: 'bold',
+                  borderWidth: 1,
+                  borderColor: Theme.colors.border,
+                  marginBottom: 16
+                }}
+                keyboardType="numeric"
+                placeholder="例: 100"
+                placeholderTextColor="rgba(255,255,255,0.3)"
+                value={customPointsInput}
+                onChangeText={setCustomPointsInput}
+                autoFocus={true}
+              />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <TouchableOpacity style={[styles.btnOutline, { flex: 1 }]} onPress={() => setShowCustomPointsModal(false)}>
+                  <Text style={styles.btnOutlineText}>キャンセル</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.btnPrimary, { flex: 1 }]} onPress={handleSetCustomPointsSubmit}>
+                  <Text style={styles.btnPrimaryText}>設定する</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Feature Unlock Celebration Preview Modal */}
+        <FeatureUnlockModal
+          featureId={previewUnlockFeature}
+          onClose={() => setPreviewUnlockFeature(null)}
+        />
 
         {/* AI Model Selection Section */}
         <View style={styles.card}>
