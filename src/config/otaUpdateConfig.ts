@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.13',
+  version: '2.0.14',
   title: {
-    ja: '🎯 習慣カウンター目標値および表示状態の保存バグ修正',
-    en: '🎯 Complete Fix for Habit Target Value Persistence',
+    ja: '🎯 習慣カウンター目標値保存バグの最終修正',
+    en: '🎯 Final Fix for Habit Target Value Persistence',
   },
   notes: {
     ja: [
-      'データベースの構造不整合を修復し、目標数値と非表示設定が確実に保存・維持されるようになりました。',
+      'データベースの構造不整合を修復する処理が過去の更新履歴によってスキップされてしまう問題を解決し、確実に目標値が保存されるよう修正しました。',
     ],
     en: [
-      'Fixed a database schema issue to ensure habit target values and hidden settings are reliably persisted.',
+      'Resolved an issue where database schema repairs were skipped due to previous update history, ensuring target values are reliably persisted.',
     ],
   },
 };
