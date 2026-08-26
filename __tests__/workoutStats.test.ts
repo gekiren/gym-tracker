@@ -208,16 +208,16 @@ describe('workoutStats - computeWeeklyWorkoutCount', () => {
     expect(count).toBe(5);
   });
 
-  it('handles multiple workouts on the same day correctly', () => {
+  it('handles multiple workouts on the same day correctly counting unique days', () => {
     const currentWorkoutStartTime = '2026-06-20T18:00:00';
     const dbWorkouts: DBWorkout[] = [
       { start_time: '2026-06-20T08:00:00' }, // today, earlier workout
       { start_time: '2026-06-19T10:00:00' }, // yesterday
     ];
 
-    // Current workout (1) + 2 in window = 3 workouts
+    // Today (2026-06-20) has 2 workouts, Yesterday (2026-06-19) has 1 workout -> Unique 2 days
     const count = computeWeeklyWorkoutCount(dbWorkouts, currentWorkoutStartTime);
-    expect(count).toBe(3);
+    expect(count).toBe(2);
   });
 
   it('returns 1 if there are no past workouts', () => {

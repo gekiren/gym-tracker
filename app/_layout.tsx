@@ -117,12 +117,14 @@ export default function RootLayout() {
         }
       }
 
+      const timerNotification = storedSettings['timer_notification'] !== '0';
       const aiCompanionMemory = storedSettings['ai_companion_memory'] || '';
 
       // 5. ストアへの設定ロード
       useSettingsStore.getState().loadSettings({
         defaultRest,
         autoRest,
+        timerNotification,
         timerVibrate,
         weightUnit,
         needsUnitSelection,

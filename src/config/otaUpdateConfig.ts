@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.9',
+  version: '2.0.16',
   title: {
-    ja: '🥗 写真拡大ドラッグ移動の指リアルタイム追従を完全実装',
-    en: '🥗 Real-time Finger-tracking Drag Panning for Photo Viewer',
+    ja: '🎯 習慣カウンター目標値保存バグの完全修正',
+    en: '🎯 Complete Fix for Habit Target Value Persistence',
   },
   notes: {
     ja: [
-      '写真拡大後のドラッグ（パン）移動を、setOffset/flattenOffset パターンとネイティブドライバ直結で再実装。指を動かすたびに遅延ゼロで写真がリアルタイムに追従するよう完全対応しました。',
+      'タップするたびに目標値がリセットされる問題の根本原因（カウント後のデータ再注入に目標値が含まれていなかった）を修正しました。',
     ],
     en: [
-      'Rebuilt drag panning with setOffset/flattenOffset pattern and native driver. Photo now tracks finger movements instantly and in real-time with zero delay.',
+      'Fixed the root cause of target values resetting on each tap: the data re-injection after counting now correctly includes target values.',
     ],
   },
 };

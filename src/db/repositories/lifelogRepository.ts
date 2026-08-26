@@ -132,12 +132,12 @@ export const getHabitItems = async (): Promise<HabitItem[]> => {
   );
 };
 
-export const addHabitItem = async (name: string, color: string): Promise<number> => {
+export const addHabitItem = async (name: string, color: string, targetCount: number = 0): Promise<number> => {
   const conn = getDB();
   const now = Date.now();
   const res = await conn.runAsync(
-    'INSERT INTO habit_items (name, color, created_at, sort_order) VALUES (?, ?, ?, 0)',
-    [name, color, now]
+    'INSERT INTO habit_items (name, color, created_at, sort_order, target_count) VALUES (?, ?, ?, 0, ?)',
+    [name, color, now, targetCount]
   );
   return res.lastInsertRowId;
 };
@@ -147,11 +147,11 @@ export const deleteHabitItem = async (id: number): Promise<void> => {
   await conn.runAsync('DELETE FROM habit_items WHERE id = ?', [id]);
 };
 
-export const updateHabitItem = async (id: number, name: string, color: string): Promise<void> => {
+export const updateHabitItem = async (id: number, name: string, color: string, targetCount: number = 0): Promise<void> => {
   const conn = getDB();
   await conn.runAsync(
-    'UPDATE habit_items SET name = ?, color = ? WHERE id = ?',
-    [name, color, id]
+    'UPDATE habit_items SET name = ?, color = ?, target_count = ? WHERE id = ?',
+    [name, color, targetCount, id]
   );
 };
 

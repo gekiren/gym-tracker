@@ -687,6 +687,10 @@ header {
         <div class="modal-content glass">
             <h2>新しい習慣を追加</h2>
             <input type="text" id="new-item-name" placeholder="例: 水を飲む" autocomplete="off">
+            <div style="margin-bottom: 15px; text-align: left;">
+                <label style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 6px; display: block;">1日の目標回数 (任意):</label>
+                <input type="number" id="new-item-target" placeholder="未設定 (例: 5)" min="0" style="margin-bottom: 0;">
+            </div>
             <div class="color-picker">
                 <button class="color-btn" style="--bg: linear-gradient(135deg, #FF6B6B, #EE5253)"
                     data-color="red"></button>
@@ -754,13 +758,12 @@ header {
         <div class="modal-content glass">
             <h2>回数の修正</h2>
             <p id="edit-item-name" class="date-label">項目名</p>
-            <div class="counter-control">
+            <div class="counter-control" style="margin-bottom: 20px;">
                 <button id="decrease-count" class="circle-btn">-</button>
                 <span id="edit-count-value" class="count-display">0</span>
                 <button id="increase-count" class="circle-btn">+</button>
             </div>
-            <div class="modal-actions">
-                <button id="delete-item" class="text-btn" style="color: var(--danger-color);">削除</button>
+            <div class="modal-actions" style="justify-content: flex-end; gap: 12px;">
                 <button id="cancel-edit" class="text-btn">キャンセル</button>
                 <button id="save-edit" class="primary-btn">保存</button>
             </div>
@@ -1033,6 +1036,8 @@ function setupEventListeners() {
     // Modals
     addBtn.addEventListener('click', () => {
         newItemInput.value = '';
+        const targetInput = document.getElementById('new-item-target');
+        if (targetInput) targetInput.value = '';
         addModal.classList.remove('hidden');
         notifyModalState(true);
         newItemInput.focus();
@@ -1140,18 +1145,14 @@ function notifyDateChanged(dateObj) {
     });
 
     saveEditBtn.addEventListener('click', saveEditCount);
-    deleteBtn.addEventListener('click', deleteItem);
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', deleteItem);
+    }
 
     // Manage Modal Buttons
     manageBtn.addEventListener('click', showManageModal);
-    closeManageBtn.addEventListener('click', () => {
-        manageModal.classList.add('hidden');
-        render();
-    });
-    closeManageXBtn.addEventListener('click', () => {
-        manageModal.classList.add('hidden');
-        render();
-    });
+    closeManageBtn.addEventListener('click', closeManageModal);
+    closeManageXBtn.addEventListener('click', closeManageModal);
 
     // Close modals on outside click
     window.addEventListener('click', (e) => {
@@ -1159,22 +1160,47 @@ function notifyDateChanged(dateObj) {
         if (e.target === statsModal) { statsModal.classList.add('hidden'); notifyModalState(false); }
         if (e.target === editModal) { editModal.classList.add('hidden'); notifyModalState(false); }
         if (e.target === manageModal) {
-            manageModal.classList.add('hidden');
-            notifyModalState(false);
-            render();
+            closeManageModal();
         }
     });
+}
+
+function closeManageModal() {
+    // 画面上の全目標入力欄の最新値を確実に items に反映
+    if (manageList) {
+        const inputs = manageList.querySelectorAll('.manage-target-input');
+        inputs.forEach(input => {
+            const container = input.closest('.manage-item-container');
+            if (container && container.id) {
+                const id = container.id.replace('manage-item-', '');
+                const item = items.find(i => i.id === id);
+                if (item) {
+                    const num = parseInt(input.value, 10);
+                    item.targetCount = (!isNaN(num) && num > 0) ? num : 0;
+                }
+            }
+        });
+    }
+    saveData();
+    manageModal.classList.add('hidden');
+    notifyModalState(false);
+    render();
 }
 
 function addItem() {
     const name = newItemInput.value.trim();
     if (!name) return;
 
+    const targetInput = document.getElementById('new-item-target');
+    const targetVal = targetInput ? parseInt(targetInput.value, 10) : 0;
+    const targetCount = (!isNaN(targetVal) && targetVal > 0) ? targetVal : 0;
+
     const newItem = {
         id: Date.now().toString(),
         name: name,
         color: selectedColor,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        targetCount: targetCount
     };
 
     items.push(newItem);
@@ -1232,23 +1258,44 @@ function renderManageList() {
         const hiddenBadge = isHidden ? ' <span style="font-size:0.75rem; opacity:0.6; color:#ffaaaa; margin-left:4px;">(非表示中)</span>' : '';
 
         li.innerHTML = \`
-            <div class="manage-item">
-                <div class="manage-reorder">
-                    <button class="manage-reorder-btn" onclick="moveItemUp('\${item.id}', event)" \${isFirst ? 'disabled' : ''}>▲</button>
-                    <button class="manage-reorder-btn" onclick="moveItemDown('\${item.id}', event)" \${isLast ? 'disabled' : ''}>▼</button>
+            <div class="manage-item" style="display: flex; flex-direction: column; gap: 8px; padding: 6px 0;">
+                <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                    <div class="manage-color-dot" style="background: \${item.color}" onclick="toggleColorPicker('\${item.id}')"></div>
+                    <input type="text" class="manage-input" value="\${escapeHtml(item.name)}" onchange="renameItem('\${item.id}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" style="flex: 1; width: 100%; font-size: 1.05rem; padding: 6px 10px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; color: white; outline: none; margin-bottom: 0 !important;" />
                 </div>
-                <div class="manage-color-dot" style="background: \${item.color}" onclick="toggleColorPicker('\${item.id}')"></div>
-                <input type="text" class="manage-input" value="\${escapeHtml(item.name)}" onchange="renameItem('\${item.id}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" />
-                <button class="manage-visibility-btn \${isHidden ? 'is-hidden-item' : ''}" onclick="toggleItemVisibility('\${item.id}')" aria-label="表示・非表示">\${eyeIcon}</button>
-                <button class="manage-delete-btn" onclick="deleteItemFromManage('\${item.id}')" aria-label="削除">🗑</button>
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding-left: 34px;">
+                    <div class="manage-reorder" style="flex-direction: row; gap: 4px;">
+                        <button class="manage-reorder-btn" onclick="moveItemUp('\${item.id}', event)" \${isFirst ? 'disabled' : ''} style="width: 32px; height: 32px; border-radius: 6px;">▲</button>
+                        <button class="manage-reorder-btn" onclick="moveItemDown('\${item.id}', event)" \${isLast ? 'disabled' : ''} style="width: 32px; height: 32px; border-radius: 6px;">▼</button>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px; font-size: 0.88rem; opacity: 0.9;">
+                        <span>目標:</span>
+                        <input type="number" class="manage-target-input" value="\${item.targetCount || ''}" placeholder="なし" min="0" oninput="updateItemTarget('\${item.id}', this.value)" onchange="updateItemTarget('\${item.id}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" style="width: 52px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.25); color: white; border-radius: 6px; padding: 4px 4px; text-align: center; font-size: 0.9rem; outline: none; margin-bottom: 0 !important;" />
+                        <span>回</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <button class="manage-visibility-btn \${isHidden ? 'is-hidden-item' : ''}" onclick="toggleItemVisibility('\${item.id}')" aria-label="表示・非表示" style="padding: 4px 6px;">\${eyeIcon}</button>
+                        <button class="manage-delete-btn" onclick="deleteItemFromManage('\${item.id}')" aria-label="削除" style="padding: 4px 6px;">🗑</button>
+                    </div>
+                </div>
             </div>
-            <div id="color-picker-\${item.id}" class="manage-color-picker-inline hidden" style="padding-left: 40px; display: flex; gap: 8px; margin-top: 8px; margin-bottom: 8px;">
+            <div id="color-picker-\${item.id}" class="manage-color-picker-inline hidden" style="padding-left: 34px; display: flex; gap: 8px; margin-top: 8px; margin-bottom: 8px;">
                 \${COLOR_OPTIONS.map(c => '<div class="color-btn-mini ' + (item.color === c.value ? "selected" : "") + '" style="background: ' + c.value + '; width: 24px; height: 24px; border-radius: 50%; border: 2px solid ' + (item.color === c.value ? "white" : "transparent") + '; cursor: pointer;" onclick="changeItemColor(\\\'' + item.id + '\\\', \\\'' + c.value + '\\\')"></div>').join('')}
             </div>
         \`;
         manageList.appendChild(li);
     });
 }
+
+function updateItemTarget(id, val) {
+    const item = items.find(i => i.id === id);
+    if (item) {
+        const num = parseInt(val, 10);
+        item.targetCount = (!isNaN(num) && num > 0) ? num : 0;
+        saveData();
+    }
+}
+window.updateItemTarget = updateItemTarget;
 
 function toggleColorPicker(id) {
     const el = document.getElementById(\`color-picker-\${id}\`);
@@ -1410,7 +1457,7 @@ function openEditModal(id) {
     const count = getCountForDate(id, editingDate);
 
     const isToday = currentDateStr === getTodayStr();
-    editItemName.textContent = \`\${item.name} (\${isToday ? '今日' : currentDateStr})\`;
+    editItemName.textContent = item.name + ' (' + (isToday ? '今日' : currentDateStr) + ')';
     editCountValue.textContent = count;
 
     editModal.classList.remove('hidden');
@@ -1515,10 +1562,28 @@ function render() {
         card.style.background = item.color;
 
         const count = getCountForDate(item.id, parseDateStr(currentDateStr));
+        const target = item.targetCount || 0;
+        const isCompleted = target > 0 && count >= target;
+
+        const countDisplay = target > 0
+            ? count + ' <span style="font-size: 0.5em; opacity: 0.8; font-weight: 500;">/ ' + target + '</span>'
+            : String(count);
+
+        let progressHtml = '';
+        if (target > 0) {
+            const percent = Math.min(100, Math.round((count / target) * 100));
+            progressHtml = '<div style="width: 80%; height: 5px; background: rgba(255, 255, 255, 0.25); border-radius: 3px; overflow: hidden; margin-top: 4px; margin-bottom: 2px;"><div style="width: ' + percent + '%; height: 100%; background: ' + (isCompleted ? '#55efc4' : '#ffffff') + '; transition: width 0.3s ease;"></div></div>';
+        }
+
+        const checkMarkHtml = isCompleted
+            ? '<div style="position: absolute; top: 8px; right: 10px; font-size: 0.9rem; color: #55efc4; font-weight: bold; background: rgba(0,0,0,0.3); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">✓</div>'
+            : '';
 
         card.innerHTML = \`
-            <div class="habit-name">\${item.name}</div>
-            <div class="habit-count">\${count}</div>
+            \${checkMarkHtml}
+            <div class="habit-name">\${escapeHtml(item.name)}</div>
+            <div class="habit-count" style="\${target > 0 ? 'font-size: 2.2rem;' : ''}">\${countDisplay}</div>
+            \${progressHtml}
         \`;
 
         // Touch events for long press and scrolling
@@ -1561,6 +1626,8 @@ function showStats() {
 
     itemsToShow.forEach(item => {
         const count = getCountForDate(item.id, currentStatsDate);
+        const target = item.targetCount || 0;
+        const countText = target > 0 ? count + ' / ' + target + '回' : count + '回';
         const li = document.createElement('li');
         li.className = 'stats-item';
         
@@ -1569,7 +1636,7 @@ function showStats() {
 
         li.innerHTML = \`
             <span>\${displayName}</span>
-            <span class="stats-count">\${count}回</span>
+            <span class="stats-count">\${countText}</span>
         \`;
         if (isItemHidden) {
             li.style.opacity = '0.7';

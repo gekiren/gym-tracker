@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 
-export const DATABASE_VERSION = 8;
+export const DATABASE_VERSION = 11;
 
 export interface Migration {
   version: number;
@@ -231,6 +231,29 @@ export const MIGRATIONS: Migration[] = [
         );
         CREATE INDEX IF NOT EXISTS idx_body_composition_date ON body_composition_logs(date);
       `);
+    },
+  },
+  {
+    version: 9,
+    up: async (db) => {
+      await safeAddColumn(db, 'habit_items', 'target_count', 'INTEGER DEFAULT 0');
+    },
+  },
+  {
+    version: 10,
+    up: async (db) => {
+      await safeAddColumn(db, 'habit_items', 'sort_order', 'INTEGER DEFAULT 0');
+      await safeAddColumn(db, 'habit_items', 'is_hidden', 'INTEGER DEFAULT 0');
+    },
+  },
+  {
+    version: 11,
+    up: async (db) => {
+      // 過去のマイグレーションがスキップされた・失敗した場合のフェイルセーフとして、
+      // 必要なカラム群を再度安全に追加（既に存在する場合はスキップされる）
+      await safeAddColumn(db, 'habit_items', 'target_count', 'INTEGER DEFAULT 0');
+      await safeAddColumn(db, 'habit_items', 'sort_order', 'INTEGER DEFAULT 0');
+      await safeAddColumn(db, 'habit_items', 'is_hidden', 'INTEGER DEFAULT 0');
     },
   },
 ];

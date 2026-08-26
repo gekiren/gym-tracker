@@ -97,6 +97,8 @@ export interface HabitItem {
   color: string;
   created_at: number;
   sort_order: number;
+  target_count?: number;
+  is_hidden?: number;
 }
 
 export interface HabitLog {

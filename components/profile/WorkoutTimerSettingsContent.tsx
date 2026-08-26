@@ -17,6 +17,7 @@ export function WorkoutTimerSettingsContent() {
 
   const [defaultRest, setDefaultRest] = useState(settings.defaultRest);
   const [autoRest, setAutoRest] = useState(settings.autoRest);
+  const [timerNotification, setTimerNotification] = useState(settings.timerNotification);
   const [timerVibrate, setTimerVibrate] = useState(settings.timerVibrate);
   const [weightUnit, setWeightUnit] = useState(settings.weightUnit);
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
@@ -32,6 +33,7 @@ export function WorkoutTimerSettingsContent() {
   useEffect(() => {
     setDefaultRest(settings.defaultRest);
     setAutoRest(settings.autoRest);
+    setTimerNotification(settings.timerNotification);
     setTimerVibrate(settings.timerVibrate);
     setWeightUnit(settings.weightUnit);
     setLocalBodyWeight(settings.bodyWeight ? settings.bodyWeight.toString() : '');
@@ -46,19 +48,25 @@ export function WorkoutTimerSettingsContent() {
 
   const handleUpdateRest = async (secs: number) => {
     setDefaultRest(secs);
-    loadSettings({ defaultRest: secs, autoRest, timerVibrate, weightUnit });
+    loadSettings({ defaultRest: secs, autoRest, timerNotification, timerVibrate, weightUnit });
     await saveSetting('default_rest_timer', secs.toString());
   };
 
   const handleUpdateAuto = async (val: boolean) => {
     setAutoRest(val);
-    loadSettings({ defaultRest, autoRest: val, timerVibrate, weightUnit });
+    loadSettings({ defaultRest, autoRest: val, timerNotification, timerVibrate, weightUnit });
     await saveSetting('auto_rest_timer', val ? '1' : '0');
+  };
+
+  const handleUpdateNotification = async (val: boolean) => {
+    setTimerNotification(val);
+    useSettingsStore.getState().setTimerNotification(val);
+    await saveSetting('timer_notification', val ? '1' : '0');
   };
 
   const handleUpdateVibrate = async (val: boolean) => {
     setTimerVibrate(val);
-    loadSettings({ defaultRest, autoRest, timerVibrate: val, weightUnit });
+    loadSettings({ defaultRest, autoRest, timerNotification, timerVibrate: val, weightUnit });
     await saveSetting('timer_vibrate', val ? '1' : '0');
   };
 
@@ -134,6 +142,8 @@ export function WorkoutTimerSettingsContent() {
       <TimerSection
         autoRest={autoRest}
         onUpdateAuto={handleUpdateAuto}
+        timerNotification={timerNotification}
+        onUpdateNotification={handleUpdateNotification}
         timerVibrate={timerVibrate}
         onUpdateVibrate={handleUpdateVibrate}
         keepAwake={keepAwake}

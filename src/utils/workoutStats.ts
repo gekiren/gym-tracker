@@ -263,7 +263,7 @@ export const computeStreaks = (
 };
 
 /**
- * 過去1週間（含む今日）のワークアウト実施回数を算出
+ * 過去1週間（含む今日）のワークアウト実施日数（ユニークな日数）を算出
  */
 export const computeWeeklyWorkoutCount = (
   dbWorkouts: DBWorkout[],
@@ -281,7 +281,7 @@ export const computeWeeklyWorkoutCount = (
       last7DaysSet.add(getLocalDateStringSafe(d));
     }
 
-    let count = 0;
+    const workedOutDates = new Set<string>();
     // 今回完了したワークアウトも含めてカウント
     const allWorkouts = [
       { start_time: currentWorkoutStartTime },
@@ -292,12 +292,12 @@ export const computeWeeklyWorkoutCount = (
       if (w && w.start_time) {
         const wDateStr = getLocalDateStringSafe(w.start_time);
         if (last7DaysSet.has(wDateStr)) {
-          count++;
+          workedOutDates.add(wDateStr);
         }
       }
     });
 
-    return count;
+    return workedOutDates.size;
   } catch (e) {
     console.warn('Failed to compute weekly workout count safely', e);
     return 1;

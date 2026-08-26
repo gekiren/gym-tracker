@@ -31,6 +31,7 @@ export interface HabitSummaryItem {
   name: string;
   color: string;
   count: number;
+  targetCount?: number;
 }
 
 export interface WaterSummary {
@@ -104,8 +105,8 @@ interface LifelogState {
   // Habit actions
   loadHabits: (date: string) => Promise<void>;
   loadHabitItems: () => Promise<void>;
-  addHabitItem: (name: string, color: string) => Promise<void>;
-  updateHabitItem: (id: number, name: string, color: string) => Promise<void>;
+  addHabitItem: (name: string, color: string, targetCount?: number) => Promise<void>;
+  updateHabitItem: (id: number, name: string, color: string, targetCount?: number) => Promise<void>;
   deleteHabitItem: (id: number) => Promise<void>;
   addHabitLog: (habitItemId: number, date: string) => Promise<void>;
   deleteHabitLog: (id: number, date: string) => Promise<void>;
@@ -184,6 +185,7 @@ export const calculateSummary = (
     name: item.name,
     color: item.color,
     count: habitCounts[item.id] || 0,
+    targetCount: item.target_count || 0,
   }));
 
   // 4. Routines summary
@@ -475,18 +477,18 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
     }
   },
 
-  addHabitItem: async (name: string, color: string) => {
+  addHabitItem: async (name: string, color: string, targetCount?: number) => {
     try {
-      await addHabitItem(name, color);
+      await addHabitItem(name, color, targetCount || 0);
       await get().loadHabitItems();
     } catch (e) {
       console.warn('Failed to add habit item:', e);
     }
   },
 
-  updateHabitItem: async (id: number, name: string, color: string) => {
+  updateHabitItem: async (id: number, name: string, color: string, targetCount?: number) => {
     try {
-      await updateHabitItem(id, name, color);
+      await updateHabitItem(id, name, color, targetCount || 0);
       await get().loadHabitItems();
     } catch (e) {
       console.warn('Failed to update habit item:', e);
