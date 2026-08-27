@@ -17,6 +17,7 @@ import i18n from '../src/i18n';
 import { registerGlobalErrorHandler } from '../src/services/crashReporterService';
 import { ReviewPromptModal } from '../components/ReviewPromptModal';
 import { OTAUpdateModal } from '../components/OTAUpdateModal';
+import { PointAwardToast } from '../components/PointAwardToast';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { syncHealthData } from '../src/services/healthService';
 import { initNotificationCategories, setupNotificationResponseListener } from '../src/services/notificationService';
@@ -285,6 +286,7 @@ export default function RootLayout() {
           </Stack>
           <ReviewPromptModal />
           <OTAUpdateModal />
+          <PointAwardToast />
           <StatusBar style="light" />
         </ThemeProvider>
       </KeyboardProvider>

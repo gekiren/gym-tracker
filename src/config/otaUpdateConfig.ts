@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.25',
+  version: '2.0.26',
   title: {
-    ja: '🛠️ Obsidian連携のデイリーノート競合・重複バグの修正',
-    en: '🛠️ Fixed Obsidian Sync Duplication Bug',
+    ja: '💎 ポイント獲得通知のトースト化（自動消去）',
+    en: '💎 Point Award Toast Notification',
   },
   notes: {
     ja: [
-      'Health ConnectデータのObsidian連携時の保存先を「Daily」から「Health」フォルダへ分離し、ファイル名を専用のものに変更しました。',
-      'これにより、PC等で手動作成するデイリーノート本体と競合し、(1)などの重複ファイルが自動生成されてしまう問題を完全に解消しました。',
+      '機能解放などに使えるPポイントを獲得した際、OKボタンを押さなくても画面上部にアプリ通知風トーストが表示され、約2.5秒で自動的に消えるようになりました。',
+      '全画面を遮断することなく、記録画面やワークアウト中などアプリ内のどこでも快適にポイント獲得を確認できます。',
     ],
     en: [
-      'Separated the Obsidian sync destination for Health Connect data from the Daily folder to the Health folder with a dedicated filename.',
-      'This resolves the sync conflict issue where daily notes were duplicated with "(1)" across multiple devices.',
+      'Point award notices now appear as non-blocking toast notifications at the top of the screen and automatically dismiss after 2.5 seconds without needing to press OK.',
+      'Seamlessly track earned points anywhere in the app without interrupting your workout or logging workflow.',
     ],
   },
 };
