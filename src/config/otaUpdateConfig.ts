@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.26',
+  version: '2.0.27',
   title: {
-    ja: '💎 ポイント獲得通知のトースト化（自動消去）',
-    en: '💎 Point Award Toast Notification',
+    ja: '📊 ワークアウトPR比率の算出精度向上（種目別PR比・自重対応）',
+    en: '📊 Improved Workout PR Ratio Calculation (Exercise PR & Bodyweight Support)',
   },
   notes: {
     ja: [
-      '機能解放などに使えるPポイントを獲得した際、OKボタンを押さなくても画面上部にアプリ通知風トーストが表示され、約2.5秒で自動的に消えるようになりました。',
-      '全画面を遮断することなく、記録画面やワークアウト中などアプリ内のどこでも快適にポイント獲得を確認できます。',
+      'ワークアウト全体のPR比率を、含まれる種目ごとの最大PR比（ウェイト種目は推定1RM比、自重種目は最大レップ比）の平均値で計算するように刷新しました。',
+      '高重量低レップの種目や懸垂などの自重種目が含まれるトレーニングでも、実際の負荷・パフォーマンス実感に即した正確なPR達成率が表示されます。',
     ],
     en: [
-      'Point award notices now appear as non-blocking toast notifications at the top of the screen and automatically dismiss after 2.5 seconds without needing to press OK.',
-      'Seamlessly track earned points anywhere in the app without interrupting your workout or logging workflow.',
+      'Refined the workout PR ratio calculation to average the max PR ratios of each exercise (estimated 1RM for weighted exercises, max reps for bodyweight exercises).',
+      'Ensures accurate and realistic PR progress tracking even during heavy low-rep sessions or bodyweight exercises like pull-ups.',
     ],
   },
 };
