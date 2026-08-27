@@ -651,60 +651,21 @@ export const getLastWorkoutSummary = async (): Promise<LastWorkoutSummary | null
   }
 };
 
-export interface WorkoutPRStat {
-  workoutId: number;
-  actualVolume: number;
-  prTargetVolume: number;
-  prRatio: number; // e.g. 93.7 (%)
-}
+export { WorkoutPRStat } from '../../utils/workoutStats';
+import { calculateWorkoutPRStats, RawWorkoutSetRow, WorkoutPRStat } from '../../utils/workoutStats';
 
 export const getWorkoutPRStatsMap = async (): Promise<Record<number, WorkoutPRStat>> => {
   try {
     const conn = getDB();
-    const rows = await conn.getAllAsync<{ workout_id: number; exercise_id: number; ex_volume: number }>(`
-      SELECT we.workout_id, we.exercise_id, SUM(ws.weight * ws.reps) as ex_volume
+    const rows = await conn.getAllAsync<RawWorkoutSetRow>(`
+      SELECT we.workout_id, we.exercise_id, ws.weight, ws.reps
       FROM workout_exercises we
       JOIN workout_sets ws ON ws.workout_exercise_id = we.id
-      WHERE ws.weight > 0 AND ws.reps > 0 AND ws.is_completed = 1
-      GROUP BY we.workout_id, we.exercise_id
+      WHERE ws.is_completed = 1 AND ((ws.reps IS NOT NULL AND ws.reps > 0) OR (ws.weight IS NOT NULL AND ws.weight > 0))
+      ORDER BY we.workout_id, we.exercise_id
     `);
 
-    const maxExVolMap: Record<number, number> = {};
-    rows.forEach(r => {
-      const exId = r.exercise_id;
-      const vol = r.ex_volume || 0;
-      if (!maxExVolMap[exId] || vol > maxExVolMap[exId]) {
-        maxExVolMap[exId] = vol;
-      }
-    });
-
-    const workoutActualMap: Record<number, number> = {};
-    const workoutTargetMap: Record<number, number> = {};
-
-    rows.forEach(r => {
-      const wId = r.workout_id;
-      const exId = r.exercise_id;
-      const vol = r.ex_volume || 0;
-
-      workoutActualMap[wId] = (workoutActualMap[wId] || 0) + vol;
-      workoutTargetMap[wId] = (workoutTargetMap[wId] || 0) + (maxExVolMap[exId] || 0);
-    });
-
-    const resultMap: Record<number, WorkoutPRStat> = {};
-    Object.keys(workoutActualMap).forEach(wIdStr => {
-      const wId = Number(wIdStr);
-      const actual = workoutActualMap[wId] || 0;
-      const target = workoutTargetMap[wId] || actual;
-      const ratio = target > 0 ? (actual / target) * 100 : 100;
-      resultMap[wId] = {
-        workoutId: wId,
-        actualVolume: actual,
-        prTargetVolume: target,
-        prRatio: Math.round(ratio * 10) / 10,
-      };
-    });
-
-    return resultMap;
+    return calculateWorkoutPRStats(rows);
   } catch (e) {
     console.warn('Failed to calculate Workout PR Stats Map:', e);
     return {};
