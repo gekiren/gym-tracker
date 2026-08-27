@@ -128,75 +128,79 @@ export default function WorkoutDetailsScreen() {
           </View>
         ) : null}
 
-        {workout.exercises.map((ex: any) => (
-          <View key={ex.workout_exercise_id} style={styles.card}>
-            <View style={styles.exerciseHeader}>
-              <TouchableOpacity 
-                style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
-                onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: ex.exercise_id } } as any)}
-              >
-                <Text style={styles.exerciseTitle}>{translateExercise(ex.name || ex.exercise_name)}</Text>
-                <Ionicons name="chevron-forward" size={16} color={Theme.colors.primary} />
-              </TouchableOpacity>
-              <View style={styles.exerciseVolumeBadge}>
-                <Text style={styles.exerciseVolumeLabel}>{t('ui.history.volume_label')}: </Text>
-                <Text style={styles.exerciseVolumeValue}>
-                  {ex.sets.reduce((sum: number, s: any) => sum + (s.weight || 0) * (s.reps || 0), 0)} {settings.weightUnit}
-                </Text>
-              </View>
-            </View>
-
-            {ex.notes ? (
-              <View style={styles.exerciseNotes}>
-                <Ionicons name="chatbubble-ellipses-outline" size={14} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
-                <Text style={styles.exerciseNotesText}>{ex.notes}</Text>
-              </View>
-            ) : null}
-
-            <View style={styles.tableHeader}>
-              <Text style={[styles.th, { width: 40 }]}>{t('ui.active_workout.header_set')}</Text>
-              <Text style={[styles.th, { flex: 1 }]}>{settings.weightUnit}</Text>
-              <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_reps')}</Text>
-              <Text style={[styles.th, { width: 45 }]}>{t('ui.active_workout.header_rpe')}</Text>
-              <Text style={[styles.th, { flex: 1 }]}>1RM</Text>
-            </View>
-
-            {ex.sets.map((set: any, idx: number) => {
-              const currentRM = calculateRM(set.weight, set.reps);
-              let timeStr = '';
-              const fmtTime = (secs: number) => {
-                const m = Math.floor(secs / 60);
-                const s = secs % 60;
-                return `${m > 0 ? `${m}:` : ''}${s.toString().padStart(m > 0 ? 2 : 1, '0')}${m === 0 ? 's' : ''}`;
-              };
-              if (set.work_seconds != null) timeStr += `⏱️ ${fmtTime(set.work_seconds)} `;
-              if (set.rest_seconds != null) timeStr += `☕ ${fmtTime(set.rest_seconds)}`;
-              timeStr = timeStr.trim();
-              const hasStance = !!(set.stance || set.variation);
-              return (
-                <View key={set.id} style={{ borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', paddingVertical: 8 }}>
-                  <View style={[styles.row, { borderBottomWidth: 0, paddingVertical: 0 }]}>
-                    <Text style={styles.tdSet}>{set.set_number}</Text>
-                    <Text style={styles.tdValue}>{set.weight ?? '-'}</Text>
-                    <Text style={styles.tdValue}>{set.reps ?? '-'}</Text>
-                    <Text style={[styles.tdValue, { width: 45, flex: 0 }]}>{set.rpe ?? '-'}</Text>
-                    <Text style={[styles.tdValue, { color: Theme.colors.primary }]}>{currentRM ?? '-'}</Text>
-                  </View>
-                  {(hasStance || timeStr) ? (
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, marginTop: 4 }}>
-                      <Text style={{ fontSize: 11, color: Theme.colors.textMuted }}>
-                        {hasStance ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.stance || set.variation)}` : ''}
-                      </Text>
-                      <Text style={{ fontSize: 11, color: Theme.colors.textMuted }}>
-                        {timeStr}
-                      </Text>
-                    </View>
-                  ) : null}
+        {workout.exercises.map((ex: any) => {
+          const completedSets = ex.sets.filter((s: any) => s.is_completed !== false && s.is_completed !== 0);
+          if (completedSets.length === 0 && !ex.notes) return null;
+          return (
+            <View key={ex.workout_exercise_id} style={styles.card}>
+              <View style={styles.exerciseHeader}>
+                <TouchableOpacity 
+                  style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                  onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: ex.exercise_id } } as any)}
+                >
+                  <Text style={styles.exerciseTitle}>{translateExercise(ex.name || ex.exercise_name)}</Text>
+                  <Ionicons name="chevron-forward" size={16} color={Theme.colors.primary} />
+                </TouchableOpacity>
+                <View style={styles.exerciseVolumeBadge}>
+                  <Text style={styles.exerciseVolumeLabel}>{t('ui.history.volume_label')}: </Text>
+                  <Text style={styles.exerciseVolumeValue}>
+                    {completedSets.reduce((sum: number, s: any) => sum + (s.weight || 0) * (s.reps || 0), 0)} {settings.weightUnit}
+                  </Text>
                 </View>
-              );
-            })}
-          </View>
-        ))}
+              </View>
+
+              {ex.notes ? (
+                <View style={styles.exerciseNotes}>
+                  <Ionicons name="chatbubble-ellipses-outline" size={14} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
+                  <Text style={styles.exerciseNotesText}>{ex.notes}</Text>
+                </View>
+              ) : null}
+
+              <View style={styles.tableHeader}>
+                <Text style={[styles.th, { width: 40 }]}>{t('ui.active_workout.header_set')}</Text>
+                <Text style={[styles.th, { flex: 1 }]}>{settings.weightUnit}</Text>
+                <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_reps')}</Text>
+                <Text style={[styles.th, { width: 45 }]}>{t('ui.active_workout.header_rpe')}</Text>
+                <Text style={[styles.th, { flex: 1 }]}>1RM</Text>
+              </View>
+
+              {completedSets.map((set: any, idx: number) => {
+                const currentRM = calculateRM(set.weight, set.reps);
+                let timeStr = '';
+                const fmtTime = (secs: number) => {
+                  const m = Math.floor(secs / 60);
+                  const s = secs % 60;
+                  return `${m > 0 ? `${m}:` : ''}${s.toString().padStart(m > 0 ? 2 : 1, '0')}${m === 0 ? 's' : ''}`;
+                };
+                if (set.work_seconds != null) timeStr += `⏱️ ${fmtTime(set.work_seconds)} `;
+                if (set.rest_seconds != null) timeStr += `☕ ${fmtTime(set.rest_seconds)}`;
+                timeStr = timeStr.trim();
+                const hasStance = !!(set.stance || set.variation);
+                return (
+                  <View key={set.id} style={{ borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', paddingVertical: 8 }}>
+                    <View style={[styles.row, { borderBottomWidth: 0, paddingVertical: 0 }]}>
+                      <Text style={styles.tdSet}>{set.set_number}</Text>
+                      <Text style={styles.tdValue}>{set.weight ?? '-'}</Text>
+                      <Text style={styles.tdValue}>{set.reps ?? '-'}</Text>
+                      <Text style={[styles.tdValue, { width: 45, flex: 0 }]}>{set.rpe ?? '-'}</Text>
+                      <Text style={[styles.tdValue, { color: Theme.colors.primary }]}>{currentRM ?? '-'}</Text>
+                    </View>
+                    {(hasStance || timeStr) ? (
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, marginTop: 4 }}>
+                        <Text style={{ fontSize: 11, color: Theme.colors.textMuted }}>
+                          {hasStance ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.stance || set.variation)}` : ''}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: Theme.colors.textMuted }}>
+                          {timeStr}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </View>
+          );
+        })}
         
         {/* Action Buttons */}
         <View style={styles.actionButtonsContainer}>

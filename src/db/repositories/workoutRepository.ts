@@ -37,39 +37,38 @@ export const saveWorkout = async (
     let order = 0;
 
     for (const ex of exercises) {
+      const completedSets = ex.sets.filter(set => !!set.is_completed);
+      if (completedSets.length === 0) continue;
+
       const waResult = await conn.runAsync(
         'INSERT INTO workout_exercises (workout_id, exercise_id, sort_order, notes) VALUES (?, ?, ?, ?)',
         [workoutId, ex.exercise_id, order++, ex.notes || null]
       );
       const weId = waResult.lastInsertRowId;
 
-      for (const set of ex.sets) {
+      for (const set of completedSets) {
         const safeWeight = sanitizeNum(set.weight);
         const safeReps = sanitizeNum(set.reps);
         const safeRpe = sanitizeNum(set.rpe);
         const safeRestSecs = sanitizeNum(set.rest_seconds);
         const safeWorkSecs = sanitizeNum(set.work_seconds);
 
-        const shouldSave = set.is_completed || safeWeight != null || safeReps != null || safeWorkSecs != null;
-
-        if (shouldSave) {
-          await conn.runAsync(
-            'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [
-              weId, 
-              set.set_number, 
-              safeReps, 
-              safeWeight, 
-              safeRpe, 
-              set.is_completed ? 1 : 0, 
-              safeRestSecs, 
-              safeWorkSecs, 
-              set.side || null, 
-              set.variation || null, 
-              set.stance || null
-            ]
-          );
-        }
+        await conn.runAsync(
+          'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [
+            weId, 
+            set.set_number, 
+            safeReps, 
+            safeWeight, 
+            safeRpe, 
+            1, 
+            safeRestSecs, 
+            safeWorkSecs, 
+            set.side || null, 
+            set.variation || null, 
+            set.stance || null
+          ]
+        );
       }
     }
   });
@@ -168,7 +167,7 @@ export const getPreviousWorkoutSets = async (exerciseId: number) => {
   const sets = await conn.getAllAsync<WorkoutSet>(`
     SELECT set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance
     FROM workout_sets 
-    WHERE workout_exercise_id = ?
+    WHERE workout_exercise_id = ? AND is_completed = 1
     ORDER BY set_number ASC, id ASC
   `, [recentEx.id]);
 
@@ -231,7 +230,7 @@ export const loadFullWorkoutData = async (workoutId: number): Promise<FullWorkou
   const allSetsRows = await db.getAllAsync<WorkoutSetRow & { workout_exercise_id: number }>(
     `SELECT id, workout_exercise_id, set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance, is_completed 
      FROM workout_sets 
-     WHERE workout_exercise_id IN (${placeholders}) 
+     WHERE workout_exercise_id IN (${placeholders}) AND is_completed = 1
      ORDER BY set_number ASC, id ASC`,
     weIds
   );
@@ -244,20 +243,22 @@ export const loadFullWorkoutData = async (workoutId: number): Promise<FullWorkou
     setsByWeId.get(s.workout_exercise_id)!.push(s);
   }
 
-  const exercisesData = exercisesRows.map(ex => {
-    const setsRows = setsByWeId.get(ex.workout_exercise_id) || [];
-    const sets = setsRows.map(s => ({
-      ...s,
-      is_completed: s.is_completed === 1 || s.is_completed === true
-    }));
-    return {
-      workout_exercise_id: ex.workout_exercise_id,
-      exercise_id: ex.exercise_id,
-      exercise_name: ex.exercise_name,
-      notes: ex.notes,
-      sets: sets
-    };
-  });
+  const exercisesData = exercisesRows
+    .map(ex => {
+      const setsRows = setsByWeId.get(ex.workout_exercise_id) || [];
+      const sets = setsRows.map(s => ({
+        ...s,
+        is_completed: s.is_completed === 1 || s.is_completed === true
+      }));
+      return {
+        workout_exercise_id: ex.workout_exercise_id,
+        exercise_id: ex.exercise_id,
+        exercise_name: ex.exercise_name,
+        notes: ex.notes,
+        sets: sets
+      };
+    })
+    .filter(ex => ex.sets.length > 0 || !!ex.notes);
 
   return {
     id: workoutRow.id,
@@ -349,7 +350,7 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
     ) w
     LEFT JOIN workout_exercises we ON we.workout_id = w.id
     LEFT JOIN exercises e ON we.exercise_id = e.id
-    LEFT JOIN workout_sets ws ON ws.workout_exercise_id = we.id
+    LEFT JOIN workout_sets ws ON ws.workout_exercise_id = we.id AND ws.is_completed = 1
     ORDER BY w.start_time DESC, we.sort_order ASC, ws.set_number ASC
   `, [limit]);
 
@@ -524,8 +525,8 @@ export const getWorkoutsWithStats = async (): Promise<WorkoutWithStats[]> => {
   const rows = await conn.getAllAsync<WorkoutWithStats>(`
     SELECT w.*, 
            (SELECT COUNT(*) FROM workout_exercises WHERE workout_id = w.id) as exercise_count,
-           (SELECT COUNT(*) FROM workout_sets ws JOIN workout_exercises we ON ws.workout_exercise_id = we.id WHERE we.workout_id = w.id) as total_sets,
-           (SELECT SUM(weight * reps) FROM workout_sets ws JOIN workout_exercises we ON ws.workout_exercise_id = we.id WHERE we.workout_id = w.id) as volume
+           (SELECT COUNT(*) FROM workout_sets ws JOIN workout_exercises we ON ws.workout_exercise_id = we.id WHERE we.workout_id = w.id AND ws.is_completed = 1) as total_sets,
+           (SELECT SUM(weight * reps) FROM workout_sets ws JOIN workout_exercises we ON ws.workout_exercise_id = we.id WHERE we.workout_id = w.id AND ws.is_completed = 1) as volume
     FROM workouts w 
     ORDER BY start_time DESC
   `);
@@ -569,7 +570,7 @@ export const getLastWorkoutSummary = async (): Promise<LastWorkoutSummary | null
         FROM workouts w
         JOIN workout_exercises we ON we.workout_id = w.id
         JOIN workout_sets ws ON ws.workout_exercise_id = we.id
-        WHERE (ws.is_completed = 1 OR (ws.reps IS NOT NULL AND ws.reps > 0) OR (ws.weight IS NOT NULL AND ws.weight > 0))
+        WHERE ws.is_completed = 1
         ORDER BY w.id DESC LIMIT 1
       `);
 
@@ -594,7 +595,7 @@ export const getLastWorkoutSummary = async (): Promise<LastWorkoutSummary | null
         FROM workout_exercises we
         JOIN exercises e ON we.exercise_id = e.id
         JOIN workout_sets ws ON ws.workout_exercise_id = we.id
-        WHERE we.workout_id = ?
+        WHERE we.workout_id = ? AND ws.is_completed = 1
       `, [targetWorkout.id]);
 
       const muscleMap: { [key: string]: number } = {};
@@ -664,7 +665,7 @@ export const getWorkoutPRStatsMap = async (): Promise<Record<number, WorkoutPRSt
       SELECT we.workout_id, we.exercise_id, SUM(ws.weight * ws.reps) as ex_volume
       FROM workout_exercises we
       JOIN workout_sets ws ON ws.workout_exercise_id = we.id
-      WHERE ws.weight > 0 AND ws.reps > 0
+      WHERE ws.weight > 0 AND ws.reps > 0 AND ws.is_completed = 1
       GROUP BY we.workout_id, we.exercise_id
     `);
 
