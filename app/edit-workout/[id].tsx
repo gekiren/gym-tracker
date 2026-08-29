@@ -29,7 +29,7 @@ export default function EditWorkoutScreen() {
       }
       loadData(parsedId);
     }
-  }, [id]);
+  }, [id, t]);
 
   const loadData = async (workoutId: number) => {
     try {
@@ -241,25 +241,24 @@ function EditWorkoutSetRow({ exIdx, sIdx, s, handleChangeSet, handleRemoveSet }:
   const [isFocusedReps, setIsFocusedReps] = useState(false);
   const [isFocusedRpe, setIsFocusedRpe] = useState(false);
 
-  // 外部からの更新同期
   useEffect(() => {
     if (isFocusedWeight) return;
     if (s.weight !== null) {
       const currentLocalFloat = parseFloat(localWeight.replace(',', '.'));
       if (currentLocalFloat !== s.weight) setLocalWeight(String(s.weight));
     } else {
-      setLocalWeight('');
+      if (localWeight !== '') setLocalWeight('');
     }
-  }, [s.weight]);
+  }, [s.weight, isFocusedWeight, localWeight]);
 
   useEffect(() => {
     if (isFocusedReps) return;
     if (s.reps !== null) {
       if (parseInt(localReps, 10) !== s.reps) setLocalReps(String(s.reps));
     } else {
-      setLocalReps('');
+      if (localReps !== '') setLocalReps('');
     }
-  }, [s.reps]);
+  }, [s.reps, isFocusedReps, localReps]);
 
   useEffect(() => {
     if (isFocusedRpe) return;
@@ -267,9 +266,9 @@ function EditWorkoutSetRow({ exIdx, sIdx, s, handleChangeSet, handleRemoveSet }:
       const currentLocalRpeFloat = parseFloat(localRpe.replace(',', '.'));
       if (currentLocalRpeFloat !== s.rpe) setLocalRpe(String(s.rpe));
     } else {
-      setLocalRpe('');
+      if (localRpe !== '') setLocalRpe('');
     }
-  }, [s.rpe]);
+  }, [s.rpe, isFocusedRpe, localRpe]);
 
   const handleWeightChange = (val: string) => {
     if (val === '' || /^\d{0,3}([.,]\d{0,1})?$/.test(val)) {

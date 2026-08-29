@@ -115,7 +115,7 @@ export default function DashboardScreen() {
         isMounted = false;
         clearTimeout(timer);
       };
-    }, [currentDate])
+    }, [currentDate, loadBodyData, loadGoals, loadMealLogs, setCurrentDate])
   );
 
   // Quick actions
