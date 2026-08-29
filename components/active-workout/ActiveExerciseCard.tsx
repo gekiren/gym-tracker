@@ -33,6 +33,36 @@ interface ActiveExerciseCardProps {
   calculateRM: (weight: number | null, reps: number | null) => number | null;
 }
 
+const CardDeleteActionLeft = ({ drag, onPress }: { drag: SharedValue<number>; onPress: () => void }) => {
+  const styleAnimation = useAnimatedStyle(() => ({
+    transform: [{ translateX: drag.value - 80 }],
+  }));
+  return (
+    <View style={{ width: 80 }}>
+      <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
+        <GHTouchableOpacity style={styles.deleteAction} onPress={onPress}>
+          <Ionicons name="trash-outline" size={24} color="#fff" />
+        </GHTouchableOpacity>
+      </Reanimated.View>
+    </View>
+  );
+};
+
+const CardDeleteActionRight = ({ drag, onPress }: { drag: SharedValue<number>; onPress: () => void }) => {
+  const styleAnimation = useAnimatedStyle(() => ({
+    transform: [{ translateX: drag.value + 80 }],
+  }));
+  return (
+    <View style={{ width: 80 }}>
+      <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
+        <GHTouchableOpacity style={styles.deleteAction} onPress={onPress}>
+          <Ionicons name="trash-outline" size={24} color="#fff" />
+        </GHTouchableOpacity>
+      </Reanimated.View>
+    </View>
+  );
+};
+
 export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(({
   ex,
   t,
@@ -54,36 +84,6 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
   const { colors } = useAppTheme();
   const [weightStepModalVisible, setWeightStepModalVisible] = React.useState(false);
 
-  const renderLeftActions = (_progress: SharedValue<number>, drag: SharedValue<number>) => {
-    const styleAnimation = useAnimatedStyle(() => ({
-      transform: [{ translateX: drag.value - 80 }],
-    }));
-    return (
-      <View style={{ width: 80 }}>
-        <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
-          <GHTouchableOpacity style={styles.deleteAction} onPress={() => onDeleteExercise(ex)}>
-            <Ionicons name="trash-outline" size={24} color="#fff" />
-          </GHTouchableOpacity>
-        </Reanimated.View>
-      </View>
-    );
-  };
-
-  const renderRightActions = (_progress: SharedValue<number>, drag: SharedValue<number>) => {
-    const styleAnimation = useAnimatedStyle(() => ({
-      transform: [{ translateX: drag.value + 80 }],
-    }));
-    return (
-      <View style={{ width: 80 }}>
-        <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
-          <GHTouchableOpacity style={styles.deleteAction} onPress={() => onDeleteExercise(ex)}>
-            <Ionicons name="trash-outline" size={24} color="#fff" />
-          </GHTouchableOpacity>
-        </Reanimated.View>
-      </View>
-    );
-  };
-
   const currentStance = ex.default_stance || ex.default_variation || null;
   const exerciseNameText = translateExercise(ex.name);
   const isLongName = exerciseNameText.length > 13;
@@ -91,8 +91,8 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
   return (
     <View style={[styles.card, { backgroundColor: colors.card }]}>
       <Swipeable
-        renderLeftActions={(progress, drag) => renderLeftActions(progress, drag)}
-        renderRightActions={(progress, drag) => renderRightActions(progress, drag)}
+        renderLeftActions={(progress, drag) => <CardDeleteActionLeft drag={drag} onPress={() => onDeleteExercise(ex)} />}
+        renderRightActions={(progress, drag) => <CardDeleteActionRight drag={drag} onPress={() => onDeleteExercise(ex)} />}
         friction={2}
         leftThreshold={40}
         rightThreshold={40}
@@ -358,3 +358,5 @@ const styles = StyleSheet.create({
     height: '100%',
   },
 });
+
+ActiveExerciseCard.displayName = 'ActiveExerciseCard';

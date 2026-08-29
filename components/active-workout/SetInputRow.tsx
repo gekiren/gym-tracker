@@ -27,6 +27,35 @@ interface SetInputRowProps {
   displayFields: any;
 }
 
+const RowDeleteActionLeft = ({ drag, onPress }: { drag: SharedValue<number>; onPress: () => void }) => {
+  const styleAnimation = useAnimatedStyle(() => ({
+    transform: [{ translateX: drag.value - 80 }],
+  }));
+  return (
+    <View style={{ width: 80 }}>
+      <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
+        <GHTouchableOpacity style={styles.deleteAction} onPress={onPress}>
+          <Ionicons name="trash-outline" size={24} color="#fff" />
+        </GHTouchableOpacity>
+      </Reanimated.View>
+    </View>
+  );
+};
+
+const RowDeleteActionRight = ({ drag, onPress }: { drag: SharedValue<number>; onPress: () => void }) => {
+  const styleAnimation = useAnimatedStyle(() => ({
+    transform: [{ translateX: drag.value + 80 }],
+  }));
+  return (
+    <View style={{ width: 80 }}>
+      <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
+        <GHTouchableOpacity style={styles.deleteAction} onPress={onPress}>
+          <Ionicons name="trash-outline" size={24} color="#fff" />
+        </GHTouchableOpacity>
+      </Reanimated.View>
+    </View>
+  );
+};
 export function SetInputRow({
   ex,
   set,
@@ -179,50 +208,10 @@ const safeParseInt = (val: string): number | null => {
     );
   };
 
-  const renderLeftActions = (progress: SharedValue<number>, drag: SharedValue<number>) => {
-    const styleAnimation = useAnimatedStyle(() => {
-      return {
-        transform: [{ translateX: drag.value - 80 }],
-      };
-    });
-    return (
-      <View style={{ width: 80 }}>
-        <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
-          <GHTouchableOpacity 
-            style={styles.deleteAction}
-            onPress={handleLongPress}
-          >
-            <Ionicons name="trash-outline" size={24} color="#fff" />
-          </GHTouchableOpacity>
-        </Reanimated.View>
-      </View>
-    );
-  };
-
-  const renderRightActions = (progress: SharedValue<number>, drag: SharedValue<number>) => {
-    const styleAnimation = useAnimatedStyle(() => {
-      return {
-        transform: [{ translateX: drag.value + 80 }],
-      };
-    });
-    return (
-      <View style={{ width: 80 }}>
-        <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
-          <GHTouchableOpacity 
-            style={styles.deleteAction}
-            onPress={handleLongPress}
-          >
-            <Ionicons name="trash-outline" size={24} color="#fff" />
-          </GHTouchableOpacity>
-        </Reanimated.View>
-      </View>
-    );
-  };
-
   return (
     <Swipeable
-      renderLeftActions={renderLeftActions}
-      renderRightActions={renderRightActions}
+      renderLeftActions={(progress, drag) => <RowDeleteActionLeft drag={drag} onPress={handleLongPress} />}
+      renderRightActions={(progress, drag) => <RowDeleteActionRight drag={drag} onPress={handleLongPress} />}
       friction={2}
       leftThreshold={40}
       rightThreshold={40}
