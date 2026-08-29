@@ -60,3 +60,5 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
 });
+
+ProfileMenuCard.displayName = 'ProfileMenuCard';

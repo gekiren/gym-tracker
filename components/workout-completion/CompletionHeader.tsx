@@ -101,3 +101,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+CompletionHeader.displayName = 'CompletionHeader';
