@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.27',
+  version: '2.0.28',
   title: {
-    ja: '📊 ワークアウトPR比率の算出精度向上（種目別PR比・自重対応）',
-    en: '📊 Improved Workout PR Ratio Calculation (Exercise PR & Bodyweight Support)',
+    ja: '⏱️ ルーティン実行中の画面スリープ防止対応',
+    en: '⏱️ Keep Screen On During Routine Execution',
   },
   notes: {
     ja: [
-      'ワークアウト全体のPR比率を、含まれる種目ごとの最大PR比（ウェイト種目は推定1RM比、自重種目は最大レップ比）の平均値で計算するように刷新しました。',
-      '高重量低レップの種目や懸垂などの自重種目が含まれるトレーニングでも、実際の負荷・パフォーマンス実感に即した正確なPR達成率が表示されます。',
+      'ルーティン実行中（タスク遂行・タイマー計測中）に画面が自動で消灯・スリープしないよう画面常時表示（Keep Awake）機能を追加しました。',
+      'ルーティン終了時や別画面への移動時には自動でスリープ防止が解除され、バッテリー消費を抑えます。',
     ],
     en: [
-      'Refined the workout PR ratio calculation to average the max PR ratios of each exercise (estimated 1RM for weighted exercises, max reps for bodyweight exercises).',
-      'Ensures accurate and realistic PR progress tracking even during heavy low-rep sessions or bodyweight exercises like pull-ups.',
+      'Added Keep Awake support to keep the screen on while actively executing routines and tracking timers.',
+      'Screen sleep prevention is automatically disabled when the routine finishes or when navigating away to conserve battery.',
     ],
   },
 };

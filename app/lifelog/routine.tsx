@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { View, TouchableOpacity, Alert, BackHandler } from 'react-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
+import { useKeepAwake } from 'expo-keep-awake';
 import { Theme } from '../../src/theme';
 import { WebViewTab, WebViewTabRef } from '../../components/WebViewTab';
 import RoutineTrackerHTML from '../../src/web-apps/RoutineTracker';
@@ -13,17 +14,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useFeatureSwipe } from '../../hooks/useFeatureSwipe';
 
+function KeepAwakeController() {
+  useKeepAwake();
+  return null;
+}
+
 export default function RoutineScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
-  const activeRoutineState = useLifelogStore((state) => state.activeRoutineState);
+  const isExecuting = useLifelogStore((state) => state.activeRoutineState?.isExecuting || false);
   const [showHistory, setShowHistory] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const webViewTabRef = useRef<WebViewTabRef>(null);
   const { t } = useTranslation();
   const isFocused = useIsFocused();
   const { panHandlerProps } = useFeatureSwipe('/lifelog/routine');
-
-  const isExecuting = activeRoutineState?.isExecuting || false;
 
   // フォーカス離脱時にモーダルフラグをリセット
   React.useEffect(() => {
@@ -91,6 +95,7 @@ export default function RoutineScreen() {
   return (
     <PanGestureHandler {...panHandlerProps}>
       <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+        {isFocused && isExecuting && <KeepAwakeController />}
         <Stack.Screen
           options={{
             title: 'ルーティン管理',
