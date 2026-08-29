@@ -258,3 +258,5 @@ const styles = StyleSheet.create({
   },
 });
 
+
+CompactSwipeableInput.displayName = 'CompactSwipeableInput';

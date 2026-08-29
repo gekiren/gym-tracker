@@ -69,7 +69,7 @@ export default function PrivacyPolicyScreen() {
         {isEn ? (
           <>
             <Section title="Overview">
-              TreNote ("the App") is a personal workout tracking application. This Privacy Policy explains what information we collect, how we use it, and your rights.
+              TreNote (&quot;the App&quot;) is a personal workout tracking application. This Privacy Policy explains what information we collect, how we use it, and your rights.
             </Section>
 
             <Section title="Information We Collect">
@@ -104,7 +104,7 @@ export default function PrivacyPolicyScreen() {
             </Section>
 
             <Section title="Changes to This Policy">
-              We may update this Privacy Policy from time to time. Changes will be reflected in the "Last updated" date above.
+              We may update this Privacy Policy from time to time. Changes will be reflected in the &quot;Last updated&quot; date above.
             </Section>
 
             <Section title="Contact">

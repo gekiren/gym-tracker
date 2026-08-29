@@ -118,3 +118,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+ActiveWorkoutHeaderRight.displayName = 'ActiveWorkoutHeaderRight';
+ActiveWorkoutHeaderLeft.displayName = 'ActiveWorkoutHeaderLeft';
