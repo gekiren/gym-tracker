@@ -1,4 +1,4 @@
-package com.gekirennomad.trenote
+ackage com.gekirennomad.trenote
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -99,6 +99,7 @@ class QuickLauncherWidget : AppWidgetProvider() {
                 "nutrition" to Pair(R.drawable.ic_ql_nutrition, "gymtracker://lifelog/nutrition"),
                 "zikan" to Pair(R.drawable.ic_ql_zikan, "gymtracker://lifelog/zikan"),
                 "routine" to Pair(R.drawable.ic_ql_routine, "gymtracker://lifelog/routine"),
+                "habit" to Pair(R.drawable.ic_ql_habit, "gymtracker://lifelog/habit"),
                 "body" to Pair(R.drawable.ic_ql_body, "gymtracker://lifelog/body"),
                 "voice_ai" to Pair(R.drawable.ic_ql_voice_ai, "gymtracker://lifelog/voice-assistant")
             )
