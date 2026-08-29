@@ -1012,7 +1012,33 @@ let selectedTemplateId = null;
 let logs = JSON.parse(storage.getItem('zikankanri_logs')) || [];
 let plans = JSON.parse(storage.getItem('zikankanri_plans')) || [];
 let templates = JSON.parse(storage.getItem('zikankanri_templates')) || [];
-let defaultTags = JSON.parse(storage.getItem('zikankanri_tags')) || ["睡眠", "仕事", "食事", "移動", "休憩", "家事", "運動", "学習"];
+
+function loadTagsFromStorage() {
+    try {
+        const raw = storage.getItem('zikankanri_tags');
+        if (raw) {
+            let parsed = JSON.parse(raw);
+            if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                return parsed;
+            }
+        }
+    } catch (e) {
+        console.warn('Failed to parse zikankanri_tags', e);
+    }
+    return ["睡眠", "仕事", "食事", "移動", "休憩", "家事", "運動", "学習"];
+}
+let defaultTags = loadTagsFromStorage();
+
+function notifyModalState(show) {
+    if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+        try {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MODAL_STATE_CHANGE', visible: show }));
+        } catch (e) {
+            console.warn('Failed to post MODAL_STATE_CHANGE:', e);
+        }
+    }
+}
 
 function sanitizeDate(dateStr) {
     if (!dateStr || typeof dateStr !== 'string') return null;
@@ -1181,22 +1207,24 @@ function initTags() {
     const editBtn = document.createElement('span');
     editBtn.className = 'tag-chip';
     editBtn.style.borderStyle = 'dashed';
+    editBtn.style.cursor = 'pointer';
     editBtn.textContent = '+ タグ編集';
-    editBtn.onclick = openTagEditor;
+    editBtn.addEventListener('click', openTagEditor);
     quickListNodesContainer.appendChild(editBtn);
 
     defaultTags.forEach(function(tag) {
         const chip = document.createElement('span');
         chip.className = 'tag-chip';
         chip.dataset.value = tag;
+        chip.style.cursor = 'pointer';
 
         const textSpan = document.createElement('span');
         textSpan.textContent = tag;
-        textSpan.style.cursor = 'pointer';
-        textSpan.addEventListener('click', function() {
+        chip.appendChild(textSpan);
+
+        chip.addEventListener('click', function() {
             selectTag(tag);
         });
-        chip.appendChild(textSpan);
 
         quickListNodesContainer.insertBefore(chip, editBtn);
     });
@@ -1208,15 +1236,22 @@ function initTags() {
 
 function openTagEditor() {
     tagEditModal.classList.add('active');
+    notifyModalState(true);
     renderModalTags();
     modalNewTagInput.value = '';
-    modalNewTagInput.focus();
+    setTimeout(function() {
+        modalNewTagInput.focus();
+    }, 100);
 }
 
 function closeTagEditor() {
     tagEditModal.classList.remove('active');
+    notifyModalState(false);
     initTags();
 }
+
+window.openTagEditor = openTagEditor;
+window.closeTagEditor = closeTagEditor;
 
 function renderModalTags() {
     modalTagList.innerHTML = '';
@@ -1235,39 +1270,49 @@ function renderModalTags() {
         rightContainer.style.marginBottom = '0';
 
         const upBtn = document.createElement('button');
+        upBtn.type = 'button';
         upBtn.className = 'edit-tag-move-btn';
         upBtn.innerHTML = '▲';
         if (index === 0) {
             upBtn.disabled = true;
         } else {
-            upBtn.onclick = function() { moveTag(index, -1); };
+            upBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                moveTag(index, -1);
+            });
         }
         rightContainer.appendChild(upBtn);
 
         const downBtn = document.createElement('button');
+        downBtn.type = 'button';
         downBtn.className = 'edit-tag-move-btn';
         downBtn.innerHTML = '▼';
         if (index === defaultTags.length - 1) {
             downBtn.disabled = true;
         } else {
-            downBtn.onclick = function() { moveTag(index, 1); };
+            downBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                moveTag(index, 1);
+            });
         }
         rightContainer.appendChild(downBtn);
 
         const delBtn = document.createElement('button');
+        delBtn.type = 'button';
         delBtn.className = 'edit-tag-delete-btn';
         delBtn.style.marginLeft = '4px';
         delBtn.innerHTML = '&times;';
-        delBtn.onclick = function() {
-            if (confirm('タグ「' + tag + '」を削除しますか？')) {
-                defaultTags = defaultTags.filter(function(t) { return t !== tag; });
-                storage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
-                renderModalTags();
-                if (activityNameInput.value === tag) {
-                    activityNameInput.value = '';
-                }
+        delBtn.setAttribute('title', '削除');
+        delBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            defaultTags = defaultTags.filter(function(t) { return t !== tag; });
+            storage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
+            renderModalTags();
+            initTags();
+            if (activityNameInput.value === tag) {
+                activityNameInput.value = '';
             }
-        };
+        });
         rightContainer.appendChild(delBtn);
 
         item.appendChild(rightContainer);
@@ -1283,18 +1328,23 @@ function moveTag(index, direction) {
     defaultTags[targetIndex] = temp;
     storage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
     renderModalTags();
+    initTags();
 }
 
 function addModalTag() {
     const val = modalNewTagInput.value.trim();
     if (!val) return;
     if (defaultTags.includes(val)) {
-        alert('そのタグは既に存在します。');
+        modalNewTagInput.style.borderColor = 'var(--error-color)';
+        setTimeout(function() {
+            modalNewTagInput.style.borderColor = '';
+        }, 1200);
         return;
     }
     defaultTags.push(val);
     storage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
     renderModalTags();
+    initTags();
     modalNewTagInput.value = '';
 }
 
@@ -1793,14 +1843,19 @@ clearDayBtn.addEventListener('click', function() {
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
     resetModalDate.textContent = selectedDate + ' のデータをリセットします：';
     resetChoiceModal.classList.add('active');
+    notifyModalState(true);
 });
 
 closeResetModalBtn.addEventListener('click', function() {
     resetChoiceModal.classList.remove('active');
+    notifyModalState(false);
 });
 
 resetChoiceModal.addEventListener('click', function(e) {
-    if (e.target === resetChoiceModal) resetChoiceModal.classList.remove('active');
+    if (e.target === resetChoiceModal) {
+        resetChoiceModal.classList.remove('active');
+        notifyModalState(false);
+    }
 });
 
 resetActualOnlyBtn.addEventListener('click', function() {
@@ -1810,6 +1865,7 @@ resetActualOnlyBtn.addEventListener('click', function() {
     renderLogs();
     renderSummary();
     resetChoiceModal.classList.remove('active');
+    notifyModalState(false);
     resetForm();
 });
 
@@ -1820,6 +1876,7 @@ resetPlanOnlyBtn.addEventListener('click', function() {
     renderPlans();
     renderSummary();
     resetChoiceModal.classList.remove('active');
+    notifyModalState(false);
     resetForm();
 });
 
@@ -1833,6 +1890,7 @@ resetAllBtn.addEventListener('click', function() {
     renderPlans();
     renderSummary();
     resetChoiceModal.classList.remove('active');
+    notifyModalState(false);
     resetForm();
 });
 
@@ -1974,20 +2032,26 @@ function openTemplateModal(templateId) {
     templateModalTitle.textContent = 'テンプレート: ' + tmpl.name;
     templateModalDesc.textContent = '項目数: ' + (tmpl.data ? tmpl.data.length : 0) + '件';
     templateActionModal.classList.add('active');
+    notifyModalState(true);
 }
 
 closeTemplateModalBtn.addEventListener('click', function() {
     templateActionModal.classList.remove('active');
+    notifyModalState(false);
 });
 
 templateActionModal.addEventListener('click', function(e) {
-    if (e.target === templateActionModal) templateActionModal.classList.remove('active');
+    if (e.target === templateActionModal) {
+        templateActionModal.classList.remove('active');
+        notifyModalState(false);
+    }
 });
 
 tmplApplyPlanBtn.addEventListener('click', function() {
     if (selectedTemplateId) {
         applyTemplate(selectedTemplateId, 'plan');
         templateActionModal.classList.remove('active');
+        notifyModalState(false);
     }
 });
 
@@ -1995,15 +2059,17 @@ tmplApplyActualBtn.addEventListener('click', function() {
     if (selectedTemplateId) {
         applyTemplate(selectedTemplateId, 'actual');
         templateActionModal.classList.remove('active');
+        notifyModalState(false);
     }
 });
 
 tmplDeleteBtn.addEventListener('click', function() {
-    if (selectedTemplateId && confirm('このテンプレートを削除しますか？')) {
+    if (selectedTemplateId) {
         templates = templates.filter(function(t) { return t.id != selectedTemplateId; });
         storage.setItem('zikankanri_templates', JSON.stringify(templates));
         renderTemplates();
         templateActionModal.classList.remove('active');
+        notifyModalState(false);
     }
 });
 

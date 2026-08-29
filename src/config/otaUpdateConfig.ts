@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.0.25',
+  version: '2.0.29',
   title: {
-    ja: '🛠️ Obsidian連携のデイリーノート競合・重複バグの修正',
-    en: '🛠️ Fixed Obsidian Sync Duplication Bug',
+    ja: '✨ ルーティン結果画面のデザイン＆表記刷新',
+    en: '✨ Routine Result Screen UI & Design Refresh',
   },
   notes: {
     ja: [
-      'Health ConnectデータのObsidian連携時の保存先を「Daily」から「Health」フォルダへ分離し、ファイル名を専用のものに変更しました。',
-      'これにより、PC等で手動作成するデイリーノート本体と競合し、(1)などの重複ファイルが自動生成されてしまう問題を完全に解消しました。',
+      'ルーティン完了後の結果画面のグラフデザイン・配色をアプリテーマ（スカイブルー＆ネオングリーン）に合わせてモダンに刷新しました。',
+      '「Est/Act/Result」の英語表記を「予定/実績/結果」の分かりやすい日本語に統一し、各タスクのカードデザインを改善しました。',
     ],
     en: [
-      'Separated the Obsidian sync destination for Health Connect data from the Daily folder to the Health folder with a dedicated filename.',
-      'This resolves the sync conflict issue where daily notes were duplicated with "(1)" across multiple devices.',
+      'Refreshed the routine result screen chart design and color scheme to match the app dark theme (sky blue & neon green).',
+      'Localized "Est/Act/Result" labels to Japanese and improved task result card styling.',
     ],
   },
 };

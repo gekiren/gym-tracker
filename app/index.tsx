@@ -67,8 +67,6 @@ export default function DashboardScreen() {
   const setInitialFeatures = useFeatureUnlockStore(state => state.setInitialFeatures);
   const pendingUnlockFeature = useFeatureUnlockStore(state => state.pendingUnlockFeature);
   const setPendingUnlockFeature = useFeatureUnlockStore(state => state.setPendingUnlockFeature);
-  const pendingPointNotice = useFeatureUnlockStore(state => state.pendingPointNotice);
-  const clearPendingPointNotice = useFeatureUnlockStore(state => state.clearPendingPointNotice);
 
   const isPremium = settings.isPremium;
   const isEarlyAdopter = settings.isEarlyAdopter;
@@ -809,30 +807,6 @@ export default function DashboardScreen() {
         onClose={() => setPendingUnlockFeature(null)}
       />
 
-      {/* Point Award Notice Modal / Toast */}
-      {pendingPointNotice && (
-        <Modal visible={!!pendingPointNotice} transparent={true} animationType="fade">
-          <TouchableOpacity
-            style={styles.pointNoticeBg}
-            activeOpacity={1}
-            onPress={clearPendingPointNotice}
-          >
-            <View style={styles.pointNoticeCard}>
-              <View style={styles.pointNoticeIcon}>
-                <Ionicons name="diamond" size={28} color="#ffd700" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.pointNoticeTitle}>{pendingPointNotice.title}</Text>
-                <Text style={styles.pointNoticeDesc}>{pendingPointNotice.desc || `+${pendingPointNotice.points} P 獲得！`}</Text>
-              </View>
-              <TouchableOpacity style={styles.pointNoticeBtn} onPress={clearPendingPointNotice}>
-                <Text style={styles.pointNoticeBtnText}>OK</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </Modal>
-      )}
-
       {/* Onboarding Unit Selection Modal */}
       <Modal visible={settings.needsUnitSelection} animationType="fade" transparent={true}>
         <View style={styles.modalBg}>
@@ -1296,64 +1270,5 @@ const styles = StyleSheet.create({
     color: Theme.colors.textMuted,
     lineHeight: 15,
     marginTop: 3,
-  },
-
-  // Point Award Notice Modal
-  pointNoticeBg: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    paddingTop: 80,
-    paddingHorizontal: 16,
-  },
-  pointNoticeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Theme.colors.card,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.4)',
-    shadowColor: '#ffd700',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
-    maxWidth: 420,
-    width: '100%',
-  },
-  pointNoticeIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 215, 0, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  pointNoticeTitle: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#ffd700',
-    marginBottom: 2,
-  },
-  pointNoticeDesc: {
-    fontSize: 12,
-    color: Theme.colors.text,
-  },
-  pointNoticeBtn: {
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
-    borderColor: 'rgba(255, 215, 0, 0.4)',
-    borderWidth: 1,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginLeft: 8,
-  },
-  pointNoticeBtnText: {
-    color: '#ffd700',
-    fontSize: 12,
-    fontWeight: 'bold',
   },
 });

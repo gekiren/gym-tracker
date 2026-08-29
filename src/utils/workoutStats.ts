@@ -33,6 +33,27 @@ export interface DBWorkout {
   start_time: string;
 }
 
+export interface RawWorkoutSetRow {
+  workout_id: number;
+  exercise_id: number;
+  weight: number | null;
+  reps: number | null;
+}
+
+export interface WorkoutPRStat {
+  workoutId: number;
+  actualVolume: number;
+  prTargetVolume: number;
+  prRatio: number; // e.g. 93.7 (%)
+  exercisePRDetails?: {
+    exerciseId: number;
+    ratio: number;
+    isBodyweight: boolean;
+    currentValue: number;
+    maxValue: number;
+  }[];
+}
+
 export interface AchievementItem {
   name: string;
   oldVal: number;
@@ -303,5 +324,145 @@ export const computeWeeklyWorkoutCount = (
     return 1;
   }
 };
+
+/**
+ * ワークアウトPR比率の算出
+ * 種目ごとに種目内の最大PR比（ウェイト種目: 推定1RM比、自重種目: 最大回数比）を計算し、
+ * ワークアウト内の全種目の平均比率としてワークアウトPR比を算出する。
+ */
+export const calculateWorkoutPRStats = (
+  rows: RawWorkoutSetRow[]
+): Record<number, WorkoutPRStat> => {
+  if (!rows || rows.length === 0) return {};
+
+  // 1. 各種目のセット群を整理し、種目ごとの全期間最大値（ウェイト: 1RM, 自重: レップ数）を算出
+  // まず種目がウェイト種目（一度でも weight > 0 のセットがあるか）を判定
+  const exerciseHasWeight: Record<number, boolean> = {};
+  rows.forEach(r => {
+    if (r.weight !== null && r.weight > 0) {
+      exerciseHasWeight[r.exercise_id] = true;
+    }
+  });
+
+  // 種目ごとの全期間最大値
+  const allTimeMaxMap: Record<number, number> = {};
+  rows.forEach(r => {
+    const exId = r.exercise_id;
+    const isWeight = !!exerciseHasWeight[exId];
+    const w = r.weight !== null && r.weight > 0 ? r.weight : 0;
+    const rep = r.reps !== null && r.reps > 0 ? r.reps : 0;
+
+    let val = 0;
+    if (isWeight) {
+      if (w > 0 && rep > 0) {
+        val = calculateRM(w, rep) || w;
+      }
+    } else {
+      val = rep;
+    }
+
+    if (val > 0) {
+      if (!allTimeMaxMap[exId] || val > allTimeMaxMap[exId]) {
+        allTimeMaxMap[exId] = val;
+      }
+    }
+  });
+
+  // 2. ワークアウトごと、種目ごとのデータを集約
+  const workoutExMap: Record<number, Record<number, { maxVal: number; volume: number }>> = {};
+  const workoutTotalVol: Record<number, number> = {};
+
+  rows.forEach(r => {
+    const wId = r.workout_id;
+    const exId = r.exercise_id;
+    const isWeight = !!exerciseHasWeight[exId];
+    const w = r.weight !== null && r.weight > 0 ? r.weight : 0;
+    const rep = r.reps !== null && r.reps > 0 ? r.reps : 0;
+
+    if (!workoutExMap[wId]) {
+      workoutExMap[wId] = {};
+      workoutTotalVol[wId] = 0;
+    }
+
+    let val = 0;
+    let setVol = 0;
+    if (isWeight) {
+      if (w > 0 && rep > 0) {
+        val = calculateRM(w, rep) || w;
+        setVol = w * rep;
+      }
+    } else {
+      val = rep;
+    }
+
+    workoutTotalVol[wId] = (workoutTotalVol[wId] || 0) + setVol;
+
+    if (!workoutExMap[wId][exId]) {
+      workoutExMap[wId][exId] = { maxVal: val, volume: setVol };
+    } else {
+      workoutExMap[wId][exId].maxVal = Math.max(workoutExMap[wId][exId].maxVal, val);
+      workoutExMap[wId][exId].volume += setVol;
+    }
+  });
+
+  // 3. 各ワークアウトのPR比率（全種目のPR比率の平均値）を算出
+  const resultMap: Record<number, WorkoutPRStat> = {};
+
+  Object.keys(workoutExMap).forEach(wIdStr => {
+    const wId = Number(wIdStr);
+    const exMap = workoutExMap[wId];
+    const exIds = Object.keys(exMap).map(Number);
+    const details: {
+      exerciseId: number;
+      ratio: number;
+      isBodyweight: boolean;
+      currentValue: number;
+      maxValue: number;
+    }[] = [];
+
+    let sumRatio = 0;
+    let validExCount = 0;
+
+    exIds.forEach(exId => {
+      const isWeight = !!exerciseHasWeight[exId];
+      const currMax = exMap[exId].maxVal;
+      const allMax = allTimeMaxMap[exId] || currMax;
+
+      let ratio = 100;
+      if (allMax > 0 && currMax > 0) {
+        ratio = (currMax / allMax) * 100;
+      } else if (currMax === 0 && allMax === 0) {
+        ratio = 100;
+      }
+
+      details.push({
+        exerciseId: exId,
+        ratio: Math.round(ratio * 10) / 10,
+        isBodyweight: !isWeight,
+        currentValue: currMax,
+        maxValue: allMax,
+      });
+
+      sumRatio += ratio;
+      validExCount++;
+    });
+
+    const avgRatio = validExCount > 0 ? sumRatio / validExCount : 100;
+    const actualVol = workoutTotalVol[wId] || 0;
+    const roundedRatio = Math.round(avgRatio * 10) / 10;
+    const prTargetVol = roundedRatio > 0 ? Math.round((actualVol * 100) / roundedRatio) : actualVol;
+
+    resultMap[wId] = {
+      workoutId: wId,
+      actualVolume: actualVol,
+      prTargetVolume: prTargetVol,
+      prRatio: roundedRatio,
+      exercisePRDetails: details,
+    };
+  });
+
+  return resultMap;
+};
+
 
 

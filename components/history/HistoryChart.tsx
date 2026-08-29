@@ -36,6 +36,8 @@ interface PeriodAggregate {
   sets: number;
   durationMin: number;
   targetVolume: number;
+  sumRatio: number;
+  count: number;
 }
 
 // 運動時間（分）の安全な計算
@@ -171,21 +173,24 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
         const weekStart = startOfWeek(date, { weekStartsOn: 1 });
         const key = weekStart.toISOString();
         if (!weeklyData[key]) {
-          weeklyData[key] = { date: weekStart, volume: 0, calories: 0, sets: 0, durationMin: 0, targetVolume: 0 };
+          weeklyData[key] = { date: weekStart, volume: 0, calories: 0, sets: 0, durationMin: 0, targetVolume: 0, sumRatio: 0, count: 0 };
         }
         const prStat = prStatsMap[w.id];
         const vol = w.volume || 0;
+        const wRatio = prStat ? prStat.prRatio : 100;
         weeklyData[key].volume += vol;
         weeklyData[key].calories += w.calories || 0;
         weeklyData[key].sets += w.total_sets || 0;
         weeklyData[key].durationMin += getWorkoutDurationMin(w);
         weeklyData[key].targetVolume += prStat ? prStat.prTargetVolume : vol;
+        weeklyData[key].sumRatio += wRatio;
+        weeklyData[key].count += 1;
       });
 
       const sortedWeeks = Object.values(weeklyData).sort((a, b) => a.date.getTime() - b.date.getTime()).slice(-40);
       return sortedWeeks.map(w => {
         const val = calculatePeriodMetricValue(w, chartMetric);
-        const ratio = w.targetVolume > 0 ? (w.volume / w.targetVolume) * 100 : 100;
+        const ratio = w.count > 0 ? (w.sumRatio / w.count) : 100;
         return {
           id: w.date.toISOString(),
           label: format(w.date, 'MM/dd'),
@@ -205,21 +210,24 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
         const monthStart = startOfMonth(date);
         const key = monthStart.toISOString();
         if (!monthlyData[key]) {
-          monthlyData[key] = { date: monthStart, volume: 0, calories: 0, sets: 0, durationMin: 0, targetVolume: 0 };
+          monthlyData[key] = { date: monthStart, volume: 0, calories: 0, sets: 0, durationMin: 0, targetVolume: 0, sumRatio: 0, count: 0 };
         }
         const prStat = prStatsMap[w.id];
         const vol = w.volume || 0;
+        const wRatio = prStat ? prStat.prRatio : 100;
         monthlyData[key].volume += vol;
         monthlyData[key].calories += w.calories || 0;
         monthlyData[key].sets += w.total_sets || 0;
         monthlyData[key].durationMin += getWorkoutDurationMin(w);
         monthlyData[key].targetVolume += prStat ? prStat.prTargetVolume : vol;
+        monthlyData[key].sumRatio += wRatio;
+        monthlyData[key].count += 1;
       });
 
       const sortedMonths = Object.values(monthlyData).sort((a, b) => a.date.getTime() - b.date.getTime()).slice(-40);
       return sortedMonths.map(m => {
         const val = calculatePeriodMetricValue(m, chartMetric);
-        const ratio = m.targetVolume > 0 ? (m.volume / m.targetVolume) * 100 : 100;
+        const ratio = m.count > 0 ? (m.sumRatio / m.count) : 100;
         return {
           id: m.date.toISOString(),
           label: format(m.date, 'yyyy/MM'),
@@ -239,21 +247,24 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
         const yearStart = new Date(date.getFullYear(), 0, 1);
         const key = yearStart.toISOString();
         if (!yearlyData[key]) {
-          yearlyData[key] = { date: yearStart, volume: 0, calories: 0, sets: 0, durationMin: 0, targetVolume: 0 };
+          yearlyData[key] = { date: yearStart, volume: 0, calories: 0, sets: 0, durationMin: 0, targetVolume: 0, sumRatio: 0, count: 0 };
         }
         const prStat = prStatsMap[w.id];
         const vol = w.volume || 0;
+        const wRatio = prStat ? prStat.prRatio : 100;
         yearlyData[key].volume += vol;
         yearlyData[key].calories += w.calories || 0;
         yearlyData[key].sets += w.total_sets || 0;
         yearlyData[key].durationMin += getWorkoutDurationMin(w);
         yearlyData[key].targetVolume += prStat ? prStat.prTargetVolume : vol;
+        yearlyData[key].sumRatio += wRatio;
+        yearlyData[key].count += 1;
       });
 
       const sortedYears = Object.values(yearlyData).sort((a, b) => a.date.getTime() - b.date.getTime()).slice(-40);
       return sortedYears.map(y => {
         const val = calculatePeriodMetricValue(y, chartMetric);
-        const ratio = y.targetVolume > 0 ? (y.volume / y.targetVolume) * 100 : 100;
+        const ratio = y.count > 0 ? (y.sumRatio / y.count) : 100;
         return {
           id: y.date.toISOString(),
           label: format(y.date, 'yyyy'),

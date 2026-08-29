@@ -121,7 +121,7 @@ export default `<!DOCTYPE html>
     (function() {
       if (window.__BACKGROUND_THEME__ === 'pureBlack') {
         var style = document.createElement('style');
-        style.innerHTML = 'body { background-color: #000000 !important; color: #ffffff !important; } .card, .routine-card, .routine-item, .item-card, div[class*="card"], .confirm-content, .modal-content { background-color: #080808 !important; border: 1px solid #1f1f1f !important; } .task-card, .setting-row { background-color: #111113 !important; border-color: #222226 !important; } .form-input, .task-name-input, .task-time-input-min, .task-time-input-sec { background-color: #000000 !important; border-color: #2a2a2e !important; } .text-muted, small, span.sub { color: #888888 !important; }';
+        style.innerHTML = 'body { background-color: #000000 !important; color: #ffffff !important; } .card, .routine-card, .routine-item, .item-card, .result-item, div[class*="card"], .confirm-content, .modal-content { background-color: #080808 !important; border-color: #1f1f1f !important; } .chart-container { background-color: #050505 !important; border-color: #1f1f1f !important; } .task-card, .setting-row { background-color: #111113 !important; border-color: #222226 !important; } .form-input, .task-name-input, .task-time-input-min, .task-time-input-sec { background-color: #000000 !important; border-color: #2a2a2e !important; } .text-muted, small, span.sub { color: #888888 !important; }';
         document.head.appendChild(style);
       }
     })();
@@ -871,18 +871,66 @@ h1, h2 {
 
 .chart-container {
     position: relative;
-    height: 250px;
+    height: 260px;
     width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    background: rgba(30, 30, 36, 0.6);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 12px 10px 8px 10px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .result-item {
-    background: #2c2c2c;
-    padding: 12px;
-    margin: 8px 0;
-    border-radius: 8px;
+    background: #1e1e24;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 4px solid #4facfe;
+    padding: 14px 16px;
+    margin: 10px 0;
+    border-radius: 12px;
     text-align: left;
-    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    transition: transform 0.15s ease;
+}
+
+.result-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.result-task-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.2px;
+}
+
+.result-act-badge {
+    background: rgba(76, 217, 100, 0.15);
+    border: 1px solid rgba(76, 217, 100, 0.35);
+    color: #4cd964;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.result-est-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #a0a0ab;
+    margin-top: 4px;
+}
+
+.result-est-tag {
+    color: #4facfe;
+    font-weight: 600;
 }
 
 /* History Styles */
@@ -1089,7 +1137,7 @@ h1, h2 {
 
         <!-- 結果画面 -->
         <div id="result-screen" class="hidden">
-            <h1>Result</h1>
+            <h1>結果</h1>
 
             <div class="chart-container">
                 <canvas id="resultChart"></canvas>
@@ -1098,7 +1146,7 @@ h1, h2 {
             <div id="result-list">
                 <!-- 結果詳細 -->
             </div>
-            <button onclick="goHome()" class="btn-large-secondary" style="margin-top: 20px;">Back to Home</button>
+            <button onclick="goHome()" class="btn-large-primary" style="margin-top: 24px;">ホームに戻る</button>
         </div>
 
         <!-- 履歴画面 -->
@@ -2018,13 +2066,27 @@ function finishRoutine() {
 }
 
 function renderResultList(updates) {
-    components.resultList.innerHTML = updates.map(u => \`
+    components.resultList.innerHTML = updates.map(u => {
+        const isFaster = u.actual < u.old_est;
+        const diff = Math.abs(u.actual - u.old_est);
+        const diffText = diff > 0 ? (isFaster ? \`-\${formatTime(diff)}\` : \`+\${formatTime(diff)}\`) : '';
+        const diffBadge = diffText ? \`<span style="font-size:11px; margin-left:6px; font-weight:600; color:\${isFaster ? '#4cd964' : '#ff9500'};">(\${diffText})</span>\` : '';
+
+        return \`
         <div class="result-item">
-            <strong>\${u.task_name}</strong><br>
-            Act: \${formatTime(u.actual)} <br>
-            <span style="color:#888;">Est: \${formatTime(u.old_est)} → \${formatTime(u.new_est)}</span>
+            <div class="result-item-header">
+                <span class="result-task-name">\${u.task_name}</span>
+                <span class="result-act-badge">実績: \${formatTime(u.actual)}\${diffBadge}</span>
+            </div>
+            <div class="result-est-row">
+                <span class="result-est-tag">予定</span>
+                <span>\${formatTime(u.old_est)}</span>
+                <span style="color:#666; margin: 0 2px;">➔</span>
+                <span style="color:#cecece;">次回目安: \${formatTime(u.new_est)}</span>
+            </div>
         </div>
-    \`).join('');
+        \`;
+    }).join('');
 }
 
 function renderChart(updates) {
@@ -2037,25 +2099,88 @@ function renderChart(updates) {
             labels: updates.map(u => u.task_name),
             datasets: [
                 {
-                    label: 'Est',
+                    label: '予定',
                     data: updates.map(u => u.old_est),
-                    backgroundColor: 'rgba(75, 192, 192, 0.5)'
+                    backgroundColor: 'rgba(79, 172, 254, 0.75)',
+                    borderColor: '#4facfe',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    borderSkipped: false
                 },
                 {
-                    label: 'Act',
+                    label: '実績',
                     data: updates.map(u => u.actual),
-                    backgroundColor: 'rgba(255, 99, 132, 0.5)'
+                    backgroundColor: 'rgba(76, 217, 100, 0.75)',
+                    borderColor: '#4cd964',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    borderSkipped: false
                 }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-                y: { beginAtZero: true, ticks: { color: '#fff' } },
-                x: { ticks: { color: '#fff' } }
+            layout: {
+                padding: { top: 10, bottom: 5, left: 5, right: 5 }
             },
-            plugins: { legend: { labels: { color: '#fff' } } }
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.08)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#a0a0ab',
+                        font: { size: 11 },
+                        callback: function(value) {
+                            return formatTime(value);
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#ffffff',
+                        font: { size: 12, weight: '500' },
+                        maxRotation: 45,
+                        minRotation: 20
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: '#ffffff',
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        boxWidth: 8,
+                        boxHeight: 8,
+                        padding: 14,
+                        font: { size: 13, weight: 'bold' }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#1e1e24',
+                    titleColor: '#ffffff',
+                    bodyColor: '#e0e0e8',
+                    borderColor: 'rgba(255, 255, 255, 0.15)',
+                    borderWidth: 1,
+                    padding: 10,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.dataset.label || '';
+                            const value = context.parsed.y;
+                            return ' ' + label + ': ' + formatTime(value);
+                        }
+                    }
+                }
+            }
         }
     });
 }

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Stack } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { Theme } from '../../src/theme';
-import { WebViewTab } from '../../components/WebViewTab';
+import { WebViewTab, WebViewTabRef } from '../../components/WebViewTab';
 import ZikanKanriHTML from '../../src/web-apps/ZikanKanri';
 import { useLifelogStore } from '../../src/store/lifelogStore';
 import { LifelogDateHeader } from '../../components/LifelogDateHeader';
@@ -16,6 +16,8 @@ import { useFeatureSwipe } from '../../hooks/useFeatureSwipe';
 export default function ZikanScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
   const [showHistory, setShowHistory] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const webViewTabRef = useRef<WebViewTabRef>(null);
   const { t } = useTranslation();
   const isFocused = useIsFocused();
   const { panHandlerProps } = useFeatureSwipe('/lifelog/zikan');
@@ -30,6 +32,19 @@ export default function ZikanScreen() {
 
   const targetDate = currentDate || getTodayStr();
 
+  // フォーカス離脱時にモーダルフラグをリセット
+  useEffect(() => {
+    if (!isFocused) {
+      setIsModalVisible(false);
+    }
+  }, [isFocused]);
+
+  const handleOpenTagEditor = () => {
+    webViewTabRef.current?.injectJavaScript(
+      "if (typeof openTagEditor === 'function') openTagEditor();"
+    );
+  };
+
   return (
     <PanGestureHandler {...panHandlerProps}>
       <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
@@ -40,9 +55,14 @@ export default function ZikanScreen() {
             headerTintColor: Theme.colors.text,
             headerTitleStyle: { fontWeight: 'bold' },
             headerRight: () => (
-              <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ marginRight: 16, padding: 4 }}>
-                <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+                <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ padding: 6, marginRight: 6 }}>
+                  <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleOpenTagEditor} style={{ padding: 6 }}>
+                  <Ionicons name="settings-outline" size={22} color={Theme.colors.primary} />
+                </TouchableOpacity>
+              </View>
             ),
           }}
         />
@@ -50,8 +70,13 @@ export default function ZikanScreen() {
           <LifelogHistoryTab type="time" t={t} />
         ) : isFocused ? (
           <>
-            <LifelogDateHeader type="zikan" />
-            <WebViewTab html={ZikanKanriHTML} currentDate={targetDate} />
+            {!isModalVisible && <LifelogDateHeader type="zikan" />}
+            <WebViewTab
+              ref={webViewTabRef}
+              html={ZikanKanriHTML}
+              currentDate={targetDate}
+              onModalStateChange={(visible) => setIsModalVisible(visible)}
+            />
           </>
         ) : null}
       </View>

@@ -258,8 +258,16 @@ export function useActiveWorkout() {
     setFinishModalVisible(false);
 
     try {
+      // 0. Filter only completed sets and exercises with at least one completed set
+      const completedExercises = exercises
+        .map(ex => ({
+          ...ex,
+          sets: ex.sets.filter(s => !!s.is_completed),
+        }))
+        .filter(ex => ex.sets.length > 0);
+
       // 1. Gather unique completed exercise IDs
-      const exerciseIds = exercises
+      const exerciseIds = completedExercises
         .map(ex => ex.exercise_id)
         .filter((id): id is number => typeof id === 'number');
 
@@ -277,7 +285,7 @@ export function useActiveWorkout() {
       // 3. Compute calorie stats safely
       let roundedCalories = 0;
       try {
-        roundedCalories = computeCalories(exercises, settings.bodyWeight || 70, settings.weightUnit);
+        roundedCalories = computeCalories(completedExercises, settings.bodyWeight || 70, settings.weightUnit);
       } catch (e) {
         console.warn('Failed to compute calories', e);
       }
@@ -287,7 +295,7 @@ export function useActiveWorkout() {
       let updated1RMs: any[] = [];
       let updatedVolumes: any[] = [];
       try {
-        const achRes = computeAchievements(exercises, pastSets, settings.bodyWeight || 70);
+        const achRes = computeAchievements(completedExercises, pastSets, settings.bodyWeight || 70);
         updated1RMs = achRes.updated1RMs || [];
         updatedVolumes = achRes.updatedVolumes || [];
       } catch (e) {
@@ -311,7 +319,7 @@ export function useActiveWorkout() {
         console.warn('Failed to compute streaks', e);
       }
 
-      const workoutId = await saveWorkout(savedTitle, savedStartTime, et, workoutNotes, exercises, roundedCalories);
+      const workoutId = await saveWorkout(savedTitle, savedStartTime, et, workoutNotes, completedExercises, roundedCalories);
 
       // Set store state for completed screen
       useWorkoutStore.getState().setLastWorkoutCompletion({
@@ -322,7 +330,7 @@ export function useActiveWorkout() {
           end_time: et,
           notes: workoutNotes || null,
           calories: roundedCalories,
-          exercises: exercises,
+          exercises: completedExercises,
         },
         achievements: {
           streakDays,
