@@ -25,11 +25,7 @@ import { getAIDebugLogs, clearAIDebugLogs, copyAIDebugLogsToClipboard } from '..
 import { useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
 import { AD_CONFIG } from '../src/config/adConfig';
 
-export default function DeveloperMenuScreen() {
-  const isProduction = process.env.APP_ENV === 'production';
-  if (isProduction && !__DEV__) {
-    return null; // Render absolutely nothing in production builds to satisfy store policy
-  }
+function DeveloperMenuScreenInternal() {
 
   const { t } = useTranslation();
   const enableAiDebugContext = useSettingsStore(state => state.settings.enableAiDebugContext);
@@ -1696,3 +1692,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+
+export default function DeveloperMenuScreen() {
+  const isProduction = process.env.APP_ENV === 'production';
+  if (isProduction && !__DEV__) {
+    return null;
+  }
+  return <DeveloperMenuScreenInternal />;
+}
