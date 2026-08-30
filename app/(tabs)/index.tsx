@@ -19,6 +19,7 @@ export default function WorkoutHomeScreen() {
   const startWorkout = useWorkoutStore(state => state.startWorkout);
   const endWorkout = useWorkoutStore(state => state.endWorkout);
   const addExercise = useWorkoutStore(state => state.addExercise);
+  const alwaysOneSet = useSettingsStore(state => state.settings.alwaysOneSet);
   const isActive = useWorkoutStore(state => state.isActive);
   const title = useWorkoutStore(state => state.title);
   const settings = useSettingsStore(state => state.settings);
@@ -107,15 +108,18 @@ export default function WorkoutHomeScreen() {
         for (const ex of routine.exercises) {
           const prevSets = await getPreviousWorkoutSets(ex.id);
           const personalRecords = await getPersonalRecords(ex.id);
-          addExercise({ 
-            id: ex.id, 
+          addExercise({
+            id: ex.id,
             name: ex.name, 
             previousSets: prevSets, 
             personalRecords, 
             equipment: ex.equipment, 
             muscle_group: ex.muscle_group,
+            is_unilateral: ex.is_unilateral,
+            default_variation: ex.default_variation,
+            default_stance: ex.default_stance,
             routineSets: ex.sets
-          });
+          }, alwaysOneSet);
         }
         router.push('/active-workout');
       } catch (e) {

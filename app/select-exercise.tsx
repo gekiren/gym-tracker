@@ -67,7 +67,8 @@ export default function SelectExerciseScreen() {
   const [newDefaultStance, setNewDefaultStance] = useState('');
 
   const settings = useSettingsStore(state => state.settings);
-  const addExercise = useWorkoutStore(state => state.addExercise);
+  const addExercise = useWorkoutStore((state) => state.addExercise);
+  const alwaysOneSet = useSettingsStore((state) => state.settings.alwaysOneSet);
   const addDraftExercise = useRoutineDraftStore(state => state.addDraftExercise);
   const customStances = settings.customStances;
   const { mode } = useLocalSearchParams<{ mode?: string }>();
@@ -116,9 +117,9 @@ export default function SelectExerciseScreen() {
     try {
       const prevSets = await getPreviousWorkoutSets(ex.id);
       const personalRecords = await getPersonalRecords(ex.id);
-      addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation, default_stance: ex.default_stance, equipment: ex.equipment, muscle_group: ex.muscle_group });
+      addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation, default_stance: ex.default_stance, equipment: ex.equipment, muscle_group: ex.muscle_group }, alwaysOneSet);
     } catch (e) {
-      addExercise({ id: ex.id, name: ex.name, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation, default_stance: ex.default_stance, equipment: ex.equipment, muscle_group: ex.muscle_group });
+      addExercise({ id: ex.id, name: ex.name, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation, default_stance: ex.default_stance, equipment: ex.equipment, muscle_group: ex.muscle_group }, alwaysOneSet);
     }
     router.back();
   };

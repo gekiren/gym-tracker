@@ -1,1 +1,0 @@
-C:\Users\toshi\.gemini\antigravity\scratch\kintore\gym-tracker\node_modules\react-native-gesture-handler\android\build\intermediates\cxx\Debug\543a6a69\obj\arm64-v8a
