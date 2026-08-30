@@ -101,7 +101,14 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
           <View style={styles.headerRow}>
             <View style={{ flex: 1 }}>
               <TouchableOpacity
-                onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: ex.exercise_id || ex.id } } as any)}
+                onPress={() => {
+                  const targetId = ex.exercise_id || ex.id;
+                  if (typeof targetId === 'string' && targetId.includes('-')) {
+                    console.warn('Cannot navigate to exercise details: exercise_id is missing (received UUID).');
+                    return;
+                  }
+                  router.push({ pathname: '/exercise/[id]', params: { id: targetId } } as any);
+                }}
                 onLongPress={() => onDeleteExercise(ex)}
                 delayLongPress={500}
                 style={{ flexDirection: 'row', alignItems: 'center', maxWidth: '82%', marginBottom: 2 }}

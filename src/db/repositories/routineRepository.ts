@@ -21,7 +21,7 @@ export const getRoutines = async () => {
     default_stance: string | null;
     weight_step: number;
   }>(`
-    SELECT re.routine_id, re.id as routine_exercise_id, e.id as exercise_id, e.name as exercise_name,
+    SELECT re.routine_id, re.id as routine_exercise_id, re.exercise_id, e.name as exercise_name,
            e.is_unilateral, e.equipment, e.muscle_group, e.default_variation, e.default_stance, e.weight_step
     FROM routine_exercises re
     JOIN exercises e ON re.exercise_id = e.id
@@ -47,7 +47,7 @@ export const getRoutines = async () => {
       FROM routine_sets
       WHERE routine_exercise_id IN (${placeholders})
       ORDER BY set_number ASC
-    `, rxIds);
+    `, ...rxIds);
   }
 
   // Map sets to routine_exercise_id
