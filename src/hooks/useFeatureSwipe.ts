@@ -1,4 +1,4 @@
-import { useSettingsStore } from '../src/store/settingsStore';
+import { useSettingsStore } from '../store/settingsStore';
 import { router } from 'expo-router';
 import { PanGestureHandlerStateChangeEvent, State } from 'react-native-gesture-handler';
 

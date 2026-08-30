@@ -10,7 +10,7 @@ import { getRoutines, getPreviousWorkoutSets, getPersonalRecords, saveSetting } 
 import { translateExercise } from '../../src/i18n';
 import { readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../../src/services/crashReporterService';
 import { PanGestureHandler } from 'react-native-gesture-handler';
-import { useFeatureSwipe } from '../../hooks/useFeatureSwipe';
+import { useFeatureSwipe } from '../../src/hooks/useFeatureSwipe';
 
 export default function WorkoutHomeScreen() {
   const { colors } = useAppTheme();

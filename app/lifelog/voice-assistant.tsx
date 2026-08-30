@@ -9,7 +9,7 @@ import { useSettingsStore } from '../../src/store/settingsStore';
 import { useLifelogStore } from '../../src/store/lifelogStore';
 import { getLastWorkoutSummary } from '../../src/db/database';
 import { handleCompanionWebViewMessage } from '../../src/services/aiCompanionSyncService';
-import { useFeatureSwipe } from '../../hooks/useFeatureSwipe';
+import { useFeatureSwipe } from '../../src/hooks/useFeatureSwipe';
 import { PointBadge } from '../../components/PointBadge';
 
 export default function VoiceAssistantScreen() {

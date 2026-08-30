@@ -19,7 +19,7 @@ import { useBodyStore } from '../../src/store/bodyStore';
 import { useLifelogStore } from '../../src/store/lifelogStore';
 import { BodyCompositionLog } from '../../src/types/bodyComposition';
 import { PanGestureHandler } from 'react-native-gesture-handler';
-import { useFeatureSwipe } from '../../hooks/useFeatureSwipe';
+import { useFeatureSwipe } from '../../src/hooks/useFeatureSwipe';
 
 // Components
 import BodySummaryCard from '../../components/body/BodySummaryCard';

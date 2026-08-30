@@ -12,7 +12,7 @@ import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { PanGestureHandler } from 'react-native-gesture-handler';
-import { useFeatureSwipe } from '../../hooks/useFeatureSwipe';
+import { useFeatureSwipe } from '../../src/hooks/useFeatureSwipe';
 
 function KeepAwakeController() {
   useKeepAwake();
