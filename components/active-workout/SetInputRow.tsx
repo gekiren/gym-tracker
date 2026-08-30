@@ -485,7 +485,7 @@ const safeParseInt = (val: string): number | null => {
                 {(set.stance || set.variation) ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.stance || set.variation)}` : `${t('ui.active_workout.stance_label')}: -`}
               </Text>
             ) : (
-              <TouchableOpacity 
+              <GHTouchableOpacity 
                 onPress={() => {
                   const curStance = set.stance || set.variation || null;
                   setStanceModalTarget({ type: 'set', exId: ex.id, setId: set.id, currentValue: curStance });
@@ -496,7 +496,7 @@ const safeParseInt = (val: string): number | null => {
                 <Text style={{ color: Theme.colors.primary, fontSize: 11, textDecorationLine: 'underline' }} numberOfLines={1}>
                   {(set.stance || set.variation) ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.stance || set.variation)}` : t('ui.active_workout.stance_add_link')}
                 </Text>
-              </TouchableOpacity>
+              </GHTouchableOpacity>
             )}
           </View>
         ) : <View style={{ flex: 1.8 }} />}

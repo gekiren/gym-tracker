@@ -136,7 +136,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
                     </Text>
                   </View>
                 )}
-                <TouchableOpacity
+                <GHTouchableOpacity
                   style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#2a2a2a', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 }}
                   onPress={() => setWeightStepModalVisible(true)}
                 >
@@ -144,22 +144,22 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
                   <Text style={{ color: Theme.colors.primary, fontSize: 11, fontWeight: 'bold' }}>
                     ±{ex.weight_step ?? 2.5}kg
                   </Text>
-                </TouchableOpacity>
+                </GHTouchableOpacity>
               </View>
             </View>
             <View style={styles.headerIcons}>
               {AI_CONFIG.status === 'active' && (
-                <TouchableOpacity onPress={() => onAICoachExercise(ex)}>
+                <GHTouchableOpacity onPress={() => onAICoachExercise(ex)}>
                   <Ionicons name="sparkles" size={20} color={Theme.colors.primary} />
-                </TouchableOpacity>
+                </GHTouchableOpacity>
               )}
-              <TouchableOpacity onPress={() => onToggleNotes(ex.id)}>
+              <GHTouchableOpacity onPress={() => onToggleNotes(ex.id)}>
                 <Ionicons
                   name={ex.notes ? 'chatbubble-ellipses' : 'chatbubble-outline'}
                   size={20}
                   color={ex.notes ? Theme.colors.primary : Theme.colors.textMuted}
                 />
-              </TouchableOpacity>
+              </GHTouchableOpacity>
             </View>
           </View>
         </View>
@@ -224,7 +224,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
 
       <View style={styles.bottomRowContainer}>
         {settings.displayFields?.showStance && (
-          <TouchableOpacity
+          <GHTouchableOpacity
             style={styles.exerciseVariationBtnBottom}
             onPress={() => {
               onOpenStanceModal({ type: 'exercise', exId: ex.id, currentValue: currentStance });
@@ -235,12 +235,12 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
               {currentStance ? translateStance(currentStance as string) : t('ui.active_workout.stance_standard')}
             </Text>
             <Ionicons name="chevron-down" size={10} color={Theme.colors.primary} style={{ marginLeft: 2, alignSelf: 'flex-end', marginBottom: 2 }} />
-          </TouchableOpacity>
+          </GHTouchableOpacity>
         )}
 
-        <TouchableOpacity style={styles.addSetBtn} onPress={() => onAddSet(ex.id)}>
+        <GHTouchableOpacity style={styles.addSetBtn} onPress={() => onAddSet(ex.id)}>
           <Text style={styles.addSetBtnText}>{t('ui.active_workout.add_set_label')}</Text>
-        </TouchableOpacity>
+        </GHTouchableOpacity>
       </View>
 
       <WeightStepModal
