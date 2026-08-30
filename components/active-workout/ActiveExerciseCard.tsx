@@ -223,24 +223,28 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
       ))}
 
       <View style={styles.bottomRowContainer}>
-        {settings.displayFields?.showStance && (
-          <GHTouchableOpacity
-            style={styles.exerciseVariationBtnBottom}
-            onPress={() => {
-              onOpenStanceModal({ type: 'exercise', exId: ex.id, currentValue: currentStance });
-            }}
-          >
-            <Text style={styles.exerciseVariationTextBottom}>
-              {t('ui.active_workout.stance_label')}:{'\n'}
-              {currentStance ? translateStance(currentStance as string) : t('ui.active_workout.stance_standard')}
-            </Text>
-            <Ionicons name="chevron-down" size={10} color={Theme.colors.primary} style={{ marginLeft: 2, alignSelf: 'flex-end', marginBottom: 2 }} />
-          </GHTouchableOpacity>
-        )}
+        <View style={styles.bottomLeftContainer}>
+          {settings.displayFields?.showStance && (
+            <GHTouchableOpacity
+              style={styles.exerciseVariationBtnBottom}
+              onPress={() => {
+                onOpenStanceModal({ type: 'exercise', exId: ex.id, currentValue: currentStance });
+              }}
+            >
+              <Text style={styles.exerciseVariationTextBottom}>
+                {t('ui.active_workout.stance_label')}:{'\n'}
+                {currentStance ? translateStance(currentStance as string) : t('ui.active_workout.stance_standard')}
+              </Text>
+              <Ionicons name="chevron-down" size={10} color={Theme.colors.primary} style={{ marginLeft: 2, alignSelf: 'flex-end', marginBottom: 2 }} />
+            </GHTouchableOpacity>
+          )}
+        </View>
 
         <GHTouchableOpacity style={styles.addSetBtn} onPress={() => onAddSet(ex.id)}>
           <Text style={styles.addSetBtnText}>{t('ui.active_workout.add_set_label')}</Text>
         </GHTouchableOpacity>
+
+        <View style={styles.bottomRightPlaceholder} />
       </View>
 
       <WeightStepModal
@@ -284,14 +288,20 @@ const styles = StyleSheet.create({
   bottomRowContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     marginTop: 8,
-    position: 'relative',
     minHeight: 40,
+    paddingHorizontal: 2,
+  },
+  bottomLeftContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  bottomRightPlaceholder: {
+    flex: 1,
   },
   exerciseVariationBtnBottom: {
-    position: 'absolute',
-    left: 0,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(79, 172, 254, 0.1)',
