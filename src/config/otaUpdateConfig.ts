@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.1.0',
+  version: '2.1.1',
   title: {
-    ja: '✨ v2.1.0 ネイティブリリース',
-    en: '✨ v2.1.0 Native Release',
+    ja: '✨ 種目詳細画面の再表示不具合を修正',
+    en: '✨ Fix navigation issue reopening exercise details',
   },
   notes: {
     ja: [
-      'ルーティン結果画面のグラフデザイン・配色をアプリテーマに合わせて刷新しました。',
-      '「予定/実績/結果」の分かりやすい日本語表記に統一し、カードデザインと安定性を向上しました。',
+      '種目詳細画面から戻った後、同じ種目名を連続してタップしても詳細画面が開かない問題を修正しました。',
     ],
     en: [
-      'Refreshed the routine result screen chart design and color scheme to match the app theme.',
-      'Localized labels to Japanese and improved task result card styling and stability.',
+      'Fixed an issue where reopening the same exercise details after returning was not responding.',
     ],
   },
 };
