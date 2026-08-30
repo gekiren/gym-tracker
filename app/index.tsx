@@ -21,6 +21,15 @@ import { readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LifelogDateHeader } from '../components/LifelogDateHeader';
 
+import { WorkoutCard } from '../src/components/home/WorkoutCard';
+import { BodyCard } from '../src/components/home/BodyCard';
+import { WaterCard } from '../src/components/home/WaterCard';
+import { NutritionCard } from '../src/components/home/NutritionCard';
+import { TimeCard } from '../src/components/home/TimeCard';
+import { HabitCard } from '../src/components/home/HabitCard';
+import { RoutineCard } from '../src/components/home/RoutineCard';
+import { VoiceAiCard } from '../src/components/home/VoiceAiCard';
+
 const { width } = Dimensions.get('window');
 
 
@@ -30,8 +39,6 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   
   // Workout Store
-  const isActive = useWorkoutStore(state => state.isActive);
-  const workoutTitle = useWorkoutStore(state => state.title);
   const settings = useSettingsStore(state => state.settings);
   const loadSettings = useSettingsStore(state => state.loadSettings);
   const featureOrder = useSettingsStore(state => state.settings.featureOrder);
@@ -40,23 +47,14 @@ export default function DashboardScreen() {
 
   // Lifelog Store
   const currentDate = useLifelogStore(state => state.currentDate);
-  const daySummary = useLifelogStore(state => state.daySummary);
   const isLoadingLifelog = useLifelogStore(state => state.isLoading);
   const setCurrentDate = useLifelogStore(state => state.setCurrentDate);
-  const addWater = useLifelogStore(state => state.addWater);
-  const addHabitLog = useLifelogStore(state => state.addHabitLog);
-  const waterPresets = useLifelogStore(state => state.waterPresets);
 
   // Nutrition Store
-  const mealLogs = useNutritionStore(state => state.mealLogs);
-  const userNutritionGoals = useNutritionStore(state => state.userNutritionGoals);
   const loadMealLogs = useNutritionStore(state => state.loadMealLogs);
   const loadGoals = useNutritionStore(state => state.loadGoals);
 
   // Body Store
-  const currentBodyLog = useBodyStore(state => state.currentLog);
-  const latestBodyLog = useBodyStore(state => state.latestLog);
-  const savedBodyMeasurements = useBodyStore(state => state.savedMeasurements);
   const loadBodyData = useBodyStore(state => state.loadBodyData);
 
   // Feature Unlock Store
@@ -74,81 +72,33 @@ export default function DashboardScreen() {
   // Local state for onboarding/modals
   const [isSendingCrash, setIsSendingCrash] = useState(false);
   const [isNewUser, setIsNewUser] = useState(settings.needsStyleSelection);
-  const [lastWorkoutSummary, setLastWorkoutSummary] = useState<LastWorkoutSummary | null>(null);
-  const [isDebugExpanded, setIsDebugExpanded] = useState(false);
-
-  // Date Formatting helper
-  const getTodayStr = () => {
-    const date = new Date();
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}/${m}/${d}`;
-  };
 
   useFocusEffect(
     useCallback(() => {
       let isMounted = true;
-      const today = getTodayStr();
+      const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
       const targetDate = currentDate || today;
       setCurrentDate(targetDate);
       loadMealLogs(targetDate);
       loadGoals();
       loadBodyData(targetDate.replace(/\//g, '-'));
 
-      const fetchSummary = async () => {
-        try {
-          const summary = await getLastWorkoutSummary();
-          if (isMounted) {
-            setLastWorkoutSummary(summary);
-          }
-        } catch (err) {
-          console.error('Failed to load last workout summary:', err);
-        }
-      };
-
-      fetchSummary();
-      // 起動直後の初期化タイミングに備えた150ms遅延バックアップ実行
-      const timer = setTimeout(fetchSummary, 150);
-
       return () => {
         isMounted = false;
-        clearTimeout(timer);
       };
-    }, [currentDate, loadBodyData, loadGoals, loadMealLogs, setCurrentDate])
+    }, [currentDate, loadMealLogs, loadGoals, loadBodyData, setCurrentDate])
   );
-
-  // Quick actions
-  const handleAddWaterAmount = async (amount: number, caffeine?: number) => {
-    const today = currentDate || getTodayStr();
-    await addWater(amount, today, caffeine);
-  };
-
-  const handleIncrementHabit = async (habitItemId: number) => {
-    const today = currentDate || getTodayStr();
-    await addHabitLog(habitItemId, today);
-  };
-
-
 
   // Onboarding Handlers
   const handleSelectUnit = async (unit: 'kg' | 'lbs') => {
     await saveSetting('weight_unit', unit);
-    loadSettings({
-      defaultRest: settings.defaultRest,
-      autoRest: settings.autoRest,
-      timerVibrate: settings.timerVibrate,
-      weightUnit: unit,
-      needsUnitSelection: false,
-      bodyWeight: settings.bodyWeight,
-      needsStyleSelection: settings.needsStyleSelection
-    });
+    loadSettings({ ...settings, weightUnit: unit, needsUnitSelection: false });
   };
 
   const handleSelectStyle = async (style: 'simple' | 'advanced') => {
     await saveSetting('style_mode', style);
     const isAdvanced = style === 'advanced';
-
+    
     await saveSetting('display_rpe', isAdvanced ? '1' : '0');
     await saveSetting('display_stance', isAdvanced ? '1' : '0');
     await saveSetting('display_1rm', isAdvanced ? '1' : '0');
@@ -161,44 +111,45 @@ export default function DashboardScreen() {
       showVolume: isAdvanced
     });
 
-    loadSettings({
-      defaultRest: settings.defaultRest,
-      autoRest: settings.autoRest,
-      timerVibrate: settings.timerVibrate,
-      weightUnit: settings.weightUnit,
-      needsUnitSelection: false,
-      bodyWeight: settings.bodyWeight,
-      needsStyleSelection: false,
-      aiTokensBalance: settings.aiTokensBalance,
-      crashConsent: settings.crashConsent
-    });
+    loadSettings({ ...settings, needsStyleSelection: false });
+    setIsNewUser(false);
   };
 
-  const handleCrashConsent = async (consent: 'agreed' | 'declined') => {
-    if (isSendingCrash) return;
+  const unlockedList = ALL_FEATURE_IDS.filter(id => isFeatureUnlockedHelper(id, unlockedFeatures, forceUnlockAll, isPremium, isEarlyAdopter));
+
+  const handleUnlock = async (featureId: FeatureId) => {
+    setPendingUnlockFeature(featureId);
+  };
+
+  const handleSendCrashReport = async () => {
     setIsSendingCrash(true);
     try {
-      await saveSetting('crash_report_consent', consent);
-      useSettingsStore.getState().setCrashConsent(consent);
-
-      if (consent === 'agreed') {
+      const log = await readCrashLog();
+      if (log) {
+        await sendCrashReport(log);
+        await deleteCrashLog();
+        useWorkoutStore.getState().setHasUnsentCrashLog(false);
         initializeSentry();
+        Alert.alert(t('ui.crash_report.success_title') || '���M����', t('ui.crash_report.success_desc') || '�����͂��肪�Ƃ��������܂��B');
       }
+    } catch (e) {
+      console.error('Failed to send crash report:', e);
+      Alert.alert(t('ui.crash_report.error_title') || '�G���[', t('ui.crash_report.error_desc') || '���M�Ɏ��s���܂����B');
+    } finally {
+      setIsSendingCrash(false);
+    }
+  };
 
-      if (hasUnsentCrashLog) {
-        if (consent === 'agreed') {
-          const log = await readCrashLog();
-          if (log) {
-            await sendCrashReport(log);
-          }
-        }
+  const handleCrashConsent = async (action: 'agreed' | 'declined' | 'remind_later') => {
+    setIsSendingCrash(true);
+    try {
+      if (action === 'declined') {
         await deleteCrashLog();
         useWorkoutStore.getState().setHasUnsentCrashLog(false);
       }
-
-      setIsNewUser(false);
+      useWorkoutStore.getState().setHasUnsentCrashLog(false);
     } catch (e) {
-      console.error('Failed to save crash report consent:', e);
+      console.error(e);
     } finally {
       setIsSendingCrash(false);
     }
@@ -206,470 +157,15 @@ export default function DashboardScreen() {
 
   const renderFeatureCard = (id: FeatureId) => {
     switch (id) {
-      case 'workout':
-        return (
-          <TouchableOpacity 
-            key="workout"
-            style={styles.card} 
-            activeOpacity={0.85} 
-            onPress={() => router.push('/(tabs)')}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconContainer, { backgroundColor: 'rgba(79, 172, 254, 0.15)' }]}>
-                <Ionicons name="barbell" size={24} color={Theme.colors.primary} />
-              </View>
-              <Text style={styles.cardTitle}>{t('ui.home.card_workout') || '筋トレ'}</Text>
-              <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-            </View>
-
-            <View style={styles.cardBody}>
-              {isActive ? (
-                <View style={styles.activeWorkoutContainer}>
-                  <View style={styles.statusBadge}>
-                    <View style={styles.activeDot} />
-                    <Text style={styles.statusBadgeText}>{t('ui.home.status_running') || '実行中'}</Text>
-                  </View>
-                  <Text style={styles.workoutActiveTitle} numberOfLines={1}>
-                    {workoutTitle || t('ui.home.free_workout_title') || 'フリーワークアウト'}
-                  </Text>
-                  <TouchableOpacity 
-                    style={[styles.actionBtn, { backgroundColor: Theme.colors.success }]}
-                    onPress={() => router.push('/active-workout')}
-                  >
-                    <Text style={styles.actionBtnText}>{t('ui.home.return_to_training') || 'トレーニングに戻る'}</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <View style={styles.inactiveWorkoutContainer}>
-                  {lastWorkoutSummary ? (
-                    <>
-                      <View style={[styles.statRow, { marginBottom: 2 }]}>
-                        <Text style={[styles.statGoal, { color: Theme.colors.textMuted, fontSize: 14 }]}>
-                          {t('ui.home.recent') || '直近: '} <Text style={{ color: Theme.colors.textMuted, fontSize: 14 }}>{lastWorkoutSummary.dateStr}</Text> ({lastWorkoutSummary.title || '筋トレ'})
-                        </Text>
-                      </View>
-
-                      {lastWorkoutSummary.muscleVolumes.filter(item => item.volumeKg > 0).length > 0 ? (
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 }}>
-                          {lastWorkoutSummary.muscleVolumes.filter(item => item.volumeKg > 0).map((item, idx) => (
-                            <View key={idx} style={styles.muscleVolumeBadge}>
-                              <Text style={styles.muscleVolumeText}>
-                                {item.muscle}: <Text style={{ color: '#fff', fontWeight: 'bold' }}>{item.volumeKg.toLocaleString()} kg</Text>
-                              </Text>
-                            </View>
-                          ))}
-                        </View>
-                      ) : (
-                        <Text style={styles.inactiveText}>{t('ui.home.no_set_records') || 'セット記録なし'} ({lastWorkoutSummary.totalSets}セット)</Text>
-                      )}
-
-                      {Updates.channel !== 'production' && lastWorkoutSummary?.debugInfo && (
-                        <View style={{ marginTop: 8 }}>
-                          <TouchableOpacity
-                            activeOpacity={0.7}
-                            onPress={() => setIsDebugExpanded(prev => !prev)}
-                            style={{
-                              alignSelf: 'flex-start',
-                              flexDirection: 'row',
-                              alignItems: 'center',
-                              gap: 4,
-                              paddingVertical: 3,
-                              paddingHorizontal: 8,
-                              backgroundColor: 'rgba(255, 183, 77, 0.12)',
-                              borderRadius: 12,
-                              borderWidth: 1,
-                              borderColor: 'rgba(255, 183, 77, 0.3)',
-                            }}
-                          >
-                            <Ionicons name="bug-outline" size={12} color="#ffb74d" />
-                            <Text style={{ color: '#ffb74d', fontSize: 10, fontWeight: 'bold' }}>
-                              {isDebugExpanded ? (t('ui.home.debug_close') || 'Debug 閉じる') : (t('ui.home.debug') || 'Debug')}
-                            </Text>
-                          </TouchableOpacity>
-
-                          {isDebugExpanded && (
-                            <View style={{ marginTop: 6, padding: 8, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,183,77,0.2)' }}>
-                              <Text style={{ color: '#ffb74d', fontSize: 10 }} numberOfLines={6}>
-                                🔍 [Staging Debug] {lastWorkoutSummary.debugInfo}
-                              </Text>
-                            </View>
-                          )}
-                        </View>
-                      )}
-                    </>
-                  ) : (
-                    <Text style={styles.inactiveText}>{t('ui.home.no_workout_records') || '過去のワークアウト記録がありません。タップして筋トレを開始しましょう。'}</Text>
-                  )}
-                </View>
-              )}
-            </View>
-          </TouchableOpacity>
-        );
-
-      case 'body':
-        return (
-          <TouchableOpacity 
-            key="body"
-            style={styles.card} 
-            activeOpacity={0.85}
-            onPress={() => router.push('/lifelog/body')}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconContainer, { backgroundColor: 'rgba(56, 189, 248, 0.15)' }]}>
-                <Ionicons name="body" size={24} color="#38bdf8" />
-              </View>
-              <Text style={styles.cardTitle}>{t('ui.home.card_body_composition') || '体組成＆筋肥大限界'}</Text>
-              <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-            </View>
-
-            <View style={styles.cardBody}>
-              {(() => {
-                const log = currentBodyLog || latestBodyLog;
-                const weight = log?.weight ?? null;
-                const bodyFatRate = log?.body_fat_rate ?? null;
-                const height = log?.height ?? savedBodyMeasurements.height ?? 175;
-                const wrist = log?.wrist ?? savedBodyMeasurements.wrist ?? null;
-                const ankle = log?.ankle ?? savedBodyMeasurements.ankle ?? null;
-
-                if (!weight && !bodyFatRate) {
-                  return (
-                    <Text style={styles.inactiveText}>
-                      {t('ui.home.body_comp_empty') || '体組成データが未記録です。タップして体重・体脂肪率や骨格限界モデルを診断しましょう。'}
-                    </Text>
-                  );
-                }
-
-                const lbm = weight && bodyFatRate ? Number((weight * (1 - bodyFatRate / 100)).toFixed(1)) : null;
-                const potential = weight && bodyFatRate && height && wrist && ankle
-                  ? analyzeMusclePotential(weight, bodyFatRate, height, wrist, ankle)
-                  : null;
-
-                return (
-                  <>
-                    <View style={styles.statRow}>
-                      <Text style={styles.statVal}>
-                        {weight !== null ? weight.toFixed(1) : '--'}{' '}
-                        <Text style={styles.statUnit}>kg</Text>
-                      </Text>
-                      <Text style={styles.statGoal}>
-                        / {t('ui.home.body_fat_rate') || '体脂肪率: '} {bodyFatRate !== null ? `${bodyFatRate.toFixed(1)}%` : '--'}
-                        {lbm !== null ? ` (LBM ${lbm}kg)` : ''}
-                      </Text>
-                    </View>
-
-                    {potential ? (
-                      <>
-                        <View style={styles.progressContainer}>
-                          <View style={styles.progressBarBg}>
-                            <View 
-                              style={[
-                                styles.progressBarFill, 
-                                { 
-                                  width: `${Math.min(100, potential.reachPercentage)}%`,
-                                  backgroundColor: '#38bdf8' 
-                                }
-                              ]} 
-                            />
-                          </View>
-                          <Text style={styles.progressPercent}>{potential.reachPercentage}%</Text>
-                        </View>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, paddingTop: 6, borderTopWidth: 1, borderTopColor: '#334155' }}>
-                          <Text style={{ fontSize: 12, color: '#94a3b8' }}>
-                            {t('ui.home.limit_lbm') || '限界除脂肪: '} <Text style={{ fontWeight: '700', color: '#a78bfa' }}>{potential.maxLbm}kg</Text>
-                          </Text>
-                          <Text style={{ fontSize: 12, color: '#94a3b8' }}>
-                            {t('ui.home.gainable') || '増量可能: '} <Text style={{ fontWeight: '700', color: '#4ade80' }}>+{potential.remainingMuscleGainKg}kg</Text>
-                          </Text>
-                          <Text style={{ fontSize: 12, color: '#38bdf8', fontWeight: 'bold' }}>
-                            {potential.naturalStatusLabel.split(' ')[0]}
-                          </Text>
-                        </View>
-                      </>
-                    ) : (
-                      <View style={{ marginTop: 6 }}>
-                        <Text style={{ fontSize: 12, color: '#94a3b8' }}>
-                          {t('ui.home.body_comp_hint') || '※手首・足首サイズを入力すると骨格筋肥大限界（%）が自動診断されます。'}
-                        </Text>
-                      </View>
-                    )}
-                  </>
-                );
-              })()}
-            </View>
-          </TouchableOpacity>
-        );
-
-      case 'water':
-        return (
-          <View key="water" style={styles.card}>
-            <TouchableOpacity 
-              style={styles.cardHeader}
-              activeOpacity={0.7}
-              onPress={() => router.push('/lifelog/water')}
-            >
-              <View style={[styles.iconContainer, { backgroundColor: 'rgba(0, 210, 255, 0.15)' }]}>
-                <Ionicons name="water" size={24} color="#00d2ff" />
-              </View>
-              <Text style={styles.cardTitle}>{t('ui.home.card_water') || '水分補給'}</Text>
-              <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-            </TouchableOpacity>
-
-            <View style={styles.cardBody}>
-              <View style={styles.statRow}>
-                <Text style={styles.statVal}>{daySummary?.water.amount ?? 0} <Text style={styles.statUnit}>ml</Text></Text>
-                <Text style={styles.statGoal}>/ {daySummary?.water.goal ?? 2000} ml</Text>
-              </View>
-
-              <View style={styles.progressContainer}>
-                <View style={styles.progressBarBg}>
-                  <View 
-                    style={[
-                      styles.progressBarFill, 
-                      { 
-                        width: `${Math.min(100, daySummary?.water.percentage ?? 0)}%`,
-                        backgroundColor: '#00d2ff' 
-                      }
-                    ]} 
-                  />
-                </View>
-                <Text style={styles.progressPercent}>{daySummary?.water.percentage ?? 0}%</Text>
-              </View>
-
-              <View style={styles.presetsRow}>
-                {waterPresets.map((preset, idx) => (
-                  <TouchableOpacity 
-                    key={idx}
-                    style={styles.presetBtn} 
-                    onPress={() => handleAddWaterAmount(preset.amount, preset.caffeine)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.presetBtnText}>
-                      {preset.caffeine > 0 ? `☕${preset.amount}ml` : `${preset.amount}ml`}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-        );
-
-      case 'nutrition':
-        return (
-          <TouchableOpacity 
-            key="nutrition"
-            style={styles.card} 
-            activeOpacity={0.85}
-            onPress={() => router.push('/lifelog/nutrition')}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                <Ionicons name="restaurant" size={24} color="#10b981" />
-              </View>
-              <Text style={styles.cardTitle}>{t('ui.home.card_nutrition') || '栄養＆食事管理'}</Text>
-              <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-            </View>
-            <View style={styles.cardBody}>
-              {(() => {
-                const logs = mealLogs || [];
-                const goalCal = userNutritionGoals?.calories || 2000;
-                const totalCal = logs.reduce((acc, curr) => acc + (curr.calories || 0), 0);
-                const totalP = logs.reduce((acc, curr) => acc + (curr.protein || 0), 0);
-                const totalF = logs.reduce((acc, curr) => acc + (curr.fat || 0), 0);
-                const totalC = logs.reduce((acc, curr) => acc + (curr.carbs || 0), 0);
-                const calPercent = Math.min(100, Math.round((totalCal / goalCal) * 100));
-
-                return (
-                  <>
-                    <View style={styles.statRow}>
-                      <Text style={styles.statVal}>{Math.round(totalCal)} <Text style={styles.statUnit}>kcal</Text></Text>
-                      <Text style={styles.statGoal}>/ {goalCal} kcal ({logs.length}{t('ui.home.unit_items') || '件'})</Text>
-                    </View>
-
-                    <View style={styles.progressContainer}>
-                      <View style={styles.progressBarBg}>
-                        <View 
-                          style={[
-                            styles.progressBarFill, 
-                            { 
-                              width: `${calPercent}%`,
-                              backgroundColor: '#10b981' 
-                            }
-                          ]} 
-                        />
-                      </View>
-                      <Text style={styles.progressPercent}>{calPercent}%</Text>
-                    </View>
-
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#334155' }}>
-                      <Text style={{ fontSize: 13, color: '#94a3b8' }}>P: <Text style={{ fontWeight: '700', color: '#06b6d4' }}>{totalP.toFixed(1)}g</Text></Text>
-                      <Text style={{ fontSize: 13, color: '#94a3b8' }}>F: <Text style={{ fontWeight: '700', color: '#f59e0b' }}>{totalF.toFixed(1)}g</Text></Text>
-                      <Text style={{ fontSize: 13, color: '#94a3b8' }}>C: <Text style={{ fontWeight: '700', color: '#a855f7' }}>{totalC.toFixed(1)}g</Text></Text>
-                    </View>
-                  </>
-                );
-              })()}
-            </View>
-          </TouchableOpacity>
-        );
-
-      case 'zikan':
-        return (
-          <TouchableOpacity 
-            key="zikan"
-            style={styles.card} 
-            activeOpacity={0.9}
-            onPress={() => router.push('/lifelog/zikan')}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconContainer, { backgroundColor: 'rgba(255, 152, 0, 0.15)' }]}>
-                <Ionicons name="time" size={24} color="#ff9800" />
-              </View>
-              <Text style={styles.cardTitle}>{t('ui.home.card_time') || '24時間管理'}</Text>
-              <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-            </View>
-
-            <View style={styles.cardBody}>
-              <View style={styles.statRow}>
-                <Text style={styles.statVal}>
-                  {daySummary ? (daySummary.totalZikanMinutes / 60).toFixed(1) : '0.0'} <Text style={styles.statUnit}>{t('ui.home.unit_hour') || '時間'}</Text>
-                </Text>
-                <Text style={styles.statGoal}>{t('ui.home.recorded') || '記録済み'}</Text>
-              </View>
-
-              <View style={styles.breakdownList}>
-                {daySummary?.zikan && daySummary.zikan.length > 0 ? (
-                  daySummary.zikan.slice(0, 3).map((item, index) => (
-                    <View key={index} style={styles.breakdownRow}>
-                      <Text style={styles.breakdownName}>• {item.name}</Text>
-                      <Text style={styles.breakdownTime}>
-                        {item.hours >= 1 ? `${item.hours}${t('ui.home.unit_hour') || '時間'}` : ''}{item.minutes % 60 > 0 ? `${item.minutes % 60}${t('ui.home.unit_minute') || '分'}` : ''}
-                      </Text>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={styles.emptyText}>{t('ui.home.no_time_blocks') || '記録された時間ブロックがありません'}</Text>
-                )}
-              </View>
-            </View>
-          </TouchableOpacity>
-        );
-
-      case 'habit':
-        return (
-          <View key="habit" style={styles.card}>
-            <TouchableOpacity 
-              style={styles.cardHeader}
-              activeOpacity={0.7}
-              onPress={() => router.push('/lifelog/habit')}
-            >
-              <View style={[styles.iconContainer, { backgroundColor: 'rgba(233, 30, 99, 0.15)' }]}>
-                <Ionicons name="checkmark-circle" size={24} color="#e91e63" />
-              </View>
-              <Text style={styles.cardTitle}>{t('ui.home.card_habits') || '習慣カウンター'}</Text>
-              <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-            </TouchableOpacity>
-
-            <View style={styles.cardBody}>
-              {daySummary?.habits && daySummary.habits.length > 0 ? (
-                <View style={styles.habitList}>
-                  {daySummary.habits.slice(0, 3).map((habit) => (
-                    <View key={habit.id} style={styles.habitRow}>
-                      <TouchableOpacity
-                        style={styles.habitMainClickArea}
-                        onPress={() => router.push('/lifelog/habit')}
-                        activeOpacity={0.7}
-                      >
-                        <View style={styles.habitInfo}>
-                          <View style={[styles.habitColorDot, { backgroundColor: habit.color || '#fff' }]} />
-                          <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
-                        </View>
-                        <Text style={styles.habitCount}>{habit.count} {t('ui.home.unit_times') || '回'}</Text>
-                      </TouchableOpacity>
-                      <View style={styles.habitActionContainer}>
-                        <TouchableOpacity
-                          style={styles.habitAddBtn}
-                          onPress={() => handleIncrementHabit(habit.id)}
-                          activeOpacity={0.7}
-                        >
-                          <Ionicons name="add" size={16} color="#fff" />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <Text style={styles.emptyText}>{t('ui.home.no_habits') || '習慣が登録されていません'}</Text>
-              )}
-            </View>
-          </View>
-        );
-
-      case 'routine':
-        return (
-          <TouchableOpacity 
-            key="routine"
-            style={styles.card} 
-            activeOpacity={0.9}
-            onPress={() => router.push('/lifelog/routine')}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconContainer, { backgroundColor: 'rgba(76, 175, 80, 0.15)' }]}>
-                <Ionicons name="repeat" size={24} color="#4caf50" />
-              </View>
-              <Text style={styles.cardTitle}>{t('ui.home.card_routines') || 'ルーティン管理'}</Text>
-              <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-            </View>
-
-            <View style={styles.cardBody}>
-              <View style={styles.routineSummaryRow}>
-                <Ionicons name="checkmark-done-circle-outline" size={20} color="#4caf50" style={{ marginRight: 6 }} />
-                <Text style={styles.routineSummaryText}>
-                  {t('ui.home.completed_routines') || '完了したルーティン:'}
-                </Text>
-              </View>
-              {daySummary?.completedRoutineNames && daySummary.completedRoutineNames.length > 0 ? (
-                <View style={{ marginTop: 8, paddingLeft: 26 }}>
-                  {daySummary.completedRoutineNames.map((name, index) => (
-                    <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                      <Ionicons name="checkmark" size={14} color="#4caf50" style={{ marginRight: 6 }} />
-                      <Text style={{ color: Theme.colors.text, fontSize: 15 }}>{name}</Text>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <View style={{ marginTop: 8, paddingLeft: 26 }}>
-                  <Text style={{ color: Theme.colors.textMuted, fontSize: 14 }}>{t('ui.home.none') || 'なし'}</Text>
-                </View>
-              )}
-            </View>
-          </TouchableOpacity>
-        );
-
-      case 'voice_ai':
-        return (
-          <TouchableOpacity
-            key="voice_ai"
-            style={styles.card}
-            activeOpacity={0.85}
-            onPress={() => router.push('/lifelog/voice-assistant')}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconContainer, { backgroundColor: 'rgba(100, 180, 255, 0.15)' }]}>
-                <Ionicons name="mic" size={24} color="#64b4ff" />
-              </View>
-              <Text style={styles.cardTitle}>{t('ui.home.card_voice_ai') || '音声AIアシスタント'}</Text>
-              <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-            </View>
-            <View style={styles.cardBody}>
-              <Text style={styles.inactiveText}>
-                {t('ui.home.voice_ai_desc') || '話すだけでトレーニング・食事・水分を記録。Gemini Live API による音声リアルタイム対話。'}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        );
-
-      default:
-        return null;
+      case 'workout': return <WorkoutCard key="workout" />;
+      case 'body': return <BodyCard key="body" />;
+      case 'water': return <WaterCard key="water" />;
+      case 'nutrition': return <NutritionCard key="nutrition" />;
+      case 'zikan': return <TimeCard key="zikan" />;
+      case 'habit': return <HabitCard key="habit" />;
+      case 'routine': return <RoutineCard key="routine" />;
+      case 'voice_ai': return <VoiceAiCard key="voice_ai" />;
+      default: return null;
     }
   };
 
