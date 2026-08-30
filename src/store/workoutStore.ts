@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import { Vibration } from 'react-native';
 import { scheduleRestTimer, cancelRestTimer } from '../utils/timer';
 import { buildInitialSetsForExercise } from '../utils/workoutSetBuilder';
-import { useSettingsStore } from './settingsStore';
-import { useRoutineDraftStore } from './routineDraftStore';
+import { generateUUID } from '../utils/uuid';
+import { WorkoutSet } from '../db/types';
 
 export type SetRecord = {
   id: string; // temp id for UI
@@ -75,12 +75,12 @@ interface WorkoutState {
   updateExerciseStance: (exerciseId: string, stance: string | null) => void;
   updateExerciseWeightStep: (exerciseId: string, weightStep: number) => void;
   endWorkout: () => void;
-  addExercise: (exercise: { id: number; name: string; previousSets?: any[]; personalRecords?: Record<string, Record<number, number>>; is_unilateral?: number; default_variation?: string | null; default_stance?: string | null; equipment?: string; muscle_group?: string; routineSets?: any[] }) => void;
+  addExercise: (exercise: { id: number; name: string; previousSets?: Omit<WorkoutSet, 'id' | 'is_completed'>[]; personalRecords?: Record<string, Record<number, number>>; is_unilateral?: number; default_variation?: string | null; default_stance?: string | null; equipment?: string; muscle_group?: string; routineSets?: Omit<WorkoutSet, 'id' | 'is_completed'>[]; weight_step?: number; }, alwaysOneSet?: boolean) => void;
   removeExercise: (exerciseId: string) => void;
   addSet: (exerciseId: string) => void;
   removeSet: (exerciseId: string, setId: string) => void;
   updateSet: (exerciseId: string, setId: string, changes: Partial<SetRecord>) => void;
-  toggleSetComplete: (exerciseId: string, setId: string) => void;
+  toggleSetComplete: (exerciseId: string, setId: string, settings?: { autoRest: boolean, defaultRest: number, timerNotification: boolean, timerVibrate: boolean }) => void;
 
   // Rest Timer
   lastRestFinishedAt: number | null;
@@ -89,10 +89,10 @@ interface WorkoutState {
     remaining: number;
     endTime: number | null;
   };
-  startRestTimer: (seconds: number) => void;
+  startRestTimer: (seconds: number, timerNotification?: boolean) => void;
   stopRestTimer: () => void;
-  adjustRestTimer: (seconds: number) => void;
-  tickRestTimer: () => void;
+  adjustRestTimer: (seconds: number, timerNotification?: boolean) => void;
+  tickRestTimer: (timerVibrate?: boolean) => void;
   markWorkStart: () => void;
 
   hasUnsentCrashLog: boolean;
@@ -101,7 +101,7 @@ interface WorkoutState {
   shouldShowPaywall: boolean;
   setShouldShowPaywall: (show: boolean) => void;
 
-  resetAllSettingsAndWorkout: () => void;
+  resetWorkoutState: () => void;
   lastWorkoutCompletion: WorkoutCompletionData | null;
   setLastWorkoutCompletion: (data: WorkoutCompletionData | null) => void;
 }
@@ -189,15 +189,14 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     });
   },
 
-  addExercise: (exercise) => set((state) => {
-    const alwaysOneSet = useSettingsStore.getState().settings.alwaysOneSet;
+  addExercise: (exercise, alwaysOneSet = false) => set((state) => {
     const initialSets = buildInitialSetsForExercise(exercise, alwaysOneSet);
 
     return {
       exercises: [
         ...state.exercises,
         {
-          id: Math.random().toString(36).substring(7),
+          id: generateUUID(),
           exercise_id: exercise.id,
           name: exercise.name,
           is_unilateral: exercise.is_unilateral,
@@ -208,7 +207,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           personalRecords: exercise.personalRecords || {},
           default_variation: exercise.default_variation || null,
           default_stance: exercise.default_stance || null,
-          weight_step: (exercise as any).weight_step ?? 2.5
+          weight_step: exercise.weight_step ?? 2.5
         }
       ]
     };
@@ -234,7 +233,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
             sets: [
               ...ex.sets,
               {
-                id: Math.random().toString(36).substring(7),
+                id: generateUUID(),
                 set_number: newSetNum,
                 weight: lastL ? lastL.weight : (lastSet ? lastSet.weight : null),
                 reps: lastL ? lastL.reps : (lastSet ? lastSet.reps : null),
@@ -247,7 +246,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
                 stance: inheritedStance
               },
               {
-                id: Math.random().toString(36).substring(7),
+                id: generateUUID(),
                 set_number: newSetNum,
                 weight: lastR ? lastR.weight : (lastSet ? lastSet.weight : null),
                 reps: lastR ? lastR.reps : (lastSet ? lastSet.reps : null),
@@ -265,7 +264,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           return {
             ...ex,
             sets: [...ex.sets, {
-              id: Math.random().toString(36).substring(7),
+              id: generateUUID(),
               set_number: newSetNum,
               weight: lastSet ? lastSet.weight : null,
               reps: lastSet ? lastSet.reps : null,
@@ -322,10 +321,10 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     })
   })),
 
-  toggleSetComplete: (exerciseId, setId) => {
+  toggleSetComplete: (exerciseId, setId, settings = { autoRest: false, defaultRest: 60, timerNotification: true, timerVibrate: true }) => {
     const state = get();
-    const ex = state.exercises.find((e: any) => e.id === exerciseId);
-    const sRecord = ex?.sets.find((s: any) => s.id === setId);
+    const ex = state.exercises.find(e => e.id === exerciseId);
+    const sRecord = ex?.sets.find(s => s.id === setId);
     const willBeCompleted = sRecord ? !sRecord.is_completed : false;
     const isAerobic = ex?.muscle_group === '有酸素';
 
@@ -393,9 +392,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     if (willBeCompleted && !state.isWorkoutStarted) {
       get().beginWorkoutTimer();
     }
-    const settings = useSettingsStore.getState().settings;
     if (willBeCompleted && settings.autoRest) {
-      get().startRestTimer(settings.defaultRest);
+      get().startRestTimer(settings.defaultRest, settings.timerNotification);
     }
     if (!willBeCompleted) {
       cancelRestTimer();
@@ -405,9 +403,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     }
   },
 
-  startRestTimer: (seconds) => {
-    const settings = useSettingsStore.getState().settings;
-    if (settings.timerNotification) {
+  startRestTimer: (seconds, timerNotification = true) => {
+    if (timerNotification) {
       scheduleRestTimer(seconds);
     } else {
       cancelRestTimer();
@@ -424,15 +421,14 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       restTimer: { isActive: false, remaining: 0, endTime: null }
     });
   },
-  adjustRestTimer: (seconds) => set((state) => {
+  adjustRestTimer: (seconds, timerNotification = true) => set((state) => {
     if (!state.restTimer.isActive || !state.restTimer.endTime) return state;
     const newEndTime = state.restTimer.endTime + (seconds * 1000);
     const newRemaining = Math.max(0, Math.ceil((newEndTime - Date.now()) / 1000));
     
     // Reschedule notification
     cancelRestTimer();
-    const settings = useSettingsStore.getState().settings;
-    if (newRemaining > 0 && settings.timerNotification) {
+    if (newRemaining > 0 && timerNotification) {
       scheduleRestTimer(newRemaining);
     }
 
@@ -444,14 +440,13 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       }
     };
   }),
-  tickRestTimer: () => set((state) => {
+   tickRestTimer: (timerVibrate = true) => set((state) => {
     if (!state.restTimer.isActive || !state.restTimer.endTime) return state;
     const now = Date.now();
     const nextRemaining = Math.ceil((state.restTimer.endTime - now) / 1000);
     
     if (nextRemaining <= 0) {
-      const settings = useSettingsStore.getState().settings;
-      if (settings.timerVibrate) {
+      if (timerVibrate) {
         Vibration.vibrate([0, 500, 200, 500]);
       }
       return { 
@@ -461,8 +456,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     }
 
     // 残り3秒、2秒、1秒のカウントダウン予告バイブレーション
-    const settings = useSettingsStore.getState().settings;
-    if (settings.timerVibrate && nextRemaining !== state.restTimer.remaining) {
+    if (timerVibrate && nextRemaining !== state.restTimer.remaining) {
       if (nextRemaining === 3 || nextRemaining === 2 || nextRemaining === 1) {
         Vibration.vibrate(60);
       }
@@ -478,10 +472,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     });
   },
 
-  resetAllSettingsAndWorkout: () => {
+  resetWorkoutState: () => {
     cancelRestTimer();
-    useSettingsStore.getState().resetSettings();
-    useRoutineDraftStore.getState().clearDraft();
     set({
       isActive: false,
       isWorkoutStarted: false,

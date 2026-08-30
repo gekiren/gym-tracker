@@ -1,7 +1,0 @@
-# ninja log v5
-1	4975	8024959985962106	CMakeFiles/rnscreens.dir/C_/Users/toshi/.gemini/antigravity/scratch/kintore/gym-tracker/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o	9a0d2569bca83c30
-15	5564	8024959991279251	CMakeFiles/rnscreens.dir/src/main/cpp/jni-adapter.cpp.o	f1d7b79dc306d489
-7	8932	8024960025794793	CMakeFiles/rnscreens.dir/C_/Users/toshi/.gemini/antigravity/scratch/kintore/gym-tracker/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o	2ade820285c85e8b
-29	10160	8024960038160158	CMakeFiles/rnscreens.dir/src/main/cpp/OnLoad.cpp.o	dbca59655a67239a
-21	10789	8024960044338896	CMakeFiles/rnscreens.dir/src/main/cpp/NativeProxy.cpp.o	dcfeb648dff92f08
-10791	10883	8024960045386670	C:/Users/toshi/.gemini/antigravity/scratch/kintore/gym-tracker/node_modules/react-native-screens/android/build/intermediates/cxx/Debug/51d723f6/obj/x86/librnscreens.so	a2c473c5159587bc

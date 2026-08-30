@@ -1,4 +1,4 @@
-ackage com.gekirennomad.trenote
+package com.gekirennomad.trenote
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager

@@ -66,14 +66,10 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   const localInputRef = useRef<TextInput>(null);
 
   const focusInput = () => {
-    setIsEditing(true);
-    setTimeout(() => {
-      localInputRef.current?.focus();
-    }, 40);
+    localInputRef.current?.focus();
   };
 
   const blurInput = () => {
-    setIsEditing(false);
     localInputRef.current?.blur();
   };
 
@@ -93,14 +89,6 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   const startValue = useSharedValue(0);
   const startIndex = useSharedValue(0);
   const lastStep = useSharedValue(0);
-
-  useEffect(() => {
-    if (isEditing) {
-      setTimeout(() => {
-        localInputRef.current?.focus();
-      }, 40);
-    }
-  }, [isEditing]);
 
   const triggerHaptic = () => {
     if (Platform.OS !== 'web') {
@@ -172,7 +160,7 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   const tapGesture = Gesture.Tap()
     .enabled(!disabled)
     .onEnd(() => {
-      runOnJS(setIsEditing)(true);
+      runOnJS(focusInput)();
     });
 
   const gesture = Gesture.Exclusive(panGesture, tapGesture);
@@ -195,35 +183,6 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
     };
   });
 
-  if (isEditing) {
-    return (
-      <TextInput
-        ref={localInputRef}
-        style={style}
-        keyboardType={keyboardType}
-        placeholder={placeholder}
-        placeholderTextColor={placeholderTextColor}
-        value={value}
-        selection={selection}
-        onSelectionChange={onSelectionChange}
-        onChangeText={onChangeText}
-        selectTextOnFocus={selectTextOnFocus}
-        onFocus={() => {
-          onFocus?.();
-        }}
-        onBlur={() => {
-          setIsEditing(false);
-          onBlur?.();
-        }}
-        returnKeyType={returnKeyType}
-        onSubmitEditing={() => {
-          setIsEditing(false);
-          onSubmitEditing?.();
-        }}
-      />
-    );
-  }
-
   const flatStyle = StyleSheet.flatten(style) || {};
   const textStyleOnly = {
     color: flatStyle.color || Theme.colors.text,
@@ -237,12 +196,43 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   return (
     <GestureDetector gesture={gesture}>
       <Animated.View style={[styles.baseBox, style, dragContainerStyle]}>
-        <Animated.Text
-          numberOfLines={1}
-          style={[styles.baseText, textStyleOnly as any, dragTextStyle]}
-        >
-          {value !== '' ? value : placeholder}
-        </Animated.Text>
+        {!isEditing && (
+          <Animated.Text
+            numberOfLines={1}
+            style={[styles.baseText, textStyleOnly as any, dragTextStyle, StyleSheet.absoluteFill]}
+            pointerEvents="none"
+          >
+            {value !== '' ? value : placeholder}
+          </Animated.Text>
+        )}
+        <TextInput
+          ref={localInputRef}
+          style={[
+            isEditing ? textStyleOnly : { opacity: 0 },
+            { flex: 1, width: '100%', height: '100%' }
+          ]}
+          keyboardType={keyboardType}
+          placeholder={isEditing ? placeholder : ''}
+          placeholderTextColor={placeholderTextColor}
+          value={value}
+          selection={selection}
+          onSelectionChange={onSelectionChange}
+          onChangeText={onChangeText}
+          selectTextOnFocus={selectTextOnFocus}
+          onFocus={() => {
+            setIsEditing(true);
+            onFocus?.();
+          }}
+          onBlur={() => {
+            setIsEditing(false);
+            onBlur?.();
+          }}
+          returnKeyType={returnKeyType}
+          onSubmitEditing={() => {
+            onSubmitEditing?.();
+          }}
+          pointerEvents={isEditing ? "auto" : "none"}
+        />
       </Animated.View>
     </GestureDetector>
   );

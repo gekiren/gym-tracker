@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
 import { Theme } from '../../src/theme';
 
 interface FloatingRestTimerProps {
@@ -13,6 +14,7 @@ export function FloatingRestTimer({ safeBottomOffset }: FloatingRestTimerProps) 
   const restTimer = useWorkoutStore(state => state.restTimer);
   const stopRestTimer = useWorkoutStore(state => state.stopRestTimer);
   const adjustRestTimer = useWorkoutStore(state => state.adjustRestTimer);
+  const timerNotification = useSettingsStore(state => state.settings.timerNotification);
 
   if (!restTimer.isActive) return null;
 
@@ -32,13 +34,13 @@ export function FloatingRestTimer({ safeBottomOffset }: FloatingRestTimerProps) 
           <Text style={styles.timerDigits}>{formatTime(restTimer.remaining)}</Text>
         </View>
         <View style={styles.timerActions}>
-          <TouchableOpacity style={styles.timerBtn} onPress={() => adjustRestTimer(-30)}>
+          <TouchableOpacity style={styles.timerBtn} onPress={() => adjustRestTimer(-30, timerNotification)}>
             <Text style={styles.timerBtnText}>-30s</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.timerBtn, { backgroundColor: Theme.colors.card }]} onPress={stopRestTimer}>
             <Text style={styles.timerBtnText}>{t('ui.active_workout.skip_label')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.timerBtn} onPress={() => adjustRestTimer(30)}>
+          <TouchableOpacity style={styles.timerBtn} onPress={() => adjustRestTimer(30, timerNotification)}>
             <Text style={styles.timerBtnText}>+30s</Text>
           </TouchableOpacity>
         </View>

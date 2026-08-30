@@ -11,6 +11,7 @@ export interface AddExercisePayload {
   equipment?: string;
   muscle_group?: string;
   routineSets?: any[];
+  weight_step?: number;
 }
 
 /**

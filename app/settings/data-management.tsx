@@ -9,6 +9,7 @@ import { RestorePresetsModal } from '../../components/profile/RestorePresetsModa
 import { resetDatabase, saveSetting } from '../../src/db/database';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
+import { useRoutineDraftStore } from '../../src/store/routineDraftStore';
 import { useLifelogStore } from '../../src/store/lifelogStore';
 import * as Updates from 'expo-updates';
 
@@ -31,7 +32,9 @@ export default function DataManagementSettingsScreen() {
     setIsResetting(true);
     try {
       await resetDatabase();
-      useWorkoutStore.getState().resetAllSettingsAndWorkout();
+      useWorkoutStore.getState().resetWorkoutState();
+      useSettingsStore.getState().resetSettings();
+      useRoutineDraftStore.getState().clearDraft();
       useLifelogStore.getState().resetAll();
 
       const activeLang = i18n.language || 'ja';

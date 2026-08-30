@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ScrollView, Modal, Switch, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 import { Theme } from '../../src/theme';
 import { translateExercise, translateMuscleGroup, translateEquipment } from '../../src/i18n';
@@ -29,12 +30,12 @@ function SwipeDeleteAction({ drag, onPress }: SwipeDeleteActionProps) {
   return (
     <View style={{ width: 80, flexDirection: 'row' }}>
       <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
-        <TouchableOpacity 
+        <GHTouchableOpacity 
           style={styles.deleteAction}
           onPress={onPress}
         >
           <Ionicons name="trash-outline" size={24} color="#fff" />
-        </TouchableOpacity>
+        </GHTouchableOpacity>
       </Reanimated.View>
     </View>
   );
@@ -190,9 +191,9 @@ export const HistoryExercisesTab: React.FC<HistoryExercisesTabProps> = ({
               renderRightActions={(progress, drag) => renderRightActions(progress, drag, item)}
               rightThreshold={40}
             >
-              <TouchableOpacity 
+              <GHTouchableOpacity 
                 style={styles.exerciseCard}
-                onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: item.id } } as any)}
+                onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: String(item.id), _t: Date.now() } } as any)}
                 activeOpacity={0.7}
               >
                 <View style={{ flex: 1 }}>
@@ -203,14 +204,14 @@ export const HistoryExercisesTab: React.FC<HistoryExercisesTabProps> = ({
                     <Text style={styles.exerciseMeta}>{translateEquipment(item.equipment)}</Text>
                   </View>
                 </View>
-                <TouchableOpacity onPress={() => onToggleFavorite(item)} style={{ padding: 6 }}>
+                <GHTouchableOpacity onPress={() => onToggleFavorite(item)} style={{ padding: 6 }}>
                   <Ionicons 
                     name={isFav ? "star" : "star-outline"} 
                     size={22} 
                     color={isFav ? '#ffd700' : Theme.colors.textMuted} 
                   />
-                </TouchableOpacity>
-              </TouchableOpacity>
+                </GHTouchableOpacity>
+              </GHTouchableOpacity>
             </Swipeable>
           );
         }}

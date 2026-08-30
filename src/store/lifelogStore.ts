@@ -70,7 +70,7 @@ interface LifelogState {
   timeLogs: TimeLog[];
   habitItems: HabitItem[];
   habitLogs: HabitLog[];
-  routineData: any[];
+  routineData: Record<string, unknown>[];
   daySummary: DaySummary | null;
   isLoading: boolean;
 
@@ -119,12 +119,18 @@ interface LifelogState {
   // Active Routine State for tracking execution
   activeRoutineState: {
     isExecuting: boolean;
-    currentRoutine: any;
+    currentRoutine: Record<string, unknown>;
     currentTaskIndex: number;
     taskStartTime: number;
-    taskLogs: any[];
+    taskLogs: Record<string, unknown>[];
   } | null;
-  setActiveRoutineState: (state: any) => void;
+  setActiveRoutineState: (state: {
+    isExecuting: boolean;
+    currentRoutine: Record<string, unknown>;
+    currentTaskIndex: number;
+    taskStartTime: number;
+    taskLogs: Record<string, unknown>[];
+  } | null) => void;
   clearActiveRoutineState: () => void;
 
   // Helper to trigger summary recalculation

@@ -18,7 +18,7 @@ import { useNutritionStore } from '../../src/store/nutritionStore';
 import { MealLog, MealFavorite, NutritionGoals, AutophagyConfig } from '../../src/db/types';
 import { getDefaultMealType, getCurrentTimeStr } from '../../src/utils/nutritionUtils';
 import { PanGestureHandler } from 'react-native-gesture-handler';
-import { useFeatureSwipe } from '../../hooks/useFeatureSwipe';
+import { useFeatureSwipe } from '../../src/hooks/useFeatureSwipe';
 
 // コンポーネントインポート
 import NutritionSummaryCard from '../../components/nutrition/NutritionSummaryCard';

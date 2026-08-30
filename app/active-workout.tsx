@@ -1,4 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Platform } from 'react-native';
+import { useSettingsStore } from '../src/store/settingsStore';
+import { useTranslation } from 'react-i18next';
 import { useCallback } from 'react';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';

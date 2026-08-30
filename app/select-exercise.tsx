@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, SectionList, TouchableOpacity, TextInput, Modal, Alert, ScrollView, Switch, KeyboardAvoidingView, Platform } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 import { useEffect, useState, useCallback } from 'react';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
@@ -39,12 +40,12 @@ function SwipeDeleteAction({ drag, onPress }: SwipeDeleteActionProps) {
   return (
     <View style={{ width: 80, flexDirection: 'row' }}>
       <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
-        <TouchableOpacity 
+        <GHTouchableOpacity 
           style={styles.deleteAction}
           onPress={onPress}
         >
           <Ionicons name="trash-outline" size={24} color="#fff" />
-        </TouchableOpacity>
+        </GHTouchableOpacity>
       </Reanimated.View>
     </View>
   );
@@ -67,7 +68,8 @@ export default function SelectExerciseScreen() {
   const [newDefaultStance, setNewDefaultStance] = useState('');
 
   const settings = useSettingsStore(state => state.settings);
-  const addExercise = useWorkoutStore(state => state.addExercise);
+  const addExercise = useWorkoutStore((state) => state.addExercise);
+  const alwaysOneSet = useSettingsStore((state) => state.settings.alwaysOneSet);
   const addDraftExercise = useRoutineDraftStore(state => state.addDraftExercise);
   const customStances = settings.customStances;
   const { mode } = useLocalSearchParams<{ mode?: string }>();
@@ -116,9 +118,9 @@ export default function SelectExerciseScreen() {
     try {
       const prevSets = await getPreviousWorkoutSets(ex.id);
       const personalRecords = await getPersonalRecords(ex.id);
-      addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation, default_stance: ex.default_stance, equipment: ex.equipment, muscle_group: ex.muscle_group });
+      addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation, default_stance: ex.default_stance, equipment: ex.equipment, muscle_group: ex.muscle_group }, alwaysOneSet);
     } catch (e) {
-      addExercise({ id: ex.id, name: ex.name, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation, default_stance: ex.default_stance, equipment: ex.equipment, muscle_group: ex.muscle_group });
+      addExercise({ id: ex.id, name: ex.name, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation, default_stance: ex.default_stance, equipment: ex.equipment, muscle_group: ex.muscle_group }, alwaysOneSet);
     }
     router.back();
   };
@@ -217,7 +219,7 @@ export default function SelectExerciseScreen() {
         friction={2}
         rightThreshold={40}
       >
-        <TouchableOpacity 
+        <GHTouchableOpacity 
           style={styles.item} 
           onPress={() => handleSelect(item)}
           activeOpacity={0.7}
@@ -226,15 +228,15 @@ export default function SelectExerciseScreen() {
             <Text style={styles.name}>{translateExercise(item.name)}</Text>
             <Text style={styles.meta}>{translateMuscleGroup(item.muscle_group)} • {translateEquipment(item.equipment)}</Text>
           </View>
-          <TouchableOpacity
+          <GHTouchableOpacity
             style={styles.listHowToBtn}
             onPress={() => openYouTubeSearch(item.name)}
             activeOpacity={0.7}
           >
             <Ionicons name="play" size={10} color={Theme.colors.primary} />
             <Text style={styles.listHowToText}>How To</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </GHTouchableOpacity>
+          <GHTouchableOpacity
             onPress={() => handleToggleFavorite(item)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             style={styles.starBtn}
@@ -244,11 +246,11 @@ export default function SelectExerciseScreen() {
               size={22}
               color={isFav ? '#f5a623' : Theme.colors.textMuted}
             />
-          </TouchableOpacity>
+          </GHTouchableOpacity>
           <View style={{ paddingLeft: 8 }}>
             <Ionicons name="add-circle" size={24} color={Theme.colors.primary} />
           </View>
-        </TouchableOpacity>
+        </GHTouchableOpacity>
       </Swipeable>
     );
   };

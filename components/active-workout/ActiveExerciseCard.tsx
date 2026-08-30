@@ -100,8 +100,15 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
         <View style={{ backgroundColor: colors.card, paddingTop: 0, paddingBottom: 2 }}>
           <View style={styles.headerRow}>
             <View style={{ flex: 1 }}>
-              <TouchableOpacity
-                onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: ex.exercise_id || ex.id } } as any)}
+              <GHTouchableOpacity
+                onPress={() => {
+                  const targetId = ex.exercise_id || ex.id;
+                  if (typeof targetId === 'string' && targetId.includes('-')) {
+                    console.warn('Cannot navigate to exercise details: exercise_id is missing (received UUID).');
+                    return;
+                  }
+                  router.push({ pathname: '/exercise/[id]', params: { id: String(targetId), _t: Date.now() } } as any);
+                }}
                 onLongPress={() => onDeleteExercise(ex)}
                 delayLongPress={500}
                 style={{ flexDirection: 'row', alignItems: 'center', maxWidth: '82%', marginBottom: 2 }}
@@ -114,7 +121,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
                 >
                   {exerciseNameText}
                 </Text>
-              </TouchableOpacity>
+              </GHTouchableOpacity>
               <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginTop: 2 }}>
                 {settings.displayFields?.showVolume && (
                   <View style={styles.exerciseVolumeContainer}>
@@ -129,7 +136,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
                     </Text>
                   </View>
                 )}
-                <TouchableOpacity
+                <GHTouchableOpacity
                   style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#2a2a2a', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 }}
                   onPress={() => setWeightStepModalVisible(true)}
                 >
@@ -137,22 +144,22 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
                   <Text style={{ color: Theme.colors.primary, fontSize: 11, fontWeight: 'bold' }}>
                     ±{ex.weight_step ?? 2.5}kg
                   </Text>
-                </TouchableOpacity>
+                </GHTouchableOpacity>
               </View>
             </View>
             <View style={styles.headerIcons}>
               {AI_CONFIG.status === 'active' && (
-                <TouchableOpacity onPress={() => onAICoachExercise(ex)}>
+                <GHTouchableOpacity onPress={() => onAICoachExercise(ex)}>
                   <Ionicons name="sparkles" size={20} color={Theme.colors.primary} />
-                </TouchableOpacity>
+                </GHTouchableOpacity>
               )}
-              <TouchableOpacity onPress={() => onToggleNotes(ex.id)}>
+              <GHTouchableOpacity onPress={() => onToggleNotes(ex.id)}>
                 <Ionicons
                   name={ex.notes ? 'chatbubble-ellipses' : 'chatbubble-outline'}
                   size={20}
                   color={ex.notes ? Theme.colors.primary : Theme.colors.textMuted}
                 />
-              </TouchableOpacity>
+              </GHTouchableOpacity>
             </View>
           </View>
         </View>
@@ -216,24 +223,28 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
       ))}
 
       <View style={styles.bottomRowContainer}>
-        {settings.displayFields?.showStance && (
-          <TouchableOpacity
-            style={styles.exerciseVariationBtnBottom}
-            onPress={() => {
-              onOpenStanceModal({ type: 'exercise', exId: ex.id, currentValue: currentStance });
-            }}
-          >
-            <Text style={styles.exerciseVariationTextBottom}>
-              {t('ui.active_workout.stance_label')}:{'\n'}
-              {currentStance ? translateStance(currentStance as string) : t('ui.active_workout.stance_standard')}
-            </Text>
-            <Ionicons name="chevron-down" size={10} color={Theme.colors.primary} style={{ marginLeft: 2, alignSelf: 'flex-end', marginBottom: 2 }} />
-          </TouchableOpacity>
-        )}
+        <View style={styles.bottomLeftContainer}>
+          {settings.displayFields?.showStance && (
+            <GHTouchableOpacity
+              style={styles.exerciseVariationBtnBottom}
+              onPress={() => {
+                onOpenStanceModal({ type: 'exercise', exId: ex.id, currentValue: currentStance });
+              }}
+            >
+              <Text style={styles.exerciseVariationTextBottom}>
+                {t('ui.active_workout.stance_label')}:{'\n'}
+                {currentStance ? translateStance(currentStance as string) : t('ui.active_workout.stance_standard')}
+              </Text>
+              <Ionicons name="chevron-down" size={10} color={Theme.colors.primary} style={{ marginLeft: 2, alignSelf: 'flex-end', marginBottom: 2 }} />
+            </GHTouchableOpacity>
+          )}
+        </View>
 
-        <TouchableOpacity style={styles.addSetBtn} onPress={() => onAddSet(ex.id)}>
+        <GHTouchableOpacity style={styles.addSetBtn} onPress={() => onAddSet(ex.id)}>
           <Text style={styles.addSetBtnText}>{t('ui.active_workout.add_set_label')}</Text>
-        </TouchableOpacity>
+        </GHTouchableOpacity>
+
+        <View style={styles.bottomRightPlaceholder} />
       </View>
 
       <WeightStepModal
@@ -277,14 +288,20 @@ const styles = StyleSheet.create({
   bottomRowContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     marginTop: 8,
-    position: 'relative',
     minHeight: 40,
+    paddingHorizontal: 2,
+  },
+  bottomLeftContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  bottomRightPlaceholder: {
+    flex: 1,
   },
   exerciseVariationBtnBottom: {
-    position: 'absolute',
-    left: 0,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(79, 172, 254, 0.1)',

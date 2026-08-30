@@ -29,7 +29,7 @@ export function useActiveWorkout() {
   const addSet = useWorkoutStore(state => state.addSet);
   const removeSet = useWorkoutStore(state => state.removeSet);
   const removeExercise = useWorkoutStore(state => state.removeExercise);
-  const toggleSetComplete = useWorkoutStore(state => state.toggleSetComplete);
+  const _toggleSetComplete = useWorkoutStore(state => state.toggleSetComplete);
   const updateSet = useWorkoutStore(state => state.updateSet);
   const restTimerActive = useWorkoutStore(state => state.restTimer.isActive);
   const tickRestTimer = useWorkoutStore(state => state.tickRestTimer);
@@ -49,6 +49,13 @@ export function useActiveWorkout() {
   const [plateCalcVisible, setPlateCalcVisible] = useState(false);
   const [activeSetForCalc, setActiveSetForCalc] = useState<{ exId: string; setId: string } | null>(null);
 
+  const toggleSetComplete = useCallback((exerciseId: string, setId: string) => {
+    _toggleSetComplete(exerciseId, setId, settings);
+  }, [_toggleSetComplete, settings]);
+
+  const _startRestTimer = useWorkoutStore(state => state.startRestTimer);
+  const _adjustRestTimer = useWorkoutStore(state => state.adjustRestTimer);
+
   // Stance Modal State
   const [stanceModalVisible, setStanceModalVisible] = useState(false);
   const [stanceModalTarget, setStanceModalTarget] = useState<StanceModalTarget | null>(null);
@@ -60,23 +67,23 @@ export function useActiveWorkout() {
   useEffect(() => {
     if (!restTimerActive) return;
     const iv = setInterval(() => {
-      tickRestTimer();
+      tickRestTimer(settings.timerVibrate);
     }, 1000);
     return () => clearInterval(iv);
-  }, [restTimerActive, tickRestTimer]);
+  }, [restTimerActive, tickRestTimer, settings.timerVibrate]);
 
   // Sync Push Notifications & State on Background/Foreground
   useEffect(() => {
     const subscription = AppState.addEventListener('change', nextAppState => {
       if (nextAppState === 'active') {
-        tickRestTimer();
+        tickRestTimer(settings.timerVibrate);
       }
     });
 
     return () => {
       subscription.remove();
     };
-  }, [tickRestTimer]);
+  }, [tickRestTimer, settings.timerVibrate]);
 
   // Keyboard Listeners
   useEffect(() => {
@@ -234,12 +241,9 @@ export function useActiveWorkout() {
     [settings.weightUnit, t]
   );
 
-  // Manual timer launch
   const handleManualTimer = useCallback(() => {
-    const { startRestTimer } = useWorkoutStore.getState();
-    const curSettings = useSettingsStore.getState().settings;
-    startRestTimer(curSettings.defaultRest);
-  }, []);
+    _startRestTimer(settings.defaultRest, settings.timerNotification);
+  }, [_startRestTimer, settings.defaultRest, settings.timerNotification]);
 
   // Finish Workout Modal trigger
   const handleFinish = useCallback(() => {

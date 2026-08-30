@@ -1,1 +1,0 @@
-C:\Users\toshi\.gemini\antigravity\scratch\kintore\gym-tracker\node_modules\react-native-worklets\android\build\intermediates\cxx\Debug\6tg61a1o\obj\armeabi-v7a

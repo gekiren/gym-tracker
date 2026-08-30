@@ -1,3 +1,0 @@
-C:/Users/toshi/.gemini/antigravity/scratch/kintore/gym-tracker/b/cxx/wo/Debug/6tg61a1o/x86/CMakeFiles/worklets.dir
-C:/Users/toshi/.gemini/antigravity/scratch/kintore/gym-tracker/b/cxx/wo/Debug/6tg61a1o/x86/CMakeFiles/edit_cache.dir
-C:/Users/toshi/.gemini/antigravity/scratch/kintore/gym-tracker/b/cxx/wo/Debug/6tg61a1o/x86/CMakeFiles/rebuild_cache.dir
