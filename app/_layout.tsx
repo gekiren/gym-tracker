@@ -279,8 +279,9 @@ export default function RootLayout() {
             <Stack.Screen name="active-workout" options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="workout-completion" options={{ presentation: 'fullScreenModal', headerShown: false }} />
             <Stack.Screen name="build-routine" options={{ presentation: 'fullScreenModal' }} />
-            <Stack.Screen name="exercise/[id]" options={{ presentation: 'card' }} />
-            <Stack.Screen name="edit-workout/[id]" options={{ presentation: 'card' }} />
+            <Stack.Screen name="exercise/[id]" getId={({ params }) => String(params?.id ?? '')} options={{ presentation: 'card' }} />
+            <Stack.Screen name="edit-workout/[id]" getId={({ params }) => String(params?.id ?? '')} options={{ presentation: 'card' }} />
+            <Stack.Screen name="workout-details/[id]" getId={({ params }) => String(params?.id ?? '')} options={{ presentation: 'card' }} />
             <Stack.Screen name="rm-calculator" options={{ presentation: 'card' }} />
             <Stack.Screen name="privacy-policy" options={{ presentation: 'card' }} />
             <Stack.Screen name="developer-menu" options={{ presentation: 'card' }} />

@@ -136,7 +136,7 @@ export default function WorkoutDetailsScreen() {
               <View style={styles.exerciseHeader}>
                 <TouchableOpacity 
                   style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
-                  onPress={() => router.push(`/exercise/${ex.exercise_id}`)}
+                  onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: String(ex.exercise_id) } } as any)}
                 >
                   <Text style={styles.exerciseTitle}>{translateExercise(ex.name || ex.exercise_name)}</Text>
                   <Ionicons name="chevron-forward" size={16} color={Theme.colors.primary} />
