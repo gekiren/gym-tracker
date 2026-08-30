@@ -165,6 +165,18 @@ export default function RootLayout() {
       // 6.5 機能開放＆Pポイントの初期化とレトロアクティブ計算
       await initFeatureUnlockState(storedSettings);
 
+      const currentSettings = useSettingsStore.getState().settings;
+      if (!currentSettings.isPremium && !currentSettings.isEarlyAdopter) {
+        mobileAds()
+          .initialize()
+          .then((adapterStatuses) => {
+            console.log('Google Mobile Ads SDK initialized successfully:', adapterStatuses);
+          })
+          .catch((err) => {
+            console.warn('Failed to initialize Google Mobile Ads SDK:', err);
+          });
+      }
+
       console.log('Database initialized successfully with settings', storedSettings);
       setDbReady(true);
 
@@ -177,16 +189,6 @@ export default function RootLayout() {
   };
 
   useEffect(() => {
-    // Initialize Google Mobile Ads SDK on startup
-    mobileAds()
-      .initialize()
-      .then((adapterStatuses) => {
-        console.log('Google Mobile Ads SDK initialized successfully:', adapterStatuses);
-      })
-      .catch((err) => {
-        console.warn('Failed to initialize Google Mobile Ads SDK:', err);
-      });
-
     setupDB();
 
     // 通知アクションカテゴリ初期化＆リスナーセットアップ

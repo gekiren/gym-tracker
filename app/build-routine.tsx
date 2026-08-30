@@ -9,6 +9,7 @@ import { useRoutineDraftStore } from '../src/store/routineDraftStore';
 import { addRoutine, updateRoutine, getRoutines, loadFullWorkoutData, getDB } from '../src/db/database';
 import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../src/i18n';
+import { useShallow } from 'zustand/react/shallow';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 export default function BuildRoutineScreen() {
@@ -18,12 +19,20 @@ export default function BuildRoutineScreen() {
   const { 
     draftRoutine, updateDraftTitle, removeDraftExercise, 
     addDraftSet, removeDraftSet, updateDraftSet, setDraftRoutine, clearDraft
-  } = useRoutineDraftStore();
-  const settings = useSettingsStore(state => state.settings);
+  } = useRoutineDraftStore(useShallow(state => ({
+    draftRoutine: state.draftRoutine,
+    updateDraftTitle: state.updateDraftTitle,
+    removeDraftExercise: state.removeDraftExercise,
+    addDraftSet: state.addDraftSet,
+    removeDraftSet: state.removeDraftSet,
+    updateDraftSet: state.updateDraftSet,
+    setDraftRoutine: state.setDraftRoutine,
+    clearDraft: state.clearDraft
+  })));
   const { t } = useTranslation();
 
-  const isPremium = settings.isPremium;
-  const isEarly = settings.isEarlyAdopter;
+  const isPremium = useSettingsStore(state => state.settings.isPremium);
+  const isEarly = useSettingsStore(state => state.settings.isEarlyAdopter);
   const isBasic = !isPremium && !isEarly;
 
   const handleRestrictedFeatureAlert = () => {
