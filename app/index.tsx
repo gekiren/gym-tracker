@@ -218,7 +218,7 @@ export default function DashboardScreen() {
               <View style={[styles.iconContainer, { backgroundColor: 'rgba(79, 172, 254, 0.15)' }]}>
                 <Ionicons name="barbell" size={24} color={Theme.colors.primary} />
               </View>
-              <Text style={styles.cardTitle}>筋トレ</Text>
+              <Text style={styles.cardTitle}>{t('ui.home.card_workout') || '筋トレ'}</Text>
               <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
             </View>
 
@@ -227,16 +227,16 @@ export default function DashboardScreen() {
                 <View style={styles.activeWorkoutContainer}>
                   <View style={styles.statusBadge}>
                     <View style={styles.activeDot} />
-                    <Text style={styles.statusBadgeText}>実行中</Text>
+                    <Text style={styles.statusBadgeText}>{t('ui.home.status_running') || '実行中'}</Text>
                   </View>
                   <Text style={styles.workoutActiveTitle} numberOfLines={1}>
-                    {workoutTitle || 'フリーワークアウト'}
+                    {workoutTitle || t('ui.home.free_workout_title') || 'フリーワークアウト'}
                   </Text>
                   <TouchableOpacity 
                     style={[styles.actionBtn, { backgroundColor: Theme.colors.success }]}
                     onPress={() => router.push('/active-workout')}
                   >
-                    <Text style={styles.actionBtnText}>トレーニングに戻る</Text>
+                    <Text style={styles.actionBtnText}>{t('ui.home.return_to_training') || 'トレーニングに戻る'}</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -245,7 +245,7 @@ export default function DashboardScreen() {
                     <>
                       <View style={[styles.statRow, { marginBottom: 2 }]}>
                         <Text style={[styles.statGoal, { color: Theme.colors.textMuted, fontSize: 14 }]}>
-                          直近: <Text style={{ color: Theme.colors.textMuted, fontSize: 14 }}>{lastWorkoutSummary.dateStr}</Text> ({lastWorkoutSummary.title || '筋トレ'})
+                          {t('ui.home.recent') || '直近: '} <Text style={{ color: Theme.colors.textMuted, fontSize: 14 }}>{lastWorkoutSummary.dateStr}</Text> ({lastWorkoutSummary.title || '筋トレ'})
                         </Text>
                       </View>
 
@@ -260,7 +260,7 @@ export default function DashboardScreen() {
                           ))}
                         </View>
                       ) : (
-                        <Text style={styles.inactiveText}>セット記録なし ({lastWorkoutSummary.totalSets}セット)</Text>
+                        <Text style={styles.inactiveText}>{t('ui.home.no_set_records') || 'セット記録なし'} ({lastWorkoutSummary.totalSets}セット)</Text>
                       )}
 
                       {Updates.channel !== 'production' && lastWorkoutSummary?.debugInfo && (
@@ -283,7 +283,7 @@ export default function DashboardScreen() {
                           >
                             <Ionicons name="bug-outline" size={12} color="#ffb74d" />
                             <Text style={{ color: '#ffb74d', fontSize: 10, fontWeight: 'bold' }}>
-                              {isDebugExpanded ? 'Debug 閉じる' : 'Debug'}
+                              {isDebugExpanded ? (t('ui.home.debug_close') || 'Debug 閉じる') : (t('ui.home.debug') || 'Debug')}
                             </Text>
                           </TouchableOpacity>
 
@@ -298,7 +298,7 @@ export default function DashboardScreen() {
                       )}
                     </>
                   ) : (
-                    <Text style={styles.inactiveText}>過去のワークアウト記録がありません。タップして筋トレを開始しましょう。</Text>
+                    <Text style={styles.inactiveText}>{t('ui.home.no_workout_records') || '過去のワークアウト記録がありません。タップして筋トレを開始しましょう。'}</Text>
                   )}
                 </View>
               )}
@@ -318,7 +318,7 @@ export default function DashboardScreen() {
               <View style={[styles.iconContainer, { backgroundColor: 'rgba(56, 189, 248, 0.15)' }]}>
                 <Ionicons name="body" size={24} color="#38bdf8" />
               </View>
-              <Text style={styles.cardTitle}>体組成＆筋肥大限界</Text>
+              <Text style={styles.cardTitle}>{t('ui.home.card_body_composition') || '体組成＆筋肥大限界'}</Text>
               <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
             </View>
 
@@ -334,7 +334,7 @@ export default function DashboardScreen() {
                 if (!weight && !bodyFatRate) {
                   return (
                     <Text style={styles.inactiveText}>
-                      体組成データが未記録です。タップして体重・体脂肪率や骨格限界モデルを診断しましょう。
+                      {t('ui.home.body_comp_empty') || '体組成データが未記録です。タップして体重・体脂肪率や骨格限界モデルを診断しましょう。'}
                     </Text>
                   );
                 }
@@ -352,7 +352,7 @@ export default function DashboardScreen() {
                         <Text style={styles.statUnit}>kg</Text>
                       </Text>
                       <Text style={styles.statGoal}>
-                        / 体脂肪率: {bodyFatRate !== null ? `${bodyFatRate.toFixed(1)}%` : '--'}
+                        / {t('ui.home.body_fat_rate') || '体脂肪率: '} {bodyFatRate !== null ? `${bodyFatRate.toFixed(1)}%` : '--'}
                         {lbm !== null ? ` (LBM ${lbm}kg)` : ''}
                       </Text>
                     </View>
@@ -375,10 +375,10 @@ export default function DashboardScreen() {
                         </View>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, paddingTop: 6, borderTopWidth: 1, borderTopColor: '#334155' }}>
                           <Text style={{ fontSize: 12, color: '#94a3b8' }}>
-                            限界除脂肪: <Text style={{ fontWeight: '700', color: '#a78bfa' }}>{potential.maxLbm}kg</Text>
+                            {t('ui.home.limit_lbm') || '限界除脂肪: '} <Text style={{ fontWeight: '700', color: '#a78bfa' }}>{potential.maxLbm}kg</Text>
                           </Text>
                           <Text style={{ fontSize: 12, color: '#94a3b8' }}>
-                            増量可能: <Text style={{ fontWeight: '700', color: '#4ade80' }}>+{potential.remainingMuscleGainKg}kg</Text>
+                            {t('ui.home.gainable') || '増量可能: '} <Text style={{ fontWeight: '700', color: '#4ade80' }}>+{potential.remainingMuscleGainKg}kg</Text>
                           </Text>
                           <Text style={{ fontSize: 12, color: '#38bdf8', fontWeight: 'bold' }}>
                             {potential.naturalStatusLabel.split(' ')[0]}
@@ -388,7 +388,7 @@ export default function DashboardScreen() {
                     ) : (
                       <View style={{ marginTop: 6 }}>
                         <Text style={{ fontSize: 12, color: '#94a3b8' }}>
-                          ※手首・足首サイズを入力すると骨格筋肥大限界（%）が自動診断されます。
+                          {t('ui.home.body_comp_hint') || '※手首・足首サイズを入力すると骨格筋肥大限界（%）が自動診断されます。'}
                         </Text>
                       </View>
                     )}
@@ -410,7 +410,7 @@ export default function DashboardScreen() {
               <View style={[styles.iconContainer, { backgroundColor: 'rgba(0, 210, 255, 0.15)' }]}>
                 <Ionicons name="water" size={24} color="#00d2ff" />
               </View>
-              <Text style={styles.cardTitle}>水分補給</Text>
+              <Text style={styles.cardTitle}>{t('ui.home.card_water') || '水分補給'}</Text>
               <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
             </TouchableOpacity>
 
@@ -465,7 +465,7 @@ export default function DashboardScreen() {
               <View style={[styles.iconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
                 <Ionicons name="restaurant" size={24} color="#10b981" />
               </View>
-              <Text style={styles.cardTitle}>栄養＆食事管理</Text>
+              <Text style={styles.cardTitle}>{t('ui.home.card_nutrition') || '栄養＆食事管理'}</Text>
               <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
             </View>
             <View style={styles.cardBody}>
@@ -482,7 +482,7 @@ export default function DashboardScreen() {
                   <>
                     <View style={styles.statRow}>
                       <Text style={styles.statVal}>{Math.round(totalCal)} <Text style={styles.statUnit}>kcal</Text></Text>
-                      <Text style={styles.statGoal}>/ {goalCal} kcal ({logs.length}件)</Text>
+                      <Text style={styles.statGoal}>/ {goalCal} kcal ({logs.length}{t('ui.home.unit_items') || '件'})</Text>
                     </View>
 
                     <View style={styles.progressContainer}>
@@ -524,16 +524,16 @@ export default function DashboardScreen() {
               <View style={[styles.iconContainer, { backgroundColor: 'rgba(255, 152, 0, 0.15)' }]}>
                 <Ionicons name="time" size={24} color="#ff9800" />
               </View>
-              <Text style={styles.cardTitle}>24時間管理</Text>
+              <Text style={styles.cardTitle}>{t('ui.home.card_time') || '24時間管理'}</Text>
               <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
             </View>
 
             <View style={styles.cardBody}>
               <View style={styles.statRow}>
                 <Text style={styles.statVal}>
-                  {daySummary ? (daySummary.totalZikanMinutes / 60).toFixed(1) : '0.0'} <Text style={styles.statUnit}>時間</Text>
+                  {daySummary ? (daySummary.totalZikanMinutes / 60).toFixed(1) : '0.0'} <Text style={styles.statUnit}>{t('ui.home.unit_hour') || '時間'}</Text>
                 </Text>
-                <Text style={styles.statGoal}>記録済み</Text>
+                <Text style={styles.statGoal}>{t('ui.home.recorded') || '記録済み'}</Text>
               </View>
 
               <View style={styles.breakdownList}>
@@ -542,12 +542,12 @@ export default function DashboardScreen() {
                     <View key={index} style={styles.breakdownRow}>
                       <Text style={styles.breakdownName}>• {item.name}</Text>
                       <Text style={styles.breakdownTime}>
-                        {item.hours >= 1 ? `${item.hours}時間` : ''}{item.minutes % 60 > 0 ? `${item.minutes % 60}分` : ''}
+                        {item.hours >= 1 ? `${item.hours}${t('ui.home.unit_hour') || '時間'}` : ''}{item.minutes % 60 > 0 ? `${item.minutes % 60}${t('ui.home.unit_minute') || '分'}` : ''}
                       </Text>
                     </View>
                   ))
                 ) : (
-                  <Text style={styles.emptyText}>記録された時間ブロックがありません</Text>
+                  <Text style={styles.emptyText}>{t('ui.home.no_time_blocks') || '記録された時間ブロックがありません'}</Text>
                 )}
               </View>
             </View>
@@ -565,7 +565,7 @@ export default function DashboardScreen() {
               <View style={[styles.iconContainer, { backgroundColor: 'rgba(233, 30, 99, 0.15)' }]}>
                 <Ionicons name="checkmark-circle" size={24} color="#e91e63" />
               </View>
-              <Text style={styles.cardTitle}>習慣カウンター</Text>
+              <Text style={styles.cardTitle}>{t('ui.home.card_habits') || '習慣カウンター'}</Text>
               <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
             </TouchableOpacity>
 
@@ -583,7 +583,7 @@ export default function DashboardScreen() {
                           <View style={[styles.habitColorDot, { backgroundColor: habit.color || '#fff' }]} />
                           <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
                         </View>
-                        <Text style={styles.habitCount}>{habit.count} 回</Text>
+                        <Text style={styles.habitCount}>{habit.count} {t('ui.home.unit_times') || '回'}</Text>
                       </TouchableOpacity>
                       <View style={styles.habitActionContainer}>
                         <TouchableOpacity
@@ -598,7 +598,7 @@ export default function DashboardScreen() {
                   ))}
                 </View>
               ) : (
-                <Text style={styles.emptyText}>習慣が登録されていません</Text>
+                <Text style={styles.emptyText}>{t('ui.home.no_habits') || '習慣が登録されていません'}</Text>
               )}
             </View>
           </View>
@@ -616,7 +616,7 @@ export default function DashboardScreen() {
               <View style={[styles.iconContainer, { backgroundColor: 'rgba(76, 175, 80, 0.15)' }]}>
                 <Ionicons name="repeat" size={24} color="#4caf50" />
               </View>
-              <Text style={styles.cardTitle}>ルーティン管理</Text>
+              <Text style={styles.cardTitle}>{t('ui.home.card_routines') || 'ルーティン管理'}</Text>
               <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
             </View>
 
@@ -624,7 +624,7 @@ export default function DashboardScreen() {
               <View style={styles.routineSummaryRow}>
                 <Ionicons name="checkmark-done-circle-outline" size={20} color="#4caf50" style={{ marginRight: 6 }} />
                 <Text style={styles.routineSummaryText}>
-                  完了したルーティン:
+                  {t('ui.home.completed_routines') || '完了したルーティン:'}
                 </Text>
               </View>
               {daySummary?.completedRoutineNames && daySummary.completedRoutineNames.length > 0 ? (
@@ -638,7 +638,7 @@ export default function DashboardScreen() {
                 </View>
               ) : (
                 <View style={{ marginTop: 8, paddingLeft: 26 }}>
-                  <Text style={{ color: Theme.colors.textMuted, fontSize: 14 }}>なし</Text>
+                  <Text style={{ color: Theme.colors.textMuted, fontSize: 14 }}>{t('ui.home.none') || 'なし'}</Text>
                 </View>
               )}
             </View>
@@ -657,12 +657,12 @@ export default function DashboardScreen() {
               <View style={[styles.iconContainer, { backgroundColor: 'rgba(100, 180, 255, 0.15)' }]}>
                 <Ionicons name="mic" size={24} color="#64b4ff" />
               </View>
-              <Text style={styles.cardTitle}>音声AIアシスタント</Text>
+              <Text style={styles.cardTitle}>{t('ui.home.card_voice_ai') || '音声AIアシスタント'}</Text>
               <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
             </View>
             <View style={styles.cardBody}>
               <Text style={styles.inactiveText}>
-                話すだけでトレーニング・食事・水分を記録。Gemini Live API による音声リアルタイム対話。
+                {t('ui.home.voice_ai_desc') || '話すだけでトレーニング・食事・水分を記録。Gemini Live API による音声リアルタイム対話。'}
               </Text>
             </View>
           </TouchableOpacity>
@@ -681,7 +681,7 @@ export default function DashboardScreen() {
       {/* P-Points & Status Bar */}
       <View style={styles.pointStatusBar}>
         <View style={styles.pointStatusLeft}>
-          <Text style={styles.pointStatusLabel}>Pポイント残高:</Text>
+          <Text style={styles.pointStatusLabel}>{t('ui.home.p_points_balance') || 'Pポイント残高:'}</Text>
           <PointBadge />
         </View>
         <TouchableOpacity
@@ -689,7 +689,7 @@ export default function DashboardScreen() {
           onPress={() => router.push('/settings/feature-management')}
           activeOpacity={0.7}
         >
-          <Text style={styles.manageFeaturesLinkText}>機能の追加・管理</Text>
+          <Text style={styles.manageFeaturesLinkText}>{t('ui.home.manage_features') || '機能の追加・管理'}</Text>
           <Ionicons name="chevron-forward" size={14} color={Theme.colors.primary} />
         </TouchableOpacity>
       </View>
@@ -721,8 +721,8 @@ export default function DashboardScreen() {
               <View style={[styles.card, { alignItems: 'center', paddingVertical: 36 }]}>
                 <Ionicons name="options-outline" size={44} color={Theme.colors.textMuted} style={{ marginBottom: 12 }} />
                 <Text style={{ color: Theme.colors.textMuted, fontSize: 14, textAlign: 'center', lineHeight: 22 }}>
-                  表示される機能が選択されていません。{'\n'}
-                  アプリ設定 ➔「機能管理」から表示する機能を選択してください。
+                  {t('ui.home.no_features_selected') || '表示される機能が選択されていません。'}{'\n'}
+                  {t('ui.home.select_features_hint') || 'アプリ設定 ➔「機能管理」から表示する機能を選択してください。'}
                 </Text>
               </View>
             );
@@ -743,13 +743,13 @@ export default function DashboardScreen() {
             </View>
             <View style={{ flex: 1, marginRight: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={styles.unlockCtaTitle}>新しい機能を開放する</Text>
+                <Text style={styles.unlockCtaTitle}>{t('ui.home.unlock_new_features') || '新しい機能を開放する'}</Text>
                 <View style={styles.unlockCtaBadge}>
-                  <Text style={styles.unlockCtaBadgeText}>あと {ALL_FEATURE_IDS.length - unlockedFeatures.length} 機能</Text>
+                  <Text style={styles.unlockCtaBadgeText}>{t('ui.home.remaining_features', { count: ALL_FEATURE_IDS.length - unlockedFeatures.length }) || `あと ${ALL_FEATURE_IDS.length - unlockedFeatures.length} 機能`}</Text>
                 </View>
               </View>
               <Text style={styles.unlockCtaDesc}>
-                貯まった Pポイントを使って、好きな機能をアンロックできます（次: {getUnlockCost(unlockedFeatures.length)} P）
+                {t('ui.home.unlock_features_hint', { cost: getUnlockCost(unlockedFeatures.length) }) || `貯まった Pポイントを使って、好きな機能をアンロックできます（次: ${getUnlockCost(unlockedFeatures.length)} P）`}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#ffd700" />
@@ -766,12 +766,12 @@ export default function DashboardScreen() {
             <View style={[styles.iconContainer, { backgroundColor: 'rgba(79, 172, 254, 0.15)' }]}>
               <Ionicons name="settings-outline" size={24} color="#4facfe" />
             </View>
-            <Text style={styles.cardTitle}>アプリ設定</Text>
+            <Text style={styles.cardTitle}>{t('ui.home.card_settings') || 'アプリ設定'}</Text>
             <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
           </View>
           <View style={styles.cardBody}>
             <Text style={styles.inactiveText}>
-              Gemini AI連携、データ出力・共有、バックアップ、機能管理などを操作できます。
+              {t('ui.home.settings_desc') || 'Gemini AI連携、データ出力・共有、バックアップ、機能管理などを操作できます。'}
             </Text>
           </View>
         </TouchableOpacity>
