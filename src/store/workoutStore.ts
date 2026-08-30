@@ -4,6 +4,8 @@ import { scheduleRestTimer, cancelRestTimer } from '../utils/timer';
 import { buildInitialSetsForExercise } from '../utils/workoutSetBuilder';
 import { useSettingsStore } from './settingsStore';
 import { useRoutineDraftStore } from './routineDraftStore';
+import { generateUUID } from '../utils/uuid';
+import { WorkoutSet } from '../db/types';
 
 export type SetRecord = {
   id: string; // temp id for UI
@@ -75,7 +77,7 @@ interface WorkoutState {
   updateExerciseStance: (exerciseId: string, stance: string | null) => void;
   updateExerciseWeightStep: (exerciseId: string, weightStep: number) => void;
   endWorkout: () => void;
-  addExercise: (exercise: { id: number; name: string; previousSets?: any[]; personalRecords?: Record<string, Record<number, number>>; is_unilateral?: number; default_variation?: string | null; default_stance?: string | null; equipment?: string; muscle_group?: string; routineSets?: any[] }) => void;
+  addExercise: (exercise: { id: number; name: string; previousSets?: Omit<WorkoutSet, 'id' | 'is_completed'>[]; personalRecords?: Record<string, Record<number, number>>; is_unilateral?: number; default_variation?: string | null; default_stance?: string | null; equipment?: string; muscle_group?: string; routineSets?: Omit<WorkoutSet, 'id' | 'is_completed'>[]; weight_step?: number; }) => void;
   removeExercise: (exerciseId: string) => void;
   addSet: (exerciseId: string) => void;
   removeSet: (exerciseId: string, setId: string) => void;
@@ -197,7 +199,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       exercises: [
         ...state.exercises,
         {
-          id: Math.random().toString(36).substring(7),
+          id: generateUUID(),
           exercise_id: exercise.id,
           name: exercise.name,
           is_unilateral: exercise.is_unilateral,
@@ -208,7 +210,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           personalRecords: exercise.personalRecords || {},
           default_variation: exercise.default_variation || null,
           default_stance: exercise.default_stance || null,
-          weight_step: (exercise as any).weight_step ?? 2.5
+          weight_step: exercise.weight_step ?? 2.5
         }
       ]
     };
@@ -234,7 +236,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
             sets: [
               ...ex.sets,
               {
-                id: Math.random().toString(36).substring(7),
+                id: generateUUID(),
                 set_number: newSetNum,
                 weight: lastL ? lastL.weight : (lastSet ? lastSet.weight : null),
                 reps: lastL ? lastL.reps : (lastSet ? lastSet.reps : null),
@@ -247,7 +249,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
                 stance: inheritedStance
               },
               {
-                id: Math.random().toString(36).substring(7),
+                id: generateUUID(),
                 set_number: newSetNum,
                 weight: lastR ? lastR.weight : (lastSet ? lastSet.weight : null),
                 reps: lastR ? lastR.reps : (lastSet ? lastSet.reps : null),
@@ -265,7 +267,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           return {
             ...ex,
             sets: [...ex.sets, {
-              id: Math.random().toString(36).substring(7),
+              id: generateUUID(),
               set_number: newSetNum,
               weight: lastSet ? lastSet.weight : null,
               reps: lastSet ? lastSet.reps : null,
@@ -324,8 +326,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
   toggleSetComplete: (exerciseId, setId) => {
     const state = get();
-    const ex = state.exercises.find((e: any) => e.id === exerciseId);
-    const sRecord = ex?.sets.find((s: any) => s.id === setId);
+    const ex = state.exercises.find(e => e.id === exerciseId);
+    const sRecord = ex?.sets.find(s => s.id === setId);
     const willBeCompleted = sRecord ? !sRecord.is_completed : false;
     const isAerobic = ex?.muscle_group === '有酸素';
 

@@ -48,3 +48,6 @@ releases/
 *.aab
 *.apk
 
+
+lint.json
+lint_output.txt
