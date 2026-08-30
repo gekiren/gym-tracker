@@ -35,6 +35,12 @@ export interface RoutineSet {
 export interface RoutineExercise {
   id: number;
   name: string;
+  is_unilateral?: number;
+  equipment?: string;
+  muscle_group?: string;
+  default_variation?: string | null;
+  default_stance?: string | null;
+  weight_step?: number;
   sets: RoutineSet[];
 }
 

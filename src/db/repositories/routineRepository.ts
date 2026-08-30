@@ -14,8 +14,15 @@ export const getRoutines = async () => {
     routine_exercise_id: number;
     exercise_id: number;
     exercise_name: string;
+    is_unilateral: number;
+    equipment: string;
+    muscle_group: string;
+    default_variation: string | null;
+    default_stance: string | null;
+    weight_step: number;
   }>(`
-    SELECT re.routine_id, re.id as routine_exercise_id, e.id as exercise_id, e.name as exercise_name
+    SELECT re.routine_id, re.id as routine_exercise_id, e.id as exercise_id, e.name as exercise_name,
+           e.is_unilateral, e.equipment, e.muscle_group, e.default_variation, e.default_stance, e.weight_step
     FROM routine_exercises re
     JOIN exercises e ON re.exercise_id = e.id
     ORDER BY re.sort_order ASC, re.id ASC
@@ -70,6 +77,12 @@ export const getRoutines = async () => {
     rxByRoutineId.get(rx.routine_id)!.push({
       id: rx.exercise_id,
       name: rx.exercise_name,
+      is_unilateral: rx.is_unilateral,
+      equipment: rx.equipment,
+      muscle_group: rx.muscle_group,
+      default_variation: rx.default_variation,
+      default_stance: rx.default_stance,
+      weight_step: rx.weight_step,
       sets
     });
   }
