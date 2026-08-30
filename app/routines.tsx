@@ -20,9 +20,8 @@ export default function RoutinesScreen() {
   const [routines, setRoutines] = useState<any[]>([]);
   const [isReorderMode, setIsReorderMode] = useState(false);
   const [deletingRoutine, setDeletingRoutine] = useState<{ id: number; title: string } | null>(null);
-  const { settings } = useSettingsStore();
-  const isPremium = settings.isPremium;
-  const isEarly = settings.isEarlyAdopter;
+  const isPremium = useSettingsStore(state => state.settings.isPremium);
+  const isEarly = useSettingsStore(state => state.settings.isEarlyAdopter);
   const isBasic = !isPremium && !isEarly;
 
   const handleMoveUp = async (index: number) => {
