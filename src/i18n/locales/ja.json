@@ -301,7 +301,9 @@
       "progression_chart_title": "{{reps}}回挙上の重量推移",
       "initial_record": "初回の記録",
       "current_pr": "自己ベスト",
-      "improvement_value": "総向上値"
+      "improvement_value": "総向上値",
+      "load_more_history": "過去の履歴をさらに表示 (残り{{count}}件)",
+      "show_all_history": "すべての履歴を表示 ({{count}}件)"
     },
     "active_routine": {
       "alert_pause_title": "ルーティンの中断",
