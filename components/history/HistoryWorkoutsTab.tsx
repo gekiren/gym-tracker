@@ -230,7 +230,7 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
               onLayout={(e) => {
                 cardOffsets.current[w.id] = e.nativeEvent.layout.y;
               }}
-              onPress={() => router.push({ pathname: '/workout-details/[id]', params: { id: w.id } } as any)}
+              onPress={() => router.push({ pathname: '/workout-details/[id]', params: { id: w.id, _t: Date.now() } } as any)}
             >
               <View style={styles.cardHeader}>
                 <Text style={styles.cardTitle}>{w.title}</Text>

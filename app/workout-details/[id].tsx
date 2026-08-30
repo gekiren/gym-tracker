@@ -93,7 +93,7 @@ export default function WorkoutDetailsScreen() {
               <TouchableOpacity onPress={() => setShareModalVisible(true)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <Ionicons name="share-social-outline" size={24} color={Theme.colors.primary} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => router.push({ pathname: '/edit-workout/[id]', params: { id: workout.id } } as any)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <TouchableOpacity onPress={() => router.push({ pathname: '/edit-workout/[id]', params: { id: workout.id, _t: Date.now() } } as any)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <Ionicons name="pencil" size={24} color={Theme.colors.primary} />
               </TouchableOpacity>
             </View>
@@ -136,7 +136,7 @@ export default function WorkoutDetailsScreen() {
               <View style={styles.exerciseHeader}>
                 <TouchableOpacity 
                   style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
-                  onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: String(ex.exercise_id) } } as any)}
+                  onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: String(ex.exercise_id), _t: Date.now() } } as any)}
                 >
                   <Text style={styles.exerciseTitle}>{translateExercise(ex.name || ex.exercise_name)}</Text>
                   <Ionicons name="chevron-forward" size={16} color={Theme.colors.primary} />

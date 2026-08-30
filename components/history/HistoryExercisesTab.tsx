@@ -192,7 +192,7 @@ export const HistoryExercisesTab: React.FC<HistoryExercisesTabProps> = ({
             >
               <TouchableOpacity 
                 style={styles.exerciseCard}
-                onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: String(item.id) } } as any)}
+                onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: String(item.id), _t: Date.now() } } as any)}
                 activeOpacity={0.7}
               >
                 <View style={{ flex: 1 }}>
