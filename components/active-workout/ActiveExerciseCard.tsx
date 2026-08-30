@@ -100,7 +100,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
         <View style={{ backgroundColor: colors.card, paddingTop: 0, paddingBottom: 2 }}>
           <View style={styles.headerRow}>
             <View style={{ flex: 1 }}>
-              <TouchableOpacity
+              <GHTouchableOpacity
                 onPress={() => {
                   const targetId = ex.exercise_id || ex.id;
                   if (typeof targetId === 'string' && targetId.includes('-')) {
@@ -121,7 +121,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
                 >
                   {exerciseNameText}
                 </Text>
-              </TouchableOpacity>
+              </GHTouchableOpacity>
               <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginTop: 2 }}>
                 {settings.displayFields?.showVolume && (
                   <View style={styles.exerciseVolumeContainer}>
