@@ -19,12 +19,15 @@ import { HistoryCalendarModal } from '../../components/active-workout/HistoryCal
 import { StanceManagement } from '../../components/exercise-detail/StanceManagement';
 import { ExerciseCharts } from '../../components/exercise-detail/ExerciseCharts';
 
+const INITIAL_PAGE_SIZE = 20;
+
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [exercise, setExercise] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [personalRecords, setPersonalRecords] = useState<Record<string, Record<number, number>>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [displayLimit, setDisplayLimit] = useState(INITIAL_PAGE_SIZE);
   const settings = useSettingsStore(state => state.settings);
   const addCustomStance = useSettingsStore(state => state.addCustomStance);
   const removeCustomStance = useSettingsStore(state => state.removeCustomStance);
@@ -50,21 +53,35 @@ export default function ExerciseDetailScreen() {
       router.back();
       return;
     }
+
+    let isMounted = true;
     const fetchDetails = async () => {
       try {
-        const exItem = await getExerciseById(parsedId);
-        setExercise(exItem);
-        const histData = await getExerciseHistory(parsedId);
-        setHistory(histData);
-        const prData = await getPersonalRecords(parsedId);
-        setPersonalRecords(prData);
+        const [exItem, histData, prData] = await Promise.all([
+          getExerciseById(parsedId),
+          getExerciseHistory(parsedId),
+          getPersonalRecords(parsedId)
+        ]);
+
+        if (isMounted) {
+          setExercise(exItem);
+          setHistory(histData || []);
+          setPersonalRecords(prData || {});
+        }
       } catch (e) {
-        console.error(e);
+        console.error('Failed to fetch exercise details:', e);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
+
     fetchDetails();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   const formatDate = (isoString: string) => {
@@ -132,24 +149,31 @@ export default function ExerciseDetailScreen() {
   };
 
   const handleDatePress = (dateStr: string) => {
-    const targetHistory = history.find(item => {
+    const targetIndex = history.findIndex(item => {
       const wDate = format(new Date(item.start_time), 'yyyy-MM-dd');
       return wDate === dateStr;
     });
 
-    if (targetHistory) {
+    if (targetIndex !== -1) {
+      const targetHistory = history[targetIndex];
       setCalendarVisible(false);
-      const yOffset = cardOffsets.current[targetHistory.workout_id];
-      if (yOffset !== undefined) {
-        const scrollTarget = Math.max(0, yOffset - 20);
-        setTimeout(() => {
+
+      // 表示上限を超えている場合は、該当カードが表示されるように上限を拡張
+      if (targetIndex >= displayLimit) {
+        setDisplayLimit(Math.max(displayLimit, targetIndex + 10));
+      }
+
+      setTimeout(() => {
+        const yOffset = cardOffsets.current[targetHistory.workout_id];
+        if (yOffset !== undefined) {
+          const scrollTarget = Math.max(0, yOffset - 20);
           scrollViewRef.current?.scrollTo({ y: scrollTarget, animated: true });
           setHighlightedWorkoutId(targetHistory.workout_id);
           setTimeout(() => {
             setHighlightedWorkoutId(null);
           }, 1500);
-        }, 100);
-      }
+        }
+      }, 150);
     }
   };
 
@@ -257,74 +281,103 @@ export default function ExerciseDetailScreen() {
             <Text style={styles.emptySubtext}>{t('ui.exercise_detail.empty_history_sub')}</Text>
           </View>
         ) : (
-          history.map(item => {
-            const dailyVolume = item.sets.reduce((sum: number, s: any) => {
-              const w = parseFloat(s.weight) || 0;
-              const r = parseInt(s.reps, 10) || 0;
-              return sum + (w * r);
-            }, 0);
+          <>
+            {history.slice(0, displayLimit).map(item => {
+              const dailyVolume = item.sets.reduce((sum: number, s: any) => {
+                const w = parseFloat(s.weight) || 0;
+                const r = parseInt(s.reps, 10) || 0;
+                return sum + (w * r);
+              }, 0);
 
-            return (
-              <View 
-                key={item.workout_id} 
-                style={[
-                  styles.historyCard, 
-                  { marginHorizontal: Theme.spacing.md },
-                  item.workout_id === highlightedWorkoutId && { borderColor: Theme.colors.primary, borderWidth: 2 }
-                ]}
-                onLayout={(e) => {
-                  cardOffsets.current[item.workout_id] = e.nativeEvent.layout.y;
-                }}
-              >
-                <View style={styles.historyCardHeader}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Ionicons name="calendar-outline" size={16} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
-                    <Text style={styles.historyDate}>{formatDate(item.start_time)}</Text>
-                  </View>
-                  {dailyVolume > 0 && (
+              return (
+                <View 
+                  key={item.workout_id} 
+                  style={[
+                    styles.historyCard, 
+                    { marginHorizontal: Theme.spacing.md },
+                    item.workout_id === highlightedWorkoutId && { borderColor: Theme.colors.primary, borderWidth: 2 }
+                  ]}
+                  onLayout={(e) => {
+                    cardOffsets.current[item.workout_id] = e.nativeEvent.layout.y;
+                  }}
+                >
+                  <View style={styles.historyCardHeader}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={{ color: Theme.colors.textMuted, fontSize: 12 }}>{t('ui.history.volume_label')}: </Text>
-                      <Text style={{ color: Theme.colors.primary, fontSize: 13, fontWeight: 'bold' }}>{dailyVolume} {settings.weightUnit}</Text>
+                      <Ionicons name="calendar-outline" size={16} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
+                      <Text style={styles.historyDate}>{formatDate(item.start_time)}</Text>
                     </View>
-                  )}
-                </View>
-                
-                <View style={styles.tableHeader}>
-                  <Text style={styles.thSet}>{t('ui.exercise_detail.table_header_set')}</Text>
-                  <Text style={styles.thVal}>{t('ui.exercise_detail.table_header_record')}</Text>
-                </View>
-                
-                {item.sets.map((s: any, idx: number) => {
-                  let timeStr = '';
-                  const fmtTime = (secs: number) => {
-                    const m = Math.floor(secs / 60);
-                    const s = secs % 60;
-                    return m > 0 ? `${m}m${s.toString().padStart(2, '0')}s` : `${s}s`;
-                  };
-                  if (s.work_seconds != null) timeStr += `⏱️ ${fmtTime(s.work_seconds)} `;
-                  if (s.rest_seconds != null) timeStr += `☕ ${fmtTime(s.rest_seconds)}`;
-                  timeStr = timeStr.trim();
-                  return (
-                    <View key={idx} style={{ paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
-                      <View style={[styles.setRow, { paddingVertical: 0 }]}>
-                        <Text style={styles.tdSet}>{s.set_number}</Text>
-                        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
-                          <Text style={styles.tdVal}>
-                            {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps}${t('ui.common.reps_unit')}` : '-'}
-                          </Text>
-                          {(s.stance || s.variation) && <View style={styles.historyVariationBadge}><Text style={styles.historyVariationText}>{translateStance(s.stance || s.variation)}</Text></View>}
-                        </View>
-                        {s.rpe && <Text style={styles.tdRpe}>@RPE {s.rpe}</Text>}
+                    {dailyVolume > 0 && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={{ color: Theme.colors.textMuted, fontSize: 12 }}>{t('ui.history.volume_label')}: </Text>
+                        <Text style={{ color: Theme.colors.primary, fontSize: 13, fontWeight: 'bold' }}>{dailyVolume} {settings.weightUnit}</Text>
                       </View>
-                      {timeStr ? (
-                        <Text style={{ textAlign: 'right', fontSize: 11, color: Theme.colors.textMuted, marginTop: 4, marginRight: 8 }}>{timeStr}</Text>
-                      ) : null}
-                    </View>
-                  );
-                })}
+                    )}
+                  </View>
+                  
+                  <View style={styles.tableHeader}>
+                    <Text style={styles.thSet}>{t('ui.exercise_detail.table_header_set')}</Text>
+                    <Text style={styles.thVal}>{t('ui.exercise_detail.table_header_record')}</Text>
+                  </View>
+                  
+                  {item.sets.map((s: any, idx: number) => {
+                    let timeStr = '';
+                    const fmtTime = (secs: number) => {
+                      const m = Math.floor(secs / 60);
+                      const s = secs % 60;
+                      return m > 0 ? `${m}m${s.toString().padStart(2, '0')}s` : `${s}s`;
+                    };
+                    if (s.work_seconds != null) timeStr += `⏱️ ${fmtTime(s.work_seconds)} `;
+                    if (s.rest_seconds != null) timeStr += `☕ ${fmtTime(s.rest_seconds)}`;
+                    timeStr = timeStr.trim();
+                    return (
+                      <View key={idx} style={{ paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
+                        <View style={[styles.setRow, { paddingVertical: 0 }]}>
+                          <Text style={styles.tdSet}>{s.set_number}</Text>
+                          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <Text style={styles.tdVal}>
+                              {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps}${t('ui.common.reps_unit')}` : '-'}
+                            </Text>
+                            {(s.stance || s.variation) && <View style={styles.historyVariationBadge}><Text style={styles.historyVariationText}>{translateStance(s.stance || s.variation)}</Text></View>}
+                          </View>
+                          {s.rpe && <Text style={styles.tdRpe}>@RPE {s.rpe}</Text>}
+                        </View>
+                        {timeStr ? (
+                          <Text style={{ textAlign: 'right', fontSize: 11, color: Theme.colors.textMuted, marginTop: 4, marginRight: 8 }}>{timeStr}</Text>
+                        ) : null}
+                      </View>
+                    );
+                  })}
+                </View>
+              );
+            })}
+
+            {/* Load More Controls for high data volume */}
+            {history.length > displayLimit && (
+              <View style={styles.loadMoreContainer}>
+                <TouchableOpacity
+                  style={styles.loadMoreBtn}
+                  onPress={() => setDisplayLimit(prev => Math.min(history.length, prev + 20))}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="chevron-down-circle-outline" size={18} color={Theme.colors.primary} style={{ marginRight: 6 }} />
+                  <Text style={styles.loadMoreText}>
+                    {t('ui.exercise_detail.load_more_history', { count: history.length - displayLimit })}
+                  </Text>
+                </TouchableOpacity>
+                {history.length - displayLimit > 20 && (
+                  <TouchableOpacity
+                    style={styles.showAllBtn}
+                    onPress={() => setDisplayLimit(history.length)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.showAllText}>
+                      {t('ui.exercise_detail.show_all_history', { count: history.length })}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
-            );
-          })
+            )}
+          </>
         )}
       </ScrollView>
       <HistoryCalendarModal
@@ -371,4 +424,9 @@ const styles = StyleSheet.create({
   exportBtnText: { color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold' },
   historyVariationBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 8 },
   historyVariationText: { color: Theme.colors.text, fontSize: 11, fontWeight: 'bold' },
+  loadMoreContainer: { marginHorizontal: Theme.spacing.md, marginVertical: Theme.spacing.md, alignItems: 'center', gap: 10 },
+  loadMoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(79, 172, 254, 0.12)', borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.3)', borderRadius: Theme.borderRadius.md, paddingVertical: 12, paddingHorizontal: 20, width: '100%' },
+  loadMoreText: { color: Theme.colors.primary, fontSize: 14, fontWeight: 'bold' },
+  showAllBtn: { paddingVertical: 6, paddingHorizontal: 12 },
+  showAllText: { color: Theme.colors.textMuted, fontSize: 12, textDecorationLine: 'underline' },
 });

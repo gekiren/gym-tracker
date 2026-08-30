@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 
-export const DATABASE_VERSION = 11;
+export const DATABASE_VERSION = 12;
 
 export interface Migration {
   version: number;
@@ -254,6 +254,18 @@ export const MIGRATIONS: Migration[] = [
       await safeAddColumn(db, 'habit_items', 'target_count', 'INTEGER DEFAULT 0');
       await safeAddColumn(db, 'habit_items', 'sort_order', 'INTEGER DEFAULT 0');
       await safeAddColumn(db, 'habit_items', 'is_hidden', 'INTEGER DEFAULT 0');
+    },
+  },
+  {
+    version: 12,
+    up: async (db) => {
+      // 種目詳細および履歴・集計クエリの高速化のためのインデックス
+      await db.execAsync(`
+        CREATE INDEX IF NOT EXISTS idx_workout_exercises_exercise_id ON workout_exercises(exercise_id);
+        CREATE INDEX IF NOT EXISTS idx_workout_exercises_workout_id ON workout_exercises(workout_id);
+        CREATE INDEX IF NOT EXISTS idx_workout_sets_we_completed ON workout_sets(workout_exercise_id, is_completed);
+        CREATE INDEX IF NOT EXISTS idx_workouts_start_time ON workouts(start_time DESC);
+      `);
     },
   },
 ];

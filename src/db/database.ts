@@ -104,6 +104,11 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       FOREIGN KEY(workout_exercise_id) REFERENCES workout_exercises(id) ON DELETE CASCADE
     );
 
+    CREATE INDEX IF NOT EXISTS idx_workouts_start_time ON workouts(start_time DESC);
+    CREATE INDEX IF NOT EXISTS idx_workout_exercises_exercise_id ON workout_exercises(exercise_id);
+    CREATE INDEX IF NOT EXISTS idx_workout_exercises_workout_id ON workout_exercises(workout_id);
+    CREATE INDEX IF NOT EXISTS idx_workout_sets_we_completed ON workout_sets(workout_exercise_id, is_completed);
+
     CREATE TABLE IF NOT EXISTS routines (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,

@@ -304,7 +304,9 @@
       "progression_chart_title": "{{reps}}-Rep Max Progression",
       "initial_record": "Initial Record",
       "current_pr": "Personal Record",
-      "improvement_value": "Total Improvement"
+      "improvement_value": "Total Improvement",
+      "load_more_history": "Load more history ({{count}} remaining)",
+      "show_all_history": "Show all history ({{count}} total)"
     },
     "active_routine": {
       "alert_pause_title": "Pause Routine",
