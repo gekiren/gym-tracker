@@ -107,7 +107,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
                     console.warn('Cannot navigate to exercise details: exercise_id is missing (received UUID).');
                     return;
                   }
-                  router.push({ pathname: '/exercise/[id]', params: { id: targetId } } as any);
+                  router.push(`/exercise/${targetId}`);
                 }}
                 onLongPress={() => onDeleteExercise(ex)}
                 delayLongPress={500}
