@@ -83,8 +83,10 @@ export function useWorkoutCompletion() {
         console.warn('Obsidian export failed in background:', err);
       });
       // ワークアウト完了ポイント (+2P) および 初回/デイリーポイント付与
-      recordFeatureAction('workout');
-      awardWorkoutCompletionPoints();
+      const { isFirstToday } = recordFeatureAction('workout');
+      if (isFirstToday) {
+        awardWorkoutCompletionPoints();
+      }
     }
   }, [completionData]);
 

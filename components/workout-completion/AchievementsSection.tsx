@@ -39,15 +39,7 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
       <Text style={styles.sectionTitle}>{t('ui.workout_completion.subtitle')}</Text>
       
       <View style={styles.achievementGrid}>
-        {/* P-Points Earned Card */}
-        <View style={styles.achievementCard}>
-          <View style={[styles.cardIconCircle, { backgroundColor: 'rgba(255, 215, 0, 0.15)' }]}>
-            <Ionicons name="diamond" size={24} color="#ffd700" />
-          </View>
-          <Text style={[styles.cardValue, { color: '#ffd700' }]}>
-            +2 P 獲得！
-          </Text>
-        </View>
+        {/* P-Points Earned Card removed as per user request */}
 
         {/* Weekly Workout Count Card */}
         <View style={styles.achievementCard}>
