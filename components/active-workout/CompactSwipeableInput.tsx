@@ -65,6 +65,22 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   const isKeyboardVisible = useIsKeyboardVisible();
   const localInputRef = useRef<TextInput>(null);
 
+  // Android等で controlled value が再レンダリングされた際に、キーストロークごとに全選択が再発火するのを防止
+  const [shouldSelectOnFocus, setShouldSelectOnFocus] = useState(selectTextOnFocus);
+  const selectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setShouldSelectOnFocus(selectTextOnFocus);
+    }
+  }, [selectTextOnFocus, isEditing]);
+
+  useEffect(() => {
+    return () => {
+      if (selectTimerRef.current) clearTimeout(selectTimerRef.current);
+    };
+  }, []);
+
   const focusInput = () => {
     localInputRef.current?.focus();
   };
@@ -82,6 +98,12 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
     focus: focusInput,
     blur: blurInput,
   }));
+
+  const handleTextChange = (text: string) => {
+    // 最初の1文字が入力されたら、以降の再レンダリングで Android ネイティブが全選択を再発火しないよう直ちに解除
+    setShouldSelectOnFocus(false);
+    onChangeText(text);
+  };
 
   // Shared Values for animations
   const translationX = useSharedValue(0);
@@ -158,7 +180,7 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
     });
 
   const tapGesture = Gesture.Tap()
-    .enabled(!disabled)
+    .enabled(!disabled && !isEditing)
     .onEnd(() => {
       runOnJS(focusInput)();
     });
@@ -189,7 +211,11 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
     fontSize: flatStyle.fontSize || 15,
     fontWeight: flatStyle.fontWeight || 'bold',
     textAlign: flatStyle.textAlign || 'center',
+    textAlignVertical: 'center' as const,
+    includeFontPadding: false,
     paddingVertical: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
     paddingHorizontal: 0,
   };
 
@@ -209,7 +235,16 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
           ref={localInputRef}
           style={[
             isEditing ? textStyleOnly : { opacity: 0 },
-            { flex: 1, width: '100%', height: '100%' }
+            {
+              flex: 1,
+              width: '100%',
+              height: '100%',
+              textAlignVertical: 'center',
+              includeFontPadding: false,
+              paddingVertical: 0,
+              paddingTop: 0,
+              paddingBottom: 0,
+            }
           ]}
           keyboardType={keyboardType}
           placeholder={isEditing ? placeholder : ''}
@@ -217,14 +252,20 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
           value={value}
           selection={selection}
           onSelectionChange={onSelectionChange}
-          onChangeText={onChangeText}
-          selectTextOnFocus={selectTextOnFocus}
+          onChangeText={handleTextChange}
+          selectTextOnFocus={shouldSelectOnFocus}
           onFocus={() => {
             setIsEditing(true);
+            if (selectTimerRef.current) clearTimeout(selectTimerRef.current);
+            selectTimerRef.current = setTimeout(() => {
+              setShouldSelectOnFocus(false);
+            }, 100);
             onFocus?.();
           }}
           onBlur={() => {
             setIsEditing(false);
+            if (selectTimerRef.current) clearTimeout(selectTimerRef.current);
+            setShouldSelectOnFocus(selectTextOnFocus);
             onBlur?.();
           }}
           returnKeyType={returnKeyType}
