@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Pressable, Alert, StyleSheet, Keyboard, Modal } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
@@ -94,10 +94,20 @@ export function SetInputRow({
   const [manualMinutes, setManualMinutes] = useState('');
   const [manualSeconds, setManualSeconds] = useState('');
 
-  // 入力欄のスワイプ中に親の行削除スワイプが誤動作・競合するのを防止
-  const [rowSwipeEnabled, setRowSwipeEnabled] = useState(true);
-  const handleSwipeStart = useCallback(() => setRowSwipeEnabled(false), []);
-  const handleSwipeEnd = useCallback(() => setRowSwipeEnabled(true), []);
+  // 入力欄のスワイプ中に親の行削除スワイプが誤動作・横取りするのをネイティブレベルで防止
+  const weightPanRef = useRef<any>(null);
+  const repsPanRef = useRef<any>(null);
+  const rpePanRef = useRef<any>(null);
+  const speedPanRef = useRef<any>(null);
+  const inclinePanRef = useRef<any>(null);
+
+  const externalGesturesToFail = useMemo(() => [
+    weightPanRef,
+    repsPanRef,
+    rpePanRef,
+    speedPanRef,
+    inclinePanRef,
+  ], []);
 
   const [weightSel, setWeightSel] = useState<{ start: number; end: number } | undefined>(undefined);
   const [repsSel, setRepsSel] = useState<{ start: number; end: number } | undefined>(undefined);
@@ -268,7 +278,7 @@ export function SetInputRow({
     }
   }
 
-  const handleLongPress = () => {
+  const handleDeleteSet = () => {
     if (set.is_completed) {
       Alert.alert(t('ui.active_workout.alert_delete_set_error_title'), t('ui.active_workout.alert_delete_set_error_message'));
       return;
@@ -285,24 +295,20 @@ export function SetInputRow({
 
   return (
     <Swipeable
-      enabled={rowSwipeEnabled}
-      renderLeftActions={(progress, drag) => <RowDeleteActionLeft drag={drag} onPress={handleLongPress} />}
-      renderRightActions={(progress, drag) => <RowDeleteActionRight drag={drag} onPress={handleLongPress} />}
+      requireExternalGestureToFail={externalGesturesToFail}
+      renderLeftActions={(progress, drag) => <RowDeleteActionLeft drag={drag} onPress={handleDeleteSet} />}
+      renderRightActions={(progress, drag) => <RowDeleteActionRight drag={drag} onPress={handleDeleteSet} />}
       friction={2}
       leftThreshold={40}
       rightThreshold={40}
     >
       <View style={{ backgroundColor: Theme.colors.card }}>
-        <Pressable
-          style={[styles.row, set.is_completed && styles.rowCompleted]}
-          onLongPress={handleLongPress}
-          delayLongPress={500}
-        >
-        <View style={{ width: 44, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={styles.tdSet} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-            {set.set_number}{set.side ? `(${set.side})` : ''}
-          </Text>
-        </View>
+        <View style={[styles.row, set.is_completed && styles.rowCompleted]}>
+          <View style={{ width: 44, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={styles.tdSet} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+              {set.set_number}{set.side ? `(${set.side})` : ''}
+            </Text>
+          </View>
 
         {isTreadmill ? (
           /* トレッドミルモード: スピード(km/h) + 角度(%) + 時間 */
@@ -317,6 +323,7 @@ export function SetInputRow({
             ) : (
               <CompactSwipeableInput 
                 inputRef={speedInputRef}
+                panGestureRef={speedPanRef}
                 style={[styles.input, { width: 68 }]} 
                 keyboardType="decimal-pad" 
                 step={0.5}
@@ -327,8 +334,6 @@ export function SetInputRow({
                 onSelectionChange={() => {}}
                 onChangeText={handleSpeedChange}
                 selectTextOnFocus={true}
-                onSwipeStart={handleSwipeStart}
-                onSwipeEnd={handleSwipeEnd}
                 onFocus={() => {
                   setActiveSetForCalc({ exId: ex.id, setId: set.id });
                   originalSpeedRef.current = localSpeed;
@@ -358,6 +363,7 @@ export function SetInputRow({
             ) : (
               <CompactSwipeableInput 
                 inputRef={inclineInputRef}
+                panGestureRef={inclinePanRef}
                 style={[styles.input, { width: 58 }]} 
                 keyboardType="decimal-pad" 
                 step={0.5}
@@ -368,8 +374,6 @@ export function SetInputRow({
                 onSelectionChange={() => {}}
                 onChangeText={handleInclineChange}
                 selectTextOnFocus={true}
-                onSwipeStart={handleSwipeStart}
-                onSwipeEnd={handleSwipeEnd}
                 onFocus={() => {
                   originalInclineRef.current = localIncline;
                   if (localIncline === '') setInclineSel({ start: 0, end: 0 });
@@ -478,6 +482,7 @@ export function SetInputRow({
               </View>
             ) : (
               <CompactSwipeableInput 
+                panGestureRef={weightPanRef}
                 style={styles.input} 
                 keyboardType="decimal-pad" 
                 step={ex.weight_step ?? 2.5}
@@ -488,8 +493,6 @@ export function SetInputRow({
                 onSelectionChange={() => {}}
                 onChangeText={handleWeightChange}
                 selectTextOnFocus={true}
-                onSwipeStart={handleSwipeStart}
-                onSwipeEnd={handleSwipeEnd}
                 onFocus={() => {
                   setActiveSetForCalc({ exId: ex.id, setId: set.id });
                   originalWeightRef.current = localWeight;
@@ -518,6 +521,7 @@ export function SetInputRow({
               ) : (
                 <CompactSwipeableInput 
                   inputRef={repsInputRef}
+                  panGestureRef={repsPanRef}
                   style={[styles.input, { width: 70 }]} 
                   keyboardType="numeric" 
                   step={1}
@@ -528,8 +532,6 @@ export function SetInputRow({
                   onSelectionChange={() => {}}
                   onChangeText={handleRepsChange}
                   selectTextOnFocus={true}
-                  onSwipeStart={handleSwipeStart}
-                  onSwipeEnd={handleSwipeEnd}
                   onFocus={() => {
                     originalRepsRef.current = localReps;
                     if (localReps === '') setRepsSel({ start: 0, end: 0 });
@@ -554,6 +556,7 @@ export function SetInputRow({
             ) : (
               <CompactSwipeableInput 
                 inputRef={repsInputRef}
+                panGestureRef={repsPanRef}
                 style={[styles.input, { width: 70 }]} 
                 keyboardType="numeric" 
                 step={1}
@@ -564,8 +567,6 @@ export function SetInputRow({
                 onSelectionChange={() => {}}
                 onChangeText={handleRepsChange}
                 selectTextOnFocus={true}
-                onSwipeStart={handleSwipeStart}
-                onSwipeEnd={handleSwipeEnd}
                 onFocus={() => {
                   originalRepsRef.current = localReps;
                   if (localReps === '') setRepsSel({ start: 0, end: 0 });
@@ -612,6 +613,7 @@ export function SetInputRow({
               ) : (
                 <CompactSwipeableInput 
                   inputRef={rpeInputRef}
+                  panGestureRef={rpePanRef}
                   style={[styles.input, { width: 55 }]} 
                   keyboardType="numeric" 
                   step={0.5}
@@ -637,8 +639,6 @@ export function SetInputRow({
                     }
                   }}
                   selectTextOnFocus={true}
-                  onSwipeStart={handleSwipeStart}
-                  onSwipeEnd={handleSwipeEnd}
                   onFocus={() => {
                     originalRpeRef.current = localRpe;
                     if (localRpe === '') setRpeSel({ start: 0, end: 0 });
@@ -688,7 +688,7 @@ export function SetInputRow({
             <Ionicons name="checkmark" size={16} color={set.is_completed ? '#fff' : Theme.colors.textMuted} />
           </GHTouchableOpacity>
         </View>
-      </Pressable>
+      </View>
       
       {/* Meta Row (Variation & RM & Time & PR) - 筋トレ種目のみ表示 */}
       {!isAerobic && !isTreadmill && (

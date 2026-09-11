@@ -11,21 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.1.8',
+  version: '2.1.14',
   title: {
-    ja: '🏃 トレッドミルの速度・傾斜設定と手動時間入力に対応',
-    en: '🏃 Treadmill Speed, Incline & Manual Duration Settings',
+    ja: '🎉 ワークアウト数値スワイプ入力の完全復旧',
+    en: '🎉 Core Fix for Workout Input Swipe Adjustments',
   },
   notes: {
     ja: [
-      'トレッドミル種目でスピード（km/h）と傾斜（%）を設定・記録できるようになりました。',
-      '走行時間を手動で素早く設定できる時間入力モーダル（クイックボタン付）を追加しました。',
-      'ルーティンの作成・編集画面でもトレッドミルの目標スピードや傾斜をプリセット可能です。',
+      'キーボード非表示時に入力枠を純粋なテキスト表示に切り替え、Androidネイティブによるスワイプ中断を解消しました。',
+      '指をなぞるスワイプ操作での重量・回数・RPEのリアルタイム増減が確実に動作します。',
+      'Enterキー（→|）による入力欄のスムーズな自動移動も完全連動しています。',
     ],
     en: [
-      'Added speed (km/h) and incline (%) tracking for treadmill exercises.',
-      'Added manual duration setting modal with quick preset buttons.',
-      'Supports presetting target treadmill speed and incline in routines.',
+      'Decoupled native text input during idle state to prevent Android gesture cancellation.',
+      'Swipe-to-adjust for weight, reps, and RPE is now fully operational.',
+      'Seamless Enter (Next) key navigation is fully synchronized.',
     ],
   },
 };
