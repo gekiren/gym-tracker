@@ -10,6 +10,7 @@ import {
 import i18next from 'i18next';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useSettingsStore } from '../store/settingsStore';
+import { getLatestMealLog } from '../utils/nutritionUtils';
 
 // Cloudflare Workers AI Proxy API Endpoint URL
 const WORKER_URL = 'https://gym-tracker-ai-proxy.toshi-diyil.workers.dev/api/chat';
@@ -487,7 +488,7 @@ export const analyzeAutophagyRecommendation = async (
     mealSummaryList.push(`${idx + 1}. [${timeStr}] ${m.name} (${cal}kcal, P:${Math.round(p)}g, F:${Math.round(f)}g, C:${Math.round(c)}g)`);
   });
 
-  const lastMeal = mealLogs[mealLogs.length - 1];
+  const lastMeal = getLatestMealLog(mealLogs) || mealLogs[mealLogs.length - 1];
   const lastMealTimeStr = lastMeal.meal_time || (lastMeal.created_at ? new Date(lastMeal.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '直近');
 
   const promptMessage = `あなたは栄養学・オートファジー（自食作用）に詳しいAI専門トレーナーです。

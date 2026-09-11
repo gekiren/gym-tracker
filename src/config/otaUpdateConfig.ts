@@ -11,21 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.1.6',
+  version: '2.1.7',
   title: {
-    ja: '🛠️ ワークアウトセット入力のスワイプ操作の改善',
-    en: '🛠️ Improved Workout Set Swipe-to-Adjust Interaction',
+    ja: '⏳ オートファジータイマーの記録時間同期への改善',
+    en: '⏳ Improved Autophagy Timer Sync with Logged Meal Times',
   },
   notes: {
     ja: [
-      'ワークアウト中の数値スワイプ入力（重量・回数・RPE）の動作を改善しました。',
-      'キーボードを閉じた後もスムーズにスワイプ操作できるよう連動を最適化しました。',
-      '行スワイプ削除との干渉防止およびスワイプ感度の向上を行いました。',
+      '食事を後から記録した際、操作時間ではなく記録された食事時間を基準にオートファジー絶食タイマーが正しく同期されるよう改善しました。',
+      '過去の食事ログを後から追加・編集した場合でも、最新の食事時刻が正しく判定されるよう最適化しました。',
+      'タイマー表示部に最終食事の記録時刻バッジを表示し、食事一覧を時間順に整列しました。',
     ],
     en: [
-      'Improved swipe-to-adjust behavior for workout sets (weight, reps, RPE).',
-      'Optimized keyboard dismissal sync for smooth swipe interaction.',
-      'Resolved gesture conflict with row swipe deletion and improved swipe sensitivity.',
+      'Fixed autophagy fasting timer to sync with actual logged meal times rather than entry timestamps.',
+      'Optimized latest meal calculation when adding or editing past meal records.',
+      'Added last meal time badge to timer display and sorted meal logs chronologically.',
     ],
   },
 };

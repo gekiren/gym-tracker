@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AutophagyConfig, MealLog } from '../../src/db/types';
 import { getMealLogsLast24Hours } from '../../src/db/database';
 import { analyzeAutophagyRecommendation, AutophagyAIProposal } from '../../src/services/aiCoachService';
+import { getMealDateTime } from '../../src/utils/nutritionUtils';
 import AutophagyAiModal from './AutophagyAiModal';
 
 interface Props {
@@ -37,15 +38,39 @@ export default function AutophagyCard({ config, lastMealLog, onUpdateConfig }: P
     return () => clearInterval(timer);
   }, [config.enabled, config.start_time]);
 
-  // 最終食事時間との自動同期
+  // 最終食事時間との自動同期（操作時間 created_at ではなく実際の記録時間 meal_time / date を基準）
+  const lastMealTimestamp = lastMealLog ? getMealDateTime(lastMealLog).getTime() : null;
+
   useEffect(() => {
-    if (config.auto_sync_with_last_meal && lastMealLog && lastMealLog.created_at) {
-      const lastMealIso = new Date(lastMealLog.created_at).toISOString();
+    if (config.auto_sync_with_last_meal && lastMealLog) {
+      const mealDateTime = getMealDateTime(lastMealLog);
+      const lastMealIso = mealDateTime.toISOString();
       if (config.start_time !== lastMealIso) {
         onUpdateConfig({ ...config, start_time: lastMealIso, notified: false });
       }
     }
-  }, [lastMealLog?.created_at, config.auto_sync_with_last_meal, config.start_time]);
+  }, [lastMealTimestamp, config.auto_sync_with_last_meal, config.start_time]);
+
+  // 開始時刻（最終食事時刻）の表示用フォーマット
+  const startTimeLabel = useMemo(() => {
+    if (!config.start_time) return '';
+    try {
+      const d = new Date(config.start_time);
+      if (isNaN(d.getTime())) return '';
+      const now = new Date();
+      const isSameDay =
+        d.getFullYear() === now.getFullYear() &&
+        d.getMonth() === now.getMonth() &&
+        d.getDate() === now.getDate();
+      const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      if (isSameDay) {
+        return timeStr;
+      }
+      return `${d.getMonth() + 1}/${d.getDate()} ${timeStr}`;
+    } catch {
+      return '';
+    }
+  }, [config.start_time]);
 
   const targetSeconds = (config.target_hours || 16) * 3600;
   const progressPct = Math.min(100, Math.round((elapsedSeconds / targetSeconds) * 100));
@@ -131,8 +156,15 @@ export default function AutophagyCard({ config, lastMealLog, onUpdateConfig }: P
       </View>
 
       <View style={styles.timerDisplay}>
-        <Text style={styles.timeText}>{formatHMS(elapsedSeconds)}</Text>
-        <Text style={styles.targetText}>/ {config.target_hours}:00:00</Text>
+        <View style={styles.timerLeft}>
+          <Text style={styles.timeText}>{formatHMS(elapsedSeconds)}</Text>
+          <Text style={styles.targetText}>/ {config.target_hours}:00:00</Text>
+        </View>
+        {startTimeLabel ? (
+          <View style={styles.startTimeBadge}>
+            <Text style={styles.startTimeBadgeText}>🍽️ 最終食事 {startTimeLabel}</Text>
+          </View>
+        ) : null}
       </View>
 
       {/* プログレスバー */}
@@ -214,9 +246,19 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   title: { fontSize: 14, fontWeight: '700', color: '#f8fafc' },
   titleOff: { fontSize: 14, fontWeight: '600', color: '#64748b' },
-  timerDisplay: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginVertical: 8 },
+  timerDisplay: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 8 },
+  timerLeft: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
   timeText: { fontSize: 24, fontWeight: '800', color: '#4facfe' },
   targetText: { fontSize: 13, color: '#64748b' },
+  startTimeBadge: {
+    backgroundColor: '#0f172a',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  startTimeBadgeText: { fontSize: 11, fontWeight: '600', color: '#94a3b8' },
   progressBg: { height: 8, backgroundColor: '#0f172a', borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
   progressFill: { height: '100%', borderRadius: 4 },
   statusRow: { marginBottom: 10 },
