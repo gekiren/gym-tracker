@@ -1,6 +1,7 @@
 import { getDB, getDBPromise, withDBQueue } from '../connection';
 import { translateExercise } from '../../i18n';
 import { WorkoutExercise, WorkoutRow, WorkoutExerciseRow, WorkoutSetRow, WorkoutSet, WorkoutWithStats, FullWorkoutData } from '../types';
+import { isTreadmillExercise } from '../../utils/exerciseUtils';
 
 export const saveWorkout = async (
   title: string,
@@ -52,9 +53,11 @@ export const saveWorkout = async (
         const safeRpe = sanitizeNum(set.rpe);
         const safeRestSecs = sanitizeNum(set.rest_seconds);
         const safeWorkSecs = sanitizeNum(set.work_seconds);
+        const safeSpeed = sanitizeNum(set.speed);
+        const safeIncline = sanitizeNum(set.incline);
 
         await conn.runAsync(
-          'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          'INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight, rpe, is_completed, rest_seconds, work_seconds, speed, incline, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
           [
             weId, 
             set.set_number, 
@@ -64,6 +67,8 @@ export const saveWorkout = async (
             1, 
             safeRestSecs, 
             safeWorkSecs, 
+            safeSpeed,
+            safeIncline,
             set.side || null, 
             set.variation || null, 
             set.stance || null
@@ -113,11 +118,13 @@ export const getExerciseHistory = async (exerciseId: number) => {
     rpe: number | null;
     rest_seconds: number | null;
     work_seconds: number | null;
+    speed: number | null;
+    incline: number | null;
     side: string | null;
     variation: string | null;
     stance: string | null;
   }>(`
-    SELECT w.id as workout_id, w.start_time, ws.set_number, ws.reps, ws.weight, ws.rpe, ws.rest_seconds, ws.work_seconds, ws.side, ws.variation, ws.stance
+    SELECT w.id as workout_id, w.start_time, ws.set_number, ws.reps, ws.weight, ws.rpe, ws.rest_seconds, ws.work_seconds, ws.speed, ws.incline, ws.side, ws.variation, ws.stance
     FROM workout_sets ws
     JOIN workout_exercises we ON ws.workout_exercise_id = we.id
     JOIN workouts w ON we.workout_id = w.id
@@ -142,6 +149,8 @@ export const getExerciseHistory = async (exerciseId: number) => {
       rpe: row.rpe,
       rest_seconds: row.rest_seconds,
       work_seconds: row.work_seconds,
+      speed: row.speed,
+      incline: row.incline,
       side: row.side,
       variation: row.variation,
       stance: row.stance
@@ -165,7 +174,7 @@ export const getPreviousWorkoutSets = async (exerciseId: number) => {
   if (!recentEx) return [];
 
   const sets = await conn.getAllAsync<WorkoutSet>(`
-    SELECT set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance
+    SELECT set_number, weight, reps, rpe, rest_seconds, work_seconds, speed, incline, side, variation, stance
     FROM workout_sets 
     WHERE workout_exercise_id = ? AND is_completed = 1
     ORDER BY set_number ASC, id ASC
@@ -228,7 +237,7 @@ export const loadFullWorkoutData = async (workoutId: number): Promise<FullWorkou
   const weIds = exercisesRows.map(e => e.workout_exercise_id);
   const placeholders = weIds.map(() => '?').join(',');
   const allSetsRows = await db.getAllAsync<WorkoutSetRow & { workout_exercise_id: number }>(
-    `SELECT id, workout_exercise_id, set_number, weight, reps, rpe, rest_seconds, work_seconds, side, variation, stance, is_completed 
+    `SELECT id, workout_exercise_id, set_number, weight, reps, rpe, rest_seconds, work_seconds, speed, incline, side, variation, stance, is_completed 
      FROM workout_sets 
      WHERE workout_exercise_id IN (${placeholders}) AND is_completed = 1
      ORDER BY set_number ASC, id ASC`,
@@ -271,17 +280,44 @@ export const loadFullWorkoutData = async (workoutId: number): Promise<FullWorkou
   };
 };
 
-export const updateWorkoutSet = async (setId: number, weight: number | null, reps: number | null, rpe: number | null, variation?: string | null, stance?: string | null) => {
+export const updateWorkoutSet = async (
+  setId: number,
+  weight: number | null,
+  reps: number | null,
+  rpe: number | null,
+  variation?: string | null,
+  stance?: string | null,
+  speed?: number | null,
+  incline?: number | null,
+  work_seconds?: number | null
+) => {
   const conn = getDB();
-  if (stance !== undefined && variation !== undefined) {
-    await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ?, rpe = ?, variation = ?, stance = ? WHERE id = ?', [weight, reps, rpe, variation, stance, setId]);
-  } else if (stance !== undefined) {
-    await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ?, rpe = ?, stance = ? WHERE id = ?', [weight, reps, rpe, stance, setId]);
-  } else if (variation !== undefined) {
-    await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ?, rpe = ?, variation = ? WHERE id = ?', [weight, reps, rpe, variation, setId]);
-  } else {
-    await conn.runAsync('UPDATE workout_sets SET weight = ?, reps = ?, rpe = ? WHERE id = ?', [weight, reps, rpe, setId]);
+  const fields: string[] = ['weight = ?', 'reps = ?', 'rpe = ?'];
+  const values: any[] = [weight, reps, rpe];
+
+  if (variation !== undefined) {
+    fields.push('variation = ?');
+    values.push(variation);
   }
+  if (stance !== undefined) {
+    fields.push('stance = ?');
+    values.push(stance);
+  }
+  if (speed !== undefined) {
+    fields.push('speed = ?');
+    values.push(speed);
+  }
+  if (incline !== undefined) {
+    fields.push('incline = ?');
+    values.push(incline);
+  }
+  if (work_seconds !== undefined) {
+    fields.push('work_seconds = ?');
+    values.push(work_seconds);
+  }
+
+  values.push(setId);
+  await conn.runAsync(`UPDATE workout_sets SET ${fields.join(', ')} WHERE id = ?`, values);
 };
 
 export const deleteWorkoutSet = async (setId: number) => {
@@ -323,6 +359,9 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
     side: string | null;
     variation: string | null;
     stance: string | null;
+    speed: number | null;
+    incline: number | null;
+    work_seconds: number | null;
   }
 
   const rows = await conn.getAllAsync<FlatRow>(`
@@ -341,7 +380,10 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
       ws.rpe,
       ws.side,
       ws.variation,
-      ws.stance
+      ws.stance,
+      ws.speed,
+      ws.incline,
+      ws.work_seconds
     FROM (
       SELECT id, title, start_time, end_time, notes
       FROM workouts
@@ -366,6 +408,9 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
     side: string | null;
     variation: string | null;
     stance: string | null;
+    speed: number | null;
+    incline: number | null;
+    work_seconds: number | null;
   }
 
   interface ExerciseData {
@@ -427,7 +472,10 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
       rpe: r.rpe,
       side: r.side,
       variation: r.variation,
-      stance: r.stance
+      stance: r.stance,
+      speed: r.speed,
+      incline: r.incline,
+      work_seconds: r.work_seconds
     });
   }
 
@@ -455,6 +503,23 @@ export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<s
 
       if (ex.sets.length === 0) {
         summary += "セット記録なし\n";
+        continue;
+      }
+
+      if (isTreadmillExercise(ex.exercise_name)) {
+        const treadmillSummaries = ex.sets.map(s => {
+          let desc = '';
+          if (s.speed != null) desc += `${s.speed}km/h`;
+          if (s.incline != null) desc += `${desc ? ' ' : ''}(傾斜${s.incline}%)`;
+          if (s.work_seconds != null) {
+            const m = Math.floor(s.work_seconds / 60);
+            const sec = s.work_seconds % 60;
+            const timeStr = `${m}:${sec.toString().padStart(2, '0')}`;
+            desc += `${desc ? ' × ' : ''}${timeStr}`;
+          }
+          return desc || '-';
+        });
+        summary += treadmillSummaries.join(', ') + '\n';
         continue;
       }
 

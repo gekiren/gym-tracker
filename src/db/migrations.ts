@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 
-export const DATABASE_VERSION = 12;
+export const DATABASE_VERSION = 13;
 
 export interface Migration {
   version: number;
@@ -266,6 +266,16 @@ export const MIGRATIONS: Migration[] = [
         CREATE INDEX IF NOT EXISTS idx_workout_sets_we_completed ON workout_sets(workout_exercise_id, is_completed);
         CREATE INDEX IF NOT EXISTS idx_workouts_start_time ON workouts(start_time DESC);
       `);
+    },
+  },
+  {
+    version: 13,
+    up: async (db) => {
+      // トレッドミル等のスピード・傾斜記録用カラムの追加
+      await safeAddColumn(db, 'workout_sets', 'speed', 'REAL');
+      await safeAddColumn(db, 'workout_sets', 'incline', 'REAL');
+      await safeAddColumn(db, 'routine_sets', 'speed', 'REAL');
+      await safeAddColumn(db, 'routine_sets', 'incline', 'REAL');
     },
   },
 ];

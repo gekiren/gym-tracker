@@ -6,8 +6,12 @@ export interface DraftExerciseSet {
   weight: number | null;
   reps: number | null;
   rpe: number | null;
+  speed?: number | null;
+  incline?: number | null;
+  work_seconds?: number | null;
   side?: 'L' | 'R' | null;
   variation?: string | null;
+  stance?: string | null;
 }
 
 export interface DraftExercise {
@@ -44,7 +48,10 @@ export const useRoutineDraftStore = create<RoutineDraftState>((set) => ({
       set_number: 1,
       weight: null,
       reps: null,
-      rpe: null
+      rpe: null,
+      speed: null,
+      incline: null,
+      work_seconds: null
     };
     const enrichedExercise: DraftExercise = {
       id: exercise.id,
@@ -73,7 +80,10 @@ export const useRoutineDraftStore = create<RoutineDraftState>((set) => ({
           set_number: nextNum,
           weight: lastSet ? lastSet.weight : null,
           reps: lastSet ? lastSet.reps : null,
-          rpe: lastSet ? lastSet.rpe : null
+          rpe: lastSet ? lastSet.rpe : null,
+          speed: lastSet ? (lastSet.speed ?? null) : null,
+          incline: lastSet ? (lastSet.incline ?? null) : null,
+          work_seconds: lastSet ? (lastSet.work_seconds ?? null) : null
         };
         return { ...ex, sets: [...ex.sets, newSet] };
       }

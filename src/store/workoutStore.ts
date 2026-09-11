@@ -13,6 +13,10 @@ export type SetRecord = {
   rpe: number | null;
   prev_weight?: number | null;
   prev_reps?: number | null;
+  speed?: number | null;
+  incline?: number | null;
+  prev_speed?: number | null;
+  prev_incline?: number | null;
   completedAt?: number;
   is_completed: boolean;
   rest_seconds?: number | null;
@@ -238,6 +242,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
                 weight: lastL ? lastL.weight : (lastSet ? lastSet.weight : null),
                 reps: lastL ? lastL.reps : (lastSet ? lastSet.reps : null),
                 rpe: lastL ? lastL.rpe : (lastSet ? lastSet.rpe : null),
+                speed: lastL ? lastL.speed : (lastSet ? lastSet.speed : null),
+                incline: lastL ? lastL.incline : (lastSet ? lastSet.incline : null),
                 is_completed: false,
                 rest_seconds: null,
                 work_seconds: null,
@@ -251,6 +257,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
                 weight: lastR ? lastR.weight : (lastSet ? lastSet.weight : null),
                 reps: lastR ? lastR.reps : (lastSet ? lastSet.reps : null),
                 rpe: lastR ? lastR.rpe : (lastSet ? lastSet.rpe : null),
+                speed: lastR ? lastR.speed : (lastSet ? lastSet.speed : null),
+                incline: lastR ? lastR.incline : (lastSet ? lastSet.incline : null),
                 is_completed: false,
                 rest_seconds: null,
                 work_seconds: null,
@@ -269,6 +277,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
               weight: lastSet ? lastSet.weight : null,
               reps: lastSet ? lastSet.reps : null,
               rpe: lastSet ? lastSet.rpe : null,
+              speed: lastSet ? lastSet.speed : null,
+              incline: lastSet ? lastSet.incline : null,
               is_completed: false,
               rest_seconds: null,
               work_seconds: null,
@@ -365,15 +375,21 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
               if (s.id === setId) {
                 let finalWeight = s.weight;
                 let finalReps = s.reps;
+                let finalSpeed = s.speed;
+                let finalIncline = s.incline;
                 if (willBeCompleted) {
                   if (finalWeight === null && s.prev_weight != null) finalWeight = s.prev_weight;
                   if (finalReps === null && s.prev_reps != null) finalReps = s.prev_reps;
+                  if (finalSpeed === null && s.prev_speed != null) finalSpeed = s.prev_speed;
+                  if (finalIncline === null && s.prev_incline != null) finalIncline = s.prev_incline;
                 }
                 return { 
                   ...s, 
                   is_completed: willBeCompleted, 
                   weight: finalWeight,
                   reps: finalReps,
+                  speed: finalSpeed,
+                  incline: finalIncline,
                   completedAt: willBeCompleted ? now : undefined,
                   rest_seconds: willBeCompleted ? restSeconds : null,
                   work_seconds: willBeCompleted 

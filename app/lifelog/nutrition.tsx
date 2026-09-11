@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,13 @@ import { useTranslation } from 'react-i18next';
 import { Theme, useAppTheme } from '../../src/theme';
 import { useNutritionStore } from '../../src/store/nutritionStore';
 import { MealLog, MealFavorite, NutritionGoals, AutophagyConfig } from '../../src/db/types';
-import { getDefaultMealType, getCurrentTimeStr } from '../../src/utils/nutritionUtils';
+import {
+  getDefaultMealType,
+  getCurrentTimeStr,
+  getMealDateTime,
+  getLatestMealLog,
+  sortMealLogsByTime,
+} from '../../src/utils/nutritionUtils';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useFeatureSwipe } from '../../src/hooks/useFeatureSwipe';
 
@@ -182,7 +188,24 @@ export default function NutritionScreen() {
     }
   };
 
-  const lastMealLog = mealLogs.length > 0 ? mealLogs[mealLogs.length - 1] : null;
+  // 食事時間順（朝→昼→夕）にソートした食事ログ一覧
+  const sortedMealLogs = useMemo(() => {
+    return sortMealLogsByTime(mealLogs || []);
+  }, [mealLogs]);
+
+  // 直近の最終食事ログ（記録時間ベースで最新の食事）
+  const lastMealLog = useMemo(() => {
+    // 選択日（本日）の食事ログがあれば、その中で記録時間が最新の食事
+    if (mealLogs && mealLogs.length > 0) {
+      return getLatestMealLog(mealLogs);
+    }
+    // 本日の食事がまだない場合、全履歴から現在時刻以前の最新食事を探索
+    if (allHistoryLogs && allHistoryLogs.length > 0) {
+      const nowMs = Date.now();
+      return getLatestMealLog(allHistoryLogs, nowMs);
+    }
+    return null;
+  }, [mealLogs, allHistoryLogs]);
 
   const safeGoals: NutritionGoals = userGoals || {
     calories: 2000,
@@ -317,7 +340,7 @@ export default function NutritionScreen() {
           <ActivityIndicator size="large" color="#4facfe" style={{ marginVertical: 20 }} />
         ) : (
           <MealLogList
-            mealLogs={mealLogs}
+            mealLogs={sortedMealLogs}
             onDeleteMeal={(id) => setDeletingMealId(id)}
             onEditMeal={(log) => setEditingLog(log)}
             onPreviewPhoto={(log) => setPreviewLog(log)}
