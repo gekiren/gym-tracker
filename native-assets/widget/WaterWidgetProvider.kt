@@ -85,7 +85,7 @@ class WaterWidgetProvider : AppWidgetProvider() {
         // 背景/全体タップ時のPendingIntent設定 (アプリ起動 -> 水分補給画面へ)
         val clickIntent = Intent(Intent.ACTION_VIEW).apply {
             data = Uri.parse("gymtracker://lifelog/water")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val clickFlag = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE

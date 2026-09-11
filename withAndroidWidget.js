@@ -389,8 +389,19 @@ const withAndroidWidget = (config) => {
       if (fs.existsSync(mainActivityPath)) {
         let content = fs.readFileSync(mainActivityPath, 'utf8');
 
-        // Always ensure clean updateWidgets without Zikan Large
+        // Always ensure clean updateWidgets without Zikan Large, plus onNewIntent and onDestroy intent reset
         const injectedCode = `
+  override fun onNewIntent(intent: Intent?) {
+    super.onNewIntent(intent)
+    setIntent(intent)
+  }
+
+  override fun onDestroy() {
+    // 再起動（recreate / reloadAsync）時に古いディープリンク Intent が引き継がれないようクリーンな Intent にリセット
+    intent = Intent(this, MainActivity::class.java)
+    super.onDestroy()
+  }
+
   override fun onResume() {
     super.onResume()
     updateWidgets()
@@ -428,7 +439,7 @@ const withAndroidWidget = (config) => {
 
         // Replace existing updateWidgets block or inject new
         if (content.includes('private fun updateWidgets()')) {
-          content = content.replace(/\n\s*override fun onResume\(\)[\s\S]*?private fun updateWidgets\(\)[\s\S]*?\}\s*\}/, `${injectedCode}\n}`);
+          content = content.replace(/\n\s*(?:override fun onNewIntent[\s\S]*?)?override fun onResume\(\)[\s\S]*?private fun updateWidgets\(\)[\s\S]*?\}\s*\}/, `${injectedCode}\n}`);
           fs.writeFileSync(mainActivityPath, content, 'utf8');
           console.log('[withAndroidWidget] Updated MainActivity.kt updateWidgets.');
         } else {

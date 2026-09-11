@@ -177,6 +177,20 @@ export default function RootLayout() {
           });
       }
 
+      // 6.6 OTA再起動フラグの判定とトップ画面（ダッシュボード）確実化
+      const isOtaReload = storedSettings['ota_reload_in_progress'] === '1';
+      if (isOtaReload) {
+        await saveSetting('ota_reload_in_progress', '0');
+        console.log('[OTA] Detected reload after OTA update. Enforcing top-level Dashboard navigation.');
+        setTimeout(() => {
+          try {
+            router.replace('/');
+          } catch (navErr) {
+            console.warn('Failed to force navigate to / after OTA reload:', navErr);
+          }
+        }, 150);
+      }
+
       console.log('Database initialized successfully with settings', storedSettings);
       setDbReady(true);
 
