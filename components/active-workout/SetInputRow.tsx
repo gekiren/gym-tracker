@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Pressable, Alert, StyleSheet, Keyboard } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
@@ -74,6 +74,11 @@ export function SetInputRow({
   const [localWeight, setLocalWeight] = useState(set.weight != null ? String(set.weight) : '');
   const [localReps, setLocalReps] = useState(set.reps != null ? String(set.reps) : '');
   const [localRpe, setLocalRpe] = useState(set.rpe != null ? String(set.rpe) : '');
+
+  // 入力欄のスワイプ中に親の行削除スワイプが誤動作・競合するのを防止
+  const [rowSwipeEnabled, setRowSwipeEnabled] = useState(true);
+  const handleSwipeStart = useCallback(() => setRowSwipeEnabled(false), []);
+  const handleSwipeEnd = useCallback(() => setRowSwipeEnabled(true), []);
 
   const [weightSel, setWeightSel] = useState<{ start: number; end: number } | undefined>(undefined);
   const [repsSel, setRepsSel] = useState<{ start: number; end: number } | undefined>(undefined);
@@ -210,6 +215,7 @@ const safeParseInt = (val: string): number | null => {
 
   return (
     <Swipeable
+      enabled={rowSwipeEnabled}
       renderLeftActions={(progress, drag) => <RowDeleteActionLeft drag={drag} onPress={handleLongPress} />}
       renderRightActions={(progress, drag) => <RowDeleteActionRight drag={drag} onPress={handleLongPress} />}
       friction={2}
@@ -288,6 +294,8 @@ const safeParseInt = (val: string): number | null => {
                 onSelectionChange={() => {}}
                 onChangeText={handleWeightChange}
                 selectTextOnFocus={true}
+                onSwipeStart={handleSwipeStart}
+                onSwipeEnd={handleSwipeEnd}
                 onFocus={() => {
                   setActiveSetForCalc({ exId: ex.id, setId: set.id });
                   originalWeightRef.current = localWeight;
@@ -326,6 +334,8 @@ const safeParseInt = (val: string): number | null => {
                   onSelectionChange={() => {}}
                   onChangeText={handleRepsChange}
                   selectTextOnFocus={true}
+                  onSwipeStart={handleSwipeStart}
+                  onSwipeEnd={handleSwipeEnd}
                   onFocus={() => {
                     originalRepsRef.current = localReps;
                     if (localReps === '') setRepsSel({ start: 0, end: 0 });
@@ -360,6 +370,8 @@ const safeParseInt = (val: string): number | null => {
                 onSelectionChange={() => {}}
                 onChangeText={handleRepsChange}
                 selectTextOnFocus={true}
+                onSwipeStart={handleSwipeStart}
+                onSwipeEnd={handleSwipeEnd}
                 onFocus={() => {
                   originalRepsRef.current = localReps;
                   if (localReps === '') setRepsSel({ start: 0, end: 0 });
@@ -431,6 +443,8 @@ const safeParseInt = (val: string): number | null => {
                     }
                   }}
                   selectTextOnFocus={true}
+                  onSwipeStart={handleSwipeStart}
+                  onSwipeEnd={handleSwipeEnd}
                   onFocus={() => {
                     originalRpeRef.current = localRpe;
                     if (localRpe === '') setRpeSel({ start: 0, end: 0 });

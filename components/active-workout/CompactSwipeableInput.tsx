@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
-import { View, Text, StyleSheet, TextInput, Platform, StyleProp, ViewStyle, TextStyle } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Platform, StyleProp, ViewStyle, TextStyle, Keyboard } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -37,6 +37,8 @@ interface CompactSwipeableInputProps {
   inputRef?: React.RefObject<any>;
   disabled?: boolean;
   keyboardType?: 'numeric' | 'decimal-pad' | 'number-pad';
+  onSwipeStart?: () => void;
+  onSwipeEnd?: () => void;
 }
 
 export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, CompactSwipeableInputProps>(({
@@ -60,10 +62,22 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   inputRef,
   disabled = false,
   keyboardType = 'numeric',
+  onSwipeStart,
+  onSwipeEnd,
 }, ref) => {
   const [isEditing, setIsEditing] = useState(false);
   const isKeyboardVisible = useIsKeyboardVisible();
   const localInputRef = useRef<TextInput>(null);
+
+  // ソフトウェアキーボードが閉じた際（Androidの戻るボタン等を含む）、フォーカスと編集モードを確実に解除
+  useEffect(() => {
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setIsEditing(false);
+      localInputRef.current?.blur();
+    });
+    return () => hideSub.remove();
+  }, []);
 
   // Android等で controlled value が再レンダリングされた際に、キーストロークごとに全選択が再発火するのを防止
   const [shouldSelectOnFocus, setShouldSelectOnFocus] = useState(selectTextOnFocus);
@@ -128,12 +142,16 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
 
   const panGesture = Gesture.Pan()
     .enabled(!disabled && !isEditing && !isKeyboardVisible)
-    .activeOffsetX([-8, 8])
-    .failOffsetY([-12, 12])
+    .activeOffsetX([-6, 6])
+    .failOffsetY([-25, 25])
     .onStart(() => {
+      if (onSwipeStart) {
+        runOnJS(onSwipeStart)();
+      }
       let parsed = parseFloat(value.replace(',', '.'));
       if (isNaN(parsed) || value === '') {
-        parsed = 0;
+        const placeholderNum = parseFloat(String(placeholder).replace(',', '.').replace(/[^\d.]/g, ''));
+        parsed = !isNaN(placeholderNum) && placeholderNum > 0 ? placeholderNum : 0;
       }
       startValue.value = parsed;
 
@@ -174,9 +192,12 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
         }
       }
     })
-    .onEnd(() => {
+    .onFinalize(() => {
       isDragging.value = false;
       translationX.value = withTiming(0, { duration: 150 });
+      if (onSwipeEnd) {
+        runOnJS(onSwipeEnd)();
+      }
     });
 
   const tapGesture = Gesture.Tap()
