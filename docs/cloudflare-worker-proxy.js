@@ -186,11 +186,13 @@ export default {
   "advice": "筋トレや健康管理に役立つプロの短文アドバイス（100文字程度）"
 }`;
 
-        // Google公式実在モデルによる高速多重冗長化: gemini-3.7-flash ➔ gemini-3.6-flash ➔ gemini-3.5-flash ➔ gemini-3.5-flash-lite ➔ gemini-3.1-flash-lite ➔ gemini-flash-lite-latest
-        // 2段階高速・安定モデル構成: gemini-3.5-flash-lite ➔ gemini-2.5-flash-lite
+        // 無料枠 500 RPD の Flash-Lite を最優先とし、タイムアウト 25秒で画像認識を完全安定化
         const geminiModels = [
-          "gemini-3.5-flash-lite",
-          "gemini-2.5-flash-lite"
+          "gemini-3.5-flash-lite",    // 500 RPD (主力 / 安定版)
+          "gemini-3.1-flash-lite",    // 500 RPD (セカンダリ / 高速版)
+          "gemini-flash-lite-latest",  // 最新Lite (フォールバック)
+          "gemini-3.7-flash",         // 20 RPD (高品質切り札)
+          "gemini-3.6-flash"          // 20 RPD (最終フォールバック)
         ];
 
         // Gemma 実験モデルの優先注入（ステージング設定対応）
@@ -209,8 +211,8 @@ export default {
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
             
             try {
-              // 各モデル12秒（Gemmaは25秒）でタイムアウト制御
-              const timeoutMs = modelName.includes('gemma') ? 25000 : 12000;
+              // 各モデル25秒でタイムアウト制御（画像認識を確実に待機）
+              const timeoutMs = 25000;
               const generationConfig = { 
                 maxOutputTokens: 2048,
                 responseMimeType: "application/json"
@@ -314,10 +316,11 @@ export default {
   "advice": "栄養アドバイス"
 }`;
 
-        // テキスト栄養解析専用モデル構成: gemini-3.5-flash-lite ➔ gemini-2.5-flash-lite
+        // テキスト栄養解析専用モデル構成: gemini-3.5-flash-lite ➔ gemini-3.1-flash-lite ➔ gemini-flash-lite-latest
         const geminiModels = [
           "gemini-3.5-flash-lite",
-          "gemini-2.5-flash-lite"
+          "gemini-3.1-flash-lite",
+          "gemini-flash-lite-latest"
         ];
 
         // Gemma 実験モデルの優先注入（ステージング設定対応）
@@ -334,8 +337,8 @@ export default {
           for (const modelName of activeModels) {
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.GEMINI_API_KEY}`;
             try {
-              // 各モデル12秒（Gemmaは25秒）でタイムアウト制御
-              const timeoutMs = modelName.includes('gemma') ? 25000 : 12000;
+              // 各モデル20秒でタイムアウト制御
+              const timeoutMs = 20000;
               const response = await fetchWithTimeout(geminiUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -455,11 +458,11 @@ export default {
       const aiMode = payload.ai_mode || payload.aiMode || "quick";
       const isThinkingMode = aiMode === "thinking";
 
-      // 思考対話: gemini-3.5-flash ➔ gemini-3.5-flash-lite ➔ gemini-2.5-flash-lite
-      // クイック対話: gemini-3.5-flash-lite ➔ gemini-2.5-flash-lite
+      // 思考対話: gemini-3.5-flash ➔ gemini-3.5-flash-lite ➔ gemini-3.1-flash-lite
+      // クイック対話: gemini-3.5-flash-lite ➔ gemini-3.1-flash-lite ➔ gemini-flash-lite-latest
       const geminiModels = isThinkingMode
-        ? ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash-lite"]
-        : ["gemini-3.5-flash-lite", "gemini-2.5-flash-lite"];
+        ? ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]
+        : ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"];
 
       // Gemma 実験モデルの優先注入 (gemma-4-26b-a4b-it最優先 ➔ Geminiチェーン)
       let activeModels = [...geminiModels];

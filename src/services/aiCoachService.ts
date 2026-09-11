@@ -356,7 +356,7 @@ export const analyzeMealImage = async (
   preferredModel?: string
 ): Promise<NutritionAIResult> => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 28000);
+  const timeoutId = setTimeout(() => controller.abort(), 38000);
 
   const activeModel = preferredModel || useSettingsStore.getState().settings.preferredAiModel || 'gemini-3.5-flash-lite';
 

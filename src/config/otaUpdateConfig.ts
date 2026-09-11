@@ -11,21 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.1.15',
+  version: '2.1.17',
   title: {
-    ja: '🥗 食事編集における食べた量の倍率変更に対応',
-    en: '🥗 Portion Multiplier Support for Meal Log Editing',
+    ja: '⚡ 写真解析のタイムアウト延長・通信安定化',
+    en: '⚡ Nutrition Vision Timeout Extension & Stability',
   },
   notes: {
     ja: [
-      '記録済みの食事ログを編集する際、食べた量の倍率（0.5倍〜2.0倍・自由入力）を変更できるようになりました。',
-      '倍率を変更するとカロリーやPFCバランスなどの栄養素が自動で再計算されます。',
-      '手動微調整や基準値（1.0倍）への復元にも柔軟に対応しています。',
+      '画像栄養解析時のタイムアウト時間を延長し、大容量の写真でも途中で途切れず確実に解析できるよう改善しました。',
+      'AIプロキシサーバーのモデル自動切替を強化し、安定した無料枠モデル（500回/日）を最優先に活用します。',
     ],
     en: [
-      'Added portion multiplier options (0.5x to 2.0x & custom) when editing existing meal logs.',
-      'Nutritional values such as calories and macros automatically recalculate based on the selected multiplier.',
-      'Supports manual adjustments and accurate restoration to the base serving (1.0x).',
+      'Extended client and server timeouts for image nutrition analysis, preventing interrupted requests on large images.',
+      'Enhanced AI proxy fallback chain, prioritizing high-quota free-tier models (500 requests/day).',
     ],
   },
 };
