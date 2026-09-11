@@ -11,19 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.1.2',
+  version: '2.1.3',
   title: {
-    ja: '⚡ 種目詳細画面の読み込み・表示速度を大幅改善',
-    en: '⚡ Major performance improvements for exercise details',
+    ja: '🛠️ ワークアウトセット入力の操作性改善・不具合修正',
+    en: '🛠️ Workout Set Input Fixes & Usability Improvements',
   },
   notes: {
     ja: [
-      'データ量が多い種目でも、種目詳細画面への遷移が瞬時に開くように高速化しました。',
-      'データベースの最適化（インデックス追加・並行読み込み）および段階的表示により、スムーズな操作性を実現しました。',
+      'RPE入力で「10」と入力した際に0に置き換わってしまう不具合を修正しました。',
+      '重量やレップ数の入力時に、1文字目が消えて上書きされてしまう現象を解消し、スムーズに2桁以上の数値を入力できるよう改善しました。',
+      '入力枠フォーカス時に数字の上下が見切れてしまう表示不具合を修正しました。',
     ],
     en: [
-      'Significantly optimized loading and navigation speed for exercise detail screens with large histories.',
-      'Enhanced database indexing, parallel fetching, and progressive rendering for a smoother experience.',
+      'Fixed an issue where logging RPE as 10 would inadvertently reset to 0.',
+      'Resolved 2-digit input overwrite bugs for weight and reps, ensuring seamless multi-digit entry.',
+      'Fixed vertical text clipping inside set input fields while focused.',
     ],
   },
 };
