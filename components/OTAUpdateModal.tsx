@@ -6,6 +6,7 @@ import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import { CURRENT_OTA_CONFIG } from '../src/config/otaUpdateConfig';
 import { Ionicons } from '@expo/vector-icons';
 import i18n from '../src/i18n';
+import { saveSetting } from '../src/db/database';
 
 export const OTAUpdateModal = () => {
   const { isVisible, hideModal } = useOTAUpdateStore();
@@ -23,6 +24,7 @@ export const OTAUpdateModal = () => {
     hideModal();
     try {
       if (Updates.isEnabled && !__DEV__) {
+        await saveSetting('ota_reload_in_progress', '1');
         await Updates.reloadAsync();
       }
     } catch (e) {
