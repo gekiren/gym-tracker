@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Platform } from 'react-native';
+import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useTranslation } from 'react-i18next';
 import { useCallback } from 'react';
@@ -181,9 +182,9 @@ export default function ActiveWorkoutScreen() {
             />
           ))}
 
-          <TouchableOpacity style={styles.addExerciseBtn} onPress={handleAddExercise}>
+          <GHTouchableOpacity style={styles.addExerciseBtn} onPress={handleAddExercise} activeOpacity={0.7}>
             <Text style={styles.addExerciseBtnText}>{t('ui.active_workout.add_exercise_label')}</Text>
-          </TouchableOpacity>
+          </GHTouchableOpacity>
           <View style={{ height: 220 }} />
         </ScrollView>
       </KeyboardAvoidingWrapper>
@@ -193,7 +194,7 @@ export default function ActiveWorkoutScreen() {
 
       {/* Floating Manual Start Button (when not resting) */}
       {isWorkoutStarted && !restTimerActive && (
-        <View style={[styles.manualStartOverlay, { bottom: safeBottomOffset + 20 }]}>
+        <View style={[styles.manualStartOverlay, { bottom: safeBottomOffset + 20 }]} pointerEvents="box-none">
           <ResumeWorkoutButton
             lastRestFinishedAt={lastRestFinishedAt}
             onPress={() => {
