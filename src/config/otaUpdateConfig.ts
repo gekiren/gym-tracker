@@ -11,21 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.1.7',
+  version: '2.1.8',
   title: {
-    ja: '⏳ オートファジータイマーの記録時間同期への改善',
-    en: '⏳ Improved Autophagy Timer Sync with Logged Meal Times',
+    ja: '🏃 トレッドミルの速度・傾斜設定と手動時間入力に対応',
+    en: '🏃 Treadmill Speed, Incline & Manual Duration Settings',
   },
   notes: {
     ja: [
-      '食事を後から記録した際、操作時間ではなく記録された食事時間を基準にオートファジー絶食タイマーが正しく同期されるよう改善しました。',
-      '過去の食事ログを後から追加・編集した場合でも、最新の食事時刻が正しく判定されるよう最適化しました。',
-      'タイマー表示部に最終食事の記録時刻バッジを表示し、食事一覧を時間順に整列しました。',
+      'トレッドミル種目でスピード（km/h）と傾斜（%）を設定・記録できるようになりました。',
+      '走行時間を手動で素早く設定できる時間入力モーダル（クイックボタン付）を追加しました。',
+      'ルーティンの作成・編集画面でもトレッドミルの目標スピードや傾斜をプリセット可能です。',
     ],
     en: [
-      'Fixed autophagy fasting timer to sync with actual logged meal times rather than entry timestamps.',
-      'Optimized latest meal calculation when adding or editing past meal records.',
-      'Added last meal time badge to timer display and sorted meal logs chronologically.',
+      'Added speed (km/h) and incline (%) tracking for treadmill exercises.',
+      'Added manual duration setting modal with quick preset buttons.',
+      'Supports presetting target treadmill speed and incline in routines.',
     ],
   },
 };
