@@ -278,7 +278,7 @@ export function SetInputRow({
     }
   }
 
-  const handleLongPress = () => {
+  const handleDeleteSet = () => {
     if (set.is_completed) {
       Alert.alert(t('ui.active_workout.alert_delete_set_error_title'), t('ui.active_workout.alert_delete_set_error_message'));
       return;
@@ -296,23 +296,19 @@ export function SetInputRow({
   return (
     <Swipeable
       requireExternalGestureToFail={externalGesturesToFail}
-      renderLeftActions={(progress, drag) => <RowDeleteActionLeft drag={drag} onPress={handleLongPress} />}
-      renderRightActions={(progress, drag) => <RowDeleteActionRight drag={drag} onPress={handleLongPress} />}
+      renderLeftActions={(progress, drag) => <RowDeleteActionLeft drag={drag} onPress={handleDeleteSet} />}
+      renderRightActions={(progress, drag) => <RowDeleteActionRight drag={drag} onPress={handleDeleteSet} />}
       friction={2}
       leftThreshold={40}
       rightThreshold={40}
     >
       <View style={{ backgroundColor: Theme.colors.card }}>
-        <Pressable
-          style={[styles.row, set.is_completed && styles.rowCompleted]}
-          onLongPress={handleLongPress}
-          delayLongPress={500}
-        >
-        <View style={{ width: 44, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={styles.tdSet} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-            {set.set_number}{set.side ? `(${set.side})` : ''}
-          </Text>
-        </View>
+        <View style={[styles.row, set.is_completed && styles.rowCompleted]}>
+          <View style={{ width: 44, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={styles.tdSet} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+              {set.set_number}{set.side ? `(${set.side})` : ''}
+            </Text>
+          </View>
 
         {isTreadmill ? (
           /* トレッドミルモード: スピード(km/h) + 角度(%) + 時間 */
@@ -692,7 +688,7 @@ export function SetInputRow({
             <Ionicons name="checkmark" size={16} color={set.is_completed ? '#fff' : Theme.colors.textMuted} />
           </GHTouchableOpacity>
         </View>
-      </Pressable>
+      </View>
       
       {/* Meta Row (Variation & RM & Time & PR) - 筋トレ種目のみ表示 */}
       {!isAerobic && !isTreadmill && (
