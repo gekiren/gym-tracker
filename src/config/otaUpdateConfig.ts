@@ -11,19 +11,25 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.1.17',
+  version: '2.2.0',
   title: {
-    ja: '⚡ 写真解析のタイムアウト延長・通信安定化',
-    en: '⚡ Nutrition Vision Timeout Extension & Stability',
+    ja: '🚀 本体 v2.2.0 リリース',
+    en: '🚀 App v2.2.0 Release',
   },
   notes: {
     ja: [
-      '画像栄養解析時のタイムアウト時間を延長し、大容量の写真でも途中で途切れず確実に解析できるよう改善しました。',
-      'AIプロキシサーバーのモデル自動切替を強化し、安定した無料枠モデル（500回/日）を最優先に活用します。',
+      'トレッドミル種目で速度・傾斜の設定・記録に対応しました。',
+      '食事ログ編集で食べた量の倍率変更機能を追加しました。',
+      'AI写真栄養解析の撮影および通信安定性を向上させました。',
+      'ワークアウト中の数値入力およびスワイプ操作性を改善しました。',
+      'その他軽微な不具合修正とパフォーマンスを向上させました。',
     ],
     en: [
-      'Extended client and server timeouts for image nutrition analysis, preventing interrupted requests on large images.',
-      'Enhanced AI proxy fallback chain, prioritizing high-quota free-tier models (500 requests/day).',
+      'Added speed & incline tracking for treadmill exercises.',
+      'Added portion multiplier to meal log editor.',
+      'Enhanced AI photo nutrition analysis stability.',
+      'Improved workout input and swipe responsiveness.',
+      'Minor bug fixes and performance improvements.',
     ],
   },
 };
