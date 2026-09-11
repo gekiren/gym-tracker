@@ -12,6 +12,7 @@ import { useSettingsStore } from '../../src/store/settingsStore';
 import * as Clipboard from 'expo-clipboard';
 import { formatWorkoutToMarkdown } from '../../src/utils/markdownExport';
 import WorkoutShareModal from '../../components/WorkoutShareModal';
+import { isTreadmillExercise } from '../../src/utils/exerciseUtils';
 
 export default function WorkoutDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -156,48 +157,81 @@ export default function WorkoutDetailsScreen() {
                 </View>
               ) : null}
 
-              <View style={styles.tableHeader}>
-                <Text style={[styles.th, { width: 40 }]}>{t('ui.active_workout.header_set')}</Text>
-                <Text style={[styles.th, { flex: 1 }]}>{settings.weightUnit}</Text>
-                <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_reps')}</Text>
-                <Text style={[styles.th, { width: 45 }]}>{t('ui.active_workout.header_rpe')}</Text>
-                <Text style={[styles.th, { flex: 1 }]}>1RM</Text>
-              </View>
-
-              {completedSets.map((set: any, idx: number) => {
-                const currentRM = calculateRM(set.weight, set.reps);
-                let timeStr = '';
-                const fmtTime = (secs: number) => {
-                  const m = Math.floor(secs / 60);
-                  const s = secs % 60;
-                  return `${m > 0 ? `${m}:` : ''}${s.toString().padStart(m > 0 ? 2 : 1, '0')}${m === 0 ? 's' : ''}`;
-                };
-                if (set.work_seconds != null) timeStr += `⏱️ ${fmtTime(set.work_seconds)} `;
-                if (set.rest_seconds != null) timeStr += `☕ ${fmtTime(set.rest_seconds)}`;
-                timeStr = timeStr.trim();
-                const hasStance = !!(set.stance || set.variation);
-                return (
-                  <View key={set.id} style={{ borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', paddingVertical: 8 }}>
-                    <View style={[styles.row, { borderBottomWidth: 0, paddingVertical: 0 }]}>
-                      <Text style={styles.tdSet}>{set.set_number}</Text>
-                      <Text style={styles.tdValue}>{set.weight ?? '-'}</Text>
-                      <Text style={styles.tdValue}>{set.reps ?? '-'}</Text>
-                      <Text style={[styles.tdValue, { width: 45, flex: 0 }]}>{set.rpe ?? '-'}</Text>
-                      <Text style={[styles.tdValue, { color: Theme.colors.primary }]}>{currentRM ?? '-'}</Text>
-                    </View>
-                    {(hasStance || timeStr) ? (
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, marginTop: 4 }}>
-                        <Text style={{ fontSize: 11, color: Theme.colors.textMuted }}>
-                          {hasStance ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.stance || set.variation)}` : ''}
-                        </Text>
-                        <Text style={{ fontSize: 11, color: Theme.colors.textMuted }}>
-                          {timeStr}
-                        </Text>
-                      </View>
-                    ) : null}
+              {isTreadmillExercise(ex.exercise_name) ? (
+                <>
+                  <View style={styles.tableHeader}>
+                    <Text style={[styles.th, { width: 40 }]}>{t('ui.active_workout.header_set')}</Text>
+                    <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_speed') || 'km/h'}</Text>
+                    <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_incline') || '傾斜(%)'}</Text>
+                    <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_time') || '時間'}</Text>
                   </View>
-                );
-              })}
+
+                  {completedSets.map((set: any) => {
+                    const fmtTime = (secs: number) => {
+                      const m = Math.floor(secs / 60);
+                      const s = secs % 60;
+                      return `${m > 0 ? `${m}:` : ''}${s.toString().padStart(m > 0 ? 2 : 1, '0')}${m === 0 ? 's' : ''}`;
+                    };
+                    return (
+                      <View key={set.id} style={{ borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', paddingVertical: 8 }}>
+                        <View style={[styles.row, { borderBottomWidth: 0, paddingVertical: 0 }]}>
+                          <Text style={styles.tdSet}>{set.set_number}</Text>
+                          <Text style={styles.tdValue}>{set.speed != null ? `${set.speed} km/h` : '-'}</Text>
+                          <Text style={styles.tdValue}>{set.incline != null ? `${set.incline}%` : '-'}</Text>
+                          <Text style={[styles.tdValue, { color: Theme.colors.success }]}>
+                            {set.work_seconds != null ? `⏱️ ${fmtTime(set.work_seconds)}` : '-'}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </>
+              ) : (
+                <>
+                  <View style={styles.tableHeader}>
+                    <Text style={[styles.th, { width: 40 }]}>{t('ui.active_workout.header_set')}</Text>
+                    <Text style={[styles.th, { flex: 1 }]}>{settings.weightUnit}</Text>
+                    <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_reps')}</Text>
+                    <Text style={[styles.th, { width: 45 }]}>{t('ui.active_workout.header_rpe')}</Text>
+                    <Text style={[styles.th, { flex: 1 }]}>1RM</Text>
+                  </View>
+
+                  {completedSets.map((set: any, idx: number) => {
+                    const currentRM = calculateRM(set.weight, set.reps);
+                    let timeStr = '';
+                    const fmtTime = (secs: number) => {
+                      const m = Math.floor(secs / 60);
+                      const s = secs % 60;
+                      return `${m > 0 ? `${m}:` : ''}${s.toString().padStart(m > 0 ? 2 : 1, '0')}${m === 0 ? 's' : ''}`;
+                    };
+                    if (set.work_seconds != null) timeStr += `⏱️ ${fmtTime(set.work_seconds)} `;
+                    if (set.rest_seconds != null) timeStr += `☕ ${fmtTime(set.rest_seconds)}`;
+                    timeStr = timeStr.trim();
+                    const hasStance = !!(set.stance || set.variation);
+                    return (
+                      <View key={set.id} style={{ borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', paddingVertical: 8 }}>
+                        <View style={[styles.row, { borderBottomWidth: 0, paddingVertical: 0 }]}>
+                          <Text style={styles.tdSet}>{set.set_number}</Text>
+                          <Text style={styles.tdValue}>{set.weight ?? '-'}</Text>
+                          <Text style={styles.tdValue}>{set.reps ?? '-'}</Text>
+                          <Text style={[styles.tdValue, { width: 45, flex: 0 }]}>{set.rpe ?? '-'}</Text>
+                          <Text style={[styles.tdValue, { color: Theme.colors.primary }]}>{currentRM ?? '-'}</Text>
+                        </View>
+                        {(hasStance || timeStr) ? (
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, marginTop: 4 }}>
+                            <Text style={{ fontSize: 11, color: Theme.colors.textMuted }}>
+                              {hasStance ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.stance || set.variation)}` : ''}
+                            </Text>
+                            <Text style={{ fontSize: 11, color: Theme.colors.textMuted }}>
+                              {timeStr}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+                    );
+                  })}
+                </>
+              )}
             </View>
           );
         })}

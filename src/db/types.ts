@@ -8,6 +8,8 @@ export interface WorkoutSet {
   is_completed?: boolean | number;
   rest_seconds?: number | null;
   work_seconds?: number | null;
+  speed?: number | null;
+  incline?: number | null;
   side?: string | null;
   variation?: string | null;
   stance?: string | null;
@@ -26,6 +28,8 @@ export interface RoutineSet {
   reps: number | null;
   weight: number | null;
   rpe: number | null;
+  speed?: number | null;
+  incline?: number | null;
   side?: string | null;
   variation?: string | null;
   stance?: string | null;
@@ -74,6 +78,8 @@ export interface WorkoutSetRow {
   rpe: number | null;
   rest_seconds: number | null;
   work_seconds: number | null;
+  speed: number | null;
+  incline: number | null;
   side: string | null;
   variation: string | null;
   stance: string | null;
@@ -134,6 +140,8 @@ export interface FullWorkoutExerciseSet {
   rpe: number | null;
   rest_seconds: number | null;
   work_seconds: number | null;
+  speed: number | null;
+  incline: number | null;
   side: string | null;
   variation: string | null;
   stance: string | null;

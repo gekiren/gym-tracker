@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../../src/i18n';
 import { KeyboardAvoidingWrapper } from '../../components/active-workout/KeyboardAvoidingWrapper';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { isTreadmillExercise } from '../../src/utils/exerciseUtils';
 
 export default function EditWorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -46,7 +47,7 @@ export default function EditWorkoutScreen() {
     setData((prev: any) => ({ ...prev, title: text }));
   };
 
-  const handleChangeSet = (exIndex: number, setIndex: number, field: 'weight' | 'reps' | 'rpe', value: string) => {
+  const handleChangeSet = (exIndex: number, setIndex: number, field: 'weight' | 'reps' | 'rpe' | 'speed' | 'incline' | 'work_seconds', value: string) => {
     setData((prev: any) => {
       const copy = { ...prev };
       const parsedVal = value ? value.replace(',', '.') : '';
@@ -65,7 +66,7 @@ export default function EditWorkoutScreen() {
           if (s._deleted) {
             await deleteWorkoutSet(s.id);
           } else {
-            await updateWorkoutSet(s.id, s.weight, s.reps, s.rpe);
+            await updateWorkoutSet(s.id, s.weight, s.reps, s.rpe, s.variation, s.stance, s.speed, s.incline, s.work_seconds);
           }
         }
       }
@@ -147,9 +148,19 @@ export default function EditWorkoutScreen() {
             
             <View style={styles.tableHeader}>
               <Text style={[styles.th, { width: 40 }]}>{t('ui.edit_workout.header_set')}</Text>
-              <Text style={[styles.th, { flex: 1 }]}>{settings.weightUnit}</Text>
-              <Text style={[styles.th, { flex: 1 }]}>{t('ui.edit_workout.header_reps')}</Text>
-              <Text style={[styles.th, { width: 45 }]}>{t('ui.edit_workout.header_rpe')}</Text>
+              {isTreadmillExercise(ex.exercise_name) ? (
+                <>
+                  <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_speed') || 'km/h'}</Text>
+                  <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_incline') || '傾斜(%)'}</Text>
+                  <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_time') || '時間(分)'}</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={[styles.th, { flex: 1 }]}>{settings.weightUnit}</Text>
+                  <Text style={[styles.th, { flex: 1 }]}>{t('ui.edit_workout.header_reps')}</Text>
+                  <Text style={[styles.th, { width: 45 }]}>{t('ui.edit_workout.header_rpe')}</Text>
+                </>
+              )}
               <Text style={[styles.th, { width: 36 }]}></Text>
             </View>
 
@@ -162,6 +173,7 @@ export default function EditWorkoutScreen() {
                   exIdx={exIdx}
                   sIdx={sIdx}
                   s={s}
+                  isTreadmill={isTreadmillExercise(ex.exercise_name)}
                   handleChangeSet={handleChangeSet}
                   handleRemoveSet={handleRemoveSet}
                 />
@@ -227,19 +239,27 @@ const styles = StyleSheet.create({
   }
 });
 
-function EditWorkoutSetRow({ exIdx, sIdx, s, handleChangeSet, handleRemoveSet }: {
+function EditWorkoutSetRow({ exIdx, sIdx, s, isTreadmill, handleChangeSet, handleRemoveSet }: {
   exIdx: number;
   sIdx: number;
   s: any;
-  handleChangeSet: (exIdx: number, sIdx: number, field: 'weight' | 'reps' | 'rpe', value: string) => void;
+  isTreadmill?: boolean;
+  handleChangeSet: (exIdx: number, sIdx: number, field: 'weight' | 'reps' | 'rpe' | 'speed' | 'incline' | 'work_seconds', value: string) => void;
   handleRemoveSet: (exIdx: number, sIdx: number) => void;
 }) {
   const [localWeight, setLocalWeight] = useState(s.weight !== null ? String(s.weight) : '');
   const [localReps, setLocalReps] = useState(s.reps !== null ? String(s.reps) : '');
   const [localRpe, setLocalRpe] = useState(s.rpe !== null ? String(s.rpe) : '');
+  const [localSpeed, setLocalSpeed] = useState(s.speed != null ? String(s.speed) : '');
+  const [localIncline, setLocalIncline] = useState(s.incline != null ? String(s.incline) : '');
+  const [localMinutes, setLocalMinutes] = useState(s.work_seconds != null ? String(Math.round(s.work_seconds / 60)) : '');
+
   const [isFocusedWeight, setIsFocusedWeight] = useState(false);
   const [isFocusedReps, setIsFocusedReps] = useState(false);
   const [isFocusedRpe, setIsFocusedRpe] = useState(false);
+  const [isFocusedSpeed, setIsFocusedSpeed] = useState(false);
+  const [isFocusedIncline, setIsFocusedIncline] = useState(false);
+  const [isFocusedMinutes, setIsFocusedMinutes] = useState(false);
 
   useEffect(() => {
     if (isFocusedWeight) return;
@@ -270,6 +290,36 @@ function EditWorkoutSetRow({ exIdx, sIdx, s, handleChangeSet, handleRemoveSet }:
     }
   }, [s.rpe, isFocusedRpe, localRpe]);
 
+  useEffect(() => {
+    if (isFocusedSpeed) return;
+    if (s.speed != null) {
+      const currentFloat = parseFloat(localSpeed.replace(',', '.'));
+      if (currentFloat !== s.speed) setLocalSpeed(String(s.speed));
+    } else {
+      if (localSpeed !== '') setLocalSpeed('');
+    }
+  }, [s.speed, isFocusedSpeed, localSpeed]);
+
+  useEffect(() => {
+    if (isFocusedIncline) return;
+    if (s.incline != null) {
+      const currentFloat = parseFloat(localIncline.replace(',', '.'));
+      if (currentFloat !== s.incline) setLocalIncline(String(s.incline));
+    } else {
+      if (localIncline !== '') setLocalIncline('');
+    }
+  }, [s.incline, isFocusedIncline, localIncline]);
+
+  useEffect(() => {
+    if (isFocusedMinutes) return;
+    if (s.work_seconds != null) {
+      const mins = String(Math.round(s.work_seconds / 60));
+      if (mins !== localMinutes) setLocalMinutes(mins);
+    } else {
+      if (localMinutes !== '') setLocalMinutes('');
+    }
+  }, [s.work_seconds, isFocusedMinutes, localMinutes]);
+
   const handleWeightChange = (val: string) => {
     if (val === '' || /^\d{0,3}([.,]\d{0,1})?$/.test(val)) {
       setLocalWeight(val);
@@ -290,6 +340,69 @@ function EditWorkoutSetRow({ exIdx, sIdx, s, handleChangeSet, handleRemoveSet }:
       handleChangeSet(exIdx, sIdx, 'rpe', val);
     }
   };
+
+  const handleSpeedChange = (val: string) => {
+    if (val === '' || /^\d{0,2}([.,]\d{0,1})?$/.test(val)) {
+      setLocalSpeed(val);
+      handleChangeSet(exIdx, sIdx, 'speed', val);
+    }
+  };
+
+  const handleInclineChange = (val: string) => {
+    if (val === '' || /^\d{0,2}([.,]\d{0,1})?$/.test(val)) {
+      setLocalIncline(val);
+      handleChangeSet(exIdx, sIdx, 'incline', val);
+    }
+  };
+
+  const handleMinutesChange = (val: string) => {
+    if (val === '' || /^\d{0,3}$/.test(val)) {
+      setLocalMinutes(val);
+      const m = parseInt(val, 10);
+      handleChangeSet(exIdx, sIdx, 'work_seconds', isNaN(m) ? '' : String(m * 60));
+    }
+  };
+
+  if (isTreadmill) {
+    return (
+      <View style={styles.row}>
+        <Text style={styles.tdSet}>{s.set_number}</Text>
+        <TextInput 
+          style={styles.input} 
+          keyboardType="decimal-pad" 
+          value={localSpeed}
+          placeholder="km/h"
+          placeholderTextColor="rgba(255,255,255,0.2)"
+          onChangeText={handleSpeedChange}
+          onFocus={() => setIsFocusedSpeed(true)}
+          onBlur={() => setIsFocusedSpeed(false)}
+        />
+        <TextInput 
+          style={styles.input} 
+          keyboardType="decimal-pad" 
+          value={localIncline}
+          placeholder="%"
+          placeholderTextColor="rgba(255,255,255,0.2)"
+          onChangeText={handleInclineChange}
+          onFocus={() => setIsFocusedIncline(true)}
+          onBlur={() => setIsFocusedIncline(false)}
+        />
+        <TextInput 
+          style={styles.input} 
+          keyboardType="numeric" 
+          value={localMinutes}
+          placeholder="分"
+          placeholderTextColor="rgba(255,255,255,0.2)"
+          onChangeText={handleMinutesChange}
+          onFocus={() => setIsFocusedMinutes(true)}
+          onBlur={() => setIsFocusedMinutes(false)}
+        />
+        <TouchableOpacity onPress={() => handleRemoveSet(exIdx, sIdx)} style={{ width: 36, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="trash-outline" size={20} color={Theme.colors.danger} />
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.row}>

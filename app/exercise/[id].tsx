@@ -18,6 +18,7 @@ import { HistoryCalendarModal } from '../../components/active-workout/HistoryCal
 // Subcomponents
 import { StanceManagement } from '../../components/exercise-detail/StanceManagement';
 import { ExerciseCharts } from '../../components/exercise-detail/ExerciseCharts';
+import { isTreadmillExercise } from '../../src/utils/exerciseUtils';
 
 const INITIAL_PAGE_SIZE = 20;
 
@@ -329,17 +330,25 @@ export default function ExerciseDetailScreen() {
                     if (s.work_seconds != null) timeStr += `⏱️ ${fmtTime(s.work_seconds)} `;
                     if (s.rest_seconds != null) timeStr += `☕ ${fmtTime(s.rest_seconds)}`;
                     timeStr = timeStr.trim();
+                    const isTreadmill = isTreadmillExercise(exercise?.name);
                     return (
                       <View key={idx} style={{ paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
                         <View style={[styles.setRow, { paddingVertical: 0 }]}>
                           <Text style={styles.tdSet}>{s.set_number}</Text>
                           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
-                            <Text style={styles.tdVal}>
-                              {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps}${t('ui.common.reps_unit')}` : '-'}
-                            </Text>
+                            {isTreadmill ? (
+                              <Text style={styles.tdVal}>
+                                {s.speed != null ? `${s.speed} km/h` : '-'}
+                                {s.incline != null ? ` (傾斜 ${s.incline}%)` : ''}
+                              </Text>
+                            ) : (
+                              <Text style={styles.tdVal}>
+                                {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps}${t('ui.common.reps_unit')}` : '-'}
+                              </Text>
+                            )}
                             {(s.stance || s.variation) && <View style={styles.historyVariationBadge}><Text style={styles.historyVariationText}>{translateStance(s.stance || s.variation)}</Text></View>}
                           </View>
-                          {s.rpe && <Text style={styles.tdRpe}>@RPE {s.rpe}</Text>}
+                          {!isTreadmill && s.rpe && <Text style={styles.tdRpe}>@RPE {s.rpe}</Text>}
                         </View>
                         {timeStr ? (
                           <Text style={{ textAlign: 'right', fontSize: 11, color: Theme.colors.textMuted, marginTop: 4, marginRight: 8 }}>{timeStr}</Text>
