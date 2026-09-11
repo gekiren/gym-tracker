@@ -11,21 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.1.14',
+  version: '2.1.15',
   title: {
-    ja: '🎉 ワークアウト数値スワイプ入力の完全復旧',
-    en: '🎉 Core Fix for Workout Input Swipe Adjustments',
+    ja: '🥗 食事編集における食べた量の倍率変更に対応',
+    en: '🥗 Portion Multiplier Support for Meal Log Editing',
   },
   notes: {
     ja: [
-      'キーボード非表示時に入力枠を純粋なテキスト表示に切り替え、Androidネイティブによるスワイプ中断を解消しました。',
-      '指をなぞるスワイプ操作での重量・回数・RPEのリアルタイム増減が確実に動作します。',
-      'Enterキー（→|）による入力欄のスムーズな自動移動も完全連動しています。',
+      '記録済みの食事ログを編集する際、食べた量の倍率（0.5倍〜2.0倍・自由入力）を変更できるようになりました。',
+      '倍率を変更するとカロリーやPFCバランスなどの栄養素が自動で再計算されます。',
+      '手動微調整や基準値（1.0倍）への復元にも柔軟に対応しています。',
     ],
     en: [
-      'Decoupled native text input during idle state to prevent Android gesture cancellation.',
-      'Swipe-to-adjust for weight, reps, and RPE is now fully operational.',
-      'Seamless Enter (Next) key navigation is fully synchronized.',
+      'Added portion multiplier options (0.5x to 2.0x & custom) when editing existing meal logs.',
+      'Nutritional values such as calories and macros automatically recalculate based on the selected multiplier.',
+      'Supports manual adjustments and accurate restoration to the base serving (1.0x).',
     ],
   },
 };
