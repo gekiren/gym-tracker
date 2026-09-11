@@ -259,6 +259,11 @@
                     requireOptionalNativeModule('ExponentImageManipulator');
   ```
 
+### ⑩ Android RNGH における TextInput とジェスチャー（PanGesture等）の競合防止ルール
+- **ネイティブ横取りの発生機序**: Android の `react-native-gesture-handler` において、`GestureDetector` のツリー内や同階層に `<TextInput>`（ネイティブの `ReactEditText`）が存在すると、タッチダウン（`ACTION_DOWN`）の瞬間に `EditTextHook` が走り、ネイティブ側で即座に `handler.activate()` が実行されます。
+- **スワイプ強制キャンセルの防止**: 1つのネイティブハンドラーがアクティブになると、同一ポインタを扱う競合ハンドラー（`PanGesture` 等）に強制的に `cancel()` が送られ、指を動かす前（わずか 0.01 秒）にジェスチャーが強制終了（`state=3 (CANCELLED)`）されます。
+- **実装の鉄則（非編集時のアンマウント）**: スワイプ操作とテキスト入力を併用するコンポーネント（例: `CompactSwipeableInput.tsx`）では、`pointerEvents="none"` や CSS 非表示だけに頼らず、**非編集時（`!isEditing`）は `<TextInput>` をツリーにマウントせず純粋な `<Text>` のみを描画し、タップやフォーカス移動による編集開始時（`isEditing === true`）に初めて `<TextInput autoFocus>` をマウントする設計を徹底**してください。
+
 ---
 
 ## 5. AIパーソナルトレーナー（AI Trainer）および Gemini API の仕様
