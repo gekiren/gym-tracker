@@ -141,9 +141,10 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
     onClose();
   };
 
-  // 画像圧縮＆Base64変換 (最大幅800pxにリサイズして軽量化)
-  const processImage = async (uri: string) => {
+  // 画像圧縮＆Base64変換 (最大幅600pxにリサイズして軽量化、多重フォールバック対応)
+  const processImage = async (uri: string, initialBase64?: string | null) => {
     try {
+      setIsAnalyzing(true);
       setSelectedImageUri(uri);
       let b64Str: string | null = null;
 
@@ -164,15 +165,20 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
             b64Str = manipResult.base64;
           }
         } catch (manipErr) {
-          console.warn('[PhotoRecordModal] ImageManipulator resize failed, attempting FileSystem fallback', manipErr);
+          console.warn('[PhotoRecordModal] ImageManipulator resize failed, attempting fallback', manipErr);
         }
       }
 
-      // フォールバック: FileSystem で Base64 取得
+      // 第1フォールバック: ImagePickerから直接渡されたBase64
+      if (!b64Str && initialBase64) {
+        b64Str = initialBase64;
+      }
+
+      // 第2フォールバック: FileSystem (legacy) で Base64 取得
       if (!b64Str) {
         try {
           // eslint-disable-next-line @typescript-eslint/no-var-requires
-          const FileSystem = require('expo-file-system');
+          const FileSystem = require('expo-file-system/legacy') || require('expo-file-system');
           if (FileSystem && FileSystem.readAsStringAsync) {
             b64Str = await FileSystem.readAsStringAsync(uri, {
               encoding: FileSystem.EncodingType ? FileSystem.EncodingType.Base64 : 'base64',
@@ -184,6 +190,7 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
       }
 
       if (!b64Str) {
+        setIsAnalyzing(false);
         Alert.alert('画像読込エラー', '画像のデータ変換に失敗しました。別の写真を試してください。');
         return;
       }
@@ -194,12 +201,13 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
       setBase64Data(formattedB64);
       await runAnalysis(formattedB64);
     } catch (err: any) {
+      setIsAnalyzing(false);
       console.error('[PhotoRecordModal] processImage error:', err);
       Alert.alert('画像処理エラー', '画像の読み込みに失敗しました。');
     }
   };
 
-  // カメラで撮影 (quality: 0.3 でメモリ消費を抑え Android OS によるメインアプリ強制終了・ダッシュボード戻りを防止)
+  // カメラで撮影 (allowsEditing を無効化してクロップ画面のクラッシュ・キャンセルを完全防止し、base64: true で即座に画像データ取得)
   const handleTakePhoto = async () => {
     const ImagePicker = safeGetImagePicker();
     if (!ImagePicker) {
@@ -212,16 +220,19 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
         Alert.alert('権限エラー', 'カメラの使用を許可してください。');
         return;
       }
-      // quality: 0.3 & allowsEditing: true で軽量化し、OSによるアプリ再起動を防止
+      // allowsEditing: false (クロップ画面をスキップして即確定し、クラッシュやキャンセルを防止)
+      // quality: 0.3 & base64: true (メモリ消費を抑えつつ直接Base64を取得)
       const res = await ImagePicker.launchCameraAsync({
         mediaTypes: ['images'],
-        allowsEditing: true,
+        allowsEditing: false,
         quality: 0.3,
+        base64: true,
       });
-      if (!res.canceled && res.assets[0]?.uri) {
-        await processImage(res.assets[0].uri);
+      if (!res.canceled && res.assets && res.assets[0]?.uri) {
+        await processImage(res.assets[0].uri, res.assets[0].base64);
       }
     } catch (err: any) {
+      console.error('[PhotoRecordModal] handleTakePhoto error:', err);
       Alert.alert('カメラエラー', err?.message || 'カメラの起動に失敗しました。');
     }
   };
@@ -242,11 +253,13 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
       const res = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         quality: 0.7,
+        base64: true,
       });
-      if (!res.canceled && res.assets[0]?.uri) {
-        await processImage(res.assets[0].uri);
+      if (!res.canceled && res.assets && res.assets[0]?.uri) {
+        await processImage(res.assets[0].uri, res.assets[0].base64);
       }
     } catch (err: any) {
+      console.error('[PhotoRecordModal] handleSelectImage error:', err);
       Alert.alert('ギャラリーエラー', err?.message || 'ギャラリーの起動に失敗しました。');
     }
   };

@@ -358,7 +358,7 @@ export const analyzeMealImage = async (
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 28000);
 
-  const activeModel = preferredModel || useSettingsStore.getState().settings.preferredAiModel || 'gemini-3.5-flash-lite';
+  const activeModel = preferredModel || useSettingsStore.getState().settings.preferredAiModel || 'gemini-3.7-flash';
 
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };

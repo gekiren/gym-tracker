@@ -11,21 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.1.15',
+  version: '2.1.16',
   title: {
-    ja: '🥗 食事編集における食べた量の倍率変更に対応',
-    en: '🥗 Portion Multiplier Support for Meal Log Editing',
+    ja: '📷 栄養管理の写真解析・カメラ撮影の安定化',
+    en: '📷 Nutrition Vision & Camera Capture Stabilization',
   },
   notes: {
     ja: [
-      '記録済みの食事ログを編集する際、食べた量の倍率（0.5倍〜2.0倍・自由入力）を変更できるようになりました。',
-      '倍率を変更するとカロリーやPFCバランスなどの栄養素が自動で再計算されます。',
-      '手動微調整や基準値（1.0倍）への復元にも柔軟に対応しています。',
+      '栄養管理の写真解析において、アプリ内カメラでの撮影後に分析が開始されない不具合を修正しました。',
+      '撮影後の不要なトリミング操作を廃止し、シャッター直後に自動でAI栄養解析がスタートするように改善しました。',
+      '撮影画像のBase64直接抽出と多重フォールバックにより、画像処理の安定性と解析速度が大幅に向上しました。',
     ],
     en: [
-      'Added portion multiplier options (0.5x to 2.0x & custom) when editing existing meal logs.',
-      'Nutritional values such as calories and macros automatically recalculate based on the selected multiplier.',
-      'Supports manual adjustments and accurate restoration to the base serving (1.0x).',
+      'Fixed an issue in nutrition tracking where AI analysis did not trigger after taking photos with the in-app camera.',
+      'Streamlined the camera workflow by removing unnecessary crop steps, automatically starting AI analysis immediately after capture.',
+      'Improved image processing stability and speed with direct Base64 extraction and multi-tier fallbacks.',
     ],
   },
 };
