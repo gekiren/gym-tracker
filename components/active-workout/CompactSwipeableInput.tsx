@@ -38,8 +38,7 @@ interface CompactSwipeableInputProps {
   keyboardType?: 'numeric' | 'decimal-pad' | 'number-pad';
   onSwipeStart?: () => void;
   onSwipeEnd?: () => void;
-  onTouchStart?: () => void;
-  onTouchEnd?: () => void;
+  panGestureRef?: React.MutableRefObject<any>;
 }
 
 export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, CompactSwipeableInputProps>(({
@@ -65,8 +64,7 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   keyboardType = 'numeric',
   onSwipeStart,
   onSwipeEnd,
-  onTouchStart,
-  onTouchEnd,
+  panGestureRef,
 }, ref) => {
   const [isEditing, setIsEditing] = useState(false);
   const localInputRef = useRef<TextInput>(null);
@@ -152,7 +150,13 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
     .enabled(!disabled)
     .activeOffsetX([-4, 4])
     .failOffsetY([-45, 45])
-    .cancelsTouchesInView(true)
+    .cancelsTouchesInView(true);
+
+  if (panGestureRef) {
+    panGesture.withRef(panGestureRef);
+  }
+
+  panGesture
     .onStart(() => {
       runOnJS(dismissKeyboardAndResetEditing)();
       if (onSwipeStart) {
@@ -253,9 +257,6 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   return (
     <GestureDetector gesture={gesture}>
       <Animated.View
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        onTouchCancel={onTouchEnd}
         style={[styles.baseBox, style, dragContainerStyle]}
       >
         {!isEditing && (
