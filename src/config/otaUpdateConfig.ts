@@ -11,21 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.1.10',
+  version: '2.1.11',
   title: {
-    ja: '🛠️ ワークアウト数値入力スワイプ操作の根本改善',
-    en: '🛠️ Core Fix for Workout Input Swipe Adjustments',
+    ja: '🛠️ ワークアウト数値入力スワイプ＆Enter移動の根本改修',
+    en: '🛠️ Workout Input Swipe Adjustment & Enter Navigation Fix',
   },
   notes: {
     ja: [
-      'キーボード非表示時でも回数・重量などのスワイプ数値調整が確実に認識されるようジェスチャー優先制御を根本改修しました。',
-      '入力欄のスワイプ操作が行削除スワイプに横取りされるネイティブ競合を完全に解消しました。',
-      'タップによる直接編集とスワイプによる数値増減のスムーズな切り替えを最適化しました。',
+      '重量(kg)入力時にEnter(→|)を押すとキーボードが閉じず、スムーズに回数入力へ移動するよう改善しました。',
+      '画面全体のスクロールと入力欄のスワイプ判定を完全協調させ、キーボード非表示時でも横スワイプでの数値変更が確実に動作するよう改修しました。',
+      '入力欄ジェスチャーの安定化により、タップでの編集開始とスワイプでの数値増減の応答性を大幅に向上させました。',
     ],
     en: [
-      'Resolved gesture precedence to reliably enable swipe adjustments for reps and weight when keyboard is hidden.',
-      'Completely eliminated gesture interception by row deletion swipe using native gesture synchronization.',
-      'Optimized seamless transition between tap editing and swipe adjustment.',
+      'Fixed Enter (Next) key so it smoothly navigates to reps input instead of dismissing the software keyboard.',
+      'Synchronized screen scrolling with input gestures to ensure swipe-to-adjust works reliably without keyboard.',
+      'Stabilized input gestures for enhanced responsiveness on tap and swipe adjustments.',
     ],
   },
 };

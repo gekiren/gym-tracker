@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Platform } from 'react-native';
-import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Platform } from 'react-native';
+import { ScrollView, TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useTranslation } from 'react-i18next';
 import { useCallback } from 'react';

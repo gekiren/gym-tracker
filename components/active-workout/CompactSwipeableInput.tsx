@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef, useMemo } from 'react';
 import { View, Text, StyleSheet, TextInput, Platform, StyleProp, ViewStyle, TextStyle, Keyboard } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, GestureType } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -69,12 +69,45 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   const [isEditing, setIsEditing] = useState(false);
   const localInputRef = useRef<TextInput>(null);
 
-  // ソフトウェアキーボードが閉じた際（Androidの戻るボタン等を含む）、フォーカスと編集モードを確実に解除
+  // 最新のpropsをrefで保持し、メモ化されたジェスチャーが常に最新の値を参照できるようにする
+  const latestPropsRef = useRef({
+    value,
+    placeholder,
+    allowedValues,
+    sensitivity,
+    step,
+    minValue,
+    maxValue,
+    disabled,
+    onSwipeStart,
+    onSwipeEnd,
+    onChangeText,
+  });
+
+  useEffect(() => {
+    latestPropsRef.current = {
+      value,
+      placeholder,
+      allowedValues,
+      sensitivity,
+      step,
+      minValue,
+      maxValue,
+      disabled,
+      onSwipeStart,
+      onSwipeEnd,
+      onChangeText,
+    };
+  });
+
+  // ソフトウェアキーボードが閉じた際、自入力欄がフォーカスされている場合のみ編集モードを解除
   useEffect(() => {
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
     const hideSub = Keyboard.addListener(hideEvent, () => {
-      setIsEditing(false);
-      localInputRef.current?.blur();
+      if (localInputRef.current?.isFocused()) {
+        setIsEditing(false);
+        localInputRef.current?.blur();
+      }
     });
     return () => hideSub.remove();
   }, []);
@@ -96,10 +129,16 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   }, []);
 
   const focusInput = () => {
-    localInputRef.current?.focus();
+    // 編集状態を有効にしてpointerEventsをautoにした上で、確実にfocusを呼び出す
+    setIsEditing(true);
+    setShouldSelectOnFocus(selectTextOnFocus);
+    setTimeout(() => {
+      localInputRef.current?.focus();
+    }, 50);
   };
 
   const blurInput = () => {
+    setIsEditing(false);
     localInputRef.current?.blur();
   };
 
@@ -133,10 +172,11 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   };
 
   const handleValueChange = (newVal: number) => {
-    const formattedStr = step % 1 === 0 
+    const currentStep = latestPropsRef.current.step;
+    const formattedStr = currentStep % 1 === 0 
       ? String(Math.round(newVal))
       : String(Math.round(newVal * 1000) / 1000);
-    onChangeText(formattedStr);
+    latestPropsRef.current.onChangeText(formattedStr);
     triggerHaptic();
   };
 
@@ -146,81 +186,89 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
     localInputRef.current?.blur();
   };
 
-  const panGesture = Gesture.Pan()
-    .enabled(!disabled)
-    .activeOffsetX([-4, 4])
-    .failOffsetY([-45, 45])
-    .cancelsTouchesInView(true);
+  // ジェスチャーインスタンスをメモ化し、再レンダリングによるネイティブ調停の切断を防止
+  const panGesture = useMemo(() => {
+    const g = Gesture.Pan()
+      .activeOffsetX([-4, 4])
+      .failOffsetY([-45, 45])
+      .cancelsTouchesInView(true);
 
-  if (panGestureRef) {
-    panGesture.withRef(panGestureRef);
-  }
+    if (panGestureRef) {
+      g.withRef(panGestureRef);
+    }
 
-  panGesture
-    .onStart(() => {
-      runOnJS(dismissKeyboardAndResetEditing)();
-      if (onSwipeStart) {
-        runOnJS(onSwipeStart)();
-      }
-      let parsed = parseFloat(value.replace(',', '.'));
-      if (isNaN(parsed) || value === '') {
-        const placeholderNum = parseFloat(String(placeholder).replace(',', '.').replace(/[^\d.]/g, ''));
-        parsed = !isNaN(placeholderNum) && placeholderNum > 0 ? placeholderNum : 0;
-      }
-      startValue.value = parsed;
+    return g
+      .enabled(!disabled)
+      .onStart(() => {
+        runOnJS(dismissKeyboardAndResetEditing)();
+        const currentProps = latestPropsRef.current;
+        if (currentProps.onSwipeStart) {
+          runOnJS(currentProps.onSwipeStart)();
+        }
+        let parsed = parseFloat(currentProps.value.replace(',', '.'));
+        if (isNaN(parsed) || currentProps.value === '') {
+          const placeholderNum = parseFloat(String(currentProps.placeholder).replace(',', '.').replace(/[^\d.]/g, ''));
+          parsed = !isNaN(placeholderNum) && placeholderNum > 0 ? placeholderNum : 0;
+        }
+        startValue.value = parsed;
 
-      if (allowedValues && allowedValues.length > 0) {
-        let closestIdx = 0;
-        let minDiff = Infinity;
-        for (let i = 0; i < allowedValues.length; i++) {
-          const diff = Math.abs(allowedValues[i] - parsed);
-          if (diff < minDiff) {
-            minDiff = diff;
-            closestIdx = i;
+        if (currentProps.allowedValues && currentProps.allowedValues.length > 0) {
+          let closestIdx = 0;
+          let minDiff = Infinity;
+          for (let i = 0; i < currentProps.allowedValues.length; i++) {
+            const diff = Math.abs(currentProps.allowedValues[i] - parsed);
+            if (diff < minDiff) {
+              minDiff = diff;
+              closestIdx = i;
+            }
+          }
+          startIndex.value = closestIdx;
+        }
+
+        lastStep.value = 0;
+        translationX.value = 0;
+        isDragging.value = true;
+      })
+      .onUpdate((event) => {
+        const currentProps = latestPropsRef.current;
+        translationX.value = event.translationX;
+        const currentStep = Math.round(event.translationX / currentProps.sensitivity);
+
+        if (currentStep !== lastStep.value) {
+          lastStep.value = currentStep;
+          if (currentProps.allowedValues && currentProps.allowedValues.length > 0) {
+            const targetIdx = Math.min(
+              Math.max(startIndex.value + currentStep, 0),
+              currentProps.allowedValues.length - 1
+            );
+            const calculated = currentProps.allowedValues[targetIdx];
+            runOnJS(handleValueChange)(calculated);
+          } else {
+            const calculated = startValue.value + currentStep * currentProps.step;
+            const clamped = Math.min(Math.max(calculated, currentProps.minValue), currentProps.maxValue);
+            runOnJS(handleValueChange)(clamped);
           }
         }
-        startIndex.value = closestIdx;
-      }
-
-      lastStep.value = 0;
-      translationX.value = 0;
-      isDragging.value = true;
-    })
-    .onUpdate((event) => {
-      translationX.value = event.translationX;
-      const currentStep = Math.round(event.translationX / sensitivity);
-
-      if (currentStep !== lastStep.value) {
-        lastStep.value = currentStep;
-        if (allowedValues && allowedValues.length > 0) {
-          const targetIdx = Math.min(
-            Math.max(startIndex.value + currentStep, 0),
-            allowedValues.length - 1
-          );
-          const calculated = allowedValues[targetIdx];
-          runOnJS(handleValueChange)(calculated);
-        } else {
-          const calculated = startValue.value + currentStep * step;
-          const clamped = Math.min(Math.max(calculated, minValue), maxValue);
-          runOnJS(handleValueChange)(clamped);
+      })
+      .onFinalize(() => {
+        isDragging.value = false;
+        translationX.value = withTiming(0, { duration: 150 });
+        const currentProps = latestPropsRef.current;
+        if (currentProps.onSwipeEnd) {
+          runOnJS(currentProps.onSwipeEnd)();
         }
-      }
-    })
-    .onFinalize(() => {
-      isDragging.value = false;
-      translationX.value = withTiming(0, { duration: 150 });
-      if (onSwipeEnd) {
-        runOnJS(onSwipeEnd)();
-      }
-    });
+      });
+  }, [panGestureRef, disabled]);
 
-  const tapGesture = Gesture.Tap()
-    .enabled(!disabled && !isEditing)
-    .onEnd(() => {
-      runOnJS(focusInput)();
-    });
+  const tapGesture = useMemo(() => {
+    return Gesture.Tap()
+      .enabled(!disabled && !isEditing)
+      .onEnd(() => {
+        runOnJS(focusInput)();
+      });
+  }, [disabled, isEditing]);
 
-  const gesture = Gesture.Exclusive(panGesture, tapGesture);
+  const gesture = useMemo(() => Gesture.Exclusive(panGesture, tapGesture), [panGesture, tapGesture]);
 
   const dragTextStyle = useAnimatedStyle(() => {
     return {
