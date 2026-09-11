@@ -186,6 +186,10 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
     localInputRef.current?.blur();
   };
 
+  const debugLog = (msg: string) => {
+    console.log(`[SWIPE_DEBUG][${placeholder || value}] ${msg}`);
+  };
+
   // ジェスチャーインスタンスをメモ化し、再レンダリングによるネイティブ調停の切断を防止
   const panGesture = useMemo(() => {
     const g = Gesture.Pan()
@@ -199,7 +203,11 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
 
     return g
       .enabled(!disabled)
+      .onBegin(() => {
+        runOnJS(debugLog)('Pan BEGAN');
+      })
       .onStart(() => {
+        runOnJS(debugLog)('Pan START (active!)');
         runOnJS(dismissKeyboardAndResetEditing)();
         const currentProps = latestPropsRef.current;
         if (currentProps.onSwipeStart) {
@@ -235,6 +243,7 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
         const currentStep = Math.round(event.translationX / currentProps.sensitivity);
 
         if (currentStep !== lastStep.value) {
+          runOnJS(debugLog)(`Pan STEP CHANGED: ${lastStep.value} -> ${currentStep} (dx=${Math.round(event.translationX)})`);
           lastStep.value = currentStep;
           if (currentProps.allowedValues && currentProps.allowedValues.length > 0) {
             const targetIdx = Math.min(
@@ -250,7 +259,8 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
           }
         }
       })
-      .onFinalize(() => {
+      .onFinalize((event, success) => {
+        runOnJS(debugLog)(`Pan FINALIZE success=${success} state=${event.state}`);
         isDragging.value = false;
         translationX.value = withTiming(0, { duration: 150 });
         const currentProps = latestPropsRef.current;
@@ -263,8 +273,15 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   const tapGesture = useMemo(() => {
     return Gesture.Tap()
       .enabled(!disabled && !isEditing)
+      .onBegin(() => {
+        runOnJS(debugLog)('Tap BEGAN');
+      })
       .onEnd(() => {
+        runOnJS(debugLog)('Tap END -> focusInput()');
         runOnJS(focusInput)();
+      })
+      .onFinalize((event, success) => {
+        runOnJS(debugLog)(`Tap FINALIZE success=${success}`);
       });
   }, [disabled, isEditing]);
 
@@ -305,6 +322,9 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   return (
     <GestureDetector gesture={gesture}>
       <Animated.View
+        onTouchStart={() => debugLog('View onTouchStart')}
+        onTouchEnd={() => debugLog('View onTouchEnd')}
+        onTouchCancel={() => debugLog('View onTouchCancel')}
         style={[styles.baseBox, style, dragContainerStyle]}
       >
         {!isEditing && (
