@@ -11,19 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.1.13',
+  version: '2.1.14',
   title: {
     ja: '🎉 ワークアウト数値スワイプ入力の完全復旧',
     en: '🎉 Core Fix for Workout Input Swipe Adjustments',
   },
   notes: {
     ja: [
-      '行コンテナによるタッチ強制キャンセルを解消し、指をなぞるスワイプ操作での重量・回数変更が確実に動作するよう改修しました。',
-      'Enterキー（→|）による入力欄のスムーズな自動移動と連動しました。',
+      'キーボード非表示時に入力枠を純粋なテキスト表示に切り替え、Androidネイティブによるスワイプ中断を解消しました。',
+      '指をなぞるスワイプ操作での重量・回数・RPEのリアルタイム増減が確実に動作します。',
+      'Enterキー（→|）による入力欄のスムーズな自動移動も完全連動しています。',
     ],
     en: [
-      'Eliminated row touch interception to reliably restore swipe-to-adjust for weight and reps.',
-      'Fully synchronized with seamless Enter (Next) key navigation.',
+      'Decoupled native text input during idle state to prevent Android gesture cancellation.',
+      'Swipe-to-adjust for weight, reps, and RPE is now fully operational.',
+      'Seamless Enter (Next) key navigation is fully synchronized.',
     ],
   },
 };

@@ -128,6 +128,15 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
     };
   }, []);
 
+  useEffect(() => {
+    if (isEditing) {
+      const timer = setTimeout(() => {
+        localInputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isEditing]);
+
   const focusInput = () => {
     // 編集状態を有効にしてpointerEventsをautoにした上で、確実にfocusを呼び出す
     setIsEditing(true);
@@ -327,7 +336,7 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
         onTouchCancel={() => debugLog('View onTouchCancel')}
         style={[styles.baseBox, style, dragContainerStyle]}
       >
-        {!isEditing && (
+        {!isEditing ? (
           <Animated.Text
             numberOfLines={1}
             style={[styles.baseText, textStyleOnly as any, dragTextStyle, StyleSheet.absoluteFill]}
@@ -335,50 +344,50 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
           >
             {value !== '' ? value : placeholder}
           </Animated.Text>
+        ) : (
+          <TextInput
+            ref={localInputRef}
+            autoFocus={true}
+            style={[
+              textStyleOnly,
+              {
+                flex: 1,
+                width: '100%',
+                height: '100%',
+                textAlignVertical: 'center',
+                includeFontPadding: false,
+                paddingVertical: 0,
+                paddingTop: 0,
+                paddingBottom: 0,
+              }
+            ]}
+            keyboardType={keyboardType}
+            placeholder={placeholder}
+            placeholderTextColor={placeholderTextColor}
+            value={value}
+            selection={selection}
+            onSelectionChange={onSelectionChange}
+            onChangeText={handleTextChange}
+            selectTextOnFocus={shouldSelectOnFocus}
+            onFocus={() => {
+              if (selectTimerRef.current) clearTimeout(selectTimerRef.current);
+              selectTimerRef.current = setTimeout(() => {
+                setShouldSelectOnFocus(false);
+              }, 100);
+              onFocus?.();
+            }}
+            onBlur={() => {
+              setIsEditing(false);
+              if (selectTimerRef.current) clearTimeout(selectTimerRef.current);
+              setShouldSelectOnFocus(selectTextOnFocus);
+              onBlur?.();
+            }}
+            returnKeyType={returnKeyType}
+            onSubmitEditing={() => {
+              onSubmitEditing?.();
+            }}
+          />
         )}
-        <TextInput
-          ref={localInputRef}
-          style={[
-            isEditing ? textStyleOnly : { opacity: 0 },
-            {
-              flex: 1,
-              width: '100%',
-              height: '100%',
-              textAlignVertical: 'center',
-              includeFontPadding: false,
-              paddingVertical: 0,
-              paddingTop: 0,
-              paddingBottom: 0,
-            }
-          ]}
-          keyboardType={keyboardType}
-          placeholder={isEditing ? placeholder : ''}
-          placeholderTextColor={placeholderTextColor}
-          value={value}
-          selection={selection}
-          onSelectionChange={onSelectionChange}
-          onChangeText={handleTextChange}
-          selectTextOnFocus={shouldSelectOnFocus}
-          onFocus={() => {
-            setIsEditing(true);
-            if (selectTimerRef.current) clearTimeout(selectTimerRef.current);
-            selectTimerRef.current = setTimeout(() => {
-              setShouldSelectOnFocus(false);
-            }, 100);
-            onFocus?.();
-          }}
-          onBlur={() => {
-            setIsEditing(false);
-            if (selectTimerRef.current) clearTimeout(selectTimerRef.current);
-            setShouldSelectOnFocus(selectTextOnFocus);
-            onBlur?.();
-          }}
-          returnKeyType={returnKeyType}
-          onSubmitEditing={() => {
-            onSubmitEditing?.();
-          }}
-          pointerEvents={isEditing ? "auto" : "none"}
-        />
       </Animated.View>
     </GestureDetector>
   );
