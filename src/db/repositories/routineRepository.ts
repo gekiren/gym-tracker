@@ -35,6 +35,8 @@ export const getRoutines = async () => {
     reps: number | null;
     weight: number | null;
     rpe: number | null;
+    speed: number | null;
+    incline: number | null;
     side: string | null;
     variation: string | null;
     stance: string | null;
@@ -43,7 +45,7 @@ export const getRoutines = async () => {
   if (rxIds.length > 0) {
     const placeholders = rxIds.map(() => '?').join(',');
     setRows = await conn.getAllAsync<typeof setRows[0]>(`
-      SELECT routine_exercise_id, set_number, reps, weight, rpe, side, variation, stance
+      SELECT routine_exercise_id, set_number, reps, weight, rpe, speed, incline, side, variation, stance
       FROM routine_sets
       WHERE routine_exercise_id IN (${placeholders})
       ORDER BY set_number ASC
@@ -70,6 +72,8 @@ export const getRoutines = async () => {
       reps: s.reps,
       weight: s.weight,
       rpe: s.rpe,
+      speed: s.speed ?? null,
+      incline: s.incline ?? null,
       side: s.side || null,
       variation: s.variation || null,
       stance: s.stance || null
@@ -110,8 +114,8 @@ export const addRoutine = async (title: string, description: string, exercises: 
       
       for (const s of ex.sets) {
         await conn.runAsync(
-          'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [routineExerciseId, s.set_number, s.reps, s.weight, s.rpe, s.side || null, s.variation || null, s.stance || null]
+          'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe, speed, incline, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [routineExerciseId, s.set_number, s.reps, s.weight, s.rpe, s.speed || null, s.incline || null, s.side || null, s.variation || null, s.stance || null]
         );
       }
     }
@@ -135,8 +139,8 @@ export const updateRoutine = async (id: number, title: string, description: stri
       
       for (const s of ex.sets) {
         await conn.runAsync(
-          'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [routineExerciseId, s.set_number, s.reps, s.weight, s.rpe, s.side || null, s.variation || null, s.stance || null]
+          'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe, speed, incline, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [routineExerciseId, s.set_number, s.reps, s.weight, s.rpe, s.speed || null, s.incline || null, s.side || null, s.variation || null, s.stance || null]
         );
       }
     }

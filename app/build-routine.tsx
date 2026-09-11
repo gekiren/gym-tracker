@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../src/i18n';
 import { useShallow } from 'zustand/react/shallow';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { isTreadmillExercise } from '../src/utils/exerciseUtils';
 
 export default function BuildRoutineScreen() {
   const { id: routineIdString } = useLocalSearchParams<{ id: string }>();
@@ -92,6 +93,9 @@ export default function BuildRoutineScreen() {
               weight: s.weight,
               reps: s.reps,
               rpe: s.rpe,
+              speed: s.speed ?? null,
+              incline: s.incline ?? null,
+              work_seconds: s.work_seconds ?? null,
               side: s.side || null,
               variation: s.variation || null,
               stance: s.stance || null
@@ -125,6 +129,9 @@ export default function BuildRoutineScreen() {
         weight: s.weight,
         reps: s.reps,
         rpe: s.rpe,
+        speed: s.speed ?? null,
+        incline: s.incline ?? null,
+        work_seconds: s.work_seconds ?? null,
         side: s.side || null,
         variation: s.variation || null,
         stance: s.stance || null
@@ -152,6 +159,9 @@ export default function BuildRoutineScreen() {
               weight: s.weight,
               reps: s.reps,
               rpe: s.rpe,
+              speed: s.speed ?? null,
+              incline: s.incline ?? null,
+              work_seconds: s.work_seconds ?? null,
               side: s.side || null,
               variation: s.variation || null,
               stance: s.stance || null
@@ -339,8 +349,12 @@ export default function BuildRoutineScreen() {
                 <View style={styles.setsContainer}>
                   <View style={styles.setsHeaderRow}>
                     <Text style={[styles.setsHeaderTh, { width: 50 }]}>{t('ui.build_routine.set_label')}</Text>
-                    <Text style={[styles.setsHeaderTh, { flex: 1 }]}>{t('ui.build_routine.weight_placeholder')}</Text>
-                    <Text style={[styles.setsHeaderTh, { flex: 1 }]}>{t('ui.build_routine.reps_placeholder')}</Text>
+                    <Text style={[styles.setsHeaderTh, { flex: 1 }]}>
+                      {isTreadmillExercise(ex.name) ? (t('ui.build_routine.speed_placeholder') || '速度 (km/h)') : t('ui.build_routine.weight_placeholder')}
+                    </Text>
+                    <Text style={[styles.setsHeaderTh, { flex: 1 }]}>
+                      {isTreadmillExercise(ex.name) ? (t('ui.build_routine.incline_placeholder') || '傾斜 (%)') : t('ui.build_routine.reps_placeholder')}
+                    </Text>
                     <Text style={[styles.setsHeaderTh, { width: 40 }]}></Text>
                   </View>
 
@@ -350,6 +364,7 @@ export default function BuildRoutineScreen() {
                       exIdx={exIdx}
                       setIdx={setIdx}
                       set={set}
+                      isTreadmill={isTreadmillExercise(ex.name)}
                       updateDraftSet={updateDraftSet}
                       removeDraftSet={removeDraftSet}
                       setsCount={ex.sets.length}
@@ -497,10 +512,11 @@ const styles = StyleSheet.create({
   modalListItemSubtext: { color: Theme.colors.textMuted, fontSize: 12 }
 });
 
-function RoutineSetRow({ exIdx, setIdx, set, updateDraftSet, removeDraftSet, setsCount, t }: {
+function RoutineSetRow({ exIdx, setIdx, set, isTreadmill, updateDraftSet, removeDraftSet, setsCount, t }: {
   exIdx: number;
   setIdx: number;
   set: any;
+  isTreadmill?: boolean;
   updateDraftSet: (exIdx: number, setIdx: number, changes: any) => void;
   removeDraftSet: (exIdx: number, setIdx: number) => void;
   setsCount: number;
@@ -508,13 +524,17 @@ function RoutineSetRow({ exIdx, setIdx, set, updateDraftSet, removeDraftSet, set
 }) {
   const [localWeight, setLocalWeight] = useState(set.weight !== null ? String(set.weight) : '');
   const [localReps, setLocalReps] = useState(set.reps !== null ? String(set.reps) : '');
+  const [localSpeed, setLocalSpeed] = useState(set.speed != null ? String(set.speed) : '');
+  const [localIncline, setLocalIncline] = useState(set.incline != null ? String(set.incline) : '');
   const [isFocusedWeight, setIsFocusedWeight] = useState(false);
   const [isFocusedReps, setIsFocusedReps] = useState(false);
+  const [isFocusedSpeed, setIsFocusedSpeed] = useState(false);
+  const [isFocusedIncline, setIsFocusedIncline] = useState(false);
 
   // 外部/親からの更新があった場合のみ同期
   useEffect(() => {
     if (isFocusedWeight) return;
-    if (set.weight !== null) {
+    if (set.weight !== null && set.weight !== undefined) {
       const currentLocalFloat = parseFloat(localWeight.replace(',', '.'));
       if (currentLocalFloat !== set.weight) setLocalWeight(String(set.weight));
     } else {
@@ -524,12 +544,32 @@ function RoutineSetRow({ exIdx, setIdx, set, updateDraftSet, removeDraftSet, set
 
   useEffect(() => {
     if (isFocusedReps) return;
-    if (set.reps !== null) {
+    if (set.reps !== null && set.reps !== undefined) {
       if (parseInt(localReps, 10) !== set.reps) setLocalReps(String(set.reps));
     } else {
       setLocalReps('');
     }
   }, [set.reps]);
+
+  useEffect(() => {
+    if (isFocusedSpeed) return;
+    if (set.speed != null) {
+      const currentLocalFloat = parseFloat(localSpeed.replace(',', '.'));
+      if (currentLocalFloat !== set.speed) setLocalSpeed(String(set.speed));
+    } else {
+      setLocalSpeed('');
+    }
+  }, [set.speed]);
+
+  useEffect(() => {
+    if (isFocusedIncline) return;
+    if (set.incline != null) {
+      const currentLocalFloat = parseFloat(localIncline.replace(',', '.'));
+      if (currentLocalFloat !== set.incline) setLocalIncline(String(set.incline));
+    } else {
+      setLocalIncline('');
+    }
+  }, [set.incline]);
 
   const handleWeightChange = (val: string) => {
     if (val === '' || /^\d{0,3}([.,]\d{0,1})?$/.test(val)) {
@@ -546,33 +586,76 @@ function RoutineSetRow({ exIdx, setIdx, set, updateDraftSet, removeDraftSet, set
     }
   };
 
+  const handleSpeedChange = (val: string) => {
+    if (val === '' || /^\d{0,2}([.,]\d{0,1})?$/.test(val)) {
+      setLocalSpeed(val);
+      const parsedVal = val.replace(',', '.');
+      updateDraftSet(exIdx, setIdx, { speed: parsedVal !== '' && parsedVal !== '.' ? parseFloat(parsedVal) : null });
+    }
+  };
+
+  const handleInclineChange = (val: string) => {
+    if (val === '' || /^\d{0,2}([.,]\d{0,1})?$/.test(val)) {
+      setLocalIncline(val);
+      const parsedVal = val.replace(',', '.');
+      updateDraftSet(exIdx, setIdx, { incline: parsedVal !== '' && parsedVal !== '.' ? parseFloat(parsedVal) : null });
+    }
+  };
+
   return (
     <View style={styles.setRow}>
       <View style={{ width: 50, alignItems: 'center' }}>
         <Text style={styles.setNumberText}>{set.set_number}</Text>
       </View>
 
-      <TextInput
-        style={styles.setInput}
-        keyboardType="decimal-pad"
-        placeholder="—"
-        placeholderTextColor="rgba(255,255,255,0.2)"
-        value={localWeight}
-        onChangeText={handleWeightChange}
-        onFocus={() => setIsFocusedWeight(true)}
-        onBlur={() => setIsFocusedWeight(false)}
-      />
+      {isTreadmill ? (
+        <>
+          <TextInput
+            style={styles.setInput}
+            keyboardType="decimal-pad"
+            placeholder="—"
+            placeholderTextColor="rgba(255,255,255,0.2)"
+            value={localSpeed}
+            onChangeText={handleSpeedChange}
+            onFocus={() => setIsFocusedSpeed(true)}
+            onBlur={() => setIsFocusedSpeed(false)}
+          />
+          <TextInput
+            style={styles.setInput}
+            keyboardType="decimal-pad"
+            placeholder="—"
+            placeholderTextColor="rgba(255,255,255,0.2)"
+            value={localIncline}
+            onChangeText={handleInclineChange}
+            onFocus={() => setIsFocusedIncline(true)}
+            onBlur={() => setIsFocusedIncline(false)}
+          />
+        </>
+      ) : (
+        <>
+          <TextInput
+            style={styles.setInput}
+            keyboardType="decimal-pad"
+            placeholder="—"
+            placeholderTextColor="rgba(255,255,255,0.2)"
+            value={localWeight}
+            onChangeText={handleWeightChange}
+            onFocus={() => setIsFocusedWeight(true)}
+            onBlur={() => setIsFocusedWeight(false)}
+          />
 
-      <TextInput
-        style={styles.setInput}
-        keyboardType="numeric"
-        placeholder="—"
-        placeholderTextColor="rgba(255,255,255,0.2)"
-        value={localReps}
-        onChangeText={handleRepsChange}
-        onFocus={() => setIsFocusedReps(true)}
-        onBlur={() => setIsFocusedReps(false)}
-      />
+          <TextInput
+            style={styles.setInput}
+            keyboardType="numeric"
+            placeholder="—"
+            placeholderTextColor="rgba(255,255,255,0.2)"
+            value={localReps}
+            onChangeText={handleRepsChange}
+            onFocus={() => setIsFocusedReps(true)}
+            onBlur={() => setIsFocusedReps(false)}
+          />
+        </>
+      )}
 
       <TouchableOpacity 
         onPress={() => removeDraftSet(exIdx, setIdx)} 

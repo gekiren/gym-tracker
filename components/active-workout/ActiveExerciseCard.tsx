@@ -13,6 +13,7 @@ import { StanceModalTarget } from '../../src/hooks/useActiveWorkout';
 import { WeightStepModal } from './WeightStepModal';
 import { updateExerciseWeightStep } from '../../src/db/repositories/exerciseRepository';
 import { useWorkoutStore } from '../../src/store/workoutStore';
+import { isTreadmillExercise } from '../../src/utils/exerciseUtils';
 
 interface ActiveExerciseCardProps {
   ex: any;
@@ -123,7 +124,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
                 </Text>
               </GHTouchableOpacity>
               <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginTop: 2 }}>
-                {settings.displayFields?.showVolume && (
+                {ex.muscle_group !== '有酸素' && settings.displayFields?.showVolume && (
                   <View style={styles.exerciseVolumeContainer}>
                     <Text style={styles.exerciseVolumeLabel}>{t('ui.history.volume_label')}: </Text>
                     <Text style={styles.exerciseVolumeValue}>
@@ -136,15 +137,17 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
                     </Text>
                   </View>
                 )}
-                <GHTouchableOpacity
-                  style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#2a2a2a', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 }}
-                  onPress={() => setWeightStepModalVisible(true)}
-                >
-                  <Ionicons name="swap-horizontal-outline" size={12} color={Theme.colors.primary} style={{ marginRight: 2 }} />
-                  <Text style={{ color: Theme.colors.primary, fontSize: 11, fontWeight: 'bold' }}>
-                    ±{ex.weight_step ?? 2.5}kg
-                  </Text>
-                </GHTouchableOpacity>
+                {ex.muscle_group !== '有酸素' && (
+                  <GHTouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#2a2a2a', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 }}
+                    onPress={() => setWeightStepModalVisible(true)}
+                  >
+                    <Ionicons name="swap-horizontal-outline" size={12} color={Theme.colors.primary} style={{ marginRight: 2 }} />
+                    <Text style={{ color: Theme.colors.primary, fontSize: 11, fontWeight: 'bold' }}>
+                      ±{ex.weight_step ?? 2.5}kg
+                    </Text>
+                  </GHTouchableOpacity>
+                )}
               </View>
             </View>
             <View style={styles.headerIcons}>
@@ -178,8 +181,14 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
 
       {/* Table Header */}
       <View style={styles.tableHeader}>
-        <Text style={[styles.th, { width: 50 }]}>{t('ui.active_workout.header_set')}</Text>
-        {ex.muscle_group === '有酸素' ? (
+        <Text style={[styles.th, { width: 44 }]}>{t('ui.active_workout.header_set')}</Text>
+        {isTreadmillExercise(ex.name) ? (
+          <>
+            <Text style={[styles.th, { width: 68, marginHorizontal: 2 }]}>{t('ui.active_workout.header_speed')}</Text>
+            <Text style={[styles.th, { width: 58, marginHorizontal: 2 }]}>{t('ui.active_workout.header_incline')}</Text>
+            <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>{t('ui.active_workout.header_time')}</Text>
+          </>
+        ) : ex.muscle_group === '有酸素' ? (
           <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>{t('ui.active_workout.header_time')}</Text>
         ) : (
           <>
@@ -200,7 +209,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
             )}
           </>
         )}
-        <Text style={[styles.th, { width: 40 }]}>{t('ui.active_workout.header_record')}</Text>
+        <Text style={[styles.th, { width: 36 }]}>{t('ui.active_workout.header_record')}</Text>
       </View>
 
       {/* Set Rows */}
