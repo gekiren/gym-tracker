@@ -329,6 +329,8 @@ export function SetInputRow({
                 selectTextOnFocus={true}
                 onSwipeStart={handleSwipeStart}
                 onSwipeEnd={handleSwipeEnd}
+                onTouchStart={handleSwipeStart}
+                onTouchEnd={handleSwipeEnd}
                 onFocus={() => {
                   setActiveSetForCalc({ exId: ex.id, setId: set.id });
                   originalSpeedRef.current = localSpeed;
@@ -370,6 +372,8 @@ export function SetInputRow({
                 selectTextOnFocus={true}
                 onSwipeStart={handleSwipeStart}
                 onSwipeEnd={handleSwipeEnd}
+                onTouchStart={handleSwipeStart}
+                onTouchEnd={handleSwipeEnd}
                 onFocus={() => {
                   originalInclineRef.current = localIncline;
                   if (localIncline === '') setInclineSel({ start: 0, end: 0 });
@@ -490,6 +494,8 @@ export function SetInputRow({
                 selectTextOnFocus={true}
                 onSwipeStart={handleSwipeStart}
                 onSwipeEnd={handleSwipeEnd}
+                onTouchStart={handleSwipeStart}
+                onTouchEnd={handleSwipeEnd}
                 onFocus={() => {
                   setActiveSetForCalc({ exId: ex.id, setId: set.id });
                   originalWeightRef.current = localWeight;
@@ -530,6 +536,8 @@ export function SetInputRow({
                   selectTextOnFocus={true}
                   onSwipeStart={handleSwipeStart}
                   onSwipeEnd={handleSwipeEnd}
+                  onTouchStart={handleSwipeStart}
+                  onTouchEnd={handleSwipeEnd}
                   onFocus={() => {
                     originalRepsRef.current = localReps;
                     if (localReps === '') setRepsSel({ start: 0, end: 0 });
@@ -566,6 +574,8 @@ export function SetInputRow({
                 selectTextOnFocus={true}
                 onSwipeStart={handleSwipeStart}
                 onSwipeEnd={handleSwipeEnd}
+                onTouchStart={handleSwipeStart}
+                onTouchEnd={handleSwipeEnd}
                 onFocus={() => {
                   originalRepsRef.current = localReps;
                   if (localReps === '') setRepsSel({ start: 0, end: 0 });
@@ -639,6 +649,8 @@ export function SetInputRow({
                   selectTextOnFocus={true}
                   onSwipeStart={handleSwipeStart}
                   onSwipeEnd={handleSwipeEnd}
+                  onTouchStart={handleSwipeStart}
+                  onTouchEnd={handleSwipeEnd}
                   onFocus={() => {
                     originalRpeRef.current = localRpe;
                     if (localRpe === '') setRpeSel({ start: 0, end: 0 });

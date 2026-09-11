@@ -9,7 +9,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Theme } from '../../src/theme';
-import { useIsKeyboardVisible } from '../../src/hooks/useKeyboardVisible';
 
 export interface CompactSwipeableInputHandle {
   focus: () => void;
@@ -39,6 +38,8 @@ interface CompactSwipeableInputProps {
   keyboardType?: 'numeric' | 'decimal-pad' | 'number-pad';
   onSwipeStart?: () => void;
   onSwipeEnd?: () => void;
+  onTouchStart?: () => void;
+  onTouchEnd?: () => void;
 }
 
 export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, CompactSwipeableInputProps>(({
@@ -64,9 +65,10 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   keyboardType = 'numeric',
   onSwipeStart,
   onSwipeEnd,
+  onTouchStart,
+  onTouchEnd,
 }, ref) => {
   const [isEditing, setIsEditing] = useState(false);
-  const isKeyboardVisible = useIsKeyboardVisible();
   const localInputRef = useRef<TextInput>(null);
 
   // ソフトウェアキーボードが閉じた際（Androidの戻るボタン等を含む）、フォーカスと編集モードを確実に解除
@@ -140,11 +142,19 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
     triggerHaptic();
   };
 
+  const dismissKeyboardAndResetEditing = () => {
+    Keyboard.dismiss();
+    setIsEditing(false);
+    localInputRef.current?.blur();
+  };
+
   const panGesture = Gesture.Pan()
-    .enabled(!disabled && !isEditing && !isKeyboardVisible)
-    .activeOffsetX([-6, 6])
-    .failOffsetY([-25, 25])
+    .enabled(!disabled)
+    .activeOffsetX([-4, 4])
+    .failOffsetY([-45, 45])
+    .cancelsTouchesInView(true)
     .onStart(() => {
+      runOnJS(dismissKeyboardAndResetEditing)();
       if (onSwipeStart) {
         runOnJS(onSwipeStart)();
       }
@@ -242,7 +252,12 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
 
   return (
     <GestureDetector gesture={gesture}>
-      <Animated.View style={[styles.baseBox, style, dragContainerStyle]}>
+      <Animated.View
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
+        style={[styles.baseBox, style, dragContainerStyle]}
+      >
         {!isEditing && (
           <Animated.Text
             numberOfLines={1}
