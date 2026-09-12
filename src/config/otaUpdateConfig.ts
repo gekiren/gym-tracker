@@ -13,19 +13,17 @@ export interface OTAUpdateConfig {
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
   version: '2.2.0',
   title: {
-    ja: '🏃 トレッドミル表示欄のレイアウト最適化',
-    en: '🏃 Treadmill Layout Optimization',
+    ja: '⏱️ トレッドミルタイマー操作の修正',
+    en: '⏱️ Treadmill Timer Controls Fix',
   },
   notes: {
     ja: [
-      'トレッドミル種目の表示欄・タイマー・記録ボタンのレイアウト干渉を解消しました。',
-      '速度・傾斜・時間の入力欄幅を最適化し、文字やアイコンの重なりを修正しました。',
-      '有酸素種目におけるスタンス表示を非表示化し、画面の視認性を向上させました。',
+      'トレッドミル種目の時間設定および再生・リセットボタンのタップ反応を修正しました。',
+      '表示欄・タイマー・記録ボタンのレイアウトを最適化しました。',
     ],
     en: [
-      'Resolved layout overlap for treadmill time, timer controls, and complete buttons.',
-      'Optimized column widths for speed, incline, and time display.',
-      'Hidden stance option for cardio exercises for cleaner UI.',
+      'Fixed touch response for treadmill time and timer play/reset controls.',
+      'Optimized layout and column alignment for cardio exercises.',
     ],
   },
 };
