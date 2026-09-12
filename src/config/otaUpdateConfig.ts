@@ -11,19 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.1.17',
+  version: '2.2.0',
   title: {
-    ja: '⚡ 写真解析のタイムアウト延長・通信安定化',
-    en: '⚡ Nutrition Vision Timeout Extension & Stability',
+    ja: '🏃 トレッドミル表示欄のレイアウト最適化',
+    en: '🏃 Treadmill Layout Optimization',
   },
   notes: {
     ja: [
-      '画像栄養解析時のタイムアウト時間を延長し、大容量の写真でも途中で途切れず確実に解析できるよう改善しました。',
-      'AIプロキシサーバーのモデル自動切替を強化し、安定した無料枠モデル（500回/日）を最優先に活用します。',
+      'トレッドミル種目の表示欄・タイマー・記録ボタンのレイアウト干渉を解消しました。',
+      '速度・傾斜・時間の入力欄幅を最適化し、文字やアイコンの重なりを修正しました。',
+      '有酸素種目におけるスタンス表示を非表示化し、画面の視認性を向上させました。',
     ],
     en: [
-      'Extended client and server timeouts for image nutrition analysis, preventing interrupted requests on large images.',
-      'Enhanced AI proxy fallback chain, prioritizing high-quota free-tier models (500 requests/day).',
+      'Resolved layout overlap for treadmill time, timer controls, and complete buttons.',
+      'Optimized column widths for speed, incline, and time display.',
+      'Hidden stance option for cardio exercises for cleaner UI.',
     ],
   },
 };
