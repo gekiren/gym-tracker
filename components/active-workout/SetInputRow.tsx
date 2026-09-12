@@ -304,7 +304,7 @@ export function SetInputRow({
     >
       <View style={{ backgroundColor: Theme.colors.card }}>
         <View style={[styles.row, set.is_completed && styles.rowCompleted]}>
-          <View style={{ width: 44, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: isTreadmill ? 38 : 44, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={styles.tdSet} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
               {set.set_number}{set.side ? `(${set.side})` : ''}
             </Text>
@@ -315,8 +315,8 @@ export function SetInputRow({
           <>
             {/* Speed Column */}
             {set.is_completed ? (
-              <View style={[styles.input, { width: 68 }, styles.inputReadOnly]}>
-                <Text style={styles.inputReadOnlyText} numberOfLines={1}>
+              <View style={[styles.input, { width: 56, marginHorizontal: 2 }, styles.inputReadOnly]}>
+                <Text style={styles.inputReadOnlyText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                   {localSpeed ? `${localSpeed}` : (set.prev_speed != null ? `${set.prev_speed}` : '-')}
                 </Text>
               </View>
@@ -324,7 +324,7 @@ export function SetInputRow({
               <CompactSwipeableInput 
                 inputRef={speedInputRef}
                 panGestureRef={speedPanRef}
-                style={[styles.input, { width: 68 }]} 
+                style={[styles.input, { width: 56, marginHorizontal: 2 }]} 
                 keyboardType="decimal-pad" 
                 step={0.5}
                 placeholder={set.prev_speed != null ? String(set.prev_speed) : "-"} 
@@ -355,8 +355,8 @@ export function SetInputRow({
 
             {/* Incline Column */}
             {set.is_completed ? (
-              <View style={[styles.input, { width: 58 }, styles.inputReadOnly]}>
-                <Text style={styles.inputReadOnlyText} numberOfLines={1}>
+              <View style={[styles.input, { width: 50, marginHorizontal: 2 }, styles.inputReadOnly]}>
+                <Text style={styles.inputReadOnlyText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                   {localIncline ? `${localIncline}%` : (set.prev_incline != null ? `${set.prev_incline}%` : '-')}
                 </Text>
               </View>
@@ -364,7 +364,7 @@ export function SetInputRow({
               <CompactSwipeableInput 
                 inputRef={inclineInputRef}
                 panGestureRef={inclinePanRef}
-                style={[styles.input, { width: 58 }]} 
+                style={[styles.input, { width: 50, marginHorizontal: 2 }]} 
                 keyboardType="decimal-pad" 
                 step={0.5}
                 placeholder={set.prev_incline != null ? `${set.prev_incline}%` : "-"} 
@@ -399,17 +399,34 @@ export function SetInputRow({
                   {formatAerobicTime(set.work_seconds ?? swElapsed)}
                 </Text>
               ) : (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                   <TouchableOpacity
                     onPress={handleOpenTimeModal}
-                    style={{ paddingVertical: 4, paddingHorizontal: 4, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.06)' }}
+                    style={[
+                      styles.input,
+                      {
+                        width: 54,
+                        marginHorizontal: 0,
+                        backgroundColor: '#2a2a2a',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }
+                    ]}
                   >
-                    <Text style={{ color: Theme.colors.primary, fontSize: 15, fontWeight: 'bold', letterSpacing: 1 }}>
+                    <Text style={{ color: Theme.colors.primary, fontSize: 14, fontWeight: 'bold', letterSpacing: 0.5 }}>
                       {formatAerobicTime(swElapsed)}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={{ backgroundColor: swRunning ? Theme.colors.danger : Theme.colors.success, width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}
+                    style={{
+                      backgroundColor: swRunning ? Theme.colors.danger : Theme.colors.success,
+                      width: 28,
+                      height: 28,
+                      borderRadius: 14,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginLeft: 4,
+                    }}
                     onPress={() => {
                       if (!swRunning) {
                         const now = Date.now() - swElapsed * 1000;
@@ -424,8 +441,16 @@ export function SetInputRow({
                     <Ionicons name={swRunning ? 'pause' : 'play'} size={14} color="#fff" style={{ marginLeft: swRunning ? 0 : 2 }} />
                   </TouchableOpacity>
                   {swElapsed > 0 && !swRunning && (
-                    <TouchableOpacity onPress={() => { setSwElapsed(0); setSwStartTs(null); updateSet(ex.id, set.id, { work_seconds: null }); }}>
-                      <Ionicons name="refresh" size={14} color={Theme.colors.textMuted} />
+                    <TouchableOpacity
+                      hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+                      style={{ width: 22, height: 28, alignItems: 'center', justifyContent: 'center', marginLeft: 3 }}
+                      onPress={() => {
+                        setSwElapsed(0);
+                        setSwStartTs(null);
+                        updateSet(ex.id, set.id, { work_seconds: null });
+                      }}
+                    >
+                      <Ionicons name="refresh" size={15} color={Theme.colors.textMuted} />
                     </TouchableOpacity>
                   )}
                 </View>

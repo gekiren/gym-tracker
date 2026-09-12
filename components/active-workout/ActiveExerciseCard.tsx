@@ -181,11 +181,11 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
 
       {/* Table Header */}
       <View style={styles.tableHeader}>
-        <Text style={[styles.th, { width: 44 }]}>{t('ui.active_workout.header_set')}</Text>
+        <Text style={[styles.th, { width: isTreadmillExercise(ex.name) ? 38 : 44 }]}>{t('ui.active_workout.header_set')}</Text>
         {isTreadmillExercise(ex.name) ? (
           <>
-            <Text style={[styles.th, { width: 68, marginHorizontal: 2 }]}>{t('ui.active_workout.header_speed')}</Text>
-            <Text style={[styles.th, { width: 58, marginHorizontal: 2 }]}>{t('ui.active_workout.header_incline')}</Text>
+            <Text style={[styles.th, { width: 56, marginHorizontal: 2 }]}>{t('ui.active_workout.header_speed')}</Text>
+            <Text style={[styles.th, { width: 50, marginHorizontal: 2, fontSize: 13 }]}>{t('ui.active_workout.header_incline')}</Text>
             <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>{t('ui.active_workout.header_time')}</Text>
           </>
         ) : ex.muscle_group === '有酸素' ? (
@@ -233,7 +233,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
 
       <View style={styles.bottomRowContainer}>
         <View style={styles.bottomLeftContainer}>
-          {settings.displayFields?.showStance && (
+          {settings.displayFields?.showStance && ex.muscle_group !== '有酸素' && !isTreadmillExercise(ex.name) && (
             <GHTouchableOpacity
               style={styles.exerciseVariationBtnBottom}
               onPress={() => {
