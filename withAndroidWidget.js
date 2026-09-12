@@ -391,7 +391,7 @@ const withAndroidWidget = (config) => {
 
         // Always ensure clean updateWidgets without Zikan Large, plus onNewIntent and onDestroy intent reset
         const injectedCode = `
-  override fun onNewIntent(intent: Intent?) {
+  override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
     setIntent(intent)
   }
