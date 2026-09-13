@@ -400,24 +400,19 @@ export function SetInputRow({
                 </Text>
               ) : (
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                  <TouchableOpacity
+                  <GHTouchableOpacity
+                    disallowInterruption={true}
+                    activeOpacity={0.7}
                     onPress={handleOpenTimeModal}
-                    style={[
-                      styles.input,
-                      {
-                        width: 54,
-                        marginHorizontal: 0,
-                        backgroundColor: '#2a2a2a',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }
-                    ]}
+                    style={styles.timeInputBtn}
                   >
-                    <Text style={{ color: Theme.colors.primary, fontSize: 14, fontWeight: 'bold', letterSpacing: 0.5 }}>
+                    <Text pointerEvents="none" style={{ color: Theme.colors.primary, fontSize: 14, fontWeight: 'bold', letterSpacing: 0.5 }}>
                       {formatAerobicTime(swElapsed)}
                     </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
+                  </GHTouchableOpacity>
+                  <GHTouchableOpacity
+                    disallowInterruption={true}
+                    activeOpacity={0.7}
                     style={{
                       backgroundColor: swRunning ? Theme.colors.danger : Theme.colors.success,
                       width: 28,
@@ -438,10 +433,12 @@ export function SetInputRow({
                       }
                     }}
                   >
-                    <Ionicons name={swRunning ? 'pause' : 'play'} size={14} color="#fff" style={{ marginLeft: swRunning ? 0 : 2 }} />
-                  </TouchableOpacity>
+                    <Ionicons pointerEvents="none" name={swRunning ? 'pause' : 'play'} size={14} color="#fff" style={{ marginLeft: swRunning ? 0 : 2 }} />
+                  </GHTouchableOpacity>
                   {swElapsed > 0 && !swRunning && (
-                    <TouchableOpacity
+                    <GHTouchableOpacity
+                      disallowInterruption={true}
+                      activeOpacity={0.7}
                       hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
                       style={{ width: 22, height: 28, alignItems: 'center', justifyContent: 'center', marginLeft: 3 }}
                       onPress={() => {
@@ -450,8 +447,8 @@ export function SetInputRow({
                         updateSet(ex.id, set.id, { work_seconds: null });
                       }}
                     >
-                      <Ionicons name="refresh" size={15} color={Theme.colors.textMuted} />
-                    </TouchableOpacity>
+                      <Ionicons pointerEvents="none" name="refresh" size={15} color={Theme.colors.textMuted} />
+                    </GHTouchableOpacity>
                   )}
                 </View>
               )}
@@ -470,7 +467,9 @@ export function SetInputRow({
               <Text style={{ color: Theme.colors.primary, fontSize: 22, fontWeight: 'bold', letterSpacing: 2, minWidth: 60, textAlign: 'center' }}>
                 {formatAerobicTime(swElapsed)}
               </Text>
-              <TouchableOpacity
+              <GHTouchableOpacity
+                disallowInterruption={true}
+                activeOpacity={0.7}
                 style={{ backgroundColor: swRunning ? Theme.colors.danger : Theme.colors.success, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 }}
                 onPress={() => {
                   if (!swRunning) {
@@ -483,14 +482,19 @@ export function SetInputRow({
                   }
                 }}
               >
-                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14 }}>
+                <Text pointerEvents="none" style={{ color: '#fff', fontWeight: 'bold', fontSize: 14 }}>
                   {swRunning ? t('ui.active_workout.aerobic_stop') : (swElapsed > 0 ? t('ui.active_workout.aerobic_resume') : t('ui.active_workout.aerobic_start'))}
                 </Text>
-              </TouchableOpacity>
+              </GHTouchableOpacity>
               {swElapsed > 0 && !swRunning && (
-                <TouchableOpacity onPress={() => { setSwElapsed(0); setSwStartTs(null); updateSet(ex.id, set.id, { work_seconds: null }); }}>
-                  <Ionicons name="refresh" size={18} color={Theme.colors.textMuted} />
-                </TouchableOpacity>
+                <GHTouchableOpacity
+                  disallowInterruption={true}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+                  onPress={() => { setSwElapsed(0); setSwStartTs(null); updateSet(ex.id, set.id, { work_seconds: null }); }}
+                >
+                  <Ionicons pointerEvents="none" name="refresh" size={18} color={Theme.colors.textMuted} />
+                </GHTouchableOpacity>
               )}
             </View>
           )
@@ -846,6 +850,14 @@ const styles = StyleSheet.create({
   },
   inputReadOnly: { opacity: 0.7, justifyContent: 'center', alignItems: 'center' },
   inputReadOnlyText: { color: Theme.colors.text, fontSize: 15, textAlign: 'center', textAlignVertical: 'center', includeFontPadding: false },
+  timeInputBtn: {
+    width: 54,
+    height: 30,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   checkBtn: { width: 30, height: 30, backgroundColor: '#333', borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
   checkBtnActive: { backgroundColor: Theme.colors.success },
   deleteAction: {
