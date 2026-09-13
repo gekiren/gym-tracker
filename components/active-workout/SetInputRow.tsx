@@ -351,7 +351,7 @@ export function SetInputRow({
     >
       <View style={{ backgroundColor: Theme.colors.card }}>
         <View style={[styles.row, set.is_completed && styles.rowCompleted]}>
-          <View style={{ width: isTreadmill ? 38 : 44, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: isTreadmill ? 40 : 44, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={styles.tdSet} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
               {set.set_number}{set.side ? `(${set.side})` : ''}
             </Text>
@@ -362,7 +362,7 @@ export function SetInputRow({
           <>
             {/* Speed Column */}
             {set.is_completed ? (
-              <View style={[styles.input, { width: 56, marginHorizontal: 2 }, styles.inputReadOnly]}>
+              <View style={[styles.input, { width: 54, marginHorizontal: 2 }, styles.inputReadOnly]}>
                 <Text style={styles.inputReadOnlyText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                   {localSpeed ? `${localSpeed}` : (set.prev_speed != null ? `${set.prev_speed}` : '-')}
                 </Text>
@@ -371,7 +371,7 @@ export function SetInputRow({
               <CompactSwipeableInput 
                 inputRef={speedInputRef}
                 panGestureRef={speedPanRef}
-                style={[styles.input, { width: 56, marginHorizontal: 2 }]} 
+                style={[styles.input, { width: 54, marginHorizontal: 2 }]} 
                 keyboardType="decimal-pad" 
                 step={0.5}
                 placeholder={set.prev_speed != null ? String(set.prev_speed) : "-"} 
@@ -402,7 +402,7 @@ export function SetInputRow({
 
             {/* Incline Column */}
             {set.is_completed ? (
-              <View style={[styles.input, { width: 50, marginHorizontal: 2 }, styles.inputReadOnly]}>
+              <View style={[styles.input, { width: 48, marginHorizontal: 2 }, styles.inputReadOnly]}>
                 <Text style={styles.inputReadOnlyText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                   {localIncline ? `${localIncline}%` : (set.prev_incline != null ? `${set.prev_incline}%` : '-')}
                 </Text>
@@ -411,7 +411,7 @@ export function SetInputRow({
               <CompactSwipeableInput 
                 inputRef={inclineInputRef}
                 panGestureRef={inclinePanRef}
-                style={[styles.input, { width: 50, marginHorizontal: 2 }]} 
+                style={[styles.input, { width: 48, marginHorizontal: 2 }]} 
                 keyboardType="decimal-pad" 
                 step={0.5}
                 placeholder={set.prev_incline != null ? `${set.prev_incline}%` : "-"} 
@@ -453,9 +453,26 @@ export function SetInputRow({
                     onPress={handleOpenTimeModal}
                     style={styles.timeInputBtn}
                   >
-                    <Text pointerEvents="none" style={{ color: Theme.colors.primary, fontSize: 14, fontWeight: 'bold', letterSpacing: 0.5 }}>
-                      {timerMode === 'countdown' ? `⏳ ${formatTimerDisplay(countdownRemaining)}` : formatTimerDisplay(swElapsed)}
-                    </Text>
+                    {timerMode === 'countdown' ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                        <Ionicons pointerEvents="none" name="hourglass-outline" size={12} color={Theme.colors.primary} style={{ marginRight: 2 }} />
+                        <Text
+                          pointerEvents="none"
+                          numberOfLines={1}
+                          style={{ color: Theme.colors.primary, fontSize: 13, fontWeight: 'bold', letterSpacing: 0.3 }}
+                        >
+                          {formatTimerDisplay(countdownRemaining)}
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text
+                        pointerEvents="none"
+                        numberOfLines={1}
+                        style={{ color: Theme.colors.primary, fontSize: 14, fontWeight: 'bold', letterSpacing: 0.5 }}
+                      >
+                        {formatTimerDisplay(swElapsed)}
+                      </Text>
+                    )}
                   </GHTouchableOpacity>
                   <GHTouchableOpacity
                     disallowInterruption={true}
@@ -972,12 +989,14 @@ const styles = StyleSheet.create({
   inputReadOnly: { opacity: 0.7, justifyContent: 'center', alignItems: 'center' },
   inputReadOnlyText: { color: Theme.colors.text, fontSize: 15, textAlign: 'center', textAlignVertical: 'center', includeFontPadding: false },
   timeInputBtn: {
-    width: 54,
+    width: 68,
     height: 30,
     backgroundColor: '#2a2a2a',
     borderRadius: 4,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 2,
   },
   checkBtn: { width: 30, height: 30, backgroundColor: '#333', borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
   checkBtnActive: { backgroundColor: Theme.colors.success },

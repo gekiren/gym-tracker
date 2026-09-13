@@ -181,11 +181,18 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
 
       {/* Table Header */}
       <View style={styles.tableHeader}>
-        <Text style={[styles.th, { width: isTreadmillExercise(ex.name) ? 38 : 44 }]}>{t('ui.active_workout.header_set')}</Text>
+        <Text
+          style={[styles.th, { width: isTreadmillExercise(ex.name) ? 40 : 44 }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+        >
+          {t('ui.active_workout.header_set')}
+        </Text>
         {isTreadmillExercise(ex.name) ? (
           <>
-            <Text style={[styles.th, { width: 56, marginHorizontal: 2 }]}>{t('ui.active_workout.header_speed')}</Text>
-            <Text style={[styles.th, { width: 50, marginHorizontal: 2, fontSize: 13 }]}>{t('ui.active_workout.header_incline')}</Text>
+            <Text style={[styles.th, { width: 54, marginHorizontal: 2 }]}>{t('ui.active_workout.header_speed')}</Text>
+            <Text style={[styles.th, { width: 48, marginHorizontal: 2, fontSize: 13 }]}>{t('ui.active_workout.header_incline')}</Text>
             <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>{t('ui.active_workout.header_time')}</Text>
           </>
         ) : ex.muscle_group === '有酸素' ? (
