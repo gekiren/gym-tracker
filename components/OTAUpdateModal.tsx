@@ -6,7 +6,7 @@ import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import { CURRENT_OTA_CONFIG } from '../src/config/otaUpdateConfig';
 import { Ionicons } from '@expo/vector-icons';
 import i18n from '../src/i18n';
-import { saveSetting } from '../src/db/database';
+import { saveSetting, createInstantBackup } from '../src/db/database';
 
 export const OTAUpdateModal = () => {
   const { isVisible, hideModal } = useOTAUpdateStore();
@@ -24,6 +24,12 @@ export const OTAUpdateModal = () => {
     hideModal();
     try {
       if (Updates.isEnabled && !__DEV__) {
+        // 🛡️ OTA適用直前の強制バックアップ（WALフラッシュ＆退避）
+        try {
+          await createInstantBackup('pre_ota_modal');
+        } catch (backupErr) {
+          console.warn('Pre-OTA modal backup warning:', backupErr);
+        }
         await saveSetting('ota_reload_in_progress', '1');
         await Updates.reloadAsync();
       }

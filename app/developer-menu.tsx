@@ -10,7 +10,7 @@ import { importWorkoutFromSelectedFile, importWorkoutFromMarkdownText } from '..
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Updates from 'expo-updates';
-import { saveSetting, getDB, closeDB, initDB, getSettings, exportDatabaseBackup } from '../src/db/database';
+import { saveSetting, getDB, closeDB, initDB, getSettings, exportDatabaseBackup, createInstantBackup } from '../src/db/database';
 import { getSyncDiagnosticsLogs } from '../src/services/lifelogSyncService';
 import { showReviewDialog } from '../src/services/reviewService';
 import { saveCrashLog, readCrashLog } from '../src/services/crashReporterService';
@@ -168,6 +168,12 @@ function DeveloperMenuScreenInternal() {
                 await Updates.fetchUpdateAsync();
                 
                 try {
+                  // 🛡️ OTA適用直前の強制バックアップ（WALフラッシュ＆退避）
+                  try {
+                    await createInstantBackup('pre_ota_dev');
+                  } catch (backupErr) {
+                    console.warn('Pre-OTA dev backup warning:', backupErr);
+                  }
                   // 7. Reload
                   await Updates.reloadAsync();
                 } catch (reloadErr: any) {
@@ -386,6 +392,12 @@ function DeveloperMenuScreenInternal() {
                 try {
                   await Updates.fetchUpdateAsync();
                   try {
+                    // 🛡️ OTA適用直前の強制バックアップ（WALフラッシュ＆退避）
+                    try {
+                      await createInstantBackup('pre_ota_dev');
+                    } catch (backupErr) {
+                      console.warn('Pre-OTA dev backup warning:', backupErr);
+                    }
                     await Updates.reloadAsync();
                   } catch (reloadErr) {
                     console.warn('Reload failed, asking user to manual restart:', reloadErr);

@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.2.6',
+  version: '2.2.7',
   title: {
-    ja: '🍱 9月13日食事記録（1800kcal）の網羅的復元パッチ',
-    en: '🍱 Full Forensic Meal Recovery Patch (Sep 13)',
+    ja: '🛡️ OTA更新直前バックアップ＆データ保護パッチ',
+    en: '🛡️ Pre-OTA Mandatory Backup & Safety Patch',
   },
   notes: {
     ja: [
-      '9月13日の全食事記録（朝食・昼食・夕食・間食等）を全バックアップから網羅的に救出・復元しました。',
-      '栄養管理およびカレンダー同期を最新化しました。',
+      'アプリアップデート（OTA）適用直前に、全データを最新状態で強制バックアップする安全保護機構を新設しました。',
+      'アップデート再起動に伴うデータ消失やロールバックを恒久的に防止します。',
     ],
     en: [
-      'Forensically scanned all backups and restored all meal records for September 13th.',
-      'Updated nutrition dashboard and calendar synchronization.',
+      'Introduced mandatory instant backup mechanism immediately before applying OTA updates.',
+      'Permanently prevents data loss and accidental rollback during update reloads.',
     ],
   },
 };
