@@ -1,4 +1,4 @@
-import { getDB, initDB, withDBQueue } from '../database';
+import { getDB, initDB, withDBQueue, triggerDebouncedDataBackup } from '../database';
 import {
   MealLog,
   MealFavorite,
@@ -53,7 +53,7 @@ export const addMealLog = async (
   log: Omit<MealLog, 'id'>
 ): Promise<number> => {
   await getSafeDB();
-  return await withDBQueue(async (conn) => {
+  const rowId = await withDBQueue(async (conn) => {
     const res = await conn.runAsync(
       `INSERT INTO meal_logs
         (date, meal_type, meal_time, name, calories, protein, fat, carbs, sodium, fiber, photo_url, memo, created_at)
@@ -76,6 +76,9 @@ export const addMealLog = async (
     );
     return res.lastInsertRowId;
   });
+  // 食事追加後の非同期バックアップ（20秒デバウンス）
+  triggerDebouncedDataBackup('meal_save', 20000);
+  return rowId;
 };
 
 export const updateMealLog = async (
@@ -108,6 +111,8 @@ export const updateMealLog = async (
       values
     );
   });
+  // 食事更新後の非同期バックアップ（20秒デバウンス）
+  triggerDebouncedDataBackup('meal_save', 20000);
 };
 
 export const deleteMealLog = async (id: number): Promise<void> => {
@@ -115,6 +120,8 @@ export const deleteMealLog = async (id: number): Promise<void> => {
   await withDBQueue(async (conn) => {
     await conn.runAsync('DELETE FROM meal_logs WHERE id = ?', [id]);
   });
+  // 食事削除後の非同期バックアップ（20秒デバウンス）
+  triggerDebouncedDataBackup('meal_save', 20000);
 };
 
 // ─── お気に入り (meal_favorites) ───────────────────────

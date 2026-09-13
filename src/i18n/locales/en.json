@@ -95,6 +95,9 @@
       "header_seconds": "Seconds",
       "header_timer": "Timer",
       "manual_time_prompt": "Set Exercise Duration",
+      "timer_mode_countup": "⏱️ Count Up",
+      "timer_mode_countdown": "⏳ Count Down",
+      "countdown_reached": "Target time reached!",
       "minutes_unit": "min",
       "seconds_unit": "s",
       "aerobic_start": "▶ Start",
@@ -641,7 +644,11 @@
       "message_detected": "The app terminated unexpectedly during the last session. Would you like to send an anonymous crash report to help improve quality?",
       "message_onboarding": "Would you like to automatically send anonymous crash reports to help improve the app? Sharing crash logs helps us find and fix bugs faster.",
       "btn_consent": "Send and cooperate (Agree)",
-      "btn_decline": "Don't send this time (Decline)"
+      "btn_decline": "Don't send this time (Decline)",
+      "success_title": "Report Sent",
+      "success_desc": "Thank you for helping us improve the app.",
+      "error_title": "Error",
+      "error_desc": "Failed to send the report."
     },
     "workout_completion": {
       "title": "Workout Complete!",

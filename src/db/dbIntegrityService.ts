@@ -34,11 +34,27 @@ export const checkAndRepairDB = async (db: SQLite.SQLiteDatabase): Promise<DBChe
     console.warn('[DB_INTEGRITY] Error during DB integrity check:', e);
   }
 
-  // 3. WAL統合修復でも直らなかった場合：コネクションを閉じてバックアップ復元を実行
+  // 3. WAL統合修復でも直らなかった場合：
+  // 【最重要】勝手に上書き復元する前に、現在のDBファイルを必ず退避コピーして保全する
   try {
     await db.closeAsync();
   } catch (closeErr) {
     console.warn('[DB_INTEGRITY] Warning closing DB connection for restore:', closeErr);
+  }
+
+  // 現行DBファイルの退避（フォレンジック・救出用）
+  try {
+    const FileSystem = require('expo-file-system/legacy');
+    const sqliteDir = `${FileSystem.documentDirectory}SQLite/`;
+    const dbPath = `${sqliteDir}gymtracker.db`;
+    const corruptedBackupPath = `${FileSystem.documentDirectory}backups/gymtracker_quarantine_${Date.now()}.db`;
+    const dbInfo = await FileSystem.getInfoAsync(dbPath);
+    if (dbInfo.exists && dbInfo.size > 0) {
+      await FileSystem.copyAsync({ from: dbPath, to: corruptedBackupPath });
+      console.log('[DB_INTEGRITY] Successfully quarantined existing DB to:', corruptedBackupPath);
+    }
+  } catch (quarantineErr) {
+    console.warn('[DB_INTEGRITY] Failed to quarantine existing DB:', quarantineErr);
   }
 
   console.warn('[DB_INTEGRITY] Attempting to restore database from latest daily backup...');

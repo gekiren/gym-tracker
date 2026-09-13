@@ -8,7 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import * as Updates from 'expo-updates';
 import mobileAds from 'react-native-google-mobile-ads';
-import { initDB, getSettings, saveSetting } from '../src/db/database';
+import { initDB, getSettings, saveSetting, triggerBackgroundBackup } from '../src/db/database';
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore, FeatureId } from '../src/store/settingsStore';
@@ -215,7 +215,12 @@ export default function RootLayout() {
     }, 15 * 60 * 1000);
 
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
-      if (nextAppState === 'active') {
+      if (nextAppState === 'background') {
+        // バックグラウンド移行時の自動バックアップ（未退避変更の回収 ＆ 5分スロットル）
+        triggerBackgroundBackup().catch((err) => {
+          console.warn('Failed to run background backup on app background:', err);
+        });
+      } else if (nextAppState === 'active') {
         // アプリフォアグラウンド復帰時にヘルスコネクトに自動アクセス
         syncHealthData({ reason: 'launch' }).catch(console.error);
 

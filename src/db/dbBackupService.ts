@@ -67,6 +67,137 @@ export const createDailyBackup = async (): Promise<boolean> => {
   }
 };
 
+// バックアップ制御用のメモリ内状態
+let lastBackupTimestamp = 0;
+let pendingDataSaveTimer: ReturnType<typeof setTimeout> | null = null;
+let hasUnsavedChanges = false;
+let pendingReason: string = 'data_save';
+
+const BACKGROUND_THROTTLE_MS = 5 * 60 * 1000; // 5分スロットル
+
+/**
+ * 強制的に即時バックアップを作成する（OTA適用前、重要イベント後などに使用）
+ * 1. WAL チェックポイントを強制実行（TRUNCATE）し、未コミット・未書き込みログをすべてDB本体へフラッシュ
+ * 2. 最新バックアップ（gymtracker_backup_latest.db）へ上書き保存
+ * 3. 追跡用バックアップ（gymtracker_backup_{reason}_{timestamp}.db）へ保存（最大3世代保持）
+ */
+export const createInstantBackup = async (reason: string = 'instant'): Promise<boolean> => {
+  try {
+    await ensureBackupDir();
+
+    // 1. WAL checkpoint (Flush WAL changes into main DB file)
+    try {
+      const conn = getDB();
+      if (conn) {
+        await conn.execAsync('PRAGMA wal_checkpoint(TRUNCATE);');
+      }
+    } catch (walErr) {
+      console.warn(`[DB_BACKUP] WAL checkpoint warning before ${reason} backup:`, walErr);
+    }
+
+    // 2. 原本DBの存在確認
+    const dbInfo = await FileSystem.getInfoAsync(DB_PATH);
+    if (!dbInfo.exists || dbInfo.size === 0) {
+      console.warn(`[DB_BACKUP] Main database file not found or empty (${DB_PATH}).`);
+      return false;
+    }
+
+    // 3. 最新バックアップファイルへの上書きコピー
+    await FileSystem.copyAsync({ from: DB_PATH, to: LATEST_BACKUP_PATH });
+
+    // 4. 追跡・世代管理用バックアップの作成
+    const timestamp = Date.now();
+    const targetedBackupPath = `${BACKUP_DIR}gymtracker_backup_${reason}_${timestamp}.db`;
+    await FileSystem.copyAsync({ from: DB_PATH, to: targetedBackupPath });
+
+    // 5. 同一reasonのバックアップが3世代を超えた場合は古いものをクリーンアップ
+    try {
+      const files = await FileSystem.readDirectoryAsync(BACKUP_DIR);
+      const matchedFiles = files
+        .filter((f) => f.startsWith(`gymtracker_backup_${reason}_`) && f.endsWith('.db'))
+        .sort();
+
+      if (matchedFiles.length > 3) {
+        const filesToDelete = matchedFiles.slice(0, matchedFiles.length - 3);
+        for (const file of filesToDelete) {
+          await FileSystem.deleteAsync(`${BACKUP_DIR}${file}`, { idempotent: true });
+        }
+      }
+    } catch (cleanErr) {
+      console.warn('[DB_BACKUP] Warning cleaning old instant backups:', cleanErr);
+    }
+
+    lastBackupTimestamp = Date.now();
+    console.log(`[DB_BACKUP] Instant backup (${reason}) created successfully at: ${targetedBackupPath}`);
+    return true;
+  } catch (e) {
+    console.warn(`[DB_BACKUP] Failed to create instant backup (${reason}):`, e);
+    return false;
+  }
+};
+
+/**
+ * データ保存時用：非同期デバウンス付きバックアップトリガー
+ * 連続した保存操作（食事の複数追加など）を考慮し、指定ミリ秒後に1回だけバックアップを実行する。
+ */
+export const triggerDebouncedDataBackup = (reason: string = 'data_save', delayMs: number = 20000): void => {
+  hasUnsavedChanges = true;
+  pendingReason = reason;
+
+  if (pendingDataSaveTimer) {
+    clearTimeout(pendingDataSaveTimer);
+  }
+
+  pendingDataSaveTimer = setTimeout(async () => {
+    pendingDataSaveTimer = null;
+    try {
+      const ok = await createInstantBackup(pendingReason);
+      if (ok) {
+        hasUnsavedChanges = false;
+      }
+    } catch (err) {
+      console.warn(`[DB_BACKUP] Debounced backup failed (${pendingReason}):`, err);
+    }
+  }, delayMs);
+};
+
+/**
+ * バックグラウンド移行時用：自動バックアップトリガー
+ * 1. データ変更の保留タイマーがある場合は直ちに回収して即時バックアップを実行
+ * 2. それ以外の場合でも、前回バックアップから5分以上経過していればバックアップを実行（5分スロットル）
+ */
+export const triggerBackgroundBackup = async (): Promise<boolean> => {
+  try {
+    const now = Date.now();
+
+    // 1. 未退避の変更がある場合は、保留タイマーをキャンセルして即座に退避
+    if (hasUnsavedChanges) {
+      if (pendingDataSaveTimer) {
+        clearTimeout(pendingDataSaveTimer);
+        pendingDataSaveTimer = null;
+      }
+      const reason = `bg_${pendingReason}`;
+      const ok = await createInstantBackup(reason);
+      if (ok) {
+        hasUnsavedChanges = false;
+      }
+      return ok;
+    }
+
+    // 2. 直近のバックアップから5分以内ならスキップ（スロットル）
+    if (now - lastBackupTimestamp < BACKGROUND_THROTTLE_MS) {
+      return true;
+    }
+
+    // 3. 定期バックグラウンドバックアップ実行
+    return await createInstantBackup('background');
+  } catch (err) {
+    console.warn('[DB_BACKUP] Failed to execute background backup:', err);
+    return false;
+  }
+};
+
+
 /**
  * 直近の最新バックアップから DB ファイルを復元する
  */

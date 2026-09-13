@@ -1,4 +1,5 @@
 import { getDB, getDBPromise, withDBQueue } from '../connection';
+import { triggerDebouncedDataBackup } from '../dbBackupService';
 import { translateExercise } from '../../i18n';
 import { WorkoutExercise, WorkoutRow, WorkoutExerciseRow, WorkoutSetRow, WorkoutSet, WorkoutWithStats, FullWorkoutData } from '../types';
 import { isTreadmillExercise } from '../../utils/exerciseUtils';
@@ -77,6 +78,9 @@ export const saveWorkout = async (
       }
     }
   });
+
+  // ワークアウト保存完了後の非同期バックアップ（3秒デバウンスで退避）
+  triggerDebouncedDataBackup('workout_save', 3000);
 
   return workoutId;
 };

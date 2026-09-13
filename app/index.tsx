@@ -18,6 +18,7 @@ import { analyzeMusclePotential } from '../src/utils/bodyCalculators';
 import { saveSetting, getLastWorkoutSummary, LastWorkoutSummary } from '../src/db/database';
 import * as Updates from 'expo-updates';
 import { readCrashLog, deleteCrashLog, sendCrashReport, initializeSentry } from '../src/services/crashReporterService';
+import { rescueSeptember13Data } from '../src/services/rescueService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LifelogDateHeader } from '../components/LifelogDateHeader';
 
@@ -72,6 +73,25 @@ export default function DashboardScreen() {
   // Local state for onboarding/modals
   const [isSendingCrash, setIsSendingCrash] = useState(false);
   const [isNewUser, setIsNewUser] = useState(settings.needsStyleSelection);
+
+  // 9月13日データの自動救出・復元
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await rescueSeptember13Data();
+        if (res.rescued) {
+          const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
+          const targetDate = currentDate || today;
+          setCurrentDate(targetDate);
+          loadMealLogs(targetDate);
+          loadGoals();
+          loadBodyData(targetDate.replace(/\//g, '-'));
+        }
+      } catch (err) {
+        console.warn('[RESCUE_20260913] Rescue execution failed:', err);
+      }
+    })();
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -130,11 +150,11 @@ export default function DashboardScreen() {
         await deleteCrashLog();
         useWorkoutStore.getState().setHasUnsentCrashLog(false);
         initializeSentry();
-        Alert.alert(t('ui.crash_report.success_title') || '���M����', t('ui.crash_report.success_desc') || '�����͂��肪�Ƃ��������܂��B');
+        Alert.alert(t('ui.crash_report.success_title') || '送信完了', t('ui.crash_report.success_desc') || 'ご協力ありがとうございました。');
       }
     } catch (e) {
       console.error('Failed to send crash report:', e);
-      Alert.alert(t('ui.crash_report.error_title') || '�G���[', t('ui.crash_report.error_desc') || '���M�Ɏ��s���܂����B');
+      Alert.alert(t('ui.crash_report.error_title') || 'エラー', t('ui.crash_report.error_desc') || '送信に失敗しました。');
     } finally {
       setIsSendingCrash(false);
     }

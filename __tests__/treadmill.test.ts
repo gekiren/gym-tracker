@@ -1,4 +1,9 @@
 import { isTreadmillExercise } from '../src/utils/exerciseUtils';
+import {
+  calculateRemainingSeconds,
+  calculateActualWorkSeconds,
+  formatTimerDisplay,
+} from '../src/utils/treadmillTimerUtils';
 
 describe('Treadmill Exercise Utilities', () => {
   describe('isTreadmillExercise', () => {
@@ -26,4 +31,46 @@ describe('Treadmill Exercise Utilities', () => {
       expect(isTreadmillExercise(undefined)).toBe(false);
     });
   });
+
+  describe('treadmillTimerUtils', () => {
+    describe('calculateRemainingSeconds', () => {
+      it('calculates remaining seconds correctly', () => {
+        expect(calculateRemainingSeconds(300, 50)).toBe(250);
+        expect(calculateRemainingSeconds(300, 300)).toBe(0);
+        expect(calculateRemainingSeconds(300, 350)).toBe(0);
+        expect(calculateRemainingSeconds(0, 10)).toBe(0);
+        expect(calculateRemainingSeconds(-10, 5)).toBe(0);
+        expect(calculateRemainingSeconds(300, -10)).toBe(300);
+      });
+    });
+
+    describe('calculateActualWorkSeconds', () => {
+      it('calculates actual worked seconds correctly', () => {
+        // Target: 300s (5min). Remaining: 200s -> Worked: 100s
+        expect(calculateActualWorkSeconds(300, 200)).toBe(100);
+        // Completed: Remaining: 0s -> Worked: 300s
+        expect(calculateActualWorkSeconds(300, 0)).toBe(300);
+        // Not started: Remaining: 300s -> Worked: 0s
+        expect(calculateActualWorkSeconds(300, 300)).toBe(0);
+        // Overflow remaining -> Worked: 0s
+        expect(calculateActualWorkSeconds(300, 350)).toBe(0);
+        expect(calculateActualWorkSeconds(0, 50)).toBe(0);
+      });
+    });
+
+    describe('formatTimerDisplay', () => {
+      it('formats seconds into MM:SS correctly', () => {
+        expect(formatTimerDisplay(0)).toBe('00:00');
+        expect(formatTimerDisplay(5)).toBe('00:05');
+        expect(formatTimerDisplay(65)).toBe('01:05');
+        expect(formatTimerDisplay(600)).toBe('10:00');
+        expect(formatTimerDisplay(3599)).toBe('59:59');
+        expect(formatTimerDisplay(5999)).toBe('99:59');
+        expect(formatTimerDisplay(6000)).toBe('99:59'); // Capped at 99:59
+        expect(formatTimerDisplay(-10)).toBe('00:00');
+        expect(formatTimerDisplay(59.9)).toBe('00:59');
+      });
+    });
+  });
 });
+
