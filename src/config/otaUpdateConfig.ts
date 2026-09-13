@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.2.5',
+  version: '2.2.6',
   title: {
-    ja: '🚑 9月13日データの完全復元パッチ',
-    en: '🚑 Full Recovery Patch for Sep 13 Data',
+    ja: '🍱 9月13日食事記録（1800kcal）の網羅的復元パッチ',
+    en: '🍱 Full Forensic Meal Recovery Patch (Sep 13)',
   },
   notes: {
     ja: [
-      '9月13日のワークアウト（4種目・11セット）および食事記録（2件・501kcal）を完全復元しました。',
-      'カレンダー表示および記録マップを正常に同期しました。',
+      '9月13日の全食事記録（朝食・昼食・夕食・間食等）を全バックアップから網羅的に救出・復元しました。',
+      '栄養管理およびカレンダー同期を最新化しました。',
     ],
     en: [
-      'Fully restored September 13th workouts (4 exercises, 11 sets) and meal logs (2 items, 501 kcal).',
-      'Synchronized calendar markers and daily record map.',
+      'Forensically scanned all backups and restored all meal records for September 13th.',
+      'Updated nutrition dashboard and calendar synchronization.',
     ],
   },
 };
