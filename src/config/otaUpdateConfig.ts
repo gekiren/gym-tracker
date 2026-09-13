@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.2.8',
+  version: '2.2.9',
   title: {
-    ja: '🛡️ データ自動バックアップ＆堅牢化パッチ',
-    en: '🛡️ Auto Backup & Data Resilience Patch',
+    ja: '⚖️ 体組成 Markdown 貼り付け一括取込機能',
+    en: '⚖️ Body Composition Markdown Batch Import',
   },
   notes: {
     ja: [
-      'バックグラウンド移行時およびデータ保存時の自動バックアップ機構を実装しました。',
-      'アプリ操作の軽快さを維持したまま、突然のアプリ終了や端末トラブルによるデータ消失を二重三重に防ぎます。',
+      'ObsidianのデイリーノートやInBody履歴テーブルから、Markdownを貼り付けて当日・複数日分の体組成データをまとめて取り込めるようになりました。',
+      'テーブル形式・箇条書き・見出し形式を自動判別し、体重・体脂肪率・骨格筋量・LBMなどを安全にマージ保存できます。',
     ],
     en: [
-      'Implemented automatic background and post-save backup mechanisms.',
-      'Prevents accidental data loss from app termination while keeping operation perfectly smooth.',
+      'Added Markdown batch import for body composition data from Obsidian daily notes and InBody tables.',
+      'Automatically parses tables, lists, and sections to safely import weight, body fat, muscle mass, and LBM across single or multiple dates.',
     ],
   },
 };
