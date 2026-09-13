@@ -130,11 +130,11 @@ export default function DashboardScreen() {
         await deleteCrashLog();
         useWorkoutStore.getState().setHasUnsentCrashLog(false);
         initializeSentry();
-        Alert.alert(t('ui.crash_report.success_title') || '���M����', t('ui.crash_report.success_desc') || '�����͂��肪�Ƃ��������܂��B');
+        Alert.alert(t('ui.crash_report.success_title') || '送信完了', t('ui.crash_report.success_desc') || 'ご協力ありがとうございました。');
       }
     } catch (e) {
       console.error('Failed to send crash report:', e);
-      Alert.alert(t('ui.crash_report.error_title') || '�G���[', t('ui.crash_report.error_desc') || '���M�Ɏ��s���܂����B');
+      Alert.alert(t('ui.crash_report.error_title') || 'エラー', t('ui.crash_report.error_desc') || '送信に失敗しました。');
     } finally {
       setIsSendingCrash(false);
     }

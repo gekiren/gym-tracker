@@ -71,7 +71,7 @@
       "unlock_new_features": "新しい機能を開放する",
       "card_settings": "アプリ設定",
       "settings_desc": "Gemini AI連携、データ出力・共有、バックアップ、機能管理などを操作できます。",
-      "unit_items": "��"
+      "unit_items": "件"
     },
     "active_workout": {
       "finish": "完了",
@@ -641,7 +641,11 @@
       "message_detected": "前回の起動時にアプリが予期せず終了しました。品質向上のため、匿名のクラッシュレポートを送信してもよろしいですか？",
       "message_onboarding": "品質向上のため、匿名のクラッシュレポートを自動送信してもよろしいですか？クラッシュ発生時に自動的にレポートが送信され、早期のバグ修正に役立ちます。",
       "btn_consent": "送信して協力する（同意）",
-      "btn_decline": "今回は送信しない（拒否）"
+      "btn_decline": "今回は送信しない（拒否）",
+      "success_title": "送信完了",
+      "success_desc": "ご協力ありがとうございました。",
+      "error_title": "エラー",
+      "error_desc": "送信に失敗しました。"
     },
     "workout_completion": {
       "title": "お疲れ様でした！",

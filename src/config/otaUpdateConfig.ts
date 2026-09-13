@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.2.2',
+  version: '2.2.3',
   title: {
-    ja: '⏱️ トレッドミル表示レイアウトの最適化',
-    en: '⏱️ Treadmill Row Layout Optimization',
+    ja: '🔤 ホーム画面の表示不具合（文字化け）の修正',
+    en: '🔤 Fix Text Encoding Issue on Home Screen',
   },
   notes: {
     ja: [
-      '時間ボタン内のカウントダウン表示が2行に折り返される不具合を修正し、1行で美しくセンタリングされるように調整しました。',
-      'ヘッダーの「セット」列の改行を防止し、全体の表示バランスを改善しました。',
+      'ホーム画面の「栄養＆食事管理」カードで件数が文字化けして表示される不具合を修正しました。',
+      'クラッシュレポート送信時の通知メッセージ表示を最適化しました。',
     ],
     en: [
-      'Fixed 2-line text wrap inside treadmill timer button and aligned layout into a clean single row.',
-      'Prevented header text wrapping and optimized table column widths.',
+      'Fixed a text encoding issue in the nutrition card count display on the home screen.',
+      'Optimized notification messages for crash report submissions.',
     ],
   },
 };
