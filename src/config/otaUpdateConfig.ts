@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.2.7',
+  version: '2.2.8',
   title: {
-    ja: '🛡️ OTA更新直前バックアップ＆データ保護パッチ',
-    en: '🛡️ Pre-OTA Mandatory Backup & Safety Patch',
+    ja: '🛡️ データ自動バックアップ＆堅牢化パッチ',
+    en: '🛡️ Auto Backup & Data Resilience Patch',
   },
   notes: {
     ja: [
-      'アプリアップデート（OTA）適用直前に、全データを最新状態で強制バックアップする安全保護機構を新設しました。',
-      'アップデート再起動に伴うデータ消失やロールバックを恒久的に防止します。',
+      'バックグラウンド移行時およびデータ保存時の自動バックアップ機構を実装しました。',
+      'アプリ操作の軽快さを維持したまま、突然のアプリ終了や端末トラブルによるデータ消失を二重三重に防ぎます。',
     ],
     en: [
-      'Introduced mandatory instant backup mechanism immediately before applying OTA updates.',
-      'Permanently prevents data loss and accidental rollback during update reloads.',
+      'Implemented automatic background and post-save backup mechanisms.',
+      'Prevents accidental data loss from app termination while keeping operation perfectly smooth.',
     ],
   },
 };

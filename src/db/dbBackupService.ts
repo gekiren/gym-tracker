@@ -67,6 +67,14 @@ export const createDailyBackup = async (): Promise<boolean> => {
   }
 };
 
+// バックアップ制御用のメモリ内状態
+let lastBackupTimestamp = 0;
+let pendingDataSaveTimer: ReturnType<typeof setTimeout> | null = null;
+let hasUnsavedChanges = false;
+let pendingReason: string = 'data_save';
+
+const BACKGROUND_THROTTLE_MS = 5 * 60 * 1000; // 5分スロットル
+
 /**
  * 強制的に即時バックアップを作成する（OTA適用前、重要イベント後などに使用）
  * 1. WAL チェックポイントを強制実行（TRUNCATE）し、未コミット・未書き込みログをすべてDB本体へフラッシュ
@@ -119,10 +127,72 @@ export const createInstantBackup = async (reason: string = 'instant'): Promise<b
       console.warn('[DB_BACKUP] Warning cleaning old instant backups:', cleanErr);
     }
 
+    lastBackupTimestamp = Date.now();
     console.log(`[DB_BACKUP] Instant backup (${reason}) created successfully at: ${targetedBackupPath}`);
     return true;
   } catch (e) {
     console.warn(`[DB_BACKUP] Failed to create instant backup (${reason}):`, e);
+    return false;
+  }
+};
+
+/**
+ * データ保存時用：非同期デバウンス付きバックアップトリガー
+ * 連続した保存操作（食事の複数追加など）を考慮し、指定ミリ秒後に1回だけバックアップを実行する。
+ */
+export const triggerDebouncedDataBackup = (reason: string = 'data_save', delayMs: number = 20000): void => {
+  hasUnsavedChanges = true;
+  pendingReason = reason;
+
+  if (pendingDataSaveTimer) {
+    clearTimeout(pendingDataSaveTimer);
+  }
+
+  pendingDataSaveTimer = setTimeout(async () => {
+    pendingDataSaveTimer = null;
+    try {
+      const ok = await createInstantBackup(pendingReason);
+      if (ok) {
+        hasUnsavedChanges = false;
+      }
+    } catch (err) {
+      console.warn(`[DB_BACKUP] Debounced backup failed (${pendingReason}):`, err);
+    }
+  }, delayMs);
+};
+
+/**
+ * バックグラウンド移行時用：自動バックアップトリガー
+ * 1. データ変更の保留タイマーがある場合は直ちに回収して即時バックアップを実行
+ * 2. それ以外の場合でも、前回バックアップから5分以上経過していればバックアップを実行（5分スロットル）
+ */
+export const triggerBackgroundBackup = async (): Promise<boolean> => {
+  try {
+    const now = Date.now();
+
+    // 1. 未退避の変更がある場合は、保留タイマーをキャンセルして即座に退避
+    if (hasUnsavedChanges) {
+      if (pendingDataSaveTimer) {
+        clearTimeout(pendingDataSaveTimer);
+        pendingDataSaveTimer = null;
+      }
+      const reason = `bg_${pendingReason}`;
+      const ok = await createInstantBackup(reason);
+      if (ok) {
+        hasUnsavedChanges = false;
+      }
+      return ok;
+    }
+
+    // 2. 直近のバックアップから5分以内ならスキップ（スロットル）
+    if (now - lastBackupTimestamp < BACKGROUND_THROTTLE_MS) {
+      return true;
+    }
+
+    // 3. 定期バックグラウンドバックアップ実行
+    return await createInstantBackup('background');
+  } catch (err) {
+    console.warn('[DB_BACKUP] Failed to execute background backup:', err);
     return false;
   }
 };
