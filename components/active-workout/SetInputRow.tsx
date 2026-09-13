@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Pressable, Alert, StyleSheet, Keyboard, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Pressable, Alert, StyleSheet, Keyboard, Modal, Vibration } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
@@ -10,6 +10,11 @@ import { translateStance } from '../../src/i18n';
 import { TimerButton } from './TimerButton';
 import { CompactSwipeableInput } from './CompactSwipeableInput';
 import { isTreadmillExercise } from '../../src/utils/exerciseUtils';
+import {
+  calculateRemainingSeconds,
+  calculateActualWorkSeconds,
+  formatTimerDisplay,
+} from '../../src/utils/treadmillTimerUtils';
 
 const RPE_ALLOWED_VALUES = [0, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
 
@@ -123,19 +128,41 @@ export function SetInputRow({
   const [swElapsed, setSwElapsed] = useState(set.work_seconds != null ? set.work_seconds : 0);
   const [swStartTs, setSwStartTs] = useState<number | null>(null);
 
+  // トレッドミル カウントダウン state
+  const [timerMode, setTimerMode] = useState<'countup' | 'countdown'>('countup');
+  const [countdownTarget, setCountdownTarget] = useState<number>(0);
+  const [countdownRemaining, setCountdownRemaining] = useState<number>(0);
+  const [modalTimerMode, setModalTimerMode] = useState<'countup' | 'countdown'>('countup');
+
   useEffect(() => {
     if (!isAerobic && !isTreadmill) return;
     if (!swRunning) return;
+
+    if (isTreadmill && timerMode === 'countdown') {
+      const iv = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - (swStartTs ?? Date.now())) / 1000);
+        const rem = calculateRemainingSeconds(countdownTarget, elapsed);
+        setCountdownRemaining(rem);
+        if (rem <= 0) {
+          setSwRunning(false);
+          try {
+            Vibration.vibrate([0, 500, 200, 500]);
+          } catch (e) {}
+          updateSet(ex.id, set.id, { work_seconds: countdownTarget });
+          setSwElapsed(countdownTarget);
+        }
+      }, 500);
+      return () => clearInterval(iv);
+    }
+
     const iv = setInterval(() => {
       setSwElapsed(Math.floor((Date.now() - (swStartTs ?? Date.now())) / 1000));
     }, 500);
     return () => clearInterval(iv);
-  }, [swRunning, swStartTs, isAerobic, isTreadmill]);
+  }, [swRunning, swStartTs, isAerobic, isTreadmill, timerMode, countdownTarget, ex.id, set.id, updateSet]);
 
   const formatAerobicTime = (secs: number) => {
-    const m = Math.min(Math.floor(secs / 60), 99);
-    const s = secs % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return formatTimerDisplay(secs);
   };
 
   // 外部からの更新（プレート計算アプリなどでストアから値が変わった場合）を検知して同期
@@ -225,18 +252,38 @@ export function SetInputRow({
   };
 
   const handleOpenTimeModal = () => {
-    const curSecs = set.work_seconds ?? swElapsed;
-    setManualMinutes(String(Math.floor(curSecs / 60)));
-    setManualSeconds(String(curSecs % 60));
+    if (isTreadmill && timerMode === 'countdown' && countdownTarget > 0) {
+      setManualMinutes(String(Math.floor(countdownTarget / 60)));
+      setManualSeconds(String(countdownTarget % 60));
+      setModalTimerMode('countdown');
+    } else {
+      const curSecs = set.work_seconds ?? swElapsed;
+      setManualMinutes(String(Math.floor(curSecs / 60)));
+      setManualSeconds(String(curSecs % 60));
+      setModalTimerMode('countup');
+    }
     setTimeModalVisible(true);
   };
 
-  const handleSaveManualTime = (mins: number, secs: number) => {
+  const handleSaveManualTime = (mins: number, secs: number, mode: 'countup' | 'countdown') => {
     const totalSecs = Math.max(0, mins * 60 + secs);
-    setSwElapsed(totalSecs);
-    setSwStartTs(null);
-    setSwRunning(false);
-    updateSet(ex.id, set.id, { work_seconds: totalSecs });
+    if (isTreadmill && mode === 'countdown' && totalSecs > 0) {
+      setTimerMode('countdown');
+      setCountdownTarget(totalSecs);
+      setCountdownRemaining(totalSecs);
+      setSwRunning(false);
+      setSwStartTs(null);
+      setSwElapsed(0);
+      updateSet(ex.id, set.id, { work_seconds: 0 });
+    } else {
+      setTimerMode('countup');
+      setCountdownTarget(0);
+      setCountdownRemaining(0);
+      setSwElapsed(totalSecs);
+      setSwStartTs(null);
+      setSwRunning(false);
+      updateSet(ex.id, set.id, { work_seconds: totalSecs });
+    }
     setTimeModalVisible(false);
   };
 
@@ -396,7 +443,7 @@ export function SetInputRow({
             <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 2 }}>
               {set.is_completed ? (
                 <Text style={{ color: Theme.colors.success, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 }}>
-                  {formatAerobicTime(set.work_seconds ?? swElapsed)}
+                  {formatTimerDisplay(set.work_seconds ?? swElapsed)}
                 </Text>
               ) : (
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
@@ -407,7 +454,7 @@ export function SetInputRow({
                     style={styles.timeInputBtn}
                   >
                     <Text pointerEvents="none" style={{ color: Theme.colors.primary, fontSize: 14, fontWeight: 'bold', letterSpacing: 0.5 }}>
-                      {formatAerobicTime(swElapsed)}
+                      {timerMode === 'countdown' ? `⏳ ${formatTimerDisplay(countdownRemaining)}` : formatTimerDisplay(swElapsed)}
                     </Text>
                   </GHTouchableOpacity>
                   <GHTouchableOpacity
@@ -424,27 +471,63 @@ export function SetInputRow({
                     }}
                     onPress={() => {
                       if (!swRunning) {
-                        const now = Date.now() - swElapsed * 1000;
-                        setSwStartTs(now);
-                        setSwRunning(true);
+                        if (timerMode === 'countdown') {
+                          if (countdownRemaining <= 0) {
+                            setCountdownRemaining(countdownTarget);
+                            setSwStartTs(Date.now());
+                            setSwRunning(true);
+                          } else {
+                            const alreadyElapsed = calculateActualWorkSeconds(countdownTarget, countdownRemaining);
+                            setSwStartTs(Date.now() - alreadyElapsed * 1000);
+                            setSwRunning(true);
+                          }
+                        } else {
+                          const now = Date.now() - swElapsed * 1000;
+                          setSwStartTs(now);
+                          setSwRunning(true);
+                        }
                       } else {
                         setSwRunning(false);
-                        updateSet(ex.id, set.id, { work_seconds: swElapsed });
+                        if (timerMode === 'countdown') {
+                          const actual = calculateActualWorkSeconds(countdownTarget, countdownRemaining);
+                          setSwElapsed(actual);
+                          updateSet(ex.id, set.id, { work_seconds: actual });
+                        } else {
+                          updateSet(ex.id, set.id, { work_seconds: swElapsed });
+                        }
                       }
                     }}
                   >
                     <Ionicons pointerEvents="none" name={swRunning ? 'pause' : 'play'} size={14} color="#fff" style={{ marginLeft: swRunning ? 0 : 2 }} />
                   </GHTouchableOpacity>
-                  {swElapsed > 0 && !swRunning && (
+                  {((timerMode === 'countdown' && (countdownRemaining !== countdownTarget || (swElapsed > 0 && !swRunning))) ||
+                    (timerMode === 'countup' && swElapsed > 0 && !swRunning)) && (
                     <GHTouchableOpacity
                       disallowInterruption={true}
                       activeOpacity={0.7}
                       hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
                       style={{ width: 22, height: 28, alignItems: 'center', justifyContent: 'center', marginLeft: 3 }}
                       onPress={() => {
-                        setSwElapsed(0);
-                        setSwStartTs(null);
-                        updateSet(ex.id, set.id, { work_seconds: null });
+                        if (timerMode === 'countdown') {
+                          if (countdownRemaining !== countdownTarget) {
+                            setCountdownRemaining(countdownTarget);
+                            setSwStartTs(null);
+                            setSwRunning(false);
+                            setSwElapsed(0);
+                            updateSet(ex.id, set.id, { work_seconds: null });
+                          } else {
+                            setTimerMode('countup');
+                            setCountdownTarget(0);
+                            setCountdownRemaining(0);
+                            setSwElapsed(0);
+                            setSwStartTs(null);
+                            updateSet(ex.id, set.id, { work_seconds: null });
+                          }
+                        } else {
+                          setSwElapsed(0);
+                          setSwStartTs(null);
+                          updateSet(ex.id, set.id, { work_seconds: null });
+                        }
                       }}
                     >
                       <Ionicons pointerEvents="none" name="refresh" size={15} color={Theme.colors.textMuted} />
@@ -697,10 +780,23 @@ export function SetInputRow({
               Keyboard.dismiss();
               if ((isAerobic || isTreadmill) && !set.is_completed) {
                 let finalSeconds = swElapsed;
-                if (swRunning) {
-                  setSwRunning(false);
-                  finalSeconds = Math.floor((Date.now() - (swStartTs ?? Date.now())) / 1000);
+                if (isTreadmill && timerMode === 'countdown') {
+                  if (swRunning) {
+                    setSwRunning(false);
+                    const currentElapsed = Math.floor((Date.now() - (swStartTs ?? Date.now())) / 1000);
+                    const rem = calculateRemainingSeconds(countdownTarget, currentElapsed);
+                    setCountdownRemaining(rem);
+                    finalSeconds = calculateActualWorkSeconds(countdownTarget, rem);
+                  } else {
+                    finalSeconds = calculateActualWorkSeconds(countdownTarget, countdownRemaining);
+                  }
                   setSwElapsed(finalSeconds);
+                } else {
+                  if (swRunning) {
+                    setSwRunning(false);
+                    finalSeconds = Math.floor((Date.now() - (swStartTs ?? Date.now())) / 1000);
+                    setSwElapsed(finalSeconds);
+                  }
                 }
                 const updates: any = { work_seconds: finalSeconds };
                 if (isTreadmill) {
@@ -762,6 +858,28 @@ export function SetInputRow({
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>{t('ui.active_workout.manual_time_prompt') || '走行時間の手動設定'}</Text>
             
+            {/* モード切替タブ（トレッドミルのみ） */}
+            {isTreadmill && (
+              <View style={styles.timerModeTabContainer}>
+                <TouchableOpacity
+                  style={[styles.timerModeTab, modalTimerMode === 'countup' && styles.timerModeTabActive]}
+                  onPress={() => setModalTimerMode('countup')}
+                >
+                  <Text style={[styles.timerModeTabText, modalTimerMode === 'countup' && styles.timerModeTabTextActive]}>
+                    {t('ui.active_workout.timer_mode_countup') || '⏱️ カウントアップ'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.timerModeTab, modalTimerMode === 'countdown' && styles.timerModeTabActive]}
+                  onPress={() => setModalTimerMode('countdown')}
+                >
+                  <Text style={[styles.timerModeTabText, modalTimerMode === 'countdown' && styles.timerModeTabTextActive]}>
+                    {t('ui.active_workout.timer_mode_countdown') || '⏳ カウントダウン'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 16 }}>
               <TextInput
                 style={styles.timeModalInput}
@@ -793,6 +911,9 @@ export function SetInputRow({
                   onPress={() => {
                     setManualMinutes(String(m));
                     setManualSeconds('0');
+                    if (isTreadmill) {
+                      setModalTimerMode('countdown');
+                    }
                   }}
                 >
                   <Text style={styles.quickTimeBtnText}>{m}分</Text>
@@ -812,7 +933,7 @@ export function SetInputRow({
                 onPress={() => {
                   const m = parseInt(manualMinutes, 10) || 0;
                   const s = parseInt(manualSeconds, 10) || 0;
-                  handleSaveManualTime(m, s);
+                  handleSaveManualTime(m, s, modalTimerMode);
                 }}
               >
                 <Text style={{ color: '#000', fontWeight: 'bold' }}>{t('ui.common.confirm') || '確定'}</Text>
@@ -914,5 +1035,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
+  },
+  timerModeTabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#1f1f1f',
+    borderRadius: 8,
+    padding: 3,
+    marginBottom: 8,
+  },
+  timerModeTab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 6,
+  },
+  timerModeTabActive: {
+    backgroundColor: Theme.colors.primary,
+  },
+  timerModeTabText: {
+    color: Theme.colors.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  timerModeTabTextActive: {
+    color: '#000',
+    fontWeight: 'bold',
   },
 });

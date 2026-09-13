@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.2.0',
+  version: '2.2.1',
   title: {
-    ja: '⏱️ トレッドミルタイマー操作の修正',
-    en: '⏱️ Treadmill Timer Controls Fix',
+    ja: '⏳ トレッドミルのカウントダウンタイマー対応',
+    en: '⏳ Treadmill Countdown Timer Support',
   },
   notes: {
     ja: [
-      'トレッドミル種目の時間設定および再生・リセットボタンのタップ反応を修正しました。',
-      '表示欄・タイマー・記録ボタンのレイアウトを最適化しました。',
+      'トレッドミル種目で目標走行時間を設定し、残り時間をカウントダウンするタイマーモードに対応しました。',
+      '目標時間到達時にバイブレーションで通知し、走った実績時間を正確に記録します。',
     ],
     en: [
-      'Fixed touch response for treadmill time and timer play/reset controls.',
-      'Optimized layout and column alignment for cardio exercises.',
+      'Added a countdown timer mode for treadmill exercises to track remaining goal time.',
+      'Vibrates upon reaching target time and accurately logs actual workout duration.',
     ],
   },
 };
