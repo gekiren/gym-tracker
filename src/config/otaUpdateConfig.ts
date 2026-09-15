@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.2.11',
+  version: '2.2.12',
   title: {
-    ja: '📊 自己ベスト（PR）一覧の4列グリッド最適化',
-    en: '📊 4-Column Grid Optimization for Personal Records',
+    ja: '🔍 自己ベスト（PR）カードの文字サイズ拡大',
+    en: '🔍 Increased Font Size for Personal Record Cards',
   },
   notes: {
     ja: [
-      '種目詳細画面の自己ベスト（PR）一覧を均等な4列グリッド表示に最適化しました。',
-      '端末の画面幅に関わらず常に4列で揃うようレイアウト方式を刷新しました。',
+      '種目詳細画面の自己ベスト（PR）一覧カードの文字サイズを拡大し、視認性を向上させました。',
+      'カードのコンパクトな4列グリッドサイズは維持したまま、重量・回数・推定1RMの文字をくっきり読みやすく調整しました。',
     ],
     en: [
-      'Optimized the Personal Records (PR) list on the exercise detail screen into a balanced 4-column grid.',
-      'Refactored the layout structure to guarantee 4 columns across all device screen widths.',
+      'Increased the font size of Personal Record (PR) cards on the exercise detail screen for better readability.',
+      'Maintained the compact 4-column card dimensions while making weight, reps, and estimated 1RM text clearer.',
     ],
   },
 };
