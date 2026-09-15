@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.2.12',
+  version: '2.2.13',
   title: {
-    ja: '🔍 自己ベスト（PR）カードの文字サイズ拡大',
-    en: '🔍 Increased Font Size for Personal Record Cards',
+    ja: '✨ 更新通知ポップアップの改善＆文字サイズ拡大',
+    en: '✨ Improved Update Modal & PR Font Size',
   },
   notes: {
     ja: [
-      '種目詳細画面の自己ベスト（PR）一覧カードの文字サイズを拡大し、視認性を向上させました。',
-      'カードのコンパクトな4列グリッドサイズは維持したまま、重量・回数・推定1RMの文字をくっきり読みやすく調整しました。',
+      '自己ベスト（PR）一覧カードの文字サイズを拡大し、視認性を向上させました（カードサイズは完全維持）。',
+      '更新通知画面の操作性を改善し、「閉じる」ボタンでスムーズにアプリを利用できるようにしました。',
     ],
     en: [
-      'Increased the font size of Personal Record (PR) cards on the exercise detail screen for better readability.',
-      'Maintained the compact 4-column card dimensions while making weight, reps, and estimated 1RM text clearer.',
+      'Increased font size of Personal Record (PR) cards for better readability while preserving card dimensions.',
+      'Enhanced update notification dialog with a convenient Close button for a smoother user experience.',
     ],
   },
 };

@@ -11,6 +11,7 @@ import {
 } from './crashReporterService';
 import * as Updates from 'expo-updates';
 import { useOTAUpdateStore } from '../store/otaUpdateStore';
+import { CURRENT_OTA_CONFIG } from '../config/otaUpdateConfig';
 import { syncLifelogToObsidian } from './obsidianService';
 import { syncHealthData } from './healthService';
 import { Alert } from 'react-native';
@@ -126,17 +127,27 @@ export async function initOTAUpdateCheck(
   // OTAアップデート後の初回起動検知
   let showOTA = false;
   const lastAckUpdateId = storedSettings['last_acknowledged_update_id'] || '';
+  const lastAckVersion = storedSettings['last_acknowledged_ota_version'] || '';
+  const currentVersion = CURRENT_OTA_CONFIG.version;
   const simulateOta = storedSettings['simulate_ota_popup'] === '1';
 
   if (isFirstInstall) {
-    // 初インストール時はインフォメーションを非表示にし、次回起動時に備えて現在のupdateIdを承認済みにする
+    // 初インストール時はインフォメーションを非表示にし、次回起動時に備えて現在のupdateIdおよびバージョンを承認済みにする
     if (Updates.updateId) {
       await saveSetting('last_acknowledged_update_id', Updates.updateId);
     }
+    await saveSetting('last_acknowledged_ota_version', currentVersion);
   } else {
-    if (Updates.updateId && Updates.updateId !== lastAckUpdateId) {
+    // バージョン番号が新しい場合、またはupdateIdが更新されている場合に表示（同一バージョン承認済み時は絶対スキップ）
+    const isNewVersion = currentVersion !== lastAckVersion;
+    const isNewUpdate = Updates.updateId && Updates.updateId !== lastAckUpdateId;
+
+    if ((isNewVersion || isNewUpdate) && isNewVersion) {
       showOTA = true;
-      await saveSetting('last_acknowledged_update_id', Updates.updateId);
+      if (Updates.updateId) {
+        await saveSetting('last_acknowledged_update_id', Updates.updateId);
+      }
+      await saveSetting('last_acknowledged_ota_version', currentVersion);
     } else if (simulateOta) {
       showOTA = true;
       await saveSetting('simulate_ota_popup', '0');

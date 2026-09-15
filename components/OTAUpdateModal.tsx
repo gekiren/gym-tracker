@@ -1,12 +1,10 @@
 import React from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View, Pressable, ScrollView } from 'react-native';
-import * as Updates from 'expo-updates';
 import { Theme } from '../src/theme';
 import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import { CURRENT_OTA_CONFIG } from '../src/config/otaUpdateConfig';
 import { Ionicons } from '@expo/vector-icons';
 import i18n from '../src/i18n';
-import { saveSetting, createInstantBackup } from '../src/db/database';
 
 export const OTAUpdateModal = () => {
   const { isVisible, hideModal } = useOTAUpdateStore();
@@ -19,24 +17,6 @@ export const OTAUpdateModal = () => {
   const title = CURRENT_OTA_CONFIG.title[currentLang] || CURRENT_OTA_CONFIG.title['ja'];
   const notes = CURRENT_OTA_CONFIG.notes[currentLang] || CURRENT_OTA_CONFIG.notes['ja'];
   const version = CURRENT_OTA_CONFIG.version;
-
-  const handleApplyAndReload = async () => {
-    hideModal();
-    try {
-      if (Updates.isEnabled && !__DEV__) {
-        // 🛡️ OTA適用直前の強制バックアップ（WALフラッシュ＆退避）
-        try {
-          await createInstantBackup('pre_ota_modal');
-        } catch (backupErr) {
-          console.warn('Pre-OTA modal backup warning:', backupErr);
-        }
-        await saveSetting('ota_reload_in_progress', '1');
-        await Updates.reloadAsync();
-      }
-    } catch (e) {
-      console.warn('Failed to reload app for OTA update:', e);
-    }
-  };
 
   return (
     <Modal
@@ -75,15 +55,15 @@ export const OTAUpdateModal = () => {
               ))}
             </ScrollView>
 
-            {/* Restart & Apply Button */}
+            {/* Close Button */}
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={handleApplyAndReload}
+              onPress={hideModal}
               activeOpacity={0.8}
             >
-              <Ionicons name="refresh-outline" size={18} color="#000" style={{ marginRight: 6 }} />
+              <Ionicons name="checkmark-circle-outline" size={18} color="#000" style={{ marginRight: 6 }} />
               <Text style={styles.closeButtonText}>
-                {currentLang === 'ja' ? '今すぐ再起動して反映' : 'Restart App & Apply'}
+                {currentLang === 'ja' ? '閉じる' : 'Close'}
               </Text>
             </TouchableOpacity>
           </View>
