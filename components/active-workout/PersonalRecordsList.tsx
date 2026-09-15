@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../src/theme';
 import { translateStance } from '../../src/i18n';
@@ -13,7 +13,14 @@ interface PersonalRecordsListProps {
 
 const GAP = 6;
 const NUM_COLUMNS = 4;
-const HORIZONTAL_PADDING = Theme.spacing.md;
+
+const chunkArray = <T,>(arr: T[], size: number): T[][] => {
+  const result: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    result.push(arr.slice(i, i + size));
+  }
+  return result;
+};
 
 export function PersonalRecordsList({
   personalRecords,
@@ -21,14 +28,9 @@ export function PersonalRecordsList({
   onPrPress
 }: PersonalRecordsListProps) {
   const { t } = useTranslation();
-  const { width: screenWidth } = useWindowDimensions();
-  const [containerWidth, setContainerWidth] = useState<number>(0);
   const [isExpanded, setIsExpanded] = useState(true);
   
   if (Object.keys(personalRecords).length === 0) return null;
-
-  const effectiveWidth = containerWidth > 0 ? containerWidth : Math.max(0, screenWidth - HORIZONTAL_PADDING * 2);
-  const itemWidth = Math.max(0, Math.floor((effectiveWidth - GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS));
 
   return (
     <View style={styles.prSection}>
@@ -45,66 +47,68 @@ export function PersonalRecordsList({
 
       {isExpanded && (
         <View style={{ marginTop: 8 }}>
-          {Object.entries(personalRecords).map(([variation, prMap]) => (
-            <View key={variation} style={{ marginBottom: 12 }}>
-              {variation !== 'default' && (
-                <Text style={styles.prVariationTitle}>
-                  {t('ui.active_workout.stance_label')}: {translateStance(variation)}
-                </Text>
-              )}
-              <View 
-                style={styles.prList}
-                onLayout={(e) => {
-                  const w = e.nativeEvent.layout.width;
-                  if (w > 0 && Math.abs(w - containerWidth) > 1) {
-                    setContainerWidth(w);
-                  }
-                }}
-              >
-                {Object.keys(prMap)
-                  .sort((a, b) => parseInt(a, 10) - parseInt(b, 10))
-                  .map(reps => {
-                    const repNum = parseInt(reps, 10);
-                    const weight = prMap[repNum];
-                    const oneRm = repNum === 1 ? weight : Math.round(weight * (1 + (repNum / 30)));
-                    return (
-                      <TouchableOpacity 
-                        key={reps} 
-                        style={[styles.prItem, { width: itemWidth }]}
-                        activeOpacity={0.7}
-                        onPress={() => onPrPress(repNum, variation)}
-                      >
-                        <Text style={styles.prReps} numberOfLines={1}>
-                          {reps}{t('ui.common.reps_unit')}
-                        </Text>
-                        <Text 
-                          style={styles.prWeight} 
-                          numberOfLines={1} 
-                          adjustsFontSizeToFit 
-                          minimumFontScale={0.75}
-                        >
-                          {weight} {weightUnit}
-                        </Text>
-                        {repNum > 1 ? (
-                          <Text 
-                            style={styles.prOneRm} 
-                            numberOfLines={1} 
-                            adjustsFontSizeToFit 
-                            minimumFontScale={0.7}
+          {Object.entries(personalRecords).map(([variation, prMap]) => {
+            const sortedReps = Object.keys(prMap).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+            const rows = chunkArray(sortedReps, NUM_COLUMNS);
+
+            return (
+              <View key={variation} style={{ marginBottom: 12 }}>
+                {variation !== 'default' && (
+                  <Text style={styles.prVariationTitle}>
+                    {t('ui.active_workout.stance_label')}: {translateStance(variation)}
+                  </Text>
+                )}
+                <View style={styles.prList}>
+                  {rows.map((row, rowIdx) => (
+                    <View key={rowIdx} style={styles.prRow}>
+                      {row.map(reps => {
+                        const repNum = parseInt(reps, 10);
+                        const weight = prMap[repNum];
+                        const oneRm = repNum === 1 ? weight : Math.round(weight * (1 + (repNum / 30)));
+                        return (
+                          <TouchableOpacity 
+                            key={reps} 
+                            style={styles.prItem}
+                            activeOpacity={0.7}
+                            onPress={() => onPrPress(repNum, variation)}
                           >
-                            1RM: {oneRm}{weightUnit}
-                          </Text>
-                        ) : (
-                          <Text style={[styles.prOneRm, { opacity: 0 }]} numberOfLines={1}>
-                            1RM
-                          </Text>
-                        )}
-                      </TouchableOpacity>
-                    );
-                  })}
+                            <Text style={styles.prReps} numberOfLines={1}>
+                              {reps}{t('ui.common.reps_unit')}
+                            </Text>
+                            <Text 
+                              style={styles.prWeight} 
+                              numberOfLines={1} 
+                              adjustsFontSizeToFit 
+                              minimumFontScale={0.7}
+                            >
+                              {weight} {weightUnit}
+                            </Text>
+                            {repNum > 1 ? (
+                              <Text 
+                                style={styles.prOneRm} 
+                                numberOfLines={1} 
+                                adjustsFontSizeToFit 
+                                minimumFontScale={0.65}
+                              >
+                                1RM: {oneRm}{weightUnit}
+                              </Text>
+                            ) : (
+                              <Text style={[styles.prOneRm, { opacity: 0 }]} numberOfLines={1}>
+                                1RM
+                              </Text>
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                      {Array.from({ length: NUM_COLUMNS - row.length }).map((_, dummyIdx) => (
+                        <View key={`dummy-${dummyIdx}`} style={styles.prItemDummy} />
+                      ))}
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       )}
     </View>
@@ -137,14 +141,17 @@ const styles = StyleSheet.create({
     marginBottom: 6 
   },
   prList: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
+    paddingHorizontal: Theme.spacing.md, 
     gap: GAP, 
-    paddingHorizontal: Theme.spacing.md 
+  },
+  prRow: {
+    flexDirection: 'row',
+    gap: GAP,
   },
   prItem: { 
+    flex: 1,
     backgroundColor: '#1a1a1a', 
-    paddingHorizontal: 4, 
+    paddingHorizontal: 2, 
     paddingVertical: 8, 
     borderRadius: 8, 
     alignItems: 'center', 
@@ -152,6 +159,9 @@ const styles = StyleSheet.create({
     borderWidth: 1, 
     borderColor: '#333', 
     minHeight: 66,
+  },
+  prItemDummy: {
+    flex: 1,
   },
   prReps: { 
     color: Theme.colors.textMuted, 
@@ -161,12 +171,12 @@ const styles = StyleSheet.create({
   },
   prWeight: { 
     color: Theme.colors.primary, 
-    fontSize: 14, 
+    fontSize: 13.5, 
     fontWeight: 'bold' 
   },
   prOneRm: { 
     color: '#f5a623', 
-    fontSize: 10, 
+    fontSize: 9.5, 
     fontWeight: 'bold', 
     marginTop: 3 
   },
