@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.2.9',
+  version: '2.2.10',
   title: {
-    ja: '⚖️ 体組成 Markdown 貼り付け一括取込機能',
-    en: '⚖️ Body Composition Markdown Batch Import',
+    ja: '📊 自己ベスト（PR）一覧の4列グリッド最適化',
+    en: '📊 4-Column Grid Optimization for Personal Records',
   },
   notes: {
     ja: [
-      'ObsidianのデイリーノートやInBody履歴テーブルから、Markdownを貼り付けて当日・複数日分の体組成データをまとめて取り込めるようになりました。',
-      'テーブル形式・箇条書き・見出し形式を自動判別し、体重・体脂肪率・骨格筋量・LBMなどを安全にマージ保存できます。',
+      '種目詳細画面の自己ベスト（PR）一覧を均等な4列グリッド表示に最適化しました。',
+      '画面幅に応じた動的カード幅計算と文字溢れ防止、カード高さの統一により視認性と一覧性が向上しました。',
     ],
     en: [
-      'Added Markdown batch import for body composition data from Obsidian daily notes and InBody tables.',
-      'Automatically parses tables, lists, and sections to safely import weight, body fat, muscle mass, and LBM across single or multiple dates.',
+      'Optimized the Personal Records (PR) list on the exercise detail screen into a balanced 4-column grid.',
+      'Enhanced readability and consistency with dynamic item width calculation, auto-scaling fonts, and unified card heights.',
     ],
   },
 };
