@@ -72,7 +72,12 @@ export function PersonalRecordsList({
                             activeOpacity={0.7}
                             onPress={() => onPrPress(repNum, variation)}
                           >
-                            <Text style={styles.prReps} numberOfLines={1}>
+                            <Text 
+                              style={styles.prReps} 
+                              numberOfLines={1}
+                              adjustsFontSizeToFit
+                              minimumFontScale={0.8}
+                            >
                               {reps}{t('ui.common.reps_unit')}
                             </Text>
                             <Text 
@@ -88,7 +93,7 @@ export function PersonalRecordsList({
                                 style={styles.prOneRm} 
                                 numberOfLines={1} 
                                 adjustsFontSizeToFit 
-                                minimumFontScale={0.65}
+                                minimumFontScale={0.7}
                               >
                                 1RM: {oneRm}{weightUnit}
                               </Text>
@@ -152,7 +157,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1a1a1a', 
     paddingHorizontal: 2, 
-    paddingVertical: 8, 
+    paddingVertical: 6, 
     borderRadius: 8, 
     alignItems: 'center', 
     justifyContent: 'center',
@@ -165,19 +170,19 @@ const styles = StyleSheet.create({
   },
   prReps: { 
     color: Theme.colors.textMuted, 
-    fontSize: 11, 
+    fontSize: 12, 
     fontWeight: 'bold', 
-    marginBottom: 2 
+    marginBottom: 1 
   },
   prWeight: { 
     color: Theme.colors.primary, 
-    fontSize: 13.5, 
+    fontSize: 15.5, 
     fontWeight: 'bold' 
   },
   prOneRm: { 
     color: '#f5a623', 
-    fontSize: 9.5, 
+    fontSize: 11, 
     fontWeight: 'bold', 
-    marginTop: 3 
+    marginTop: 2 
   },
 });

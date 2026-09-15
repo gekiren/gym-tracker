@@ -216,8 +216,9 @@ function DeveloperMenuScreenInternal() {
   const handleResetOtaAck = async () => {
     try {
       await saveSetting('last_acknowledged_update_id', '');
+      await saveSetting('last_acknowledged_ota_version', '');
       setLastAckId('None');
-      Alert.alert('リセット完了', '検証済みOTA IDを初期化しました。');
+      Alert.alert('リセット完了', '検証済みOTA IDおよびバージョンを初期化しました。');
     } catch (e: any) {
       Alert.alert('エラー', e?.message || String(e));
     }
