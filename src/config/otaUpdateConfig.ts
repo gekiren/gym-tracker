@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.2.8',
+  version: '2.2.11',
   title: {
-    ja: '🛡️ データ自動バックアップ＆堅牢化パッチ',
-    en: '🛡️ Auto Backup & Data Resilience Patch',
+    ja: '📊 自己ベスト（PR）一覧の4列グリッド最適化',
+    en: '📊 4-Column Grid Optimization for Personal Records',
   },
   notes: {
     ja: [
-      'バックグラウンド移行時およびデータ保存時の自動バックアップ機構を実装しました。',
-      'アプリ操作の軽快さを維持したまま、突然のアプリ終了や端末トラブルによるデータ消失を二重三重に防ぎます。',
+      '種目詳細画面の自己ベスト（PR）一覧を均等な4列グリッド表示に最適化しました。',
+      '端末の画面幅に関わらず常に4列で揃うようレイアウト方式を刷新しました。',
     ],
     en: [
-      'Implemented automatic background and post-save backup mechanisms.',
-      'Prevents accidental data loss from app termination while keeping operation perfectly smooth.',
+      'Optimized the Personal Records (PR) list on the exercise detail screen into a balanced 4-column grid.',
+      'Refactored the layout structure to guarantee 4 columns across all device screen widths.',
     ],
   },
 };

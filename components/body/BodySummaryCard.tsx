@@ -14,6 +14,7 @@ interface BodySummaryCardProps {
   onSyncHealthConnect: () => void;
   onOpenEditModal: () => void;
   onOpenGuideModal: () => void;
+  onOpenMdImportModal?: () => void;
 }
 
 export default function BodySummaryCard({
@@ -23,6 +24,7 @@ export default function BodySummaryCard({
   onSyncHealthConnect,
   onOpenEditModal,
   onOpenGuideModal,
+  onOpenMdImportModal,
 }: BodySummaryCardProps) {
   const savedMeasurements = useBodyStore((state) => state.savedMeasurements);
 
@@ -217,9 +219,20 @@ export default function BodySummaryCard({
             <Ionicons name="refresh" size={16} color="#38bdf8" style={{ marginRight: 6 }} />
           )}
           <Text style={styles.syncBtnText}>
-            {isHealthSyncing ? '取得中...' : 'Health Connect から取得'}
+            {isHealthSyncing ? '取得中...' : 'Health Connect'}
           </Text>
         </TouchableOpacity>
+
+        {onOpenMdImportModal && (
+          <TouchableOpacity
+            style={styles.mdImportBtn}
+            onPress={onOpenMdImportModal}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="document-text-outline" size={16} color="#38bdf8" style={{ marginRight: 4 }} />
+            <Text style={styles.mdImportBtnText}>MD取込</Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity style={styles.editBtn} onPress={onOpenEditModal} activeOpacity={0.7}>
           <Ionicons name="create-outline" size={16} color="#fff" style={{ marginRight: 4 }} />
@@ -352,6 +365,22 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(56, 189, 248, 0.3)',
   },
   syncBtnText: {
+    color: '#38bdf8',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  mdImportBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: Theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+  },
+  mdImportBtnText: {
     color: '#38bdf8',
     fontSize: 13,
     fontWeight: '600',

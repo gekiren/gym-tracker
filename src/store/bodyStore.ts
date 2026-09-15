@@ -37,6 +37,7 @@ export interface BodyState {
   saveLastMeasurements: (measurements: Partial<SavedBodyMeasurements>) => Promise<void>;
   deleteBodyLog: (id: number, currentDate?: string) => Promise<void>;
   syncWithHealthConnect: (date: string) => Promise<boolean>;
+  importBodyLogs: (logs: (Partial<BodyCompositionLog> & { date: string })[], targetDate?: string) => Promise<number>;
 }
 
 export const useBodyStore = create<BodyState>((set, get) => ({
@@ -160,6 +161,85 @@ export const useBodyStore = create<BodyState>((set, get) => ({
     } catch (e: any) {
       console.error('Failed to save body log:', e);
       set({ isLoading: false });
+      throw e;
+    }
+  },
+
+  /**
+   * 複数日分の体組成データを一括インポート（安全な逐次Upsert）
+   */
+  importBodyLogs: async (
+    logs: (Partial<BodyCompositionLog> & { date: string })[],
+    targetDate?: string
+  ) => {
+    if (!logs || logs.length === 0) return 0;
+    set({ isLoading: true, syncError: null });
+
+    try {
+      let importedCount = 0;
+      let lastLogWithMeasurements: Partial<BodyCompositionLog> | null = null;
+
+      for (const log of logs) {
+        await upsertBodyLog(log);
+        importedCount++;
+
+        if (
+          log.neck !== undefined ||
+          log.waist !== undefined ||
+          log.hip !== undefined ||
+          log.wrist !== undefined ||
+          log.ankle !== undefined ||
+          log.height !== undefined
+        ) {
+          lastLogWithMeasurements = log;
+        }
+      }
+
+      // 最後のレコードに身体測定値があればキャッシュも更新
+      if (lastLogWithMeasurements) {
+        const toCache: Partial<SavedBodyMeasurements> = {};
+        if (lastLogWithMeasurements.neck !== undefined && lastLogWithMeasurements.neck !== null) toCache.neck = lastLogWithMeasurements.neck;
+        if (lastLogWithMeasurements.waist !== undefined && lastLogWithMeasurements.waist !== null) toCache.waist = lastLogWithMeasurements.waist;
+        if (lastLogWithMeasurements.hip !== undefined && lastLogWithMeasurements.hip !== null) toCache.hip = lastLogWithMeasurements.hip;
+        if (lastLogWithMeasurements.wrist !== undefined && lastLogWithMeasurements.wrist !== null) toCache.wrist = lastLogWithMeasurements.wrist;
+        if (lastLogWithMeasurements.ankle !== undefined && lastLogWithMeasurements.ankle !== null) toCache.ankle = lastLogWithMeasurements.ankle;
+        if (lastLogWithMeasurements.height !== undefined && lastLogWithMeasurements.height !== null) toCache.height = lastLogWithMeasurements.height;
+
+        if (Object.keys(toCache).length > 0) {
+          get().saveLastMeasurements(toCache);
+        }
+      }
+
+      const activeDate = targetDate || logs[logs.length - 1]?.date;
+      const [updatedCurrent, updatedLatest, updatedHistory] = await Promise.all([
+        activeDate ? getBodyLogByDate(activeDate) : Promise.resolve(null),
+        getLatestBodyLog(),
+        getAllBodyLogs(50),
+      ]);
+
+      set({
+        currentLog: updatedCurrent || get().currentLog,
+        latestLog: updatedLatest,
+        historyLogs: updatedHistory,
+        isLoading: false,
+      });
+
+      // Obsidian自動エクスポート（最新日のログ）
+      if (updatedLatest) {
+        import('../services/obsidianService')
+          .then(({ exportBodyCompositionToObsidian }) => {
+            exportBodyCompositionToObsidian(updatedLatest).catch((err) =>
+              console.warn('[Obsidian] Auto body export failed after import:', err)
+            );
+          })
+          .catch(() => {});
+      }
+
+      recordFeatureAction('body', activeDate || logs[0]?.date);
+      return importedCount;
+    } catch (e: any) {
+      console.error('Failed to batch import body logs:', e);
+      set({ isLoading: false, syncError: e.message || '体組成データの一括インポートに失敗しました' });
       throw e;
     }
   },

@@ -28,6 +28,7 @@ import CaseyLimitCalculatorCard from '../../components/body/CaseyLimitCalculator
 import PotentialGaugeCard from '../../components/body/PotentialGaugeCard';
 import BodyMeasurementModal from '../../components/body/BodyMeasurementModal';
 import BodyGuideModal from '../../components/body/BodyGuideModal';
+import BodyMarkdownImportModal from '../../components/body/BodyMarkdownImportModal';
 import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
 
 export default function BodyCompositionScreen() {
@@ -73,6 +74,7 @@ export default function BodyCompositionScreen() {
   const [showHistoryTab, setShowHistoryTab] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
+  const [showMdImportModal, setShowMdImportModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   // 日付切替 (前日 / 翌日)
@@ -186,8 +188,15 @@ export default function BodyCompositionScreen() {
           headerRight: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
               <TouchableOpacity
+                onPress={() => setShowMdImportModal(true)}
+                style={{ padding: 8, marginRight: 2 }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="document-text-outline" size={22} color={Theme.colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity
                 onPress={() => setShowHistoryTab((prev) => !prev)}
-                style={{ padding: 8, marginRight: 4 }}
+                style={{ padding: 8, marginRight: 2 }}
                 activeOpacity={0.7}
               >
                 <Ionicons
@@ -261,6 +270,7 @@ export default function BodyCompositionScreen() {
             onSyncHealthConnect={handleSyncHealthConnect}
             onOpenEditModal={() => setShowEditModal(true)}
             onOpenGuideModal={() => setShowGuideModal(true)}
+            onOpenMdImportModal={() => setShowMdImportModal(true)}
           />
 
           {/* 2. 限界到達度 ＆ ポテンシャル診断ゲージ */}
@@ -298,6 +308,13 @@ export default function BodyCompositionScreen() {
 
       {/* 身体測定ガイドモーダル */}
       <BodyGuideModal visible={showGuideModal} onClose={() => setShowGuideModal(false)} />
+
+      {/* 体組成 Markdown 取り込みモーダル */}
+      <BodyMarkdownImportModal
+        visible={showMdImportModal}
+        selectedDate={selectedDate}
+        onClose={() => setShowMdImportModal(false)}
+      />
       </View>
     </PanGestureHandler>
   );

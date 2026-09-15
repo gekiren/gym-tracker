@@ -11,6 +11,17 @@ interface PersonalRecordsListProps {
   onPrPress: (reps: number, variation: string) => void;
 }
 
+const GAP = 6;
+const NUM_COLUMNS = 4;
+
+const chunkArray = <T,>(arr: T[], size: number): T[][] => {
+  const result: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    result.push(arr.slice(i, i + size));
+  }
+  return result;
+};
+
 export function PersonalRecordsList({
   personalRecords,
   weightUnit,
@@ -36,38 +47,68 @@ export function PersonalRecordsList({
 
       {isExpanded && (
         <View style={{ marginTop: 8 }}>
-          {Object.entries(personalRecords).map(([variation, prMap]) => (
-            <View key={variation} style={{ marginBottom: 12 }}>
-              {variation !== 'default' && (
-                <Text style={styles.prVariationTitle}>
-                  {t('ui.active_workout.stance_label')}: {translateStance(variation)}
-                </Text>
-              )}
-              <View style={styles.prList}>
-                {Object.keys(prMap)
-                  .sort((a, b) => parseInt(a) - parseInt(b))
-                  .map(reps => {
-                    const repNum = parseInt(reps);
-                    const weight = prMap[repNum];
-                    const oneRm = repNum === 1 ? weight : Math.round(weight * (1 + (repNum / 30)));
-                    return (
-                      <TouchableOpacity 
-                        key={reps} 
-                        style={styles.prItem}
-                        activeOpacity={0.7}
-                        onPress={() => onPrPress(repNum, variation)}
-                      >
-                        <Text style={styles.prReps}>{reps}{t('ui.common.reps_unit')}</Text>
-                        <Text style={styles.prWeight}>{weight} {weightUnit}</Text>
-                        {repNum > 1 && (
-                          <Text style={styles.prOneRm}>1RM: {oneRm}{weightUnit}</Text>
-                        )}
-                      </TouchableOpacity>
-                    );
-                  })}
+          {Object.entries(personalRecords).map(([variation, prMap]) => {
+            const sortedReps = Object.keys(prMap).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+            const rows = chunkArray(sortedReps, NUM_COLUMNS);
+
+            return (
+              <View key={variation} style={{ marginBottom: 12 }}>
+                {variation !== 'default' && (
+                  <Text style={styles.prVariationTitle}>
+                    {t('ui.active_workout.stance_label')}: {translateStance(variation)}
+                  </Text>
+                )}
+                <View style={styles.prList}>
+                  {rows.map((row, rowIdx) => (
+                    <View key={rowIdx} style={styles.prRow}>
+                      {row.map(reps => {
+                        const repNum = parseInt(reps, 10);
+                        const weight = prMap[repNum];
+                        const oneRm = repNum === 1 ? weight : Math.round(weight * (1 + (repNum / 30)));
+                        return (
+                          <TouchableOpacity 
+                            key={reps} 
+                            style={styles.prItem}
+                            activeOpacity={0.7}
+                            onPress={() => onPrPress(repNum, variation)}
+                          >
+                            <Text style={styles.prReps} numberOfLines={1}>
+                              {reps}{t('ui.common.reps_unit')}
+                            </Text>
+                            <Text 
+                              style={styles.prWeight} 
+                              numberOfLines={1} 
+                              adjustsFontSizeToFit 
+                              minimumFontScale={0.7}
+                            >
+                              {weight} {weightUnit}
+                            </Text>
+                            {repNum > 1 ? (
+                              <Text 
+                                style={styles.prOneRm} 
+                                numberOfLines={1} 
+                                adjustsFontSizeToFit 
+                                minimumFontScale={0.65}
+                              >
+                                1RM: {oneRm}{weightUnit}
+                              </Text>
+                            ) : (
+                              <Text style={[styles.prOneRm, { opacity: 0 }]} numberOfLines={1}>
+                                1RM
+                              </Text>
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                      {Array.from({ length: NUM_COLUMNS - row.length }).map((_, dummyIdx) => (
+                        <View key={`dummy-${dummyIdx}`} style={styles.prItemDummy} />
+                      ))}
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       )}
     </View>
@@ -75,13 +116,68 @@ export function PersonalRecordsList({
 }
 
 const styles = StyleSheet.create({
-  prSection: { borderBottomWidth: 1, borderBottomColor: Theme.colors.border, paddingBottom: Theme.spacing.md, paddingTop: Theme.spacing.md },
-  prHeaderToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Theme.spacing.lg },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
-  prVariationTitle: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: 'bold', paddingHorizontal: Theme.spacing.lg, marginBottom: 4 },
-  prList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: Theme.spacing.lg },
-  prItem: { backgroundColor: '#1a1a1a', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#333', minWidth: 70 },
-  prReps: { color: Theme.colors.textMuted, fontSize: 12, fontWeight: 'bold', marginBottom: 2 },
-  prWeight: { color: Theme.colors.primary, fontSize: 16, fontWeight: 'bold' },
-  prOneRm: { color: '#f5a623', fontSize: 11, fontWeight: 'bold', marginTop: 4 },
+  prSection: { 
+    borderBottomWidth: 1, 
+    borderBottomColor: Theme.colors.border, 
+    paddingBottom: Theme.spacing.md, 
+    paddingTop: Theme.spacing.md 
+  },
+  prHeaderToggle: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: Theme.spacing.md 
+  },
+  sectionTitle: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    color: Theme.colors.text 
+  },
+  prVariationTitle: { 
+    color: Theme.colors.textMuted, 
+    fontSize: 13, 
+    fontWeight: 'bold', 
+    paddingHorizontal: Theme.spacing.md, 
+    marginBottom: 6 
+  },
+  prList: { 
+    paddingHorizontal: Theme.spacing.md, 
+    gap: GAP, 
+  },
+  prRow: {
+    flexDirection: 'row',
+    gap: GAP,
+  },
+  prItem: { 
+    flex: 1,
+    backgroundColor: '#1a1a1a', 
+    paddingHorizontal: 2, 
+    paddingVertical: 8, 
+    borderRadius: 8, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    borderWidth: 1, 
+    borderColor: '#333', 
+    minHeight: 66,
+  },
+  prItemDummy: {
+    flex: 1,
+  },
+  prReps: { 
+    color: Theme.colors.textMuted, 
+    fontSize: 11, 
+    fontWeight: 'bold', 
+    marginBottom: 2 
+  },
+  prWeight: { 
+    color: Theme.colors.primary, 
+    fontSize: 13.5, 
+    fontWeight: 'bold' 
+  },
+  prOneRm: { 
+    color: '#f5a623', 
+    fontSize: 9.5, 
+    fontWeight: 'bold', 
+    marginTop: 3 
+  },
 });
