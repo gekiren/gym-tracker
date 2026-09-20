@@ -182,9 +182,14 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
 
   const handleValueChange = (newVal: number) => {
     const currentStep = latestPropsRef.current.step;
-    const formattedStr = currentStep % 1 === 0 
-      ? String(Math.round(newVal))
-      : String(Math.round(newVal * 1000) / 1000);
+    let formattedStr: string;
+    if (currentStep % 1 === 0) {
+      formattedStr = String(Math.round(newVal));
+    } else if (currentStep === 0.1) {
+      formattedStr = (Math.round(newVal * 10) / 10).toFixed(1);
+    } else {
+      formattedStr = String(Math.round(newVal * 1000) / 1000);
+    }
     latestPropsRef.current.onChangeText(formattedStr);
     triggerHaptic();
   };
