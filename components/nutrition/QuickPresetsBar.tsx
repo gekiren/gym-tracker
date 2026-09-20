@@ -55,11 +55,15 @@ export default function QuickPresetsBar({
           }}
           activeOpacity={0.7}
         >
-          <Ionicons name="restaurant-outline" size={16} color="#10b981" />
-          <Text style={styles.emptyText}>
-            献立セットを登録すると、複数の食品を一括で記録できます
-          </Text>
-          <Text style={styles.emptyActionText}>＋ セット登録</Text>
+          <View style={styles.emptyLeft}>
+            <Ionicons name="restaurant-outline" size={16} color="#10b981" />
+            <Text style={styles.emptyText} numberOfLines={2}>
+              献立セットで複数食品を一括記録
+            </Text>
+          </View>
+          <View style={styles.emptyActionBadge}>
+            <Text style={styles.emptyActionText}>＋ 登録</Text>
+          </View>
         </TouchableOpacity>
       </View>
     );
@@ -226,23 +230,41 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     backgroundColor: '#0a0a0a',
     borderRadius: 12,
-    padding: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: '#1c1c1c',
   },
   emptyButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 6,
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  emptyLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
   },
   emptyText: {
     fontSize: 12,
-    color: '#888888',
+    color: '#94a3b8',
+    flex: 1,
+  },
+  emptyActionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#04785722',
+    borderWidth: 1,
+    borderColor: '#059669',
+    borderRadius: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    flexShrink: 0,
   },
   emptyActionText: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#10b981',
     fontWeight: 'bold',
   },
