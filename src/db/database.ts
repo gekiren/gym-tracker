@@ -203,9 +203,12 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       fiber REAL DEFAULT 0,
       photo_url TEXT,
       memo TEXT,
-      created_at INTEGER NOT NULL
+      created_at INTEGER NOT NULL,
+      preset_log_group_id TEXT,
+      preset_name TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_meal_logs_date ON meal_logs(date);
+    CREATE INDEX IF NOT EXISTS idx_meal_logs_preset_group ON meal_logs(preset_log_group_id);
 
     CREATE TABLE IF NOT EXISTS meal_favorites (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -221,6 +224,33 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       created_at INTEGER NOT NULL,
       sort_order INTEGER DEFAULT 0
     );
+
+    CREATE TABLE IF NOT EXISTS meal_presets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      meal_type TEXT,
+      meal_time TEXT,
+      scheduled_days TEXT,
+      memo TEXT,
+      sort_order INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS meal_preset_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      preset_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      calories REAL DEFAULT 0,
+      protein REAL DEFAULT 0,
+      fat REAL DEFAULT 0,
+      carbs REAL DEFAULT 0,
+      sodium REAL DEFAULT 0,
+      fiber REAL DEFAULT 0,
+      memo TEXT,
+      sort_order INTEGER DEFAULT 0,
+      FOREIGN KEY (preset_id) REFERENCES meal_presets (id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_meal_preset_items_preset_id ON meal_preset_items(preset_id);
 
     CREATE TABLE IF NOT EXISTS autophagy_config (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -423,6 +453,8 @@ export const resetDatabase = async () => {
     await conn.runAsync('DELETE FROM time_logs');
     await conn.runAsync('DELETE FROM meal_logs');
     await conn.runAsync('DELETE FROM meal_favorites');
+    await conn.runAsync('DELETE FROM meal_preset_items');
+    await conn.runAsync('DELETE FROM meal_presets');
     await conn.runAsync('DELETE FROM autophagy_config');
     await conn.runAsync('DELETE FROM body_composition_logs');
   });

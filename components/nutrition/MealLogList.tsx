@@ -33,6 +33,8 @@ interface Props {
   onEditMeal: (log: MealLog) => void;
   onToggleFavorite?: (log: MealLog) => void;
   onPreviewPhoto?: (log: MealLog) => void;
+  onDeletePresetGroup?: (groupId: string, presetName?: string) => void;
+  onCreatePresetFromLogs?: (logs: MealLog[]) => void;
 }
 
 export default function MealLogList({
@@ -40,6 +42,8 @@ export default function MealLogList({
   onDeleteMeal,
   onEditMeal,
   onPreviewPhoto,
+  onDeletePresetGroup,
+  onCreatePresetFromLogs,
 }: Props) {
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -79,7 +83,21 @@ export default function MealLogList({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>📝 食事ログ一覧 ({filteredLogs.length}/{mealLogs.length}件)</Text>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionTitle}>
+          📝 食事ログ一覧 ({filteredLogs.length}/{mealLogs.length}件)
+        </Text>
+        {onCreatePresetFromLogs && mealLogs.length > 0 && (
+          <TouchableOpacity
+            style={styles.createPresetHeaderBtn}
+            onPress={() => onCreatePresetFromLogs(mealLogs)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="bookmark-outline" size={13} color="#10b981" />
+            <Text style={styles.createPresetHeaderBtnText}>セット保存</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* 検索バー */}
       <View style={styles.searchBar}>
@@ -134,6 +152,13 @@ export default function MealLogList({
                 <View style={[styles.typeBadge, { backgroundColor: typeColor }]}>
                   <Text style={styles.typeBadgeText}>{typeLabel}</Text>
                 </View>
+                {Boolean(log.preset_name || log.preset_log_group_id) && (
+                  <View style={styles.presetBadge}>
+                    <Text style={styles.presetBadgeText} numberOfLines={1}>
+                      🍱 {log.preset_name || 'セット'}
+                    </Text>
+                  </View>
+                )}
                 {Boolean(displayTime) && (
                   <Text style={styles.timeText}>⏰ {displayTime}</Text>
                 )}
@@ -188,6 +213,17 @@ export default function MealLogList({
                 >
                   <Text style={styles.deleteBtnText}>🗑️ 削除</Text>
                 </TouchableOpacity>
+
+                {Boolean(log.preset_log_group_id && onDeletePresetGroup) && (
+                  <TouchableOpacity
+                    style={[styles.actionBtn, styles.groupDeleteBtn]}
+                    onPress={() =>
+                      onDeletePresetGroup!(log.preset_log_group_id!, log.preset_name || undefined)
+                    }
+                  >
+                    <Text style={styles.groupDeleteBtnText}>🍱 セット一括削除</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           );
@@ -199,7 +235,51 @@ export default function MealLogList({
 
 const styles = StyleSheet.create({
   container: { marginVertical: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#f8fafc', marginBottom: 10 },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#f8fafc' },
+  createPresetHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#04785724',
+    borderColor: '#059669',
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  createPresetHeaderBtnText: {
+    fontSize: 11,
+    color: '#34d399',
+    fontWeight: '700',
+  },
+  presetBadge: {
+    backgroundColor: '#064e3b',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  presetBadgeText: {
+    color: '#a7f3d0',
+    fontSize: 10,
+    fontWeight: 'bold',
+    maxWidth: 90,
+  },
+  groupDeleteBtn: {
+    backgroundColor: '#83184322',
+    borderColor: '#db2777',
+    borderWidth: 1,
+  },
+  groupDeleteBtnText: {
+    fontSize: 11,
+    color: '#f472b6',
+    fontWeight: '700',
+  },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',

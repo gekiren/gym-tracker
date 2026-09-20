@@ -29,6 +29,7 @@ import { useFeatureSwipe } from '../../src/hooks/useFeatureSwipe';
 // コンポーネントインポート
 import NutritionSummaryCard from '../../components/nutrition/NutritionSummaryCard';
 import QuickFavoritesBar from '../../components/nutrition/QuickFavoritesBar';
+import QuickPresetsBar from '../../components/nutrition/QuickPresetsBar';
 import MealLogList from '../../components/nutrition/MealLogList';
 import ChatRecordModal from '../../components/nutrition/ChatRecordModal';
 import PhotoRecordModal from '../../components/nutrition/PhotoRecordModal';
@@ -36,6 +37,8 @@ import ManualEntryModal from '../../components/nutrition/ManualEntryModal';
 import HistorySelectModal from '../../components/nutrition/HistorySelectModal';
 import EditMealLogModal from '../../components/nutrition/EditMealLogModal';
 import ManageFavoritesModal from '../../components/nutrition/ManageFavoritesModal';
+import ManagePresetsModal from '../../components/nutrition/ManagePresetsModal';
+import ApplyPresetModal from '../../components/nutrition/ApplyPresetModal';
 import AutophagyCard from '../../components/nutrition/AutophagyCard';
 import NutritionHistoryChart from '../../components/nutrition/NutritionHistoryChart';
 import MdImportModal from '../../components/nutrition/MdImportModal';
@@ -44,6 +47,7 @@ import ImagePreviewModal from '../../components/nutrition/ImagePreviewModal';
 import PhotoGalleryModal from '../../components/nutrition/PhotoGalleryModal';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
+import { MealPresetWithItems, MealPresetItem } from '../../src/db/types';
 
 export default function NutritionScreen() {
   const { colors } = useAppTheme();
@@ -59,6 +63,7 @@ export default function NutritionScreen() {
   const mealLogs = useNutritionStore((state) => state.mealLogs);
   const allHistoryLogs = useNutritionStore((state) => state.allHistoryLogs);
   const favorites = useNutritionStore((state) => state.favorites);
+  const presets = useNutritionStore((state) => state.presets);
   const userGoals = useNutritionStore((state) => state.userNutritionGoals);
   const autophagyConfig = useNutritionStore((state) => state.autophagyConfig);
   const isLoading = useNutritionStore((state) => state.isLoading);
@@ -69,12 +74,19 @@ export default function NutritionScreen() {
   const updateMeal = useNutritionStore((state) => state.updateMeal);
   const removeMealPhoto = useNutritionStore((state) => state.removeMealPhoto);
   const deleteMeal = useNutritionStore((state) => state.deleteMeal);
+  const deleteMealGroupByGroupId = useNutritionStore((state) => state.deleteMealGroupByGroupId);
   const loadFavorites = useNutritionStore((state) => state.loadFavorites);
   const addFavoriteFromLog = useNutritionStore((state) => state.addFavoriteFromLog);
   const addNewFavorite = useNutritionStore((state) => state.addNewFavorite);
   const updateFavoriteItem = useNutritionStore((state) => state.updateFavoriteItem);
   const updateFavoritesOrder = useNutritionStore((state) => state.updateFavoritesOrder);
   const deleteFavoriteById = useNutritionStore((state) => state.deleteFavoriteById);
+  const loadPresets = useNutritionStore((state) => state.loadPresets);
+  const addNewPreset = useNutritionStore((state) => state.addNewPreset);
+  const updatePresetItem = useNutritionStore((state) => state.updatePresetItem);
+  const deletePresetById = useNutritionStore((state) => state.deletePresetById);
+  const updatePresetsOrder = useNutritionStore((state) => state.updatePresetsOrder);
+  const applyPreset = useNutritionStore((state) => state.applyPreset);
   const loadGoals = useNutritionStore((state) => state.loadGoals);
   const saveGoals = useNutritionStore((state) => state.saveGoals);
   const loadAutophagyConfig = useNutritionStore((state) => state.loadAutophagyConfig);
@@ -98,6 +110,16 @@ export default function NutritionScreen() {
   const [showMdModal, setShowMdModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showManageFavsModal, setShowManageFavsModal] = useState(false);
+  const [showManagePresetsModal, setShowManagePresetsModal] = useState(false);
+  const [selectedPresetToApply, setSelectedPresetToApply] = useState<MealPresetWithItems | null>(null);
+  const [initialPresetData, setInitialPresetData] = useState<{
+    name: string;
+    meal_type?: string;
+    meal_time?: string;
+    items: Omit<MealPresetItem, 'id' | 'preset_id'>[];
+  } | null>(null);
+  const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
+  const [deletingPresetName, setDeletingPresetName] = useState<string | null>(null);
   const [showPhotoGalleryModal, setShowPhotoGalleryModal] = useState(false);
   const [previewLog, setPreviewLog] = useState<MealLog | null>(null);
   const [deletingPhotoLog, setDeletingPhotoLog] = useState<MealLog | null>(null);
@@ -123,6 +145,7 @@ export default function NutritionScreen() {
       await loadMealLogs(selectedDate);
       await loadAllHistory();
       await loadFavorites();
+      await loadPresets();
       await loadGoals();
       await loadAutophagyConfig();
     } catch (err) {
@@ -138,6 +161,40 @@ export default function NutritionScreen() {
     });
     return unsubscribe;
   }, [navigation, selectedDate, isFocused]);
+
+  // 本日の食事ログから献立セットを新規作成
+  const handleCreatePresetFromCurrentLogs = (logs: MealLog[]) => {
+    if (!logs || logs.length === 0) return;
+    const items: Omit<MealPresetItem, 'id' | 'preset_id'>[] = logs.map((log, idx) => ({
+      name: log.name,
+      calories: log.calories || 0,
+      protein: log.protein || 0,
+      fat: log.fat || 0,
+      carbs: log.carbs || 0,
+      sodium: log.sodium || 0,
+      fiber: log.fiber || 0,
+      memo: log.memo,
+      sort_order: idx,
+    }));
+    const dominantType = logs[0]?.meal_type || getDefaultMealType();
+    const dominantTime = logs[0]?.meal_time || getCurrentTimeStr();
+
+    const typeLabels: Record<string, string> = {
+      breakfast: '朝食',
+      lunch: '昼食',
+      dinner: '夕食',
+      snack: '間食',
+    };
+    const typeLabel = typeLabels[dominantType] || '定番';
+
+    setInitialPresetData({
+      name: `定番${typeLabel}セット`,
+      meal_type: dominantType,
+      meal_time: dominantTime,
+      items,
+    });
+    setShowManagePresetsModal(true);
+  };
 
   // お気に入りトグル処理
   const handleToggleFavorite = async (log: MealLog) => {
@@ -325,7 +382,18 @@ export default function NutritionScreen() {
           </View>
         </View>
 
-        {/* クイックお気に入りバー（上から2番目） */}
+        {/* 献立セット一括記録バー */}
+        <QuickPresetsBar
+          presets={presets}
+          selectedDate={selectedDate}
+          onSelectPreset={(preset) => setSelectedPresetToApply(preset)}
+          onOpenManage={() => {
+            setInitialPresetData(null);
+            setShowManagePresetsModal(true);
+          }}
+        />
+
+        {/* クイックお気に入りバー */}
         <QuickFavoritesBar
           favorites={favorites}
           onSelectFavorite={handleSelectQuickFavorite}
@@ -344,6 +412,11 @@ export default function NutritionScreen() {
             onDeleteMeal={(id) => setDeletingMealId(id)}
             onEditMeal={(log) => setEditingLog(log)}
             onPreviewPhoto={(log) => setPreviewLog(log)}
+            onDeletePresetGroup={(groupId, presetName) => {
+              setDeletingGroupId(groupId);
+              setDeletingPresetName(presetName || null);
+            }}
+            onCreatePresetFromLogs={handleCreatePresetFromCurrentLogs}
           />
         )}
 
@@ -430,6 +503,34 @@ export default function NutritionScreen() {
         onUpdateOrder={updateFavoritesOrder}
       />
 
+      {/* 献立セット管理モーダル */}
+      <ManagePresetsModal
+        visible={showManagePresetsModal}
+        presets={presets}
+        favorites={favorites}
+        historyLogs={allHistoryLogs || []}
+        initialNewPresetData={initialPresetData}
+        onClose={() => {
+          setShowManagePresetsModal(false);
+          setInitialPresetData(null);
+        }}
+        onAddPreset={addNewPreset}
+        onUpdatePreset={updatePresetItem}
+        onDeletePreset={deletePresetById}
+        onUpdateOrder={updatePresetsOrder}
+      />
+
+      {/* 献立セット一括記録プレビューモーダル */}
+      <ApplyPresetModal
+        visible={selectedPresetToApply !== null}
+        preset={selectedPresetToApply}
+        selectedDate={selectedDate}
+        onClose={() => setSelectedPresetToApply(null)}
+        onApply={async (presetId, date, options) => {
+          await applyPreset(presetId, date, options);
+        }}
+      />
+
       {/* 写真拡大プレビューモーダル */}
       <ImagePreviewModal
         visible={previewLog !== null}
@@ -482,6 +583,26 @@ export default function NutritionScreen() {
           }
         }}
         onCancel={() => setDeletingMealId(null)}
+      />
+
+      {/* 献立セット一括削除確認モーダル */}
+      <ConfirmModal
+        visible={deletingGroupId !== null}
+        title="献立セットの一括削除"
+        message={`この献立セット食事（${deletingPresetName || 'セット'}）を一括削除しますか？\n（同セットで記録されたすべての品が削除されます）`}
+        confirmText="一括削除"
+        type="danger"
+        onConfirm={async () => {
+          if (deletingGroupId !== null) {
+            await deleteMealGroupByGroupId(deletingGroupId);
+            setDeletingGroupId(null);
+            setDeletingPresetName(null);
+          }
+        }}
+        onCancel={() => {
+          setDeletingGroupId(null);
+          setDeletingPresetName(null);
+        }}
       />
       </View>
     </PanGestureHandler>
