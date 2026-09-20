@@ -416,7 +416,7 @@ export function SetInputRow({
                 panGestureRef={inclinePanRef}
                 style={[styles.input, { width: 48, marginHorizontal: 2 }]} 
                 keyboardType="decimal-pad" 
-                step={0.5}
+                step={1}
                 placeholder={set.prev_incline != null ? `${set.prev_incline}%` : "-"} 
                 placeholderTextColor="rgba(255,255,255,0.2)"
                 value={localIncline}
