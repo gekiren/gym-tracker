@@ -208,7 +208,6 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       preset_name TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_meal_logs_date ON meal_logs(date);
-    CREATE INDEX IF NOT EXISTS idx_meal_logs_preset_group ON meal_logs(preset_log_group_id);
 
     CREATE TABLE IF NOT EXISTS meal_favorites (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
