@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import {
   MealLog,
   MealFavorite,
+  MealPreset,
+  MealPresetItem,
+  MealPresetWithItems,
   NutritionGoals,
   AutophagyConfig,
   getMealLogsByDate,
@@ -9,11 +12,18 @@ import {
   addMealLog,
   updateMealLog,
   deleteMealLog,
+  deleteMealLogsByGroupId,
   getFavorites,
   addFavorite,
   updateFavorite,
   updateFavoriteOrders,
   deleteFavorite,
+  getMealPresets,
+  addMealPreset,
+  updateMealPreset,
+  deleteMealPreset,
+  updateMealPresetOrders,
+  applyMealPresetToDate,
   getNutritionGoals,
   saveNutritionGoals,
   getAutophagyConfig,
@@ -29,6 +39,7 @@ interface NutritionState {
   mealLogs: MealLog[];
   allHistoryLogs: MealLog[];
   favorites: MealFavorite[];
+  presets: MealPresetWithItems[];
   selectedDate: string;
   userNutritionGoals: NutritionGoals;
   autophagyConfig: AutophagyConfig;
@@ -41,12 +52,19 @@ interface NutritionState {
   updateMeal: (id: number, log: Partial<Omit<MealLog, 'id'>>) => Promise<void>;
   removeMealPhoto: (id: number) => Promise<void>;
   deleteMeal: (id: number) => Promise<void>;
+  deleteMealGroupByGroupId: (groupId: string) => Promise<void>;
   loadFavorites: () => Promise<void>;
   addFavoriteFromLog: (fav: Omit<MealFavorite, 'id'>) => Promise<void>;
   addNewFavorite: (fav: Omit<MealFavorite, 'id'>) => Promise<void>;
   updateFavoriteItem: (id: number, fav: Partial<Omit<MealFavorite, 'id'>>) => Promise<void>;
   updateFavoritesOrder: (orders: { id: number; sort_order: number }[]) => Promise<void>;
   deleteFavoriteById: (id: number) => Promise<void>;
+  loadPresets: () => Promise<void>;
+  addNewPreset: (preset: Omit<MealPreset, 'id'>, items: Omit<MealPresetItem, 'id' | 'preset_id'>[]) => Promise<void>;
+  updatePresetItem: (id: number, preset: Partial<Omit<MealPreset, 'id'>>, items?: Omit<MealPresetItem, 'id' | 'preset_id'>[]) => Promise<void>;
+  deletePresetById: (id: number) => Promise<void>;
+  updatePresetsOrder: (orders: { id: number; sort_order: number }[]) => Promise<void>;
+  applyPreset: (presetId: number, date: string, options?: { multiplier?: number; meal_time?: string; meal_type?: string; selectedItemIds?: number[] }) => Promise<void>;
   loadGoals: () => Promise<void>;
   saveGoals: (goals: NutritionGoals) => Promise<void>;
   loadAutophagyConfig: () => Promise<void>;
@@ -87,6 +105,7 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
   mealLogs: [],
   allHistoryLogs: [],
   favorites: [],
+  presets: [],
   selectedDate: '',
   userNutritionGoals: DEFAULT_GOALS,
   autophagyConfig: DEFAULT_AUTOPHAGY,
@@ -175,6 +194,19 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
     }
   },
 
+  deleteMealGroupByGroupId: async (groupId: string) => {
+    try {
+      await deleteMealLogsByGroupId(groupId);
+      const date = get().selectedDate;
+      if (date) {
+        const logs = await getMealLogsByDate(date);
+        set({ mealLogs: logs });
+      }
+    } catch (e) {
+      console.warn('useNutritionStore: deleteMealGroupByGroupId failed', e);
+    }
+  },
+
   loadFavorites: async () => {
     try {
       const favs = await getFavorites();
@@ -252,6 +284,90 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
     }
   },
 
+  loadPresets: async () => {
+    try {
+      const presets = await getMealPresets();
+      set({ presets: presets || [] });
+    } catch (e) {
+      console.warn('useNutritionStore: loadPresets failed', e);
+    }
+  },
+
+  addNewPreset: async (
+    preset: Omit<MealPreset, 'id'>,
+    items: Omit<MealPresetItem, 'id' | 'preset_id'>[]
+  ) => {
+    try {
+      const current = get().presets;
+      const nextSortOrder = current.length > 0
+        ? Math.max(...current.map(p => p.sort_order ?? 0)) + 1
+        : 0;
+      await addMealPreset({ ...preset, sort_order: preset.sort_order ?? nextSortOrder }, items);
+      const updated = await getMealPresets();
+      set({ presets: updated || [] });
+    } catch (e) {
+      console.warn('useNutritionStore: addNewPreset failed', e);
+    }
+  },
+
+  updatePresetItem: async (
+    id: number,
+    preset: Partial<Omit<MealPreset, 'id'>>,
+    items?: Omit<MealPresetItem, 'id' | 'preset_id'>[]
+  ) => {
+    try {
+      await updateMealPreset(id, preset, items);
+      const updated = await getMealPresets();
+      set({ presets: updated || [] });
+    } catch (e) {
+      console.warn('useNutritionStore: updatePresetItem failed', e);
+    }
+  },
+
+  deletePresetById: async (id: number) => {
+    try {
+      await deleteMealPreset(id);
+      const updated = await getMealPresets();
+      set({ presets: updated || [] });
+    } catch (e) {
+      console.warn('useNutritionStore: deletePresetById failed', e);
+    }
+  },
+
+  updatePresetsOrder: async (orders: { id: number; sort_order: number }[]) => {
+    try {
+      const current = [...get().presets];
+      const orderMap = new Map(orders.map(o => [o.id, o.sort_order]));
+      current.sort((a, b) => {
+        const orderA = orderMap.get(a.id) ?? a.sort_order ?? 0;
+        const orderB = orderMap.get(b.id) ?? b.sort_order ?? 0;
+        return orderA - orderB;
+      });
+      set({ presets: current });
+
+      await updateMealPresetOrders(orders);
+      const updated = await getMealPresets();
+      set({ presets: updated || [] });
+    } catch (e) {
+      console.warn('useNutritionStore: updatePresetsOrder failed', e);
+    }
+  },
+
+  applyPreset: async (
+    presetId: number,
+    date: string,
+    options?: { multiplier?: number; meal_time?: string; meal_type?: string; selectedItemIds?: number[] }
+  ) => {
+    try {
+      await applyMealPresetToDate(presetId, date, options);
+      const logs = await getMealLogsByDate(date);
+      set({ mealLogs: logs });
+      recordFeatureAction('nutrition', date);
+    } catch (e) {
+      console.warn('useNutritionStore: applyPreset failed', e);
+    }
+  },
+
   loadGoals: async () => {
     try {
       const goals = await getNutritionGoals();
@@ -313,6 +429,7 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
       mealLogs: [],
       allHistoryLogs: [],
       favorites: [],
+      presets: [],
       selectedDate: '',
       userNutritionGoals: DEFAULT_GOALS,
       autophagyConfig: DEFAULT_AUTOPHAGY,

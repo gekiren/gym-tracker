@@ -32,11 +32,15 @@ export default function QuickFavoritesBar({
           }}
           activeOpacity={0.7}
         >
-          <Ionicons name="star-outline" size={16} color="#38bdf8" />
-          <Text style={styles.emptyText}>
-            お気に入りを登録すると、1タップで即座に記録できます
-          </Text>
-          <Text style={styles.emptyActionText}>＋ 登録</Text>
+          <View style={styles.emptyLeft}>
+            <Ionicons name="star-outline" size={16} color="#38bdf8" />
+            <Text style={styles.emptyText} numberOfLines={2}>
+              お気に入り登録で1タップ即座に記録
+            </Text>
+          </View>
+          <View style={styles.emptyActionBadge}>
+            <Text style={styles.emptyActionText}>＋ 登録</Text>
+          </View>
         </TouchableOpacity>
       </View>
     );
@@ -144,22 +148,47 @@ const styles = StyleSheet.create({
     color: '#38bdf8',
   },
   emptyContainer: {
-    marginVertical: 8,
+    marginVertical: 6,
     backgroundColor: '#0a0a0a',
     borderRadius: 12,
-    padding: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: '#1c1c1c',
   },
   emptyButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 6,
+    justifyContent: 'space-between',
+    gap: 8,
   },
-  emptyText: { fontSize: 12, color: '#888888' },
-  emptyActionText: { fontSize: 12, color: '#38bdf8', fontWeight: 'bold' },
+  emptyLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  emptyText: {
+    fontSize: 12,
+    color: '#94a3b8',
+    flex: 1,
+  },
+  emptyActionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0284c722',
+    borderWidth: 1,
+    borderColor: '#0284c7',
+    borderRadius: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    flexShrink: 0,
+  },
+  emptyActionText: {
+    fontSize: 11,
+    color: '#38bdf8',
+    fontWeight: 'bold',
+  },
   scrollContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   chip: {
     backgroundColor: '#3b82f61a',

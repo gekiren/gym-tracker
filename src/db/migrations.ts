@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 
-export const DATABASE_VERSION = 13;
+export const DATABASE_VERSION = 14;
 
 export interface Migration {
   version: number;
@@ -276,6 +276,45 @@ export const MIGRATIONS: Migration[] = [
       await safeAddColumn(db, 'workout_sets', 'incline', 'REAL');
       await safeAddColumn(db, 'routine_sets', 'speed', 'REAL');
       await safeAddColumn(db, 'routine_sets', 'incline', 'REAL');
+    },
+  },
+  {
+    version: 14,
+    up: async (db) => {
+      // 献立プリセット（食事セット）機能用テーブルの作成
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS meal_presets (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          meal_type TEXT,
+          meal_time TEXT,
+          scheduled_days TEXT,
+          memo TEXT,
+          sort_order INTEGER DEFAULT 0,
+          created_at INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS meal_preset_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          preset_id INTEGER NOT NULL,
+          name TEXT NOT NULL,
+          calories REAL DEFAULT 0,
+          protein REAL DEFAULT 0,
+          fat REAL DEFAULT 0,
+          carbs REAL DEFAULT 0,
+          sodium REAL DEFAULT 0,
+          fiber REAL DEFAULT 0,
+          memo TEXT,
+          sort_order INTEGER DEFAULT 0,
+          FOREIGN KEY (preset_id) REFERENCES meal_presets (id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_meal_preset_items_preset_id ON meal_preset_items(preset_id);
+      `);
+      // 食事ログへのプリセット識別・一括削除用カラムの追加
+      await safeAddColumn(db, 'meal_logs', 'preset_log_group_id', 'TEXT');
+      await safeAddColumn(db, 'meal_logs', 'preset_name', 'TEXT');
+      await db.execAsync(`
+        CREATE INDEX IF NOT EXISTS idx_meal_logs_preset_group ON meal_logs(preset_log_group_id);
+      `);
     },
   },
 ];

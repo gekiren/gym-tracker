@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.2.13',
+  version: '2.2.17',
   title: {
-    ja: '✨ 更新通知ポップアップの改善＆文字サイズ拡大',
-    en: '✨ Improved Update Modal & PR Font Size',
+    ja: '🛠️ 献立セット一括記録の安定性向上',
+    en: '🛠️ Improved Meal Preset Apply Stability',
   },
   notes: {
     ja: [
-      '自己ベスト（PR）一覧カードの文字サイズを拡大し、視認性を向上させました（カードサイズは完全維持）。',
-      '更新通知画面の操作性を改善し、「閉じる」ボタンでスムーズにアプリを利用できるようにしました。',
+      '献立セットを一括記録するプレビュー画面を開く際に、一部の環境でエラー画面が表示されてしまう不具合を修正しました。',
+      '画面描画処理の最適化を行い、献立セットの一括記録をよりスムーズに行えるようにしました。',
     ],
     en: [
-      'Increased font size of Personal Record (PR) cards for better readability while preserving card dimensions.',
-      'Enhanced update notification dialog with a convenient Close button for a smoother user experience.',
+      'Fixed an issue where an error screen was displayed when opening the meal preset apply preview modal on certain devices.',
+      'Optimized rendering logic to ensure smooth meal preset recording.',
     ],
   },
 };

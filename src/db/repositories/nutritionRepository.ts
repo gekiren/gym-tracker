@@ -2,6 +2,9 @@ import { getDB, initDB, withDBQueue, triggerDebouncedDataBackup } from '../datab
 import {
   MealLog,
   MealFavorite,
+  MealPreset,
+  MealPresetItem,
+  MealPresetWithItems,
   NutritionGoals,
   AutophagyConfig,
 } from '../types';
@@ -56,8 +59,8 @@ export const addMealLog = async (
   const rowId = await withDBQueue(async (conn) => {
     const res = await conn.runAsync(
       `INSERT INTO meal_logs
-        (date, meal_type, meal_time, name, calories, protein, fat, carbs, sodium, fiber, photo_url, memo, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (date, meal_type, meal_time, name, calories, protein, fat, carbs, sodium, fiber, photo_url, memo, created_at, preset_log_group_id, preset_name)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         log.date,
         log.meal_type ?? null,
@@ -72,6 +75,8 @@ export const addMealLog = async (
         log.photo_url ?? null,
         log.memo ?? null,
         log.created_at,
+        log.preset_log_group_id ?? null,
+        log.preset_name ?? null,
       ]
     );
     return res.lastInsertRowId;
@@ -101,6 +106,8 @@ export const updateMealLog = async (
   if (log.fiber !== undefined) { fields.push('fiber = ?'); values.push(log.fiber); }
   if (log.photo_url !== undefined) { fields.push('photo_url = ?'); values.push(log.photo_url ?? null); }
   if (log.memo !== undefined) { fields.push('memo = ?'); values.push(log.memo ?? null); }
+  if (log.preset_log_group_id !== undefined) { fields.push('preset_log_group_id = ?'); values.push(log.preset_log_group_id ?? null); }
+  if (log.preset_name !== undefined) { fields.push('preset_name = ?'); values.push(log.preset_name ?? null); }
 
   if (fields.length === 0) return;
   values.push(id);
@@ -119,6 +126,15 @@ export const deleteMealLog = async (id: number): Promise<void> => {
   await getSafeDB();
   await withDBQueue(async (conn) => {
     await conn.runAsync('DELETE FROM meal_logs WHERE id = ?', [id]);
+  });
+  // 食事削除後の非同期バックアップ（20秒デバウンス）
+  triggerDebouncedDataBackup('meal_save', 20000);
+};
+
+export const deleteMealLogsByGroupId = async (groupId: string): Promise<void> => {
+  await getSafeDB();
+  await withDBQueue(async (conn) => {
+    await conn.runAsync('DELETE FROM meal_logs WHERE preset_log_group_id = ?', [groupId]);
   });
   // 食事削除後の非同期バックアップ（20秒デバウンス）
   triggerDebouncedDataBackup('meal_save', 20000);
@@ -336,3 +352,240 @@ export const saveAutophagyConfig = async (
     }
   });
 };
+
+// ─── 献立プリセット (meal_presets & meal_preset_items) ────
+
+export const getMealPresets = async (): Promise<MealPresetWithItems[]> => {
+  await getSafeDB();
+  return await withDBQueue(async (conn) => {
+    const presets = await conn.getAllAsync<MealPreset>(
+      'SELECT * FROM meal_presets ORDER BY sort_order ASC, created_at DESC'
+    );
+    if (!presets || presets.length === 0) return [];
+
+    const items = await conn.getAllAsync<MealPresetItem>(
+      'SELECT * FROM meal_preset_items ORDER BY sort_order ASC, id ASC'
+    );
+
+    const itemsByPresetId = new Map<number, MealPresetItem[]>();
+    for (const item of (items || [])) {
+      if (!itemsByPresetId.has(item.preset_id)) {
+        itemsByPresetId.set(item.preset_id, []);
+      }
+      itemsByPresetId.get(item.preset_id)!.push(item);
+    }
+
+    return presets.map((p) => ({
+      ...p,
+      items: itemsByPresetId.get(p.id) || [],
+    }));
+  });
+};
+
+export const addMealPreset = async (
+  preset: Omit<MealPreset, 'id'>,
+  items: Omit<MealPresetItem, 'id' | 'preset_id'>[]
+): Promise<number> => {
+  await getSafeDB();
+  const presetId = await withDBQueue(async (conn) => {
+    const res = await conn.runAsync(
+      `INSERT INTO meal_presets (name, meal_type, meal_time, scheduled_days, memo, sort_order, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        preset.name,
+        preset.meal_type ?? null,
+        preset.meal_time ?? null,
+        preset.scheduled_days ?? null,
+        preset.memo ?? null,
+        preset.sort_order ?? 0,
+        preset.created_at || Date.now(),
+      ]
+    );
+    const newId = res.lastInsertRowId;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      await conn.runAsync(
+        `INSERT INTO meal_preset_items
+         (preset_id, name, calories, protein, fat, carbs, sodium, fiber, memo, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          newId,
+          item.name,
+          item.calories || 0,
+          item.protein || 0,
+          item.fat || 0,
+          item.carbs || 0,
+          item.sodium || 0,
+          item.fiber || 0,
+          item.memo ?? null,
+          item.sort_order ?? i,
+        ]
+      );
+    }
+    return newId;
+  });
+  triggerDebouncedDataBackup('meal_save', 20000);
+  return presetId;
+};
+
+export const updateMealPreset = async (
+  id: number,
+  preset: Partial<Omit<MealPreset, 'id'>>,
+  items?: Omit<MealPresetItem, 'id' | 'preset_id'>[]
+): Promise<void> => {
+  await getSafeDB();
+  await withDBQueue(async (conn) => {
+    const fields: string[] = [];
+    const values: (string | number | null)[] = [];
+
+    if (preset.name !== undefined) { fields.push('name = ?'); values.push(preset.name); }
+    if (preset.meal_type !== undefined) { fields.push('meal_type = ?'); values.push(preset.meal_type ?? null); }
+    if (preset.meal_time !== undefined) { fields.push('meal_time = ?'); values.push(preset.meal_time ?? null); }
+    if (preset.scheduled_days !== undefined) { fields.push('scheduled_days = ?'); values.push(preset.scheduled_days ?? null); }
+    if (preset.memo !== undefined) { fields.push('memo = ?'); values.push(preset.memo ?? null); }
+    if (preset.sort_order !== undefined) { fields.push('sort_order = ?'); values.push(preset.sort_order); }
+
+    if (fields.length > 0) {
+      values.push(id);
+      await conn.runAsync(
+        `UPDATE meal_presets SET ${fields.join(', ')} WHERE id = ?`,
+        values
+      );
+    }
+
+    if (items !== undefined) {
+      await conn.runAsync('DELETE FROM meal_preset_items WHERE preset_id = ?', [id]);
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        await conn.runAsync(
+          `INSERT INTO meal_preset_items
+           (preset_id, name, calories, protein, fat, carbs, sodium, fiber, memo, sort_order)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            id,
+            item.name,
+            item.calories || 0,
+            item.protein || 0,
+            item.fat || 0,
+            item.carbs || 0,
+            item.sodium || 0,
+            item.fiber || 0,
+            item.memo ?? null,
+            item.sort_order ?? i,
+          ]
+        );
+      }
+    }
+  });
+  triggerDebouncedDataBackup('meal_save', 20000);
+};
+
+export const deleteMealPreset = async (id: number): Promise<void> => {
+  await getSafeDB();
+  await withDBQueue(async (conn) => {
+    await conn.runAsync('DELETE FROM meal_preset_items WHERE preset_id = ?', [id]);
+    await conn.runAsync('DELETE FROM meal_presets WHERE id = ?', [id]);
+  });
+  triggerDebouncedDataBackup('meal_save', 20000);
+};
+
+export const updateMealPresetOrders = async (
+  orders: { id: number; sort_order: number }[]
+): Promise<void> => {
+  await getSafeDB();
+  await withDBQueue(async (conn) => {
+    for (const item of orders) {
+      await conn.runAsync(
+        'UPDATE meal_presets SET sort_order = ? WHERE id = ?',
+        [item.sort_order, item.id]
+      );
+    }
+  });
+};
+
+export const applyMealPresetToDate = async (
+  presetId: number,
+  date: string,
+  options?: {
+    multiplier?: number;
+    meal_time?: string;
+    meal_type?: string;
+    selectedItemIds?: number[];
+  }
+): Promise<string> => {
+  await getSafeDB();
+  const mult = options?.multiplier ?? 1.0;
+  const nowMs = Date.now();
+  const groupId = `preset_${presetId}_${nowMs}`;
+
+  // トランザクション外でプリフェッチ（SQLiteデッドロック防止）
+  const preset = await withDBQueue(async (conn) => {
+    return await conn.getFirstAsync<MealPreset>(
+      'SELECT * FROM meal_presets WHERE id = ?',
+      [presetId]
+    );
+  });
+
+  if (!preset) {
+    throw new Error(`MealPreset with id ${presetId} not found`);
+  }
+
+  const allItems = await withDBQueue(async (conn) => {
+    return await conn.getAllAsync<MealPresetItem>(
+      'SELECT * FROM meal_preset_items WHERE preset_id = ? ORDER BY sort_order ASC, id ASC',
+      [presetId]
+    );
+  });
+
+  if (!allItems || allItems.length === 0) {
+    return groupId;
+  }
+
+  const items = options?.selectedItemIds
+    ? allItems.filter((i) => options.selectedItemIds!.includes(i.id))
+    : allItems;
+
+  if (items.length === 0) {
+    return groupId;
+  }
+
+  const finalMealType = options?.meal_type || preset.meal_type || 'breakfast';
+  const finalMealTime = options?.meal_time || preset.meal_time || '12:00';
+
+  await withDBQueue(async (conn) => {
+    for (const item of items) {
+      const cal = mult === 1 ? item.calories : Math.round(item.calories * mult);
+      const p = mult === 1 ? item.protein : parseFloat((item.protein * mult).toFixed(1));
+      const f = mult === 1 ? item.fat : parseFloat((item.fat * mult).toFixed(1));
+      const c = mult === 1 ? item.carbs : parseFloat((item.carbs * mult).toFixed(1));
+      const na = mult === 1 ? item.sodium : parseFloat((item.sodium * mult).toFixed(1));
+      const fib = mult === 1 ? item.fiber : parseFloat((item.fiber * mult).toFixed(1));
+
+      await conn.runAsync(
+        `INSERT INTO meal_logs
+          (date, meal_type, meal_time, name, calories, protein, fat, carbs, sodium, fiber, memo, created_at, preset_log_group_id, preset_name)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          date,
+          finalMealType,
+          finalMealTime,
+          item.name,
+          cal,
+          p,
+          f,
+          c,
+          na,
+          fib,
+          item.memo ?? null,
+          nowMs,
+          groupId,
+          preset.name,
+        ]
+      );
+    }
+  });
+
+  triggerDebouncedDataBackup('meal_save', 20000);
+  return groupId;
+};
+

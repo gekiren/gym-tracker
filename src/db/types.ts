@@ -183,6 +183,8 @@ export interface MealLog {
   photo_url?: string | null;
   memo?: string;
   created_at: number;
+  preset_log_group_id?: string | null;
+  preset_name?: string | null;
 }
 
 export interface MealFavorite {
@@ -198,6 +200,35 @@ export interface MealFavorite {
   memo?: string;
   created_at: number;
   sort_order?: number;
+}
+
+export interface MealPreset {
+  id: number;
+  name: string;
+  meal_type?: string;
+  meal_time?: string;
+  scheduled_days?: string; // 例: "1,2,3,4,5" (0=日, 1=月, ..., 6=土)
+  memo?: string;
+  sort_order?: number;
+  created_at: number;
+}
+
+export interface MealPresetItem {
+  id: number;
+  preset_id: number;
+  name: string;
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  sodium: number;
+  fiber: number;
+  memo?: string;
+  sort_order?: number;
+}
+
+export interface MealPresetWithItems extends MealPreset {
+  items: MealPresetItem[];
 }
 
 export interface NutritionGoals {
@@ -227,6 +258,7 @@ export interface AutophagyConfig {
   notified: boolean;
   auto_sync_with_last_meal: boolean;
 }
+
 
 
 
