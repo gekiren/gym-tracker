@@ -66,8 +66,6 @@ export default function ApplyPresetModal({
     }
   }, [preset, visible]);
 
-  if (!preset) return null;
-
   const toggleItemSelection = (id: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setSelectedItemIds((prev) => {
@@ -82,8 +80,11 @@ export default function ApplyPresetModal({
     });
   };
 
-  // 選択された食品群の計算
-  const activeItems = preset.items.filter((item) => selectedItemIds.has(item.id));
+  // 選択された食品群の計算（全フック宣言をトップレベルで無条件実行）
+  const activeItems = useMemo(() => {
+    if (!preset) return [];
+    return preset.items.filter((item) => selectedItemIds.has(item.id));
+  }, [preset, selectedItemIds]);
 
   const totals = useMemo(() => {
     let cal = 0;
@@ -113,7 +114,7 @@ export default function ApplyPresetModal({
   }, [activeItems, multiplier]);
 
   const handleConfirmApply = async () => {
-    if (isApplying) return;
+    if (!preset || isApplying) return;
     try {
       setIsApplying(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -130,6 +131,9 @@ export default function ApplyPresetModal({
       setIsApplying(false);
     }
   };
+
+  // すべてのReactフック宣言が完了した後にガード
+  if (!preset) return null;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>

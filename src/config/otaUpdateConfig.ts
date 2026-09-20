@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.2.16',
+  version: '2.2.17',
   title: {
-    ja: '🍱 献立セット案内バナーの表示改善',
-    en: '🍱 Meal Preset Banner Display Fix',
+    ja: '🛠️ 献立セット一括記録の安定性向上',
+    en: '🛠️ Improved Meal Preset Apply Stability',
   },
   notes: {
     ja: [
-      '献立セット未登録時の案内バナーが端末画面幅からはみ出て見切れてしまう表示崩れを修正しました。',
-      '案内テキストの自動折り返しとアクションバッジ配置により、各種画面サイズでの視認性を向上させました。',
+      '献立セットを一括記録するプレビュー画面を開く際に、一部の環境でエラー画面が表示されてしまう不具合を修正しました。',
+      '画面描画処理の最適化を行い、献立セットの一括記録をよりスムーズに行えるようにしました。',
     ],
     en: [
-      'Fixed an issue where the meal preset guide banner overflowed the screen on certain devices.',
-      'Improved responsive layout with text auto-wrapping and action badges across various screen sizes.',
+      'Fixed an issue where an error screen was displayed when opening the meal preset apply preview modal on certain devices.',
+      'Optimized rendering logic to ensure smooth meal preset recording.',
     ],
   },
 };
