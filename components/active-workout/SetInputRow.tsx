@@ -257,7 +257,10 @@ export function SetInputRow({
       setManualSeconds(String(countdownTarget % 60));
       setModalTimerMode('countdown');
     } else {
-      const curSecs = set.work_seconds ?? swElapsed;
+      let curSecs = set.work_seconds ?? swElapsed;
+      if (curSecs === 0 && isTreadmill && set.prev_work_seconds != null) {
+        curSecs = set.prev_work_seconds;
+      }
       setManualMinutes(String(Math.floor(curSecs / 60)));
       setManualSeconds(String(curSecs % 60));
       setModalTimerMode('countup');
@@ -364,7 +367,7 @@ export function SetInputRow({
             {set.is_completed ? (
               <View style={[styles.input, { width: 54, marginHorizontal: 2 }, styles.inputReadOnly]}>
                 <Text style={styles.inputReadOnlyText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-                  {localSpeed ? `${localSpeed}` : (set.prev_speed != null ? `${set.prev_speed}` : '-')}
+                  {localSpeed ? `${localSpeed}` : (set.speed != null ? `${set.speed}` : (set.prev_speed != null ? `${set.prev_speed}` : '-'))}
                 </Text>
               </View>
             ) : (
@@ -373,7 +376,7 @@ export function SetInputRow({
                 panGestureRef={speedPanRef}
                 style={[styles.input, { width: 54, marginHorizontal: 2 }]} 
                 keyboardType="decimal-pad" 
-                step={0.5}
+                step={0.1}
                 placeholder={set.prev_speed != null ? String(set.prev_speed) : "-"} 
                 placeholderTextColor="rgba(255,255,255,0.2)"
                 value={localSpeed}
@@ -404,7 +407,7 @@ export function SetInputRow({
             {set.is_completed ? (
               <View style={[styles.input, { width: 48, marginHorizontal: 2 }, styles.inputReadOnly]}>
                 <Text style={styles.inputReadOnlyText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-                  {localIncline ? `${localIncline}%` : (set.prev_incline != null ? `${set.prev_incline}%` : '-')}
+                  {localIncline ? `${localIncline}%` : (set.incline != null ? `${set.incline}%` : (set.prev_incline != null ? `${set.prev_incline}%` : '-'))}
                 </Text>
               </View>
             ) : (
@@ -468,9 +471,18 @@ export function SetInputRow({
                       <Text
                         pointerEvents="none"
                         numberOfLines={1}
-                        style={{ color: Theme.colors.primary, fontSize: 14, fontWeight: 'bold', letterSpacing: 0.5 }}
+                        style={{
+                          color: (!swRunning && swElapsed === 0 && set.work_seconds == null && set.prev_work_seconds != null)
+                            ? 'rgba(255,255,255,0.4)'
+                            : Theme.colors.primary,
+                          fontSize: 14,
+                          fontWeight: 'bold',
+                          letterSpacing: 0.5,
+                        }}
                       >
-                        {formatTimerDisplay(swElapsed)}
+                        {(!swRunning && swElapsed === 0 && set.work_seconds == null && set.prev_work_seconds != null)
+                          ? formatTimerDisplay(set.prev_work_seconds)
+                          : formatTimerDisplay(swElapsed)}
                       </Text>
                     )}
                   </GHTouchableOpacity>
@@ -813,14 +825,27 @@ export function SetInputRow({
                     setSwRunning(false);
                     finalSeconds = Math.floor((Date.now() - (swStartTs ?? Date.now())) / 1000);
                     setSwElapsed(finalSeconds);
+                  } else if (isTreadmill && (finalSeconds === 0 || set.work_seconds == null) && set.prev_work_seconds != null) {
+                    finalSeconds = set.prev_work_seconds;
+                    setSwElapsed(finalSeconds);
                   }
                 }
                 const updates: any = { work_seconds: finalSeconds };
                 if (isTreadmill) {
                   const spd = safeParseFloat(localSpeed);
                   const inc = safeParseFloat(localIncline);
-                  if (spd !== null) updates.speed = spd;
-                  if (inc !== null) updates.incline = inc;
+                  if (spd !== null) {
+                    updates.speed = spd;
+                  } else if (set.prev_speed != null) {
+                    updates.speed = set.prev_speed;
+                    setLocalSpeed(String(set.prev_speed));
+                  }
+                  if (inc !== null) {
+                    updates.incline = inc;
+                  } else if (set.prev_incline != null) {
+                    updates.incline = set.prev_incline;
+                    setLocalIncline(String(set.prev_incline));
+                  }
                 }
                 updateSet(ex.id, set.id, updates);
               }

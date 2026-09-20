@@ -17,6 +17,7 @@ export type SetRecord = {
   incline?: number | null;
   prev_speed?: number | null;
   prev_incline?: number | null;
+  prev_work_seconds?: number | null;
   completedAt?: number;
   is_completed: boolean;
   rest_seconds?: number | null;
@@ -244,6 +245,11 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
                 rpe: lastL ? lastL.rpe : (lastSet ? lastSet.rpe : null),
                 speed: lastL ? lastL.speed : (lastSet ? lastSet.speed : null),
                 incline: lastL ? lastL.incline : (lastSet ? lastSet.incline : null),
+                prev_weight: lastL ? (lastL.weight ?? lastL.prev_weight ?? null) : (lastSet ? (lastSet.weight ?? lastSet.prev_weight ?? null) : null),
+                prev_reps: lastL ? (lastL.reps ?? lastL.prev_reps ?? null) : (lastSet ? (lastSet.reps ?? lastSet.prev_reps ?? null) : null),
+                prev_speed: lastL ? (lastL.speed ?? lastL.prev_speed ?? null) : (lastSet ? (lastSet.speed ?? lastSet.prev_speed ?? null) : null),
+                prev_incline: lastL ? (lastL.incline ?? lastL.prev_incline ?? null) : (lastSet ? (lastSet.incline ?? lastSet.prev_incline ?? null) : null),
+                prev_work_seconds: lastL ? (lastL.work_seconds ?? lastL.prev_work_seconds ?? null) : (lastSet ? (lastSet.work_seconds ?? lastSet.prev_work_seconds ?? null) : null),
                 is_completed: false,
                 rest_seconds: null,
                 work_seconds: null,
@@ -259,6 +265,11 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
                 rpe: lastR ? lastR.rpe : (lastSet ? lastSet.rpe : null),
                 speed: lastR ? lastR.speed : (lastSet ? lastSet.speed : null),
                 incline: lastR ? lastR.incline : (lastSet ? lastSet.incline : null),
+                prev_weight: lastR ? (lastR.weight ?? lastR.prev_weight ?? null) : (lastSet ? (lastSet.weight ?? lastSet.prev_weight ?? null) : null),
+                prev_reps: lastR ? (lastR.reps ?? lastR.prev_reps ?? null) : (lastSet ? (lastSet.reps ?? lastSet.prev_reps ?? null) : null),
+                prev_speed: lastR ? (lastR.speed ?? lastR.prev_speed ?? null) : (lastSet ? (lastSet.speed ?? lastSet.prev_speed ?? null) : null),
+                prev_incline: lastR ? (lastR.incline ?? lastR.prev_incline ?? null) : (lastSet ? (lastSet.incline ?? lastSet.prev_incline ?? null) : null),
+                prev_work_seconds: lastR ? (lastR.work_seconds ?? lastR.prev_work_seconds ?? null) : (lastSet ? (lastSet.work_seconds ?? lastSet.prev_work_seconds ?? null) : null),
                 is_completed: false,
                 rest_seconds: null,
                 work_seconds: null,
@@ -279,6 +290,11 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
               rpe: lastSet ? lastSet.rpe : null,
               speed: lastSet ? lastSet.speed : null,
               incline: lastSet ? lastSet.incline : null,
+              prev_weight: lastSet ? (lastSet.weight ?? lastSet.prev_weight ?? null) : null,
+              prev_reps: lastSet ? (lastSet.reps ?? lastSet.prev_reps ?? null) : null,
+              prev_speed: lastSet ? (lastSet.speed ?? lastSet.prev_speed ?? null) : null,
+              prev_incline: lastSet ? (lastSet.incline ?? lastSet.prev_incline ?? null) : null,
+              prev_work_seconds: lastSet ? (lastSet.work_seconds ?? lastSet.prev_work_seconds ?? null) : null,
               is_completed: false,
               rest_seconds: null,
               work_seconds: null,
@@ -377,11 +393,15 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
                 let finalReps = s.reps;
                 let finalSpeed = s.speed;
                 let finalIncline = s.incline;
+                let finalWorkSecs = s.work_seconds;
                 if (willBeCompleted) {
                   if (finalWeight === null && s.prev_weight != null) finalWeight = s.prev_weight;
                   if (finalReps === null && s.prev_reps != null) finalReps = s.prev_reps;
                   if (finalSpeed === null && s.prev_speed != null) finalSpeed = s.prev_speed;
                   if (finalIncline === null && s.prev_incline != null) finalIncline = s.prev_incline;
+                  if ((finalWorkSecs === null || finalWorkSecs === 0) && s.prev_work_seconds != null) {
+                    finalWorkSecs = s.prev_work_seconds;
+                  }
                 }
                 return { 
                   ...s, 
@@ -393,7 +413,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
                   completedAt: willBeCompleted ? now : undefined,
                   rest_seconds: willBeCompleted ? restSeconds : null,
                   work_seconds: willBeCompleted 
-                    ? (isAerobic ? s.work_seconds : (s.work_seconds ?? workSeconds)) 
+                    ? (isAerobic ? finalWorkSecs : (finalWorkSecs ?? workSeconds)) 
                     : null
                 };
               }

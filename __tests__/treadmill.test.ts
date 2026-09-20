@@ -72,5 +72,77 @@ describe('Treadmill Exercise Utilities', () => {
       });
     });
   });
+
+  describe('buildInitialSetsForExercise for Treadmill', () => {
+    it('correctly populates prev_speed, prev_incline, and prev_work_seconds from previousSets', () => {
+      const { buildInitialSetsForExercise } = require('../src/utils/workoutSetBuilder');
+      const mockExercise = {
+        id: 99,
+        name: 'トレッドミル',
+        previousSets: [
+          {
+            set_number: 1,
+            speed: 8.5,
+            incline: 2.0,
+            work_seconds: 1200, // 20分
+            weight: null,
+            reps: null,
+            rpe: null,
+          },
+          {
+            set_number: 2,
+            speed: 9.0,
+            incline: 3.0,
+            work_seconds: 900, // 15分
+            weight: null,
+            reps: null,
+            rpe: null,
+          },
+        ],
+      };
+
+      const sets = buildInitialSetsForExercise(mockExercise);
+      expect(sets).toHaveLength(2);
+
+      // Set 1
+      expect(sets[0].speed).toBeNull();
+      expect(sets[0].incline).toBeNull();
+      expect(sets[0].prev_speed).toBe(8.5);
+      expect(sets[0].prev_incline).toBe(2.0);
+      expect(sets[0].prev_work_seconds).toBe(1200);
+
+      // Set 2
+      expect(sets[1].speed).toBeNull();
+      expect(sets[1].incline).toBeNull();
+      expect(sets[1].prev_speed).toBe(9.0);
+      expect(sets[1].prev_incline).toBe(3.0);
+      expect(sets[1].prev_work_seconds).toBe(900);
+    });
+
+    it('correctly populates prev_work_seconds when alwaysOneSet is true', () => {
+      const { buildInitialSetsForExercise } = require('../src/utils/workoutSetBuilder');
+      const mockExercise = {
+        id: 99,
+        name: 'トレッドミル',
+        previousSets: [
+          {
+            set_number: 1,
+            speed: 7.2,
+            incline: 1.5,
+            work_seconds: 1800, // 30分
+            weight: null,
+            reps: null,
+            rpe: null,
+          },
+        ],
+      };
+
+      const sets = buildInitialSetsForExercise(mockExercise, true);
+      expect(sets).toHaveLength(1);
+      expect(sets[0].prev_speed).toBe(7.2);
+      expect(sets[0].prev_incline).toBe(1.5);
+      expect(sets[0].prev_work_seconds).toBe(1800);
+    });
+  });
 });
 
