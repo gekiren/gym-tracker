@@ -40,6 +40,7 @@ export type ActiveExercise = {
   default_variation?: string | null;
   default_stance?: string | null;
   weight_step?: number;
+  rest_seconds?: number | null;
 };
 
 export interface WorkoutCompletionAchievement {
@@ -79,13 +80,14 @@ interface WorkoutState {
   updateExerciseVariation: (exerciseId: string, variation: string | null) => void;
   updateExerciseStance: (exerciseId: string, stance: string | null) => void;
   updateExerciseWeightStep: (exerciseId: string, weightStep: number) => void;
+  updateExerciseRestSeconds: (exerciseId: string | number, restSeconds: number | null) => void;
   endWorkout: () => void;
-  addExercise: (exercise: { id: number; name: string; previousSets?: Omit<WorkoutSet, 'id' | 'is_completed'>[]; personalRecords?: Record<string, Record<number, number>>; is_unilateral?: number; default_variation?: string | null; default_stance?: string | null; equipment?: string; muscle_group?: string; routineSets?: Omit<WorkoutSet, 'id' | 'is_completed'>[]; weight_step?: number; }, alwaysOneSet?: boolean) => void;
+  addExercise: (exercise: { id: number; name: string; previousSets?: Omit<WorkoutSet, 'id' | 'is_completed'>[]; personalRecords?: Record<string, Record<number, number>>; is_unilateral?: number; default_variation?: string | null; default_stance?: string | null; equipment?: string; muscle_group?: string; routineSets?: Omit<WorkoutSet, 'id' | 'is_completed'>[]; weight_step?: number; rest_seconds?: number | null; }, alwaysOneSet?: boolean) => void;
   removeExercise: (exerciseId: string) => void;
   addSet: (exerciseId: string) => void;
   removeSet: (exerciseId: string, setId: string) => void;
   updateSet: (exerciseId: string, setId: string, changes: Partial<SetRecord>) => void;
-  toggleSetComplete: (exerciseId: string, setId: string, settings?: { autoRest: boolean, defaultRest: number, timerNotification: boolean, timerVibrate: boolean }) => void;
+  toggleSetComplete: (exerciseId: string, setId: string, settings?: { autoRest: boolean, defaultRest: number, timerNotification: boolean, timerVibrate: boolean, individualRestEnabled?: boolean }) => void;
 
   // Rest Timer
   lastRestFinishedAt: number | null;
@@ -181,6 +183,12 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     )
   })),
 
+  updateExerciseRestSeconds: (exerciseId, restSeconds) => set((state) => ({
+    exercises: state.exercises.map(ex => 
+      (ex.id === exerciseId || ex.exercise_id === exerciseId) ? { ...ex, rest_seconds: restSeconds } : ex
+    )
+  })),
+
   endWorkout: () => {
     cancelRestTimer();
     set({
@@ -212,7 +220,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           personalRecords: exercise.personalRecords || {},
           default_variation: exercise.default_variation || null,
           default_stance: exercise.default_stance || null,
-          weight_step: exercise.weight_step ?? 2.5
+          weight_step: exercise.weight_step ?? 2.5,
+          rest_seconds: exercise.rest_seconds ?? null
         }
       ]
     };
@@ -347,7 +356,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     })
   })),
 
-  toggleSetComplete: (exerciseId, setId, settings = { autoRest: false, defaultRest: 60, timerNotification: true, timerVibrate: true }) => {
+  toggleSetComplete: (exerciseId, setId, settings = { autoRest: false, defaultRest: 60, timerNotification: true, timerVibrate: true, individualRestEnabled: false }) => {
     const state = get();
     const ex = state.exercises.find(e => e.id === exerciseId);
     const sRecord = ex?.sets.find(s => s.id === setId);
@@ -429,7 +438,11 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       get().beginWorkoutTimer();
     }
     if (willBeCompleted && settings.autoRest) {
-      get().startRestTimer(settings.defaultRest, settings.timerNotification);
+      let targetRestTime = settings.defaultRest;
+      if (settings.individualRestEnabled && ex?.rest_seconds != null && ex.rest_seconds > 0) {
+        targetRestTime = ex.rest_seconds;
+      }
+      get().startRestTimer(targetRestTime, settings.timerNotification);
     }
     if (!willBeCompleted) {
       cancelRestTimer();

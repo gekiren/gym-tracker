@@ -20,9 +20,10 @@ export const getRoutines = async () => {
     default_variation: string | null;
     default_stance: string | null;
     weight_step: number;
+    rest_seconds: number | null;
   }>(`
     SELECT re.routine_id, re.id as routine_exercise_id, re.exercise_id, e.name as exercise_name,
-           e.is_unilateral, e.equipment, e.muscle_group, e.default_variation, e.default_stance, e.weight_step
+           e.is_unilateral, e.equipment, e.muscle_group, e.default_variation, e.default_stance, e.weight_step, e.rest_seconds
     FROM routine_exercises re
     JOIN exercises e ON re.exercise_id = e.id
     ORDER BY re.sort_order ASC, re.id ASC
@@ -87,6 +88,7 @@ export const getRoutines = async () => {
       default_variation: rx.default_variation,
       default_stance: rx.default_stance,
       weight_step: rx.weight_step,
+      rest_seconds: rx.rest_seconds,
       sets
     });
   }

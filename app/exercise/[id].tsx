@@ -17,6 +17,7 @@ import { HistoryCalendarModal } from '../../components/active-workout/HistoryCal
 
 // Subcomponents
 import { StanceManagement } from '../../components/exercise-detail/StanceManagement';
+import { RestTimerManagement } from '../../components/exercise-detail/RestTimerManagement';
 import { ExerciseCharts } from '../../components/exercise-detail/ExerciseCharts';
 import { isTreadmillExercise } from '../../src/utils/exerciseUtils';
 
@@ -235,6 +236,14 @@ export default function ExerciseDetailScreen() {
           settings={settings}
           addCustomStance={addCustomStance}
           removeCustomStance={removeCustomStance}
+          t={t}
+        />
+
+        {/* Rest Timer Management Section */}
+        <RestTimerManagement
+          exercise={exercise}
+          setExercise={setExercise}
+          settings={settings}
           t={t}
         />
 

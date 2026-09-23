@@ -73,6 +73,11 @@ export const updateExerciseWeightStep = async (exerciseId: number, weightStep: n
   await conn.runAsync('UPDATE exercises SET weight_step = ? WHERE id = ?', [weightStep, exerciseId]);
 };
 
+export const updateExerciseRestSeconds = async (exerciseId: number, restSeconds: number | null) => {
+  const conn = getDB();
+  await conn.runAsync('UPDATE exercises SET rest_seconds = ? WHERE id = ?', [restSeconds, exerciseId]);
+};
+
 export const getMissingPresets = async () => {
   const conn = getDB();
   

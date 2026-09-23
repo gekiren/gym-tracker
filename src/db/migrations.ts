@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 
-export const DATABASE_VERSION = 14;
+export const DATABASE_VERSION = 15;
 
 export interface Migration {
   version: number;
@@ -315,6 +315,12 @@ export const MIGRATIONS: Migration[] = [
       await db.execAsync(`
         CREATE INDEX IF NOT EXISTS idx_meal_logs_preset_group ON meal_logs(preset_log_group_id);
       `);
+    },
+  },
+  {
+    version: 15,
+    up: async (db) => {
+      await safeAddColumn(db, 'exercises', 'rest_seconds', 'INTEGER');
     },
   },
 ];

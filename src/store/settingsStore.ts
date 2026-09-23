@@ -7,6 +7,7 @@ export type FeatureId = 'workout' | 'water' | 'nutrition' | 'zikan' | 'routine' 
 export interface ApplicationSettings {
   defaultRest: number;
   autoRest: boolean;
+  individualRestEnabled: boolean;
   timerNotification: boolean;
   timerVibrate: boolean;
   weightUnit: 'kg' | 'lbs';
@@ -39,6 +40,7 @@ export interface ApplicationSettings {
 export interface LoadSettingsPayload {
   defaultRest: number;
   autoRest: boolean;
+  individualRestEnabled?: boolean;
   timerNotification?: boolean;
   timerVibrate: boolean;
   weightUnit: 'kg' | 'lbs';
@@ -63,6 +65,7 @@ export interface LoadSettingsPayload {
 export interface SettingsState {
   settings: ApplicationSettings;
   loadSettings: (payload: LoadSettingsPayload) => void;
+  setIndividualRestEnabled: (enabled: boolean) => void;
   setTimerNotification: (timerNotification: boolean) => void;
   setKeepAwake: (keepAwake: boolean) => void;
   setAlwaysOneSet: (alwaysOneSet: boolean) => void;
@@ -88,6 +91,7 @@ export interface SettingsState {
 export const initialSettings: ApplicationSettings = {
   defaultRest: 90,
   autoRest: true,
+  individualRestEnabled: false,
   timerNotification: true,
   timerVibrate: true,
   weightUnit: 'kg',
@@ -133,6 +137,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const {
       defaultRest,
       autoRest,
+      individualRestEnabled,
       timerNotification,
       timerVibrate,
       weightUnit,
@@ -153,6 +158,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       featureVisibility,
       aiCompanionMemory,
     } = payload;
+    const finalIndividualRestEnabled = individualRestEnabled !== undefined ? individualRestEnabled : state.settings.individualRestEnabled;
     const finalTimerNotification = timerNotification !== undefined ? timerNotification : state.settings.timerNotification;
     const finalNeedsUnitSelection = needsUnitSelection !== undefined ? needsUnitSelection : state.settings.needsUnitSelection;
     const finalBodyWeight = bodyWeight !== undefined ? bodyWeight : state.settings.bodyWeight;
@@ -177,6 +183,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         ...state.settings,
         defaultRest,
         autoRest,
+        individualRestEnabled: finalIndividualRestEnabled,
         timerNotification: finalTimerNotification,
         timerVibrate,
         weightUnit,
@@ -199,6 +206,10 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       }
     };
   }),
+
+  setIndividualRestEnabled: (individualRestEnabled: boolean) => set((state) => ({
+    settings: { ...state.settings, individualRestEnabled }
+  })),
 
   setTimerNotification: (timerNotification: boolean) => set((state) => ({
     settings: { ...state.settings, timerNotification }

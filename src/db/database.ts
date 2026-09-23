@@ -67,7 +67,8 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       is_unilateral INTEGER DEFAULT 0,
       default_variation TEXT,
       default_stance TEXT,
-      weight_step REAL DEFAULT 2.5
+      weight_step REAL DEFAULT 2.5,
+      rest_seconds INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS workouts (
@@ -413,6 +414,7 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       preferred_ai_model: 'gemini',
       ai_chat_mode: 'quick',
       background_theme: 'dark',
+      individual_rest_timer: '0',
     };
 
     for (const [key, defaultValue] of Object.entries(preAllocations)) {

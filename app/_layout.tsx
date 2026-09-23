@@ -51,6 +51,7 @@ export default function RootLayout() {
 
       const defaultRest = storedSettings['default_rest_timer'] ? parseInt(storedSettings['default_rest_timer'], 10) : 90;
       const autoRest = storedSettings['auto_rest_timer'] ? storedSettings['auto_rest_timer'] === '1' : true;
+      const individualRestEnabled = storedSettings['individual_rest_timer'] === '1';
       const timerVibrate = storedSettings['timer_vibrate'] ? storedSettings['timer_vibrate'] === '1' : true;
       const keepAwake = storedSettings['keep_awake'] ? storedSettings['keep_awake'] === '1' : true;
       const bodyWeight = storedSettings['body_weight'] ? parseFloat(storedSettings['body_weight']) : null;
@@ -126,6 +127,7 @@ export default function RootLayout() {
       useSettingsStore.getState().loadSettings({
         defaultRest,
         autoRest,
+        individualRestEnabled,
         timerNotification,
         timerVibrate,
         weightUnit,
