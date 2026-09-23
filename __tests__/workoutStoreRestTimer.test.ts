@@ -116,4 +116,30 @@ describe('WorkoutStore - Exercise Specific Rest Timer', () => {
     ex = useWorkoutStore.getState().exercises[0];
     expect(ex.rest_seconds).toBe(60);
   });
+
+  it('does NOT record 0 seconds for work_seconds when first set completed without starting timer', () => {
+    const store = useWorkoutStore.getState();
+    store.startWorkout('Test Workout');
+
+    store.addExercise({
+      id: 5,
+      name: 'ベンチプレス',
+    });
+
+    const ex = useWorkoutStore.getState().exercises[0];
+    const firstSet = ex.sets[0];
+
+    // Toggle set complete directly without beginWorkoutTimer
+    useWorkoutStore.getState().toggleSetComplete(ex.id, firstSet.id);
+
+    const updatedEx = useWorkoutStore.getState().exercises[0];
+    const completedSet = updatedEx.sets[0];
+
+    expect(completedSet.is_completed).toBe(true);
+    // Crucial: work_seconds must be null, never 0
+    expect(completedSet.work_seconds).toBeNull();
+    // But workout timer should now be started for subsequent sets
+    expect(useWorkoutStore.getState().isWorkoutStarted).toBe(true);
+    expect(useWorkoutStore.getState().startTime).not.toBeNull();
+  });
 });

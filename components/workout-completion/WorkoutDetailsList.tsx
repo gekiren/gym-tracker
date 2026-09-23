@@ -119,8 +119,8 @@ export const WorkoutDetailsList: React.FC<WorkoutDetailsListProps> = ({
                 const s = secs % 60;
                 return `${m > 0 ? `${m}:` : ''}${s.toString().padStart(m > 0 ? 2 : 1, '0')}${m === 0 ? 's' : ''}`;
               };
-              if (set.work_seconds != null) timeStr += `⏱️ ${fmtTime(set.work_seconds)} `;
-              if (set.rest_seconds != null) timeStr += `☕ ${fmtTime(set.rest_seconds)}`;
+              if (set.work_seconds != null && set.work_seconds > 0) timeStr += `⏱️ ${fmtTime(set.work_seconds)} `;
+              if (set.rest_seconds != null && set.rest_seconds > 0) timeStr += `☕ ${fmtTime(set.rest_seconds)}`;
               timeStr = timeStr.trim();
 
               return (

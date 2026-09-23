@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.2.20',
+  version: '2.2.21',
   title: {
-    ja: '⏱️ 種目別の個別休憩時間設定に対応',
-    en: '⏱️ Exercise-Specific Rest Timers',
+    ja: '🔧 セット時間・休憩時間の記録不具合修正',
+    en: '🔧 Set & Rest Timer Fixes',
   },
   notes: {
     ja: [
-      '種目詳細画面から、種目ごとに個別の休憩時間を設定できるようになりました。',
-      '「筋トレ・タイマー・環境設定」に「種目別の個別休憩時間」スイッチを追加しました。有効にすると種目ごとの設定時間が優先適用されます。',
+      'セット完了チェック時にセット所要時間が「0秒」で記録・表示されてしまう不具合を修正しました。',
+      '休憩時間およびセット時間の計測精度と表示を改善しました。',
     ],
     en: [
-      'You can now configure custom rest intervals for each exercise on the Exercise Details screen.',
-      'Added an "Exercise-Specific Rest Timers" toggle in Workout Settings. When enabled, custom exercise rest times take priority.',
+      'Fixed an issue where set work time was recorded as "0s" upon completing a set.',
+      'Improved accuracy and display for set duration and rest timer tracking.',
     ],
   },
 };

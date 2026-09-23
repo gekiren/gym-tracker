@@ -379,15 +379,23 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
       if (prevTime) {
         if (restFinishedTime && restFinishedTime >= prevTime && restFinishedTime <= now) {
-          restSeconds = Math.floor((restFinishedTime - prevTime) / 1000);
-          workSeconds = Math.floor((now - restFinishedTime) / 1000);
+          const rawRest = Math.floor((restFinishedTime - prevTime) / 1000);
+          const rawWork = Math.floor((now - restFinishedTime) / 1000);
+          restSeconds = rawRest > 0 ? rawRest : null;
+          workSeconds = rawWork > 0 ? rawWork : null;
         } else {
           restSeconds = null;
-          workSeconds = Math.floor((now - prevTime) / 1000);
+          const rawWork = Math.floor((now - prevTime) / 1000);
+          workSeconds = rawWork > 0 ? rawWork : null;
         }
       } else {
-        const startTimeMs = state.startTime ? new Date(state.startTime).getTime() : now;
-        workSeconds = Math.floor((now - startTimeMs) / 1000);
+        if (state.startTime) {
+          const startTimeMs = new Date(state.startTime).getTime();
+          const rawWork = Math.floor((now - startTimeMs) / 1000);
+          workSeconds = rawWork > 0 ? rawWork : null;
+        } else {
+          workSeconds = null;
+        }
       }
     }
 
