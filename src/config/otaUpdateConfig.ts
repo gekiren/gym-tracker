@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.2.21',
+  version: '2.2.22',
   title: {
-    ja: '🔧 セット時間・休憩時間の記録不具合修正',
-    en: '🔧 Set & Rest Timer Fixes',
+    ja: '⚡ ウィジェット起動時の動作改善',
+    en: '⚡ Widget Launch Improvements',
   },
   notes: {
     ja: [
-      'セット完了チェック時にセット所要時間が「0秒」で記録・表示されてしまう不具合を修正しました。',
-      '休憩時間およびセット時間の計測精度と表示を改善しました。',
+      'ウィジェットからワークアウトを直接起動した際に、更新内容ポップアップが表示されないよう改善しました。',
+      'ウィジェットからのクイック起動時の安定性と応答性を向上しました。',
     ],
     en: [
-      'Fixed an issue where set work time was recorded as "0s" upon completing a set.',
-      'Improved accuracy and display for set duration and rest timer tracking.',
+      'Improved quick launch from the widget to suppress the release notes popup when starting workouts directly.',
+      'Enhanced launch stability and responsiveness from home screen widgets.',
     ],
   },
 };
