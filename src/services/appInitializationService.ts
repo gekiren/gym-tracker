@@ -14,7 +14,7 @@ import { useOTAUpdateStore } from '../store/otaUpdateStore';
 import { CURRENT_OTA_CONFIG } from '../config/otaUpdateConfig';
 import { syncLifelogToObsidian } from './obsidianService';
 import { syncHealthData } from './healthService';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import { router } from 'expo-router';
 
 /**
@@ -124,6 +124,24 @@ export async function initOTAUpdateCheck(
     }
   }
 
+  // ウィジェット（ディープリンク）からの直接起動検知
+  let isWidgetLaunch = false;
+  try {
+    const initialUrl = await Linking.getInitialURL();
+    if (initialUrl && (initialUrl.includes('start-workout') || initialUrl.includes('gymtracker://'))) {
+      isWidgetLaunch = true;
+      useOTAUpdateStore.getState().suppressModal();
+      console.log('[initOTAUpdateCheck] Detected widget launch via deep link:', initialUrl);
+    }
+  } catch (linkErr) {
+    console.warn('[initOTAUpdateCheck] Failed to check initial URL:', linkErr);
+  }
+
+  // start-workout等により既に抑止フラグが立っている場合もウィジェット起動と判定
+  if (useOTAUpdateStore.getState().isSuppressed) {
+    isWidgetLaunch = true;
+  }
+
   // OTAアップデート後の初回起動検知
   let showOTA = false;
   const lastAckUpdateId = storedSettings['last_acknowledged_update_id'] || '';
@@ -151,6 +169,17 @@ export async function initOTAUpdateCheck(
     } else if (simulateOta) {
       showOTA = true;
       await saveSetting('simulate_ota_popup', '0');
+    }
+  }
+
+  // ウィジェット起動時は更新内容ポップアップを完全抑止（ただし承認状態は上記でDB保存済み）
+  if (isWidgetLaunch) {
+    showOTA = false;
+    useOTAUpdateStore.getState().suppressModal();
+    // ウィジェット起動時にも現在のバージョンを確実に承認済みとして保存
+    await saveSetting('last_acknowledged_ota_version', currentVersion);
+    if (Updates.updateId) {
+      await saveSetting('last_acknowledged_update_id', Updates.updateId);
     }
   }
 

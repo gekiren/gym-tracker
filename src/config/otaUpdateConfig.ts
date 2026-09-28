@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.2.19',
+  version: '2.2.22',
   title: {
-    ja: '🏃 トレッドミルの傾斜操作性向上',
-    en: '🏃 Treadmill Incline Usability Improvements',
+    ja: '⚡ ウィジェット起動時の動作改善',
+    en: '⚡ Widget Launch Improvements',
   },
   notes: {
     ja: [
-      'トレッドミルの傾斜スワイプ調整を1%刻みに変更し、より素早く直感的に傾斜を設定できるようにしました。',
-      '速度・傾斜・走行時間が未入力の場合に、前回のワークアウトの設定値を自動参照・補完して記録できるように改善しました。',
+      'ウィジェットからワークアウトを直接起動した際に、更新内容ポップアップが表示されないよう改善しました。',
+      'ウィジェットからのクイック起動時の安定性と応答性を向上しました。',
     ],
     en: [
-      'Updated treadmill incline swipe adjustment to 1% increments for faster and more intuitive control.',
-      'Improved treadmill set logging to automatically inherit and retain speed, incline, and duration from your previous workout when left empty.',
+      'Improved quick launch from the widget to suppress the release notes popup when starting workouts directly.',
+      'Enhanced launch stability and responsiveness from home screen widgets.',
     ],
   },
 };

@@ -17,6 +17,7 @@ import { HistoryCalendarModal } from '../../components/active-workout/HistoryCal
 
 // Subcomponents
 import { StanceManagement } from '../../components/exercise-detail/StanceManagement';
+import { RestTimerManagement } from '../../components/exercise-detail/RestTimerManagement';
 import { ExerciseCharts } from '../../components/exercise-detail/ExerciseCharts';
 import { isTreadmillExercise } from '../../src/utils/exerciseUtils';
 
@@ -137,8 +138,8 @@ export default function ExerciseDetailScreen() {
           const s = secs % 60;
           return m > 0 ? `${m}m${s.toString().padStart(2, '0')}s` : `${s}s`;
         };
-        if (s.work_seconds != null) timeStr += `${fmtTime(s.work_seconds)}`;
-        if (s.rest_seconds != null) timeStr += `${timeStr?' / ':''}rest ${fmtTime(s.rest_seconds)}`;
+        if (s.work_seconds != null && s.work_seconds > 0) timeStr += `${fmtTime(s.work_seconds)}`;
+        if (s.rest_seconds != null && s.rest_seconds > 0) timeStr += `${timeStr?' / ':''}rest ${fmtTime(s.rest_seconds)}`;
         if (!timeStr) timeStr = '-';
         const stanceVal = (s.stance || s.variation) ? translateStance(s.stance || s.variation) : '-';
         md += `| ${dateStr} | ${s.set_number} | ${stanceVal} | ${s.weight ? s.weight + settings.weightUnit : '-'} | ${s.reps ? s.reps + t('ui.common.reps_unit') : '-'} | ${s.rpe || '-'} | ${timeStr} |\n`;
@@ -238,6 +239,14 @@ export default function ExerciseDetailScreen() {
           t={t}
         />
 
+        {/* Rest Timer Management Section */}
+        <RestTimerManagement
+          exercise={exercise}
+          setExercise={setExercise}
+          settings={settings}
+          t={t}
+        />
+
         {/* PR Section */}
         <PersonalRecordsList
           personalRecords={personalRecords}
@@ -327,8 +336,8 @@ export default function ExerciseDetailScreen() {
                       const s = secs % 60;
                       return m > 0 ? `${m}m${s.toString().padStart(2, '0')}s` : `${s}s`;
                     };
-                    if (s.work_seconds != null) timeStr += `⏱️ ${fmtTime(s.work_seconds)} `;
-                    if (s.rest_seconds != null) timeStr += `☕ ${fmtTime(s.rest_seconds)}`;
+                    if (s.work_seconds != null && s.work_seconds > 0) timeStr += `⏱️ ${fmtTime(s.work_seconds)} `;
+                    if (s.rest_seconds != null && s.rest_seconds > 0) timeStr += `☕ ${fmtTime(s.rest_seconds)}`;
                     timeStr = timeStr.trim();
                     const isTreadmill = isTreadmillExercise(exercise?.name);
                     return (

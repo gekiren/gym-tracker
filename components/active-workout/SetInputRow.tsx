@@ -308,7 +308,7 @@ export function SetInputRow({
   let restTimeStr = '';
   
   if (set.is_completed && set.completedAt) {
-    if (set.rest_seconds != null) {
+    if (set.rest_seconds != null && set.rest_seconds > 0) {
       const m = Math.floor(set.rest_seconds / 60);
       const s = set.rest_seconds % 60;
       restTimeStr = `☕${m > 0 ? `${m}:` : ''}${s.toString().padStart(m > 0 ? 2 : 1, '0')}${m === 0 ? 's' : ''}`;
@@ -316,11 +316,23 @@ export function SetInputRow({
     
     let wSecs = set.work_seconds;
     if (wSecs == null) {
-        const prevTime = idx === 0 ? (startTime ? new Date(startTime).getTime() : Date.now()) : (ex.sets[idx - 1].completedAt || (startTime ? new Date(startTime).getTime() : Date.now()));
-        wSecs = Math.floor((set.completedAt - prevTime) / 1000);
+      if (idx === 0) {
+        if (startTime) {
+          const startTimeMs = new Date(startTime).getTime();
+          const diff = Math.floor((set.completedAt - startTimeMs) / 1000);
+          if (diff > 0) wSecs = diff;
+        }
+      } else {
+        const prevCompletedAt = ex.sets[idx - 1]?.completedAt;
+        const baseTime = prevCompletedAt || (startTime ? new Date(startTime).getTime() : null);
+        if (baseTime) {
+          const diff = Math.floor((set.completedAt - baseTime) / 1000);
+          if (diff > 0) wSecs = diff;
+        }
+      }
     }
     
-    if (wSecs != null && wSecs >= 0) {
+    if (wSecs != null && wSecs > 0) {
       const m = Math.floor(wSecs / 60);
       const s = wSecs % 60;
       const fmt = `${m > 0 ? `${m}:` : ''}${s.toString().padStart(m > 0 ? 2 : 1, '0')}${m === 0 ? 's' : ''}`;

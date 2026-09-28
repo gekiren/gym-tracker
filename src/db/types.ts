@@ -45,7 +45,20 @@ export interface RoutineExercise {
   default_variation?: string | null;
   default_stance?: string | null;
   weight_step?: number;
+  rest_seconds?: number | null;
   sets: RoutineSet[];
+}
+
+export interface Exercise {
+  id: number;
+  name: string;
+  muscle_group: string;
+  equipment: string;
+  is_unilateral?: number;
+  default_variation?: string | null;
+  default_stance?: string | null;
+  weight_step?: number;
+  rest_seconds?: number | null;
 }
 
 // DB レコード（workoutsテーブル）の型定義

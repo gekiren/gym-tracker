@@ -3,6 +3,7 @@ import { Modal, StyleSheet, Text, TouchableOpacity, View, Pressable, ScrollView 
 import { Theme } from '../src/theme';
 import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import { CURRENT_OTA_CONFIG } from '../src/config/otaUpdateConfig';
+import { saveSetting } from '../src/db/database';
 import { Ionicons } from '@expo/vector-icons';
 import i18n from '../src/i18n';
 
@@ -10,6 +11,13 @@ export const OTAUpdateModal = () => {
   const { isVisible, hideModal } = useOTAUpdateStore();
 
   if (!isVisible) return null;
+
+  const handleClose = () => {
+    hideModal();
+    saveSetting('last_acknowledged_ota_version', CURRENT_OTA_CONFIG.version).catch((e) => {
+      console.warn('[OTAUpdateModal] Failed to acknowledge version on close:', e);
+    });
+  };
 
   // Detect current language (default to 'ja' if not matched)
   const currentLang = i18n.language && i18n.language.startsWith('en') ? 'en' : 'ja';
@@ -23,9 +31,9 @@ export const OTAUpdateModal = () => {
       transparent
       visible={isVisible}
       animationType="fade"
-      onRequestClose={hideModal}
+      onRequestClose={handleClose}
     >
-      <Pressable style={styles.overlay} onPress={hideModal}>
+      <Pressable style={styles.overlay} onPress={handleClose}>
         <Pressable style={styles.dialogContainer} onPress={(e) => e.stopPropagation()}>
           <View style={styles.content}>
             {/* Header Icon Container */}
@@ -58,7 +66,7 @@ export const OTAUpdateModal = () => {
             {/* Close Button */}
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={hideModal}
+              onPress={handleClose}
               activeOpacity={0.8}
             >
               <Ionicons name="checkmark-circle-outline" size={18} color="#000" style={{ marginRight: 6 }} />

@@ -179,7 +179,7 @@ export default function WorkoutDetailsScreen() {
                           <Text style={styles.tdValue}>{set.speed != null ? `${set.speed} km/h` : '-'}</Text>
                           <Text style={styles.tdValue}>{set.incline != null ? `${set.incline}%` : '-'}</Text>
                           <Text style={[styles.tdValue, { color: Theme.colors.success }]}>
-                            {set.work_seconds != null ? `⏱️ ${fmtTime(set.work_seconds)}` : '-'}
+                            {(set.work_seconds != null && set.work_seconds > 0) ? `⏱️ ${fmtTime(set.work_seconds)}` : '-'}
                           </Text>
                         </View>
                       </View>
@@ -204,8 +204,8 @@ export default function WorkoutDetailsScreen() {
                       const s = secs % 60;
                       return `${m > 0 ? `${m}:` : ''}${s.toString().padStart(m > 0 ? 2 : 1, '0')}${m === 0 ? 's' : ''}`;
                     };
-                    if (set.work_seconds != null) timeStr += `⏱️ ${fmtTime(set.work_seconds)} `;
-                    if (set.rest_seconds != null) timeStr += `☕ ${fmtTime(set.rest_seconds)}`;
+                    if (set.work_seconds != null && set.work_seconds > 0) timeStr += `⏱️ ${fmtTime(set.work_seconds)} `;
+                    if (set.rest_seconds != null && set.rest_seconds > 0) timeStr += `☕ ${fmtTime(set.rest_seconds)}`;
                     timeStr = timeStr.trim();
                     const hasStance = !!(set.stance || set.variation);
                     return (

@@ -119,6 +119,7 @@ export default function WorkoutHomeScreen() {
             default_variation: ex.default_variation,
             default_stance: ex.default_stance,
             weight_step: ex.weight_step,
+            rest_seconds: ex.rest_seconds,
             routineSets: ex.sets
           }, alwaysOneSet);
         }
