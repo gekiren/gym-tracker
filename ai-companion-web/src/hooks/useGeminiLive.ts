@@ -16,6 +16,7 @@ import {
 } from '../utils/audioUtils';
 
 export const LIVE_MODELS = [
+  { id: 'models/gemini-3.8-live', label: 'Gemini 3.8 Live' },
   { id: 'models/gemini-3.1-flash-live-preview', label: 'Gemini 3.1 Flash Live' },
   { id: 'models/gemini-2.5-flash-native-audio-preview-12-2025', label: 'Gemini 2.5 Flash Native Audio' },
   { id: 'models/gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash Live' },
