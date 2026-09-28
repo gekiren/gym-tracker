@@ -14,6 +14,7 @@ import { useOTAUpdateStore } from '../store/otaUpdateStore';
 import { CURRENT_OTA_CONFIG } from '../config/otaUpdateConfig';
 import { syncLifelogToObsidian } from './obsidianService';
 import { syncHealthData } from './healthService';
+import { initCalendarSync } from './calendarService';
 import { Alert, Linking } from 'react-native';
 import { router } from 'expo-router';
 
@@ -288,6 +289,11 @@ export function initBackgroundSyncServices(expired: boolean) {
   // ヘルスコネクト自動アクセス（起動時）
   syncHealthData({ reason: 'launch' }).catch((hErr) => {
     console.warn('Health Connect sync failed on launch:', hErr);
+  });
+
+  // Googleカレンダーバックグラウンド同期初期化
+  initCalendarSync().catch((cErr) => {
+    console.warn('Calendar sync init failed on launch:', cErr);
   });
 
   if (expired) {

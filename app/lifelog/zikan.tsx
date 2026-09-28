@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, TouchableOpacity } from 'react-native';
-import { Stack } from 'expo-router';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { View, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { Stack, router } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { Theme } from '../../src/theme';
 import { WebViewTab, WebViewTabRef } from '../../components/WebViewTab';
@@ -12,11 +12,18 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useFeatureSwipe } from '../../src/hooks/useFeatureSwipe';
+import {
+  isCalendarAvailable,
+  getCalendarSyncSettings,
+  importGoogleCalendarPlans,
+  exportLogsToGoogleCalendar,
+} from '../../src/services/calendarService';
 
 export default function ZikanScreen() {
   const currentDate = useLifelogStore((state) => state.currentDate);
   const [showHistory, setShowHistory] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isCalendarSyncing, setIsCalendarSyncing] = useState(false);
   const webViewTabRef = useRef<WebViewTabRef>(null);
   const { t } = useTranslation();
   const isFocused = useIsFocused();
@@ -32,12 +39,101 @@ export default function ZikanScreen() {
 
   const targetDate = currentDate || getTodayStr();
 
+  // フォーカス時および日付変更時のカレンダー予定スマート自動取り込み
+  useEffect(() => {
+    if (!isFocused) return;
+
+    let isMounted = true;
+    const autoImport = async () => {
+      try {
+        const available = await isCalendarAvailable();
+        if (!available) return;
+
+        const settings = await getCalendarSyncSettings();
+        if (settings.enabled && settings.importEnabled && settings.importOnScreenFocus) {
+          const res = await importGoogleCalendarPlans(targetDate);
+          if (isMounted && res.success && res.allPlans) {
+            // WebView側へ最新の予定を注入して即座に再描画
+            webViewTabRef.current?.injectJavaScript(
+              `if (typeof window.importGooglePlans === 'function') {
+                window.importGooglePlans(${JSON.stringify(res.allPlans)});
+              }`
+            );
+          }
+        }
+      } catch (err) {
+        console.warn('[ZikanScreen] Auto calendar import failed:', err);
+      }
+    };
+
+    // 画面マウント・フォーカス直後のわずかな猶予をおいて実行
+    const timer = setTimeout(autoImport, 600);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [isFocused, targetDate]);
+
   // フォーカス離脱時にモーダルフラグをリセット
   useEffect(() => {
     if (!isFocused) {
       setIsModalVisible(false);
     }
   }, [isFocused]);
+
+  // 手動カレンダー同期
+  const handleManualCalendarSync = useCallback(async () => {
+    const available = await isCalendarAvailable();
+    if (!available) {
+      Alert.alert(
+        'カレンダー連携',
+        '端末カレンダー連携は次回のアプリ更新（AAB/APKビルド）以降に利用可能になります。設定画面を開きますか？',
+        [
+          { text: 'キャンセル', style: 'cancel' },
+          { text: '設定を開く', onPress: () => router.push('/settings/calendar-sync') },
+        ]
+      );
+      return;
+    }
+
+    const settings = await getCalendarSyncSettings();
+    if (!settings.enabled) {
+      Alert.alert(
+        'カレンダー未連携',
+        'Googleカレンダーとの自動連動がオフになっています。設定画面で連携をオンにしてください。',
+        [
+          { text: 'キャンセル', style: 'cancel' },
+          { text: '設定を開く', onPress: () => router.push('/settings/calendar-sync') },
+        ]
+      );
+      return;
+    }
+
+    try {
+      setIsCalendarSyncing(true);
+      const importRes = await importGoogleCalendarPlans(targetDate);
+      const exportRes = await exportLogsToGoogleCalendar(targetDate);
+
+      if (importRes.success && importRes.allPlans) {
+        webViewTabRef.current?.injectJavaScript(
+          `if (typeof window.importGooglePlans === 'function') {
+            window.importGooglePlans(${JSON.stringify(importRes.allPlans)});
+          }`
+        );
+      }
+
+      Alert.alert(
+        '同期完了',
+        `Googleカレンダーと同期しました。\n\n• 予定取り込み: ${importRes.count} 件\n• 実績書き出し: ${exportRes.count} 件`,
+        [{ text: 'OK' }]
+      );
+    } catch (e) {
+      console.error('[ZikanScreen] Manual calendar sync failed:', e);
+      Alert.alert('エラー', 'カレンダーとの同期に失敗しました。');
+    } finally {
+      setIsCalendarSyncing(false);
+    }
+  }, [targetDate]);
 
   const handleOpenTagEditor = () => {
     webViewTabRef.current?.injectJavaScript(
@@ -56,6 +152,17 @@ export default function ZikanScreen() {
             headerTitleStyle: { fontWeight: 'bold' },
             headerRight: () => (
               <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+                <TouchableOpacity
+                  onPress={handleManualCalendarSync}
+                  disabled={isCalendarSyncing}
+                  style={{ padding: 6, marginRight: 6 }}
+                >
+                  {isCalendarSyncing ? (
+                    <ActivityIndicator size="small" color={Theme.colors.primary} />
+                  ) : (
+                    <Ionicons name="calendar-outline" size={22} color={Theme.colors.primary} />
+                  )}
+                </TouchableOpacity>
                 <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ padding: 6, marginRight: 6 }}>
                   <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
                 </TouchableOpacity>

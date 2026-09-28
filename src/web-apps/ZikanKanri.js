@@ -2591,6 +2591,16 @@ function deletePlan(id) {
 
 window.deletePlan = deletePlan;
 
+window.importGooglePlans = function(newPlans) {
+    if (Array.isArray(newPlans)) {
+        plans = newPlans;
+        storage.setItem('zikankanri_plans', JSON.stringify(plans));
+        if (typeof renderPlans === 'function') renderPlans();
+        if (typeof renderSummary === 'function') renderSummary();
+    }
+};
+window.renderPlans = renderPlans;
+
 function getCurrentTimeStr() {
     const now = new Date();
     return now.toTimeString().substring(0, 5);

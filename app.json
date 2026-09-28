@@ -23,7 +23,9 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSHealthShareUsageDescription": "ワークアウト中の心拍数および消費カロリーデータを表示・記録するためにヘルスケアデータにアクセスします。",
-        "NSHealthUpdateUsageDescription": "ワークアウトデータをヘルスケアに記録するためにアクセスします。"
+        "NSHealthUpdateUsageDescription": "ワークアウトデータをヘルスケアに記録するためにアクセスします。",
+        "NSCalendarsUsageDescription": "24時間管理の予定取り込みおよび実績を書き出すためにカレンダーにアクセスします。",
+        "NSCalendarsFullAccessUsageDescription": "24時間管理の予定取り込みおよび実績を書き出すためにカレンダーにアクセスします。"
       }
     },
     "android": {
@@ -52,7 +54,9 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.READ_MEDIA_IMAGES"
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#000000",
@@ -125,7 +129,8 @@
           "iosAppId": "ca-app-pub-3940256099942544~1458002511"
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "expo-calendar"
     ],
     "experiments": {
       "typedRoutes": true,
