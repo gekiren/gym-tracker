@@ -5,7 +5,7 @@
       "ja": "./locales/ja.json"
     },
     "slug": "gym-tracker",
-    "version": "2.2.0",
+    "version": "2.3.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "gymtracker",
@@ -30,7 +30,7 @@
     },
     "android": {
       "package": "com.gekirennomad.trenote",
-      "versionCode": 46,
+      "versionCode": 47,
       "permissions": [
         "com.android.vending.BILLING",
         "android.permission.SCHEDULE_EXACT_ALARM",
