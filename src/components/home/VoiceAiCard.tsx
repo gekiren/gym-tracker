@@ -24,7 +24,7 @@ export const VoiceAiCard = () => {
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.inactiveText}>
-          {t('ui.home.voice_ai_desc') || '話すだけでトレーニング・食事・水分を記録。Gemini Live API による音声リアルタイム対話。'}
+          {t('ui.home.voice_ai_desc') || '話すだけでトレーニング・食事・水分を記録。アクアボイス ＆ Gemini による高精度自動入力。'}
         </Text>
       </View>
     </TouchableOpacity>

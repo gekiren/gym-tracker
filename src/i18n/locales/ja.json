@@ -63,7 +63,7 @@
       "completed_routines": "完了したルーティン:",
       "none": "なし",
       "card_voice_ai": "音声AIアシスタント",
-      "voice_ai_desc": "話すだけでトレーニング・食事・水分を記録。Gemini Live API による音声リアルタイム対話。",
+      "voice_ai_desc": "話すだけでトレーニング・食事・水分を記録。アクアボイス ＆ Gemini による高精度自動入力。",
       "p_points_balance": "Pポイント残高:",
       "manage_features": "機能の追加・管理",
       "no_features_selected": "表示される機能が選択されていません。",

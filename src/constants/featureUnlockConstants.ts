@@ -97,8 +97,8 @@ export const FEATURE_UNLOCK_METAS: Record<FeatureId, FeatureUnlockMeta> = {
   voice_ai: {
     id: 'voice_ai',
     title: '音声AIアシスタント',
-    shortDesc: 'Gemini Live による音声リアルタイム対話・自動記録',
-    fullDesc: '話しかけるだけでトレーニングや食事、水分を自動記録。最先端AIと音声でリアルタイムに対話できます。',
+    shortDesc: 'アクアボイス ＆ Gemini による音声入力・自動記録',
+    fullDesc: '話しかけるだけでトレーニングや食事、水分を自動記録。アクアボイスの高精度文字起こしとGeminiの構造化解析で手軽に入力できます。',
     icon: 'mic',
     iconColor: '#64b4ff',
     badgeColor: 'rgba(100, 180, 255, 0.15)',
