@@ -115,6 +115,14 @@ export function useProfile() {
         route: '/settings/obsidian',
       },
       {
+        id: 'calendar-sync',
+        title: 'Googleカレンダー連携',
+        desc: '24時間管理の予定自動取り込み・実績書き出し',
+        icon: 'calendar-outline',
+        iconColor: '#34a853',
+        route: '/settings/calendar-sync',
+      },
+      {
         id: 'widget-launcher',
         title: 'ウィジェット設定',
         desc: 'クイックランチャーの項目をカスタマイズ',

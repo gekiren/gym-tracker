@@ -3,6 +3,7 @@ import { StyleSheet, View, ActivityIndicator, Text, AppState, AppStateStatus, Vi
 import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getInitialDataForWebView, handleWebViewMessage, syncWidgetPunches, addSyncDiagnosticLog } from '../src/services/lifelogSyncService';
+import { debouncedExportLogsToGoogleCalendar } from '../src/services/calendarService';
 import { useLifelogStore } from '../src/store/lifelogStore';
 import { useAppTheme } from '../src/theme';
 
@@ -164,6 +165,11 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
             })();
           `;
           webViewRef.current?.injectJavaScript(injectScript);
+        }
+
+        // 活動実績保存時のGoogleカレンダー自動書き出し（1.5秒デバウンス）
+        if (key === 'zikankanri_logs') {
+          debouncedExportLogsToGoogleCalendar(currentDate);
         }
       }
     } catch (e) {
