@@ -51,37 +51,54 @@ export default {
           );
         }
 
-        // Aqua Voice Avalon API へ転送
-        const aquaFormData = new FormData();
-        aquaFormData.append('file', file, (file as any).name || 'audio.webm');
-        aquaFormData.append('model', 'avalon');
-        aquaFormData.append('language', 'ja');
+        // Aqua Voice Avalon API へ転送（モデル名自動フォールバック）
+        const candidateModels = ['avalon-v1.5', 'avalon-v1', 'avalon', 'whisper-1'];
+        let aquaResult: any = null;
+        let lastAquaErr: string = '';
 
-        const aquaResponse = await fetch('https://api.aquavoice.com/v1/audio/transcriptions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: aquaFormData,
-        });
+        for (const aquaModel of candidateModels) {
+          const aquaFormData = new FormData();
+          aquaFormData.append('file', file, (file as any).name || 'audio.webm');
+          aquaFormData.append('model', aquaModel);
+          aquaFormData.append('language', 'ja');
 
-        if (!aquaResponse.ok) {
-          const errText = await aquaResponse.text();
-          console.error('Aqua Voice API Error:', aquaResponse.status, errText);
+          const aquaResponse = await fetch('https://api.aquavoice.com/v1/audio/transcriptions', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: aquaFormData,
+          });
+
+          if (aquaResponse.ok) {
+            aquaResult = await aquaResponse.json();
+            break;
+          } else {
+            const errText = await aquaResponse.text();
+            lastAquaErr = `(${aquaResponse.status}): ${errText}`;
+            console.warn(`Aqua Voice Model ${aquaModel} failed:`, errText);
+            // 404 (model not found) 以外の認証エラーやクライアントエラー等の場合はループを抜ける
+            if (aquaResponse.status !== 404) {
+              break;
+            }
+          }
+        }
+
+        if (!aquaResult) {
+          console.error('Aqua Voice All Models Error:', lastAquaErr);
           return new Response(
             JSON.stringify({
               success: false,
-              error: `アクアボイスAPIエラー (${aquaResponse.status}): ${errText}`,
+              error: `アクアボイスAPIエラー ${lastAquaErr}`,
             }),
-            { status: aquaResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
 
-        const result: any = await aquaResponse.json();
         return new Response(
           JSON.stringify({
             success: true,
-            text: result.text || '',
+            text: aquaResult.text || '',
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
