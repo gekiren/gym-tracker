@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.8',
+  version: '2.3.9',
   title: {
-    ja: '🛠️ 24時間管理：安定性向上とダイアログ修正',
-    en: '🛠️ 24h Timeline: Stability Improvement & Fixes',
+    ja: '🇯🇵 24時間管理：日本の祝日連携とスケジュール設定',
+    en: '🇯🇵 24h Timeline: Holiday Sync & Schedule Settings',
   },
   notes: {
     ja: [
-      '24時間管理: スケジュール適用ダイアログの表示不具合を修正しました。',
-      '24時間管理: デフォルトスケジュール機能の安定性を向上しました。',
+      '端末/Googleカレンダーから日本の祝日データを自動取得し、タイムラインに祝日名を表示する機能を追加しました。',
+      '祝日を日曜日（休日スケジュール）として自動適用するかどうかを、デフォルト設定モーダルから自由に切り替えられるようになりました。',
     ],
     en: [
-      '24h Tracker: Fixed schedule dialog display issue.',
-      '24h Tracker: Improved stability of default schedule system.',
+      'Added Japanese national holidays sync from device calendar with holiday badges on the timeline.',
+      'You can now toggle whether to treat national holidays as Sundays (holiday schedule) directly from settings.',
     ],
   },
 };

@@ -1270,6 +1270,31 @@ header {
 .quick-day-btn:active {
   background: rgba(255, 255, 255, 0.15);
 }
+.holiday-switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(255, 255, 255, 0.2);
+  transition: .2s;
+  border-radius: 24px;
+}
+.holiday-switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .2s;
+  border-radius: 50%;
+}
+input:checked + .holiday-switch-slider {
+  background-color: #2563eb;
+}
+input:checked + .holiday-switch-slider:before {
+  transform: translateX(20px);
+}
 </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1824,6 +1849,23 @@ header {
                     <span style="color: #93c5fd; font-weight: 600;">曜日指定</span>が最優先され、指定のない曜日は<span style="color: #c4b5fd; font-weight: 600;">曜日指定なし</span>が適用されます。
                 </p>
 
+                <!-- 祝日設定トグルカード -->
+                <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="flex: 1; padding-right: 8px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">㊗️ 祝日を休日（日曜日）として扱う</span>
+                            <span id="def-sched-today-holiday-badge" style="display: none; background: rgba(239, 68, 68, 0.25); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.5); padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700;"></span>
+                        </div>
+                        <p style="font-size: 0.72rem; color: var(--text-secondary); margin: 3px 0 0 0; line-height: 1.3;">
+                            平日の祝日には、月〜金用ではなく日曜日（休日スケジュール）を自動適用します
+                        </p>
+                    </div>
+                    <label style="position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; margin-bottom: 0;">
+                        <input type="checkbox" id="def-sched-holiday-toggle" style="opacity: 0; width: 0; height: 0;">
+                        <span class="holiday-switch-slider"></span>
+                    </label>
+                </div>
+
                 <!-- 新規作成フォーム（現在の日の予定から） -->
                 <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px; margin-bottom: 14px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -1948,6 +1990,8 @@ const defaultSchedBanner = document.getElementById('default-sched-banner');
 const defaultSchedBannerText = document.getElementById('default-sched-banner-text');
 const defaultSchedBannerApplyBtn = document.getElementById('default-sched-banner-apply-btn');
 const tmplSaveAsDefaultBtn = document.getElementById('tmpl-save-as-default-btn');
+const defSchedHolidayToggle = document.getElementById('def-sched-holiday-toggle');
+const defSchedTodayHolidayBadge = document.getElementById('def-sched-today-holiday-badge');
 
 // State
 const storage = window.appStorage || { getItem: function() { return null; }, setItem: function() {} };
@@ -1971,6 +2015,51 @@ let defaultSchedules = (function() {
     }
 })();
 let userClearedDates = {};
+
+let holidaysMap = (function() {
+    try {
+        const raw = storage.getItem('zikankanri_holidays');
+        return raw ? (JSON.parse(raw) || {}) : {};
+    } catch (e) {
+        return {};
+    }
+})();
+
+let treatHolidaysAsSunday = (function() {
+    try {
+        const raw = storage.getItem('zikankanri_treat_holidays_as_sunday');
+        if (raw !== null && raw !== undefined) {
+            return raw === 'true' || raw === true;
+        }
+        const csRaw = storage.getItem('calendar_sync_settings');
+        if (csRaw) {
+            const cs = JSON.parse(csRaw);
+            if (cs && cs.treatHolidaysAsSunday !== undefined) {
+                return !!cs.treatHolidaysAsSunday;
+            }
+        }
+        return true;
+    } catch (e) {
+        return true;
+    }
+})();
+
+function getHolidayName(dateStr) {
+    if (!dateStr || !holidaysMap) return null;
+    const key = dateStr.replace(/-/g, '/');
+    return holidaysMap[key] || null;
+}
+
+window.updateHolidaysData = function(newHolidays, newTreatAsSunday) {
+    if (newHolidays && typeof newHolidays === 'object') {
+        holidaysMap = newHolidays;
+    }
+    if (newTreatAsSunday !== undefined) {
+        treatHolidaysAsSunday = !!newTreatAsSunday;
+    }
+    updateDefaultSchedBanner();
+    if (typeof renderPuzzle === 'function') renderPuzzle();
+};
 
 // Puzzle State
 var puzzleInitialized = false;
@@ -2055,7 +2144,11 @@ function getDayOfWeek(dateStr) {
  */
 function getDefaultScheduleForDate(dateStr) {
     if (!defaultSchedules || defaultSchedules.length === 0) return null;
-    const dayOfWeek = getDayOfWeek(dateStr);
+    const originalDay = getDayOfWeek(dateStr);
+    const holidayName = getHolidayName(dateStr);
+    const isHoliday = !!holidayName;
+    const treatAsSunday = isHoliday && treatHolidaysAsSunday;
+    const dayOfWeek = treatAsSunday ? 0 : originalDay;
 
     // 1. 曜日指定があるもの（最優先）
     const dayMatches = defaultSchedules.filter(function(s) {
@@ -2071,9 +2164,12 @@ function getDefaultScheduleForDate(dateStr) {
         });
         return {
             schedule: dayMatches[0],
-            matchType: 'day_specific',
+            matchType: treatAsSunday ? 'holiday_sunday' : 'day_specific',
             dayOfWeek: dayOfWeek,
-            dayName: DAY_NAMES[dayOfWeek]
+            originalDay: originalDay,
+            dayName: DAY_NAMES[dayOfWeek],
+            isHoliday: isHoliday,
+            holidayName: holidayName
         };
     }
 
@@ -2090,7 +2186,10 @@ function getDefaultScheduleForDate(dateStr) {
             schedule: anyMatches[0],
             matchType: 'any_day',
             dayOfWeek: dayOfWeek,
-            dayName: DAY_NAMES[dayOfWeek]
+            originalDay: originalDay,
+            dayName: DAY_NAMES[dayOfWeek],
+            isHoliday: isHoliday,
+            holidayName: holidayName
         };
     }
 
@@ -2165,18 +2264,30 @@ function updateDefaultSchedBanner() {
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
     const match = getDefaultScheduleForDate(selectedDate);
     const existingPlans = plans.filter(function(p) { return p.date === selectedDate; });
+    const holidayName = getHolidayName(selectedDate);
+
+    let holidayBadge = '';
+    if (holidayName) {
+        holidayBadge = '<span style="background:rgba(239,68,68,0.25); color:#fca5a5; border:1px solid rgba(239,68,68,0.5); padding:1px 6px; border-radius:4px; font-weight:700; font-size:0.7rem; margin-right:6px;">🇯🇵 ' + holidayName + '</span>';
+    }
 
     if (match && match.schedule) {
-        const typeBadge = (match.matchType === 'day_specific')
-            ? ('[' + match.dayName + '曜指定]')
-            : '[全日共通]';
+        let typeBadge = '[全日共通]';
+        if (match.matchType === 'holiday_sunday') {
+            typeBadge = '[㊗️ 休日適用]';
+        } else if (match.matchType === 'day_specific') {
+            typeBadge = '[' + match.dayName + '曜指定]';
+        }
         
         const count = match.schedule.data ? match.schedule.data.length : 0;
         const statusText = (existingPlans.length > 0)
             ? '✓ 適用中: <strong>' + match.schedule.name + '</strong>'
             : '💡 デフォルト予定: <strong>' + match.schedule.name + '</strong>';
 
-        defaultSchedBannerText.innerHTML = statusText + ' <span style="font-size:0.7rem; opacity:0.85;">' + typeBadge + '</span> (' + count + '件)';
+        defaultSchedBannerText.innerHTML = holidayBadge + statusText + ' <span style="font-size:0.7rem; opacity:0.85;">' + typeBadge + '</span> (' + count + '件)';
+        defaultSchedBanner.style.display = 'flex';
+    } else if (holidayBadge) {
+        defaultSchedBannerText.innerHTML = holidayBadge + '<span style="font-size:0.75rem; color:var(--text-secondary);">デフォルト未設定</span>';
         defaultSchedBanner.style.display = 'flex';
     } else {
         defaultSchedBanner.style.display = 'none';
@@ -2197,6 +2308,21 @@ function openDefaultScheduleModal() {
         defSchedNoDayCheck.checked = false;
         if (defSchedDaysPickerBox) defSchedDaysPickerBox.style.opacity = '1';
     }
+
+    // 祝日トグルの状態反映
+    if (defSchedHolidayToggle) {
+        defSchedHolidayToggle.checked = treatHolidaysAsSunday;
+    }
+    const holidayName = getHolidayName(selectedDate);
+    if (defSchedTodayHolidayBadge) {
+        if (holidayName) {
+            defSchedTodayHolidayBadge.textContent = '今日: ' + holidayName;
+            defSchedTodayHolidayBadge.style.display = 'inline-block';
+        } else {
+            defSchedTodayHolidayBadge.style.display = 'none';
+        }
+    }
+
     resetDayButtons();
     const todayDayOfWeek = getDayOfWeek(selectedDate);
     setDayButtonSelected(todayDayOfWeek, true);
@@ -2493,6 +2619,20 @@ function initDefaultScheduleUI() {
     if (defaultSchedBannerApplyBtn) {
         defaultSchedBannerApplyBtn.onclick = function() {
             applyDefaultScheduleForCurrentDate({ force: true });
+        };
+    }
+    if (defSchedHolidayToggle) {
+        defSchedHolidayToggle.onchange = function() {
+            treatHolidaysAsSunday = !!defSchedHolidayToggle.checked;
+            storage.setItem('zikankanri_treat_holidays_as_sunday', treatHolidaysAsSunday ? 'true' : 'false');
+            if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                    type: 'SAVE_DATA',
+                    key: 'zikankanri_treat_holidays_as_sunday',
+                    value: treatHolidaysAsSunday ? 'true' : 'false'
+                }));
+            }
+            updateDefaultSchedBanner();
         };
     }
     if (saveDefSchedBtn) {
