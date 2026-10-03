@@ -640,30 +640,90 @@ textarea:focus {
   justify-content: space-between;
   align-items: center;
   background-color: rgba(255, 255, 255, 0.05);
-  padding: 8px 12px;
+  padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid #333;
+  gap: 8px;
 }
 
 .edit-tag-name {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   color: var(--text-primary);
   word-break: break-all;
-  padding-right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.piece-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.piece-badge.invest {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.piece-badge.maintain {
+  background: rgba(59, 130, 246, 0.18);
+  color: #bfdbfe;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.piece-badge.drift {
+  background: rgba(168, 85, 247, 0.18);
+  color: #e9d5ff;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+}
+
+.piece-size-badge {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  white-space: nowrap;
+}
+
+.emoji-quick-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid #3d3d3d;
+  border-radius: 6px;
+  padding: 3px 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+
+.emoji-quick-btn:active {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: #8b5cf6;
+  transform: scale(0.92);
 }
 
 .edit-tag-move-btn {
   background: #2C2C2C;
   border: 1px solid #444;
   color: var(--text-primary);
-  width: 32px !important;
-  height: 32px;
+  width: 28px !important;
+  height: 28px;
   padding: 0 !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: background-color 0.2s, border-color 0.2s;
   margin-bottom: 0 !important;
@@ -678,6 +738,27 @@ textarea:focus {
   cursor: not-allowed;
   background: #1E1E1E;
   border-color: #222;
+}
+
+.edit-tag-action-btn {
+  background: #2C2C2C;
+  border: 1px solid #444;
+  color: var(--text-primary);
+  width: 28px !important;
+  height: 28px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+  margin-bottom: 0 !important;
+}
+
+.edit-tag-action-btn:active {
+  background: #3D3D3D;
 }
 
 .edit-tag-delete-btn {
@@ -1380,102 +1461,24 @@ input:checked + .holiday-switch-slider:before {
             </div>
 
             <!-- ピース選択パレット -->
-            <div class="puzzle-palette-container">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="puzzle-palette-container" id="puzzle-palette-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
                     <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">
                         はめ込むピースを選択: <b id="puzzle-selected-piece-name" style="color: #c4b5fd;">なし</b>
                     </span>
-                    <span style="font-size: 0.68rem; color: var(--text-secondary); opacity: 0.7;">
-                        ※選択後に下の空き時間をタップ
-                    </span>
-                </div>
-
-                <!-- 大ピース -->
-                <div class="palette-category">
-                    <div class="palette-category-label" style="color: #fbbf24;">
-                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #fbbf24; display: inline-block;"></span>
-                        大ピース（15分吸着 / 伸縮）
-                    </div>
-                    <div class="palette-pieces-row">
-                        <button type="button" class="piece-btn large-piece" data-name="睡眠" data-type="large" data-category="maintain" data-duration="480" data-snap="15" data-color="blue">
-                            🛌 睡眠 (8h)
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button type="button" id="puzzle-palette-config-btn" class="btn btn-secondary" onclick="openTagEditor()" style="width: auto; padding: 3px 8px; font-size: 0.72rem; margin-bottom: 0; color: #c4b5fd; border-color: rgba(139, 92, 246, 0.4);" title="タグ・ピースの管理">
+                            ⚙️ タグ・ピース設定
                         </button>
-                        <button type="button" class="piece-btn large-piece" data-name="仕事" data-type="large" data-category="invest" data-duration="480" data-snap="15" data-color="amber">
-                            💼 仕事 (8h)
-                        </button>
-                        <button type="button" class="piece-btn large-piece" data-name="学習" data-type="large" data-category="invest" data-duration="120" data-snap="15" data-color="amber">
-                            💻 学習・自己投資 (2h)
-                        </button>
+                        <span style="font-size: 0.68rem; color: var(--text-secondary); opacity: 0.7;">
+                            ※空き時間をタップ
+                        </span>
                     </div>
                 </div>
 
-                <!-- 中ピース -->
-                <div class="palette-category">
-                    <div class="palette-category-label" style="color: #60a5fa;">
-                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #60a5fa; display: inline-block;"></span>
-                        中ピース（5分吸着 / 伸縮）
-                    </div>
-                    <div class="palette-pieces-row" id="puzzle-medium-pieces-row">
-                        <button type="button" class="piece-btn medium-piece" data-name="筋トレ" data-type="medium" data-category="invest" data-duration="60" data-snap="5" data-color="amber">
-                            🏋️ 筋トレ (60m)
-                        </button>
-                        <button type="button" class="piece-btn medium-piece" data-name="食事" data-type="medium" data-category="maintain" data-duration="45" data-snap="5" data-color="blue">
-                            🍽️ 食事 (45m)
-                        </button>
-                        <button type="button" class="piece-btn medium-piece" data-name="入浴" data-type="medium" data-category="maintain" data-duration="30" data-snap="5" data-color="blue">
-                            🛁 入浴 (30m)
-                        </button>
-                        <button type="button" class="piece-btn medium-piece" data-name="移動" data-type="medium" data-category="maintain" data-duration="25" data-snap="5" data-color="blue">
-                            🚶 移動 (25m)
-                        </button>
-                        <button type="button" class="piece-btn medium-piece" data-name="家事" data-type="medium" data-category="maintain" data-duration="30" data-snap="5" data-color="blue">
-                            🧹 家事 (30m)
-                        </button>
-                        <button type="button" class="piece-btn medium-piece" data-name="休憩" data-type="medium" data-category="maintain" data-duration="20" data-snap="5" data-color="blue">
-                            ☕ 休憩 (20m)
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 小ピース -->
-                <div class="palette-category">
-                    <div class="palette-category-label" style="color: #34d399;">
-                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #34d399; display: inline-block;"></span>
-                        小ピース（1分吸着 / 前後マグネット吸着）
-                    </div>
-                    <div class="palette-pieces-row">
-                        <button type="button" class="piece-btn small-piece" data-name="歯磨き" data-type="small" data-category="maintain" data-duration="3" data-snap="1" data-color="blue">
-                            🪥 歯磨き (3m)
-                        </button>
-                        <button type="button" class="piece-btn small-piece" data-name="ストレッチ" data-type="small" data-category="maintain" data-duration="10" data-snap="1" data-color="blue">
-                            🧘 ストレッチ (10m)
-                        </button>
-                        <button type="button" class="piece-btn small-piece" data-name="15分タスク" data-type="small" data-category="invest" data-duration="15" data-snap="5" data-color="amber">
-                            ⚡ 15分タスク (15m)
-                        </button>
-                        <button type="button" class="piece-btn small-piece" data-name="日記" data-type="small" data-category="invest" data-duration="5" data-snap="1" data-color="amber">
-                            📝 日記 (5m)
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 浪費・漂流ピース -->
-                <div class="palette-category" style="border-top: 1px dashed #333; padding-top: 6px;">
-                    <div class="palette-category-label" style="color: #c084fc;">
-                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #c084fc; display: inline-block;"></span>
-                        🟣 漂流・浪費ピース（客観ログ / 5分単位）
-                    </div>
-                    <div class="palette-pieces-row">
-                        <button type="button" class="piece-btn drift-piece" data-name="SNS" data-type="medium" data-category="drift" data-duration="30" data-snap="5" data-color="purple">
-                            📱 SNS漂流 (30m)
-                        </button>
-                        <button type="button" class="piece-btn drift-piece" data-name="動画" data-type="medium" data-category="drift" data-duration="45" data-snap="5" data-color="purple">
-                            ▶️ 動画鑑賞 (45m)
-                        </button>
-                        <button type="button" class="piece-btn drift-piece" data-name="ダラダラ" data-type="medium" data-category="drift" data-duration="30" data-snap="5" data-color="purple">
-                            🌫️ ダラダラ (30m)
-                        </button>
-                    </div>
+                <!-- 動的レンダリング領域 -->
+                <div id="puzzle-palette-dynamic-content" style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- JSのrenderPuzzlePalette()で大・中・小・漂流ピースを動的に描画 -->
                 </div>
             </div>
 
@@ -1766,25 +1769,92 @@ input:checked + .holiday-switch-slider:before {
         </div>
     </div>
 
-    <!-- Tag Edit Modal -->
+    <!-- Tag & Piece Edit Modal (一体管理モーダル) -->
     <div id="tag-edit-modal" class="modal-overlay">
-        <div class="modal-content">
+        <div class="modal-content" style="max-height: 88vh; display: flex; flex-direction: column;">
             <div class="modal-header">
-                <h3>タグの編集</h3>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.2rem;">🏷️</span>
+                    <div>
+                        <h3 style="margin-bottom: 0; font-size: 1.05rem;">タグ・ピース設定 (活動マスター)</h3>
+                        <span style="font-size: 0.7rem; color: var(--text-secondary);">タイムラインと詳細リストで共通利用</span>
+                    </div>
+                </div>
                 <span id="close-modal-btn" style="cursor: pointer; font-size: 1.5rem; font-weight: bold; color: var(--text-secondary);">&times;</span>
             </div>
-            <div class="modal-body">
-                <div class="flex-row" style="margin-bottom: 16px;">
-                    <input type="text" id="modal-new-tag-input" placeholder="新しいタグ名を入力" style="flex: 1; margin-bottom: 0;">
-                    <button type="button" id="modal-add-tag-btn" class="btn btn-secondary" style="width: auto; padding: 12px 20px; white-space: nowrap; margin-bottom: 0;">追加</button>
+            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 12px 16px;">
+                <!-- 新規追加 / 編集フォーム -->
+                <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid #333; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span id="modal-form-title" style="font-size: 0.8rem; font-weight: 700; color: #c4b5fd;">➕ 新しいタグ・ピースを追加</span>
+                        <button type="button" id="modal-cancel-edit-btn" style="display: none; background: none; border: none; color: var(--text-secondary); font-size: 0.72rem; cursor: pointer; text-decoration: underline;">編集をキャンセル</button>
+                    </div>
+
+                    <!-- 活動名 & アイコン -->
+                    <div class="flex-row" style="gap: 8px; margin-bottom: 8px;">
+                        <div style="width: 68px;">
+                            <label style="font-size: 0.7rem; margin-bottom: 2px;">アイコン</label>
+                            <input type="text" id="modal-piece-icon-input" value="🏷️" maxlength="4" style="text-align: center; font-size: 1.1rem; padding: 6px; margin-bottom: 0;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.7rem; margin-bottom: 2px;">活動名</label>
+                            <input type="text" id="modal-new-tag-input" placeholder="例: 読書、サウナ、英語" style="padding: 6px 10px; margin-bottom: 0;">
+                        </div>
+                    </div>
+
+                    <!-- 絵文字クイック選択パレット -->
+                    <div style="margin-bottom: 8px;">
+                        <label style="font-size: 0.68rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">クイックアイコン選択:</label>
+                        <div id="modal-emoji-palette" style="display: flex; flex-wrap: wrap; gap: 4px;">
+                            <!-- JSでよく使われる絵文字ボタンを描画 -->
+                        </div>
+                    </div>
+
+                    <!-- 分類 & サイズ & 時間 -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                        <div>
+                            <label style="font-size: 0.7rem; margin-bottom: 2px;">分類 (ポートフォリオ)</label>
+                            <select id="modal-piece-category-select" style="width: 100%; padding: 6px; font-size: 0.78rem; margin-bottom: 0; background: #222; color: #fff; border: 1px solid #444; border-radius: 6px;">
+                                <option value="invest">🟢 投資・活動 (仕事/学習/筋トレ)</option>
+                                <option value="maintain" selected>🔵 維持・ケア (睡眠/食事/風呂)</option>
+                                <option value="drift">🟣 漂流・オフ (SNS/動画/ダラダラ)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.7rem; margin-bottom: 2px;">ピースサイズ (吸着単位)</label>
+                            <select id="modal-piece-type-select" style="width: 100%; padding: 6px; font-size: 0.78rem; margin-bottom: 0; background: #222; color: #fff; border: 1px solid #444; border-radius: 6px;">
+                                <option value="large">📦 大ピース (15分単位)</option>
+                                <option value="medium" selected>🧩 中ピース (5分単位)</option>
+                                <option value="small">⚡ 小ピース (1分単位)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex-row" style="align-items: flex-end; gap: 8px; margin-bottom: 0;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.7rem; margin-bottom: 2px;">標準所要時間 (分)</label>
+                            <input type="number" id="modal-piece-duration-input" value="30" min="1" max="720" style="padding: 6px 10px; margin-bottom: 0;">
+                        </div>
+                        <button type="button" id="modal-add-tag-btn" class="btn btn-secondary" style="width: auto; padding: 7px 16px; white-space: nowrap; margin-bottom: 0; border-color: #8b5cf6; color: #c4b5fd;">
+                            ＋ 追加する
+                        </button>
+                    </div>
                 </div>
-                <label>現在のタグ一覧 (クリックで削除)</label>
-                <div id="modal-tag-list" class="edit-tag-list">
+
+                <!-- 現在の一覧 -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label style="font-size: 0.75rem; margin-bottom: 0; color: var(--text-secondary);">現在のタグ・ピース一覧 (<span id="modal-piece-count">0</span>件)</label>
+                    <span style="font-size: 0.68rem; color: var(--text-secondary); opacity: 0.8;">▲▼で並び替え ｜ ✏️で編集</span>
+                </div>
+                <div id="modal-tag-list" class="edit-tag-list" style="max-height: 240px;">
                     <!-- Javascript will populate this -->
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" id="modal-close-btn" class="btn btn-primary" style="margin-bottom: 0; width: auto; padding: 8px 16px;">完了</button>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                <button type="button" id="modal-reset-pieces-btn" style="background: none; border: none; color: var(--text-secondary); font-size: 0.72rem; cursor: pointer; text-decoration: underline; padding: 4px;">
+                    標準16種にリセット
+                </button>
+                <button type="button" id="modal-close-btn" class="btn btn-primary" style="margin-bottom: 0; width: auto; padding: 6px 18px; font-size: 0.85rem;">完了</button>
             </div>
         </div>
     </div>
@@ -2072,9 +2142,35 @@ var currentMainViewMode = (function() {
     }
 })();
 
-function loadTagsFromStorage() {
+// ==========================================
+// 活動・ピース統合マスター (Activity & Piece Master)
+// ==========================================
+var DEFAULT_ACTIVITY_PIECES = [
+    // 大ピース (15分吸着 / 伸縮)
+    { name: "睡眠", icon: "🛌", type: "large", category: "maintain", duration: 480, snap: 15, color: "blue" },
+    { name: "仕事", icon: "💼", type: "large", category: "invest", duration: 480, snap: 15, color: "amber" },
+    { name: "学習", icon: "💻", type: "large", category: "invest", duration: 120, snap: 15, color: "amber" },
+    // 中ピース (5分吸着 / 伸縮)
+    { name: "筋トレ", icon: "🏋️", type: "medium", category: "invest", duration: 60, snap: 5, color: "amber" },
+    { name: "食事", icon: "🍽️", type: "medium", category: "maintain", duration: 45, snap: 5, color: "blue" },
+    { name: "入浴", icon: "🛁", type: "medium", category: "maintain", duration: 30, snap: 5, color: "blue" },
+    { name: "移動", icon: "🚶", type: "medium", category: "maintain", duration: 25, snap: 5, color: "blue" },
+    { name: "家事", icon: "🧹", type: "medium", category: "maintain", duration: 30, snap: 5, color: "blue" },
+    { name: "休憩", icon: "☕", type: "medium", category: "maintain", duration: 20, snap: 5, color: "blue" },
+    // 小ピース (1分吸着 / 前後マグネット吸着)
+    { name: "歯磨き", icon: "🪥", type: "small", category: "maintain", duration: 3, snap: 1, color: "blue" },
+    { name: "ストレッチ", icon: "🧘", type: "small", category: "maintain", duration: 10, snap: 1, color: "blue" },
+    { name: "15分タスク", icon: "⚡", type: "small", category: "invest", duration: 15, snap: 5, color: "amber" },
+    { name: "日記", icon: "📝", type: "small", category: "invest", duration: 5, snap: 1, color: "amber" },
+    // 漂流・オフピース (客観ログ / 5分単位)
+    { name: "SNS", icon: "📱", type: "medium", category: "drift", duration: 30, snap: 5, color: "purple" },
+    { name: "動画", icon: "▶️", type: "medium", category: "drift", duration: 45, snap: 5, color: "purple" },
+    { name: "ダラダラ", icon: "🌫️", type: "medium", category: "drift", duration: 30, snap: 5, color: "purple" }
+];
+
+function loadActivityPiecesFromStorage() {
     try {
-        const raw = storage.getItem('zikankanri_tags');
+        const raw = storage.getItem('zikankanri_pieces');
         if (raw) {
             let parsed = JSON.parse(raw);
             if (typeof parsed === 'string') parsed = JSON.parse(parsed);
@@ -2083,11 +2179,55 @@ function loadTagsFromStorage() {
             }
         }
     } catch (e) {
-        console.warn('Failed to parse zikankanri_tags', e);
+        console.warn('Failed to parse zikankanri_pieces', e);
     }
-    return ["睡眠", "仕事", "食事", "移動", "休憩", "家事", "運動", "学習"];
+
+    // 移行フォールバック: 旧タグ（zikankanri_tags）があればマージして引き継ぐ
+    let pieces = JSON.parse(JSON.stringify(DEFAULT_ACTIVITY_PIECES));
+    try {
+        const rawOldTags = storage.getItem('zikankanri_tags');
+        if (rawOldTags) {
+            let parsedTags = JSON.parse(rawOldTags);
+            if (typeof parsedTags === 'string') parsedTags = JSON.parse(parsedTags);
+            if (Array.isArray(parsedTags)) {
+                const defaultNames = pieces.map(function(p) { return p.name; });
+                parsedTags.forEach(function(tag) {
+                    if (tag && !defaultNames.includes(tag)) {
+                        pieces.push({
+                            name: tag,
+                            icon: '🏷️',
+                            type: 'medium',
+                            category: (typeof getCategoryByActivityName === 'function') ? getCategoryByActivityName(tag) : 'maintain',
+                            duration: 30,
+                            snap: 5,
+                            color: 'blue'
+                        });
+                    }
+                });
+            }
+        }
+    } catch (err) {}
+
+    return pieces;
 }
-let defaultTags = loadTagsFromStorage();
+
+var activityPieces = loadActivityPiecesFromStorage();
+
+function saveActivityPieces() {
+    try {
+        storage.setItem('zikankanri_pieces', JSON.stringify(activityPieces));
+        defaultTags = activityPieces.map(function(p) { return p.name; });
+        storage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
+    } catch (e) {
+        console.error('Failed to save activityPieces', e);
+    }
+}
+
+function loadTagsFromStorage() {
+    return activityPieces.map(function(p) { return p.name; });
+}
+
+let defaultTags = activityPieces.map(function(p) { return p.name; });
 
 function notifyModalState(show) {
     if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
@@ -2825,22 +2965,30 @@ function initTags() {
     editBtn.className = 'tag-chip';
     editBtn.style.borderStyle = 'dashed';
     editBtn.style.cursor = 'pointer';
-    editBtn.textContent = '+ タグ編集';
+    editBtn.textContent = '⚙️ タグ・ピース編集';
     editBtn.addEventListener('click', openTagEditor);
     quickListNodesContainer.appendChild(editBtn);
 
-    defaultTags.forEach(function(tag) {
+    activityPieces.forEach(function(piece) {
         const chip = document.createElement('span');
         chip.className = 'tag-chip';
-        chip.dataset.value = tag;
+        chip.dataset.value = piece.name;
         chip.style.cursor = 'pointer';
 
+        if (piece.category === 'invest') {
+            chip.style.borderColor = 'rgba(245, 158, 11, 0.45)';
+            chip.style.background = 'rgba(245, 158, 11, 0.08)';
+        } else if (piece.category === 'drift') {
+            chip.style.borderColor = 'rgba(168, 85, 247, 0.45)';
+            chip.style.background = 'rgba(168, 85, 247, 0.08)';
+        }
+
         const textSpan = document.createElement('span');
-        textSpan.textContent = tag;
+        textSpan.textContent = (piece.icon ? piece.icon + ' ' : '') + piece.name;
         chip.appendChild(textSpan);
 
         chip.addEventListener('click', function() {
-            selectTag(tag);
+            selectTag(piece.name);
         });
 
         quickListNodesContainer.insertBefore(chip, editBtn);
@@ -2854,127 +3002,343 @@ function initTags() {
     }
 }
 
+var editingPieceIndex = null;
+
+function resetPieceForm() {
+    editingPieceIndex = null;
+    const formTitle = document.getElementById('modal-form-title');
+    const cancelBtn = document.getElementById('modal-cancel-edit-btn');
+    const addBtn = document.getElementById('modal-add-tag-btn');
+    const iconInput = document.getElementById('modal-piece-icon-input');
+    const nameInput = document.getElementById('modal-new-tag-input');
+    const catSelect = document.getElementById('modal-piece-category-select');
+    const typeSelect = document.getElementById('modal-piece-type-select');
+    const durInput = document.getElementById('modal-piece-duration-input');
+
+    if (formTitle) formTitle.textContent = '➕ 新しいタグ・ピースを追加';
+    if (cancelBtn) cancelBtn.style.display = 'none';
+    if (addBtn) {
+        addBtn.textContent = '＋ 追加する';
+        addBtn.classList.remove('btn-primary');
+        addBtn.classList.add('btn-secondary');
+    }
+    if (iconInput) iconInput.value = '🏷️';
+    if (nameInput) nameInput.value = '';
+    if (catSelect) catSelect.value = 'maintain';
+    if (typeSelect) typeSelect.value = 'medium';
+    if (durInput) durInput.value = '30';
+}
+
+function startEditPiece(index) {
+    if (index < 0 || index >= activityPieces.length) return;
+    editingPieceIndex = index;
+    const piece = activityPieces[index];
+
+    const formTitle = document.getElementById('modal-form-title');
+    const cancelBtn = document.getElementById('modal-cancel-edit-btn');
+    const addBtn = document.getElementById('modal-add-tag-btn');
+    const iconInput = document.getElementById('modal-piece-icon-input');
+    const nameInput = document.getElementById('modal-new-tag-input');
+    const catSelect = document.getElementById('modal-piece-category-select');
+    const typeSelect = document.getElementById('modal-piece-type-select');
+    const durInput = document.getElementById('modal-piece-duration-input');
+
+    if (formTitle) formTitle.textContent = '✏️ タグ・ピースを編集: ' + piece.name;
+    if (cancelBtn) cancelBtn.style.display = 'inline-block';
+    if (addBtn) {
+        addBtn.textContent = '更新する';
+        addBtn.classList.remove('btn-secondary');
+        addBtn.classList.add('btn-primary');
+    }
+    if (iconInput) iconInput.value = piece.icon || '🏷️';
+    if (nameInput) nameInput.value = piece.name;
+    if (catSelect) catSelect.value = piece.category || 'maintain';
+    if (typeSelect) typeSelect.value = piece.type || 'medium';
+    if (durInput) durInput.value = piece.duration || 30;
+
+    if (nameInput) nameInput.focus();
+}
+
+function saveOrAddModalPiece() {
+    const iconInput = document.getElementById('modal-piece-icon-input');
+    const nameInput = document.getElementById('modal-new-tag-input');
+    const catSelect = document.getElementById('modal-piece-category-select');
+    const typeSelect = document.getElementById('modal-piece-type-select');
+    const durInput = document.getElementById('modal-piece-duration-input');
+
+    const name = nameInput ? nameInput.value.trim() : '';
+    if (!name) {
+        if (nameInput) {
+            nameInput.style.borderColor = 'var(--error-color)';
+            setTimeout(function() { nameInput.style.borderColor = ''; }, 1200);
+        }
+        return;
+    }
+
+    const icon = (iconInput && iconInput.value.trim()) ? iconInput.value.trim() : '🏷️';
+    const category = catSelect ? catSelect.value : 'maintain';
+    const type = typeSelect ? typeSelect.value : 'medium';
+    const duration = durInput ? Math.max(1, parseInt(durInput.value, 10) || 30) : 30;
+    const snap = type === 'large' ? 15 : (type === 'small' ? 1 : 5);
+    const color = category === 'invest' ? 'amber' : (category === 'drift' ? 'purple' : 'blue');
+
+    const existingIndex = activityPieces.findIndex(function(p) { return p.name === name; });
+
+    if (editingPieceIndex !== null) {
+        // 更新モード
+        if (existingIndex !== -1 && existingIndex !== editingPieceIndex) {
+            if (nameInput) {
+                nameInput.style.borderColor = 'var(--error-color)';
+                setTimeout(function() { nameInput.style.borderColor = ''; }, 1200);
+            }
+            return;
+        }
+        activityPieces[editingPieceIndex] = {
+            name: name,
+            icon: icon,
+            category: category,
+            type: type,
+            duration: duration,
+            snap: snap,
+            color: color
+        };
+    } else {
+        // 新規追加モード
+        if (existingIndex !== -1) {
+            if (nameInput) {
+                nameInput.style.borderColor = 'var(--error-color)';
+                setTimeout(function() { nameInput.style.borderColor = ''; }, 1200);
+            }
+            return;
+        }
+        activityPieces.push({
+            name: name,
+            icon: icon,
+            category: category,
+            type: type,
+            duration: duration,
+            snap: snap,
+            color: color
+        });
+    }
+
+    resetPieceForm();
+    syncAllActivityViews();
+    renderModalPieces();
+}
+
+function deletePiece(index) {
+    if (index < 0 || index >= activityPieces.length) return;
+    const target = activityPieces[index];
+    activityPieces.splice(index, 1);
+    if (activityPieces.length === 0) {
+        activityPieces.push(JSON.parse(JSON.stringify(DEFAULT_ACTIVITY_PIECES[0])));
+    }
+    if (activityNameInput.value === target.name) {
+        activityNameInput.value = '';
+    }
+    if (editingPieceIndex === index) {
+        resetPieceForm();
+    } else if (editingPieceIndex !== null && editingPieceIndex > index) {
+        editingPieceIndex--;
+    }
+    syncAllActivityViews();
+    renderModalPieces();
+}
+
+function movePiece(index, direction) {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= activityPieces.length) return;
+    const temp = activityPieces[index];
+    activityPieces[index] = activityPieces[targetIndex];
+    activityPieces[targetIndex] = temp;
+    if (editingPieceIndex === index) {
+        editingPieceIndex = targetIndex;
+    } else if (editingPieceIndex === targetIndex) {
+        editingPieceIndex = index;
+    }
+    syncAllActivityViews();
+    renderModalPieces();
+}
+
+function resetToDefaultPieces() {
+    if (confirm('タグ・ピースを標準の16種類に初期化しますか？\n（カスタム追加したピースは消去されます）')) {
+        activityPieces = JSON.parse(JSON.stringify(DEFAULT_ACTIVITY_PIECES));
+        resetPieceForm();
+        syncAllActivityViews();
+        renderModalPieces();
+    }
+}
+
+function initEmojiPalette() {
+    const paletteEl = document.getElementById('modal-emoji-palette');
+    if (!paletteEl || paletteEl.children.length > 0) return;
+    const emojis = ['🛌', '💼', '💻', '🏋️', '🍽️', '🛁', '🚶', '🧹', '☕', '🪥', '🧘', '⚡', '📝', '📱', '▶️', '🌫️', '📖', '🏃', '🎮', '🌿', '🎯', '🍳', '🚗', '🛒'];
+    emojis.forEach(function(em) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'emoji-quick-btn';
+        btn.textContent = em;
+        btn.addEventListener('click', function() {
+            const iconInput = document.getElementById('modal-piece-icon-input');
+            if (iconInput) iconInput.value = em;
+        });
+        paletteEl.appendChild(btn);
+    });
+}
+
+function syncAllActivityViews() {
+    saveActivityPieces();
+    initTags();
+    if (typeof renderPuzzlePalette === 'function') renderPuzzlePalette();
+    if (typeof renderBottomSheetTags === 'function') renderBottomSheetTags();
+    if (typeof renderBottomSheetSimultaneousList === 'function') renderBottomSheetSimultaneousList();
+}
+
 function openTagEditor() {
     tagEditModal.classList.add('active');
     notifyModalState(true);
-    renderModalTags();
-    modalNewTagInput.value = '';
+    resetPieceForm();
+    initEmojiPalette();
+    renderModalPieces();
     setTimeout(function() {
-        modalNewTagInput.focus();
+        const nameInput = document.getElementById('modal-new-tag-input');
+        if (nameInput) nameInput.focus();
     }, 100);
 }
 
 function closeTagEditor() {
     tagEditModal.classList.remove('active');
     notifyModalState(false);
-    initTags();
+    resetPieceForm();
+    syncAllActivityViews();
 }
 
 window.openTagEditor = openTagEditor;
 window.closeTagEditor = closeTagEditor;
 
-function renderModalTags() {
-    modalTagList.innerHTML = '';
-    defaultTags.forEach(function(tag, index) {
+function renderModalPieces() {
+    const listEl = document.getElementById('modal-tag-list');
+    const countEl = document.getElementById('modal-piece-count');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    if (countEl) countEl.textContent = activityPieces.length;
+
+    activityPieces.forEach(function(piece, index) {
         const item = document.createElement('div');
         item.className = 'edit-tag-item';
 
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'edit-tag-name';
-        nameSpan.textContent = tag;
-        item.appendChild(nameSpan);
+        const leftDiv = document.createElement('div');
+        leftDiv.className = 'edit-tag-name';
 
-        const rightContainer = document.createElement('div');
-        rightContainer.className = 'flex-row';
-        rightContainer.style.gap = '6px';
-        rightContainer.style.marginBottom = '0';
+        const iconSpan = document.createElement('span');
+        iconSpan.style.fontSize = '1.1rem';
+        iconSpan.textContent = piece.icon || '🏷️';
+        leftDiv.appendChild(iconSpan);
+
+        const nameSpan = document.createElement('span');
+        nameSpan.style.fontWeight = '600';
+        nameSpan.textContent = piece.name;
+        leftDiv.appendChild(nameSpan);
+
+        const catBadge = document.createElement('span');
+        catBadge.className = 'piece-badge ' + (piece.category || 'maintain');
+        const catLabel = piece.category === 'invest' ? '🟢投資' : (piece.category === 'drift' ? '🟣漂流' : '🔵維持');
+        catBadge.textContent = catLabel;
+        leftDiv.appendChild(catBadge);
+
+        const sizeBadge = document.createElement('span');
+        sizeBadge.className = 'piece-size-badge';
+        const typeLabel = piece.type === 'large' ? '大' : (piece.type === 'small' ? '小' : '中');
+        sizeBadge.textContent = typeLabel + ' (' + (piece.duration || 30) + 'm)';
+        leftDiv.appendChild(sizeBadge);
+
+        item.appendChild(leftDiv);
+
+        const rightDiv = document.createElement('div');
+        rightDiv.className = 'flex-row';
+        rightDiv.style.gap = '4px';
+        rightDiv.style.marginBottom = '0';
 
         const upBtn = document.createElement('button');
         upBtn.type = 'button';
         upBtn.className = 'edit-tag-move-btn';
         upBtn.innerHTML = '▲';
+        upBtn.title = '上へ移動';
         if (index === 0) {
             upBtn.disabled = true;
         } else {
             upBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                moveTag(index, -1);
+                movePiece(index, -1);
             });
         }
-        rightContainer.appendChild(upBtn);
+        rightDiv.appendChild(upBtn);
 
         const downBtn = document.createElement('button');
         downBtn.type = 'button';
         downBtn.className = 'edit-tag-move-btn';
         downBtn.innerHTML = '▼';
-        if (index === defaultTags.length - 1) {
+        downBtn.title = '下へ移動';
+        if (index === activityPieces.length - 1) {
             downBtn.disabled = true;
         } else {
             downBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                moveTag(index, 1);
+                movePiece(index, 1);
             });
         }
-        rightContainer.appendChild(downBtn);
+        rightDiv.appendChild(downBtn);
+
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'edit-tag-action-btn';
+        editBtn.innerHTML = '✏️';
+        editBtn.title = '編集';
+        editBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            startEditPiece(index);
+        });
+        rightDiv.appendChild(editBtn);
 
         const delBtn = document.createElement('button');
         delBtn.type = 'button';
         delBtn.className = 'edit-tag-delete-btn';
-        delBtn.style.marginLeft = '4px';
         delBtn.innerHTML = '&times;';
-        delBtn.setAttribute('title', '削除');
+        delBtn.title = '削除';
         delBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            defaultTags = defaultTags.filter(function(t) { return t !== tag; });
-            storage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
-            renderModalTags();
-            initTags();
-            if (activityNameInput.value === tag) {
-                activityNameInput.value = '';
-            }
+            deletePiece(index);
         });
-        rightContainer.appendChild(delBtn);
+        rightDiv.appendChild(delBtn);
 
-        item.appendChild(rightContainer);
-        modalTagList.appendChild(item);
+        item.appendChild(rightDiv);
+        listEl.appendChild(item);
     });
 }
 
-function moveTag(index, direction) {
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= defaultTags.length) return;
-    const temp = defaultTags[index];
-    defaultTags[index] = defaultTags[targetIndex];
-    defaultTags[targetIndex] = temp;
-    storage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
-    renderModalTags();
-    initTags();
+function renderModalTags() {
+    renderModalPieces();
 }
 
 function addModalTag() {
-    const val = modalNewTagInput.value.trim();
-    if (!val) return;
-    if (defaultTags.includes(val)) {
-        modalNewTagInput.style.borderColor = 'var(--error-color)';
-        setTimeout(function() {
-            modalNewTagInput.style.borderColor = '';
-        }, 1200);
-        return;
-    }
-    defaultTags.push(val);
-    storage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
-    renderModalTags();
-    initTags();
-    modalNewTagInput.value = '';
+    saveOrAddModalPiece();
 }
 
 closeModalBtn.addEventListener('click', closeTagEditor);
 modalCloseBtn.addEventListener('click', closeTagEditor);
-modalAddTagBtn.addEventListener('click', addModalTag);
+modalAddTagBtn.addEventListener('click', saveOrAddModalPiece);
+
+const cancelEditBtn = document.getElementById('modal-cancel-edit-btn');
+if (cancelEditBtn) cancelEditBtn.addEventListener('click', resetPieceForm);
+
+const resetPiecesBtn = document.getElementById('modal-reset-pieces-btn');
+if (resetPiecesBtn) resetPiecesBtn.addEventListener('click', resetToDefaultPieces);
+
 modalNewTagInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
         e.preventDefault();
-        addModalTag();
+        saveOrAddModalPiece();
     }
 });
 tagEditModal.addEventListener('click', function(e) {
@@ -4386,69 +4750,91 @@ function initPuzzleTimelineGrid() {
     }
 }
 
-function initPuzzlePalette() {
-    const paletteContainer = document.querySelector('.puzzle-palette-container');
-    if (!paletteContainer) return;
+function renderPuzzlePalette() {
+    const container = document.getElementById('puzzle-palette-dynamic-content');
+    if (!container) return;
 
-    const pieceBtns = paletteContainer.querySelectorAll('.piece-btn');
-    pieceBtns.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            paletteContainer.querySelectorAll('.piece-btn').forEach(function(b) {
-                b.classList.remove('active-selected');
-            });
-            btn.classList.add('active-selected');
-            selectedPuzzlePiece = {
-                name: btn.dataset.name,
-                type: btn.dataset.type,
-                category: btn.dataset.category || getCategoryByActivityName(btn.dataset.name),
-                duration: parseInt(btn.dataset.duration, 10),
-                snap: parseInt(btn.dataset.snap, 10),
-                color: btn.dataset.color
-            };
-            const labelEl = document.getElementById('puzzle-selected-piece-name');
-            if (labelEl) {
-                labelEl.textContent = btn.textContent.trim().replace(/\s+/g, ' ') + ' (' + selectedPuzzlePiece.snap + '分単位)';
+    container.innerHTML = '';
+
+    // 大ピース / 中ピース / 小ピース / 漂流ピース に仕分け
+    const largePieces = activityPieces.filter(function(p) { return p.category !== 'drift' && p.type === 'large'; });
+    const mediumPieces = activityPieces.filter(function(p) { return p.category !== 'drift' && p.type === 'medium'; });
+    const smallPieces = activityPieces.filter(function(p) { return p.category !== 'drift' && p.type === 'small'; });
+    const driftPieces = activityPieces.filter(function(p) { return p.category === 'drift'; });
+
+    const categories = [
+        { label: '大ピース（15分吸着 / 伸縮）', color: '#fbbf24', pieces: largePieces, cls: 'large-piece' },
+        { label: '中ピース（5分吸着 / 伸縮）', color: '#60a5fa', pieces: mediumPieces, cls: 'medium-piece' },
+        { label: '小ピース（1分吸着 / 吸着）', color: '#34d399', pieces: smallPieces, cls: 'small-piece' },
+        { label: '🟣 漂流・浪費ピース（客観ログ / 5分単位）', color: '#c084fc', pieces: driftPieces, cls: 'drift-piece', isDrift: true }
+    ];
+
+    categories.forEach(function(cat) {
+        if (!cat.pieces || cat.pieces.length === 0) return;
+
+        const catDiv = document.createElement('div');
+        catDiv.className = 'palette-category';
+        if (cat.isDrift) {
+            catDiv.style.borderTop = '1px dashed #333';
+            catDiv.style.paddingTop = '6px';
+        }
+
+        const labelDiv = document.createElement('div');
+        labelDiv.className = 'palette-category-label';
+        labelDiv.style.color = cat.color;
+        labelDiv.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: ' + cat.color + '; display: inline-block;"></span> ' + cat.label;
+        catDiv.appendChild(labelDiv);
+
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'palette-pieces-row';
+
+        cat.pieces.forEach(function(piece) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'piece-btn ' + cat.cls;
+            if (selectedPuzzlePiece && selectedPuzzlePiece.name === piece.name) {
+                btn.classList.add('active-selected');
             }
-        });
-    });
+            btn.dataset.name = piece.name;
+            btn.dataset.type = piece.type;
+            btn.dataset.category = piece.category;
+            btn.dataset.duration = piece.duration;
+            btn.dataset.snap = piece.snap;
+            btn.dataset.color = piece.color || 'blue';
 
-    const mediumRow = document.getElementById('puzzle-medium-pieces-row');
-    if (mediumRow && Array.isArray(defaultTags)) {
-        const existingNames = Array.from(mediumRow.querySelectorAll('.piece-btn')).map(function(b) { return b.dataset.name; });
-        defaultTags.forEach(function(tagName) {
-            if (!existingNames.includes(tagName) && !['睡眠', '仕事', '学習', '歯磨き', 'ストレッチ', '日記', 'SNS', '動画', 'ダラダラ'].includes(tagName)) {
-                const customBtn = document.createElement('button');
-                customBtn.type = 'button';
-                customBtn.className = 'piece-btn medium-piece';
-                customBtn.dataset.name = tagName;
-                customBtn.dataset.type = 'medium';
-                customBtn.dataset.category = getCategoryByActivityName(tagName);
-                customBtn.dataset.duration = '30';
-                customBtn.dataset.snap = '5';
-                customBtn.dataset.color = 'blue';
-                customBtn.innerHTML = '🏷️ ' + tagName + ' (30m)';
-                customBtn.addEventListener('click', function() {
-                    paletteContainer.querySelectorAll('.piece-btn').forEach(function(b) {
-                        b.classList.remove('active-selected');
-                    });
-                    customBtn.classList.add('active-selected');
-                    selectedPuzzlePiece = {
-                        name: tagName,
-                        type: 'medium',
-                        category: customBtn.dataset.category,
-                        duration: 30,
-                        snap: 5,
-                        color: 'blue'
-                    };
-                    const labelEl = document.getElementById('puzzle-selected-piece-name');
-                    if (labelEl) {
-                        labelEl.textContent = tagName + ' (5分単位)';
-                    }
+            const durLabel = piece.duration >= 60 ? (piece.duration / 60) + 'h' : piece.duration + 'm';
+            btn.innerHTML = (piece.icon ? piece.icon + ' ' : '') + piece.name + ' (' + durLabel + ')';
+
+            btn.addEventListener('click', function() {
+                container.querySelectorAll('.piece-btn').forEach(function(b) {
+                    b.classList.remove('active-selected');
                 });
-                mediumRow.appendChild(customBtn);
-            }
+                btn.classList.add('active-selected');
+                selectedPuzzlePiece = {
+                    name: piece.name,
+                    icon: piece.icon,
+                    type: piece.type,
+                    category: piece.category,
+                    duration: piece.duration,
+                    snap: piece.snap,
+                    color: piece.color || 'blue'
+                };
+                const labelEl = document.getElementById('puzzle-selected-piece-name');
+                if (labelEl) {
+                    labelEl.textContent = (piece.icon ? piece.icon + ' ' : '') + piece.name + ' (' + piece.snap + '分単位)';
+                }
+            });
+
+            rowDiv.appendChild(btn);
         });
-    }
+
+        catDiv.appendChild(rowDiv);
+        container.appendChild(catDiv);
+    });
+}
+
+function initPuzzlePalette() {
+    renderPuzzlePalette();
 }
 
 function calculateSnap(minute, type, duration, excludeId, currentItems) {
@@ -4823,14 +5209,14 @@ function renderBottomSheetTags() {
     container.innerHTML = '';
     if (display) display.textContent = bsSelectedActivity || '未選択';
 
-    if (Array.isArray(defaultTags)) {
-        defaultTags.forEach(function(tag) {
+    if (Array.isArray(activityPieces)) {
+        activityPieces.forEach(function(piece) {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'bs-tag-chip' + (tag === bsSelectedActivity ? ' active' : '');
-            btn.textContent = tag;
+            btn.className = 'bs-tag-chip' + (piece.name === bsSelectedActivity ? ' active' : '');
+            btn.textContent = (piece.icon ? piece.icon + ' ' : '') + piece.name;
             btn.onclick = function() {
-                bsSelectedActivity = tag;
+                bsSelectedActivity = piece.name;
                 renderBottomSheetTags();
             };
             container.appendChild(btn);
