@@ -1803,6 +1803,8 @@ input:checked + .holiday-switch-slider:before {
                 </button>
             </div>
         </div>
+    </div>
+
     <!-- ピース選択メニュー モーダル (ポップアップシート) -->
     <div id="puzzle-piece-picker-modal" class="modal-overlay" onclick="closePiecePickerMenuOnOverlay(event)">
         <div class="modal-content" style="max-height: 85vh; display: flex; flex-direction: column;">
@@ -4975,6 +4977,14 @@ window.closePiecePickerMenuOnOverlay = closePiecePickerMenuOnOverlay;
 function initPuzzlePalette() {
     renderPuzzlePalette();
     updatePieceSelectorBar();
+    const openBtn = document.getElementById('puzzle-open-picker-btn');
+    if (openBtn && !openBtn.dataset.pickerBound) {
+        openBtn.dataset.pickerBound = 'true';
+        openBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openPiecePickerMenu();
+        });
+    }
 }
 
 function calculateSnap(minute, type, duration, excludeId, currentItems) {
