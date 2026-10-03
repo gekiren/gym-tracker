@@ -1602,10 +1602,7 @@ function notifyModalState(show) {
 
 function sanitizeDate(dateStr) {
     if (!dateStr || typeof dateStr !== 'string') return null;
-    const cleaned = dateStr.replace(/\\\\//g, '-').trim();
-    if (/^\\\\d{4}-\\\\d{2}-\\\\d{2}$/.test(cleaned)) {
-        return cleaned;
-    }
+    const cleaned = dateStr.split('/').join('-').trim();
     const parts = cleaned.split('-');
     if (parts.length === 3) {
         const y = parts[0];
@@ -1634,6 +1631,9 @@ function init() {
         currentDateInput.value = y + '-' + m + '-' + d;
     }
     initTags();
+    if (typeof initPuzzle === 'function') {
+        initPuzzle();
+    }
     setContinuousMode(isContinuousMode);
     updateDefaultStartTime();
     renderLogs();
@@ -3762,7 +3762,11 @@ function handlePuzzleResetDay() {
     renderPuzzle();
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+let puzzleInitialized = false;
+function initPuzzle() {
+    if (puzzleInitialized) return;
+    puzzleInitialized = true;
+
     initPuzzleTimelineGrid();
     initPuzzlePalette();
 
@@ -3783,7 +3787,13 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
         switchMainViewMode(currentMainViewMode);
     }, 50);
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPuzzle);
+} else {
+    initPuzzle();
+}
 
 </script>
 </body>
