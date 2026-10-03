@@ -13,17 +13,21 @@ export interface OTAUpdateConfig {
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
   version: '2.3.0',
   title: {
-    ja: '🎙️ 音声AIアシスタント刷新（アクアボイス＆Gemini）',
-    en: '🎙️ Voice AI Assistant Revamped (Aqua Voice & Gemini)',
+    ja: '🧩 24時間ピースはめ込みタイムライン導入',
+    en: '🧩 24h Piece Puzzle Timeline Introduced',
   },
   notes: {
     ja: [
-      '音声AIアシスタントの仕組みを刷新しました。',
-      'アクアボイスの高精度文字起こしとGeminiの構造化解析により、話すだけで筋トレ・食事・水分・体調メモを自動記録できます。',
+      '24時間管理に「ピースはめ込みバーチカルタイムラインUI」を導入しました。',
+      '大(15分)/中(5分)/小(1分)スナップピースで、パズルのように時間をはめ込んで直感的に予定・実績を記録できます。',
+      '本体ドラッグで開始時刻の移動、下端ドラッグで長さの伸縮が可能です。',
+      'SNS・動画・ダラダラなどの浪費時間も客観データとしてワンタップで記録できるようになりました。',
     ],
     en: [
-      'Revamped Voice AI Assistant powered by Aqua Voice transcription & Gemini.',
-      'Log workouts, meals, water, and notes just by speaking with high-accuracy parsing.',
+      'Introduced Piece Puzzle Vertical Timeline for 24h Life Log.',
+      'Snap pieces with Large (15m), Medium (5m), Small (1m) & Drift pieces directly on the timeline.',
+      'Drag blocks to move time and drag bottom handles to resize duration.',
+      'Track drift time (SNS, videos) objectively with single-tap fills.',
     ],
   },
 };
