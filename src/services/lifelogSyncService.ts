@@ -258,6 +258,16 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
     }
 
     try {
+      const defaultSchedulesRow = await db.getFirstAsync<{ value: string }>(
+        "SELECT value FROM settings WHERE key = 'zikankanri_default_schedules'"
+      );
+      data['zikankanri_default_schedules'] = defaultSchedulesRow && defaultSchedulesRow.value ? JSON.parse(defaultSchedulesRow.value) : null;
+    } catch (e) {
+      console.warn('[getInitialDataForWebView] Failed to parse zikankanri_default_schedules:', e);
+      data['zikankanri_default_schedules'] = null;
+    }
+
+    try {
       const tagsRow = await db.getFirstAsync<{ value: string }>(
         "SELECT value FROM settings WHERE key = 'zikankanri_tags'"
       );
@@ -461,6 +471,13 @@ export const handleWebViewMessage = async (
     else if (key === 'zikankanri_templates') {
       await db.runAsync(
         "INSERT OR REPLACE INTO settings (key, value) VALUES ('zikankanri_templates', ?)",
+        [value]
+      );
+    } 
+    
+    else if (key === 'zikankanri_default_schedules') {
+      await db.runAsync(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES ('zikankanri_default_schedules', ?)",
         [value]
       );
     } 

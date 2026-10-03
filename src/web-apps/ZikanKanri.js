@@ -1197,6 +1197,79 @@ header {
   border-color: #8b5cf6;
   box-shadow: 0 2px 8px rgba(109, 40, 217, 0.4);
 }
+
+/* Default Schedule UI Styles */
+.def-sched-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.def-sched-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.def-sched-badge-day {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+.def-sched-badge-any {
+  background: rgba(139, 92, 246, 0.2);
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+}
+.day-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin: 6px 0;
+}
+.day-toggle-btn {
+  padding: 6px 2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+.day-toggle-btn.active {
+  background: #2563eb;
+  border-color: #60a5fa;
+  color: #ffffff;
+  font-weight: 700;
+}
+.day-toggle-btn.sunday.active {
+  background: #dc2626;
+  border-color: #f87171;
+}
+.day-toggle-btn.saturday.active {
+  background: #0284c7;
+  border-color: #38bdf8;
+}
+.quick-day-btn {
+  padding: 3px 6px;
+  font-size: 0.7rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.quick-day-btn:active {
+  background: rgba(255, 255, 255, 0.15);
+}
 </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1235,17 +1308,26 @@ header {
                     <h3 style="margin-bottom: 0;">24時間ピースタイムライン</h3>
                     <span id="puzzle-current-mode-badge" class="puzzle-mode-badge puzzle-mode-actual">⏱ 実績</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 6px;">
-                    <button type="button" id="puzzle-add-record-btn" class="btn btn-primary" style="width: auto; padding: 4px 10px; font-size: 0.78rem; margin-bottom: 0;" onclick="openTimelineBottomSheetForNew()">
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <button type="button" id="puzzle-add-record-btn" class="btn btn-primary" style="width: auto; padding: 4px 8px; font-size: 0.76rem; margin-bottom: 0;" onclick="openTimelineBottomSheetForNew()">
                         ＋ 記録
                     </button>
-                    <button type="button" id="puzzle-switch-mode-btn" class="btn btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.78rem; margin-bottom: 0;">
+                    <button type="button" id="puzzle-switch-mode-btn" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.76rem; margin-bottom: 0;">
                         予定に切替
                     </button>
-                    <button type="button" id="puzzle-reset-day-btn" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.78rem; margin-bottom: 0; color: var(--error-color);">
+                    <button type="button" id="puzzle-default-schedule-btn" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.76rem; margin-bottom: 0; color: #c4b5fd; border-color: #8b5cf6;" title="デフォルトスケジュール設定">
+                        📅 デフォルト
+                    </button>
+                    <button type="button" id="puzzle-reset-day-btn" class="btn btn-secondary" style="width: auto; padding: 4px 7px; font-size: 0.76rem; margin-bottom: 0; color: var(--error-color);">
                         クリア
                     </button>
                 </div>
+            </div>
+
+            <!-- デフォルトスケジュール情報バナー -->
+            <div id="default-sched-banner" style="display: none; margin-bottom: 10px; padding: 6px 12px; border-radius: 8px; background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.3); font-size: 0.76rem; align-items: center; justify-content: space-between;">
+                <span id="default-sched-banner-text" style="color: #c4b5fd;">⚡ デフォルト予定: </span>
+                <button type="button" id="default-sched-banner-apply-btn" class="btn btn-secondary" style="width: auto; padding: 2px 8px; font-size: 0.72rem; margin-bottom: 0; border-color: #8b5cf6; color: #c4b5fd;">再適用</button>
             </div>
 
             <!-- 時間ポートフォリオ（4分割） -->
@@ -1501,6 +1583,8 @@ header {
                         style="width:auto; font-size: 0.78rem; padding: 4px 8px; border-color: #2563EB; color: #93c5fd;">予定を保存</button>
                     <button type="button" id="save-template-btn" class="btn btn-secondary"
                         style="width:auto; font-size: 0.78rem; padding: 4px 8px;">実績を保存</button>
+                    <button type="button" id="classic-default-sched-btn" class="btn btn-secondary"
+                        style="width:auto; font-size: 0.78rem; padding: 4px 8px; border-color: #8b5cf6; color: #c4b5fd;">📅 デフォルト設定</button>
                 </div>
             </div>
             <div id="template-list" class="tags" style="margin-top: 10px;">
@@ -1695,7 +1779,10 @@ header {
                 <button type="button" id="tmpl-apply-actual-btn" class="btn btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
                     ⏱ 今日の「実績」として読み込む
                 </button>
-                <button type="button" id="tmpl-delete-btn" class="btn btn-secondary" style="color: var(--error-color); border-color: var(--error-color); margin-top: 10px;">
+                <button type="button" id="tmpl-save-as-default-btn" class="btn btn-secondary" style="border-color: #8b5cf6; color: #c4b5fd; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    ⭐ デフォルトスケジュールとして登録
+                </button>
+                <button type="button" id="tmpl-delete-btn" class="btn btn-secondary" style="color: var(--error-color); border-color: var(--error-color); margin-top: 6px;">
                     🗑 このテンプレートを削除
                 </button>
             </div>
@@ -1720,6 +1807,73 @@ header {
                 <button type="button" id="reset-all-btn" class="btn btn-secondary" style="border-color: var(--error-color); color: var(--error-color); margin-top: 6px;">
                     ⚠️ 実績・予定の両方を消去
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Default Schedule Modal -->
+    <div id="default-schedule-modal" class="modal-overlay">
+        <div class="modal-content" style="max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3>📅 デフォルトスケジュール設定</h3>
+                <span id="close-default-sched-modal-btn" style="cursor: pointer; font-size: 1.5rem; font-weight: bold; color: var(--text-secondary);">&times;</span>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; padding-right: 4px;">
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.4;">
+                    予定が未登録の日に自動スケジュールされます。<br>
+                    <span style="color: #93c5fd; font-weight: 600;">曜日指定</span>が最優先され、指定のない曜日は<span style="color: #c4b5fd; font-weight: 600;">曜日指定なし</span>が適用されます。
+                </p>
+
+                <!-- 新規作成フォーム（現在の日の予定から） -->
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">＋ 現在の予定から作成</span>
+                        <span id="def-sched-current-plan-count" style="font-size: 0.75rem; color: #93c5fd;"></span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <input type="text" id="def-sched-name-input" placeholder="スケジュール名 (例: 平日ルーティン, 休日)" style="font-size: 0.85rem; padding: 6px 10px;">
+
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; cursor: pointer; color: var(--text-primary); user-select: none;">
+                                <input type="checkbox" id="def-sched-no-day-check" style="cursor: pointer;">
+                                <span>曜日指定なし（全日共通・デフォルト）</span>
+                            </label>
+                        </div>
+
+                        <div id="def-sched-days-picker-box" style="margin-top: 4px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <span style="font-size: 0.75rem; color: var(--text-secondary);">適用する曜日を選択:</span>
+                                <div style="display: flex; gap: 4px;">
+                                    <button type="button" class="quick-day-btn" id="btn-quick-weekday">平日(月〜金)</button>
+                                    <button type="button" class="quick-day-btn" id="btn-quick-weekend">休日(土日)</button>
+                                    <button type="button" class="quick-day-btn" id="btn-quick-clear">クリア</button>
+                                </div>
+                            </div>
+                            <div class="day-selector-grid" id="def-sched-day-buttons">
+                                <button type="button" class="day-toggle-btn sunday" data-day="0">日</button>
+                                <button type="button" class="day-toggle-btn" data-day="1">月</button>
+                                <button type="button" class="day-toggle-btn" data-day="2">火</button>
+                                <button type="button" class="day-toggle-btn" data-day="3">水</button>
+                                <button type="button" class="day-toggle-btn" data-day="4">木</button>
+                                <button type="button" class="day-toggle-btn" data-day="5">金</button>
+                                <button type="button" class="day-toggle-btn saturday" data-day="6">土</button>
+                            </div>
+                        </div>
+
+                        <button type="button" id="save-def-sched-btn" class="btn btn-primary" style="margin-top: 6px; padding: 8px; font-size: 0.85rem;">
+                            💾 このスケジュールを登録
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 登録済みスケジュール一覧 -->
+                <div style="margin-top: 10px;">
+                    <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">登録済みスケジュール</h4>
+                    <div id="def-sched-list-container">
+                        <!-- Javascript will populate -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1779,6 +1933,22 @@ const resetActualOnlyBtn = document.getElementById('reset-actual-only-btn');
 const resetPlanOnlyBtn = document.getElementById('reset-plan-only-btn');
 const resetAllBtn = document.getElementById('reset-all-btn');
 
+// Default Schedule DOM Elements
+const puzzleDefaultScheduleBtn = document.getElementById('puzzle-default-schedule-btn');
+const classicDefaultSchedBtn = document.getElementById('classic-default-sched-btn');
+const defaultScheduleModal = document.getElementById('default-schedule-modal');
+const closeDefaultSchedModalBtn = document.getElementById('close-default-sched-modal-btn');
+const defSchedNameInput = document.getElementById('def-sched-name-input');
+const defSchedNoDayCheck = document.getElementById('def-sched-no-day-check');
+const defSchedDaysPickerBox = document.getElementById('def-sched-days-picker-box');
+const saveDefSchedBtn = document.getElementById('save-def-sched-btn');
+const defSchedListContainer = document.getElementById('def-sched-list-container');
+const defSchedCurrentPlanCount = document.getElementById('def-sched-current-plan-count');
+const defaultSchedBanner = document.getElementById('default-sched-banner');
+const defaultSchedBannerText = document.getElementById('default-sched-banner-text');
+const defaultSchedBannerApplyBtn = document.getElementById('default-sched-banner-apply-btn');
+const tmplSaveAsDefaultBtn = document.getElementById('tmpl-save-as-default-btn');
+
 // State
 const storage = window.appStorage || { getItem: function() { return null; }, setItem: function() {} };
 let isContinuousMode = JSON.parse(storage.getItem('zikankanri_continuous_mode')) || false;
@@ -1792,6 +1962,15 @@ let selectedTemplateId = null;
 let logs = JSON.parse(storage.getItem('zikankanri_logs')) || [];
 let plans = JSON.parse(storage.getItem('zikankanri_plans')) || [];
 let templates = JSON.parse(storage.getItem('zikankanri_templates')) || [];
+let defaultSchedules = (function() {
+    try {
+        const raw = storage.getItem('zikankanri_default_schedules');
+        return raw ? (JSON.parse(raw) || []) : [];
+    } catch (e) {
+        return [];
+    }
+})();
+let userClearedDates = {};
 
 // Puzzle State
 var puzzleInitialized = false;
@@ -1850,6 +2029,507 @@ function sanitizeDate(dateStr) {
     return null;
 }
 
+// ==========================================
+// デフォルトスケジュール機能 (Default Schedule)
+// ==========================================
+const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
+
+function saveDefaultSchedules() {
+    storage.setItem('zikankanri_default_schedules', JSON.stringify(defaultSchedules));
+}
+
+function getDayOfWeek(dateStr) {
+    if (!dateStr) return 0;
+    const parts = dateStr.replace(/-/g, '/').split('/').map(Number);
+    if (parts.length < 3 || isNaN(parts[0]) || isNaN(parts[1]) || isNaN(parts[2])) {
+        return new Date().getDay();
+    }
+    return new Date(parts[0], parts[1] - 1, parts[2]).getDay();
+}
+
+/**
+ * 対象日のデフォルトスケジュールを取得
+ * 優先度ルール:
+ * 1. 曜日指定があるもの（最優先）: 複数マッチ時は絞り込み度が高い（該当曜日数が少ない）ものを優先、同率なら最新
+ * 2. 曜日指定なし（全日共通・デフォルト）: 曜日指定がない場合のフォールバック
+ */
+function getDefaultScheduleForDate(dateStr) {
+    if (!defaultSchedules || defaultSchedules.length === 0) return null;
+    const dayOfWeek = getDayOfWeek(dateStr);
+
+    // 1. 曜日指定があるもの（最優先）
+    const dayMatches = defaultSchedules.filter(function(s) {
+        return Array.isArray(s.days) && s.days.length > 0 && s.days.indexOf(dayOfWeek) !== -1;
+    });
+
+    if (dayMatches.length > 0) {
+        dayMatches.sort(function(a, b) {
+            if (a.days.length !== b.days.length) {
+                return a.days.length - b.days.length; // 絞り込み度の高いもの（例: 月曜のみ > 平日）を優先
+            }
+            return (b.updatedAt || b.id || 0) - (a.updatedAt || a.id || 0);
+        });
+        return {
+            schedule: dayMatches[0],
+            matchType: 'day_specific',
+            dayOfWeek: dayOfWeek,
+            dayName: DAY_NAMES[dayOfWeek]
+        };
+    }
+
+    // 2. 曜日指定なし（全日共通・デフォルト）
+    const anyMatches = defaultSchedules.filter(function(s) {
+        return !s.days || !Array.isArray(s.days) || s.days.length === 0;
+    });
+
+    if (anyMatches.length > 0) {
+        anyMatches.sort(function(a, b) {
+            return (b.updatedAt || b.id || 0) - (a.updatedAt || a.id || 0);
+        });
+        return {
+            schedule: anyMatches[0],
+            matchType: 'any_day',
+            dayOfWeek: dayOfWeek,
+            dayName: DAY_NAMES[dayOfWeek]
+        };
+    }
+
+    return null;
+}
+
+/**
+ * 選択中日付にデフォルトスケジュールを適用
+ * @param {Object} options - { force: boolean }
+ */
+function applyDefaultScheduleForCurrentDate(options) {
+    options = options || {};
+    const force = !!options.force;
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+
+    // クリア直後の同一日かつ自動適用の場合はスキップ
+    if (!force && userClearedDates[selectedDate]) {
+        updateDefaultSchedBanner();
+        return false;
+    }
+
+    const existingPlans = plans.filter(function(p) { return p.date === selectedDate; });
+    // 自動モード（force=false）の場合、すでに予定があれば既存データを保護してスキップ
+    if (!force && existingPlans.length > 0) {
+        updateDefaultSchedBanner();
+        return false;
+    }
+
+    const match = getDefaultScheduleForDate(selectedDate);
+    if (!match || !match.schedule || !Array.isArray(match.schedule.data) || match.schedule.data.length === 0) {
+        if (force) {
+            alert('適用できるデフォルトスケジュールがありません。先に設定してください。');
+        }
+        updateDefaultSchedBanner();
+        return false;
+    }
+
+    if (force && existingPlans.length > 0) {
+        const confirmMsg = '「' + match.schedule.name + '」を適用しますか？\n（現在の' + existingPlans.length + '件の予定は置き換えられます）';
+        if (!confirm(confirmMsg)) {
+            return false;
+        }
+    }
+
+    // 新規予定アイテム作成
+    const newItems = match.schedule.data.map(function(item) {
+        return {
+            ...item,
+            id: Date.now() + Math.random(),
+            date: selectedDate
+        };
+    });
+
+    plans = plans.filter(function(p) { return p.date !== selectedDate; }).concat(newItems);
+    savePlans();
+    renderPlans();
+    if (typeof renderPuzzle === 'function') renderPuzzle();
+    renderSummary();
+    updateDefaultSchedBanner();
+
+    if (force) {
+        alert('デフォルトスケジュール「' + match.schedule.name + '」を適用しました。');
+    }
+    return true;
+}
+
+/**
+ * タイムライン上部のデフォルトスケジュール情報バナー更新
+ */
+function updateDefaultSchedBanner() {
+    if (!defaultSchedBanner || !defaultSchedBannerText) return;
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const match = getDefaultScheduleForDate(selectedDate);
+    const existingPlans = plans.filter(function(p) { return p.date === selectedDate; });
+
+    if (match && match.schedule) {
+        const typeBadge = (match.matchType === 'day_specific')
+            ? ('[' + match.dayName + '曜指定]')
+            : '[全日共通]';
+        
+        const count = match.schedule.data ? match.schedule.data.length : 0;
+        const statusText = (existingPlans.length > 0)
+            ? '✓ 適用中: <strong>' + match.schedule.name + '</strong>'
+            : '💡 デフォルト予定: <strong>' + match.schedule.name + '</strong>';
+
+        defaultSchedBannerText.innerHTML = statusText + ' <span style="font-size:0.7rem; opacity:0.85;">' + typeBadge + '</span> (' + count + '件)';
+        defaultSchedBanner.style.display = 'flex';
+    } else {
+        defaultSchedBanner.style.display = 'none';
+    }
+}
+
+function openDefaultScheduleModal() {
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const currentDayPlans = plans.filter(function(p) { return p.date === selectedDate; });
+
+    if (defSchedCurrentPlanCount) {
+        defSchedCurrentPlanCount.textContent = '今日(' + selectedDate + ')の予定: ' + currentDayPlans.length + '件';
+    }
+    if (defSchedNameInput) {
+        defSchedNameInput.value = '';
+    }
+    if (defSchedNoDayCheck) {
+        defSchedNoDayCheck.checked = false;
+        if (defSchedDaysPickerBox) defSchedDaysPickerBox.style.opacity = '1';
+    }
+    resetDayButtons();
+    const todayDayOfWeek = getDayOfWeek(selectedDate);
+    setDayButtonSelected(todayDayOfWeek, true);
+
+    renderDefaultScheduleList();
+    if (defaultScheduleModal) {
+        defaultScheduleModal.classList.add('active');
+        notifyModalState(true);
+    }
+}
+
+function closeDefaultScheduleModal() {
+    if (defaultScheduleModal) {
+        defaultScheduleModal.classList.remove('active');
+        notifyModalState(false);
+    }
+}
+
+function resetDayButtons() {
+    const btns = document.querySelectorAll('#def-sched-day-buttons .day-toggle-btn');
+    btns.forEach(function(b) { b.classList.remove('active'); });
+}
+
+function setDayButtonSelected(dayNum, isSelected) {
+    const btn = document.querySelector('#def-sched-day-buttons .day-toggle-btn[data-day="' + dayNum + '"]');
+    if (btn) {
+        if (isSelected) btn.classList.add('active');
+        else btn.classList.remove('active');
+    }
+}
+
+function getSelectedDays() {
+    const isNoDay = defSchedNoDayCheck && defSchedNoDayCheck.checked;
+    if (isNoDay) return [];
+
+    const activeBtns = document.querySelectorAll('#def-sched-day-buttons .day-toggle-btn.active');
+    const days = [];
+    activeBtns.forEach(function(b) {
+        days.push(parseInt(b.getAttribute('data-day'), 10));
+    });
+    return days.sort(function(a, b) { return a - b; });
+}
+
+window.selectDefaultSchedQuickDays = function(type) {
+    if (defSchedNoDayCheck) {
+        defSchedNoDayCheck.checked = false;
+        if (defSchedDaysPickerBox) defSchedDaysPickerBox.style.opacity = '1';
+    }
+    resetDayButtons();
+    if (type === 'weekday') {
+        [1, 2, 3, 4, 5].forEach(function(d) { setDayButtonSelected(d, true); });
+    } else if (type === 'weekend') {
+        [0, 6].forEach(function(d) { setDayButtonSelected(d, true); });
+    }
+};
+
+function initDayButtonEvents() {
+    const btns = document.querySelectorAll('#def-sched-day-buttons .day-toggle-btn');
+    btns.forEach(function(b) {
+        b.onclick = function() {
+            if (defSchedNoDayCheck && defSchedNoDayCheck.checked) {
+                defSchedNoDayCheck.checked = false;
+                if (defSchedDaysPickerBox) defSchedDaysPickerBox.style.opacity = '1';
+            }
+            b.classList.toggle('active');
+        };
+    });
+
+    const quickWeekdayBtn = document.getElementById('btn-quick-weekday');
+    if (quickWeekdayBtn) {
+        quickWeekdayBtn.onclick = function() { selectDefaultSchedQuickDays('weekday'); };
+    }
+    const quickWeekendBtn = document.getElementById('btn-quick-weekend');
+    if (quickWeekendBtn) {
+        quickWeekendBtn.onclick = function() { selectDefaultSchedQuickDays('weekend'); };
+    }
+    const quickClearBtn = document.getElementById('btn-quick-clear');
+    if (quickClearBtn) {
+        quickClearBtn.onclick = function() { selectDefaultSchedQuickDays('clear'); };
+    }
+
+    if (defSchedNoDayCheck) {
+        defSchedNoDayCheck.onchange = function() {
+            if (defSchedNoDayCheck.checked) {
+                resetDayButtons();
+                if (defSchedDaysPickerBox) defSchedDaysPickerBox.style.opacity = '0.35';
+            } else {
+                if (defSchedDaysPickerBox) defSchedDaysPickerBox.style.opacity = '1';
+            }
+        };
+    }
+}
+
+function renderDefaultScheduleList() {
+    if (!defSchedListContainer) return;
+    defSchedListContainer.innerHTML = '';
+
+    if (!defaultSchedules || defaultSchedules.length === 0) {
+        defSchedListContainer.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.82rem; padding: 12px; text-align: center;">登録されているデフォルトスケジュールはありません</div>';
+        return;
+    }
+
+    defaultSchedules.forEach(function(sched) {
+        const card = document.createElement('div');
+        card.className = 'def-sched-card';
+
+        const hasDays = Array.isArray(sched.days) && sched.days.length > 0;
+        let daysBadgeHtml = '';
+        if (hasDays) {
+            const dayLabels = sched.days.slice().sort(function(a, b) { return a - b; }).map(function(d) { return DAY_NAMES[d]; }).join('・');
+            daysBadgeHtml = '<span class="def-sched-badge def-sched-badge-day">曜日指定: ' + dayLabels + '</span>';
+        } else {
+            daysBadgeHtml = '<span class="def-sched-badge def-sched-badge-any">全日共通（デフォルト）</span>';
+        }
+
+        const count = sched.data ? sched.data.length : 0;
+
+        card.innerHTML =
+            '<div style="display: flex; justify-content: space-between; align-items: flex-start;">' +
+                '<div>' +
+                    '<div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 4px;">' + sched.name + '</div>' +
+                    '<div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">' +
+                        daysBadgeHtml +
+                        '<span style="font-size: 0.72rem; color: var(--text-secondary);">' + count + '件の予定</span>' +
+                    '</div>' +
+                '</div>' +
+                '<button type="button" class="btn btn-secondary" style="width: auto; padding: 3px 8px; font-size: 0.74rem; color: var(--error-color); border-color: rgba(239, 68, 68, 0.4); margin-bottom: 0;" data-del-id="' + sched.id + '">削除</button>' +
+            '</div>' +
+            '<div style="display: flex; gap: 6px; margin-top: 6px;">' +
+                '<button type="button" class="btn btn-secondary" style="flex: 1; padding: 5px 8px; font-size: 0.76rem; border-color: #8b5cf6; color: #c4b5fd; margin-bottom: 0;" data-apply-id="' + sched.id + '">⚡ 今日の予定に適用</button>' +
+                '<button type="button" class="btn btn-secondary" style="width: auto; padding: 5px 10px; font-size: 0.76rem; margin-bottom: 0;" data-edit-days-id="' + sched.id + '">曜日変更</button>' +
+            '</div>';
+
+        // 削除ボタン
+        const delBtn = card.querySelector('[data-del-id]');
+        if (delBtn) {
+            delBtn.onclick = function() {
+                if (confirm('デフォルトスケジュール「' + sched.name + '」を削除しますか？')) {
+                    defaultSchedules = defaultSchedules.filter(function(s) { return s.id !== sched.id; });
+                    saveDefaultSchedules();
+                    renderDefaultScheduleList();
+                    updateDefaultSchedBanner();
+                }
+            };
+        }
+
+        // 適用ボタン
+        const applyBtn = card.querySelector('[data-apply-id]');
+        if (applyBtn) {
+            applyBtn.onclick = function() {
+                applySpecificSchedule(sched.id);
+            };
+        }
+
+        // 曜日変更ボタン
+        const editDaysBtn = card.querySelector('[data-edit-days-id]');
+        if (editDaysBtn) {
+            editDaysBtn.onclick = function() {
+                promptEditScheduleDays(sched.id);
+            };
+        }
+
+        defSchedListContainer.appendChild(card);
+    });
+}
+
+function applySpecificSchedule(schedId) {
+    const sched = defaultSchedules.find(function(s) { return s.id === schedId; });
+    if (!sched || !sched.data || sched.data.length === 0) return;
+
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const existingPlans = plans.filter(function(p) { return p.date === selectedDate; });
+
+    if (existingPlans.length > 0) {
+        if (!confirm('「' + sched.name + '」を適用しますか？\n（現在の' + existingPlans.length + '件の予定は置き換えられます）')) {
+            return;
+        }
+    }
+
+    const newItems = sched.data.map(function(item) {
+        return {
+            ...item,
+            id: Date.now() + Math.random(),
+            date: selectedDate
+        };
+    });
+
+    plans = plans.filter(function(p) { return p.date !== selectedDate; }).concat(newItems);
+    savePlans();
+    renderPlans();
+    if (typeof renderPuzzle === 'function') renderPuzzle();
+    renderSummary();
+    updateDefaultSchedBanner();
+    closeDefaultScheduleModal();
+    alert('「' + sched.name + '」を適用しました。');
+}
+
+function promptEditScheduleDays(schedId) {
+    const sched = defaultSchedules.find(function(s) { return s.id === schedId; });
+    if (!sched) return;
+
+    const curDaysStr = (Array.isArray(sched.days) && sched.days.length > 0)
+        ? sched.days.join(',')
+        : 'none';
+
+    const input = prompt(
+        '「' + sched.name + '」の適用曜日を設定してください:\n' +
+        '0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土\n' +
+        '（カンマ区切りで入力。例: 1,2,3,4,5 / 曜日指定なしは none と入力）',
+        curDaysStr
+    );
+
+    if (input !== null) {
+        const trimmed = input.trim().toLowerCase();
+        if (trimmed === 'none' || trimmed === '' || trimmed === '空') {
+            sched.days = [];
+        } else {
+            const parsedDays = trimmed.split(',')
+                .map(function(x) { return parseInt(x.trim(), 10); })
+                .filter(function(x) { return !isNaN(x) && x >= 0 && x <= 6; });
+            sched.days = Array.from(new Set(parsedDays)).sort(function(a, b) { return a - b; });
+        }
+        sched.updatedAt = Date.now();
+        saveDefaultSchedules();
+        renderDefaultScheduleList();
+        updateDefaultSchedBanner();
+    }
+}
+
+function saveNewDefaultScheduleFromPlans(sourcePlans, defaultName, days) {
+    if (!sourcePlans || sourcePlans.length === 0) {
+        alert('保存する予定がありません。');
+        return false;
+    }
+    const name = defaultName || (defSchedNameInput ? defSchedNameInput.value.trim() : '');
+    if (!name) {
+        alert('スケジュール名を入力してください。');
+        return false;
+    }
+
+    const selectedDays = (days !== undefined) ? days : getSelectedDays();
+
+    const cleanData = sourcePlans.map(function(p) {
+        return {
+            start: p.start,
+            end: p.end,
+            category: p.category || '',
+            items: (p.items || []).map(function(i) {
+                return {
+                    name: i.name || '',
+                    percent: i.percent,
+                    weight: i.weight
+                };
+            }),
+            memo: p.memo || ''
+        };
+    });
+
+    const newSched = {
+        id: Date.now(),
+        name: name,
+        days: selectedDays,
+        data: cleanData,
+        updatedAt: Date.now()
+    };
+
+    defaultSchedules.push(newSched);
+    saveDefaultSchedules();
+    renderDefaultScheduleList();
+    updateDefaultSchedBanner();
+
+    alert('デフォルトスケジュール「' + name + '」を登録しました！');
+    if (defSchedNameInput) defSchedNameInput.value = '';
+    return true;
+}
+
+function initDefaultScheduleUI() {
+    initDayButtonEvents();
+
+    if (puzzleDefaultScheduleBtn) {
+        puzzleDefaultScheduleBtn.onclick = openDefaultScheduleModal;
+    }
+    if (classicDefaultSchedBtn) {
+        classicDefaultSchedBtn.onclick = openDefaultScheduleModal;
+    }
+    if (closeDefaultSchedModalBtn) {
+        closeDefaultSchedModalBtn.onclick = closeDefaultScheduleModal;
+    }
+    if (defaultScheduleModal) {
+        defaultScheduleModal.addEventListener('click', function(e) {
+            if (e.target === defaultScheduleModal) closeDefaultScheduleModal();
+        });
+    }
+    if (defaultSchedBannerApplyBtn) {
+        defaultSchedBannerApplyBtn.onclick = function() {
+            applyDefaultScheduleForCurrentDate({ force: true });
+        };
+    }
+    if (saveDefSchedBtn) {
+        saveDefSchedBtn.onclick = function() {
+            const selectedDate = currentDateInput.value.replace(/-/g, '/');
+            const currentPlans = plans.filter(function(p) { return p.date === selectedDate; });
+            if (currentPlans.length === 0) {
+                alert('今日の予定がありません。タイムラインで予定を作成してから登録してください。');
+                return;
+            }
+            saveNewDefaultScheduleFromPlans(currentPlans);
+        };
+    }
+    if (tmplSaveAsDefaultBtn) {
+        tmplSaveAsDefaultBtn.addEventListener('click', function() {
+            if (!selectedTemplateId) return;
+            const tmpl = templates.find(function(t) { return t.id == selectedTemplateId; });
+            if (!tmpl) return;
+
+            templateActionModal.classList.remove('active');
+            notifyModalState(false);
+
+            openDefaultScheduleModal();
+            if (defSchedNameInput) defSchedNameInput.value = tmpl.name;
+            if (saveDefSchedBtn) {
+                const originalOnclick = saveDefSchedBtn.onclick;
+                saveDefSchedBtn.onclick = function() {
+                    const ok = saveNewDefaultScheduleFromPlans(tmpl.data);
+                    if (ok) {
+                        saveDefSchedBtn.onclick = originalOnclick;
+                    }
+                };
+            }
+        });
+    }
+}
+
 function init() {
     let dateVal = sanitizeDate(window.__TARGET_DATE__);
     if (dateVal) {
@@ -1862,26 +2542,34 @@ function init() {
         currentDateInput.value = y + '-' + m + '-' + d;
     }
     initTags();
+    initDefaultScheduleUI();
     if (typeof initPuzzle === 'function') {
         initPuzzle();
     }
     setContinuousMode(isContinuousMode);
     updateDefaultStartTime();
     renderLogs();
+
+    // デフォルトスケジュールの自動適用チェック（予定が0件の未設定日の場合）
+    applyDefaultScheduleForCurrentDate({ force: false });
+
     renderPlans();
     renderTemplates();
     renderSummary();
+    updateDefaultSchedBanner();
     registerSW();
 }
 
 // Application initialization (init and initPuzzle) is executed at the very end of the script
 
-
 currentDateInput.addEventListener('change', function() {
     updateDefaultStartTime();
     renderLogs();
+    // 日付変更時のデフォルトスケジュール自動適用チェック
+    applyDefaultScheduleForCurrentDate({ force: false });
     renderPlans();
     renderSummary();
+    updateDefaultSchedBanner();
     notifyDateChanged();
 });
 
@@ -2663,10 +3351,12 @@ resetActualOnlyBtn.addEventListener('click', function() {
 
 resetPlanOnlyBtn.addEventListener('click', function() {
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    userClearedDates[selectedDate] = true;
     plans = plans.filter(function(p) { return p.date !== selectedDate; });
     savePlans();
     renderPlans();
     renderSummary();
+    if (typeof updateDefaultSchedBanner === 'function') updateDefaultSchedBanner();
     resetChoiceModal.classList.remove('active');
     notifyModalState(false);
     resetForm();
@@ -2674,6 +3364,7 @@ resetPlanOnlyBtn.addEventListener('click', function() {
 
 resetAllBtn.addEventListener('click', function() {
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    userClearedDates[selectedDate] = true;
     logs = logs.filter(function(log) { return log.date !== selectedDate; });
     plans = plans.filter(function(p) { return p.date !== selectedDate; });
     saveLogs();
@@ -2681,6 +3372,7 @@ resetAllBtn.addEventListener('click', function() {
     renderLogs();
     renderPlans();
     renderSummary();
+    if (typeof updateDefaultSchedBanner === 'function') updateDefaultSchedBanner();
     resetChoiceModal.classList.remove('active');
     notifyModalState(false);
     resetForm();
@@ -4402,6 +5094,7 @@ function handlePuzzleResetDay() {
     }
 
     if (isPlan) {
+        userClearedDates[selectedDate] = true;
         plans = plans.filter(function(p) { return p.date !== selectedDate; });
         savePlans();
         renderPlans();
@@ -4413,6 +5106,7 @@ function handlePuzzleResetDay() {
 
     renderSummary();
     renderPuzzle();
+    if (typeof updateDefaultSchedBanner === 'function') updateDefaultSchedBanner();
 }
 
 function initPuzzle() {
