@@ -11,21 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.5',
+  version: '2.3.6',
   title: {
-    ja: '🧩 24時間管理 タイムライン＆フォーム統合（ボトムシート連動）',
-    en: '🧩 24h Timeline & Form Integration with Bottom Sheet Drawer',
+    ja: '🛡️ データベース整合性自動修復＆バックアップ保護機能の強化',
+    en: '🛡️ Database Auto-Repair, Table Rescue & Backup Protection',
   },
   notes: {
     ja: [
-      'タイムライン上のブロックをタップして、メモ追記・時間微調整・活動名変更・削除ができる編集ボトムシートを追加しました。',
-      'タイムラインの空き時間をタップ、または「＋記録」ボタンから、指定時刻ですぐに開く新規記録シートを新設しました。',
-      'ブロックの移動・伸縮時の誤タップ防止ガードを搭載し、タイムライン中心の快適な操作性を実現しました。',
+      'SQLiteインデックス破損の自動再構築（REINDEX）およびテーブル別データ救出再構築エンジンを搭載しました。',
+      '破損DBによるバックアップ上書き汚染を防止するセーフティガードを追加しました。',
+      '健全な過去バックアップの自動探索復元および多段階自己修復により、データの保全性と安定性を大幅に向上させました。',
     ],
     en: [
-      'Tapping a timeline block opens a bottom sheet drawer to edit notes, time, activity tags, or delete.',
-      'Tapping empty slots or the "+ Record" button opens a quick creation sheet pre-filled with that time.',
-      'Added tap protection during drag/resize, delivering an intuitive timeline-first experience.',
+      'Implemented automatic SQLite index rebuilding (REINDEX) and table-by-table data rescue engine.',
+      'Added safety guards to prevent corrupted databases from overwriting valid backups.',
+      'Enhanced database integrity with multi-stage self-healing and automatic healthy backup recovery.',
     ],
   },
 };
