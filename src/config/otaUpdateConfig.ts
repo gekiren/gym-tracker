@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.13',
+  version: '2.3.14',
   title: {
-    ja: '🧩 24時間管理：ピース選択メニューの表示改善',
-    en: '🧩 24h Timeline: Piece Menu Display Fix',
+    ja: '🧩 24時間管理：タイムラインUIのスリム化',
+    en: '🧩 24h Timeline: Simplified Timeline UI',
   },
   notes: {
     ja: [
-      '「🧩 ピースを選択する」ボタンをタップした際にメニューが確実に開くよう、画面構造とイベント処理を最適化しました。',
-      'ピース管理モーダルおよびタグ設定の表示安定性を向上させました。',
+      'タイムライン下部に配置されていた固定スケジュール用の「平日の基本型を一括配置」ボタンを削除し、UIをすっきりと整理しました。',
+      'ご自身で登録したテンプレートやデフォルトスケジュールをより快適に活用いただけます。',
     ],
     en: [
-      'Resolved an issue where tapping the piece selector button did not open the menu sheet.',
-      'Improved modal display stability for piece and tag settings dialogs.',
+      'Removed the static weekday template quick-fill button to streamline the timeline layout.',
+      'Enjoy a cleaner workspace optimized for your custom templates and default routines.',
     ],
   },
 };

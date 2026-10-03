@@ -1538,14 +1538,11 @@ input:checked + .holiday-switch-slider:before {
                 </div>
             </div>
 
-            <!-- クイックアクションバー -->
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+            <!-- タイムライン操作ヒント -->
+            <div style="text-align: center; margin-top: 12px; padding: 4px 0;">
                 <span style="font-size: 0.75rem; color: var(--text-secondary);">
-                    💡 空白時間をタップして「📱 SNS」を選べば事後でも一瞬で記録完了
+                    💡 空白時間をタップすると、ピースを選んですぐに記録できます
                 </span>
-                <button type="button" id="puzzle-quick-fill-btn" class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 0.8rem; margin-bottom: 0; border-color: #6d28d9; color: #c4b5fd;">
-                    🪄 平日の基本型を一括配置
-                </button>
             </div>
         </section>
 
@@ -5711,54 +5708,6 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
     }
 }
 
-function handlePuzzleQuickFill() {
-    const selectedDate = currentDateInput.value.replace(/-/g, '/');
-    const isPlan = (currentInputMode === 'plan');
-    const modeName = isPlan ? '予定' : '実績';
-
-    if (!confirm('今日の' + modeName + 'に「平日の基本型（睡眠・仕事・筋トレ・食事・入浴等）」を一括配置しますか？\\n（※既存の同日の' + modeName + 'は上書きされます）')) {
-        return;
-    }
-
-    const defaultBlocks = [
-        { name: '睡眠', start: '00:00', end: '07:00' },
-        { name: '歯磨き', start: '07:00', end: '07:03' },
-        { name: '食事', start: '07:15', end: '07:45' },
-        { name: '仕事', start: '09:00', end: '17:00' },
-        { name: '筋トレ', start: '18:00', end: '19:00' },
-        { name: '食事', start: '19:15', end: '20:00' },
-        { name: '入浴', start: '20:30', end: '21:00' },
-        { name: 'ストレッチ', start: '21:00', end: '21:10' },
-        { name: '睡眠', start: '23:00', end: '24:00' }
-    ];
-
-    const newEntries = defaultBlocks.map(function(b, idx) {
-        return {
-            id: Date.now() + idx,
-            date: selectedDate,
-            start: b.start === '24:00' ? '23:59' : b.start,
-            end: b.end === '24:00' ? '23:59' : b.end,
-            items: [{ name: b.name, percent: 100 }],
-            memo: ''
-        };
-    });
-
-    if (isPlan) {
-        plans = plans.filter(function(p) { return p.date !== selectedDate; }).concat(newEntries);
-        savePlans();
-        renderPlans();
-    } else {
-        logs = logs.filter(function(l) { return l.date !== selectedDate; }).concat(newEntries);
-        saveLogs();
-        renderLogs();
-    }
-
-    renderSummary();
-    renderPuzzle();
-
-    const scrollArea = document.getElementById('puzzle-timeline-scroll');
-    if (scrollArea) scrollArea.scrollTop = 380;
-}
 
 function handlePuzzleResetDay() {
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
@@ -5792,9 +5741,6 @@ function initPuzzle() {
     initPuzzleTimelineGrid();
     initPuzzlePalette();
     initTimelineBottomSheet();
-
-    const quickFillBtn = document.getElementById('puzzle-quick-fill-btn');
-    if (quickFillBtn) quickFillBtn.addEventListener('click', handlePuzzleQuickFill);
 
     const resetDayBtn = document.getElementById('puzzle-reset-day-btn');
     if (resetDayBtn) resetDayBtn.addEventListener('click', handlePuzzleResetDay);
