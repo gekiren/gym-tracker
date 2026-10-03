@@ -17,6 +17,19 @@ export default `<!DOCTYPE html>
         }));
       }
     } catch (e) {}
+
+    // 画面上部への赤バナー表示（実機デバッグ・フェイルセーフ用）
+    try {
+      var errDiv = document.getElementById('wv-runtime-error-banner');
+      if (!errDiv) {
+        errDiv = document.createElement('div');
+        errDiv.id = 'wv-runtime-error-banner';
+        errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#dc2626;color:#ffffff;padding:8px 12px;font-size:0.75rem;z-index:99999;word-break:break-all;box-shadow:0 2px 8px rgba(0,0,0,0.5);font-family:monospace;';
+        document.body ? document.body.appendChild(errDiv) : document.documentElement.appendChild(errDiv);
+      }
+      errDiv.textContent = '⚠️ JSエラー: ' + message + ' (' + lineno + ':' + colno + ')';
+    } catch (bannerErr) {}
+
     return false;
   };
 
@@ -687,6 +700,381 @@ textarea:focus {
 header {
   display: none !important;
 }
+
+/* ==========================================================================
+   Piece Puzzle Timeline Styles (24h Vertical Drag & Resize)
+   ========================================================================== */
+.view-mode-toggle-group {
+  display: flex;
+  background-color: var(--surface-color);
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 16px;
+  gap: 4px;
+}
+
+.view-mode-btn {
+  flex: 1;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.view-mode-btn.active {
+  background: #6d28d9;
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(109, 40, 217, 0.4);
+}
+
+.puzzle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.puzzle-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.puzzle-mode-actual {
+  background: rgba(109, 40, 217, 0.2);
+  color: #c4b5fd;
+  border: 1px solid rgba(109, 40, 217, 0.4);
+}
+
+.puzzle-mode-plan {
+  background: rgba(37, 99, 235, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(37, 99, 235, 0.4);
+}
+
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+@media (min-width: 480px) {
+  .portfolio-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.portfolio-card {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+}
+
+.portfolio-card.invest {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+.portfolio-card.invest .val { color: #fbbf24; }
+
+.portfolio-card.maintain {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+.portfolio-card.maintain .val { color: #60a5fa; }
+
+.portfolio-card.drift {
+  background: rgba(168, 85, 247, 0.1);
+  border-color: rgba(168, 85, 247, 0.3);
+}
+.portfolio-card.drift .val { color: #c084fc; }
+
+.portfolio-card.free {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: #333;
+}
+.portfolio-card.free .val { color: #FFFFFF; }
+
+.portfolio-card .title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.portfolio-card .val {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 2px 0;
+  font-family: monospace;
+}
+
+.portfolio-card .desc {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+}
+
+.puzzle-palette-container {
+  background: #181818;
+  border: 1px solid #2d2d2d;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.palette-category {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.palette-category-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.palette-pieces-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.piece-btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid #333;
+  background: #242424;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.piece-btn:hover {
+  background: #333;
+}
+
+.piece-btn.active-selected {
+  outline: 2px solid #6d28d9;
+  background: rgba(109, 40, 217, 0.25) !important;
+  border-color: #8b5cf6 !important;
+}
+
+.piece-btn.large-piece {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.12);
+  color: #fde68a;
+}
+
+.piece-btn.medium-piece {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.12);
+  color: #bfdbfe;
+}
+
+.piece-btn.small-piece {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.12);
+  color: #a7f3d0;
+}
+
+.piece-btn.drift-piece {
+  border-color: rgba(168, 85, 247, 0.4);
+  background: rgba(168, 85, 247, 0.15);
+  color: #e9d5ff;
+}
+
+.timeline-outer-frame {
+  border: 1px solid #333;
+  border-radius: 12px;
+  background: #141414;
+  overflow: hidden;
+  height: 520px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+}
+
+.timeline-scroll-area {
+  overflow-y: auto;
+  flex: 1;
+  position: relative;
+  user-select: none;
+}
+
+.timeline-hour-row {
+  height: 60px;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.timeline-hour-label {
+  width: 54px;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding: 4px 6px 0 8px;
+  border-right: 1px solid #2a2a2a;
+  flex-shrink: 0;
+}
+
+.timeline-hour-slot {
+  flex: 1;
+  height: 100%;
+  position: relative;
+  cursor: pointer;
+}
+
+.timeline-hour-slot:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.timeline-quarter-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  border-top: 1px dotted rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+}
+
+.timeline-blocks-layer {
+  position: absolute;
+  top: 0;
+  left: 54px;
+  right: 6px;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.timeline-block {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  border-radius: 8px;
+  padding: 4px 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  touch-action: none;
+  pointer-events: auto;
+  cursor: grab;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: box-shadow 0.15s ease;
+}
+
+.timeline-block:active {
+  cursor: grabbing;
+}
+
+.timeline-block.is-dragging {
+  opacity: 0.85;
+  transform: scale(1.01);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+  z-index: 50 !important;
+}
+
+.timeline-block.is-resizing {
+  opacity: 0.9;
+  z-index: 50 !important;
+}
+
+.timeline-block.theme-amber {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #fef3c7;
+}
+
+.timeline-block.theme-blue {
+  background: rgba(59, 130, 246, 0.22);
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #dbeafe;
+}
+
+.timeline-block.theme-purple {
+  background: rgba(168, 85, 247, 0.25);
+  border-color: rgba(168, 85, 247, 0.55);
+  color: #f3e8ff;
+}
+
+.timeline-block.theme-emerald {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #d1fae5;
+}
+
+.timeline-resize-handle {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 12px;
+  cursor: ns-resize;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  touch-action: none;
+}
+
+.timeline-resize-handle::after {
+  content: '';
+  width: 28px;
+  height: 3px;
+  background: currentColor;
+  opacity: 0.4;
+  border-radius: 2px;
+}
+
+.drag-feedback-tooltip {
+  position: sticky;
+  top: 6px;
+  right: 6px;
+  align-self: flex-end;
+  background: #6d28d9;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-family: monospace;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  z-index: 60;
+  pointer-events: none;
+}
 </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -705,6 +1093,190 @@ header {
     </header>
 
     <div class="container">
+        <!-- Main View Mode Toggle -->
+        <div class="view-mode-toggle-group">
+            <button type="button" id="view-mode-puzzle-btn" class="view-mode-btn active" onclick="switchMainViewMode('puzzle')">
+                🧩 ピースパズル
+            </button>
+            <button type="button" id="view-mode-classic-btn" class="view-mode-btn" onclick="switchMainViewMode('classic')">
+                📋 フォーム＆リスト
+            </button>
+        </div>
+
+        <!-- Piece Puzzle Section -->
+        <section class="card" id="puzzle-section">
+            <div class="puzzle-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <h3 style="margin-bottom: 0;">24時間ピースタイムライン</h3>
+                    <span id="puzzle-current-mode-badge" class="puzzle-mode-badge puzzle-mode-actual">⏱ 実績</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" id="puzzle-switch-mode-btn" class="btn btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.78rem; margin-bottom: 0;">
+                        予定に切替
+                    </button>
+                    <button type="button" id="puzzle-reset-day-btn" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.78rem; margin-bottom: 0; color: var(--error-color);">
+                        クリア
+                    </button>
+                </div>
+            </div>
+
+            <!-- 時間ポートフォリオ（4分割） -->
+            <div class="portfolio-grid">
+                <div class="portfolio-card invest">
+                    <span class="title">🟢 投資・活動</span>
+                    <span id="portfolio-invest-val" class="val">0.0h</span>
+                    <span class="desc">仕事 / 学習 / 筋トレ</span>
+                </div>
+                <div class="portfolio-card maintain">
+                    <span class="title">🔵 維持・ケア</span>
+                    <span id="portfolio-maintain-val" class="val">0.0h</span>
+                    <span class="desc">睡眠 / 食事 / 風呂 / 歯磨き</span>
+                </div>
+                <div class="portfolio-card drift">
+                    <span class="title">🟣 漂流・オフ</span>
+                    <span id="portfolio-drift-val" class="val">0.0h</span>
+                    <span class="desc">SNS / 動画 / ダラダラ</span>
+                </div>
+                <div class="portfolio-card free">
+                    <span class="title">⚪ 未記録（余白）</span>
+                    <span id="portfolio-free-val" class="val">24.0h</span>
+                    <span class="desc">自由時間・バッファ</span>
+                </div>
+            </div>
+
+            <!-- ピース選択パレット -->
+            <div class="puzzle-palette-container">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">
+                        はめ込むピースを選択: <b id="puzzle-selected-piece-name" style="color: #c4b5fd;">なし</b>
+                    </span>
+                    <span style="font-size: 0.68rem; color: var(--text-secondary); opacity: 0.7;">
+                        ※選択後に下の空き時間をタップ
+                    </span>
+                </div>
+
+                <!-- 大ピース -->
+                <div class="palette-category">
+                    <div class="palette-category-label" style="color: #fbbf24;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #fbbf24; display: inline-block;"></span>
+                        大ピース（15分吸着 / 伸縮）
+                    </div>
+                    <div class="palette-pieces-row">
+                        <button type="button" class="piece-btn large-piece" data-name="睡眠" data-type="large" data-category="maintain" data-duration="480" data-snap="15" data-color="blue">
+                            🛌 睡眠 (8h)
+                        </button>
+                        <button type="button" class="piece-btn large-piece" data-name="仕事" data-type="large" data-category="invest" data-duration="480" data-snap="15" data-color="amber">
+                            💼 仕事 (8h)
+                        </button>
+                        <button type="button" class="piece-btn large-piece" data-name="学習" data-type="large" data-category="invest" data-duration="120" data-snap="15" data-color="amber">
+                            💻 学習・自己投資 (2h)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 中ピース -->
+                <div class="palette-category">
+                    <div class="palette-category-label" style="color: #60a5fa;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #60a5fa; display: inline-block;"></span>
+                        中ピース（5分吸着 / 伸縮）
+                    </div>
+                    <div class="palette-pieces-row" id="puzzle-medium-pieces-row">
+                        <button type="button" class="piece-btn medium-piece" data-name="筋トレ" data-type="medium" data-category="invest" data-duration="60" data-snap="5" data-color="amber">
+                            🏋️ 筋トレ (60m)
+                        </button>
+                        <button type="button" class="piece-btn medium-piece" data-name="食事" data-type="medium" data-category="maintain" data-duration="45" data-snap="5" data-color="blue">
+                            🍽️ 食事 (45m)
+                        </button>
+                        <button type="button" class="piece-btn medium-piece" data-name="入浴" data-type="medium" data-category="maintain" data-duration="30" data-snap="5" data-color="blue">
+                            🛁 入浴 (30m)
+                        </button>
+                        <button type="button" class="piece-btn medium-piece" data-name="移動" data-type="medium" data-category="maintain" data-duration="25" data-snap="5" data-color="blue">
+                            🚶 移動 (25m)
+                        </button>
+                        <button type="button" class="piece-btn medium-piece" data-name="家事" data-type="medium" data-category="maintain" data-duration="30" data-snap="5" data-color="blue">
+                            🧹 家事 (30m)
+                        </button>
+                        <button type="button" class="piece-btn medium-piece" data-name="休憩" data-type="medium" data-category="maintain" data-duration="20" data-snap="5" data-color="blue">
+                            ☕ 休憩 (20m)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 小ピース -->
+                <div class="palette-category">
+                    <div class="palette-category-label" style="color: #34d399;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #34d399; display: inline-block;"></span>
+                        小ピース（1分吸着 / 前後マグネット吸着）
+                    </div>
+                    <div class="palette-pieces-row">
+                        <button type="button" class="piece-btn small-piece" data-name="歯磨き" data-type="small" data-category="maintain" data-duration="3" data-snap="1" data-color="blue">
+                            🪥 歯磨き (3m)
+                        </button>
+                        <button type="button" class="piece-btn small-piece" data-name="ストレッチ" data-type="small" data-category="maintain" data-duration="10" data-snap="1" data-color="blue">
+                            🧘 ストレッチ (10m)
+                        </button>
+                        <button type="button" class="piece-btn small-piece" data-name="15分タスク" data-type="small" data-category="invest" data-duration="15" data-snap="5" data-color="amber">
+                            ⚡ 15分タスク (15m)
+                        </button>
+                        <button type="button" class="piece-btn small-piece" data-name="日記" data-type="small" data-category="invest" data-duration="5" data-snap="1" data-color="amber">
+                            📝 日記 (5m)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 浪費・漂流ピース -->
+                <div class="palette-category" style="border-top: 1px dashed #333; padding-top: 6px;">
+                    <div class="palette-category-label" style="color: #c084fc;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #c084fc; display: inline-block;"></span>
+                        🟣 漂流・浪費ピース（客観ログ / 5分単位）
+                    </div>
+                    <div class="palette-pieces-row">
+                        <button type="button" class="piece-btn drift-piece" data-name="SNS" data-type="medium" data-category="drift" data-duration="30" data-snap="5" data-color="purple">
+                            📱 SNS漂流 (30m)
+                        </button>
+                        <button type="button" class="piece-btn drift-piece" data-name="動画" data-type="medium" data-category="drift" data-duration="45" data-snap="5" data-color="purple">
+                            ▶️ 動画鑑賞 (45m)
+                        </button>
+                        <button type="button" class="piece-btn drift-piece" data-name="ダラダラ" data-type="medium" data-category="drift" data-duration="30" data-snap="5" data-color="purple">
+                            🌫️ ダラダラ (30m)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作説明ガイド -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.72rem; color: var(--text-secondary);">
+                <span>本体ドラッグ: 位置移動 ｜ 下端ドラッグ: 長さ変更 ｜ ✕: 削除</span>
+                <span id="puzzle-drag-tooltip" class="drag-feedback-tooltip" style="display: none;">00:00 - 00:00</span>
+            </div>
+
+            <!-- 縦スクロール タイムライン 外枠 -->
+            <div class="timeline-outer-frame">
+                <div id="puzzle-timeline-scroll" class="timeline-scroll-area">
+                    <!-- 24時間の背景グリッド -->
+                    <div id="puzzle-timeline-grid" style="position: relative; min-width: 100%;">
+                        <!-- JSで24時間行を生成 -->
+                    </div>
+                    <!-- 配置ブロックレイヤー -->
+                    <div id="puzzle-blocks-layer" class="timeline-blocks-layer">
+                        <!-- JSでブロックを描画 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- クイックアクションバー -->
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+                <span style="font-size: 0.75rem; color: var(--text-secondary);">
+                    💡 空白時間をタップして「📱 SNS」を選べば事後でも一瞬で記録完了
+                </span>
+                <button type="button" id="puzzle-quick-fill-btn" class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 0.8rem; margin-bottom: 0; border-color: #6d28d9; color: #c4b5fd;">
+                    🪄 平日の基本型を一括配置
+                </button>
+            </div>
+        </section>
+
+        <!-- Classic View Container (従来の入力フォーム＆リスト) -->
+        <div id="classic-view-container" style="display: none;">
         <!-- Input Section -->
         <section class="card" id="input-section">
             <!-- Mode Switch Segmented Control -->
@@ -818,6 +1390,7 @@ header {
                 </div>
             </div>
         </section>
+        </div><!-- End of classic-view-container -->
 
         <!-- Summary & Plan vs Actual Comparison -->
         <section class="card" id="summary-section">
@@ -1013,6 +1586,17 @@ let logs = JSON.parse(storage.getItem('zikankanri_logs')) || [];
 let plans = JSON.parse(storage.getItem('zikankanri_plans')) || [];
 let templates = JSON.parse(storage.getItem('zikankanri_templates')) || [];
 
+// Puzzle State
+var puzzleInitialized = false;
+var selectedPuzzlePiece = null;
+var currentMainViewMode = (function() {
+    try {
+        return storage.getItem('zikankanri_main_view_mode') || 'puzzle';
+    } catch (e) {
+        return 'puzzle';
+    }
+})();
+
 function loadTagsFromStorage() {
     try {
         const raw = storage.getItem('zikankanri_tags');
@@ -1042,10 +1626,7 @@ function notifyModalState(show) {
 
 function sanitizeDate(dateStr) {
     if (!dateStr || typeof dateStr !== 'string') return null;
-    const cleaned = dateStr.replace(/\\\\//g, '-').trim();
-    if (/^\\\\d{4}-\\\\d{2}-\\\\d{2}$/.test(cleaned)) {
-        return cleaned;
-    }
+    const cleaned = dateStr.split('/').join('-').trim();
     const parts = cleaned.split('-');
     if (parts.length === 3) {
         const y = parts[0];
@@ -1074,6 +1655,9 @@ function init() {
         currentDateInput.value = y + '-' + m + '-' + d;
     }
     initTags();
+    if (typeof initPuzzle === 'function') {
+        initPuzzle();
+    }
     setContinuousMode(isContinuousMode);
     updateDefaultStartTime();
     renderLogs();
@@ -1083,11 +1667,8 @@ function init() {
     registerSW();
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
-    init();
-}
+// Application initialization (init and initPuzzle) is executed at the very end of the script
+
 
 currentDateInput.addEventListener('change', function() {
     updateDefaultStartTime();
@@ -1129,6 +1710,7 @@ window.switchInputMode = function(mode) {
         document.getElementById('time-input-label').textContent = "時間";
     }
     highlightTag(activityNameInput.value);
+    if (typeof renderPuzzle === 'function') renderPuzzle();
 };
 
 window.switchSummaryTab = function(tab) {
@@ -2123,6 +2705,7 @@ function renderPlans() {
 
     if (targetPlans.length === 0) {
         planList.innerHTML = '<div style="text-align:center; color: var(--text-secondary); padding: 16px;">予定はまだありません</div>';
+        if (typeof renderPuzzle === 'function') renderPuzzle();
         return;
     }
 
@@ -2167,6 +2750,7 @@ function renderPlans() {
             '</div>';
         planList.appendChild(el);
     });
+    if (typeof renderPuzzle === 'function') renderPuzzle();
 }
 
 function renderLogs() {
@@ -2177,6 +2761,7 @@ function renderLogs() {
 
     if (targetLogs.length === 0) {
         logList.innerHTML = '<div style="text-align:center; color: var(--text-secondary); padding: 20px;">記録はまだありません</div>';
+        if (typeof renderPuzzle === 'function') renderPuzzle();
         return;
     }
 
@@ -2220,6 +2805,7 @@ function renderLogs() {
             '</div>';
         logList.appendChild(el);
     });
+    if (typeof renderPuzzle === 'function') renderPuzzle();
 }
 
 function renderSummary() {
@@ -2648,6 +3234,590 @@ function updateDefaultStartTime() {
     } else {
         startTimeInput.value = getCurrentTimeStr();
     }
+}
+
+/* ==========================================================================
+   Piece Puzzle Timeline Logic (24h Vertical Drag & Resize)
+   ========================================================================== */
+// (puzzle state variables are declared at the top in the State section)
+
+
+window.switchMainViewMode = function(mode) {
+    currentMainViewMode = mode;
+    storage.setItem('zikankanri_main_view_mode', mode);
+    const puzzleBtn = document.getElementById('view-mode-puzzle-btn');
+    const classicBtn = document.getElementById('view-mode-classic-btn');
+    const puzzleSec = document.getElementById('puzzle-section');
+    const classicSec = document.getElementById('classic-view-container');
+
+    if (mode === 'puzzle') {
+        if (puzzleBtn) puzzleBtn.classList.add('active');
+        if (classicBtn) classicBtn.classList.remove('active');
+        if (puzzleSec) puzzleSec.style.display = 'block';
+        if (classicSec) classicSec.style.display = 'none';
+        renderPuzzle();
+        setTimeout(function() {
+            const scrollArea = document.getElementById('puzzle-timeline-scroll');
+            if (scrollArea && scrollArea.scrollTop === 0) {
+                scrollArea.scrollTop = 380; // 朝6時半〜7時付近へ
+            }
+        }, 80);
+    } else {
+        if (classicBtn) classicBtn.classList.add('active');
+        if (puzzleBtn) puzzleBtn.classList.remove('active');
+        if (puzzleSec) puzzleSec.style.display = 'none';
+        if (classicSec) classicSec.style.display = 'block';
+    }
+};
+
+function getCategoryByActivityName(name) {
+    if (!name) return 'maintain';
+    const n = name.toLowerCase();
+    if (n.includes('sns') || n.includes('twitter') || n.includes('x') || n.includes('動画') || n.includes('youtube') || n.includes('ダラダラ') || n.includes('浪費')) {
+        return 'drift';
+    }
+    if (n.includes('仕事') || n.includes('学習') || n.includes('勉強') || n.includes('投資') || n.includes('筋トレ') || n.includes('運動') || n.includes('タスク') || n.includes('日記') || n.includes('作業')) {
+        return 'invest';
+    }
+    return 'maintain';
+}
+
+function getColorThemeByActivityName(name, category) {
+    if (category === 'drift') return 'theme-purple';
+    if (category === 'invest') return 'theme-amber';
+    if (name.includes('睡眠') || name.includes('入浴') || name.includes('食事') || name.includes('歯磨き')) return 'theme-blue';
+    return 'theme-emerald';
+}
+
+function initPuzzleTimelineGrid() {
+    const gridContainer = document.getElementById('puzzle-timeline-grid');
+    if (!gridContainer || gridContainer.children.length > 0) return;
+
+    for (let h = 0; h < 24; h++) {
+        const row = document.createElement('div');
+        row.className = 'timeline-hour-row';
+
+        const label = document.createElement('div');
+        label.className = 'timeline-hour-label';
+        label.textContent = String(h).padStart(2, '0') + ':00';
+        row.appendChild(label);
+
+        const slot = document.createElement('div');
+        slot.className = 'timeline-hour-slot';
+        slot.dataset.hour = h;
+
+        for (let q = 1; q < 4; q++) {
+            const line = document.createElement('div');
+            line.className = 'timeline-quarter-line';
+            line.style.top = (q * 15) + 'px';
+            slot.appendChild(line);
+        }
+
+        slot.addEventListener('click', function(e) {
+            handlePuzzleSlotClick(e, h);
+        });
+
+        row.appendChild(slot);
+        gridContainer.appendChild(row);
+    }
+}
+
+function initPuzzlePalette() {
+    const paletteContainer = document.querySelector('.puzzle-palette-container');
+    if (!paletteContainer) return;
+
+    const pieceBtns = paletteContainer.querySelectorAll('.piece-btn');
+    pieceBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            paletteContainer.querySelectorAll('.piece-btn').forEach(function(b) {
+                b.classList.remove('active-selected');
+            });
+            btn.classList.add('active-selected');
+            selectedPuzzlePiece = {
+                name: btn.dataset.name,
+                type: btn.dataset.type,
+                category: btn.dataset.category || getCategoryByActivityName(btn.dataset.name),
+                duration: parseInt(btn.dataset.duration, 10),
+                snap: parseInt(btn.dataset.snap, 10),
+                color: btn.dataset.color
+            };
+            const labelEl = document.getElementById('puzzle-selected-piece-name');
+            if (labelEl) {
+                labelEl.textContent = btn.textContent.trim().replace(/\s+/g, ' ') + ' (' + selectedPuzzlePiece.snap + '分単位)';
+            }
+        });
+    });
+
+    const mediumRow = document.getElementById('puzzle-medium-pieces-row');
+    if (mediumRow && Array.isArray(defaultTags)) {
+        const existingNames = Array.from(mediumRow.querySelectorAll('.piece-btn')).map(function(b) { return b.dataset.name; });
+        defaultTags.forEach(function(tagName) {
+            if (!existingNames.includes(tagName) && !['睡眠', '仕事', '学習', '歯磨き', 'ストレッチ', '日記', 'SNS', '動画', 'ダラダラ'].includes(tagName)) {
+                const customBtn = document.createElement('button');
+                customBtn.type = 'button';
+                customBtn.className = 'piece-btn medium-piece';
+                customBtn.dataset.name = tagName;
+                customBtn.dataset.type = 'medium';
+                customBtn.dataset.category = getCategoryByActivityName(tagName);
+                customBtn.dataset.duration = '30';
+                customBtn.dataset.snap = '5';
+                customBtn.dataset.color = 'blue';
+                customBtn.innerHTML = '🏷️ ' + tagName + ' (30m)';
+                customBtn.addEventListener('click', function() {
+                    paletteContainer.querySelectorAll('.piece-btn').forEach(function(b) {
+                        b.classList.remove('active-selected');
+                    });
+                    customBtn.classList.add('active-selected');
+                    selectedPuzzlePiece = {
+                        name: tagName,
+                        type: 'medium',
+                        category: customBtn.dataset.category,
+                        duration: 30,
+                        snap: 5,
+                        color: 'blue'
+                    };
+                    const labelEl = document.getElementById('puzzle-selected-piece-name');
+                    if (labelEl) {
+                        labelEl.textContent = tagName + ' (5分単位)';
+                    }
+                });
+                mediumRow.appendChild(customBtn);
+            }
+        });
+    }
+}
+
+function calculateSnap(minute, type, duration, excludeId, currentItems) {
+    if (type === 'large') {
+        return Math.round(minute / 15) * 15;
+    } else if (type === 'medium') {
+        return Math.round(minute / 5) * 5;
+    } else {
+        let nearestSnap = null;
+        let minDiff = 12;
+
+        if (Array.isArray(currentItems)) {
+            currentItems.forEach(function(b) {
+                if (b.id === excludeId) return;
+                const bStart = timeToMins(b.start);
+                let bEnd = timeToMins(b.end);
+                if (bEnd < bStart) bEnd += 1440;
+
+                const afterDiff = Math.abs(minute - bEnd);
+                if (afterDiff < minDiff) {
+                    minDiff = afterDiff;
+                    nearestSnap = bEnd;
+                }
+                const beforeDiff = Math.abs(minute - (bStart - duration));
+                if (beforeDiff < minDiff) {
+                    minDiff = beforeDiff;
+                    nearestSnap = bStart - duration;
+                }
+            });
+        }
+
+        if (nearestSnap !== null) {
+            return nearestSnap;
+        }
+        return Math.round(minute);
+    }
+}
+
+function calculateDurationSnap(duration, type) {
+    if (type === 'large') {
+        return Math.max(15, Math.round(duration / 15) * 15);
+    } else if (type === 'medium') {
+        return Math.max(5, Math.round(duration / 5) * 5);
+    } else {
+        return Math.max(1, Math.round(duration));
+    }
+}
+
+function handlePuzzleSlotClick(e, hour) {
+    if (!selectedPuzzlePiece) {
+        alert('まずは上のパレットから配置したいピースを選択してください！');
+        return;
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickOffsetY = e.clientY - rect.top;
+    const rawMinute = (hour * 60) + Math.round(clickOffsetY);
+
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const currentList = (currentInputMode === 'plan')
+        ? plans.filter(function(p) { return p.date === selectedDate; })
+        : logs.filter(function(l) { return l.date === selectedDate; });
+
+    let targetStartMinute = calculateSnap(rawMinute, selectedPuzzlePiece.type, selectedPuzzlePiece.duration, null, currentList);
+
+    if (targetStartMinute < 0) targetStartMinute = 0;
+    if (targetStartMinute + selectedPuzzlePiece.duration > 1440) {
+        targetStartMinute = 1440 - selectedPuzzlePiece.duration;
+    }
+
+    const startStr = minsToTime(targetStartMinute);
+    const endStr = minsToTime(targetStartMinute + selectedPuzzlePiece.duration);
+
+    const newEntry = {
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        date: selectedDate,
+        start: startStr,
+        end: endStr,
+        items: [{ name: selectedPuzzlePiece.name, weight: 1.0 }],
+        memo: ""
+    };
+
+    if (currentInputMode === 'plan') {
+        plans.push(newEntry);
+        savePlans();
+        renderPlans();
+    } else {
+        logs.push(newEntry);
+        saveLogs();
+        renderLogs();
+    }
+
+    renderSummary();
+    renderPuzzle();
+}
+
+function renderPuzzle() {
+    const blocksLayer = document.getElementById('puzzle-blocks-layer');
+    if (!blocksLayer) return;
+
+    initPuzzleTimelineGrid();
+
+    blocksLayer.innerHTML = '';
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const isPlan = (currentInputMode === 'plan');
+
+    const badge = document.getElementById('puzzle-current-mode-badge');
+    const switchModeBtn = document.getElementById('puzzle-switch-mode-btn');
+    if (badge) {
+        badge.className = 'puzzle-mode-badge ' + (isPlan ? 'puzzle-mode-plan' : 'puzzle-mode-actual');
+        badge.textContent = isPlan ? '📅 予定' : '⏱ 実績';
+    }
+    if (switchModeBtn) {
+        switchModeBtn.textContent = isPlan ? '実績に切替' : '予定に切替';
+    }
+
+    const currentList = isPlan
+        ? plans.filter(function(p) { return p.date === selectedDate; })
+        : logs.filter(function(l) { return l.date === selectedDate; });
+
+    let investMinutes = 0;
+    let maintainMinutes = 0;
+    let driftMinutes = 0;
+
+    currentList.forEach(function(item) {
+        const startMins = timeToMins(item.start);
+        let endMins = timeToMins(item.end);
+        if (endMins < startMins) endMins += 1440;
+        const duration = Math.max(1, endMins - startMins);
+
+        const primaryName = (item.items && item.items.length > 0) ? item.items[0].name : (item.activity_name || "活動");
+        const category = getCategoryByActivityName(primaryName);
+
+        if (category === 'invest') investMinutes += duration;
+        else if (category === 'drift') driftMinutes += duration;
+        else maintainMinutes += duration;
+
+        const blockEl = document.createElement('div');
+        const themeClass = getColorThemeByActivityName(primaryName, category);
+        blockEl.className = 'timeline-block ' + themeClass;
+        blockEl.style.top = startMins + 'px';
+        blockEl.style.height = Math.max(duration, 20) + 'px';
+
+        let pieceType = 'medium';
+        if (duration >= 90) pieceType = 'large';
+        else if (duration <= 15) pieceType = 'small';
+
+        const durationStr = (duration >= 60)
+            ? Math.floor(duration / 60) + 'h' + (duration % 60 > 0 ? (duration % 60) + 'm' : '')
+            : duration + 'm';
+
+        blockEl.innerHTML =
+            '<div style="display: flex; justify-content: space-between; align-items: center; pointer-events: none; width: 100%;">' +
+                '<span style="font-weight: 700; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;">' +
+                    primaryName +
+                '</span>' +
+                '<div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">' +
+                    '<span style="font-family: monospace; font-size: 0.68rem; opacity: 0.85;">' +
+                        item.start + '-' + item.end + ' (' + durationStr + ')' +
+                    '</span>' +
+                    '<button type="button" class="puzzle-del-btn" style="pointer-events: auto; background: none; border: none; color: inherit; opacity: 0.6; cursor: pointer; font-size: 0.72rem; padding: 0 4px; line-height: 1;">✕</button>' +
+                '</div>' +
+            '</div>' +
+            '<div class="timeline-resize-handle" title="上下にドラッグして長さを調整"></div>';
+
+        const delBtn = blockEl.querySelector('.puzzle-del-btn');
+        if (delBtn) {
+            delBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (isPlan) {
+                    plans = plans.filter(function(p) { return p.id !== item.id; });
+                    savePlans();
+                    renderPlans();
+                } else {
+                    logs = logs.filter(function(l) { return l.id !== item.id; });
+                    saveLogs();
+                    renderLogs();
+                }
+                renderSummary();
+                renderPuzzle();
+            });
+        }
+
+        attachPuzzleDragAndResize(blockEl, item, pieceType, currentList, isPlan);
+        blocksLayer.appendChild(blockEl);
+    });
+
+    const totalRecorded = investMinutes + maintainMinutes + driftMinutes;
+    const freeMinutes = Math.max(0, 1440 - totalRecorded);
+
+    const invEl = document.getElementById('portfolio-invest-val');
+    const mainEl = document.getElementById('portfolio-maintain-val');
+    const driftEl = document.getElementById('portfolio-drift-val');
+    const freeEl = document.getElementById('portfolio-free-val');
+
+    if (invEl) invEl.textContent = (investMinutes / 60).toFixed(1) + 'h';
+    if (mainEl) mainEl.textContent = (maintainMinutes / 60).toFixed(1) + 'h';
+    if (driftEl) driftEl.textContent = (driftMinutes / 60).toFixed(1) + 'h';
+    if (freeEl) freeEl.textContent = (freeMinutes / 60).toFixed(1) + 'h';
+}
+
+function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan) {
+    const resizeHandle = element.querySelector('.timeline-resize-handle');
+    const tooltip = document.getElementById('puzzle-drag-tooltip');
+
+    // 1. ドラッグ移動
+    element.addEventListener('pointerdown', function(e) {
+        if (e.target.closest('.puzzle-del-btn') || e.target.closest('.timeline-resize-handle')) return;
+
+        e.preventDefault();
+        element.setPointerCapture(e.pointerId);
+        element.classList.add('is-dragging');
+
+        const initialY = e.clientY;
+        const initialStart = timeToMins(item.start);
+        let initialEnd = timeToMins(item.end);
+        if (initialEnd < initialStart) initialEnd += 1440;
+        const duration = initialEnd - initialStart;
+
+        if (tooltip) tooltip.style.display = 'block';
+
+        function onPointerMove(moveEvent) {
+            const deltaY = moveEvent.clientY - initialY;
+            let newStart = initialStart + deltaY;
+
+            newStart = calculateSnap(newStart, pieceType, duration, item.id, currentList);
+
+            if (newStart < 0) newStart = 0;
+            if (newStart + duration > 1440) newStart = 1440 - duration;
+
+            element.style.top = newStart + 'px';
+
+            const newStartStr = minsToTime(newStart);
+            const newEndStr = minsToTime(newStart + duration);
+            if (tooltip) {
+                tooltip.textContent = '📍 ' + newStartStr + ' - ' + newEndStr;
+            }
+        }
+
+        function onPointerUp(upEvent) {
+            element.releasePointerCapture(upEvent.pointerId);
+            element.classList.remove('is-dragging');
+            if (tooltip) tooltip.style.display = 'none';
+
+            element.removeEventListener('pointermove', onPointerMove);
+            element.removeEventListener('pointerup', onPointerUp);
+
+            const finalTop = parseInt(element.style.top, 10) || 0;
+            item.start = minsToTime(finalTop);
+            item.end = minsToTime(finalTop + duration);
+
+            if (isPlan) {
+                savePlans();
+                renderPlans();
+            } else {
+                saveLogs();
+                renderLogs();
+            }
+            renderSummary();
+            renderPuzzle();
+        }
+
+        element.addEventListener('pointermove', onPointerMove);
+        element.addEventListener('pointerup', onPointerUp);
+    });
+
+    // 2. リサイズ（下端ドラッグ）
+    if (resizeHandle) {
+        resizeHandle.addEventListener('pointerdown', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            resizeHandle.setPointerCapture(e.pointerId);
+            element.classList.add('is-resizing');
+
+            const initialY = e.clientY;
+            const startMins = timeToMins(item.start);
+            let initialEnd = timeToMins(item.end);
+            if (initialEnd < startMins) initialEnd += 1440;
+            const initialDuration = initialEnd - startMins;
+
+            if (tooltip) tooltip.style.display = 'block';
+
+            function onResizeMove(moveEvent) {
+                const deltaY = moveEvent.clientY - initialY;
+                let newDuration = initialDuration + deltaY;
+
+                newDuration = calculateDurationSnap(newDuration, pieceType);
+
+                if (startMins + newDuration > 1440) newDuration = 1440 - startMins;
+
+                element.style.height = Math.max(newDuration, 20) + 'px';
+
+                const endStr = minsToTime(startMins + newDuration);
+                if (tooltip) {
+                    tooltip.textContent = '📏 ' + item.start + ' - ' + endStr + ' (' + newDuration + 'm)';
+                }
+            }
+
+            function onResizeUp(upEvent) {
+                resizeHandle.releasePointerCapture(upEvent.pointerId);
+                element.classList.remove('is-resizing');
+                if (tooltip) tooltip.style.display = 'none';
+
+                resizeHandle.removeEventListener('pointermove', onResizeMove);
+                resizeHandle.removeEventListener('pointerup', onResizeUp);
+
+                const finalHeight = parseInt(element.style.height, 10) || 20;
+                item.end = minsToTime(startMins + finalHeight);
+
+                if (isPlan) {
+                    savePlans();
+                    renderPlans();
+                } else {
+                    saveLogs();
+                    renderLogs();
+                }
+                renderSummary();
+                renderPuzzle();
+            }
+
+            resizeHandle.addEventListener('pointermove', onResizeMove);
+            resizeHandle.addEventListener('pointerup', onResizeUp);
+        });
+    }
+}
+
+function handlePuzzleQuickFill() {
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const isPlan = (currentInputMode === 'plan');
+    const modeName = isPlan ? '予定' : '実績';
+
+    if (!confirm('今日の' + modeName + 'に「平日の基本型（睡眠・仕事・筋トレ・食事・入浴等）」を一括配置しますか？\\n（※既存の同日の' + modeName + 'は上書きされます）')) {
+        return;
+    }
+
+    const defaultBlocks = [
+        { name: '睡眠', start: '00:00', end: '07:00' },
+        { name: '歯磨き', start: '07:00', end: '07:03' },
+        { name: '食事', start: '07:15', end: '07:45' },
+        { name: '仕事', start: '09:00', end: '17:00' },
+        { name: '筋トレ', start: '18:00', end: '19:00' },
+        { name: '食事', start: '19:15', end: '20:00' },
+        { name: '入浴', start: '20:30', end: '21:00' },
+        { name: 'ストレッチ', start: '21:00', end: '21:10' },
+        { name: '睡眠', start: '23:00', end: '24:00' }
+    ];
+
+    const newEntries = defaultBlocks.map(function(b, idx) {
+        return {
+            id: Date.now() + idx,
+            date: selectedDate,
+            start: b.start === '24:00' ? '23:59' : b.start,
+            end: b.end === '24:00' ? '23:59' : b.end,
+            items: [{ name: b.name, weight: 1.0 }],
+            memo: ''
+        };
+    });
+
+    if (isPlan) {
+        plans = plans.filter(function(p) { return p.date !== selectedDate; }).concat(newEntries);
+        savePlans();
+        renderPlans();
+    } else {
+        logs = logs.filter(function(l) { return l.date !== selectedDate; }).concat(newEntries);
+        saveLogs();
+        renderLogs();
+    }
+
+    renderSummary();
+    renderPuzzle();
+
+    const scrollArea = document.getElementById('puzzle-timeline-scroll');
+    if (scrollArea) scrollArea.scrollTop = 380;
+}
+
+function handlePuzzleResetDay() {
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const isPlan = (currentInputMode === 'plan');
+    const modeName = isPlan ? '予定' : '実績';
+
+    if (!confirm('今日の' + modeName + 'データをすべてクリアしますか？')) {
+        return;
+    }
+
+    if (isPlan) {
+        plans = plans.filter(function(p) { return p.date !== selectedDate; });
+        savePlans();
+        renderPlans();
+    } else {
+        logs = logs.filter(function(l) { return l.date !== selectedDate; });
+        saveLogs();
+        renderLogs();
+    }
+
+    renderSummary();
+    renderPuzzle();
+}
+
+function initPuzzle() {
+    if (puzzleInitialized) return;
+    puzzleInitialized = true;
+
+    initPuzzleTimelineGrid();
+    initPuzzlePalette();
+
+    const quickFillBtn = document.getElementById('puzzle-quick-fill-btn');
+    if (quickFillBtn) quickFillBtn.addEventListener('click', handlePuzzleQuickFill);
+
+    const resetDayBtn = document.getElementById('puzzle-reset-day-btn');
+    if (resetDayBtn) resetDayBtn.addEventListener('click', handlePuzzleResetDay);
+
+    const switchModeBtn = document.getElementById('puzzle-switch-mode-btn');
+    if (switchModeBtn) {
+        switchModeBtn.addEventListener('click', function() {
+            switchInputMode(currentInputMode === 'plan' ? 'actual' : 'plan');
+            renderPuzzle();
+        });
+    }
+
+    setTimeout(function() {
+        switchMainViewMode(currentMainViewMode);
+    }, 50);
+}
+
+function startApp() {
+    init();
+    initPuzzle();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
+} else {
+    startApp();
 }
 
 </script>

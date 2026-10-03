@@ -11,21 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.0',
+  version: '2.3.3',
   title: {
-    ja: '📅 24時間管理 Googleカレンダー連携',
-    en: '📅 24h Management Google Calendar Sync',
+    ja: '🧩 24時間ピースパズルタイムライン起動・構文エラーの完全解消',
+    en: '🧩 24h Piece Timeline Complete Initialization & Syntax Fix',
   },
   notes: {
     ja: [
-      '24時間管理とGoogleカレンダーの双方向連動機能を追加しました。',
-      'カレンダーの予定自動取り込み、および活動実績の自動書き出しに対応。',
-      'アプリ設定の「Googleカレンダー連携」から双方向自動同期の設定を行えます。',
+      '24時間管理画面でスクリプトの構文エラー（SyntaxError）によりタイムライン枠やボタンが動作しなかった不具合を完全に解消しました。',
+      'タイムラインへのピース配置・ドラッグ移動・長さ調整がスムーズにご利用いただけます。',
+      '平日の基本型クイック配置や予定・実績の切り替えが正常に動作します。',
     ],
     en: [
-      'Added two-way sync between 24-hour management and Google Calendar.',
-      'Supports auto-importing plans and auto-exporting recorded activity logs.',
-      'Configure automatic sync settings via "Google Calendar Sync" in app settings.',
+      'Completely resolved the syntax error that prevented the 24h timeline frame and buttons from operating.',
+      'Piece snapping, drag-to-move, and resize are now fully functional.',
+      'Quick-fill default routine and plan/actual mode toggles are now working properly.',
     ],
   },
 };

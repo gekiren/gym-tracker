@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useGeminiLive } from './hooks/useGeminiLive';
+import { useAquaVoiceCompanion } from './hooks/useAquaVoiceCompanion';
 import type { InitialContext } from './types';
 import {
   Mic,
-  MicOff,
-  PhoneCall,
-  PhoneOff,
+  Square,
+  Loader2,
   Dumbbell,
   Droplets,
   Utensils,
@@ -81,7 +80,6 @@ const getThemeTokens = (mode: 'dark' | 'pureBlack' = 'dark'): ThemeColors => {
 };
 
 export default function App() {
-  const [voiceName, setVoiceName] = useState<string>('Aoede');
   const [copied, setCopied] = useState<boolean>(false);
 
   // TreNoteからのコンテキストを取得（1. JS注入優先、2. URLパラメータフォールバック）
@@ -160,22 +158,20 @@ export default function App() {
   }, [themeTokens]);
 
   const {
-    isConnected,
-    isConnecting,
-    isMuted,
+    isRecording,
+    isProcessing,
+    recordingSeconds,
     micVolume,
     messages,
     extractedData,
     statusText,
     debugLogs,
-    connect,
-    disconnect,
-    toggleMute,
+    startRecording,
+    stopRecording,
     sendTextMessage,
     setExtractedData,
-  } = useGeminiLive({
+  } = useAquaVoiceCompanion({
     initialContext,
-    voiceName,
   });
 
   const [editingTarget, setEditingTarget] = useState<EditTarget | null>(null);
@@ -220,6 +216,12 @@ export default function App() {
     extractedData.dailyNotes.length > 0 ||
     (extractedData.memoryUpdates && extractedData.memoryUpdates.length > 0);
 
+  const formatTimer = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
   return (
     <div style={styles.container}>
       {/* Header */}
@@ -229,9 +231,9 @@ export default function App() {
             <Dumbbell size={18} color="#ff6b00" />
           </div>
           <div>
-            <h1 style={styles.title} className="res-title">TreNote 音声AIパートナー</h1>
+            <h1 style={styles.title} className="res-title">TreNote 音声AIアシスタント</h1>
             <p style={styles.subtitle} className="res-subtitle">
-              水・栄養・トレーニング・雑記を話すだけでリアルタイム自動記録
+              アクアボイス文字起こし ＆ Gemini 構造化解析による自動記録
             </p>
           </div>
         </div>
@@ -264,7 +266,7 @@ export default function App() {
         </div>
       )}
 
-      {/* 1. 接続状態 (Control Banner) */}
+      {/* 1. 音声入力コントロールバナー */}
       <div style={styles.controlBanner} className="res-banner">
         <div style={styles.statusSection} className="res-status-section">
           <div>
@@ -272,43 +274,30 @@ export default function App() {
               <div
                 style={{
                   ...styles.statusDot,
-                  backgroundColor: isConnected
-                    ? themeTokens.success
-                    : isConnecting
+                  backgroundColor: isRecording
+                    ? themeTokens.danger
+                    : isProcessing
                     ? '#f59e0b'
-                    : themeTokens.textMuted,
-                  boxShadow: isConnected ? `0 0 10px ${themeTokens.success}` : 'none',
+                    : themeTokens.success,
+                  boxShadow: isRecording ? `0 0 10px ${themeTokens.danger}` : 'none',
                 }}
               />
               <div style={styles.statusLabel}>{statusText}</div>
+              {isRecording && (
+                <span style={{ fontSize: 12, color: themeTokens.danger, fontWeight: 700, marginLeft: 4 }}>
+                  ● {formatTimer(recordingSeconds)}
+                </span>
+              )}
             </div>
             
             <div style={styles.voiceSelectWrapper} className="res-voice-select">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} className="res-select-group">
-                <Volume2 size={14} color={themeTokens.textMuted} />
-                <select
-                  value={voiceName}
-                  onChange={(e) => setVoiceName(e.target.value)}
-                  disabled={isConnected || isConnecting}
-                  style={styles.select}
-                  className="res-select"
-                >
-                  <option value="Aoede">音声: Aoede (落ち着いた女性)</option>
-                  <option value="Puck">音声: Puck (明るい男性)</option>
-                  <option value="Charon">音声: Charon (深みのある男性)</option>
-                  <option value="Kore">音声: Kore (クリアな女性)</option>
-                  <option value="Fenrir">音声: Fenrir (力強い男性)</option>
-                </select>
-              </div>
-
               {/* Microphone Selection */}
-              {!isConnected && devices.length > 0 && (
+              {!isRecording && !isProcessing && devices.length > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} className="res-select-group">
                   <Mic size={14} color={themeTokens.textMuted} />
                   <select
                     value={selectedDeviceId}
                     onChange={(e) => setSelectedDeviceId(e.target.value)}
-                    disabled={isConnecting}
                     style={{...styles.select, flex: 1}}
                     className="res-select"
                   >
@@ -325,7 +314,7 @@ export default function App() {
         </div>
 
         <div style={styles.actionButtons} className="res-action-btns">
-          {isConnected ? (
+          {isRecording ? (
             <>
               {/* Mic Volume Level Meter */}
               <div
@@ -336,12 +325,12 @@ export default function App() {
                   backgroundColor: themeTokens.cardSubtle,
                   padding: '8px 12px',
                   borderRadius: 8,
-                  border: `1px solid ${micVolume > 0 ? themeTokens.success : themeTokens.border}`,
+                  border: `1px solid ${micVolume > 0 ? themeTokens.danger : themeTokens.border}`,
                   transition: 'border-color 0.1s',
                 }}
                 title="マイク入力音量レベル"
               >
-                <Mic size={16} color={micVolume > 0 ? themeTokens.success : themeTokens.textMuted} />
+                <Mic size={16} color={micVolume > 0 ? themeTokens.danger : themeTokens.textMuted} />
                 <div
                   style={{
                     width: 50,
@@ -355,7 +344,7 @@ export default function App() {
                     style={{
                       width: `${Math.max(micVolume > 0 ? 5 : 0, Math.min(100, micVolume))}%`,
                       height: '100%',
-                      backgroundColor: themeTokens.success,
+                      backgroundColor: themeTokens.danger,
                       transition: 'width 0.05s ease-out',
                     }}
                   />
@@ -363,32 +352,31 @@ export default function App() {
               </div>
 
               <button
-                style={{...styles.muteButton, backgroundColor: isMuted ? themeTokens.danger : themeTokens.cardSubtle}}
+                style={{ ...styles.disconnectButton, backgroundColor: themeTokens.danger }}
                 className="res-btn"
-                onClick={toggleMute}
+                onClick={stopRecording}
               >
-                {isMuted ? <MicOff size={18} /> : <Mic size={18} />}
-                <span>{isMuted ? '消音中' : 'マイクON'}</span>
-              </button>
-
-              <button
-                style={styles.disconnectButton}
-                className="res-btn"
-                onClick={disconnect}
-              >
-                <PhoneOff size={18} />
-                <span>終了</span>
+                <Square size={16} />
+                <span>完了・解析</span>
               </button>
             </>
+          ) : isProcessing ? (
+            <button
+              style={{ ...styles.connectButton, opacity: 0.7, cursor: 'wait' }}
+              className="res-btn"
+              disabled
+            >
+              <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+              <span>解析中...</span>
+            </button>
           ) : (
             <button
-              style={{...styles.connectButton, opacity: isConnecting ? 0.7 : 1}}
+              style={styles.connectButton}
               className="res-btn"
-              disabled={isConnecting}
-              onClick={() => connect(selectedDeviceId)}
+              onClick={() => startRecording(selectedDeviceId)}
             >
-              <PhoneCall size={18} />
-              <span>{isConnecting ? '接続中...' : '音声対話を開始'}</span>
+              <Mic size={18} />
+              <span>音声入力を開始</span>
             </button>
           )}
         </div>
@@ -398,14 +386,14 @@ export default function App() {
       <div style={styles.card}>
         <h2 style={styles.cardTitle}>
           <Volume2 size={16} color="#ff6b00" />
-          リアルタイム対話ログ
+          音声対話・解析ログ
         </h2>
         <div style={styles.chatLog}>
           {messages.length === 0 ? (
             <div style={styles.emptyText}>
-              {isConnected
-                ? 'AIがあなたの声をお待ちしています。「水」「栄養」「トレーニング」「雑記（メモ・気づき）」について自由にお話しください。\n例: 「水500ml」「プロテイン飲んだ」「ベンチプレス80kg10回3セット」「肩の調子がすごく良い」'
-                : '「音声対話を開始」ボタンを押すと、ハンズフリーで会話がスタートします。\n水・栄養・トレーニング・雑記（体調・メモ）を話すだけで自動で分類・記録されます。'}
+              {isRecording
+                ? '音声を聞き取っています。「水」「栄養」「トレーニング」「雑記（体調・メモ）」についてお話しください。\n話し終えたら「完了・解析」ボタンをタップしてください。'
+                : '「音声入力を開始」ボタンを押して話しかけてください。\nアクアボイスが高精度に文字起こしし、Geminiが筋トレ・水・食事・メモを自動解析してアプリに記録します。\n例: 「ベンチプレス80kg10回3セット」「水500ml飲んだ」「プロテイン摂取」「肩の調子がすごく良い」'}
             </div>
           ) : (
             messages.map((m) => (
@@ -420,66 +408,66 @@ export default function App() {
                 }}
               >
                 <div style={styles.bubbleSender}>
-                  {m.sender === 'user' ? 'あなた' : 'TreNote AI'}
+                  {m.sender === 'user' ? 'あなた（アクアボイス文字起こし）' : 'TreNote AI'}
                 </div>
-                <div style={{ color: '#ffffff' }}>{m.text}</div>
+                <div style={{ color: '#ffffff', whiteSpace: 'pre-wrap' }}>{m.text}</div>
               </div>
             ))
           )}
         </div>
 
         {/* Text Input Fallback / Test Form */}
-        {isConnected && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (inputMessage.trim()) {
-                sendTextMessage(inputMessage);
-                setInputMessage('');
-              }
-            }}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (inputMessage.trim() && !isProcessing && !isRecording) {
+              sendTextMessage(inputMessage);
+              setInputMessage('');
+            }
+          }}
+          style={{
+            display: 'flex',
+            gap: 8,
+            marginTop: 12,
+            paddingTop: 12,
+            borderTop: `1px solid ${themeTokens.border}`,
+          }}
+        >
+          <input
+            type="text"
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            disabled={isRecording || isProcessing}
+            placeholder="テキストでも直接入力して記録できます（例: スクワット100kg5回3セット）"
             style={{
-              display: 'flex',
-              gap: 8,
-              marginTop: 12,
-              paddingTop: 12,
-              borderTop: `1px solid ${themeTokens.border}`,
+              flex: 1,
+              backgroundColor: themeTokens.inputBg,
+              border: `1px solid ${themeTokens.border}`,
+              borderRadius: 8,
+              padding: '8px 12px',
+              color: themeTokens.text,
+              fontSize: 13,
+              opacity: isRecording || isProcessing ? 0.6 : 1,
+            }}
+          />
+          <button
+            type="submit"
+            disabled={!inputMessage.trim() || isRecording || isProcessing}
+            style={{
+              backgroundColor: themeTokens.accent,
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '8px 14px',
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: inputMessage.trim() && !isRecording && !isProcessing ? 'pointer' : 'default',
+              opacity: inputMessage.trim() && !isRecording && !isProcessing ? 1 : 0.5,
             }}
           >
-            <input
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="テキストでも話しかけられます（例: ベンチ100kg10回3セット）"
-              style={{
-                flex: 1,
-                backgroundColor: themeTokens.inputBg,
-                border: `1px solid ${themeTokens.border}`,
-                borderRadius: 8,
-                padding: '8px 12px',
-                color: themeTokens.text,
-                fontSize: 13,
-              }}
-            />
-            <button
-              type="submit"
-              disabled={!inputMessage.trim()}
-              style={{
-                backgroundColor: themeTokens.accent,
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: 8,
-                padding: '8px 14px',
-                fontWeight: 600,
-                fontSize: 13,
-                cursor: inputMessage.trim() ? 'pointer' : 'default',
-                opacity: inputMessage.trim() ? 1 : 0.5,
-              }}
-            >
-              送信
-            </button>
-          </form>
-        )}
+            送信
+          </button>
+        </form>
       </div>
 
       {/* 3. 自動抽出データ (Extracted Data - TreNote Sync Preview) */}

@@ -879,19 +879,10 @@ function parseDateStr(str) {
     return new Date();
 }
 
-// 共通の日付クレンジング関数
 function sanitizeDate(dateStr) {
     if (!dateStr || typeof dateStr !== 'string') return null;
     
-    // スラッシュをハイフンに統一し、余計な空白をトリム
-    const cleaned = dateStr.replace(/\\//g, '-').trim();
-    
-    // YYYY-MM-DD 形式の正規表現チェック
-    if (/^\\d{4}-\\d{2}-\\d{2}$/.test(cleaned)) {
-        return cleaned.replace(/-/g, '/');
-    }
-    
-    // YYYY-M-D 形式（1桁）の補正
+    const cleaned = dateStr.split('/').join('-').trim();
     const parts = cleaned.split('-');
     if (parts.length === 3) {
         const y = parts[0];
