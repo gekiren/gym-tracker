@@ -3716,7 +3716,7 @@ function handlePuzzleQuickFill() {
     const isPlan = (currentInputMode === 'plan');
     const modeName = isPlan ? '予定' : '実績';
 
-    if (!confirm('今日の' + modeName + 'に「平日の基本型（睡眠・仕事・筋トレ・食事・入浴等）」を一括配置しますか？\n（※既存の同日の' + modeName + 'は上書きされます）')) {
+    if (!confirm('今日の' + modeName + 'に「平日の基本型（睡眠・仕事・筋トレ・食事・入浴等）」を一括配置しますか？\\n（※既存の同日の' + modeName + 'は上書きされます）')) {
         return;
     }
 
