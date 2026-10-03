@@ -11,21 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.1',
+  version: '2.3.2',
   title: {
-    ja: '🧩 24時間ピースタイムラインの不具合修正＆安定化',
-    en: '🧩 24h Piece Timeline Bug Fix & Stabilization',
+    ja: '🧩 24時間ピースタイムライン起動・操作不具合の完全解消',
+    en: '🧩 24h Piece Timeline Complete Initialization Fix',
   },
   notes: {
     ja: [
-      '24時間管理画面でタイムライン枠が描画されずボタン操作が動作しなくなる不具合を修正しました。',
-      '日付解析ロジックおよび初期化処理を強化し、端末起動時の安定性を向上させました。',
-      '大・中・小・浪費ピースのはめ込み、ドラッグ移動、リサイズ操作がスムーズに動作するようになりました。',
+      '24時間管理画面でタイムライン枠が描画されずボタンが反応しない問題を完全に解決しました。',
+      'スクリプト実行順序と状態管理変数を最適化し、起動時の読み込み安定性を大幅に強化しました。',
+      'タイムラインへのピース配置・ドラッグ移動・長さ調整がスムーズにご利用いただけます。',
     ],
     en: [
-      'Fixed an issue where the timeline frame and buttons were unresponsive in 24h activity log.',
-      'Enhanced date parsing and initialization lifecycle for rock-solid stability.',
-      'Smooth piece snapping, dragging, and resizing are now fully operational.',
+      'Completely resolved the issue where timeline frame and buttons were unresponsive in 24h activity log.',
+      'Optimized script execution order and state scoping for robust initialization.',
+      'Piece snapping, drag-to-move, and resize are now fully operational.',
     ],
   },
 };

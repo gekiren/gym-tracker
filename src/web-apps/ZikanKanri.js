@@ -17,6 +17,19 @@ export default `<!DOCTYPE html>
         }));
       }
     } catch (e) {}
+
+    // 画面上部への赤バナー表示（実機デバッグ・フェイルセーフ用）
+    try {
+      var errDiv = document.getElementById('wv-runtime-error-banner');
+      if (!errDiv) {
+        errDiv = document.createElement('div');
+        errDiv.id = 'wv-runtime-error-banner';
+        errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#dc2626;color:#ffffff;padding:8px 12px;font-size:0.75rem;z-index:99999;word-break:break-all;box-shadow:0 2px 8px rgba(0,0,0,0.5);font-family:monospace;';
+        document.body ? document.body.appendChild(errDiv) : document.documentElement.appendChild(errDiv);
+      }
+      errDiv.textContent = '⚠️ JSエラー: ' + message + ' (' + lineno + ':' + colno + ')';
+    } catch (bannerErr) {}
+
     return false;
   };
 
@@ -1573,6 +1586,17 @@ let logs = JSON.parse(storage.getItem('zikankanri_logs')) || [];
 let plans = JSON.parse(storage.getItem('zikankanri_plans')) || [];
 let templates = JSON.parse(storage.getItem('zikankanri_templates')) || [];
 
+// Puzzle State
+var puzzleInitialized = false;
+var selectedPuzzlePiece = null;
+var currentMainViewMode = (function() {
+    try {
+        return storage.getItem('zikankanri_main_view_mode') || 'puzzle';
+    } catch (e) {
+        return 'puzzle';
+    }
+})();
+
 function loadTagsFromStorage() {
     try {
         const raw = storage.getItem('zikankanri_tags');
@@ -1643,11 +1667,8 @@ function init() {
     registerSW();
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
-    init();
-}
+// Application initialization (init and initPuzzle) is executed at the very end of the script
+
 
 currentDateInput.addEventListener('change', function() {
     updateDefaultStartTime();
@@ -3218,8 +3239,8 @@ function updateDefaultStartTime() {
 /* ==========================================================================
    Piece Puzzle Timeline Logic (24h Vertical Drag & Resize)
    ========================================================================== */
-let selectedPuzzlePiece = null;
-let currentMainViewMode = storage.getItem('zikankanri_main_view_mode') || 'puzzle';
+// (puzzle state variables are declared at the top in the State section)
+
 
 window.switchMainViewMode = function(mode) {
     currentMainViewMode = mode;
@@ -3762,7 +3783,6 @@ function handlePuzzleResetDay() {
     renderPuzzle();
 }
 
-let puzzleInitialized = false;
 function initPuzzle() {
     if (puzzleInitialized) return;
     puzzleInitialized = true;
@@ -3789,10 +3809,15 @@ function initPuzzle() {
     }, 50);
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPuzzle);
-} else {
+function startApp() {
+    init();
     initPuzzle();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
+} else {
+    startApp();
 }
 
 </script>
