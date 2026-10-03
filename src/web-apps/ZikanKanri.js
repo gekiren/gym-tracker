@@ -1771,6 +1771,9 @@ input:checked + .holiday-switch-slider:before {
                     <button type="button" class="btn btn-secondary" id="bs-btn-now-start" style="width: auto; flex: 1; padding: 5px 6px; font-size: 0.72rem; margin-bottom: 0;">現在時刻を開始に</button>
                     <button type="button" class="btn btn-secondary" id="bs-btn-now-end" style="width: auto; flex: 1; padding: 5px 6px; font-size: 0.72rem; margin-bottom: 0;">現在時刻を終了に</button>
                 </div>
+                <div id="bs-cross-day-badge" style="display: none; margin-top: 8px; padding: 6px 10px; border-radius: 6px; background: rgba(139, 92, 246, 0.16); border: 1px solid rgba(139, 92, 246, 0.4); font-size: 0.74rem; color: #c4b5fd; text-align: center;">
+                    🌙 翌朝までまたがる記録
+                </div>
             </div>
 
             <!-- メモ入力 -->
@@ -2341,6 +2344,35 @@ function getDayOfWeek(dateStr) {
         return new Date().getDay();
     }
     return new Date(parts[0], parts[1] - 1, parts[2]).getDay();
+}
+
+function getNextDateString(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.replace(/-/g, '/').split('/').map(Number);
+    const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+    dt.setDate(dt.getDate() + 1);
+    const ny = dt.getFullYear();
+    const nm = String(dt.getMonth() + 1).padStart(2, '0');
+    const nd = String(dt.getDate()).padStart(2, '0');
+    return ny + '/' + nm + '/' + nd;
+}
+
+function getPrevDateString(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.replace(/-/g, '/').split('/').map(Number);
+    const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+    dt.setDate(dt.getDate() - 1);
+    const py = dt.getFullYear();
+    const pm = String(dt.getMonth() + 1).padStart(2, '0');
+    const pd = String(dt.getDate()).padStart(2, '0');
+    return py + '/' + pm + '/' + pd;
+}
+
+function isCrossDayTime(startStr, endStr) {
+    if (!startStr || !endStr) return false;
+    const s = timeToMins(startStr);
+    const e = timeToMins(endStr);
+    return e < s;
 }
 
 /**
@@ -5137,16 +5169,25 @@ function renderPuzzle() {
             ? Math.floor(duration / 60) + 'h' + (duration % 60 > 0 ? (duration % 60) + 'm' : '')
             : duration + 'm';
 
+        let timeLabel = item.start + '-' + item.end + ' (' + durationStr + ')';
+        if (item.crossRole === 'head') {
+            const nextPart = item.crossFullSpan ? item.crossFullSpan.split('-')[1].trim() : '朝';
+            timeLabel = '🌙 ' + item.start + '-翌' + nextPart + ' (' + durationStr + ')';
+        } else if (item.crossRole === 'tail') {
+            const prevPart = item.crossFullSpan ? item.crossFullSpan.split('-')[0].trim() : '前夜';
+            timeLabel = '🌅 ' + prevPart + '-' + item.end + ' (' + durationStr + ')';
+        }
+
         blockEl.innerHTML =
             '<div style="display: flex; justify-content: space-between; align-items: center; pointer-events: none; width: 100%;">' +
-                '<span style="font-weight: 700; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;">' +
+                '<span style="font-weight: 700; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%;">' +
                     primaryName +
                 '</span>' +
                 '<div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">' +
                     '<span style="font-family: monospace; font-size: 0.68rem; opacity: 0.85;">' +
-                        item.start + '-' + item.end + ' (' + durationStr + ')' +
+                        timeLabel +
                     '</span>' +
-                    '<button type="button" class="puzzle-del-btn" style="pointer-events: auto; background: none; border: none; color: inherit; opacity: 0.6; cursor: pointer; font-size: 0.72rem; padding: 0 4px; line-height: 1;">✕</button>' +
+                    '<button type="button" class="puzzle-del-btn" style="pointer-events: auto; background: none; border: none; color: inherit; opacity: 0.6; cursor: pointer; font-size: 0.72rem; padding: 0 4px; line-height: 1;" title="削除">✕</button>' +
                 '</div>' +
             '</div>' +
             '<div class="timeline-resize-handle" title="上下にドラッグして長さを調整"></div>';
@@ -5155,12 +5196,15 @@ function renderPuzzle() {
         if (delBtn) {
             delBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
+                const gid = item.crossDayGroupId;
                 if (isPlan) {
-                    plans = plans.filter(function(p) { return p.id !== item.id; });
+                    if (gid) plans = plans.filter(function(p) { return p.crossDayGroupId !== gid && p.id !== item.id; });
+                    else plans = plans.filter(function(p) { return p.id !== item.id; });
                     savePlans();
                     renderPlans();
                 } else {
-                    logs = logs.filter(function(l) { return l.id !== item.id; });
+                    if (gid) logs = logs.filter(function(l) { return l.crossDayGroupId !== gid && l.id !== item.id; });
+                    else logs = logs.filter(function(l) { return l.id !== item.id; });
                     saveLogs();
                     renderLogs();
                 }
@@ -5196,6 +5240,24 @@ var bsCurrentMode = 'actual'; // 'actual' | 'plan'
 var bsSelectedActivity = '';
 var bsSimultaneousItems = []; // [{ name: '', percent: 100 }]
 
+function updateBottomSheetCrossDayBadge() {
+    const startTimeInput = document.getElementById('bs-start-time');
+    const endTimeInput = document.getElementById('bs-end-time');
+    const badge = document.getElementById('bs-cross-day-badge');
+    if (!startTimeInput || !endTimeInput || !badge) return;
+
+    const s = startTimeInput.value;
+    const e = endTimeInput.value;
+    if (s && e && isCrossDayTime(s, e)) {
+        const duration = calculateDuration(s, e);
+        const hours = (duration / 60).toFixed(1);
+        badge.innerHTML = '🌙 翌朝 ' + e + ' まで（計 ' + hours + 'h・翌日にまたがる記録）';
+        badge.style.display = 'block';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
 function openTimelineBottomSheetForEdit(item, isPlan, element) {
     currentEditingTimelineItem = item;
     isBottomSheetNewRecord = false;
@@ -5221,9 +5283,27 @@ function openTimelineBottomSheetForEdit(item, isPlan, element) {
 
     setBottomSheetMode(bsCurrentMode);
 
-    if (startTimeInput) startTimeInput.value = item.start || '09:00';
-    if (endTimeInput) endTimeInput.value = item.end || '10:00';
+    let origStart = item.start || '09:00';
+    let origEnd = item.end || '10:00';
+
+    if (item.crossDayGroupId) {
+        const pool = isPlan ? plans : logs;
+        const pair = pool.find(function(p) {
+            return p.crossDayGroupId === item.crossDayGroupId && p.id !== item.id;
+        });
+        if (item.crossRole === 'head') {
+            origStart = item.start;
+            origEnd = pair ? pair.end : (item.crossFullSpan ? item.crossFullSpan.split('-')[1].trim() : '07:00');
+        } else if (item.crossRole === 'tail') {
+            origStart = pair ? pair.start : (item.crossFullSpan ? item.crossFullSpan.split('-')[0].trim() : '23:00');
+            origEnd = item.end;
+        }
+    }
+
+    if (startTimeInput) startTimeInput.value = origStart;
+    if (endTimeInput) endTimeInput.value = origEnd;
     if (memoInput) memoInput.value = item.memo || '';
+    updateBottomSheetCrossDayBadge();
 
     if (item.items && item.items.length > 0) {
         bsSelectedActivity = item.items[0].name;
@@ -5304,6 +5384,7 @@ function openTimelineBottomSheetForNew(startStr, endStr, isPlan) {
 
     renderBottomSheetTags();
     renderBottomSheetSimultaneousList();
+    updateBottomSheetCrossDayBadge();
 
     if (overlay) overlay.classList.add('active');
     if (sheet) sheet.classList.add('active');
@@ -5452,61 +5533,138 @@ function handleBottomSheetSave() {
         }
     });
 
-    if (isBottomSheetNewRecord) {
-        const newEntry = {
-            id: Date.now() + Math.floor(Math.random() * 1000),
-            date: selectedDate,
-            start: startVal,
-            end: endVal,
-            items: items,
-            memo: memoVal
-        };
+    const isCrossDay = isCrossDayTime(startVal, endVal);
+    const targetIsPlan = (bsCurrentMode === 'plan');
+    const fullSpan = startVal + ' - ' + endVal;
 
-        if (bsCurrentMode === 'plan') {
-            plans.push(newEntry);
-            savePlans();
+    if (isBottomSheetNewRecord) {
+        if (isCrossDay) {
+            const nextDate = getNextDateString(selectedDate);
+            const groupId = 'cross_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            const headEntry = {
+                id: Date.now() + Math.floor(Math.random() * 500),
+                date: selectedDate,
+                start: startVal,
+                end: '24:00',
+                items: items,
+                memo: memoVal,
+                crossDayGroupId: groupId,
+                crossRole: 'head',
+                crossFullSpan: fullSpan
+            };
+            const tailEntry = {
+                id: Date.now() + 500 + Math.floor(Math.random() * 500),
+                date: nextDate,
+                start: '00:00',
+                end: endVal,
+                items: items,
+                memo: memoVal,
+                crossDayGroupId: groupId,
+                crossRole: 'tail',
+                crossFullSpan: fullSpan
+            };
+            if (targetIsPlan) {
+                plans.push(headEntry, tailEntry);
+                savePlans();
+            } else {
+                logs.push(headEntry, tailEntry);
+                saveLogs();
+            }
         } else {
-            logs.push(newEntry);
-            saveLogs();
+            const newEntry = {
+                id: Date.now() + Math.floor(Math.random() * 1000),
+                date: selectedDate,
+                start: startVal,
+                end: endVal,
+                items: items,
+                memo: memoVal
+            };
+            if (targetIsPlan) {
+                plans.push(newEntry);
+                savePlans();
+            } else {
+                logs.push(newEntry);
+                saveLogs();
+            }
         }
     } else if (currentEditingTimelineItem) {
         const item = currentEditingTimelineItem;
         const oldId = item.id;
-
+        const oldGroupId = item.crossDayGroupId;
         const originalWasPlan = plans.some(function(p) { return p.id === oldId; });
-        const targetIsPlan = (bsCurrentMode === 'plan');
 
-        if (originalWasPlan !== targetIsPlan) {
-            if (originalWasPlan) {
-                plans = plans.filter(function(p) { return p.id !== oldId; });
-                logs.push({
-                    id: oldId,
-                    date: selectedDate,
-                    start: startVal,
-                    end: endVal,
-                    items: items,
-                    memo: memoVal
-                });
+        let oldPair = null;
+        if (oldGroupId) {
+            const searchPool = originalWasPlan ? plans : logs;
+            oldPair = searchPool.find(function(p) { return p.crossDayGroupId === oldGroupId && p.id !== oldId; });
+        }
+
+        if (isCrossDay) {
+            const nextDate = getNextDateString(selectedDate);
+            const groupId = oldGroupId || ('cross_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
+            const headId = (item.crossRole === 'head') ? item.id : (oldPair ? oldPair.id : Date.now());
+            const tailId = (item.crossRole === 'tail') ? item.id : (oldPair ? oldPair.id : Date.now() + 500);
+
+            // 古いレコードを両プールから削除
+            plans = plans.filter(function(p) { return p.id !== headId && p.id !== tailId && (!oldGroupId || p.crossDayGroupId !== oldGroupId); });
+            logs = logs.filter(function(l) { return l.id !== headId && l.id !== tailId && (!oldGroupId || l.crossDayGroupId !== oldGroupId); });
+
+            const newHead = {
+                id: headId,
+                date: selectedDate,
+                start: startVal,
+                end: '24:00',
+                items: items,
+                memo: memoVal,
+                crossDayGroupId: groupId,
+                crossRole: 'head',
+                crossFullSpan: fullSpan
+            };
+            const newTail = {
+                id: tailId,
+                date: nextDate,
+                start: '00:00',
+                end: endVal,
+                items: items,
+                memo: memoVal,
+                crossDayGroupId: groupId,
+                crossRole: 'tail',
+                crossFullSpan: fullSpan
+            };
+
+            if (targetIsPlan) {
+                plans.push(newHead, newTail);
             } else {
-                logs = logs.filter(function(l) { return l.id !== oldId; });
-                plans.push({
-                    id: oldId,
-                    date: selectedDate,
-                    start: startVal,
-                    end: endVal,
-                    items: items,
-                    memo: memoVal
-                });
+                logs.push(newHead, newTail);
             }
             savePlans();
             saveLogs();
         } else {
-            item.start = startVal;
-            item.end = endVal;
-            item.items = items;
-            item.memo = memoVal;
-            if (targetIsPlan) savePlans();
-            else saveLogs();
+            // 通常時間に変更された場合
+            if (oldGroupId) {
+                plans = plans.filter(function(p) { return p.crossDayGroupId !== oldGroupId; });
+                logs = logs.filter(function(l) { return l.crossDayGroupId !== oldGroupId; });
+            } else {
+                plans = plans.filter(function(p) { return p.id !== oldId; });
+                logs = logs.filter(function(l) { return l.id !== oldId; });
+            }
+
+            const updatedEntry = {
+                id: oldId,
+                date: selectedDate,
+                start: startVal,
+                end: endVal,
+                items: items,
+                memo: memoVal
+            };
+
+            if (targetIsPlan) {
+                plans.push(updatedEntry);
+            } else {
+                logs.push(updatedEntry);
+            }
+            savePlans();
+            saveLogs();
         }
     }
 
@@ -5521,9 +5679,17 @@ function handleBottomSheetDelete() {
     if (!currentEditingTimelineItem) return;
     if (!confirm('この活動記録を削除しますか？')) return;
 
-    const delId = currentEditingTimelineItem.id;
-    plans = plans.filter(function(p) { return p.id !== delId; });
-    logs = logs.filter(function(l) { return l.id !== delId; });
+    const delItem = currentEditingTimelineItem;
+    const delId = delItem.id;
+    const gid = delItem.crossDayGroupId;
+
+    if (gid) {
+        plans = plans.filter(function(p) { return p.crossDayGroupId !== gid && p.id !== delId; });
+        logs = logs.filter(function(l) { return l.crossDayGroupId !== gid && l.id !== delId; });
+    } else {
+        plans = plans.filter(function(p) { return p.id !== delId; });
+        logs = logs.filter(function(l) { return l.id !== delId; });
+    }
 
     savePlans();
     saveLogs();
@@ -5546,6 +5712,7 @@ function initTimelineBottomSheet() {
         bsNowStart.onclick = function() {
             const st = document.getElementById('bs-start-time');
             if (st) st.value = getCurrentTimeStr();
+            updateBottomSheetCrossDayBadge();
         };
     }
 
@@ -5554,7 +5721,19 @@ function initTimelineBottomSheet() {
         bsNowEnd.onclick = function() {
             const et = document.getElementById('bs-end-time');
             if (et) et.value = getCurrentTimeStr();
+            updateBottomSheetCrossDayBadge();
         };
+    }
+
+    const stInput = document.getElementById('bs-start-time');
+    const etInput = document.getElementById('bs-end-time');
+    if (stInput) {
+        stInput.addEventListener('input', updateBottomSheetCrossDayBadge);
+        stInput.addEventListener('change', updateBottomSheetCrossDayBadge);
+    }
+    if (etInput) {
+        etInput.addEventListener('input', updateBottomSheetCrossDayBadge);
+        etInput.addEventListener('change', updateBottomSheetCrossDayBadge);
     }
 
     const bsAddSimBtn = document.getElementById('bs-add-simultaneous-btn');
@@ -5631,7 +5810,8 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
 
             const finalTop = parseInt(element.style.top, 10) || 0;
             item.start = minsToTime(finalTop);
-            item.end = minsToTime(finalTop + duration);
+            const finalEndMins = finalTop + duration;
+            item.end = (finalEndMins >= 1440) ? '24:00' : minsToTime(finalEndMins);
 
             if (isPlan) {
                 savePlans();
@@ -5674,7 +5854,7 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
 
                 element.style.height = Math.max(newDuration, 20) + 'px';
 
-                const endStr = minsToTime(startMins + newDuration);
+                const endStr = (startMins + newDuration >= 1440) ? '24:00' : minsToTime(startMins + newDuration);
                 if (tooltip) {
                     tooltip.textContent = '📏 ' + item.start + ' - ' + endStr + ' (' + newDuration + 'm)';
                 }
@@ -5689,7 +5869,7 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
                 resizeHandle.removeEventListener('pointerup', onResizeUp);
 
                 const finalHeight = parseInt(element.style.height, 10) || 20;
-                item.end = minsToTime(startMins + finalHeight);
+                item.end = (startMins + finalHeight >= 1440) ? '24:00' : minsToTime(startMins + finalHeight);
 
                 if (isPlan) {
                     savePlans();
