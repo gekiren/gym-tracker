@@ -11,21 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.4',
+  version: '2.3.9',
   title: {
-    ja: '🧩 24時間管理 タブ分割による操作性改善 ＆ 予定計算バグ修正',
-    en: '🧩 24h Timeline Segment Tabs & Plan Calculation Fix',
+    ja: '🇯🇵 24時間管理：日本の祝日連携とスケジュール設定',
+    en: '🇯🇵 24h Timeline: Holiday Sync & Schedule Settings',
   },
   notes: {
     ja: [
-      '画面上部に「タイムライン」と「サークル・集計」のセグメントタブを新設し、画面全体のスクロールの引っかかりを解消しました。',
-      'タイムラインで予定ピースを配置した際に、予定総時間が「NaN分」と表示されてしまう集計バグを修正しました。',
-      '活動別の予定・実績差異や遵守率が即座に正しく集計・表示されます。',
+      '端末/Googleカレンダーから日本の祝日データを自動取得し、タイムラインに祝日名を表示する機能を追加しました。',
+      '祝日を日曜日（休日スケジュール）として自動適用するかどうかを、デフォルト設定モーダルから自由に切り替えられるようになりました。',
     ],
     en: [
-      'Added segment tabs for Timeline and Circle Summary, resolving scroll interception issues.',
-      'Fixed an issue where total planned time showed as NaN when placing pieces on the timeline.',
-      'Plan vs. actual breakdown and adherence rates now update accurately in real time.',
+      'Added Japanese national holidays sync from device calendar with holiday badges on the timeline.',
+      'You can now toggle whether to treat national holidays as Sundays (holiday schedule) directly from settings.',
     ],
   },
 };

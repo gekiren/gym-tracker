@@ -253,6 +253,32 @@ export default function CalendarSyncScreen() {
                   <View style={styles.divider} />
                   <View style={styles.settingRow}>
                     <View style={{ flex: 1, paddingRight: 8 }}>
+                      <Text style={styles.settingLabel}>{t('ui.calendar_sync.import_holidays', '日本の祝日を取り込む')}</Text>
+                      <Text style={styles.settingSubtext}>{t('ui.calendar_sync.import_holidays_desc', '端末/Googleカレンダーから祝日を取得し、タイムラインに表示します')}</Text>
+                    </View>
+                    <Switch
+                      value={settings.importHolidays ?? true}
+                      onValueChange={(v) => updateSetting('importHolidays', v)}
+                      trackColor={{ false: Theme.colors.border, true: Theme.colors.primary }}
+                    />
+                  </View>
+
+                  <View style={styles.divider} />
+                  <View style={styles.settingRow}>
+                    <View style={{ flex: 1, paddingRight: 8 }}>
+                      <Text style={styles.settingLabel}>{t('ui.calendar_sync.treat_holidays_as_sunday', '祝日を休日（日曜日）として扱う')}</Text>
+                      <Text style={styles.settingSubtext}>{t('ui.calendar_sync.treat_holidays_as_sunday_desc', '祝日には平日ではなく日曜日（休日用デフォルトスケジュール）を自動適用します')}</Text>
+                    </View>
+                    <Switch
+                      value={settings.treatHolidaysAsSunday ?? true}
+                      onValueChange={(v) => updateSetting('treatHolidaysAsSunday', v)}
+                      trackColor={{ false: Theme.colors.border, true: Theme.colors.primary }}
+                    />
+                  </View>
+
+                  <View style={styles.divider} />
+                  <View style={styles.settingRow}>
+                    <View style={{ flex: 1, paddingRight: 8 }}>
                       <Text style={styles.settingLabel}>{t('ui.calendar_sync.import_bg_daily', '毎朝の定時バックグラウンド取得')}</Text>
                       <Text style={styles.settingSubtext}>{t('ui.calendar_sync.import_bg_daily_desc', 'アプリ未起動時でも、朝（07:00頃）に裏で予定を取り込みます')}</Text>
                     </View>

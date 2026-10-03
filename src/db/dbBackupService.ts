@@ -1,3 +1,4 @@
+import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { getDB } from './connection';
@@ -18,12 +19,67 @@ const ensureBackupDir = async (): Promise<void> => {
 };
 
 /**
+ * 指定された DB ファイルの整合性を quick_check で検証する
+ */
+export const verifyDBFileIntegrity = async (filePath: string): Promise<boolean> => {
+  const tempDbName = `_temp_chk_${Date.now()}.db`;
+  const tempDbPath = `${FileSystem.documentDirectory}SQLite/${tempDbName}`;
+  try {
+    const fileInfo = await FileSystem.getInfoAsync(filePath);
+    if (!fileInfo.exists || fileInfo.size === 0) return false;
+
+    const sqliteDir = `${FileSystem.documentDirectory}SQLite/`;
+    const dirInfo = await FileSystem.getInfoAsync(sqliteDir);
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
+    }
+
+    await FileSystem.copyAsync({ from: filePath, to: tempDbPath });
+    const tempDb = await SQLite.openDatabaseAsync(tempDbName);
+    try {
+      const check = await tempDb.getFirstAsync<{ quick_check?: string; integrity_check?: string }>(
+        'PRAGMA quick_check;'
+      );
+      const status = check?.quick_check || check?.integrity_check || '';
+      return status.toLowerCase() === 'ok';
+    } finally {
+      await tempDb.closeAsync();
+    }
+  } catch (err) {
+    console.warn(`[DB_BACKUP] Error verifying integrity of ${filePath}:`, err);
+    return false;
+  } finally {
+    await FileSystem.deleteAsync(tempDbPath, { idempotent: true }).catch(() => {});
+    await FileSystem.deleteAsync(`${tempDbPath}-wal`, { idempotent: true }).catch(() => {});
+    await FileSystem.deleteAsync(`${tempDbPath}-shm`, { idempotent: true }).catch(() => {});
+  }
+};
+
+/**
  * 定期（1日1回）自動バックアップを作成（最新3世代ローテーション）
  */
 export const createDailyBackup = async (): Promise<boolean> => {
   try {
     const dbInfo = await FileSystem.getInfoAsync(DB_PATH);
     if (!dbInfo.exists || dbInfo.size === 0) {
+      return false;
+    }
+
+    // 原本DBの健全性チェック（破損DBでバックアップを上書き汚染させないガード）
+    try {
+      const conn = getDB();
+      if (conn) {
+        const check = await conn.getFirstAsync<{ quick_check?: string; integrity_check?: string }>(
+          'PRAGMA quick_check;'
+        );
+        const status = check?.quick_check || check?.integrity_check || '';
+        if (status.toLowerCase() !== 'ok') {
+          console.warn('[DB_BACKUP] Aborted daily backup: current DB is malformed! Existing healthy backups preserved.');
+          return false;
+        }
+      }
+    } catch (checkErr) {
+      console.warn('[DB_BACKUP] Quick check before daily backup failed, skipping:', checkErr);
       return false;
     }
 
@@ -99,6 +155,24 @@ export const createInstantBackup = async (reason: string = 'instant'): Promise<b
     const dbInfo = await FileSystem.getInfoAsync(DB_PATH);
     if (!dbInfo.exists || dbInfo.size === 0) {
       console.warn(`[DB_BACKUP] Main database file not found or empty (${DB_PATH}).`);
+      return false;
+    }
+
+    // 原本DBの健全性チェック（破損DBでバックアップを上書き汚染させないガード）
+    try {
+      const conn = getDB();
+      if (conn) {
+        const check = await conn.getFirstAsync<{ quick_check?: string; integrity_check?: string }>(
+          'PRAGMA quick_check;'
+        );
+        const status = check?.quick_check || check?.integrity_check || '';
+        if (status.toLowerCase() !== 'ok') {
+          console.warn(`[DB_BACKUP] Aborted instant backup (${reason}): current DB is malformed! Existing healthy backups preserved.`);
+          return false;
+        }
+      }
+    } catch (checkErr) {
+      console.warn(`[DB_BACKUP] Quick check before instant backup (${reason}) failed, skipping:`, checkErr);
       return false;
     }
 
@@ -197,34 +271,103 @@ export const triggerBackgroundBackup = async (): Promise<boolean> => {
   }
 };
 
-
 /**
- * 直近の最新バックアップから DB ファイルを復元する
+ * backups フォルダ内の全バックアップファイルを走査し、
+ * quick_check が正常な最も新しいバックアップから復元する
  */
-export const restoreFromLatestBackup = async (): Promise<boolean> => {
+export const restoreFromHealthyBackup = async (): Promise<boolean> => {
   try {
-    const latestInfo = await FileSystem.getInfoAsync(LATEST_BACKUP_PATH);
-    if (!latestInfo.exists || latestInfo.size === 0) {
-      console.warn('[DB_BACKUP] No valid backup file found to restore.');
+    await ensureBackupDir();
+    const files = await FileSystem.readDirectoryAsync(BACKUP_DIR);
+
+    // バックアップ候補の収集（quarantine と temp は除外）
+    const dbFiles = files.filter(
+      (f) => f.endsWith('.db') && !f.includes('quarantine') && !f.startsWith('_temp_')
+    );
+
+    if (dbFiles.length === 0) {
+      console.warn('[DB_BACKUP] No candidate backup files found in backup directory.');
       return false;
     }
 
-    // SQLite ディレクトリの確保
-    const sqliteDir = `${FileSystem.documentDirectory}SQLite/`;
-    const dirInfo = await FileSystem.getInfoAsync(sqliteDir);
-    if (!dirInfo.exists) {
-      await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
+    // 優先順位付け:
+    // 1. 日次バックアップ (gymtracker_backup_20*.db) 降順 (最新の日付優先)
+    // 2. バックグラウンド/即時バックアップ (gymtracker_backup_background_*.db / instant_*.db) 降順
+    // 3. latest (gymtracker_backup_latest.db)
+    const dailyBackups = dbFiles.filter((f) => f.startsWith('gymtracker_backup_20')).sort().reverse();
+    const bgBackups = dbFiles
+      .filter((f) => f.startsWith('gymtracker_backup_background_') || f.startsWith('gymtracker_backup_instant_'))
+      .sort()
+      .reverse();
+    const otherBackups = dbFiles.filter((f) => !dailyBackups.includes(f) && !bgBackups.includes(f));
+
+    const candidates = [...dailyBackups, ...bgBackups, ...otherBackups];
+
+    console.log(`[DB_BACKUP] Searching for healthy backup among ${candidates.length} candidates:`, candidates);
+
+    for (const filename of candidates) {
+      const fullPath = `${BACKUP_DIR}${filename}`;
+      const isHealthy = await verifyDBFileIntegrity(fullPath);
+      if (isHealthy) {
+        console.log(`[DB_BACKUP] Found healthy backup file: ${filename}! Restoring...`);
+
+        const sqliteDir = `${FileSystem.documentDirectory}SQLite/`;
+        const dirInfo = await FileSystem.getInfoAsync(sqliteDir);
+        if (!dirInfo.exists) {
+          await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
+        }
+
+        // 壊れた原本を上書き
+        await FileSystem.copyAsync({ from: fullPath, to: DB_PATH });
+
+        // 旧WAL/SHMの削除
+        await FileSystem.deleteAsync(`${DB_PATH}-wal`, { idempotent: true }).catch(() => {});
+        await FileSystem.deleteAsync(`${DB_PATH}-shm`, { idempotent: true }).catch(() => {});
+
+        console.log(`[DB_BACKUP] Successfully restored from healthy backup: ${filename}!`);
+        return true;
+      } else {
+        console.warn(`[DB_BACKUP] Candidate ${filename} is corrupted. Trying next candidate...`);
+      }
     }
 
-    // バックアップから原本へコピー復元（壊れた原本を上書き）
-    await FileSystem.copyAsync({ from: LATEST_BACKUP_PATH, to: DB_PATH });
+    console.warn('[DB_BACKUP] No healthy backup files found among all candidates.');
+    return false;
+  } catch (err) {
+    console.error('[DB_BACKUP] Error searching for healthy backup:', err);
+    return false;
+  }
+};
 
-    // 関連する WAL / SHM ファイルがあれば削除（旧ログとの矛盾を防ぐ）
-    await FileSystem.deleteAsync(`${DB_PATH}-wal`, { idempotent: true }).catch(() => {});
-    await FileSystem.deleteAsync(`${DB_PATH}-shm`, { idempotent: true }).catch(() => {});
+/**
+ * 直近の最新バックアップから DB ファイルを復元する（健全性チェック付き）
+ */
+export const restoreFromLatestBackup = async (): Promise<boolean> => {
+  try {
+    // まず最新バックアップ自体の健全性をチェック
+    const latestInfo = await FileSystem.getInfoAsync(LATEST_BACKUP_PATH);
+    if (latestInfo.exists && latestInfo.size > 0) {
+      const isLatestHealthy = await verifyDBFileIntegrity(LATEST_BACKUP_PATH);
+      if (isLatestHealthy) {
+        const sqliteDir = `${FileSystem.documentDirectory}SQLite/`;
+        const dirInfo = await FileSystem.getInfoAsync(sqliteDir);
+        if (!dirInfo.exists) {
+          await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
+        }
 
-    console.log('[DB_BACKUP] Restored database from latest backup successfully.');
-    return true;
+        await FileSystem.copyAsync({ from: LATEST_BACKUP_PATH, to: DB_PATH });
+        await FileSystem.deleteAsync(`${DB_PATH}-wal`, { idempotent: true }).catch(() => {});
+        await FileSystem.deleteAsync(`${DB_PATH}-shm`, { idempotent: true }).catch(() => {});
+
+        console.log('[DB_BACKUP] Restored database from latest backup successfully.');
+        return true;
+      } else {
+        console.warn('[DB_BACKUP] Latest backup file is malformed! Searching older healthy backups...');
+      }
+    }
+
+    // latest が破損している場合は他の健全なバックアップから自動探索復元
+    return await restoreFromHealthyBackup();
   } catch (e) {
     console.error('[DB_BACKUP] Failed to restore database from backup:', e);
     return false;

@@ -1076,6 +1076,225 @@ header {
   z-index: 60;
   pointer-events: none;
 }
+
+/* Timeline Selection Highlight */
+.timeline-block.is-selected {
+  box-shadow: 0 0 0 2px #c084fc, 0 4px 16px rgba(168, 85, 247, 0.45) !important;
+  z-index: 45 !important;
+}
+
+/* Timeline Bottom Sheet Drawer */
+.bottom-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.bottom-sheet-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bottom-sheet-container {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 84vh;
+  background: #181822;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.85);
+  z-index: 999;
+  transform: translateY(105%);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.bottom-sheet-container.active {
+  transform: translateY(0);
+}
+
+.bottom-sheet-handle-bar {
+  padding: 8px 0 4px 0;
+  display: flex;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.bottom-sheet-drag-pill {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.bottom-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px 10px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bottom-sheet-header h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0;
+}
+
+.bs-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.bottom-sheet-body {
+  padding: 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: calc(84vh - 60px);
+  padding-bottom: 36px;
+}
+
+.bs-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.bs-tag-chip:active {
+  transform: scale(0.96);
+}
+
+.bs-tag-chip.active {
+  background: #6d28d9;
+  color: #ffffff;
+  border-color: #8b5cf6;
+  box-shadow: 0 2px 8px rgba(109, 40, 217, 0.4);
+}
+
+/* Default Schedule UI Styles */
+.def-sched-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.def-sched-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.def-sched-badge-day {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+.def-sched-badge-any {
+  background: rgba(139, 92, 246, 0.2);
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+}
+.day-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin: 6px 0;
+}
+.day-toggle-btn {
+  padding: 6px 2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+.day-toggle-btn.active {
+  background: #2563eb;
+  border-color: #60a5fa;
+  color: #ffffff;
+  font-weight: 700;
+}
+.day-toggle-btn.sunday.active {
+  background: #dc2626;
+  border-color: #f87171;
+}
+.day-toggle-btn.saturday.active {
+  background: #0284c7;
+  border-color: #38bdf8;
+}
+.quick-day-btn {
+  padding: 3px 6px;
+  font-size: 0.7rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.quick-day-btn:active {
+  background: rgba(255, 255, 255, 0.15);
+}
+.holiday-switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(255, 255, 255, 0.2);
+  transition: .2s;
+  border-radius: 24px;
+}
+.holiday-switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .2s;
+  border-radius: 50%;
+}
+input:checked + .holiday-switch-slider {
+  background-color: #2563eb;
+}
+input:checked + .holiday-switch-slider:before {
+  transform: translateX(20px);
+}
 </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1103,7 +1322,7 @@ header {
                 📊 サークル・集計
             </button>
             <button type="button" id="view-mode-classic-btn" class="view-mode-btn" onclick="switchMainViewMode('classic')">
-                📋 フォーム
+                📋 詳細リスト
             </button>
         </div>
 
@@ -1114,14 +1333,26 @@ header {
                     <h3 style="margin-bottom: 0;">24時間ピースタイムライン</h3>
                     <span id="puzzle-current-mode-badge" class="puzzle-mode-badge puzzle-mode-actual">⏱ 実績</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <button type="button" id="puzzle-switch-mode-btn" class="btn btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.78rem; margin-bottom: 0;">
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <button type="button" id="puzzle-add-record-btn" class="btn btn-primary" style="width: auto; padding: 4px 8px; font-size: 0.76rem; margin-bottom: 0;" onclick="openTimelineBottomSheetForNew()">
+                        ＋ 記録
+                    </button>
+                    <button type="button" id="puzzle-switch-mode-btn" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.76rem; margin-bottom: 0;">
                         予定に切替
                     </button>
-                    <button type="button" id="puzzle-reset-day-btn" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.78rem; margin-bottom: 0; color: var(--error-color);">
+                    <button type="button" id="puzzle-default-schedule-btn" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.76rem; margin-bottom: 0; color: #c4b5fd; border-color: #8b5cf6;" title="デフォルトスケジュール設定">
+                        📅 デフォルト
+                    </button>
+                    <button type="button" id="puzzle-reset-day-btn" class="btn btn-secondary" style="width: auto; padding: 4px 7px; font-size: 0.76rem; margin-bottom: 0; color: var(--error-color);">
                         クリア
                     </button>
                 </div>
+            </div>
+
+            <!-- デフォルトスケジュール情報バナー -->
+            <div id="default-sched-banner" style="display: none; margin-bottom: 10px; padding: 6px 12px; border-radius: 8px; background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.3); font-size: 0.76rem; align-items: center; justify-content: space-between;">
+                <span id="default-sched-banner-text" style="color: #c4b5fd;">⚡ デフォルト予定: </span>
+                <button type="button" id="default-sched-banner-apply-btn" class="btn btn-secondary" style="width: auto; padding: 2px 8px; font-size: 0.72rem; margin-bottom: 0; border-color: #8b5cf6; color: #c4b5fd;">再適用</button>
             </div>
 
             <!-- 時間ポートフォリオ（4分割） -->
@@ -1377,6 +1608,8 @@ header {
                         style="width:auto; font-size: 0.78rem; padding: 4px 8px; border-color: #2563EB; color: #93c5fd;">予定を保存</button>
                     <button type="button" id="save-template-btn" class="btn btn-secondary"
                         style="width:auto; font-size: 0.78rem; padding: 4px 8px;">実績を保存</button>
+                    <button type="button" id="classic-default-sched-btn" class="btn btn-secondary"
+                        style="width:auto; font-size: 0.78rem; padding: 4px 8px; border-color: #8b5cf6; color: #c4b5fd;">📅 デフォルト設定</button>
                 </div>
             </div>
             <div id="template-list" class="tags" style="margin-top: 10px;">
@@ -1454,6 +1687,85 @@ header {
         </section>
     </div>
 
+    <!-- Timeline Edit/Create Bottom Sheet -->
+    <div id="timeline-bottom-sheet-overlay" class="bottom-sheet-overlay" onclick="closeTimelineBottomSheet()"></div>
+    <div id="timeline-bottom-sheet" class="bottom-sheet-container">
+        <div class="bottom-sheet-handle-bar" onclick="closeTimelineBottomSheet()">
+            <div class="bottom-sheet-drag-pill"></div>
+        </div>
+        <div class="bottom-sheet-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="bs-mode-badge" class="puzzle-mode-badge puzzle-mode-actual">⏱ 実績</span>
+                <h3 id="bs-sheet-title" style="margin-bottom: 0; font-size: 1.05rem;">活動を編集</h3>
+            </div>
+            <button type="button" class="bs-close-btn" onclick="closeTimelineBottomSheet()" title="閉じる">&times;</button>
+        </div>
+
+        <div class="bottom-sheet-body">
+            <!-- 予定/実績 切替タブ -->
+            <div class="mode-tab-group" style="margin-bottom: 14px;">
+                <button type="button" id="bs-tab-actual" class="mode-tab active-actual" onclick="setBottomSheetMode('actual')">
+                    ⏱ 実績として記録
+                </button>
+                <button type="button" id="bs-tab-plan" class="mode-tab" onclick="setBottomSheetMode('plan')">
+                    📅 予定として記録
+                </button>
+            </div>
+
+            <!-- 活動名・タグ選択 -->
+            <div style="margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0;">活動内容</label>
+                    <span id="bs-selected-activity-display" style="font-size: 0.82rem; font-weight: 700; color: #c4b5fd;">未選択</span>
+                </div>
+                <div id="bs-quick-tags" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; padding: 2px 0;">
+                    <!-- JSでタグボタンを描画 -->
+                </div>
+            </div>
+
+            <!-- 時間設定 -->
+            <div style="margin-bottom: 14px;">
+                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block;">時間</label>
+                <div class="flex-row" style="align-items: center; gap: 8px;">
+                    <input type="time" id="bs-start-time" style="margin-bottom: 0; flex: 1;">
+                    <span style="color: var(--text-secondary); font-weight: bold;">〜</span>
+                    <input type="time" id="bs-end-time" style="margin-bottom: 0; flex: 1;">
+                </div>
+                <div class="flex-row" style="margin-top: 6px; gap: 6px;">
+                    <button type="button" class="btn btn-secondary" id="bs-btn-now-start" style="width: auto; flex: 1; padding: 5px 6px; font-size: 0.72rem; margin-bottom: 0;">現在時刻を開始に</button>
+                    <button type="button" class="btn btn-secondary" id="bs-btn-now-end" style="width: auto; flex: 1; padding: 5px 6px; font-size: 0.72rem; margin-bottom: 0;">現在時刻を終了に</button>
+                </div>
+            </div>
+
+            <!-- メモ入力 -->
+            <div style="margin-bottom: 16px;">
+                <label for="bs-memo-input" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block;">メモ（詳細）</label>
+                <input type="text" id="bs-memo-input" placeholder="例: 資料作成、会議、読書など（省略可）" style="margin-bottom: 0;">
+            </div>
+
+            <!-- 同時進行オプション（折りたたみ展開） -->
+            <details id="bs-simultaneous-details" style="margin-bottom: 16px; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px 10px; border: 1px solid rgba(255,255,255,0.08);">
+                <summary style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); cursor: pointer;">
+                    ＋ 同時進行する活動を追加（比率設定）
+                </summary>
+                <div id="bs-simultaneous-container" style="margin-top: 10px;">
+                    <div id="bs-simultaneous-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                    <button type="button" id="bs-add-simultaneous-btn" class="btn btn-secondary" style="margin-top: 8px; padding: 6px 10px; font-size: 0.75rem;">+ 活動を追加</button>
+                </div>
+            </details>
+
+            <!-- 操作ボタン群 -->
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+                <button type="button" id="bs-delete-btn" class="btn btn-secondary" style="width: auto; padding: 10px 14px; color: var(--error-color); border-color: rgba(207, 102, 121, 0.4); display: none;">
+                    削除
+                </button>
+                <button type="button" id="bs-save-btn" class="btn btn-primary" style="flex: 1; margin-bottom: 0; padding: 12px 16px; font-weight: 700; font-size: 0.95rem;">
+                    保存する
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Tag Edit Modal -->
     <div id="tag-edit-modal" class="modal-overlay">
         <div class="modal-content">
@@ -1492,7 +1804,10 @@ header {
                 <button type="button" id="tmpl-apply-actual-btn" class="btn btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
                     ⏱ 今日の「実績」として読み込む
                 </button>
-                <button type="button" id="tmpl-delete-btn" class="btn btn-secondary" style="color: var(--error-color); border-color: var(--error-color); margin-top: 10px;">
+                <button type="button" id="tmpl-save-as-default-btn" class="btn btn-secondary" style="border-color: #8b5cf6; color: #c4b5fd; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    ⭐ デフォルトスケジュールとして登録
+                </button>
+                <button type="button" id="tmpl-delete-btn" class="btn btn-secondary" style="color: var(--error-color); border-color: var(--error-color); margin-top: 6px;">
                     🗑 このテンプレートを削除
                 </button>
             </div>
@@ -1517,6 +1832,90 @@ header {
                 <button type="button" id="reset-all-btn" class="btn btn-secondary" style="border-color: var(--error-color); color: var(--error-color); margin-top: 6px;">
                     ⚠️ 実績・予定の両方を消去
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Default Schedule Modal -->
+    <div id="default-schedule-modal" class="modal-overlay">
+        <div class="modal-content" style="max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3>📅 デフォルトスケジュール設定</h3>
+                <span id="close-default-sched-modal-btn" style="cursor: pointer; font-size: 1.5rem; font-weight: bold; color: var(--text-secondary);">&times;</span>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; padding-right: 4px;">
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.4;">
+                    予定が未登録の日に自動スケジュールされます。<br>
+                    <span style="color: #93c5fd; font-weight: 600;">曜日指定</span>が最優先され、指定のない曜日は<span style="color: #c4b5fd; font-weight: 600;">曜日指定なし</span>が適用されます。
+                </p>
+
+                <!-- 祝日設定トグルカード -->
+                <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="flex: 1; padding-right: 8px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">㊗️ 祝日を休日（日曜日）として扱う</span>
+                            <span id="def-sched-today-holiday-badge" style="display: none; background: rgba(239, 68, 68, 0.25); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.5); padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700;"></span>
+                        </div>
+                        <p style="font-size: 0.72rem; color: var(--text-secondary); margin: 3px 0 0 0; line-height: 1.3;">
+                            平日の祝日には、月〜金用ではなく日曜日（休日スケジュール）を自動適用します
+                        </p>
+                    </div>
+                    <label style="position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; margin-bottom: 0;">
+                        <input type="checkbox" id="def-sched-holiday-toggle" style="opacity: 0; width: 0; height: 0;">
+                        <span class="holiday-switch-slider"></span>
+                    </label>
+                </div>
+
+                <!-- 新規作成フォーム（現在の日の予定から） -->
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">＋ 現在の予定から作成</span>
+                        <span id="def-sched-current-plan-count" style="font-size: 0.75rem; color: #93c5fd;"></span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <input type="text" id="def-sched-name-input" placeholder="スケジュール名 (例: 平日ルーティン, 休日)" style="font-size: 0.85rem; padding: 6px 10px;">
+
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; cursor: pointer; color: var(--text-primary); user-select: none;">
+                                <input type="checkbox" id="def-sched-no-day-check" style="cursor: pointer;">
+                                <span>曜日指定なし（全日共通・デフォルト）</span>
+                            </label>
+                        </div>
+
+                        <div id="def-sched-days-picker-box" style="margin-top: 4px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <span style="font-size: 0.75rem; color: var(--text-secondary);">適用する曜日を選択:</span>
+                                <div style="display: flex; gap: 4px;">
+                                    <button type="button" class="quick-day-btn" id="btn-quick-weekday">平日(月〜金)</button>
+                                    <button type="button" class="quick-day-btn" id="btn-quick-weekend">休日(土日)</button>
+                                    <button type="button" class="quick-day-btn" id="btn-quick-clear">クリア</button>
+                                </div>
+                            </div>
+                            <div class="day-selector-grid" id="def-sched-day-buttons">
+                                <button type="button" class="day-toggle-btn sunday" data-day="0">日</button>
+                                <button type="button" class="day-toggle-btn" data-day="1">月</button>
+                                <button type="button" class="day-toggle-btn" data-day="2">火</button>
+                                <button type="button" class="day-toggle-btn" data-day="3">水</button>
+                                <button type="button" class="day-toggle-btn" data-day="4">木</button>
+                                <button type="button" class="day-toggle-btn" data-day="5">金</button>
+                                <button type="button" class="day-toggle-btn saturday" data-day="6">土</button>
+                            </div>
+                        </div>
+
+                        <button type="button" id="save-def-sched-btn" class="btn btn-primary" style="margin-top: 6px; padding: 8px; font-size: 0.85rem;">
+                            💾 このスケジュールを登録
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 登録済みスケジュール一覧 -->
+                <div style="margin-top: 10px;">
+                    <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">登録済みスケジュール</h4>
+                    <div id="def-sched-list-container">
+                        <!-- Javascript will populate -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1576,6 +1975,24 @@ const resetActualOnlyBtn = document.getElementById('reset-actual-only-btn');
 const resetPlanOnlyBtn = document.getElementById('reset-plan-only-btn');
 const resetAllBtn = document.getElementById('reset-all-btn');
 
+// Default Schedule DOM Elements
+const puzzleDefaultScheduleBtn = document.getElementById('puzzle-default-schedule-btn');
+const classicDefaultSchedBtn = document.getElementById('classic-default-sched-btn');
+const defaultScheduleModal = document.getElementById('default-schedule-modal');
+const closeDefaultSchedModalBtn = document.getElementById('close-default-sched-modal-btn');
+const defSchedNameInput = document.getElementById('def-sched-name-input');
+const defSchedNoDayCheck = document.getElementById('def-sched-no-day-check');
+const defSchedDaysPickerBox = document.getElementById('def-sched-days-picker-box');
+const saveDefSchedBtn = document.getElementById('save-def-sched-btn');
+const defSchedListContainer = document.getElementById('def-sched-list-container');
+const defSchedCurrentPlanCount = document.getElementById('def-sched-current-plan-count');
+const defaultSchedBanner = document.getElementById('default-sched-banner');
+const defaultSchedBannerText = document.getElementById('default-sched-banner-text');
+const defaultSchedBannerApplyBtn = document.getElementById('default-sched-banner-apply-btn');
+const tmplSaveAsDefaultBtn = document.getElementById('tmpl-save-as-default-btn');
+const defSchedHolidayToggle = document.getElementById('def-sched-holiday-toggle');
+const defSchedTodayHolidayBadge = document.getElementById('def-sched-today-holiday-badge');
+
 // State
 const storage = window.appStorage || { getItem: function() { return null; }, setItem: function() {} };
 let isContinuousMode = JSON.parse(storage.getItem('zikankanri_continuous_mode')) || false;
@@ -1589,6 +2006,60 @@ let selectedTemplateId = null;
 let logs = JSON.parse(storage.getItem('zikankanri_logs')) || [];
 let plans = JSON.parse(storage.getItem('zikankanri_plans')) || [];
 let templates = JSON.parse(storage.getItem('zikankanri_templates')) || [];
+let defaultSchedules = (function() {
+    try {
+        const raw = storage.getItem('zikankanri_default_schedules');
+        return raw ? (JSON.parse(raw) || []) : [];
+    } catch (e) {
+        return [];
+    }
+})();
+let userClearedDates = {};
+
+let holidaysMap = (function() {
+    try {
+        const raw = storage.getItem('zikankanri_holidays');
+        return raw ? (JSON.parse(raw) || {}) : {};
+    } catch (e) {
+        return {};
+    }
+})();
+
+let treatHolidaysAsSunday = (function() {
+    try {
+        const raw = storage.getItem('zikankanri_treat_holidays_as_sunday');
+        if (raw !== null && raw !== undefined) {
+            return raw === 'true' || raw === true;
+        }
+        const csRaw = storage.getItem('calendar_sync_settings');
+        if (csRaw) {
+            const cs = JSON.parse(csRaw);
+            if (cs && cs.treatHolidaysAsSunday !== undefined) {
+                return !!cs.treatHolidaysAsSunday;
+            }
+        }
+        return true;
+    } catch (e) {
+        return true;
+    }
+})();
+
+function getHolidayName(dateStr) {
+    if (!dateStr || !holidaysMap) return null;
+    const key = dateStr.replace(/-/g, '/');
+    return holidaysMap[key] || null;
+}
+
+window.updateHolidaysData = function(newHolidays, newTreatAsSunday) {
+    if (newHolidays && typeof newHolidays === 'object') {
+        holidaysMap = newHolidays;
+    }
+    if (newTreatAsSunday !== undefined) {
+        treatHolidaysAsSunday = !!newTreatAsSunday;
+    }
+    updateDefaultSchedBanner();
+    if (typeof renderPuzzle === 'function') renderPuzzle();
+};
 
 // Puzzle State
 var puzzleInitialized = false;
@@ -1647,6 +2118,558 @@ function sanitizeDate(dateStr) {
     return null;
 }
 
+// ==========================================
+// デフォルトスケジュール機能 (Default Schedule)
+// ==========================================
+const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
+
+function saveDefaultSchedules() {
+    storage.setItem('zikankanri_default_schedules', JSON.stringify(defaultSchedules));
+}
+
+function getDayOfWeek(dateStr) {
+    if (!dateStr) return 0;
+    const parts = dateStr.replace(/-/g, '/').split('/').map(Number);
+    if (parts.length < 3 || isNaN(parts[0]) || isNaN(parts[1]) || isNaN(parts[2])) {
+        return new Date().getDay();
+    }
+    return new Date(parts[0], parts[1] - 1, parts[2]).getDay();
+}
+
+/**
+ * 対象日のデフォルトスケジュールを取得
+ * 優先度ルール:
+ * 1. 曜日指定があるもの（最優先）: 複数マッチ時は絞り込み度が高い（該当曜日数が少ない）ものを優先、同率なら最新
+ * 2. 曜日指定なし（全日共通・デフォルト）: 曜日指定がない場合のフォールバック
+ */
+function getDefaultScheduleForDate(dateStr) {
+    if (!defaultSchedules || defaultSchedules.length === 0) return null;
+    const originalDay = getDayOfWeek(dateStr);
+    const holidayName = getHolidayName(dateStr);
+    const isHoliday = !!holidayName;
+    const treatAsSunday = isHoliday && treatHolidaysAsSunday;
+    const dayOfWeek = treatAsSunday ? 0 : originalDay;
+
+    // 1. 曜日指定があるもの（最優先）
+    const dayMatches = defaultSchedules.filter(function(s) {
+        return Array.isArray(s.days) && s.days.length > 0 && s.days.indexOf(dayOfWeek) !== -1;
+    });
+
+    if (dayMatches.length > 0) {
+        dayMatches.sort(function(a, b) {
+            if (a.days.length !== b.days.length) {
+                return a.days.length - b.days.length; // 絞り込み度の高いもの（例: 月曜のみ > 平日）を優先
+            }
+            return (b.updatedAt || b.id || 0) - (a.updatedAt || a.id || 0);
+        });
+        return {
+            schedule: dayMatches[0],
+            matchType: treatAsSunday ? 'holiday_sunday' : 'day_specific',
+            dayOfWeek: dayOfWeek,
+            originalDay: originalDay,
+            dayName: DAY_NAMES[dayOfWeek],
+            isHoliday: isHoliday,
+            holidayName: holidayName
+        };
+    }
+
+    // 2. 曜日指定なし（全日共通・デフォルト）
+    const anyMatches = defaultSchedules.filter(function(s) {
+        return !s.days || !Array.isArray(s.days) || s.days.length === 0;
+    });
+
+    if (anyMatches.length > 0) {
+        anyMatches.sort(function(a, b) {
+            return (b.updatedAt || b.id || 0) - (a.updatedAt || a.id || 0);
+        });
+        return {
+            schedule: anyMatches[0],
+            matchType: 'any_day',
+            dayOfWeek: dayOfWeek,
+            originalDay: originalDay,
+            dayName: DAY_NAMES[dayOfWeek],
+            isHoliday: isHoliday,
+            holidayName: holidayName
+        };
+    }
+
+    return null;
+}
+
+/**
+ * 選択中日付にデフォルトスケジュールを適用
+ * @param {Object} options - { force: boolean }
+ */
+function applyDefaultScheduleForCurrentDate(options) {
+    options = options || {};
+    const force = !!options.force;
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+
+    // クリア直後の同一日かつ自動適用の場合はスキップ
+    if (!force && userClearedDates[selectedDate]) {
+        updateDefaultSchedBanner();
+        return false;
+    }
+
+    const existingPlans = plans.filter(function(p) { return p.date === selectedDate; });
+    // 自動モード（force=false）の場合、すでに予定があれば既存データを保護してスキップ
+    if (!force && existingPlans.length > 0) {
+        updateDefaultSchedBanner();
+        return false;
+    }
+
+    const match = getDefaultScheduleForDate(selectedDate);
+    if (!match || !match.schedule || !Array.isArray(match.schedule.data) || match.schedule.data.length === 0) {
+        if (force) {
+            alert('適用できるデフォルトスケジュールがありません。先に設定してください。');
+        }
+        updateDefaultSchedBanner();
+        return false;
+    }
+
+    if (force && existingPlans.length > 0) {
+        const confirmMsg = '「' + match.schedule.name + '」を適用しますか？\\n（現在の' + existingPlans.length + '件の予定は置き換えられます）';
+        if (!confirm(confirmMsg)) {
+            return false;
+        }
+    }
+
+    // 新規予定アイテム作成
+    const newItems = match.schedule.data.map(function(item) {
+        return {
+            ...item,
+            id: Date.now() + Math.random(),
+            date: selectedDate
+        };
+    });
+
+    plans = plans.filter(function(p) { return p.date !== selectedDate; }).concat(newItems);
+    savePlans();
+    renderPlans();
+    if (typeof renderPuzzle === 'function') renderPuzzle();
+    renderSummary();
+    updateDefaultSchedBanner();
+
+    if (force) {
+        alert('デフォルトスケジュール「' + match.schedule.name + '」を適用しました。');
+    }
+    return true;
+}
+
+/**
+ * タイムライン上部のデフォルトスケジュール情報バナー更新
+ */
+function updateDefaultSchedBanner() {
+    if (!defaultSchedBanner || !defaultSchedBannerText) return;
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const match = getDefaultScheduleForDate(selectedDate);
+    const existingPlans = plans.filter(function(p) { return p.date === selectedDate; });
+    const holidayName = getHolidayName(selectedDate);
+
+    let holidayBadge = '';
+    if (holidayName) {
+        holidayBadge = '<span style="background:rgba(239,68,68,0.25); color:#fca5a5; border:1px solid rgba(239,68,68,0.5); padding:1px 6px; border-radius:4px; font-weight:700; font-size:0.7rem; margin-right:6px;">🇯🇵 ' + holidayName + '</span>';
+    }
+
+    if (match && match.schedule) {
+        let typeBadge = '[全日共通]';
+        if (match.matchType === 'holiday_sunday') {
+            typeBadge = '[㊗️ 休日適用]';
+        } else if (match.matchType === 'day_specific') {
+            typeBadge = '[' + match.dayName + '曜指定]';
+        }
+        
+        const count = match.schedule.data ? match.schedule.data.length : 0;
+        const statusText = (existingPlans.length > 0)
+            ? '✓ 適用中: <strong>' + match.schedule.name + '</strong>'
+            : '💡 デフォルト予定: <strong>' + match.schedule.name + '</strong>';
+
+        defaultSchedBannerText.innerHTML = holidayBadge + statusText + ' <span style="font-size:0.7rem; opacity:0.85;">' + typeBadge + '</span> (' + count + '件)';
+        defaultSchedBanner.style.display = 'flex';
+    } else if (holidayBadge) {
+        defaultSchedBannerText.innerHTML = holidayBadge + '<span style="font-size:0.75rem; color:var(--text-secondary);">デフォルト未設定</span>';
+        defaultSchedBanner.style.display = 'flex';
+    } else {
+        defaultSchedBanner.style.display = 'none';
+    }
+}
+
+function openDefaultScheduleModal() {
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const currentDayPlans = plans.filter(function(p) { return p.date === selectedDate; });
+
+    if (defSchedCurrentPlanCount) {
+        defSchedCurrentPlanCount.textContent = '今日(' + selectedDate + ')の予定: ' + currentDayPlans.length + '件';
+    }
+    if (defSchedNameInput) {
+        defSchedNameInput.value = '';
+    }
+    if (defSchedNoDayCheck) {
+        defSchedNoDayCheck.checked = false;
+        if (defSchedDaysPickerBox) defSchedDaysPickerBox.style.opacity = '1';
+    }
+
+    // 祝日トグルの状態反映
+    if (defSchedHolidayToggle) {
+        defSchedHolidayToggle.checked = treatHolidaysAsSunday;
+    }
+    const holidayName = getHolidayName(selectedDate);
+    if (defSchedTodayHolidayBadge) {
+        if (holidayName) {
+            defSchedTodayHolidayBadge.textContent = '今日: ' + holidayName;
+            defSchedTodayHolidayBadge.style.display = 'inline-block';
+        } else {
+            defSchedTodayHolidayBadge.style.display = 'none';
+        }
+    }
+
+    resetDayButtons();
+    const todayDayOfWeek = getDayOfWeek(selectedDate);
+    setDayButtonSelected(todayDayOfWeek, true);
+
+    renderDefaultScheduleList();
+    if (defaultScheduleModal) {
+        defaultScheduleModal.classList.add('active');
+        notifyModalState(true);
+    }
+}
+
+function closeDefaultScheduleModal() {
+    if (defaultScheduleModal) {
+        defaultScheduleModal.classList.remove('active');
+        notifyModalState(false);
+    }
+}
+
+function resetDayButtons() {
+    const btns = document.querySelectorAll('#def-sched-day-buttons .day-toggle-btn');
+    btns.forEach(function(b) { b.classList.remove('active'); });
+}
+
+function setDayButtonSelected(dayNum, isSelected) {
+    const btn = document.querySelector('#def-sched-day-buttons .day-toggle-btn[data-day="' + dayNum + '"]');
+    if (btn) {
+        if (isSelected) btn.classList.add('active');
+        else btn.classList.remove('active');
+    }
+}
+
+function getSelectedDays() {
+    const isNoDay = defSchedNoDayCheck && defSchedNoDayCheck.checked;
+    if (isNoDay) return [];
+
+    const activeBtns = document.querySelectorAll('#def-sched-day-buttons .day-toggle-btn.active');
+    const days = [];
+    activeBtns.forEach(function(b) {
+        days.push(parseInt(b.getAttribute('data-day'), 10));
+    });
+    return days.sort(function(a, b) { return a - b; });
+}
+
+window.selectDefaultSchedQuickDays = function(type) {
+    if (defSchedNoDayCheck) {
+        defSchedNoDayCheck.checked = false;
+        if (defSchedDaysPickerBox) defSchedDaysPickerBox.style.opacity = '1';
+    }
+    resetDayButtons();
+    if (type === 'weekday') {
+        [1, 2, 3, 4, 5].forEach(function(d) { setDayButtonSelected(d, true); });
+    } else if (type === 'weekend') {
+        [0, 6].forEach(function(d) { setDayButtonSelected(d, true); });
+    }
+};
+
+function initDayButtonEvents() {
+    const btns = document.querySelectorAll('#def-sched-day-buttons .day-toggle-btn');
+    btns.forEach(function(b) {
+        b.onclick = function() {
+            if (defSchedNoDayCheck && defSchedNoDayCheck.checked) {
+                defSchedNoDayCheck.checked = false;
+                if (defSchedDaysPickerBox) defSchedDaysPickerBox.style.opacity = '1';
+            }
+            b.classList.toggle('active');
+        };
+    });
+
+    const quickWeekdayBtn = document.getElementById('btn-quick-weekday');
+    if (quickWeekdayBtn) {
+        quickWeekdayBtn.onclick = function() { selectDefaultSchedQuickDays('weekday'); };
+    }
+    const quickWeekendBtn = document.getElementById('btn-quick-weekend');
+    if (quickWeekendBtn) {
+        quickWeekendBtn.onclick = function() { selectDefaultSchedQuickDays('weekend'); };
+    }
+    const quickClearBtn = document.getElementById('btn-quick-clear');
+    if (quickClearBtn) {
+        quickClearBtn.onclick = function() { selectDefaultSchedQuickDays('clear'); };
+    }
+
+    if (defSchedNoDayCheck) {
+        defSchedNoDayCheck.onchange = function() {
+            if (defSchedNoDayCheck.checked) {
+                resetDayButtons();
+                if (defSchedDaysPickerBox) defSchedDaysPickerBox.style.opacity = '0.35';
+            } else {
+                if (defSchedDaysPickerBox) defSchedDaysPickerBox.style.opacity = '1';
+            }
+        };
+    }
+}
+
+function renderDefaultScheduleList() {
+    if (!defSchedListContainer) return;
+    defSchedListContainer.innerHTML = '';
+
+    if (!defaultSchedules || defaultSchedules.length === 0) {
+        defSchedListContainer.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.82rem; padding: 12px; text-align: center;">登録されているデフォルトスケジュールはありません</div>';
+        return;
+    }
+
+    defaultSchedules.forEach(function(sched) {
+        const card = document.createElement('div');
+        card.className = 'def-sched-card';
+
+        const hasDays = Array.isArray(sched.days) && sched.days.length > 0;
+        let daysBadgeHtml = '';
+        if (hasDays) {
+            const dayLabels = sched.days.slice().sort(function(a, b) { return a - b; }).map(function(d) { return DAY_NAMES[d]; }).join('・');
+            daysBadgeHtml = '<span class="def-sched-badge def-sched-badge-day">曜日指定: ' + dayLabels + '</span>';
+        } else {
+            daysBadgeHtml = '<span class="def-sched-badge def-sched-badge-any">全日共通（デフォルト）</span>';
+        }
+
+        const count = sched.data ? sched.data.length : 0;
+
+        card.innerHTML =
+            '<div style="display: flex; justify-content: space-between; align-items: flex-start;">' +
+                '<div>' +
+                    '<div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 4px;">' + sched.name + '</div>' +
+                    '<div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">' +
+                        daysBadgeHtml +
+                        '<span style="font-size: 0.72rem; color: var(--text-secondary);">' + count + '件の予定</span>' +
+                    '</div>' +
+                '</div>' +
+                '<button type="button" class="btn btn-secondary" style="width: auto; padding: 3px 8px; font-size: 0.74rem; color: var(--error-color); border-color: rgba(239, 68, 68, 0.4); margin-bottom: 0;" data-del-id="' + sched.id + '">削除</button>' +
+            '</div>' +
+            '<div style="display: flex; gap: 6px; margin-top: 6px;">' +
+                '<button type="button" class="btn btn-secondary" style="flex: 1; padding: 5px 8px; font-size: 0.76rem; border-color: #8b5cf6; color: #c4b5fd; margin-bottom: 0;" data-apply-id="' + sched.id + '">⚡ 今日の予定に適用</button>' +
+                '<button type="button" class="btn btn-secondary" style="width: auto; padding: 5px 10px; font-size: 0.76rem; margin-bottom: 0;" data-edit-days-id="' + sched.id + '">曜日変更</button>' +
+            '</div>';
+
+        // 削除ボタン
+        const delBtn = card.querySelector('[data-del-id]');
+        if (delBtn) {
+            delBtn.onclick = function() {
+                if (confirm('デフォルトスケジュール「' + sched.name + '」を削除しますか？')) {
+                    defaultSchedules = defaultSchedules.filter(function(s) { return s.id !== sched.id; });
+                    saveDefaultSchedules();
+                    renderDefaultScheduleList();
+                    updateDefaultSchedBanner();
+                }
+            };
+        }
+
+        // 適用ボタン
+        const applyBtn = card.querySelector('[data-apply-id]');
+        if (applyBtn) {
+            applyBtn.onclick = function() {
+                applySpecificSchedule(sched.id);
+            };
+        }
+
+        // 曜日変更ボタン
+        const editDaysBtn = card.querySelector('[data-edit-days-id]');
+        if (editDaysBtn) {
+            editDaysBtn.onclick = function() {
+                promptEditScheduleDays(sched.id);
+            };
+        }
+
+        defSchedListContainer.appendChild(card);
+    });
+}
+
+function applySpecificSchedule(schedId) {
+    const sched = defaultSchedules.find(function(s) { return s.id === schedId; });
+    if (!sched || !sched.data || sched.data.length === 0) return;
+
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const existingPlans = plans.filter(function(p) { return p.date === selectedDate; });
+
+    if (existingPlans.length > 0) {
+        if (!confirm('「' + sched.name + '」を適用しますか？\\n（現在の' + existingPlans.length + '件の予定は置き換えられます）')) {
+            return;
+        }
+    }
+
+    const newItems = sched.data.map(function(item) {
+        return {
+            ...item,
+            id: Date.now() + Math.random(),
+            date: selectedDate
+        };
+    });
+
+    plans = plans.filter(function(p) { return p.date !== selectedDate; }).concat(newItems);
+    savePlans();
+    renderPlans();
+    if (typeof renderPuzzle === 'function') renderPuzzle();
+    renderSummary();
+    updateDefaultSchedBanner();
+    closeDefaultScheduleModal();
+    alert('「' + sched.name + '」を適用しました。');
+}
+
+function promptEditScheduleDays(schedId) {
+    const sched = defaultSchedules.find(function(s) { return s.id === schedId; });
+    if (!sched) return;
+
+    const curDaysStr = (Array.isArray(sched.days) && sched.days.length > 0)
+        ? sched.days.join(',')
+        : 'none';
+
+    const input = prompt(
+        '「' + sched.name + '」の適用曜日を設定してください:\\n' +
+        '0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土\\n' +
+        '（カンマ区切りで入力。例: 1,2,3,4,5 / 曜日指定なしは none と入力）',
+        curDaysStr
+    );
+
+    if (input !== null) {
+        const trimmed = input.trim().toLowerCase();
+        if (trimmed === 'none' || trimmed === '' || trimmed === '空') {
+            sched.days = [];
+        } else {
+            const parsedDays = trimmed.split(',')
+                .map(function(x) { return parseInt(x.trim(), 10); })
+                .filter(function(x) { return !isNaN(x) && x >= 0 && x <= 6; });
+            sched.days = Array.from(new Set(parsedDays)).sort(function(a, b) { return a - b; });
+        }
+        sched.updatedAt = Date.now();
+        saveDefaultSchedules();
+        renderDefaultScheduleList();
+        updateDefaultSchedBanner();
+    }
+}
+
+function saveNewDefaultScheduleFromPlans(sourcePlans, defaultName, days) {
+    if (!sourcePlans || sourcePlans.length === 0) {
+        alert('保存する予定がありません。');
+        return false;
+    }
+    const name = defaultName || (defSchedNameInput ? defSchedNameInput.value.trim() : '');
+    if (!name) {
+        alert('スケジュール名を入力してください。');
+        return false;
+    }
+
+    const selectedDays = (days !== undefined) ? days : getSelectedDays();
+
+    const cleanData = sourcePlans.map(function(p) {
+        return {
+            start: p.start,
+            end: p.end,
+            category: p.category || '',
+            items: (p.items || []).map(function(i) {
+                return {
+                    name: i.name || '',
+                    percent: i.percent,
+                    weight: i.weight
+                };
+            }),
+            memo: p.memo || ''
+        };
+    });
+
+    const newSched = {
+        id: Date.now(),
+        name: name,
+        days: selectedDays,
+        data: cleanData,
+        updatedAt: Date.now()
+    };
+
+    defaultSchedules.push(newSched);
+    saveDefaultSchedules();
+    renderDefaultScheduleList();
+    updateDefaultSchedBanner();
+
+    alert('デフォルトスケジュール「' + name + '」を登録しました！');
+    if (defSchedNameInput) defSchedNameInput.value = '';
+    return true;
+}
+
+function initDefaultScheduleUI() {
+    initDayButtonEvents();
+
+    if (puzzleDefaultScheduleBtn) {
+        puzzleDefaultScheduleBtn.onclick = openDefaultScheduleModal;
+    }
+    if (classicDefaultSchedBtn) {
+        classicDefaultSchedBtn.onclick = openDefaultScheduleModal;
+    }
+    if (closeDefaultSchedModalBtn) {
+        closeDefaultSchedModalBtn.onclick = closeDefaultScheduleModal;
+    }
+    if (defaultScheduleModal) {
+        defaultScheduleModal.addEventListener('click', function(e) {
+            if (e.target === defaultScheduleModal) closeDefaultScheduleModal();
+        });
+    }
+    if (defaultSchedBannerApplyBtn) {
+        defaultSchedBannerApplyBtn.onclick = function() {
+            applyDefaultScheduleForCurrentDate({ force: true });
+        };
+    }
+    if (defSchedHolidayToggle) {
+        defSchedHolidayToggle.onchange = function() {
+            treatHolidaysAsSunday = !!defSchedHolidayToggle.checked;
+            storage.setItem('zikankanri_treat_holidays_as_sunday', treatHolidaysAsSunday ? 'true' : 'false');
+            if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                    type: 'SAVE_DATA',
+                    key: 'zikankanri_treat_holidays_as_sunday',
+                    value: treatHolidaysAsSunday ? 'true' : 'false'
+                }));
+            }
+            updateDefaultSchedBanner();
+        };
+    }
+    if (saveDefSchedBtn) {
+        saveDefSchedBtn.onclick = function() {
+            const selectedDate = currentDateInput.value.replace(/-/g, '/');
+            const currentPlans = plans.filter(function(p) { return p.date === selectedDate; });
+            if (currentPlans.length === 0) {
+                alert('今日の予定がありません。タイムラインで予定を作成してから登録してください。');
+                return;
+            }
+            saveNewDefaultScheduleFromPlans(currentPlans);
+        };
+    }
+    if (tmplSaveAsDefaultBtn) {
+        tmplSaveAsDefaultBtn.addEventListener('click', function() {
+            if (!selectedTemplateId) return;
+            const tmpl = templates.find(function(t) { return t.id == selectedTemplateId; });
+            if (!tmpl) return;
+
+            templateActionModal.classList.remove('active');
+            notifyModalState(false);
+
+            openDefaultScheduleModal();
+            if (defSchedNameInput) defSchedNameInput.value = tmpl.name;
+            if (saveDefSchedBtn) {
+                const originalOnclick = saveDefSchedBtn.onclick;
+                saveDefSchedBtn.onclick = function() {
+                    const ok = saveNewDefaultScheduleFromPlans(tmpl.data);
+                    if (ok) {
+                        saveDefSchedBtn.onclick = originalOnclick;
+                    }
+                };
+            }
+        });
+    }
+}
+
 function init() {
     let dateVal = sanitizeDate(window.__TARGET_DATE__);
     if (dateVal) {
@@ -1659,26 +2682,34 @@ function init() {
         currentDateInput.value = y + '-' + m + '-' + d;
     }
     initTags();
+    initDefaultScheduleUI();
     if (typeof initPuzzle === 'function') {
         initPuzzle();
     }
     setContinuousMode(isContinuousMode);
     updateDefaultStartTime();
     renderLogs();
+
+    // デフォルトスケジュールの自動適用チェック（予定が0件の未設定日の場合）
+    applyDefaultScheduleForCurrentDate({ force: false });
+
     renderPlans();
     renderTemplates();
     renderSummary();
+    updateDefaultSchedBanner();
     registerSW();
 }
 
 // Application initialization (init and initPuzzle) is executed at the very end of the script
 
-
 currentDateInput.addEventListener('change', function() {
     updateDefaultStartTime();
     renderLogs();
+    // 日付変更時のデフォルトスケジュール自動適用チェック
+    applyDefaultScheduleForCurrentDate({ force: false });
     renderPlans();
     renderSummary();
+    updateDefaultSchedBanner();
     notifyDateChanged();
 });
 
@@ -1817,6 +2848,9 @@ function initTags() {
 
     if (activityNameInput.value) {
         selectTag(activityNameInput.value);
+    }
+    if (typeof renderBottomSheetTags === 'function') {
+        renderBottomSheetTags();
     }
 }
 
@@ -2457,10 +3491,12 @@ resetActualOnlyBtn.addEventListener('click', function() {
 
 resetPlanOnlyBtn.addEventListener('click', function() {
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    userClearedDates[selectedDate] = true;
     plans = plans.filter(function(p) { return p.date !== selectedDate; });
     savePlans();
     renderPlans();
     renderSummary();
+    if (typeof updateDefaultSchedBanner === 'function') updateDefaultSchedBanner();
     resetChoiceModal.classList.remove('active');
     notifyModalState(false);
     resetForm();
@@ -2468,6 +3504,7 @@ resetPlanOnlyBtn.addEventListener('click', function() {
 
 resetAllBtn.addEventListener('click', function() {
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    userClearedDates[selectedDate] = true;
     logs = logs.filter(function(log) { return log.date !== selectedDate; });
     plans = plans.filter(function(p) { return p.date !== selectedDate; });
     saveLogs();
@@ -2475,6 +3512,7 @@ resetAllBtn.addEventListener('click', function() {
     renderLogs();
     renderPlans();
     renderSummary();
+    if (typeof updateDefaultSchedBanner === 'function') updateDefaultSchedBanner();
     resetChoiceModal.classList.remove('active');
     notifyModalState(false);
     resetForm();
@@ -3460,19 +4498,23 @@ function calculateDurationSnap(duration, type) {
 }
 
 function handlePuzzleSlotClick(e, hour) {
-    if (!selectedPuzzlePiece) {
-        alert('まずは上のパレットから配置したいピースを選択してください！');
-        return;
-    }
-
     const rect = e.currentTarget.getBoundingClientRect();
     const clickOffsetY = e.clientY - rect.top;
     const rawMinute = (hour * 60) + Math.round(clickOffsetY);
 
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
-    const currentList = (currentInputMode === 'plan')
+    const isPlan = (currentInputMode === 'plan');
+    const currentList = isPlan
         ? plans.filter(function(p) { return p.date === selectedDate; })
         : logs.filter(function(l) { return l.date === selectedDate; });
+
+    if (!selectedPuzzlePiece) {
+        // パレット未選択時は、タップした時間帯をセットして新規記録ボトムシートを開く
+        const snappedStart = Math.max(0, Math.min(1380, Math.round(rawMinute / 5) * 5));
+        const snappedEnd = Math.min(1440, snappedStart + 60);
+        openTimelineBottomSheetForNew(minsToTime(snappedStart), minsToTime(snappedEnd), isPlan);
+        return;
+    }
 
     let targetStartMinute = calculateSnap(rawMinute, selectedPuzzlePiece.type, selectedPuzzlePiece.duration, null, currentList);
 
@@ -3493,7 +4535,7 @@ function handlePuzzleSlotClick(e, hour) {
         memo: ""
     };
 
-    if (currentInputMode === 'plan') {
+    if (isPlan) {
         plans.push(newEntry);
         savePlans();
         renderPlans();
@@ -3612,30 +4654,420 @@ function renderPuzzle() {
     if (freeEl) freeEl.textContent = (freeMinutes / 60).toFixed(1) + 'h';
 }
 
+/* ==========================================================================
+   Timeline Bottom Sheet (Drawer Form) Logic
+   ========================================================================== */
+var currentEditingTimelineItem = null;
+var isBottomSheetNewRecord = false;
+var bsCurrentMode = 'actual'; // 'actual' | 'plan'
+var bsSelectedActivity = '';
+var bsSimultaneousItems = []; // [{ name: '', percent: 100 }]
+
+function openTimelineBottomSheetForEdit(item, isPlan, element) {
+    currentEditingTimelineItem = item;
+    isBottomSheetNewRecord = false;
+    bsCurrentMode = isPlan ? 'plan' : 'actual';
+
+    document.querySelectorAll('.timeline-block').forEach(function(b) {
+        b.classList.remove('is-selected');
+    });
+    if (element) element.classList.add('is-selected');
+
+    const overlay = document.getElementById('timeline-bottom-sheet-overlay');
+    const sheet = document.getElementById('timeline-bottom-sheet');
+    const titleEl = document.getElementById('bs-sheet-title');
+    const delBtn = document.getElementById('bs-delete-btn');
+    const saveBtn = document.getElementById('bs-save-btn');
+    const startTimeInput = document.getElementById('bs-start-time');
+    const endTimeInput = document.getElementById('bs-end-time');
+    const memoInput = document.getElementById('bs-memo-input');
+
+    if (titleEl) titleEl.textContent = '活動を編集';
+    if (delBtn) delBtn.style.display = 'block';
+    if (saveBtn) saveBtn.textContent = '更新する';
+
+    setBottomSheetMode(bsCurrentMode);
+
+    if (startTimeInput) startTimeInput.value = item.start || '09:00';
+    if (endTimeInput) endTimeInput.value = item.end || '10:00';
+    if (memoInput) memoInput.value = item.memo || '';
+
+    if (item.items && item.items.length > 0) {
+        bsSelectedActivity = item.items[0].name;
+        if (item.items.length > 1) {
+            bsSimultaneousItems = item.items.slice(1).map(function(i) {
+                const pct = (i.percent !== undefined && !isNaN(i.percent)) ? i.percent : (i.weight ? i.weight * 100 : 50);
+                return { name: i.name, percent: pct };
+            });
+            const details = document.getElementById('bs-simultaneous-details');
+            if (details) details.open = true;
+        } else {
+            bsSimultaneousItems = [];
+            const details = document.getElementById('bs-simultaneous-details');
+            if (details) details.open = false;
+        }
+    } else {
+        bsSelectedActivity = item.activity_name || '';
+        bsSimultaneousItems = [];
+        const details = document.getElementById('bs-simultaneous-details');
+        if (details) details.open = false;
+    }
+
+    renderBottomSheetTags();
+    renderBottomSheetSimultaneousList();
+
+    if (overlay) overlay.classList.add('active');
+    if (sheet) sheet.classList.add('active');
+
+    notifyModalState(true);
+}
+
+function openTimelineBottomSheetForNew(startStr, endStr, isPlan) {
+    currentEditingTimelineItem = null;
+    isBottomSheetNewRecord = true;
+    bsCurrentMode = isPlan ? 'plan' : (currentInputMode === 'plan' ? 'plan' : 'actual');
+
+    document.querySelectorAll('.timeline-block').forEach(function(b) {
+        b.classList.remove('is-selected');
+    });
+
+    const overlay = document.getElementById('timeline-bottom-sheet-overlay');
+    const sheet = document.getElementById('timeline-bottom-sheet');
+    const titleEl = document.getElementById('bs-sheet-title');
+    const delBtn = document.getElementById('bs-delete-btn');
+    const saveBtn = document.getElementById('bs-save-btn');
+    const startTimeInput = document.getElementById('bs-start-time');
+    const endTimeInput = document.getElementById('bs-end-time');
+    const memoInput = document.getElementById('bs-memo-input');
+
+    if (titleEl) titleEl.textContent = '新しい活動を記録';
+    if (delBtn) delBtn.style.display = 'none';
+    if (saveBtn) saveBtn.textContent = '記録する';
+
+    setBottomSheetMode(bsCurrentMode);
+
+    if (startTimeInput) startTimeInput.value = startStr || getCurrentTimeStr();
+    if (endTimeInput) {
+        if (endStr) {
+            endTimeInput.value = endStr;
+        } else {
+            const startMins = timeToMins(startTimeInput.value);
+            endTimeInput.value = minsToTime(Math.min(1440, startMins + 60));
+        }
+    }
+    if (memoInput) memoInput.value = '';
+
+    if (selectedPuzzlePiece && selectedPuzzlePiece.name) {
+        bsSelectedActivity = selectedPuzzlePiece.name;
+    } else if (defaultTags && defaultTags.length > 0) {
+        bsSelectedActivity = defaultTags[0];
+    } else {
+        bsSelectedActivity = '仕事';
+    }
+
+    bsSimultaneousItems = [];
+    const details = document.getElementById('bs-simultaneous-details');
+    if (details) details.open = false;
+
+    renderBottomSheetTags();
+    renderBottomSheetSimultaneousList();
+
+    if (overlay) overlay.classList.add('active');
+    if (sheet) sheet.classList.add('active');
+
+    notifyModalState(true);
+}
+
+window.openTimelineBottomSheetForNew = openTimelineBottomSheetForNew;
+window.openTimelineBottomSheetForEdit = openTimelineBottomSheetForEdit;
+
+function closeTimelineBottomSheet() {
+    const overlay = document.getElementById('timeline-bottom-sheet-overlay');
+    const sheet = document.getElementById('timeline-bottom-sheet');
+    if (overlay) overlay.classList.remove('active');
+    if (sheet) sheet.classList.remove('active');
+
+    document.querySelectorAll('.timeline-block').forEach(function(b) {
+        b.classList.remove('is-selected');
+    });
+
+    currentEditingTimelineItem = null;
+    notifyModalState(false);
+}
+window.closeTimelineBottomSheet = closeTimelineBottomSheet;
+
+function setBottomSheetMode(mode) {
+    bsCurrentMode = mode;
+    const badge = document.getElementById('bs-mode-badge');
+    const tabActual = document.getElementById('bs-tab-actual');
+    const tabPlan = document.getElementById('bs-tab-plan');
+
+    if (badge) {
+        badge.className = 'puzzle-mode-badge ' + (mode === 'plan' ? 'puzzle-mode-plan' : 'puzzle-mode-actual');
+        badge.textContent = (mode === 'plan') ? '📅 予定' : '⏱ 実績';
+    }
+    if (tabActual) {
+        tabActual.className = (mode === 'actual') ? 'mode-tab active-actual' : 'mode-tab';
+    }
+    if (tabPlan) {
+        tabPlan.className = (mode === 'plan') ? 'mode-tab active-plan' : 'mode-tab';
+    }
+}
+window.setBottomSheetMode = setBottomSheetMode;
+
+function renderBottomSheetTags() {
+    const container = document.getElementById('bs-quick-tags');
+    const display = document.getElementById('bs-selected-activity-display');
+    if (!container) return;
+
+    container.innerHTML = '';
+    if (display) display.textContent = bsSelectedActivity || '未選択';
+
+    if (Array.isArray(defaultTags)) {
+        defaultTags.forEach(function(tag) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'bs-tag-chip' + (tag === bsSelectedActivity ? ' active' : '');
+            btn.textContent = tag;
+            btn.onclick = function() {
+                bsSelectedActivity = tag;
+                renderBottomSheetTags();
+            };
+            container.appendChild(btn);
+        });
+    }
+}
+
+function renderBottomSheetSimultaneousList() {
+    const container = document.getElementById('bs-simultaneous-list');
+    if (!container) return;
+
+    container.innerHTML = '';
+    bsSimultaneousItems.forEach(function(item, idx) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+
+        const nameSelect = document.createElement('select');
+        nameSelect.style.cssText = 'flex: 1; margin-bottom: 0; padding: 6px 8px; font-size: 0.82rem; color-scheme: dark;';
+        defaultTags.forEach(function(tag) {
+            const opt = document.createElement('option');
+            opt.value = tag;
+            opt.textContent = tag;
+            if (tag === item.name) opt.selected = true;
+            nameSelect.appendChild(opt);
+        });
+        nameSelect.onchange = function() {
+            item.name = nameSelect.value;
+        };
+
+        const pctInput = document.createElement('input');
+        pctInput.type = 'number';
+        pctInput.min = '1';
+        pctInput.max = '100';
+        pctInput.value = item.percent || 50;
+        pctInput.style.cssText = 'width: 60px; margin-bottom: 0; padding: 6px; font-size: 0.82rem; text-align: center;';
+        pctInput.onchange = function() {
+            item.percent = parseInt(pctInput.value, 10) || 50;
+        };
+
+        const pctLabel = document.createElement('span');
+        pctLabel.textContent = '%';
+        pctLabel.style.cssText = 'font-size: 0.8rem; color: var(--text-secondary);';
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.textContent = '✕';
+        delBtn.style.cssText = 'background: none; border: none; color: var(--error-color); cursor: pointer; padding: 4px 6px; font-size: 0.9rem;';
+        delBtn.onclick = function() {
+            bsSimultaneousItems.splice(idx, 1);
+            renderBottomSheetSimultaneousList();
+        };
+
+        row.appendChild(nameSelect);
+        row.appendChild(pctInput);
+        row.appendChild(pctLabel);
+        row.appendChild(delBtn);
+        container.appendChild(row);
+    });
+}
+
+function handleBottomSheetSave() {
+    const startTimeInput = document.getElementById('bs-start-time');
+    const endTimeInput = document.getElementById('bs-end-time');
+    const memoInput = document.getElementById('bs-memo-input');
+
+    const startVal = startTimeInput ? startTimeInput.value : '';
+    const endVal = endTimeInput ? endTimeInput.value : '';
+    const memoVal = memoInput ? memoInput.value.trim() : '';
+
+    if (!startVal || !endVal) {
+        alert('開始時刻と終了時刻を入力してください。');
+        return;
+    }
+    if (!bsSelectedActivity) {
+        alert('活動内容を選択してください。');
+        return;
+    }
+
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+
+    const mainPercent = bsSimultaneousItems.length > 0 ? 50 : 100;
+    const items = [{ name: bsSelectedActivity, percent: mainPercent }];
+    bsSimultaneousItems.forEach(function(sim) {
+        if (sim.name) {
+            items.push({ name: sim.name, percent: sim.percent || 50 });
+        }
+    });
+
+    if (isBottomSheetNewRecord) {
+        const newEntry = {
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            date: selectedDate,
+            start: startVal,
+            end: endVal,
+            items: items,
+            memo: memoVal
+        };
+
+        if (bsCurrentMode === 'plan') {
+            plans.push(newEntry);
+            savePlans();
+        } else {
+            logs.push(newEntry);
+            saveLogs();
+        }
+    } else if (currentEditingTimelineItem) {
+        const item = currentEditingTimelineItem;
+        const oldId = item.id;
+
+        const originalWasPlan = plans.some(function(p) { return p.id === oldId; });
+        const targetIsPlan = (bsCurrentMode === 'plan');
+
+        if (originalWasPlan !== targetIsPlan) {
+            if (originalWasPlan) {
+                plans = plans.filter(function(p) { return p.id !== oldId; });
+                logs.push({
+                    id: oldId,
+                    date: selectedDate,
+                    start: startVal,
+                    end: endVal,
+                    items: items,
+                    memo: memoVal
+                });
+            } else {
+                logs = logs.filter(function(l) { return l.id !== oldId; });
+                plans.push({
+                    id: oldId,
+                    date: selectedDate,
+                    start: startVal,
+                    end: endVal,
+                    items: items,
+                    memo: memoVal
+                });
+            }
+            savePlans();
+            saveLogs();
+        } else {
+            item.start = startVal;
+            item.end = endVal;
+            item.items = items;
+            item.memo = memoVal;
+            if (targetIsPlan) savePlans();
+            else saveLogs();
+        }
+    }
+
+    renderLogs();
+    renderPlans();
+    renderSummary();
+    renderPuzzle();
+    closeTimelineBottomSheet();
+}
+
+function handleBottomSheetDelete() {
+    if (!currentEditingTimelineItem) return;
+    if (!confirm('この活動記録を削除しますか？')) return;
+
+    const delId = currentEditingTimelineItem.id;
+    plans = plans.filter(function(p) { return p.id !== delId; });
+    logs = logs.filter(function(l) { return l.id !== delId; });
+
+    savePlans();
+    saveLogs();
+    renderLogs();
+    renderPlans();
+    renderSummary();
+    renderPuzzle();
+    closeTimelineBottomSheet();
+}
+
+function initTimelineBottomSheet() {
+    const bsSaveBtn = document.getElementById('bs-save-btn');
+    if (bsSaveBtn) bsSaveBtn.onclick = handleBottomSheetSave;
+
+    const bsDeleteBtn = document.getElementById('bs-delete-btn');
+    if (bsDeleteBtn) bsDeleteBtn.onclick = handleBottomSheetDelete;
+
+    const bsNowStart = document.getElementById('bs-btn-now-start');
+    if (bsNowStart) {
+        bsNowStart.onclick = function() {
+            const st = document.getElementById('bs-start-time');
+            if (st) st.value = getCurrentTimeStr();
+        };
+    }
+
+    const bsNowEnd = document.getElementById('bs-btn-now-end');
+    if (bsNowEnd) {
+        bsNowEnd.onclick = function() {
+            const et = document.getElementById('bs-end-time');
+            if (et) et.value = getCurrentTimeStr();
+        };
+    }
+
+    const bsAddSimBtn = document.getElementById('bs-add-simultaneous-btn');
+    if (bsAddSimBtn) {
+        bsAddSimBtn.onclick = function() {
+            const newName = (defaultTags && defaultTags.length > 1) ? defaultTags[1] : (defaultTags[0] || '休憩');
+            bsSimultaneousItems.push({ name: newName, percent: 50 });
+            renderBottomSheetSimultaneousList();
+        };
+    }
+
+    renderBottomSheetTags();
+}
+
 function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan) {
     const resizeHandle = element.querySelector('.timeline-resize-handle');
     const tooltip = document.getElementById('puzzle-drag-tooltip');
 
-    // 1. ドラッグ移動
+    // 1. ドラッグ移動 / タップ判定
     element.addEventListener('pointerdown', function(e) {
         if (e.target.closest('.puzzle-del-btn') || e.target.closest('.timeline-resize-handle')) return;
 
         e.preventDefault();
         element.setPointerCapture(e.pointerId);
-        element.classList.add('is-dragging');
 
         const initialY = e.clientY;
+        const initialX = e.clientX;
         const initialStart = timeToMins(item.start);
         let initialEnd = timeToMins(item.end);
         if (initialEnd < initialStart) initialEnd += 1440;
         const duration = initialEnd - initialStart;
-
-        if (tooltip) tooltip.style.display = 'block';
+        let hasMoved = false;
 
         function onPointerMove(moveEvent) {
             const deltaY = moveEvent.clientY - initialY;
-            let newStart = initialStart + deltaY;
+            const deltaX = moveEvent.clientX - initialX;
+            if (Math.abs(deltaY) > 5 || Math.abs(deltaX) > 5) {
+                if (!hasMoved) {
+                    hasMoved = true;
+                    element.classList.add('is-dragging');
+                    if (tooltip) tooltip.style.display = 'block';
+                }
+            }
+            if (!hasMoved) return;
 
+            let newStart = initialStart + deltaY;
             newStart = calculateSnap(newStart, pieceType, duration, item.id, currentList);
 
             if (newStart < 0) newStart = 0;
@@ -3657,6 +5089,12 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
 
             element.removeEventListener('pointermove', onPointerMove);
             element.removeEventListener('pointerup', onPointerUp);
+
+            if (!hasMoved) {
+                // 指を動かさずにタップした場合 ➔ ボトムシートで編集！
+                openTimelineBottomSheetForEdit(item, isPlan, element);
+                return;
+            }
 
             const finalTop = parseInt(element.style.top, 10) || 0;
             item.start = minsToTime(finalTop);
@@ -3796,6 +5234,7 @@ function handlePuzzleResetDay() {
     }
 
     if (isPlan) {
+        userClearedDates[selectedDate] = true;
         plans = plans.filter(function(p) { return p.date !== selectedDate; });
         savePlans();
         renderPlans();
@@ -3807,6 +5246,7 @@ function handlePuzzleResetDay() {
 
     renderSummary();
     renderPuzzle();
+    if (typeof updateDefaultSchedBanner === 'function') updateDefaultSchedBanner();
 }
 
 function initPuzzle() {
@@ -3815,6 +5255,7 @@ function initPuzzle() {
 
     initPuzzleTimelineGrid();
     initPuzzlePalette();
+    initTimelineBottomSheet();
 
     const quickFillBtn = document.getElementById('puzzle-quick-fill-btn');
     if (quickFillBtn) quickFillBtn.addEventListener('click', handlePuzzleQuickFill);

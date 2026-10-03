@@ -14,6 +14,8 @@ export interface CalendarSyncSettings {
   importBgDaily: boolean;           // 毎朝定時バックグラウンド自動取り込み
   importBgTime: string;             // 定時取り込み時刻 (例: "07:00")
   excludeAllDay: boolean;           // 終日イベントを除外（円グラフ圧迫防止）
+  importHolidays?: boolean;         // 祝日の取り込み有効/無効 (デフォルト: true)
+  treatHolidaysAsSunday?: boolean;  // 祝日を日曜日（休日スケジュール）として扱う (デフォルト: true)
   exportEnabled: boolean;           // 実績書き出しの有効/無効
   exportCalendarId: string;         // 書き出し先カレンダーID（空ならTreNote専用サブカレンダー）
   exportOnSave: boolean;            // 実績保存時にリアルタイム書き出し
@@ -30,6 +32,8 @@ export const DEFAULT_CALENDAR_SYNC_SETTINGS: CalendarSyncSettings = {
   importBgDaily: false,
   importBgTime: '07:00',
   excludeAllDay: true,
+  importHolidays: true,
+  treatHolidaysAsSunday: true,
   exportEnabled: true,
   exportCalendarId: '',
   exportOnSave: true,
@@ -620,3 +624,183 @@ export async function initCalendarSync(): Promise<void> {
     console.warn('[calendarService] initCalendarSync error:', e);
   }
 }
+
+/**
+ * 日本の祝日を計算（フォールバック用）
+ * 振替休日・国民の休日・春分/秋分の日を含む
+ */
+export function calculateJapaneseHolidays(year: number): Record<string, string> {
+  const holidays: Record<string, string> = {};
+
+  const add = (m: number, d: number, name: string) => {
+    if (d > 0 && d <= 31) {
+      const mStr = String(m).padStart(2, '0');
+      const dStr = String(d).padStart(2, '0');
+      holidays[`${year}/${mStr}/${dStr}`] = name;
+    }
+  };
+
+  // 第N月曜日の日付を取得
+  const getNthMonday = (m: number, n: number): number => {
+    const firstDay = new Date(year, m - 1, 1).getDay();
+    const firstMon = firstDay <= 1 ? 1 + (1 - firstDay) : 1 + (8 - firstDay);
+    return firstMon + (n - 1) * 7;
+  };
+
+  // 固定祝日
+  add(1, 1, '元日');
+  add(1, getNthMonday(1, 2), '成人の日');
+  add(2, 11, '建国記念の日');
+  if (year >= 2020) add(2, 23, '天皇誕生日');
+
+  // 春分の日 (計算式: 2020〜2030年対応)
+  const shunbunDay = Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+  add(3, shunbunDay, '春分の日');
+
+  add(4, 29, '昭和の日');
+  add(5, 3, '憲法記念日');
+  add(5, 4, 'みどりの日');
+  add(5, 5, 'こどもの日');
+
+  // 海の日 (7月第3月曜日)
+  add(7, getNthMonday(7, 3), '海の日');
+
+  // 山の日 (8/11)
+  if (year >= 2016) add(8, 11, '山の日');
+
+  // 敬老の日 (9月第3月曜日)
+  const keiroDay = getNthMonday(9, 3);
+  add(9, keiroDay, '敬老の日');
+
+  // 秋分の日
+  const shubunDay = Math.floor(23.2488 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+  add(9, shubunDay, '秋分の日');
+
+  // 国民の休日 (敬老の日と秋分の日の間の平日)
+  if (shubunDay - keiroDay === 2) {
+    add(9, keiroDay + 1, '国民の休日');
+  }
+
+  // スポーツの日 (10月第2月曜日)
+  add(10, getNthMonday(10, 2), 'スポーツの日');
+
+  add(11, 3, '文化の日');
+  add(11, 23, '勤労感謝の日');
+
+  // 振替休日の判定
+  // 祝日が日曜日の場合、その翌日以降の最も早い平日を振替休日とする
+  const dates = Object.keys(holidays).sort();
+  for (const dateStr of dates) {
+    const [y, m, d] = dateStr.split('/').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    if (dateObj.getDay() === 0) { // 日曜日
+      let cur = new Date(dateObj);
+      while (true) {
+        cur.setDate(cur.getDate() + 1);
+        const nextY = cur.getFullYear();
+        const nextM = String(cur.getMonth() + 1).padStart(2, '0');
+        const nextD = String(cur.getDate()).padStart(2, '0');
+        const nextStr = `${nextY}/${nextM}/${nextD}`;
+        if (!holidays[nextStr]) {
+          holidays[nextStr] = '振替休日';
+          break;
+        }
+      }
+    }
+  }
+
+  return holidays;
+}
+
+/**
+ * 端末/Googleカレンダーおよび計算フォールバックから祝日データを同期してSQLiteに保存
+ */
+export async function syncHolidaysFromDevice(year?: number): Promise<Record<string, string>> {
+  const currentYear = year || new Date().getFullYear();
+  let mergedHolidays: Record<string, string> = {};
+
+  // 1. まず計算フォールバックで前年・今年・来年の祝日を生成
+  try {
+    const h0 = calculateJapaneseHolidays(currentYear - 1);
+    const h1 = calculateJapaneseHolidays(currentYear);
+    const h2 = calculateJapaneseHolidays(currentYear + 1);
+    mergedHolidays = { ...h0, ...h1, ...h2 };
+  } catch (err) {
+    console.warn('[calendarService] Holiday calculation error:', err);
+  }
+
+  // 2. 端末カレンダーが利用可能な場合、端末の祝日カレンダーから実際のイベントを取得してマージ
+  try {
+    const available = await isCalendarAvailable();
+    if (available) {
+      const hasPerm = await checkCalendarPermissions();
+      if (hasPerm) {
+        const calendars = await getDeviceCalendars();
+        const holidayCals = calendars.filter((c) => {
+          const t = (c.title || '').toLowerCase();
+          const n = (c.name || '').toLowerCase();
+          const s = (c.source?.name || '').toLowerCase();
+          const o = (c.ownerAccount || '').toLowerCase();
+          return (
+            t.includes('祝日') || t.includes('holiday') ||
+            n.includes('祝日') || n.includes('holiday') ||
+            s.includes('holiday') || o.includes('holiday') ||
+            o.includes('japan')
+          );
+        });
+
+        if (holidayCals.length > 0) {
+          const startDate = new Date(currentYear - 1, 0, 1);
+          const endDate = new Date(currentYear + 1, 11, 31, 23, 59, 59);
+          const events = await Calendar.getEventsAsync(
+            holidayCals.map((c) => c.id),
+            startDate,
+            endDate
+          );
+
+          events.forEach((ev) => {
+            if (ev.title) {
+              const d = new Date(ev.startDate);
+              const dateKey = formatDateToSlash(d);
+              mergedHolidays[dateKey] = ev.title;
+            }
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[calendarService] Error syncing holidays from device:', e);
+  }
+
+  // 3. SQLite にキャッシュ保存
+  try {
+    const db = getDB();
+    await db.runAsync(
+      "INSERT OR REPLACE INTO settings (key, value) VALUES ('zikankanri_holidays', ?)",
+      [JSON.stringify(mergedHolidays)]
+    );
+  } catch (e) {
+    console.error('[calendarService] Failed to cache holidays to DB:', e);
+  }
+
+  return mergedHolidays;
+}
+
+/**
+ * キャッシュされた祝日マップの取得
+ */
+export async function getCachedHolidays(): Promise<Record<string, string>> {
+  try {
+    const db = getDB();
+    const row = await db.getFirstAsync<{ value: string }>(
+      "SELECT value FROM settings WHERE key = 'zikankanri_holidays'"
+    );
+    if (row && row.value) {
+      return JSON.parse(row.value);
+    }
+  } catch (e) {
+    console.warn('[calendarService] getCachedHolidays failed:', e);
+  }
+  return calculateJapaneseHolidays(new Date().getFullYear());
+}
+

@@ -258,6 +258,16 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
     }
 
     try {
+      const defaultSchedulesRow = await db.getFirstAsync<{ value: string }>(
+        "SELECT value FROM settings WHERE key = 'zikankanri_default_schedules'"
+      );
+      data['zikankanri_default_schedules'] = defaultSchedulesRow && defaultSchedulesRow.value ? JSON.parse(defaultSchedulesRow.value) : null;
+    } catch (e) {
+      console.warn('[getInitialDataForWebView] Failed to parse zikankanri_default_schedules:', e);
+      data['zikankanri_default_schedules'] = null;
+    }
+
+    try {
       const tagsRow = await db.getFirstAsync<{ value: string }>(
         "SELECT value FROM settings WHERE key = 'zikankanri_tags'"
       );
@@ -275,6 +285,26 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
     } catch (e) {
       console.warn('[getInitialDataForWebView] Failed to get zikankanri_continuous_mode:', e);
       data['zikankanri_continuous_mode'] = null;
+    }
+
+    try {
+      const holidaysRow = await db.getFirstAsync<{ value: string }>(
+        "SELECT value FROM settings WHERE key = 'zikankanri_holidays'"
+      );
+      data['zikankanri_holidays'] = holidaysRow && holidaysRow.value ? JSON.parse(holidaysRow.value) : null;
+    } catch (e) {
+      console.warn('[getInitialDataForWebView] Failed to parse zikankanri_holidays:', e);
+      data['zikankanri_holidays'] = null;
+    }
+
+    try {
+      const calSettingsRow = await db.getFirstAsync<{ value: string }>(
+        "SELECT value FROM settings WHERE key = 'calendar_sync_settings'"
+      );
+      data['calendar_sync_settings'] = calSettingsRow && calSettingsRow.value ? JSON.parse(calSettingsRow.value) : null;
+    } catch (e) {
+      console.warn('[getInitialDataForWebView] Failed to parse calendar_sync_settings:', e);
+      data['calendar_sync_settings'] = null;
     }
 
     // 3. Habit items and logs
@@ -465,6 +495,13 @@ export const handleWebViewMessage = async (
       );
     } 
     
+    else if (key === 'zikankanri_default_schedules') {
+      await db.runAsync(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES ('zikankanri_default_schedules', ?)",
+        [value]
+      );
+    } 
+    
     else if (key === 'zikankanri_tags') {
       await db.runAsync(
         "INSERT OR REPLACE INTO settings (key, value) VALUES ('zikankanri_tags', ?)",
@@ -477,6 +514,26 @@ export const handleWebViewMessage = async (
         "INSERT OR REPLACE INTO settings (key, value) VALUES ('zikankanri_continuous_mode', ?)",
         [value]
       );
+    } 
+
+    else if (key === 'zikankanri_treat_holidays_as_sunday') {
+      await db.runAsync(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES ('zikankanri_treat_holidays_as_sunday', ?)",
+        [value]
+      );
+      try {
+        const calSettingsRow = await db.getFirstAsync<{ value: string }>(
+          "SELECT value FROM settings WHERE key = 'calendar_sync_settings'"
+        );
+        const calSettings = calSettingsRow && calSettingsRow.value ? JSON.parse(calSettingsRow.value) : {};
+        calSettings.treatHolidaysAsSunday = value === 'true';
+        await db.runAsync(
+          "INSERT OR REPLACE INTO settings (key, value) VALUES ('calendar_sync_settings', ?)",
+          [JSON.stringify(calSettings)]
+        );
+      } catch (err) {
+        console.warn('[SyncService] Failed to sync treatHolidaysAsSunday to calendar_sync_settings:', err);
+      }
     } 
     
     else if (key === 'habit-items') {

@@ -17,6 +17,7 @@ import {
   getCalendarSyncSettings,
   importGoogleCalendarPlans,
   exportLogsToGoogleCalendar,
+  syncHolidaysFromDevice,
 } from '../../src/services/calendarService';
 
 export default function ZikanScreen() {
@@ -50,6 +51,17 @@ export default function ZikanScreen() {
         if (!available) return;
 
         const settings = await getCalendarSyncSettings();
+        if (settings.importHolidays !== false) {
+          const holidays = await syncHolidaysFromDevice();
+          if (isMounted) {
+            webViewTabRef.current?.injectJavaScript(
+              `if (typeof window.updateHolidaysData === 'function') {
+                window.updateHolidaysData(${JSON.stringify(holidays)}, ${JSON.stringify(settings.treatHolidaysAsSunday ?? true)});
+              }`
+            );
+          }
+        }
+
         if (settings.enabled && settings.importEnabled && settings.importOnScreenFocus) {
           const res = await importGoogleCalendarPlans(targetDate);
           if (isMounted && res.success && res.allPlans) {
@@ -113,11 +125,21 @@ export default function ZikanScreen() {
       setIsCalendarSyncing(true);
       const importRes = await importGoogleCalendarPlans(targetDate);
       const exportRes = await exportLogsToGoogleCalendar(targetDate);
+      const holidays = await syncHolidaysFromDevice();
 
       if (importRes.success && importRes.allPlans) {
         webViewTabRef.current?.injectJavaScript(
           `if (typeof window.importGooglePlans === 'function') {
             window.importGooglePlans(${JSON.stringify(importRes.allPlans)});
+          }
+          if (typeof window.updateHolidaysData === 'function') {
+            window.updateHolidaysData(${JSON.stringify(holidays)}, ${JSON.stringify(settings.treatHolidaysAsSunday ?? true)});
+          }`
+        );
+      } else {
+        webViewTabRef.current?.injectJavaScript(
+          `if (typeof window.updateHolidaysData === 'function') {
+            window.updateHolidaysData(${JSON.stringify(holidays)}, ${JSON.stringify(settings.treatHolidaysAsSunday ?? true)});
           }`
         );
       }
