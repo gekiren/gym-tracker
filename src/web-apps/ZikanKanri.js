@@ -716,11 +716,11 @@ header {
 
 .view-mode-btn {
   flex: 1;
-  padding: 10px 14px;
+  padding: 8px 6px;
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 600;
   border-radius: 8px;
   cursor: pointer;
@@ -728,7 +728,8 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 .view-mode-btn.active {
@@ -1096,10 +1097,13 @@ header {
         <!-- Main View Mode Toggle -->
         <div class="view-mode-toggle-group">
             <button type="button" id="view-mode-puzzle-btn" class="view-mode-btn active" onclick="switchMainViewMode('puzzle')">
-                🧩 ピースパズル
+                🧩 タイムライン
+            </button>
+            <button type="button" id="view-mode-summary-btn" class="view-mode-btn" onclick="switchMainViewMode('summary')">
+                📊 サークル・集計
             </button>
             <button type="button" id="view-mode-classic-btn" class="view-mode-btn" onclick="switchMainViewMode('classic')">
-                📋 フォーム＆リスト
+                📋 フォーム
             </button>
         </div>
 
@@ -1442,7 +1446,7 @@ header {
         </section>
 
         <!-- Export/Clear -->
-        <section style="margin-top: 20px; text-align: center;">
+        <section id="clear-day-section" style="margin-top: 20px; text-align: center;">
             <button type="button" id="clear-day-btn"
                 style="background:none; border:none; color: var(--error-color); text-decoration: underline; cursor: pointer; font-size: 0.95rem;">
                 今日のデータをリセット...
@@ -2495,7 +2499,8 @@ if (exportMdBtn) {
         targetLogs.forEach(function(log) {
             const duration = calculateDuration(log.start, log.end);
             log.items.forEach(function(item) {
-                const minutes = duration * (item.percent / 100);
+                const percent = (item.percent !== undefined && !isNaN(item.percent)) ? item.percent : (item.weight ? item.weight * 100 : 100);
+                const minutes = duration * (percent / 100);
                 if (!actualTotals[item.name]) actualTotals[item.name] = 0;
                 actualTotals[item.name] += minutes;
                 totalActualMins += minutes;
@@ -2507,7 +2512,8 @@ if (exportMdBtn) {
         targetPlans.forEach(function(plan) {
             const duration = calculateDuration(plan.start, plan.end);
             plan.items.forEach(function(item) {
-                const minutes = duration * (item.percent / 100);
+                const percent = (item.percent !== undefined && !isNaN(item.percent)) ? item.percent : (item.weight ? item.weight * 100 : 100);
+                const minutes = duration * (percent / 100);
                 if (!planTotals[item.name]) planTotals[item.name] = 0;
                 planTotals[item.name] += minutes;
                 totalPlanMins += minutes;
@@ -2721,7 +2727,8 @@ function renderPlans() {
             content = '<div style="font-size:0.9rem;">' +
                 plan.items.map(function(i) {
                     const name = i.name.trim() || '(未設定)';
-                    return name + ' (' + i.percent + '%)';
+                    const pct = (i.percent !== undefined && !isNaN(i.percent)) ? i.percent : (i.weight ? i.weight * 100 : 100);
+                    return name + ' (' + pct + '%)';
                 }).join(' / ') +
                 '</div>';
         }
@@ -2777,7 +2784,8 @@ function renderLogs() {
             content = '<div style="font-size:0.9rem;">' +
                 log.items.map(function(i) {
                     const name = i.name.trim() || '(未設定)';
-                    return name + ' (' + i.percent + '%)';
+                    const pct = (i.percent !== undefined && !isNaN(i.percent)) ? i.percent : (i.weight ? i.weight * 100 : 100);
+                    return name + ' (' + pct + '%)';
                 }).join(' / ') +
                 '</div>';
         }
@@ -2829,7 +2837,8 @@ function renderSummary() {
     targetLogs.forEach(function(log) {
         const duration = calculateDuration(log.start, log.end);
         log.items.forEach(function(item) {
-            const minutes = duration * (item.percent / 100);
+            const percent = (item.percent !== undefined && !isNaN(item.percent)) ? item.percent : (item.weight ? item.weight * 100 : 100);
+            const minutes = duration * (percent / 100);
             if (!actualTotals[item.name]) actualTotals[item.name] = 0;
             actualTotals[item.name] += minutes;
             totalActualMins += minutes;
@@ -2841,7 +2850,8 @@ function renderSummary() {
     targetPlans.forEach(function(plan) {
         const duration = calculateDuration(plan.start, plan.end);
         plan.items.forEach(function(item) {
-            const minutes = duration * (item.percent / 100);
+            const percent = (item.percent !== undefined && !isNaN(item.percent)) ? item.percent : (item.weight ? item.weight * 100 : 100);
+            const minutes = duration * (percent / 100);
             if (!planTotals[item.name]) planTotals[item.name] = 0;
             planTotals[item.name] += minutes;
             totalPlanMins += minutes;
@@ -3246,15 +3256,22 @@ window.switchMainViewMode = function(mode) {
     currentMainViewMode = mode;
     storage.setItem('zikankanri_main_view_mode', mode);
     const puzzleBtn = document.getElementById('view-mode-puzzle-btn');
+    const summaryBtn = document.getElementById('view-mode-summary-btn');
     const classicBtn = document.getElementById('view-mode-classic-btn');
     const puzzleSec = document.getElementById('puzzle-section');
+    const summarySec = document.getElementById('summary-section');
     const classicSec = document.getElementById('classic-view-container');
+    const clearSec = document.getElementById('clear-day-section');
+
+    if (puzzleBtn) puzzleBtn.classList.toggle('active', mode === 'puzzle');
+    if (summaryBtn) summaryBtn.classList.toggle('active', mode === 'summary');
+    if (classicBtn) classicBtn.classList.toggle('active', mode === 'classic');
 
     if (mode === 'puzzle') {
-        if (puzzleBtn) puzzleBtn.classList.add('active');
-        if (classicBtn) classicBtn.classList.remove('active');
         if (puzzleSec) puzzleSec.style.display = 'block';
+        if (summarySec) summarySec.style.display = 'none';
         if (classicSec) classicSec.style.display = 'none';
+        if (clearSec) clearSec.style.display = 'none';
         renderPuzzle();
         setTimeout(function() {
             const scrollArea = document.getElementById('puzzle-timeline-scroll');
@@ -3262,11 +3279,20 @@ window.switchMainViewMode = function(mode) {
                 scrollArea.scrollTop = 380; // 朝6時半〜7時付近へ
             }
         }, 80);
-    } else {
-        if (classicBtn) classicBtn.classList.add('active');
-        if (puzzleBtn) puzzleBtn.classList.remove('active');
+    } else if (mode === 'summary') {
         if (puzzleSec) puzzleSec.style.display = 'none';
+        if (summarySec) summarySec.style.display = 'block';
+        if (classicSec) classicSec.style.display = 'none';
+        if (clearSec) clearSec.style.display = 'block';
+        renderSummary();
+    } else {
+        if (puzzleSec) puzzleSec.style.display = 'none';
+        if (summarySec) summarySec.style.display = 'block';
         if (classicSec) classicSec.style.display = 'block';
+        if (clearSec) clearSec.style.display = 'block';
+        renderLogs();
+        renderPlans();
+        renderSummary();
     }
 };
 
@@ -3463,7 +3489,7 @@ function handlePuzzleSlotClick(e, hour) {
         date: selectedDate,
         start: startStr,
         end: endStr,
-        items: [{ name: selectedPuzzlePiece.name, weight: 1.0 }],
+        items: [{ name: selectedPuzzlePiece.name, percent: 100 }],
         memo: ""
     };
 
@@ -3738,7 +3764,7 @@ function handlePuzzleQuickFill() {
             date: selectedDate,
             start: b.start === '24:00' ? '23:59' : b.start,
             end: b.end === '24:00' ? '23:59' : b.end,
-            items: [{ name: b.name, weight: 1.0 }],
+            items: [{ name: b.name, percent: 100 }],
             memo: ''
         };
     });

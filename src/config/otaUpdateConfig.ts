@@ -11,21 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.3',
+  version: '2.3.4',
   title: {
-    ja: '🧩 24時間ピースパズルタイムライン起動・構文エラーの完全解消',
-    en: '🧩 24h Piece Timeline Complete Initialization & Syntax Fix',
+    ja: '🧩 24時間管理 タブ分割による操作性改善 ＆ 予定計算バグ修正',
+    en: '🧩 24h Timeline Segment Tabs & Plan Calculation Fix',
   },
   notes: {
     ja: [
-      '24時間管理画面でスクリプトの構文エラー（SyntaxError）によりタイムライン枠やボタンが動作しなかった不具合を完全に解消しました。',
-      'タイムラインへのピース配置・ドラッグ移動・長さ調整がスムーズにご利用いただけます。',
-      '平日の基本型クイック配置や予定・実績の切り替えが正常に動作します。',
+      '画面上部に「タイムライン」と「サークル・集計」のセグメントタブを新設し、画面全体のスクロールの引っかかりを解消しました。',
+      'タイムラインで予定ピースを配置した際に、予定総時間が「NaN分」と表示されてしまう集計バグを修正しました。',
+      '活動別の予定・実績差異や遵守率が即座に正しく集計・表示されます。',
     ],
     en: [
-      'Completely resolved the syntax error that prevented the 24h timeline frame and buttons from operating.',
-      'Piece snapping, drag-to-move, and resize are now fully functional.',
-      'Quick-fill default routine and plan/actual mode toggles are now working properly.',
+      'Added segment tabs for Timeline and Circle Summary, resolving scroll interception issues.',
+      'Fixed an issue where total planned time showed as NaN when placing pieces on the timeline.',
+      'Plan vs. actual breakdown and adherence rates now update accurately in real time.',
     ],
   },
 };
