@@ -11,7 +11,7 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.10',
+  version: '2.3.11',
   title: {
     ja: '🏷️ 24時間管理：タグとピースの一体化管理',
     en: '🏷️ 24h Timeline: Unified Tags & Pieces Management',

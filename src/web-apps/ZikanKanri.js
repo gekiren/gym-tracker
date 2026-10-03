@@ -3162,7 +3162,7 @@ function movePiece(index, direction) {
 }
 
 function resetToDefaultPieces() {
-    if (confirm('タグ・ピースを標準の16種類に初期化しますか？\n（カスタム追加したピースは消去されます）')) {
+    if (confirm('タグ・ピースを標準の16種類に初期化しますか？\\n（カスタム追加したピースは消去されます）')) {
         activityPieces = JSON.parse(JSON.stringify(DEFAULT_ACTIVITY_PIECES));
         resetPieceForm();
         syncAllActivityViews();
