@@ -11,21 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.11',
+  version: '2.3.12',
   title: {
-    ja: '🏷️ 24時間管理：タグとピースの一体化管理',
-    en: '🏷️ 24h Timeline: Unified Tags & Pieces Management',
+    ja: '🧩 24時間管理：ピース選択パレットのメニュー化',
+    en: '🧩 24h Timeline: Compact Piece Menu',
   },
   notes: {
     ja: [
-      '詳細リストのタグとタイムラインの活動ピースを1つのマスターデータとして完全統合しました。',
-      'タグ・ピース設定画面から、活動名・アイコン・分類（投資/維持/漂流）・サイズ・所要時間を自由に編集・追加・並び替えできるようになりました。',
-      'タイムライン、詳細リスト、記録用ボトムシートの全画面で設定したピースとタグがリアルタイムに連動します。',
+      'ピース選択パレットの常時表示を廃止し、スリムな選択バーとメニューシートから選ぶスマートなUIに刷新しました。',
+      '画面の縦スペースが大幅に広がり、24時間タイムラインの視認性と操作性が格段に向上しました。',
+      '選択中ピースの「✕ 解除」や、未選択時の空き時間タップによる新規記録ボトムシートもスムーズに利用できます。',
     ],
     en: [
-      'Unified detailed list tags and timeline activity pieces into a single synchronized master dataset.',
-      'Easily customize, add, and reorder activities with custom icons, categories (invest/maintain/drift), piece sizes, and default durations.',
-      'Changes instantly sync across the timeline palette, detailed list tags, and quick-add sheets.',
+      'Replaced the always-visible piece palette with a sleek selector bar and popup menu sheet.',
+      'Maximized vertical screen space for a significantly cleaner, wider 24-hour timeline view.',
+      'Easily clear selected pieces or tap empty slots to open manual recording sheets seamlessly.',
     ],
   },
 };

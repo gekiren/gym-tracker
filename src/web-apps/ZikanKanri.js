@@ -915,6 +915,41 @@ header {
   color: var(--text-secondary);
 }
 
+.puzzle-piece-selector-bar {
+  background: #181818;
+  border: 1px solid #2d2d2d;
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.piece-picker-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: 8px;
+  margin-bottom: 0 !important;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid #444;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.piece-picker-trigger-btn:active {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: #8b5cf6;
+}
+
+.piece-picker-trigger-btn.has-piece {
+  background: rgba(139, 92, 246, 0.18);
+  border-color: #8b5cf6;
+  color: #c4b5fd;
+}
+
 .puzzle-palette-container {
   background: #181818;
   border: 1px solid #2d2d2d;
@@ -1460,25 +1495,26 @@ input:checked + .holiday-switch-slider:before {
                 </div>
             </div>
 
-            <!-- ピース選択パレット -->
-            <div class="puzzle-palette-container" id="puzzle-palette-container">
+            <!-- ピース選択バー (スリム化＆メニュー選択式) -->
+            <div class="puzzle-piece-selector-bar" id="puzzle-palette-bar">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-                    <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">
-                        はめ込むピースを選択: <b id="puzzle-selected-piece-name" style="color: #c4b5fd;">なし</b>
-                    </span>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <button type="button" id="puzzle-palette-config-btn" class="btn btn-secondary" onclick="openTagEditor()" style="width: auto; padding: 3px 8px; font-size: 0.72rem; margin-bottom: 0; color: #c4b5fd; border-color: rgba(139, 92, 246, 0.4);" title="タグ・ピースの管理">
-                            ⚙️ タグ・ピース設定
+                    <button type="button" id="puzzle-open-picker-btn" class="piece-picker-trigger-btn" onclick="openPiecePickerMenu()">
+                        <span id="puzzle-picker-btn-icon" style="font-size: 1rem;">🧩</span>
+                        <span id="puzzle-picker-btn-text">ピースを選択する</span>
+                        <span style="font-size: 0.7rem; opacity: 0.7;">▼</span>
+                    </button>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <button type="button" id="puzzle-clear-piece-btn" class="btn btn-secondary" onclick="clearSelectedPuzzlePiece()" style="display: none; width: auto; padding: 4px 8px; font-size: 0.72rem; margin-bottom: 0; color: var(--error-color); border-color: rgba(207, 102, 121, 0.4);" title="ピース選択を解除">
+                            ✕ 解除
                         </button>
-                        <span style="font-size: 0.68rem; color: var(--text-secondary); opacity: 0.7;">
-                            ※空き時間をタップ
-                        </span>
+                        <button type="button" id="puzzle-palette-config-btn" class="btn btn-secondary" onclick="openTagEditor()" style="width: auto; padding: 4px 8px; font-size: 0.72rem; margin-bottom: 0; color: #c4b5fd; border-color: rgba(139, 92, 246, 0.4);" title="タグ・ピースの管理">
+                            ⚙️ 設定
+                        </button>
                     </div>
                 </div>
-
-                <!-- 動的レンダリング領域 -->
-                <div id="puzzle-palette-dynamic-content" style="display: flex; flex-direction: column; gap: 10px;">
-                    <!-- JSのrenderPuzzlePalette()で大・中・小・漂流ピースを動的に描画 -->
+                <!-- 選択中ピースのガイド表示 -->
+                <div id="puzzle-selected-piece-hint" style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 4px; display: none;">
+                    ※タイムラインの空き時間をタップして配置（未選択時はタップで新規記録シートが開きます）
                 </div>
             </div>
 
@@ -1764,6 +1800,38 @@ input:checked + .holiday-switch-slider:before {
                 </button>
                 <button type="button" id="bs-save-btn" class="btn btn-primary" style="flex: 1; margin-bottom: 0; padding: 12px 16px; font-weight: 700; font-size: 0.95rem;">
                     保存する
+                </button>
+            </div>
+        </div>
+    <!-- ピース選択メニュー モーダル (ポップアップシート) -->
+    <div id="puzzle-piece-picker-modal" class="modal-overlay" onclick="closePiecePickerMenuOnOverlay(event)">
+        <div class="modal-content" style="max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.15rem;">🧩</span>
+                    <h3 style="margin-bottom: 0; font-size: 1.05rem;">はめ込むピースを選択</h3>
+                </div>
+                <span id="close-piece-picker-btn" onclick="closePiecePickerMenu()" style="cursor: pointer; font-size: 1.5rem; font-weight: bold; color: var(--text-secondary);">&times;</span>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 12px 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
+                    <span style="font-size: 0.72rem; color: var(--text-secondary);">タップしてピースを選択すると、タイムラインに直接配置できます</span>
+                    <button type="button" class="btn btn-secondary" onclick="closePiecePickerMenu(); openTagEditor();" style="width: auto; padding: 2px 8px; font-size: 0.7rem; margin-bottom: 0; color: #c4b5fd; border-color: rgba(139, 92, 246, 0.4);">
+                        ⚙️ ピース管理
+                    </button>
+                </div>
+
+                <!-- 動的レンダリング領域 -->
+                <div id="puzzle-picker-dynamic-content" style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- JSのrenderPuzzlePalette()で大・中・小・漂流ピースを描画 -->
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                <button type="button" class="btn btn-secondary" onclick="clearSelectedPuzzlePiece(); closePiecePickerMenu();" style="width: auto; padding: 6px 12px; font-size: 0.8rem; margin-bottom: 0; color: var(--error-color); border-color: rgba(207, 102, 121, 0.4);">
+                    ✕ 選択を解除する
+                </button>
+                <button type="button" class="btn btn-primary" onclick="closePiecePickerMenu()" style="width: auto; padding: 6px 16px; font-size: 0.85rem; margin-bottom: 0;">
+                    閉じる
                 </button>
             </div>
         </div>
@@ -3190,6 +3258,13 @@ function initEmojiPalette() {
 function syncAllActivityViews() {
     saveActivityPieces();
     initTags();
+    if (selectedPuzzlePiece) {
+        const stillExists = activityPieces.some(function(p) { return p.name === selectedPuzzlePiece.name; });
+        if (!stillExists) {
+            selectedPuzzlePiece = null;
+        }
+    }
+    if (typeof updatePieceSelectorBar === 'function') updatePieceSelectorBar();
     if (typeof renderPuzzlePalette === 'function') renderPuzzlePalette();
     if (typeof renderBottomSheetTags === 'function') renderBottomSheetTags();
     if (typeof renderBottomSheetSimultaneousList === 'function') renderBottomSheetSimultaneousList();
@@ -4751,7 +4826,7 @@ function initPuzzleTimelineGrid() {
 }
 
 function renderPuzzlePalette() {
-    const container = document.getElementById('puzzle-palette-dynamic-content');
+    const container = document.getElementById('puzzle-picker-dynamic-content');
     if (!container) return;
 
     container.innerHTML = '';
@@ -4806,23 +4881,8 @@ function renderPuzzlePalette() {
             btn.innerHTML = (piece.icon ? piece.icon + ' ' : '') + piece.name + ' (' + durLabel + ')';
 
             btn.addEventListener('click', function() {
-                container.querySelectorAll('.piece-btn').forEach(function(b) {
-                    b.classList.remove('active-selected');
-                });
-                btn.classList.add('active-selected');
-                selectedPuzzlePiece = {
-                    name: piece.name,
-                    icon: piece.icon,
-                    type: piece.type,
-                    category: piece.category,
-                    duration: piece.duration,
-                    snap: piece.snap,
-                    color: piece.color || 'blue'
-                };
-                const labelEl = document.getElementById('puzzle-selected-piece-name');
-                if (labelEl) {
-                    labelEl.textContent = (piece.icon ? piece.icon + ' ' : '') + piece.name + ' (' + piece.snap + '分単位)';
-                }
+                selectPuzzlePiece(piece);
+                closePiecePickerMenu();
             });
 
             rowDiv.appendChild(btn);
@@ -4833,8 +4893,88 @@ function renderPuzzlePalette() {
     });
 }
 
+function selectPuzzlePiece(piece) {
+    selectedPuzzlePiece = {
+        name: piece.name,
+        icon: piece.icon,
+        type: piece.type,
+        category: piece.category,
+        duration: piece.duration,
+        snap: piece.snap,
+        color: piece.color || 'blue'
+    };
+    updatePieceSelectorBar();
+}
+
+function clearSelectedPuzzlePiece() {
+    selectedPuzzlePiece = null;
+    updatePieceSelectorBar();
+}
+window.clearSelectedPuzzlePiece = clearSelectedPuzzlePiece;
+
+function updatePieceSelectorBar() {
+    const triggerBtn = document.getElementById('puzzle-open-picker-btn');
+    const iconEl = document.getElementById('puzzle-picker-btn-icon');
+    const textEl = document.getElementById('puzzle-picker-btn-text');
+    const clearBtn = document.getElementById('puzzle-clear-piece-btn');
+    const hintEl = document.getElementById('puzzle-selected-piece-hint');
+
+    if (selectedPuzzlePiece) {
+        const durLabel = selectedPuzzlePiece.duration >= 60 ? (selectedPuzzlePiece.duration / 60) + 'h' : selectedPuzzlePiece.duration + 'm';
+        if (triggerBtn) triggerBtn.classList.add('has-piece');
+        if (iconEl) iconEl.textContent = selectedPuzzlePiece.icon || '🧩';
+        if (textEl) textEl.textContent = selectedPuzzlePiece.name + ' (' + durLabel + ' / ' + selectedPuzzlePiece.snap + '分単位)';
+        if (clearBtn) clearBtn.style.display = 'inline-block';
+        if (hintEl) hintEl.style.display = 'block';
+    } else {
+        if (triggerBtn) triggerBtn.classList.remove('has-piece');
+        if (iconEl) iconEl.textContent = '🧩';
+        if (textEl) textEl.textContent = 'ピースを選択する';
+        if (clearBtn) clearBtn.style.display = 'none';
+        if (hintEl) hintEl.style.display = 'none';
+    }
+
+    const menuContainer = document.getElementById('puzzle-picker-dynamic-content');
+    if (menuContainer) {
+        menuContainer.querySelectorAll('.piece-btn').forEach(function(b) {
+            if (selectedPuzzlePiece && b.dataset.name === selectedPuzzlePiece.name) {
+                b.classList.add('active-selected');
+            } else {
+                b.classList.remove('active-selected');
+            }
+        });
+    }
+}
+
+function openPiecePickerMenu() {
+    const modal = document.getElementById('puzzle-piece-picker-modal');
+    if (modal) {
+        modal.classList.add('active');
+        notifyModalState(true);
+        renderPuzzlePalette();
+    }
+}
+window.openPiecePickerMenu = openPiecePickerMenu;
+
+function closePiecePickerMenu() {
+    const modal = document.getElementById('puzzle-piece-picker-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        notifyModalState(false);
+    }
+}
+window.closePiecePickerMenu = closePiecePickerMenu;
+
+function closePiecePickerMenuOnOverlay(e) {
+    if (e.target && e.target.id === 'puzzle-piece-picker-modal') {
+        closePiecePickerMenu();
+    }
+}
+window.closePiecePickerMenuOnOverlay = closePiecePickerMenuOnOverlay;
+
 function initPuzzlePalette() {
     renderPuzzlePalette();
+    updatePieceSelectorBar();
 }
 
 function calculateSnap(minute, type, duration, excludeId, currentItems) {
