@@ -11,21 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.7',
+  version: '2.3.8',
   title: {
-    ja: '📅 24時間管理：デフォルトスケジュール機能の追加',
-    en: '📅 24h Timeline: Default Schedule System Added',
+    ja: '🛠️ 24時間管理：安定性向上とダイアログ修正',
+    en: '🛠️ 24h Timeline: Stability Improvement & Fixes',
   },
   notes: {
     ja: [
-      '曜日指定および全日共通の「デフォルトスケジュール」を登録・自動展開できる機能を追加しました。',
-      '予定が未登録の日付に、曜日指定スケジュールを最優先（未指定の曜日は共通デフォルト）で自動スケジュールします。',
-      'タイムラインヘッダーからいつでもワンタップで再適用・登録・編集・管理が可能です。',
+      '24時間管理: スケジュール適用ダイアログの表示不具合を修正しました。',
+      '24時間管理: デフォルトスケジュール機能の安定性を向上しました。',
     ],
     en: [
-      'Added Default Schedule feature supporting day-specific and daily common routines.',
-      'Automatically schedules empty days with priority on day-specific routines and daily fallback.',
-      'Quickly apply, create, edit, or manage schedules directly from the timeline header.',
+      '24h Tracker: Fixed schedule dialog display issue.',
+      '24h Tracker: Improved stability of default schedule system.',
     ],
   },
 };

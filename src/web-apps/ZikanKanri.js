@@ -2129,7 +2129,7 @@ function applyDefaultScheduleForCurrentDate(options) {
     }
 
     if (force && existingPlans.length > 0) {
-        const confirmMsg = '「' + match.schedule.name + '」を適用しますか？\n（現在の' + existingPlans.length + '件の予定は置き換えられます）';
+        const confirmMsg = '「' + match.schedule.name + '」を適用しますか？\\n（現在の' + existingPlans.length + '件の予定は置き換えられます）';
         if (!confirm(confirmMsg)) {
             return false;
         }
@@ -2371,7 +2371,7 @@ function applySpecificSchedule(schedId) {
     const existingPlans = plans.filter(function(p) { return p.date === selectedDate; });
 
     if (existingPlans.length > 0) {
-        if (!confirm('「' + sched.name + '」を適用しますか？\n（現在の' + existingPlans.length + '件の予定は置き換えられます）')) {
+        if (!confirm('「' + sched.name + '」を適用しますか？\\n（現在の' + existingPlans.length + '件の予定は置き換えられます）')) {
             return;
         }
     }
@@ -2403,8 +2403,8 @@ function promptEditScheduleDays(schedId) {
         : 'none';
 
     const input = prompt(
-        '「' + sched.name + '」の適用曜日を設定してください:\n' +
-        '0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土\n' +
+        '「' + sched.name + '」の適用曜日を設定してください:\\n' +
+        '0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土\\n' +
         '（カンマ区切りで入力。例: 1,2,3,4,5 / 曜日指定なしは none と入力）',
         curDaysStr
     );
