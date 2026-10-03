@@ -11,21 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.4',
+  version: '2.3.5',
   title: {
-    ja: '🧩 24時間管理 タブ分割による操作性改善 ＆ 予定計算バグ修正',
-    en: '🧩 24h Timeline Segment Tabs & Plan Calculation Fix',
+    ja: '🧩 24時間管理 タイムライン＆フォーム統合（ボトムシート連動）',
+    en: '🧩 24h Timeline & Form Integration with Bottom Sheet Drawer',
   },
   notes: {
     ja: [
-      '画面上部に「タイムライン」と「サークル・集計」のセグメントタブを新設し、画面全体のスクロールの引っかかりを解消しました。',
-      'タイムラインで予定ピースを配置した際に、予定総時間が「NaN分」と表示されてしまう集計バグを修正しました。',
-      '活動別の予定・実績差異や遵守率が即座に正しく集計・表示されます。',
+      'タイムライン上のブロックをタップして、メモ追記・時間微調整・活動名変更・削除ができる編集ボトムシートを追加しました。',
+      'タイムラインの空き時間をタップ、または「＋記録」ボタンから、指定時刻ですぐに開く新規記録シートを新設しました。',
+      'ブロックの移動・伸縮時の誤タップ防止ガードを搭載し、タイムライン中心の快適な操作性を実現しました。',
     ],
     en: [
-      'Added segment tabs for Timeline and Circle Summary, resolving scroll interception issues.',
-      'Fixed an issue where total planned time showed as NaN when placing pieces on the timeline.',
-      'Plan vs. actual breakdown and adherence rates now update accurately in real time.',
+      'Tapping a timeline block opens a bottom sheet drawer to edit notes, time, activity tags, or delete.',
+      'Tapping empty slots or the "+ Record" button opens a quick creation sheet pre-filled with that time.',
+      'Added tap protection during drag/resize, delivering an intuitive timeline-first experience.',
     ],
   },
 };

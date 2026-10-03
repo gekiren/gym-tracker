@@ -1076,6 +1076,127 @@ header {
   z-index: 60;
   pointer-events: none;
 }
+
+/* Timeline Selection Highlight */
+.timeline-block.is-selected {
+  box-shadow: 0 0 0 2px #c084fc, 0 4px 16px rgba(168, 85, 247, 0.45) !important;
+  z-index: 45 !important;
+}
+
+/* Timeline Bottom Sheet Drawer */
+.bottom-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.bottom-sheet-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bottom-sheet-container {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 84vh;
+  background: #181822;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.85);
+  z-index: 999;
+  transform: translateY(105%);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.bottom-sheet-container.active {
+  transform: translateY(0);
+}
+
+.bottom-sheet-handle-bar {
+  padding: 8px 0 4px 0;
+  display: flex;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.bottom-sheet-drag-pill {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.bottom-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px 10px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bottom-sheet-header h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0;
+}
+
+.bs-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.bottom-sheet-body {
+  padding: 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: calc(84vh - 60px);
+  padding-bottom: 36px;
+}
+
+.bs-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.bs-tag-chip:active {
+  transform: scale(0.96);
+}
+
+.bs-tag-chip.active {
+  background: #6d28d9;
+  color: #ffffff;
+  border-color: #8b5cf6;
+  box-shadow: 0 2px 8px rgba(109, 40, 217, 0.4);
+}
 </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1103,7 +1224,7 @@ header {
                 📊 サークル・集計
             </button>
             <button type="button" id="view-mode-classic-btn" class="view-mode-btn" onclick="switchMainViewMode('classic')">
-                📋 フォーム
+                📋 詳細リスト
             </button>
         </div>
 
@@ -1114,7 +1235,10 @@ header {
                     <h3 style="margin-bottom: 0;">24時間ピースタイムライン</h3>
                     <span id="puzzle-current-mode-badge" class="puzzle-mode-badge puzzle-mode-actual">⏱ 実績</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <button type="button" id="puzzle-add-record-btn" class="btn btn-primary" style="width: auto; padding: 4px 10px; font-size: 0.78rem; margin-bottom: 0;" onclick="openTimelineBottomSheetForNew()">
+                        ＋ 記録
+                    </button>
                     <button type="button" id="puzzle-switch-mode-btn" class="btn btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.78rem; margin-bottom: 0;">
                         予定に切替
                     </button>
@@ -1452,6 +1576,85 @@ header {
                 今日のデータをリセット...
             </button>
         </section>
+    </div>
+
+    <!-- Timeline Edit/Create Bottom Sheet -->
+    <div id="timeline-bottom-sheet-overlay" class="bottom-sheet-overlay" onclick="closeTimelineBottomSheet()"></div>
+    <div id="timeline-bottom-sheet" class="bottom-sheet-container">
+        <div class="bottom-sheet-handle-bar" onclick="closeTimelineBottomSheet()">
+            <div class="bottom-sheet-drag-pill"></div>
+        </div>
+        <div class="bottom-sheet-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="bs-mode-badge" class="puzzle-mode-badge puzzle-mode-actual">⏱ 実績</span>
+                <h3 id="bs-sheet-title" style="margin-bottom: 0; font-size: 1.05rem;">活動を編集</h3>
+            </div>
+            <button type="button" class="bs-close-btn" onclick="closeTimelineBottomSheet()" title="閉じる">&times;</button>
+        </div>
+
+        <div class="bottom-sheet-body">
+            <!-- 予定/実績 切替タブ -->
+            <div class="mode-tab-group" style="margin-bottom: 14px;">
+                <button type="button" id="bs-tab-actual" class="mode-tab active-actual" onclick="setBottomSheetMode('actual')">
+                    ⏱ 実績として記録
+                </button>
+                <button type="button" id="bs-tab-plan" class="mode-tab" onclick="setBottomSheetMode('plan')">
+                    📅 予定として記録
+                </button>
+            </div>
+
+            <!-- 活動名・タグ選択 -->
+            <div style="margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0;">活動内容</label>
+                    <span id="bs-selected-activity-display" style="font-size: 0.82rem; font-weight: 700; color: #c4b5fd;">未選択</span>
+                </div>
+                <div id="bs-quick-tags" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; padding: 2px 0;">
+                    <!-- JSでタグボタンを描画 -->
+                </div>
+            </div>
+
+            <!-- 時間設定 -->
+            <div style="margin-bottom: 14px;">
+                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block;">時間</label>
+                <div class="flex-row" style="align-items: center; gap: 8px;">
+                    <input type="time" id="bs-start-time" style="margin-bottom: 0; flex: 1;">
+                    <span style="color: var(--text-secondary); font-weight: bold;">〜</span>
+                    <input type="time" id="bs-end-time" style="margin-bottom: 0; flex: 1;">
+                </div>
+                <div class="flex-row" style="margin-top: 6px; gap: 6px;">
+                    <button type="button" class="btn btn-secondary" id="bs-btn-now-start" style="width: auto; flex: 1; padding: 5px 6px; font-size: 0.72rem; margin-bottom: 0;">現在時刻を開始に</button>
+                    <button type="button" class="btn btn-secondary" id="bs-btn-now-end" style="width: auto; flex: 1; padding: 5px 6px; font-size: 0.72rem; margin-bottom: 0;">現在時刻を終了に</button>
+                </div>
+            </div>
+
+            <!-- メモ入力 -->
+            <div style="margin-bottom: 16px;">
+                <label for="bs-memo-input" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block;">メモ（詳細）</label>
+                <input type="text" id="bs-memo-input" placeholder="例: 資料作成、会議、読書など（省略可）" style="margin-bottom: 0;">
+            </div>
+
+            <!-- 同時進行オプション（折りたたみ展開） -->
+            <details id="bs-simultaneous-details" style="margin-bottom: 16px; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px 10px; border: 1px solid rgba(255,255,255,0.08);">
+                <summary style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); cursor: pointer;">
+                    ＋ 同時進行する活動を追加（比率設定）
+                </summary>
+                <div id="bs-simultaneous-container" style="margin-top: 10px;">
+                    <div id="bs-simultaneous-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                    <button type="button" id="bs-add-simultaneous-btn" class="btn btn-secondary" style="margin-top: 8px; padding: 6px 10px; font-size: 0.75rem;">+ 活動を追加</button>
+                </div>
+            </details>
+
+            <!-- 操作ボタン群 -->
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+                <button type="button" id="bs-delete-btn" class="btn btn-secondary" style="width: auto; padding: 10px 14px; color: var(--error-color); border-color: rgba(207, 102, 121, 0.4); display: none;">
+                    削除
+                </button>
+                <button type="button" id="bs-save-btn" class="btn btn-primary" style="flex: 1; margin-bottom: 0; padding: 12px 16px; font-weight: 700; font-size: 0.95rem;">
+                    保存する
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Tag Edit Modal -->
@@ -1817,6 +2020,9 @@ function initTags() {
 
     if (activityNameInput.value) {
         selectTag(activityNameInput.value);
+    }
+    if (typeof renderBottomSheetTags === 'function') {
+        renderBottomSheetTags();
     }
 }
 
@@ -3460,19 +3666,23 @@ function calculateDurationSnap(duration, type) {
 }
 
 function handlePuzzleSlotClick(e, hour) {
-    if (!selectedPuzzlePiece) {
-        alert('まずは上のパレットから配置したいピースを選択してください！');
-        return;
-    }
-
     const rect = e.currentTarget.getBoundingClientRect();
     const clickOffsetY = e.clientY - rect.top;
     const rawMinute = (hour * 60) + Math.round(clickOffsetY);
 
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
-    const currentList = (currentInputMode === 'plan')
+    const isPlan = (currentInputMode === 'plan');
+    const currentList = isPlan
         ? plans.filter(function(p) { return p.date === selectedDate; })
         : logs.filter(function(l) { return l.date === selectedDate; });
+
+    if (!selectedPuzzlePiece) {
+        // パレット未選択時は、タップした時間帯をセットして新規記録ボトムシートを開く
+        const snappedStart = Math.max(0, Math.min(1380, Math.round(rawMinute / 5) * 5));
+        const snappedEnd = Math.min(1440, snappedStart + 60);
+        openTimelineBottomSheetForNew(minsToTime(snappedStart), minsToTime(snappedEnd), isPlan);
+        return;
+    }
 
     let targetStartMinute = calculateSnap(rawMinute, selectedPuzzlePiece.type, selectedPuzzlePiece.duration, null, currentList);
 
@@ -3493,7 +3703,7 @@ function handlePuzzleSlotClick(e, hour) {
         memo: ""
     };
 
-    if (currentInputMode === 'plan') {
+    if (isPlan) {
         plans.push(newEntry);
         savePlans();
         renderPlans();
@@ -3612,30 +3822,420 @@ function renderPuzzle() {
     if (freeEl) freeEl.textContent = (freeMinutes / 60).toFixed(1) + 'h';
 }
 
+/* ==========================================================================
+   Timeline Bottom Sheet (Drawer Form) Logic
+   ========================================================================== */
+var currentEditingTimelineItem = null;
+var isBottomSheetNewRecord = false;
+var bsCurrentMode = 'actual'; // 'actual' | 'plan'
+var bsSelectedActivity = '';
+var bsSimultaneousItems = []; // [{ name: '', percent: 100 }]
+
+function openTimelineBottomSheetForEdit(item, isPlan, element) {
+    currentEditingTimelineItem = item;
+    isBottomSheetNewRecord = false;
+    bsCurrentMode = isPlan ? 'plan' : 'actual';
+
+    document.querySelectorAll('.timeline-block').forEach(function(b) {
+        b.classList.remove('is-selected');
+    });
+    if (element) element.classList.add('is-selected');
+
+    const overlay = document.getElementById('timeline-bottom-sheet-overlay');
+    const sheet = document.getElementById('timeline-bottom-sheet');
+    const titleEl = document.getElementById('bs-sheet-title');
+    const delBtn = document.getElementById('bs-delete-btn');
+    const saveBtn = document.getElementById('bs-save-btn');
+    const startTimeInput = document.getElementById('bs-start-time');
+    const endTimeInput = document.getElementById('bs-end-time');
+    const memoInput = document.getElementById('bs-memo-input');
+
+    if (titleEl) titleEl.textContent = '活動を編集';
+    if (delBtn) delBtn.style.display = 'block';
+    if (saveBtn) saveBtn.textContent = '更新する';
+
+    setBottomSheetMode(bsCurrentMode);
+
+    if (startTimeInput) startTimeInput.value = item.start || '09:00';
+    if (endTimeInput) endTimeInput.value = item.end || '10:00';
+    if (memoInput) memoInput.value = item.memo || '';
+
+    if (item.items && item.items.length > 0) {
+        bsSelectedActivity = item.items[0].name;
+        if (item.items.length > 1) {
+            bsSimultaneousItems = item.items.slice(1).map(function(i) {
+                const pct = (i.percent !== undefined && !isNaN(i.percent)) ? i.percent : (i.weight ? i.weight * 100 : 50);
+                return { name: i.name, percent: pct };
+            });
+            const details = document.getElementById('bs-simultaneous-details');
+            if (details) details.open = true;
+        } else {
+            bsSimultaneousItems = [];
+            const details = document.getElementById('bs-simultaneous-details');
+            if (details) details.open = false;
+        }
+    } else {
+        bsSelectedActivity = item.activity_name || '';
+        bsSimultaneousItems = [];
+        const details = document.getElementById('bs-simultaneous-details');
+        if (details) details.open = false;
+    }
+
+    renderBottomSheetTags();
+    renderBottomSheetSimultaneousList();
+
+    if (overlay) overlay.classList.add('active');
+    if (sheet) sheet.classList.add('active');
+
+    notifyModalState(true);
+}
+
+function openTimelineBottomSheetForNew(startStr, endStr, isPlan) {
+    currentEditingTimelineItem = null;
+    isBottomSheetNewRecord = true;
+    bsCurrentMode = isPlan ? 'plan' : (currentInputMode === 'plan' ? 'plan' : 'actual');
+
+    document.querySelectorAll('.timeline-block').forEach(function(b) {
+        b.classList.remove('is-selected');
+    });
+
+    const overlay = document.getElementById('timeline-bottom-sheet-overlay');
+    const sheet = document.getElementById('timeline-bottom-sheet');
+    const titleEl = document.getElementById('bs-sheet-title');
+    const delBtn = document.getElementById('bs-delete-btn');
+    const saveBtn = document.getElementById('bs-save-btn');
+    const startTimeInput = document.getElementById('bs-start-time');
+    const endTimeInput = document.getElementById('bs-end-time');
+    const memoInput = document.getElementById('bs-memo-input');
+
+    if (titleEl) titleEl.textContent = '新しい活動を記録';
+    if (delBtn) delBtn.style.display = 'none';
+    if (saveBtn) saveBtn.textContent = '記録する';
+
+    setBottomSheetMode(bsCurrentMode);
+
+    if (startTimeInput) startTimeInput.value = startStr || getCurrentTimeStr();
+    if (endTimeInput) {
+        if (endStr) {
+            endTimeInput.value = endStr;
+        } else {
+            const startMins = timeToMins(startTimeInput.value);
+            endTimeInput.value = minsToTime(Math.min(1440, startMins + 60));
+        }
+    }
+    if (memoInput) memoInput.value = '';
+
+    if (selectedPuzzlePiece && selectedPuzzlePiece.name) {
+        bsSelectedActivity = selectedPuzzlePiece.name;
+    } else if (defaultTags && defaultTags.length > 0) {
+        bsSelectedActivity = defaultTags[0];
+    } else {
+        bsSelectedActivity = '仕事';
+    }
+
+    bsSimultaneousItems = [];
+    const details = document.getElementById('bs-simultaneous-details');
+    if (details) details.open = false;
+
+    renderBottomSheetTags();
+    renderBottomSheetSimultaneousList();
+
+    if (overlay) overlay.classList.add('active');
+    if (sheet) sheet.classList.add('active');
+
+    notifyModalState(true);
+}
+
+window.openTimelineBottomSheetForNew = openTimelineBottomSheetForNew;
+window.openTimelineBottomSheetForEdit = openTimelineBottomSheetForEdit;
+
+function closeTimelineBottomSheet() {
+    const overlay = document.getElementById('timeline-bottom-sheet-overlay');
+    const sheet = document.getElementById('timeline-bottom-sheet');
+    if (overlay) overlay.classList.remove('active');
+    if (sheet) sheet.classList.remove('active');
+
+    document.querySelectorAll('.timeline-block').forEach(function(b) {
+        b.classList.remove('is-selected');
+    });
+
+    currentEditingTimelineItem = null;
+    notifyModalState(false);
+}
+window.closeTimelineBottomSheet = closeTimelineBottomSheet;
+
+function setBottomSheetMode(mode) {
+    bsCurrentMode = mode;
+    const badge = document.getElementById('bs-mode-badge');
+    const tabActual = document.getElementById('bs-tab-actual');
+    const tabPlan = document.getElementById('bs-tab-plan');
+
+    if (badge) {
+        badge.className = 'puzzle-mode-badge ' + (mode === 'plan' ? 'puzzle-mode-plan' : 'puzzle-mode-actual');
+        badge.textContent = (mode === 'plan') ? '📅 予定' : '⏱ 実績';
+    }
+    if (tabActual) {
+        tabActual.className = (mode === 'actual') ? 'mode-tab active-actual' : 'mode-tab';
+    }
+    if (tabPlan) {
+        tabPlan.className = (mode === 'plan') ? 'mode-tab active-plan' : 'mode-tab';
+    }
+}
+window.setBottomSheetMode = setBottomSheetMode;
+
+function renderBottomSheetTags() {
+    const container = document.getElementById('bs-quick-tags');
+    const display = document.getElementById('bs-selected-activity-display');
+    if (!container) return;
+
+    container.innerHTML = '';
+    if (display) display.textContent = bsSelectedActivity || '未選択';
+
+    if (Array.isArray(defaultTags)) {
+        defaultTags.forEach(function(tag) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'bs-tag-chip' + (tag === bsSelectedActivity ? ' active' : '');
+            btn.textContent = tag;
+            btn.onclick = function() {
+                bsSelectedActivity = tag;
+                renderBottomSheetTags();
+            };
+            container.appendChild(btn);
+        });
+    }
+}
+
+function renderBottomSheetSimultaneousList() {
+    const container = document.getElementById('bs-simultaneous-list');
+    if (!container) return;
+
+    container.innerHTML = '';
+    bsSimultaneousItems.forEach(function(item, idx) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+
+        const nameSelect = document.createElement('select');
+        nameSelect.style.cssText = 'flex: 1; margin-bottom: 0; padding: 6px 8px; font-size: 0.82rem; color-scheme: dark;';
+        defaultTags.forEach(function(tag) {
+            const opt = document.createElement('option');
+            opt.value = tag;
+            opt.textContent = tag;
+            if (tag === item.name) opt.selected = true;
+            nameSelect.appendChild(opt);
+        });
+        nameSelect.onchange = function() {
+            item.name = nameSelect.value;
+        };
+
+        const pctInput = document.createElement('input');
+        pctInput.type = 'number';
+        pctInput.min = '1';
+        pctInput.max = '100';
+        pctInput.value = item.percent || 50;
+        pctInput.style.cssText = 'width: 60px; margin-bottom: 0; padding: 6px; font-size: 0.82rem; text-align: center;';
+        pctInput.onchange = function() {
+            item.percent = parseInt(pctInput.value, 10) || 50;
+        };
+
+        const pctLabel = document.createElement('span');
+        pctLabel.textContent = '%';
+        pctLabel.style.cssText = 'font-size: 0.8rem; color: var(--text-secondary);';
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.textContent = '✕';
+        delBtn.style.cssText = 'background: none; border: none; color: var(--error-color); cursor: pointer; padding: 4px 6px; font-size: 0.9rem;';
+        delBtn.onclick = function() {
+            bsSimultaneousItems.splice(idx, 1);
+            renderBottomSheetSimultaneousList();
+        };
+
+        row.appendChild(nameSelect);
+        row.appendChild(pctInput);
+        row.appendChild(pctLabel);
+        row.appendChild(delBtn);
+        container.appendChild(row);
+    });
+}
+
+function handleBottomSheetSave() {
+    const startTimeInput = document.getElementById('bs-start-time');
+    const endTimeInput = document.getElementById('bs-end-time');
+    const memoInput = document.getElementById('bs-memo-input');
+
+    const startVal = startTimeInput ? startTimeInput.value : '';
+    const endVal = endTimeInput ? endTimeInput.value : '';
+    const memoVal = memoInput ? memoInput.value.trim() : '';
+
+    if (!startVal || !endVal) {
+        alert('開始時刻と終了時刻を入力してください。');
+        return;
+    }
+    if (!bsSelectedActivity) {
+        alert('活動内容を選択してください。');
+        return;
+    }
+
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+
+    const mainPercent = bsSimultaneousItems.length > 0 ? 50 : 100;
+    const items = [{ name: bsSelectedActivity, percent: mainPercent }];
+    bsSimultaneousItems.forEach(function(sim) {
+        if (sim.name) {
+            items.push({ name: sim.name, percent: sim.percent || 50 });
+        }
+    });
+
+    if (isBottomSheetNewRecord) {
+        const newEntry = {
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            date: selectedDate,
+            start: startVal,
+            end: endVal,
+            items: items,
+            memo: memoVal
+        };
+
+        if (bsCurrentMode === 'plan') {
+            plans.push(newEntry);
+            savePlans();
+        } else {
+            logs.push(newEntry);
+            saveLogs();
+        }
+    } else if (currentEditingTimelineItem) {
+        const item = currentEditingTimelineItem;
+        const oldId = item.id;
+
+        const originalWasPlan = plans.some(function(p) { return p.id === oldId; });
+        const targetIsPlan = (bsCurrentMode === 'plan');
+
+        if (originalWasPlan !== targetIsPlan) {
+            if (originalWasPlan) {
+                plans = plans.filter(function(p) { return p.id !== oldId; });
+                logs.push({
+                    id: oldId,
+                    date: selectedDate,
+                    start: startVal,
+                    end: endVal,
+                    items: items,
+                    memo: memoVal
+                });
+            } else {
+                logs = logs.filter(function(l) { return l.id !== oldId; });
+                plans.push({
+                    id: oldId,
+                    date: selectedDate,
+                    start: startVal,
+                    end: endVal,
+                    items: items,
+                    memo: memoVal
+                });
+            }
+            savePlans();
+            saveLogs();
+        } else {
+            item.start = startVal;
+            item.end = endVal;
+            item.items = items;
+            item.memo = memoVal;
+            if (targetIsPlan) savePlans();
+            else saveLogs();
+        }
+    }
+
+    renderLogs();
+    renderPlans();
+    renderSummary();
+    renderPuzzle();
+    closeTimelineBottomSheet();
+}
+
+function handleBottomSheetDelete() {
+    if (!currentEditingTimelineItem) return;
+    if (!confirm('この活動記録を削除しますか？')) return;
+
+    const delId = currentEditingTimelineItem.id;
+    plans = plans.filter(function(p) { return p.id !== delId; });
+    logs = logs.filter(function(l) { return l.id !== delId; });
+
+    savePlans();
+    saveLogs();
+    renderLogs();
+    renderPlans();
+    renderSummary();
+    renderPuzzle();
+    closeTimelineBottomSheet();
+}
+
+function initTimelineBottomSheet() {
+    const bsSaveBtn = document.getElementById('bs-save-btn');
+    if (bsSaveBtn) bsSaveBtn.onclick = handleBottomSheetSave;
+
+    const bsDeleteBtn = document.getElementById('bs-delete-btn');
+    if (bsDeleteBtn) bsDeleteBtn.onclick = handleBottomSheetDelete;
+
+    const bsNowStart = document.getElementById('bs-btn-now-start');
+    if (bsNowStart) {
+        bsNowStart.onclick = function() {
+            const st = document.getElementById('bs-start-time');
+            if (st) st.value = getCurrentTimeStr();
+        };
+    }
+
+    const bsNowEnd = document.getElementById('bs-btn-now-end');
+    if (bsNowEnd) {
+        bsNowEnd.onclick = function() {
+            const et = document.getElementById('bs-end-time');
+            if (et) et.value = getCurrentTimeStr();
+        };
+    }
+
+    const bsAddSimBtn = document.getElementById('bs-add-simultaneous-btn');
+    if (bsAddSimBtn) {
+        bsAddSimBtn.onclick = function() {
+            const newName = (defaultTags && defaultTags.length > 1) ? defaultTags[1] : (defaultTags[0] || '休憩');
+            bsSimultaneousItems.push({ name: newName, percent: 50 });
+            renderBottomSheetSimultaneousList();
+        };
+    }
+
+    renderBottomSheetTags();
+}
+
 function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan) {
     const resizeHandle = element.querySelector('.timeline-resize-handle');
     const tooltip = document.getElementById('puzzle-drag-tooltip');
 
-    // 1. ドラッグ移動
+    // 1. ドラッグ移動 / タップ判定
     element.addEventListener('pointerdown', function(e) {
         if (e.target.closest('.puzzle-del-btn') || e.target.closest('.timeline-resize-handle')) return;
 
         e.preventDefault();
         element.setPointerCapture(e.pointerId);
-        element.classList.add('is-dragging');
 
         const initialY = e.clientY;
+        const initialX = e.clientX;
         const initialStart = timeToMins(item.start);
         let initialEnd = timeToMins(item.end);
         if (initialEnd < initialStart) initialEnd += 1440;
         const duration = initialEnd - initialStart;
-
-        if (tooltip) tooltip.style.display = 'block';
+        let hasMoved = false;
 
         function onPointerMove(moveEvent) {
             const deltaY = moveEvent.clientY - initialY;
-            let newStart = initialStart + deltaY;
+            const deltaX = moveEvent.clientX - initialX;
+            if (Math.abs(deltaY) > 5 || Math.abs(deltaX) > 5) {
+                if (!hasMoved) {
+                    hasMoved = true;
+                    element.classList.add('is-dragging');
+                    if (tooltip) tooltip.style.display = 'block';
+                }
+            }
+            if (!hasMoved) return;
 
+            let newStart = initialStart + deltaY;
             newStart = calculateSnap(newStart, pieceType, duration, item.id, currentList);
 
             if (newStart < 0) newStart = 0;
@@ -3657,6 +4257,12 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
 
             element.removeEventListener('pointermove', onPointerMove);
             element.removeEventListener('pointerup', onPointerUp);
+
+            if (!hasMoved) {
+                // 指を動かさずにタップした場合 ➔ ボトムシートで編集！
+                openTimelineBottomSheetForEdit(item, isPlan, element);
+                return;
+            }
 
             const finalTop = parseInt(element.style.top, 10) || 0;
             item.start = minsToTime(finalTop);
@@ -3815,6 +4421,7 @@ function initPuzzle() {
 
     initPuzzleTimelineGrid();
     initPuzzlePalette();
+    initTimelineBottomSheet();
 
     const quickFillBtn = document.getElementById('puzzle-quick-fill-btn');
     if (quickFillBtn) quickFillBtn.addEventListener('click', handlePuzzleQuickFill);
