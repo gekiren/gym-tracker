@@ -142,4 +142,90 @@ describe('WorkoutStore - Exercise Specific Rest Timer', () => {
     expect(useWorkoutStore.getState().isWorkoutStarted).toBe(true);
     expect(useWorkoutStore.getState().startTime).not.toBeNull();
   });
+
+  it('records independent work_seconds across multiple sets for strength exercises without copying set 1 duration', () => {
+    jest.useFakeTimers({ now: new Date('2026-10-04T10:00:00Z') });
+
+    try {
+      const store = useWorkoutStore.getState();
+      store.startWorkout('Test Workout');
+      store.beginWorkoutTimer();
+
+      store.addExercise({
+        id: 6,
+        name: 'ベンチプレス',
+        muscle_group: '胸',
+      });
+
+      const exId = useWorkoutStore.getState().exercises[0].id;
+      const set1Id = useWorkoutStore.getState().exercises[0].sets[0].id;
+
+      // Set 1 completed after 30 seconds
+      jest.advanceTimersByTime(30 * 1000);
+      useWorkoutStore.getState().toggleSetComplete(exId, set1Id, {
+        autoRest: true,
+        defaultRest: 60,
+        timerNotification: false,
+        timerVibrate: false,
+      });
+
+      const set1 = useWorkoutStore.getState().exercises[0].sets[0];
+      expect(set1.is_completed).toBe(true);
+      expect(set1.work_seconds).toBe(30);
+
+      // Add set 2
+      useWorkoutStore.getState().addSet(exId);
+      const set2Id = useWorkoutStore.getState().exercises[0].sets[1].id;
+
+      // Rest timer completes after 60 seconds
+      jest.advanceTimersByTime(60 * 1000);
+      useWorkoutStore.getState().tickRestTimer(false);
+
+      // Set 2 performed for 45 seconds and completed
+      jest.advanceTimersByTime(45 * 1000);
+      useWorkoutStore.getState().toggleSetComplete(exId, set2Id, {
+        autoRest: true,
+        defaultRest: 60,
+        timerNotification: false,
+        timerVibrate: false,
+      });
+
+      const set2 = useWorkoutStore.getState().exercises[0].sets[1];
+      expect(set2.is_completed).toBe(true);
+      // Crucial: set 2 work_seconds must be 45 seconds (measured), NOT 30 seconds (set 1)
+      expect(set2.work_seconds).toBe(45);
+      expect(set2.rest_seconds).toBe(60);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('preserves prev_work_seconds inheritance for treadmill exercises', () => {
+    const store = useWorkoutStore.getState();
+    store.startWorkout('Test Treadmill');
+
+    store.addExercise({
+      id: 7,
+      name: 'トレッドミル',
+      muscle_group: '有酸素',
+    });
+
+    const exId = useWorkoutStore.getState().exercises[0].id;
+    const set1Id = useWorkoutStore.getState().exercises[0].sets[0].id;
+
+    // Set 1 has work_seconds = 1200 (20 minutes)
+    useWorkoutStore.getState().updateSet(exId, set1Id, { work_seconds: 1200, speed: 10 });
+    useWorkoutStore.getState().toggleSetComplete(exId, set1Id);
+
+    // Add set 2
+    useWorkoutStore.getState().addSet(exId);
+    const set2Id = useWorkoutStore.getState().exercises[0].sets[1].id;
+
+    // Toggle set 2 complete without setting manual time -> should inherit 1200 seconds
+    useWorkoutStore.getState().toggleSetComplete(exId, set2Id);
+
+    const set2 = useWorkoutStore.getState().exercises[0].sets[1];
+    expect(set2.is_completed).toBe(true);
+    expect(set2.work_seconds).toBe(1200);
+  });
 });
