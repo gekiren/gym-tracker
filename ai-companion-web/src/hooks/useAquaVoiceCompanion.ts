@@ -8,16 +8,20 @@ import type {
   MealRecord,
   DailyNoteRecord,
   MemoryRecord,
+  VoiceCategory,
 } from '../types';
 
 interface UseAquaVoiceCompanionOptions {
   initialContext?: InitialContext;
   voiceName?: string;
+  category?: VoiceCategory;
 }
 
 export function useAquaVoiceCompanion({
   initialContext,
+  category = 'all',
 }: UseAquaVoiceCompanionOptions) {
+
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [micVolume, setMicVolume] = useState<number>(0);
@@ -106,7 +110,10 @@ export function useAquaVoiceCompanion({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: transcribedText,
-          context: initialContext,
+          context: {
+            ...initialContext,
+            category,
+          },
         }),
       });
 
@@ -190,7 +197,7 @@ export function useAquaVoiceCompanion({
       addLog(`解析完了: 合計 ${count} 件の記録を抽出しました。`);
       setStatusText(`記録完了（+${count}件）`);
     },
-    [initialContext, addLog, speakText]
+    [initialContext, category, addLog, speakText]
   );
 
   // 録音開始
@@ -203,11 +210,26 @@ export function useAquaVoiceCompanion({
         addLog('マイクへのアクセスを要求中...');
         setStatusText('マイク準備中...');
 
-        const constraints: MediaStreamConstraints = {
-          audio: deviceId ? { deviceId: { exact: deviceId } } : true,
-        };
-
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        let stream: MediaStream;
+        try {
+          const advancedConstraints: MediaStreamConstraints = {
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+              ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+            },
+          };
+          stream = await navigator.mediaDevices.getUserMedia(advancedConstraints);
+          addLog('マイク取得成功（ノイズ抑制・エコーキャンセル有効）');
+        } catch (constrErr) {
+          console.warn('Advanced audio constraints failed, fallback to basic audio', constrErr);
+          addLog('高度ノイズ抑制制約の適用に失敗したため、基本マイク設定にフォールバックします');
+          const fallbackConstraints: MediaStreamConstraints = {
+            audio: deviceId ? { deviceId: { exact: deviceId } } : true,
+          };
+          stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+        }
         micStreamRef.current = stream;
 
         // 音量レベル解析
@@ -318,6 +340,7 @@ export function useAquaVoiceCompanion({
           // 1. Aqua Voice API による文字起こし
           const formData = new FormData();
           formData.append('file', audioBlob, 'voice_record.webm');
+          formData.append('category', category || 'all');
 
           const transcribeRes = await fetch('/api/transcribe', {
             method: 'POST',
@@ -365,7 +388,7 @@ export function useAquaVoiceCompanion({
 
       recorder.stop();
     });
-  }, [addLog, analyzeWithGemini, cleanupRecording]);
+  }, [addLog, analyzeWithGemini, category, cleanupRecording]);
 
   // テキスト直接入力での送信
   const sendTextMessage = useCallback(

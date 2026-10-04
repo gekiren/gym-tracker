@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Platform, PermissionsAndroid, Alert, TouchableOpacity } from 'react-native';
-import { Stack, router } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { PanGestureHandler } from 'react-native-gesture-handler';
@@ -13,6 +13,7 @@ import { useFeatureSwipe } from '../../src/hooks/useFeatureSwipe';
 import { PointBadge } from '../../components/PointBadge';
 
 export default function VoiceAssistantScreen() {
+  const { category: initialCategory } = useLocalSearchParams<{ category?: string }>();
   const { colors } = useAppTheme();
   const settings = useSettingsStore((state) => state.settings);
   const daySummary = useLifelogStore((state) => state.daySummary);
@@ -69,6 +70,7 @@ export default function VoiceAssistantScreen() {
         theme: settings.backgroundTheme || 'dark',
         date: getTodayStr(),
         memory: settings.aiCompanionMemory || '',
+        category: initialCategory || undefined,
       };
 
       const injectedJs = `window.__TRENOTE_CONTEXT__ = ${JSON.stringify(contextData)};true;`;
@@ -77,7 +79,7 @@ export default function VoiceAssistantScreen() {
     };
 
     initVoiceAssistant();
-  }, [settings, daySummary]);
+  }, [settings, daySummary, initialCategory]);
 
   const handleWebViewMessage = (event: any) => {
     handleCompanionWebViewMessage(event, () => {

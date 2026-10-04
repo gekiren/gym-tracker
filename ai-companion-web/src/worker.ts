@@ -19,6 +19,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
+const CATEGORY_VOCABULARY_PROMPTS: Record<string, string> = {
+  workout: '筋トレ, トレーニング, ベンチプレス, スクワット, デッドリフト, ダンベル, バーベル, レップ, セット, kg, キロ, 回, 自重, ドロップセット, ショルダープレス, ラットプルダウン, アームカール, レッグプレス, 腹筋',
+  nutrition: '食事, 栄養, プロテイン, カロリー, kcal, タンパク質, 脂質, 炭水化物, 糖質, グラム, g, 朝食, 昼食, 夕食, 間食, 鶏胸肉, 白米, 卵, オートミール, ブロッコリー, サプリ',
+  water: '水分, 水, ミリリットル, ml, お茶, 麦茶, 緑茶, コーヒー, アイスコーヒー, カフェイン, コップ, ペットボトル, 飲んだ, 補給',
+  note: '体調, メモ, 睡眠, 疲労, 筋肉痛, コンディション, 良好, 違和感, 痛み, 体重, 目標, 元気, だるい',
+  all: '筋トレ, ベンチプレス, スクワット, デッドリフト, ダンベル, プロテイン, レップ, セット, kg, 水, ml, カロリー, 睡眠, 体調, 鶏胸肉, 白米',
+};
+
 export default {
   async fetch(request: Request, env: Env, _ctx: any): Promise<Response> {
     const url = new URL(request.url);
@@ -51,24 +59,40 @@ export default {
           );
         }
 
-        // Aqua Voice Avalon API へ転送（モデル名自動フォールバック）
+        const category = ((formData as any).get('category') as string) || 'all';
+        const promptText = CATEGORY_VOCABULARY_PROMPTS[category] || CATEGORY_VOCABULARY_PROMPTS.all;
+
+        // Aqua Voice Avalon API へ転送（モデル名自動フォールバック ＆ prompt 付与）
         const candidateModels = ['avalon-v1.5', 'avalon-v1', 'avalon', 'whisper-1'];
         let aquaResult: any = null;
         let lastAquaErr: string = '';
 
         for (const aquaModel of candidateModels) {
-          const aquaFormData = new FormData();
-          aquaFormData.append('file', file, (file as any).name || 'audio.webm');
-          aquaFormData.append('model', aquaModel);
-          aquaFormData.append('language', 'ja');
+          const makeAquaRequest = async (includePrompt: boolean) => {
+            const aquaFormData = new FormData();
+            aquaFormData.append('file', file, (file as any).name || 'audio.webm');
+            aquaFormData.append('model', aquaModel);
+            aquaFormData.append('language', 'ja');
+            if (includePrompt && promptText) {
+              aquaFormData.append('prompt', promptText);
+            }
+            return fetch('https://api.aquavoice.com/v1/audio/transcriptions', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${apiKey}`,
+              },
+              body: aquaFormData,
+            });
+          };
 
-          const aquaResponse = await fetch('https://api.aquavoice.com/v1/audio/transcriptions', {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-            },
-            body: aquaFormData,
-          });
+          // まず語彙プロンプト付きでリクエスト
+          let aquaResponse = await makeAquaRequest(true);
+
+          // モデルが prompt パラメータ未サポート等の理由で 400 / 422 を返した場合は prompt なしで再試行
+          if (!aquaResponse.ok && (aquaResponse.status === 400 || aquaResponse.status === 422)) {
+            console.warn(`Aqua model ${aquaModel} returned ${aquaResponse.status} with prompt, retrying without prompt...`);
+            aquaResponse = await makeAquaRequest(false);
+          }
 
           if (aquaResponse.ok) {
             aquaResult = await aquaResponse.json();
@@ -77,7 +101,7 @@ export default {
             const errText = await aquaResponse.text();
             lastAquaErr = `(${aquaResponse.status}): ${errText}`;
             console.warn(`Aqua Voice Model ${aquaModel} failed:`, errText);
-            // 404 (model not found) 以外の認証エラーやクライアントエラー等の場合はループを抜ける
+            // 404 (model not found) 以外の認証エラー等の場合はループを抜ける
             if (aquaResponse.status !== 404) {
               break;
             }
@@ -136,9 +160,22 @@ export default {
           );
         }
 
+        const category = (userContext?.category as string) || 'all';
+
+        let categoryInstruction = '';
+        if (category === 'workout') {
+          categoryInstruction = `\n【今回の重点カテゴリー: 🏋️ 筋トレ（workouts）】\nユーザーは筋トレ・トレーニングの記録を主目的として発話しています。workouts の抽出を最優先としてください。ただし発話内に明確な水分や食事、体調メモが含まれている場合は柔軟に併せて抽出してください。\n`;
+        } else if (category === 'nutrition') {
+          categoryInstruction = `\n【今回の重点カテゴリー: 🥗 食事・栄養（meals）】\nユーザーは食事・栄養・プロテインの記録を主目的として発話しています。meals の抽出を最優先としてください。\n`;
+        } else if (category === 'water') {
+          categoryInstruction = `\n【今回の重点カテゴリー: 💧 水分（waters）】\nユーザーは水分摂取の記録を主目的として発話しています。waters の抽出を最優先としてください。\n`;
+        } else if (category === 'note') {
+          categoryInstruction = `\n【今回の重点カテゴリー: 📝 雑記・メモ・体調（dailyNotes）】\nユーザーは体調や雑記メモの記録を主目的として発話しています。dailyNotes の抽出を最優先としてください。\n`;
+        }
+
         const systemInstruction = `あなたは筋トレ・フィットネス・ライフログ記録アプリ「TreNote」の専属AIパートナーです。
 ユーザーの発話（音声から文字起こしされたテキスト）を解析し、以下の4大カテゴリーおよびユーザーの記憶に分類してJSON形式で抽出してください。
-
+${categoryInstruction}
 【抽出対象カテゴリー】
 1. workouts: 筋トレの記録（種目名, 重量kg, 回数reps, セット数sets, メモnotes）
    - 例: 「ベンチプレス80キロ10回3セットやった」 -> exercise_name: "ベンチプレス", weight_kg: 80, reps: 10, sets: 3
@@ -156,12 +193,18 @@ export default {
 5. memoryUpdates: ユーザーに関する重要な長期記憶（文字列配列）
    - ユーザーの目標、好み、ケガの箇所、ライフスタイルなど次回以降の会話で活かせる情報のみ抽出。
 
+【屋外音声・イヤホンマイクの誤認識への自動推正ルール】
+発話テキストは屋外の環境音やBluetoothイヤホンマイク等を通じて音声認識されているため、同音異義語、当て字、数字の聞き間違いが含まれている可能性があります。
+前後の文脈やフィットネス・筋トレの常識から最も妥当な単語・数値に自動推正して解釈してください。
+（例: 「電池プレス」「現地プレス」 -> 「ベンチプレス」、「救助キロ」「休止キロ」 -> 「90kg」、「インクライン現地」 -> 「インクラインベンチ」など）
+
 【コンテキスト情報】
 - ユーザーの日付: ${userContext?.date || '本日'}
 - 直前のトレーニング: ${userContext?.lastWorkout || 'なし'}
 - 現在の水分摂取状況: ${userContext?.currentWaterMl || 0}ml / 目標${userContext?.waterGoalMl || 2000}ml
 - 体重: ${userContext?.bodyWeight ? `${userContext.bodyWeight}kg` : '未登録'}
 - 既存の記憶: ${userContext?.memory || 'なし'}
+- 選択カテゴリー: ${category}
 
 【出力形式】
 必ず以下のJSONフォーマットのみを出力してください。マークダウンの装飾コード（\`\`\`json等）を含める場合も必ず有効なJSONとしてパースできるようにしてください。
