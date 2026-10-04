@@ -11,19 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.9',
+  version: '2.3.15',
   title: {
-    ja: '🇯🇵 24時間管理：日本の祝日連携とスケジュール設定',
-    en: '🇯🇵 24h Timeline: Holiday Sync & Schedule Settings',
+    ja: '🌙 24時間管理：0時またぎ（睡眠等）のスマート連動対応',
+    en: '🌙 24h Timeline: Smart Midnight-Crossing Support',
   },
   notes: {
     ja: [
-      '端末/Googleカレンダーから日本の祝日データを自動取得し、タイムラインに祝日名を表示する機能を追加しました。',
-      '祝日を日曜日（休日スケジュール）として自動適用するかどうかを、デフォルト設定モーダルから自由に切り替えられるようになりました。',
+      '睡眠など0時をまたぐスケジュール（例: 23:00〜翌07:00）の自動分割＆スマート連動管理に対応しました。',
+      '翌朝までの時間を1回入力するだけで、当日と翌日のタイムラインに隙間なく美しく配置され、各日の集計も正確に反映されます。',
+      'Googleカレンダーとの双方向連動にも対応し、カレンダー側には1本の美しい睡眠イベントとして連携されます。',
     ],
     en: [
-      'Added Japanese national holidays sync from device calendar with holiday badges on the timeline.',
-      'You can now toggle whether to treat national holidays as Sundays (holiday schedule) directly from settings.',
+      'Added smart midnight-crossing support: record overnight routines (e.g. 23:00 to 07:00) in one simple input.',
+      'Automatically splits into linked blocks on today and tomorrow timelines with seamless 24h portfolio calculation.',
+      'Full bidirectional synchronization with Google Calendar as unified overnight events.',
     ],
   },
 };

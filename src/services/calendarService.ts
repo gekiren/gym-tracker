@@ -304,11 +304,26 @@ export async function importGoogleCalendarPlans(
       const sDate = new Date(ev.startDate);
       const eDate = new Date(ev.endDate);
 
-      // 日をまたぐ場合は 00:00〜23:59 でクリップ
+      // 日をまたぐ場合のクリップおよび日跨ぎペア情報の生成
       let startStr = formatTimeToHHMM(sDate);
       let endStr = formatTimeToHHMM(eDate);
-      if (sDate < startDate) startStr = '00:00';
-      if (eDate > endDate) endStr = '23:59';
+      let crossDayGroupId: string | undefined = undefined;
+      let crossRole: 'head' | 'tail' | undefined = undefined;
+      let crossFullSpan: string | undefined = undefined;
+
+      const isCrossDay = (sDate < startDate || eDate > endDate);
+      if (isCrossDay) {
+        crossDayGroupId = `google_cross_${ev.id}`;
+        crossFullSpan = `${formatTimeToHHMM(sDate)} - ${formatTimeToHHMM(eDate)}`;
+        if (eDate > endDate) {
+          endStr = '24:00';
+          crossRole = 'head';
+        }
+        if (sDate < startDate) {
+          startStr = '00:00';
+          crossRole = 'tail';
+        }
+      }
 
       const planId = stringToHash(`google_${ev.id}_${dateStr}_${idx}`);
 
@@ -321,6 +336,9 @@ export async function importGoogleCalendarPlans(
         memo: ev.notes || '',
         source: 'google',
         googleEventId: ev.id,
+        crossDayGroupId,
+        crossRole,
+        crossFullSpan,
       };
     });
 
