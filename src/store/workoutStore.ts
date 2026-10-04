@@ -3,6 +3,7 @@ import { Vibration } from 'react-native';
 import { scheduleRestTimer, cancelRestTimer } from '../utils/timer';
 import { buildInitialSetsForExercise } from '../utils/workoutSetBuilder';
 import { generateUUID } from '../utils/uuid';
+import { isTreadmillExercise } from '../utils/exerciseUtils';
 import { WorkoutSet } from '../db/types';
 
 export type SetRecord = {
@@ -361,7 +362,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     const ex = state.exercises.find(e => e.id === exerciseId);
     const sRecord = ex?.sets.find(s => s.id === setId);
     const willBeCompleted = sRecord ? !sRecord.is_completed : false;
-    const isAerobic = ex?.muscle_group === '有酸素';
+    const isAerobicOrTreadmill = ex?.muscle_group === '有酸素' || isTreadmillExercise(ex?.name);
 
     let restSeconds: number | null = null;
     let workSeconds: number | null = null;
@@ -416,7 +417,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
                   if (finalReps === null && s.prev_reps != null) finalReps = s.prev_reps;
                   if (finalSpeed === null && s.prev_speed != null) finalSpeed = s.prev_speed;
                   if (finalIncline === null && s.prev_incline != null) finalIncline = s.prev_incline;
-                  if ((finalWorkSecs === null || finalWorkSecs === 0) && s.prev_work_seconds != null) {
+                  if (isAerobicOrTreadmill && (finalWorkSecs === null || finalWorkSecs === 0) && s.prev_work_seconds != null) {
                     finalWorkSecs = s.prev_work_seconds;
                   }
                 }
@@ -430,7 +431,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
                   completedAt: willBeCompleted ? now : undefined,
                   rest_seconds: willBeCompleted ? restSeconds : null,
                   work_seconds: willBeCompleted 
-                    ? (isAerobic ? finalWorkSecs : (finalWorkSecs ?? workSeconds)) 
+                    ? (isAerobicOrTreadmill ? finalWorkSecs : (s.work_seconds ?? workSeconds)) 
                     : null
                 };
               }
