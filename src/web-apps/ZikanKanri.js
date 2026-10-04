@@ -1199,6 +1199,114 @@ header {
   z-index: 45 !important;
 }
 
+/* Semi-transparent Ghost Plan Block in Actual Mode */
+.timeline-block.timeline-block-ghost {
+  border-style: dashed !important;
+  border-width: 1.5px !important;
+  opacity: 0.65;
+  z-index: 15 !important;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.timeline-block.timeline-block-ghost:hover {
+  opacity: 0.9;
+}
+
+.timeline-block.timeline-block-ghost.is-dragging {
+  opacity: 0.95;
+  border-style: solid !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.5) !important;
+  z-index: 60 !important;
+}
+
+.timeline-block.timeline-block-ghost.is-resizing {
+  opacity: 0.95;
+  border-style: solid !important;
+  z-index: 60 !important;
+}
+
+.ghost-plan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.64rem;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 1px 4px;
+  border-radius: 4px;
+  margin-right: 4px;
+  font-weight: 600;
+  color: #93c5fd;
+  flex-shrink: 0;
+}
+
+.timeline-ghost-apply-btn {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 5px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s ease, filter 0.15s ease;
+  line-height: 1.2;
+}
+
+.timeline-ghost-apply-btn:hover {
+  filter: brightness(1.15);
+}
+
+.timeline-ghost-apply-btn:active {
+  transform: scale(0.92);
+  filter: brightness(0.9);
+}
+
+.puzzle-ghost-toggle-btn.active {
+  background: rgba(59, 130, 246, 0.2) !important;
+  border-color: #3b82f6 !important;
+  color: #93c5fd !important;
+}
+
+/* Bottom Sheet Quick Time Adjust Controls */
+.bs-time-adjust-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin-top: 5px;
+}
+
+.bs-time-step-btn {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  padding: 4px 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex: 1;
+  text-align: center;
+  transition: background 0.15s ease;
+}
+
+.bs-time-step-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.bs-time-step-btn:active {
+  background: rgba(59, 130, 246, 0.35);
+  border-color: #3b82f6;
+  color: #93c5fd;
+}
+
 /* Timeline Bottom Sheet Drawer */
 .bottom-sheet-overlay {
   position: fixed;
@@ -1455,6 +1563,9 @@ input:checked + .holiday-switch-slider:before {
                     </button>
                     <button type="button" id="puzzle-switch-mode-btn" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.76rem; margin-bottom: 0;">
                         予定に切替
+                    </button>
+                    <button type="button" id="puzzle-toggle-ghost-btn" class="btn btn-secondary puzzle-ghost-toggle-btn active" style="width: auto; padding: 4px 7px; font-size: 0.74rem; margin-bottom: 0;" title="実績タイムライン上に予定ガイドを表示/非表示">
+                        📅 予定ガイド
                     </button>
                     <button type="button" id="puzzle-default-schedule-btn" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.76rem; margin-bottom: 0; color: #c4b5fd; border-color: #8b5cf6;" title="デフォルトスケジュール設定">
                         📅 デフォルト
@@ -1761,13 +1872,31 @@ input:checked + .holiday-switch-slider:before {
 
             <!-- 時間設定 -->
             <div style="margin-bottom: 14px;">
-                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block;">時間</label>
-                <div class="flex-row" style="align-items: center; gap: 8px;">
-                    <input type="time" id="bs-start-time" style="margin-bottom: 0; flex: 1;">
-                    <span style="color: var(--text-secondary); font-weight: bold;">〜</span>
-                    <input type="time" id="bs-end-time" style="margin-bottom: 0; flex: 1;">
+                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block;">時間（タップまたは増減ボタンで微調整）</label>
+                <div class="flex-row" style="align-items: flex-start; gap: 8px;">
+                    <div style="flex: 1;">
+                        <span style="font-size: 0.7rem; color: var(--text-secondary); display: block; margin-bottom: 2px;">開始</span>
+                        <input type="time" id="bs-start-time" style="margin-bottom: 0; width: 100%;">
+                        <div class="bs-time-adjust-row">
+                            <button type="button" class="bs-time-step-btn" onclick="adjustBsTime('start', -15)" title="開始を15分早める">-15m</button>
+                            <button type="button" class="bs-time-step-btn" onclick="adjustBsTime('start', -5)" title="開始を5分早める">-5m</button>
+                            <button type="button" class="bs-time-step-btn" onclick="adjustBsTime('start', +5)" title="開始を5分遅くする">+5m</button>
+                            <button type="button" class="bs-time-step-btn" onclick="adjustBsTime('start', +15)" title="開始を15分遅くする">+15m</button>
+                        </div>
+                    </div>
+                    <span style="color: var(--text-secondary); font-weight: bold; margin-top: 26px;">〜</span>
+                    <div style="flex: 1;">
+                        <span style="font-size: 0.7rem; color: var(--text-secondary); display: block; margin-bottom: 2px;">終了</span>
+                        <input type="time" id="bs-end-time" style="margin-bottom: 0; width: 100%;">
+                        <div class="bs-time-adjust-row">
+                            <button type="button" class="bs-time-step-btn" onclick="adjustBsTime('end', -15)" title="終了を15分早める">-15m</button>
+                            <button type="button" class="bs-time-step-btn" onclick="adjustBsTime('end', -5)" title="終了を5分早める">-5m</button>
+                            <button type="button" class="bs-time-step-btn" onclick="adjustBsTime('end', +5)" title="終了を5分遅くする">+5m</button>
+                            <button type="button" class="bs-time-step-btn" onclick="adjustBsTime('end', +15)" title="終了を15分遅くする">+15m</button>
+                        </div>
+                    </div>
                 </div>
-                <div class="flex-row" style="margin-top: 6px; gap: 6px;">
+                <div class="flex-row" style="margin-top: 8px; gap: 6px;">
                     <button type="button" class="btn btn-secondary" id="bs-btn-now-start" style="width: auto; flex: 1; padding: 5px 6px; font-size: 0.72rem; margin-bottom: 0;">現在時刻を開始に</button>
                     <button type="button" class="btn btn-secondary" id="bs-btn-now-end" style="width: auto; flex: 1; padding: 5px 6px; font-size: 0.72rem; margin-bottom: 0;">現在時刻を終了に</button>
                 </div>
@@ -5114,6 +5243,322 @@ function handlePuzzleSlotClick(e, hour) {
     renderPuzzle();
 }
 
+/* ==========================================================================
+   Plan Ghost Overlay & Smart Actual Reflection Logic
+   ========================================================================== */
+var showPlanGhostsInActual = true;
+
+function togglePlanGhostGuide() {
+    showPlanGhostsInActual = !showPlanGhostsInActual;
+    const btn = document.getElementById('puzzle-toggle-ghost-btn');
+    if (btn) {
+        btn.classList.toggle('active', showPlanGhostsInActual);
+    }
+    renderPuzzle();
+}
+window.togglePlanGhostGuide = togglePlanGhostGuide;
+
+function adjustBsTime(type, deltaMins) {
+    const input = document.getElementById(type === 'start' ? 'bs-start-time' : 'bs-end-time');
+    if (!input || !input.value) return;
+
+    let mins = timeToMins(input.value);
+    mins += deltaMins;
+    if (mins < 0) mins = 0;
+    if (mins > 1440) mins = 1440;
+
+    input.value = minsToTime(mins);
+    updateBottomSheetCrossDayBadge();
+}
+window.adjustBsTime = adjustBsTime;
+
+function showGhostActionToast(msg) {
+    let toast = document.getElementById('puzzle-action-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'puzzle-action-toast';
+        toast.style.cssText = 'position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); background: #1e3a8a; border: 1px solid #3b82f6; color: #dbeafe; padding: 7px 16px; border-radius: 20px; font-size: 0.76rem; font-weight: bold; z-index: 1000; box-shadow: 0 4px 14px rgba(0,0,0,0.6); pointer-events: none; transition: opacity 0.25s ease; opacity: 0; white-space: nowrap;';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.opacity = '1';
+    setTimeout(function() {
+        if (toast) toast.style.opacity = '0';
+    }, 2200);
+}
+
+function applyPlanToActual(plan) {
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const gid = plan.crossDayGroupId;
+    const planName = (plan.items && plan.items.length > 0) ? plan.items[0].name : (plan.activity_name || "活動");
+
+    if (gid) {
+        const pair = plans.find(function(p) { return p.crossDayGroupId === gid && p.id !== plan.id; });
+        const newGid = 'cross_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        const headPlan = (plan.crossRole === 'head') ? plan : (pair || plan);
+        const tailPlan = (plan.crossRole === 'tail') ? plan : (pair || plan);
+
+        const newHead = {
+            id: Date.now() + Math.floor(Math.random() * 500),
+            date: headPlan.date || selectedDate,
+            start: headPlan.start,
+            end: '24:00',
+            items: JSON.parse(JSON.stringify(headPlan.items || [{ name: planName, percent: 100 }])),
+            memo: headPlan.memo || '',
+            crossDayGroupId: newGid,
+            crossRole: 'head',
+            crossFullSpan: headPlan.crossFullSpan
+        };
+        const nextDate = getNextDateString(newHead.date);
+        const newTail = {
+            id: Date.now() + 500 + Math.floor(Math.random() * 500),
+            date: nextDate,
+            start: '00:00',
+            end: tailPlan.end,
+            items: JSON.parse(JSON.stringify(tailPlan.items || [{ name: planName, percent: 100 }])),
+            memo: tailPlan.memo || '',
+            crossDayGroupId: newGid,
+            crossRole: 'tail',
+            crossFullSpan: headPlan.crossFullSpan
+        };
+        logs.push(newHead, newTail);
+    } else {
+        const newEntry = {
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            date: selectedDate,
+            start: plan.start,
+            end: plan.end,
+            items: JSON.parse(JSON.stringify(plan.items || [{ name: planName, percent: 100 }])),
+            memo: plan.memo || ''
+        };
+        logs.push(newEntry);
+    }
+
+    saveLogs();
+    renderLogs();
+    renderSummary();
+    renderPuzzle();
+
+    showGhostActionToast('⚡ 実績に反映しました: ' + planName + ' (' + plan.start + '-' + plan.end + ')');
+}
+window.applyPlanToActual = applyPlanToActual;
+
+function openTimelineBottomSheetForPlanToActual(plan, element) {
+    currentEditingTimelineItem = null;
+    isBottomSheetNewRecord = true;
+    bsCurrentMode = 'actual';
+
+    document.querySelectorAll('.timeline-block').forEach(function(b) {
+        b.classList.remove('is-selected');
+    });
+    if (element) element.classList.add('is-selected');
+
+    const overlay = document.getElementById('timeline-bottom-sheet-overlay');
+    const sheet = document.getElementById('timeline-bottom-sheet');
+    const titleEl = document.getElementById('bs-sheet-title');
+    const delBtn = document.getElementById('bs-delete-btn');
+    const saveBtn = document.getElementById('bs-save-btn');
+    const startTimeInput = document.getElementById('bs-start-time');
+    const endTimeInput = document.getElementById('bs-end-time');
+    const memoInput = document.getElementById('bs-memo-input');
+
+    if (titleEl) titleEl.textContent = '予定から実績を記録';
+    if (delBtn) delBtn.style.display = 'none';
+    if (saveBtn) saveBtn.textContent = '実績として保存';
+
+    setBottomSheetMode('actual');
+
+    if (startTimeInput) startTimeInput.value = plan.start || '09:00';
+    if (endTimeInput) endTimeInput.value = plan.end || '10:00';
+    if (memoInput) memoInput.value = plan.memo || '';
+
+    if (plan.items && plan.items.length > 0) {
+        bsSelectedActivity = plan.items[0].name;
+        if (plan.items.length > 1) {
+            bsSimultaneousItems = plan.items.slice(1).map(function(i) {
+                const pct = (i.percent !== undefined && !isNaN(i.percent)) ? i.percent : (i.weight ? i.weight * 100 : 50);
+                return { name: i.name, percent: pct };
+            });
+            const details = document.getElementById('bs-simultaneous-details');
+            if (details) details.open = true;
+        } else {
+            bsSimultaneousItems = [];
+            const details = document.getElementById('bs-simultaneous-details');
+            if (details) details.open = false;
+        }
+    } else {
+        bsSelectedActivity = plan.activity_name || (defaultTags[0] || '仕事');
+        bsSimultaneousItems = [];
+        const details = document.getElementById('bs-simultaneous-details');
+        if (details) details.open = false;
+    }
+
+    renderBottomSheetTags();
+    renderBottomSheetSimultaneousList();
+    updateBottomSheetCrossDayBadge();
+
+    if (overlay) overlay.classList.add('active');
+    if (sheet) sheet.classList.add('active');
+
+    notifyModalState(true);
+}
+window.openTimelineBottomSheetForPlanToActual = openTimelineBottomSheetForPlanToActual;
+
+function attachPuzzleDragAndResizeForGhost(element, plan, pieceType, currentList) {
+    const resizeHandle = element.querySelector('.timeline-resize-handle');
+    const tooltip = document.getElementById('puzzle-drag-tooltip');
+    const planName = (plan.items && plan.items.length > 0) ? plan.items[0].name : (plan.activity_name || "活動");
+
+    // 1. ドラッグ移動 / タップ判定
+    element.addEventListener('pointerdown', function(e) {
+        if (e.target.closest('.timeline-ghost-apply-btn') || e.target.closest('.timeline-resize-handle')) return;
+
+        e.preventDefault();
+        element.setPointerCapture(e.pointerId);
+
+        const initialY = e.clientY;
+        const initialX = e.clientX;
+        const initialStart = timeToMins(plan.start);
+        let initialEnd = timeToMins(plan.end);
+        if (initialEnd < initialStart) initialEnd += 1440;
+        const duration = initialEnd - initialStart;
+        let hasMoved = false;
+
+        function onPointerMove(moveEvent) {
+            const deltaY = moveEvent.clientY - initialY;
+            const deltaX = moveEvent.clientX - initialX;
+            if (Math.abs(deltaY) > 5 || Math.abs(deltaX) > 5) {
+                if (!hasMoved) {
+                    hasMoved = true;
+                    element.classList.add('is-dragging');
+                    if (tooltip) tooltip.style.display = 'block';
+                }
+            }
+            if (!hasMoved) return;
+
+            let newStart = initialStart + deltaY;
+            newStart = calculateSnap(newStart, pieceType, duration, null, currentList);
+
+            if (newStart < 0) newStart = 0;
+            if (newStart + duration > 1440) newStart = 1440 - duration;
+
+            element.style.top = newStart + 'px';
+
+            const newStartStr = minsToTime(newStart);
+            const newEndStr = minsToTime(newStart + duration);
+            if (tooltip) {
+                tooltip.textContent = '⏱ 実績化: ' + newStartStr + ' - ' + newEndStr;
+            }
+        }
+
+        function onPointerUp(upEvent) {
+            element.releasePointerCapture(upEvent.pointerId);
+            element.classList.remove('is-dragging');
+            if (tooltip) tooltip.style.display = 'none';
+
+            element.removeEventListener('pointermove', onPointerMove);
+            element.removeEventListener('pointerup', onPointerUp);
+
+            if (!hasMoved) {
+                openTimelineBottomSheetForPlanToActual(plan, element);
+                return;
+            }
+
+            const finalTop = parseInt(element.style.top, 10) || 0;
+            const finalStartStr = minsToTime(finalTop);
+            const finalEndMins = finalTop + duration;
+            const finalEndStr = (finalEndMins >= 1440) ? '24:00' : minsToTime(finalEndMins);
+            const selectedDate = currentDateInput.value.replace(/-/g, '/');
+
+            const newEntry = {
+                id: Date.now() + Math.floor(Math.random() * 1000),
+                date: selectedDate,
+                start: finalStartStr,
+                end: finalEndStr,
+                items: JSON.parse(JSON.stringify(plan.items || [{ name: planName, percent: 100 }])),
+                memo: plan.memo || ''
+            };
+
+            logs.push(newEntry);
+            saveLogs();
+            renderLogs();
+            renderSummary();
+            renderPuzzle();
+
+            showGhostActionToast('⏱ 時間を調整して実績化しました: ' + planName + ' (' + finalStartStr + '-' + finalEndStr + ')');
+        }
+
+        element.addEventListener('pointermove', onPointerMove);
+        element.addEventListener('pointerup', onPointerUp);
+    });
+
+    // 2. リサイズ（下端ドラッグで長さを伸縮して実績化）
+    if (resizeHandle) {
+        resizeHandle.addEventListener('pointerdown', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            resizeHandle.setPointerCapture(e.pointerId);
+            element.classList.add('is-resizing');
+
+            const initialY = e.clientY;
+            const startMins = timeToMins(plan.start);
+            let initialEnd = timeToMins(plan.end);
+            if (initialEnd < startMins) initialEnd += 1440;
+            const initialDuration = initialEnd - startMins;
+
+            if (tooltip) tooltip.style.display = 'block';
+
+            function onResizeMove(moveEvent) {
+                const deltaY = moveEvent.clientY - initialY;
+                let newDuration = initialDuration + deltaY;
+                newDuration = calculateDurationSnap(newDuration, pieceType);
+
+                if (startMins + newDuration > 1440) newDuration = 1440 - startMins;
+
+                element.style.height = Math.max(newDuration, 24) + 'px';
+
+                const endStr = (startMins + newDuration >= 1440) ? '24:00' : minsToTime(startMins + newDuration);
+                if (tooltip) {
+                    tooltip.textContent = '📏 実績化: ' + plan.start + ' - ' + endStr + ' (' + newDuration + 'm)';
+                }
+            }
+
+            function onResizeUp(upEvent) {
+                resizeHandle.releasePointerCapture(upEvent.pointerId);
+                element.classList.remove('is-resizing');
+                if (tooltip) tooltip.style.display = 'none';
+
+                resizeHandle.removeEventListener('pointermove', onResizeMove);
+                resizeHandle.removeEventListener('pointerup', onResizeUp);
+
+                const finalHeight = parseInt(element.style.height, 10) || 24;
+                const finalEndStr = (startMins + finalHeight >= 1440) ? '24:00' : minsToTime(startMins + finalHeight);
+                const selectedDate = currentDateInput.value.replace(/-/g, '/');
+
+                const newEntry = {
+                    id: Date.now() + Math.floor(Math.random() * 1000),
+                    date: selectedDate,
+                    start: plan.start,
+                    end: finalEndStr,
+                    items: JSON.parse(JSON.stringify(plan.items || [{ name: planName, percent: 100 }])),
+                    memo: plan.memo || ''
+                };
+
+                logs.push(newEntry);
+                saveLogs();
+                renderLogs();
+                renderSummary();
+                renderPuzzle();
+
+                showGhostActionToast('📏 時間を調整して実績化しました: ' + planName + ' (' + plan.start + '-' + finalEndStr + ')');
+            }
+
+            resizeHandle.addEventListener('pointermove', onResizeMove);
+            resizeHandle.addEventListener('pointerup', onResizeUp);
+        });
+    }
+}
+
 function renderPuzzle() {
     const blocksLayer = document.getElementById('puzzle-blocks-layer');
     if (!blocksLayer) return;
@@ -5216,6 +5661,91 @@ function renderPuzzle() {
         attachPuzzleDragAndResize(blockEl, item, pieceType, currentList, isPlan);
         blocksLayer.appendChild(blockEl);
     });
+
+    // 実績モードかつ予定ガイドが有効な場合、未反映の予定を半透明（ゴースト）ブロックとして描画
+    if (!isPlan && showPlanGhostsInActual) {
+        const dayPlans = plans.filter(function(p) { return p.date === selectedDate; });
+        const dayLogs = logs.filter(function(l) { return l.date === selectedDate; });
+
+        dayPlans.forEach(function(plan) {
+            const pStartMins = timeToMins(plan.start);
+            let pEndMins = timeToMins(plan.end);
+            if (pEndMins < pStartMins) pEndMins += 1440;
+            const pDuration = Math.max(1, pEndMins - pStartMins);
+
+            const primaryName = (plan.items && plan.items.length > 0) ? plan.items[0].name : (plan.activity_name || "活動");
+            const category = getCategoryByActivityName(primaryName);
+
+            // すでに同一活動＆時間帯の重複（50%以上）がある実績が存在するか判定（反映済み判定）
+            const isAlreadyLogged = dayLogs.some(function(log) {
+                const lStartMins = timeToMins(log.start);
+                let lEndMins = timeToMins(log.end);
+                if (lEndMins < lStartMins) lEndMins += 1440;
+                const logName = (log.items && log.items.length > 0) ? log.items[0].name : (log.activity_name || "活動");
+
+                const overlapStart = Math.max(pStartMins, lStartMins);
+                const overlapEnd = Math.min(pEndMins, lEndMins);
+                const overlap = Math.max(0, overlapEnd - overlapStart);
+                return (logName === primaryName) && (overlap >= pDuration * 0.5);
+            });
+
+            // 反映済みの予定は非表示にし、未反映の予定のみ目立たせる
+            if (isAlreadyLogged) return;
+
+            const ghostEl = document.createElement('div');
+            const themeClass = getColorThemeByActivityName(primaryName, category);
+            ghostEl.className = 'timeline-block timeline-block-ghost ' + themeClass;
+            ghostEl.style.top = pStartMins + 'px';
+            ghostEl.style.height = Math.max(pDuration, 24) + 'px';
+
+            let pieceType = 'medium';
+            if (pDuration >= 90) pieceType = 'large';
+            else if (pDuration <= 15) pieceType = 'small';
+
+            const pDurationStr = (pDuration >= 60)
+                ? Math.floor(pDuration / 60) + 'h' + (pDuration % 60 > 0 ? (pDuration % 60) + 'm' : '')
+                : pDuration + 'm';
+
+            let timeLabel = plan.start + '-' + plan.end + ' (' + pDurationStr + ')';
+            if (plan.crossRole === 'head') {
+                const nextPart = plan.crossFullSpan ? plan.crossFullSpan.split('-')[1].trim() : '朝';
+                timeLabel = '🌙 ' + plan.start + '-翌' + nextPart + ' (' + pDurationStr + ')';
+            } else if (plan.crossRole === 'tail') {
+                const prevPart = plan.crossFullSpan ? plan.crossFullSpan.split('-')[0].trim() : '前夜';
+                timeLabel = '🌅 ' + prevPart + '-' + plan.end + ' (' + pDurationStr + ')';
+            }
+
+            ghostEl.innerHTML =
+                '<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; pointer-events: none;">' +
+                    '<div style="display: flex; align-items: center; gap: 4px; overflow: hidden; max-width: 58%;">' +
+                        '<span class="ghost-plan-badge">📅予定</span>' +
+                        '<span style="font-weight: 700; font-size: 0.74rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' +
+                            primaryName +
+                        '</span>' +
+                    '</div>' +
+                    '<div style="display: flex; align-items: center; gap: 5px; pointer-events: auto;">' +
+                        '<span style="font-family: monospace; font-size: 0.65rem; opacity: 0.85; pointer-events: none;">' +
+                            timeLabel +
+                        '</span>' +
+                        '<button type="button" class="timeline-ghost-apply-btn" title="予定通りワンタップで実績に反映">' +
+                            '⚡ 反映' +
+                        '</button>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="timeline-resize-handle" title="上下にドラッグして長さを調整し実績化"></div>';
+
+            const applyBtn = ghostEl.querySelector('.timeline-ghost-apply-btn');
+            if (applyBtn) {
+                applyBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    applyPlanToActual(plan);
+                });
+            }
+
+            attachPuzzleDragAndResizeForGhost(ghostEl, plan, pieceType, currentList);
+            blocksLayer.appendChild(ghostEl);
+        });
+    }
 
     const totalRecorded = investMinutes + maintainMinutes + driftMinutes;
     const freeMinutes = Math.max(0, 1440 - totalRecorded);
@@ -5930,6 +6460,13 @@ function initPuzzle() {
         switchModeBtn.addEventListener('click', function() {
             switchInputMode(currentInputMode === 'plan' ? 'actual' : 'plan');
             renderPuzzle();
+        });
+    }
+
+    const toggleGhostBtn = document.getElementById('puzzle-toggle-ghost-btn');
+    if (toggleGhostBtn) {
+        toggleGhostBtn.addEventListener('click', function() {
+            togglePlanGhostGuide();
         });
     }
 
