@@ -52,6 +52,8 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+export type VoiceCategory = 'all' | 'workout' | 'nutrition' | 'water' | 'note';
+
 export interface InitialContext {
   lastWorkout?: string | null;
   currentWaterMl?: number;
@@ -60,4 +62,6 @@ export interface InitialContext {
   theme?: 'dark' | 'pureBlack';
   date?: string;
   memory?: string;
+  category?: VoiceCategory;
 }
+

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAquaVoiceCompanion } from './hooks/useAquaVoiceCompanion';
-import type { InitialContext } from './types';
+import type { InitialContext, VoiceCategory } from './types';
 import {
   Mic,
   Square,
@@ -157,6 +157,29 @@ export default function App() {
     document.documentElement.style.backgroundColor = themeTokens.background;
   }, [themeTokens]);
 
+  // カテゴリ選択状態（localStorageで永続化＆復元）
+  const [selectedCategory, setSelectedCategory] = useState<VoiceCategory>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('trenote_voice_category');
+        if (saved && ['all', 'workout', 'nutrition', 'water', 'note'].includes(saved)) {
+          return saved as VoiceCategory;
+        }
+        if (window.__TRENOTE_CONTEXT__?.category) {
+          return window.__TRENOTE_CONTEXT__.category;
+        }
+      }
+    } catch (_) {}
+    return 'all';
+  });
+
+  const handleSelectCategory = (cat: VoiceCategory) => {
+    setSelectedCategory(cat);
+    try {
+      localStorage.setItem('trenote_voice_category', cat);
+    } catch (_) {}
+  };
+
   const {
     isRecording,
     isProcessing,
@@ -172,6 +195,7 @@ export default function App() {
     setExtractedData,
   } = useAquaVoiceCompanion({
     initialContext,
+    category: selectedCategory,
   });
 
   const [editingTarget, setEditingTarget] = useState<EditTarget | null>(null);
@@ -222,6 +246,14 @@ export default function App() {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
+  const categoriesConfig: { id: VoiceCategory; label: string; icon: React.ReactNode; color: string; desc: string }[] = useMemo(() => [
+    { id: 'all', label: 'すべて', icon: <Sparkles size={13} />, color: '#ff6b00', desc: '全ジャンルを自動判別して記録' },
+    { id: 'workout', label: '筋トレ', icon: <Dumbbell size={13} />, color: '#ff6b00', desc: '種目・重量・回数・セット数を優先' },
+    { id: 'nutrition', label: '栄養', icon: <Utensils size={13} />, color: '#4cd964', desc: '食事・プロテイン・カロリーを優先' },
+    { id: 'water', label: '水分', icon: <Droplets size={13} />, color: '#4facfe', desc: '水・お茶・コーヒーの摂取量を優先' },
+    { id: 'note', label: 'メモ', icon: <BookOpen size={13} />, color: '#a78bfa', desc: '体調・コンディション・雑記を優先' },
+  ], []);
+
   return (
     <div style={styles.container}>
       {/* Header */}
@@ -239,23 +271,35 @@ export default function App() {
         </div>
       </header>
 
-      {/* 4大記録カテゴリーの提示チップ */}
-      <div style={styles.categoryChipsRow}>
-        <div style={{...styles.categoryChip, borderColor: 'rgba(79, 172, 254, 0.3)', backgroundColor: 'rgba(79, 172, 254, 0.08)'}}>
-          <Droplets size={13} color="#4facfe" />
-          <span style={{color: '#4facfe'}}>💧 水</span>
+      {/* カテゴリ選択セレクター */}
+      <div style={styles.categorySelectorContainer}>
+        <div style={styles.categoryChipsRow}>
+          {categoriesConfig.map((cat) => {
+            const isActive = selectedCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => handleSelectCategory(cat.id)}
+                style={{
+                  ...styles.categoryButton,
+                  borderColor: isActive ? cat.color : styles.categoryButton.borderColor,
+                  backgroundColor: isActive ? `${cat.color}22` : styles.categoryButton.backgroundColor,
+                  color: isActive ? '#ffffff' : themeTokens.textMuted,
+                  boxShadow: isActive ? `0 0 10px ${cat.color}33` : 'none',
+                }}
+              >
+                <span style={{ color: isActive ? cat.color : themeTokens.textMuted, display: 'flex', alignItems: 'center' }}>
+                  {cat.icon}
+                </span>
+                <span style={{ fontWeight: isActive ? 700 : 500 }}>{cat.label}</span>
+              </button>
+            );
+          })}
         </div>
-        <div style={{...styles.categoryChip, borderColor: 'rgba(76, 217, 100, 0.3)', backgroundColor: 'rgba(76, 217, 100, 0.08)'}}>
-          <Utensils size={13} color="#4cd964" />
-          <span style={{color: '#4cd964'}}>🥗 栄養</span>
-        </div>
-        <div style={{...styles.categoryChip, borderColor: 'rgba(255, 107, 0, 0.3)', backgroundColor: 'rgba(255, 107, 0, 0.08)'}}>
-          <Dumbbell size={13} color="#ff6b00" />
-          <span style={{color: '#ff8c33'}}>🏋️ トレーニング</span>
-        </div>
-        <div style={{...styles.categoryChip, borderColor: 'rgba(167, 139, 250, 0.3)', backgroundColor: 'rgba(167, 139, 250, 0.08)'}}>
-          <BookOpen size={13} color="#a78bfa" />
-          <span style={{color: '#a78bfa'}}>📝 雑記・メモ</span>
+        <div style={styles.categoryDescRow}>
+          <span style={{ color: categoriesConfig.find((c) => c.id === selectedCategory)?.color || '#ff6b00', fontSize: 10 }}>●</span>
+          <span>{categoriesConfig.find((c) => c.id === selectedCategory)?.desc}</span>
         </div>
       </div>
 
@@ -829,23 +873,39 @@ const getStyles = (colors: ThemeColors): { [key: string]: React.CSSProperties } 
     fontSize: 12,
     color: colors.textMuted,
   },
-  categoryChipsRow: {
+  categorySelectorContainer: {
     display: 'flex',
-    gap: 8,
-    flexWrap: 'wrap',
-    alignItems: 'center',
+    flexDirection: 'column',
+    gap: 4,
     marginTop: -4,
     marginBottom: 4,
   },
-  categoryChip: {
+  categoryChipsRow: {
+    display: 'flex',
+    gap: 6,
+    flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  categoryButton: {
     display: 'flex',
     alignItems: 'center',
     gap: 5,
-    padding: '4px 10px',
-    borderRadius: 8,
-    border: '1px solid',
+    padding: '6px 12px',
+    borderRadius: 20,
+    border: `1px solid ${colors.border}`,
+    backgroundColor: colors.card,
     fontSize: 12,
-    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+  },
+  categoryDescRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    fontSize: 11,
+    color: colors.textMuted,
+    paddingLeft: 4,
+    paddingTop: 2,
   },
   controlBanner: {
     display: 'flex',
