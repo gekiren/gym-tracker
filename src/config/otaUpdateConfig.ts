@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.17',
+  version: '2.3.19',
   title: {
-    ja: '🎙️ 音声AIアシスタント：屋外ノイズ抑制 ＆ カテゴリ選択',
-    en: '🎙️ Voice AI Assistant: Noise Suppression & Category Selector',
+    ja: '📅 24時間管理：カレンダー連携予定の表示最適化',
+    en: '📅 24h Management: Optimized Calendar Plan Display',
   },
   notes: {
     ja: [
-      '屋外やイヤホン使用時の認識精度向上のため、マイクのノイズ抑制・エコーキャンセルを強化しました。',
-      '「筋トレ」「栄養」「水分」「メモ」から選べるカテゴリ選択セレクターを追加し、AI認識精度を大幅に向上させました。',
+      'カレンダー連携の会議招待やアジェンダ等の長文予定をスマートに抽出し、予定カード内をコンパクトに自動折りたたみ（最大2行）表示するように改善しました。',
+      '「▼ もっと見る」タップでアジェンダや会議IDなどの全文をいつでも展開・確認できます。また、操作ボタン（実績コピー・編集・削除）が押し潰される問題を解消しました。',
     ],
     en: [
-      'Enhanced microphone noise suppression and echo cancellation for better outdoor/earphone accuracy.',
-      'Added category selector (Workout, Nutrition, Water, Note) with dedicated vocabulary optimization.',
+      'Optimized calendar-synced plans with long meeting invites/agendas by collapsing them neatly into 2 lines with a tap-to-expand toggle.',
+      'Fixed layout issues preventing action buttons (Copy to Actual, Edit, Delete) from being compressed by long text.',
     ],
   },
 };
