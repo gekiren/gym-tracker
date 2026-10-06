@@ -4424,19 +4424,22 @@ function escapeHtml(str) {
         .replace(/'/g, '&#039;');
 }
 
-window.toggleItemText = function(elementId, btn) {
-    const el = document.getElementById(elementId);
-    if (!el) return;
-    const isCollapsed = el.classList.contains('collapsed');
+window.toggleCollapsible = function(el) {
+    const parent = el.closest('.item-text-wrapper');
+    if (!parent) return;
+    const textEl = parent.querySelector('.collapsible-text');
+    const btn = parent.querySelector('.btn-toggle-memo');
+    if (!textEl) return;
+    const isCollapsed = textEl.classList.contains('collapsed');
     if (isCollapsed) {
-        el.classList.remove('collapsed');
-        if (btn && btn.tagName === 'BUTTON') {
-            btn.textContent = btn.textContent.includes('タイトル') ? '▲ タイトルを省略' : '▲ 閉じる';
+        textEl.classList.remove('collapsed');
+        if (btn) {
+            btn.textContent = (btn.getAttribute('data-type') === 'title') ? '▲ タイトルを省略' : '▲ 閉じる';
         }
     } else {
-        el.classList.add('collapsed');
-        if (btn && btn.tagName === 'BUTTON') {
-            btn.textContent = btn.textContent.includes('タイトル') ? '▼ タイトル全文を表示' : '▼ もっと見る (詳細)';
+        textEl.classList.add('collapsed');
+        if (btn) {
+            btn.textContent = (btn.getAttribute('data-type') === 'title') ? '▼ タイトル全文を表示' : '▼ もっと見る (詳細)';
         }
     }
 };
@@ -4461,12 +4464,11 @@ function renderPlans() {
         if (plan.items.length === 1) {
             const name = (plan.items[0].name || '').trim();
             if (name) {
-                const isLongTitle = name.length > 50 || name.includes('\n');
-                const titleId = 'plan-title-' + plan.id;
+                const isLongTitle = name.length > 50 || (name.indexOf(String.fromCharCode(10)) !== -1);
                 if (isLongTitle) {
-                    content = '<div>' +
-                        '<strong id="' + titleId + '" class="plan-item-title collapsed" style="cursor: pointer;" onclick="toggleItemText(\'' + titleId + '\', this.nextElementSibling)">' + escapeHtml(name) + '</strong>' +
-                        '<button type="button" class="btn-toggle-memo" onclick="toggleItemText(\'' + titleId + '\', this)">▼ タイトル全文を表示</button>' +
+                    content = '<div class="item-text-wrapper">' +
+                        '<strong class="plan-item-title collapsible-text collapsed" style="cursor: pointer;" onclick="toggleCollapsible(this)">' + escapeHtml(name) + '</strong>' +
+                        '<button type="button" class="btn-toggle-memo" data-type="title" onclick="toggleCollapsible(this)">▼ タイトル全文を表示</button>' +
                         '</div>';
                 } else {
                     content = '<strong class="plan-item-title">' + escapeHtml(name) + '</strong>';
@@ -4486,12 +4488,11 @@ function renderPlans() {
 
         if (plan.memo && plan.memo.trim() !== '') {
             const rawMemo = plan.memo.trim();
-            const isLongMemo = rawMemo.length > 50 || rawMemo.includes('\n');
-            const memoId = 'plan-memo-' + plan.id;
+            const isLongMemo = rawMemo.length > 50 || (rawMemo.indexOf(String.fromCharCode(10)) !== -1);
             if (isLongMemo) {
-                content += '<div class="item-memo-container">' +
-                    '<div id="' + memoId + '" class="item-memo-text collapsed" style="cursor: pointer;" onclick="toggleItemText(\'' + memoId + '\', this.nextElementSibling)">📝 ' + escapeHtml(rawMemo) + '</div>' +
-                    '<button type="button" class="btn-toggle-memo" onclick="toggleItemText(\'' + memoId + '\', this)">▼ もっと見る (詳細)</button>' +
+                content += '<div class="item-text-wrapper item-memo-container">' +
+                    '<div class="item-memo-text collapsible-text collapsed" style="cursor: pointer;" onclick="toggleCollapsible(this)">📝 ' + escapeHtml(rawMemo) + '</div>' +
+                    '<button type="button" class="btn-toggle-memo" onclick="toggleCollapsible(this)">▼ もっと見る (詳細)</button>' +
                     '</div>';
             } else {
                 content += '<div class="item-memo-container"><div class="item-memo-text">📝 ' + escapeHtml(rawMemo) + '</div></div>';
@@ -4543,12 +4544,11 @@ function renderLogs() {
         if (log.items.length === 1) {
             const name = (log.items[0].name || '').trim();
             if (name) {
-                const isLongTitle = name.length > 50 || name.includes('\n');
-                const titleId = 'log-title-' + log.id;
+                const isLongTitle = name.length > 50 || (name.indexOf(String.fromCharCode(10)) !== -1);
                 if (isLongTitle) {
-                    content = '<div>' +
-                        '<strong id="' + titleId + '" class="log-item-title collapsed" style="cursor: pointer;" onclick="toggleItemText(\'' + titleId + '\', this.nextElementSibling)">' + escapeHtml(name) + '</strong>' +
-                        '<button type="button" class="btn-toggle-memo" onclick="toggleItemText(\'' + titleId + '\', this)">▼ タイトル全文を表示</button>' +
+                    content = '<div class="item-text-wrapper">' +
+                        '<strong class="log-item-title collapsible-text collapsed" style="cursor: pointer;" onclick="toggleCollapsible(this)">' + escapeHtml(name) + '</strong>' +
+                        '<button type="button" class="btn-toggle-memo" data-type="title" onclick="toggleCollapsible(this)">▼ タイトル全文を表示</button>' +
                         '</div>';
                 } else {
                     content = '<strong class="log-item-title">' + escapeHtml(name) + '</strong>';
@@ -4568,12 +4568,11 @@ function renderLogs() {
 
         if (log.memo && log.memo.trim() !== '') {
             const rawMemo = log.memo.trim();
-            const isLongMemo = rawMemo.length > 50 || rawMemo.includes('\n');
-            const memoId = 'log-memo-' + log.id;
+            const isLongMemo = rawMemo.length > 50 || (rawMemo.indexOf(String.fromCharCode(10)) !== -1);
             if (isLongMemo) {
-                content += '<div class="item-memo-container">' +
-                    '<div id="' + memoId + '" class="item-memo-text collapsed" style="cursor: pointer;" onclick="toggleItemText(\'' + memoId + '\', this.nextElementSibling)">📝 ' + escapeHtml(rawMemo) + '</div>' +
-                    '<button type="button" class="btn-toggle-memo" onclick="toggleItemText(\'' + memoId + '\', this)">▼ もっと見る (詳細)</button>' +
+                content += '<div class="item-text-wrapper item-memo-container">' +
+                    '<div class="item-memo-text collapsible-text collapsed" style="cursor: pointer;" onclick="toggleCollapsible(this)">📝 ' + escapeHtml(rawMemo) + '</div>' +
+                    '<button type="button" class="btn-toggle-memo" onclick="toggleCollapsible(this)">▼ もっと見る (詳細)</button>' +
                     '</div>';
             } else {
                 content += '<div class="item-memo-container"><div class="item-memo-text">📝 ' + escapeHtml(rawMemo) + '</div></div>';
