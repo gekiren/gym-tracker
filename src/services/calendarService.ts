@@ -327,13 +327,46 @@ export async function importGoogleCalendarPlans(
 
       const planId = stringToHash(`google_${ev.id}_${dateStr}_${idx}`);
 
+      // イベントタイトルと詳細メモのスマート正規化
+      const rawTitle = (ev.title || '予定').trim();
+      const rawNotes = (ev.notes || '').trim();
+
+      let cleanTitle = rawTitle;
+      let extraMemo = '';
+
+      // 改行が含まれる場合、最初の非空行を件名（タイトル）とし、残りの行をメモへ退避
+      if (rawTitle.includes('\n')) {
+        const lines = rawTitle.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+        if (lines.length > 0) {
+          cleanTitle = lines[0];
+          extraMemo = lines.slice(1).join('\n');
+        }
+      }
+
+      // 改行がなくてもタイトルが長すぎる場合（例: 会議テンプレートが1行に繋がっている等）
+      // 40文字を超える場合は適切な長さに丸め、元の全文をメモへ保持
+      if (cleanTitle.length > 40) {
+        if (!extraMemo) {
+          extraMemo = cleanTitle;
+        } else {
+          extraMemo = cleanTitle + '\n' + extraMemo;
+        }
+        cleanTitle = cleanTitle.slice(0, 37) + '...';
+      }
+
+      // 詳細メモの統合（重要情報は1文字も欠落させずに保持）
+      let combinedMemo = rawNotes;
+      if (extraMemo) {
+        combinedMemo = rawNotes ? `${extraMemo}\n\n${rawNotes}` : extraMemo;
+      }
+
       return {
         id: planId,
         date: dateStr,
         start: startStr,
         end: endStr,
-        items: [{ name: ev.title || '予定', percent: 100 }],
-        memo: ev.notes || '',
+        items: [{ name: cleanTitle || '予定', percent: 100 }],
+        memo: combinedMemo,
         source: 'google',
         googleEventId: ev.id,
         crossDayGroupId,

@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.18',
+  version: '2.3.19',
   title: {
-    ja: '⏱️ 24時間ピースタイムライン：予定連動 ＆ スマート実績入力',
-    en: '⏱️ 24h Piece Timeline: Plan Overlay & Smart Actual Logging',
+    ja: '📅 24時間管理：カレンダー連携予定の表示最適化',
+    en: '📅 24h Management: Optimized Calendar Plan Display',
   },
   notes: {
     ja: [
-      '実績タイムライン上に今日の予定を半透明で重ねて表示し、予定通りなら「⚡ 反映」を1タップするだけで実績化できるようになりました。',
-      '活動編集シートに「±15分」「±5分」のクイック微調整ボタンを追加。さらにタイムライン上で直接ドラッグ・伸縮してズレた実績を即座に記録できます。',
+      'カレンダー連携の会議招待やアジェンダ等の長文予定をスマートに抽出し、予定カード内をコンパクトに自動折りたたみ（最大2行）表示するように改善しました。',
+      '「▼ もっと見る」タップでアジェンダや会議IDなどの全文をいつでも展開・確認できます。また、操作ボタン（実績コピー・編集・削除）が押し潰される問題を解消しました。',
     ],
     en: [
-      'Displayed today\'s plans as semi-transparent blocks on the actual timeline. One-tap "⚡ Apply" to instantly log planned activities as actual records.',
-      'Added ±15m and ±5m quick adjustment buttons in the edit sheet, and enabled direct drag/resize on the timeline to log shifted times.',
+      'Optimized calendar-synced plans with long meeting invites/agendas by collapsing them neatly into 2 lines with a tap-to-expand toggle.',
+      'Fixed layout issues preventing action buttons (Copy to Actual, Edit, Delete) from being compressed by long text.',
     ],
   },
 };

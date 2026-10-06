@@ -379,24 +379,98 @@ textarea:focus {
 .log-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 12px;
   background-color: #262626;
   border-radius: 8px;
   margin-bottom: 8px;
   border-left: 4px solid var(--primary-color);
+  gap: 10px;
 }
 
 .plan-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 12px;
   background-color: rgba(37, 99, 235, 0.08);
   border-radius: 8px;
   margin-bottom: 8px;
   border: 1px solid rgba(37, 99, 235, 0.3);
   border-left: 4px solid var(--plan-color);
+  gap: 10px;
+}
+
+.plan-item-main,
+.log-item-main {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.plan-item-title,
+.log-item-title {
+  word-break: break-word;
+  line-height: 1.4;
+  font-size: 0.95rem;
+}
+
+.plan-item-title.collapsed,
+.log-item-title.collapsed {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-memo-container {
+  margin-top: 4px;
+}
+
+.item-memo-text {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.item-memo-text.collapsed {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-toggle-memo {
+  display: inline-block;
+  background: none;
+  border: none;
+  color: #60a5fa;
+  font-size: 0.76rem;
+  padding: 3px 0;
+  margin-top: 2px;
+  cursor: pointer;
+  text-decoration: underline;
+  user-select: none;
+}
+
+.plan-item-actions,
+.log-item-actions {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+
+.plan-sub-actions,
+.log-sub-actions {
+  display: flex;
+  gap: 4px;
 }
 
 .time-badge {
@@ -420,16 +494,16 @@ textarea:focus {
   border: 1px solid #10b981;
   color: #ffffff;
   padding: 4px 8px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   border-radius: 6px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 3px;
   transition: opacity 0.2s;
-  width: auto;
-  margin-right: 6px;
-  margin-bottom: 0;
+  white-space: nowrap;
+  margin: 0;
 }
 
 .btn-copy-plan:active {
@@ -4340,6 +4414,33 @@ function renderTemplates() {
     });
 }
 
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+window.toggleItemText = function(elementId, btn) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    const isCollapsed = el.classList.contains('collapsed');
+    if (isCollapsed) {
+        el.classList.remove('collapsed');
+        if (btn && btn.tagName === 'BUTTON') {
+            btn.textContent = btn.textContent.includes('タイトル') ? '▲ タイトルを省略' : '▲ 閉じる';
+        }
+    } else {
+        el.classList.add('collapsed');
+        if (btn && btn.tagName === 'BUTTON') {
+            btn.textContent = btn.textContent.includes('タイトル') ? '▼ タイトル全文を表示' : '▼ もっと見る (詳細)';
+        }
+    }
+};
+
 function renderPlans() {
     planList.innerHTML = '';
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
@@ -4358,20 +4459,43 @@ function renderPlans() {
 
         let content = '';
         if (plan.items.length === 1) {
-            const name = plan.items[0].name.trim();
-            content = name ? ('<strong>' + name + '</strong>') : '<span style="color: var(--text-secondary); font-style: italic;">(未設定)</span>';
+            const name = (plan.items[0].name || '').trim();
+            if (name) {
+                const isLongTitle = name.length > 50 || name.includes('\n');
+                const titleId = 'plan-title-' + plan.id;
+                if (isLongTitle) {
+                    content = '<div>' +
+                        '<strong id="' + titleId + '" class="plan-item-title collapsed" style="cursor: pointer;" onclick="toggleItemText(\'' + titleId + '\', this.nextElementSibling)">' + escapeHtml(name) + '</strong>' +
+                        '<button type="button" class="btn-toggle-memo" onclick="toggleItemText(\'' + titleId + '\', this)">▼ タイトル全文を表示</button>' +
+                        '</div>';
+                } else {
+                    content = '<strong class="plan-item-title">' + escapeHtml(name) + '</strong>';
+                }
+            } else {
+                content = '<span style="color: var(--text-secondary); font-style: italic;">(未設定)</span>';
+            }
         } else {
-            content = '<div style="font-size:0.9rem;">' +
+            content = '<div style="font-size:0.9rem;" class="plan-item-title">' +
                 plan.items.map(function(i) {
-                    const name = i.name.trim() || '(未設定)';
+                    const name = (i.name || '').trim() || '(未設定)';
                     const pct = (i.percent !== undefined && !isNaN(i.percent)) ? i.percent : (i.weight ? i.weight * 100 : 100);
-                    return name + ' (' + pct + '%)';
+                    return escapeHtml(name) + ' (' + pct + '%)';
                 }).join(' / ') +
                 '</div>';
         }
 
         if (plan.memo && plan.memo.trim() !== '') {
-            content += '<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">📝 ' + plan.memo.trim() + '</div>';
+            const rawMemo = plan.memo.trim();
+            const isLongMemo = rawMemo.length > 50 || rawMemo.includes('\n');
+            const memoId = 'plan-memo-' + plan.id;
+            if (isLongMemo) {
+                content += '<div class="item-memo-container">' +
+                    '<div id="' + memoId + '" class="item-memo-text collapsed" style="cursor: pointer;" onclick="toggleItemText(\'' + memoId + '\', this.nextElementSibling)">📝 ' + escapeHtml(rawMemo) + '</div>' +
+                    '<button type="button" class="btn-toggle-memo" onclick="toggleItemText(\'' + memoId + '\', this)">▼ もっと見る (詳細)</button>' +
+                    '</div>';
+            } else {
+                content += '<div class="item-memo-container"><div class="item-memo-text">📝 ' + escapeHtml(rawMemo) + '</div></div>';
+            }
         }
 
         const duration = calculateDuration(plan.start, plan.end);
@@ -4383,14 +4507,16 @@ function renderPlans() {
         const editText = isEditing ? '編集中' : '編集';
 
         el.innerHTML =
-            '<div>' +
+            '<div class="plan-item-main">' +
                 '<div class="plan-time-badge">' + timeStr + durationStr + '</div>' +
                 '<div style="margin-top: 4px;">' + content + '</div>' +
             '</div>' +
-            '<div class="flex-row" style="margin-bottom: 0;">' +
+            '<div class="plan-item-actions">' +
                 '<button type="button" class="btn-copy-plan" onclick="copyPlanToActual(' + plan.id + ')">▶ 実績にコピー</button>' +
-                '<button type="button" class="btn ' + editClass + '" style="width: auto; padding: 4px 8px; font-size: 0.8rem; margin-right: 6px; border-color: #2563EB; color: #93c5fd;" onclick="startEditPlan(' + plan.id + ')">' + editText + '</button>' +
-                '<button type="button" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.8rem; border-color: #666; color: #888;" onclick="deletePlan(' + plan.id + ')">削除</button>' +
+                '<div class="plan-sub-actions">' +
+                    '<button type="button" class="btn ' + editClass + '" style="width: auto; padding: 4px 8px; font-size: 0.8rem; border-color: #2563EB; color: #93c5fd;" onclick="startEditPlan(' + plan.id + ')">' + editText + '</button>' +
+                    '<button type="button" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.8rem; border-color: #666; color: #888;" onclick="deletePlan(' + plan.id + ')">削除</button>' +
+                '</div>' +
             '</div>';
         planList.appendChild(el);
     });
@@ -4415,20 +4541,43 @@ function renderLogs() {
 
         let content = '';
         if (log.items.length === 1) {
-            const name = log.items[0].name.trim();
-            content = name ? ('<strong>' + name + '</strong>') : '<span style="color: var(--text-secondary); font-style: italic;">(未設定)</span>';
+            const name = (log.items[0].name || '').trim();
+            if (name) {
+                const isLongTitle = name.length > 50 || name.includes('\n');
+                const titleId = 'log-title-' + log.id;
+                if (isLongTitle) {
+                    content = '<div>' +
+                        '<strong id="' + titleId + '" class="log-item-title collapsed" style="cursor: pointer;" onclick="toggleItemText(\'' + titleId + '\', this.nextElementSibling)">' + escapeHtml(name) + '</strong>' +
+                        '<button type="button" class="btn-toggle-memo" onclick="toggleItemText(\'' + titleId + '\', this)">▼ タイトル全文を表示</button>' +
+                        '</div>';
+                } else {
+                    content = '<strong class="log-item-title">' + escapeHtml(name) + '</strong>';
+                }
+            } else {
+                content = '<span style="color: var(--text-secondary); font-style: italic;">(未設定)</span>';
+            }
         } else {
-            content = '<div style="font-size:0.9rem;">' +
+            content = '<div style="font-size:0.9rem;" class="log-item-title">' +
                 log.items.map(function(i) {
-                    const name = i.name.trim() || '(未設定)';
+                    const name = (i.name || '').trim() || '(未設定)';
                     const pct = (i.percent !== undefined && !isNaN(i.percent)) ? i.percent : (i.weight ? i.weight * 100 : 100);
-                    return name + ' (' + pct + '%)';
+                    return escapeHtml(name) + ' (' + pct + '%)';
                 }).join(' / ') +
                 '</div>';
         }
 
         if (log.memo && log.memo.trim() !== '') {
-            content += '<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">📝 ' + log.memo.trim() + '</div>';
+            const rawMemo = log.memo.trim();
+            const isLongMemo = rawMemo.length > 50 || rawMemo.includes('\n');
+            const memoId = 'log-memo-' + log.id;
+            if (isLongMemo) {
+                content += '<div class="item-memo-container">' +
+                    '<div id="' + memoId + '" class="item-memo-text collapsed" style="cursor: pointer;" onclick="toggleItemText(\'' + memoId + '\', this.nextElementSibling)">📝 ' + escapeHtml(rawMemo) + '</div>' +
+                    '<button type="button" class="btn-toggle-memo" onclick="toggleItemText(\'' + memoId + '\', this)">▼ もっと見る (詳細)</button>' +
+                    '</div>';
+            } else {
+                content += '<div class="item-memo-container"><div class="item-memo-text">📝 ' + escapeHtml(rawMemo) + '</div></div>';
+            }
         }
 
         const duration = calculateDuration(log.start, log.end);
@@ -4440,13 +4589,15 @@ function renderLogs() {
         const editText = isEditing ? '編集中' : '編集';
 
         el.innerHTML =
-            '<div>' +
+            '<div class="log-item-main">' +
                 '<div class="time-badge">' + timeStr + durationStr + '</div>' +
                 '<div style="margin-top: 4px;">' + content + '</div>' +
             '</div>' +
-            '<div class="flex-row" style="margin-bottom: 0;">' +
-                '<button type="button" class="btn ' + editClass + '" style="width: auto; padding: 4px 8px; font-size: 0.8rem; margin-right: 8px;" onclick="startEdit(' + log.id + ')">' + editText + '</button>' +
-                '<button type="button" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.8rem; border-color: #666; color: #888;" onclick="deleteLog(' + log.id + ')">削除</button>' +
+            '<div class="log-item-actions">' +
+                '<div class="log-sub-actions">' +
+                    '<button type="button" class="btn ' + editClass + '" style="width: auto; padding: 4px 8px; font-size: 0.8rem; margin-right: 4px;" onclick="startEdit(' + log.id + ')">' + editText + '</button>' +
+                    '<button type="button" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.8rem; border-color: #666; color: #888;" onclick="deleteLog(' + log.id + ')">削除</button>' +
+                '</div>' +
             '</div>';
         logList.appendChild(el);
     });
