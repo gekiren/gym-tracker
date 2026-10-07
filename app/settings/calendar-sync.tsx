@@ -123,12 +123,13 @@ export default function CalendarSyncScreen() {
       const updatedSettings = await getCalendarSyncSettings();
       setSettings(updatedSettings);
 
+      const deleteMsg = exportRes.deletedCount > 0 ? `\n• 不要イベント削除: ${exportRes.deletedCount} 件` : '';
       Alert.alert(
         t('ui.calendar_sync.sync_completed', '同期完了'),
         t('ui.calendar_sync.sync_result_msg', 'Googleカレンダーとの同期が完了しました。\n\n• 予定取り込み: {{importCount}} 件\n• 実績書き出し: {{exportCount}} 件', {
           importCount: importRes.count,
           exportCount: exportRes.count,
-        }),
+        }) + deleteMsg,
         [{ text: 'OK' }]
       );
     } catch (err) {

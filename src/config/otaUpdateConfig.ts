@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.19',
+  version: '2.3.20',
   title: {
-    ja: '📅 24時間管理：カレンダー連携予定の表示最適化',
-    en: '📅 24h Management: Optimized Calendar Plan Display',
+    ja: '📅 Googleカレンダー連携：予定削除・時間変更の完全同期対応',
+    en: '📅 Calendar Sync: Real-time Deletion & Time Change Sync',
   },
   notes: {
     ja: [
-      'カレンダー連携の会議招待やアジェンダ等の長文予定をスマートに抽出し、予定カード内をコンパクトに自動折りたたみ（最大2行）表示するように改善しました。',
-      '「▼ もっと見る」タップでアジェンダや会議IDなどの全文をいつでも展開・確認できます。また、操作ボタン（実績コピー・編集・削除）が押し潰される問題を解消しました。',
+      'トレノート側で予定や活動記録を削除した際に、Googleカレンダー側の該当イベントも自動的に綺麗に消去されるように同期ロジック（差分パージ）を改善しました。',
+      '予定の時間を変更した際にも、変更前の古い時間のイベントがカレンダーに残って重複・増殖する問題を解消しました。',
     ],
     en: [
-      'Optimized calendar-synced plans with long meeting invites/agendas by collapsing them neatly into 2 lines with a tap-to-expand toggle.',
-      'Fixed layout issues preventing action buttons (Copy to Actual, Edit, Delete) from being compressed by long text.',
+      'Improved calendar sync to automatically purge and delete events from Google Calendar when removed in TreNote.',
+      'Resolved issue where changing event times caused duplicate old events to remain on Google Calendar.',
     ],
   },
 };
