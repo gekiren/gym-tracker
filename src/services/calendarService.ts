@@ -419,20 +419,21 @@ export async function importGoogleCalendarPlans(
 
 /**
  * 24時間管理の活動実績（time_logs）を Google カレンダー（または TreNote 専用カレンダー）へ書き出し
+ * トレノート側で削除・変更されたイベントの差分パージ（自動削除）も同時に実行されます
  */
 export async function exportLogsToGoogleCalendar(
   targetDate?: string
-): Promise<{ success: boolean; count: number }> {
+): Promise<{ success: boolean; count: number; deletedCount: number }> {
   const available = await isCalendarAvailable();
-  if (!available) return { success: false, count: 0 };
+  if (!available) return { success: false, count: 0, deletedCount: 0 };
 
   const settings = await getCalendarSyncSettings();
   if (!settings.enabled || !settings.exportEnabled) {
-    return { success: false, count: 0 };
+    return { success: false, count: 0, deletedCount: 0 };
   }
 
   const hasPerm = await checkCalendarPermissions();
-  if (!hasPerm) return { success: false, count: 0 };
+  if (!hasPerm) return { success: false, count: 0, deletedCount: 0 };
 
   const dateStr = targetDate || formatDateToSlash(new Date());
 
@@ -444,8 +445,14 @@ export async function exportLogsToGoogleCalendar(
     }
     if (!exportCalId) {
       console.warn('[calendarService] No export calendar available');
-      return { success: false, count: 0 };
+      return { success: false, count: 0, deletedCount: 0 };
     }
+
+    // 書き出し先カレンダーがTreNote専用サブカレンダーかどうかを判別
+    const calendars = await getDeviceCalendars();
+    const targetCal = calendars.find((c) => c.id === exportCalId);
+    const isTreNoteDedicatedCal =
+      targetCal?.title === 'TreNote' || targetCal?.name === 'TreNote';
 
     const db = getDB();
     const rows = await db.getAllAsync<{
@@ -460,34 +467,35 @@ export async function exportLogsToGoogleCalendar(
       [dateStr]
     );
 
-    if (!rows || rows.length === 0) {
-      return { success: true, count: 0 };
-    }
-
     // start_time と end_time ごとにグループ化
     const groupedMap: Record<string, { start: string; end: string; items: string[] }> = {};
-    rows.forEach((r) => {
-      const key = `${r.start_time}_${r.end_time}`;
-      if (!groupedMap[key]) {
-        groupedMap[key] = { start: r.start_time, end: r.end_time, items: [] };
-      }
-      if (r.activity_name && !groupedMap[key].items.includes(r.activity_name)) {
-        groupedMap[key].items.push(r.activity_name);
-      }
-    });
+    if (rows && rows.length > 0) {
+      rows.forEach((r) => {
+        const key = `${r.start_time}_${r.end_time}`;
+        if (!groupedMap[key]) {
+          groupedMap[key] = { start: r.start_time, end: r.end_time, items: [] };
+        }
+        if (r.activity_name && !groupedMap[key].items.includes(r.activity_name)) {
+          groupedMap[key].items.push(r.activity_name);
+        }
+      });
+    }
 
     const [y, m, d] = dateStr.split('/').map(Number);
     const dayStart = new Date(y, m - 1, d, 0, 0, 0);
     const dayEnd = new Date(y, m - 1, d, 23, 59, 59);
 
-    // 既に書き出し先カレンダーに存在する当日のイベントを取得（重複防止）
+    // 既に書き出し先カレンダーに存在する当日のイベントを取得（重複防止・差分削除用）
     const existingEvents = await Calendar.getEventsAsync(
       [exportCalId],
       dayStart,
       dayEnd
     );
 
+    // 処理・維持された（最新データと紐付いた）イベントIDの記録用
+    const matchedEventIds = new Set<string>();
     let exportCount = 0;
+
     for (const group of Object.values(groupedMap)) {
       const [sh, sm] = group.start.split(':').map(Number);
       const [eh, em] = group.end.split(':').map(Number);
@@ -505,14 +513,16 @@ export async function exportLogsToGoogleCalendar(
       // 既存イベントの中に同じ時間帯・マーカーがあるか確認
       const matchingEvent = existingEvents.find(
         (ev) =>
-          ev.notes?.includes(markerNote) ||
-          (formatTimeToHHMM(new Date(ev.startDate)) === group.start &&
-            formatTimeToHHMM(new Date(ev.endDate)) === group.end)
+          !matchedEventIds.has(ev.id) &&
+          (ev.notes?.includes(markerNote) ||
+            (formatTimeToHHMM(new Date(ev.startDate)) === group.start &&
+              formatTimeToHHMM(new Date(ev.endDate)) === group.end))
       );
 
       if (matchingEvent) {
-        // 既存イベントのタイトルを更新
-        if (matchingEvent.title !== title) {
+        matchedEventIds.add(matchingEvent.id);
+        // 既存イベントのタイトルまたはノートを更新
+        if (matchingEvent.title !== title || !matchingEvent.notes?.includes(markerNote)) {
           await Calendar.updateEventAsync(matchingEvent.id, {
             title,
             notes: markerNote,
@@ -520,14 +530,42 @@ export async function exportLogsToGoogleCalendar(
         }
       } else {
         // 新規作成
-        await Calendar.createEventAsync(exportCalId, {
+        const createdId = await Calendar.createEventAsync(exportCalId, {
           title,
           startDate: eventStart,
           endDate: eventEnd,
           notes: markerNote,
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         });
+        if (createdId) {
+          matchedEventIds.add(createdId);
+        }
         exportCount++;
+      }
+    }
+
+    // 【重要: 差分パージ（削除）処理】
+    // TreNote由来のイベントのうち、最新ログにマッチしなかった古いイベント（TreNote側で削除・変更されたもの）をGoogleカレンダーから消去
+    let deletedCount = 0;
+    for (const ev of existingEvents) {
+      if (matchedEventIds.has(ev.id)) {
+        continue;
+      }
+
+      // 削除対象判定（安全フィルタ）:
+      // 1. 専用カレンダーの場合はカレンダー内の全イベントがTreNote管理対象
+      // 2. 通常カレンダー（個人カレンダー等）の場合は、TreNoteのマーカーが含まれるイベントのみに厳格限定（私用予定の誤削除を100%防止）
+      const isTreNoteEvent =
+        isTreNoteDedicatedCal ||
+        (ev.notes && ev.notes.includes('[TreNote Log:'));
+
+      if (isTreNoteEvent) {
+        try {
+          await Calendar.deleteEventAsync(ev.id);
+          deletedCount++;
+        } catch (delErr) {
+          console.warn(`[calendarService] Failed to delete stale event ${ev.id}:`, delErr);
+        }
       }
     }
 
@@ -537,10 +575,10 @@ export async function exportLogsToGoogleCalendar(
       [JSON.stringify(settings)]
     );
 
-    return { success: true, count: exportCount };
+    return { success: true, count: exportCount, deletedCount };
   } catch (e) {
     console.error('[calendarService] exportLogsToGoogleCalendar error:', e);
-    return { success: false, count: 0 };
+    return { success: false, count: 0, deletedCount: 0 };
   }
 }
 

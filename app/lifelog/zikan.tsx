@@ -144,9 +144,10 @@ export default function ZikanScreen() {
         );
       }
 
+      const deleteMsg = exportRes.deletedCount > 0 ? `\n• 不要イベント削除: ${exportRes.deletedCount} 件` : '';
       Alert.alert(
         '同期完了',
-        `Googleカレンダーと同期しました。\n\n• 予定取り込み: ${importRes.count} 件\n• 実績書き出し: ${exportRes.count} 件`,
+        `Googleカレンダーと同期しました。\n\n• 予定取り込み: ${importRes.count} 件\n• 実績書き出し: ${exportRes.count} 件${deleteMsg}`,
         [{ text: 'OK' }]
       );
     } catch (e) {
