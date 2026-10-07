@@ -1181,25 +1181,28 @@ header {
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
-  touch-action: none;
+  touch-action: pan-y;
   pointer-events: auto;
-  cursor: grab;
+  cursor: pointer;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  transition: box-shadow 0.15s ease;
+  transition: box-shadow 0.15s ease, transform 0.12s ease;
 }
 
 .timeline-block:active {
-  cursor: grabbing;
+  cursor: pointer;
 }
 
 .timeline-block.is-dragging {
-  opacity: 0.85;
-  transform: scale(1.01);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+  touch-action: none;
+  opacity: 0.9;
+  transform: scale(1.02);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.65), 0 0 0 2px rgba(255, 255, 255, 0.35);
   z-index: 50 !important;
+  cursor: grabbing;
 }
 
 .timeline-block.is-resizing {
+  touch-action: none;
   opacity: 0.9;
   z-index: 50 !important;
 }
@@ -1705,7 +1708,7 @@ input:checked + .holiday-switch-slider:before {
 
             <!-- 操作説明ガイド -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.72rem; color: var(--text-secondary);">
-                <span>本体ドラッグ: 位置移動 ｜ 下端ドラッグ: 長さ変更 ｜ ✕: 削除</span>
+                <span>本体長押し: 位置移動 ｜ タップ: 編集 ｜ 下端ドラッグ: 長さ変更</span>
                 <span id="puzzle-drag-tooltip" class="drag-feedback-tooltip" style="display: none;">00:00 - 00:00</span>
             </div>
 
@@ -5561,32 +5564,66 @@ function attachPuzzleDragAndResizeForGhost(element, plan, pieceType, currentList
     const tooltip = document.getElementById('puzzle-drag-tooltip');
     const planName = (plan.items && plan.items.length > 0) ? plan.items[0].name : (plan.activity_name || "活動");
 
-    // 1. ドラッグ移動 / タップ判定
+    // 1. 長押しドラッグ移動 / タップ判定
     element.addEventListener('pointerdown', function(e) {
         if (e.target.closest('.timeline-ghost-apply-btn') || e.target.closest('.timeline-resize-handle')) return;
 
-        e.preventDefault();
-        element.setPointerCapture(e.pointerId);
-
         const initialY = e.clientY;
         const initialX = e.clientX;
+        const pointerId = e.pointerId;
         const initialStart = timeToMins(plan.start);
         let initialEnd = timeToMins(plan.end);
         if (initialEnd < initialStart) initialEnd += 1440;
         const duration = initialEnd - initialStart;
+
+        let isLongPressed = false;
         let hasMoved = false;
+        let longPressTimer = null;
+
+        // 長押しタイマー（350ms）
+        longPressTimer = setTimeout(function() {
+            isLongPressed = true;
+            element.classList.add('is-dragging');
+            if (tooltip) {
+                tooltip.style.display = 'block';
+                tooltip.textContent = '⏱ 実績化: ' + plan.start + ' - ' + plan.end;
+            }
+            if (navigator.vibrate) {
+                try { navigator.vibrate(35); } catch (vErr) {}
+            }
+            try {
+                element.setPointerCapture(pointerId);
+            } catch (capErr) {}
+        }, 350);
+
+        function cleanupListeners() {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+            element.removeEventListener('pointermove', onPointerMove);
+            element.removeEventListener('pointerup', onPointerUp);
+            element.removeEventListener('pointercancel', onPointerCancel);
+        }
 
         function onPointerMove(moveEvent) {
             const deltaY = moveEvent.clientY - initialY;
             const deltaX = moveEvent.clientX - initialX;
-            if (Math.abs(deltaY) > 5 || Math.abs(deltaX) > 5) {
-                if (!hasMoved) {
-                    hasMoved = true;
-                    element.classList.add('is-dragging');
-                    if (tooltip) tooltip.style.display = 'block';
+
+            if (!isLongPressed) {
+                // 長押し前に指が動いた場合はスクロール操作とみなし、長押しタイマーを解除
+                if (Math.abs(deltaY) > 8 || Math.abs(deltaX) > 8) {
+                    if (longPressTimer) {
+                        clearTimeout(longPressTimer);
+                        longPressTimer = null;
+                    }
                 }
+                return;
             }
-            if (!hasMoved) return;
+
+            // 長押し成立後はドラッグ移動処理
+            moveEvent.preventDefault();
+            hasMoved = true;
 
             let newStart = initialStart + deltaY;
             newStart = calculateSnap(newStart, pieceType, duration, null, currentList);
@@ -5603,16 +5640,37 @@ function attachPuzzleDragAndResizeForGhost(element, plan, pieceType, currentList
             }
         }
 
+        function onPointerCancel() {
+            // スクロール等でブラウザに横取りされた場合はキャンセル
+            cleanupListeners();
+            element.classList.remove('is-dragging');
+            if (tooltip) tooltip.style.display = 'none';
+        }
+
         function onPointerUp(upEvent) {
-            element.releasePointerCapture(upEvent.pointerId);
+            try {
+                element.releasePointerCapture(upEvent.pointerId);
+            } catch (rErr) {}
+
             element.classList.remove('is-dragging');
             if (tooltip) tooltip.style.display = 'none';
 
-            element.removeEventListener('pointermove', onPointerMove);
-            element.removeEventListener('pointerup', onPointerUp);
+            const wasLongPressed = isLongPressed;
+            cleanupListeners();
 
+            if (!wasLongPressed) {
+                // 長押しされずに離された ➔ 移動距離が小さければタップと判定して詳細ボトムシートを開く
+                const deltaY = Math.abs(upEvent.clientY - initialY);
+                const deltaX = Math.abs(upEvent.clientX - initialX);
+                if (deltaY <= 8 && deltaX <= 8) {
+                    openTimelineBottomSheetForPlanToActual(plan, element);
+                }
+                return;
+            }
+
+            // 長押しされたが移動させなかった場合
             if (!hasMoved) {
-                openTimelineBottomSheetForPlanToActual(plan, element);
+                element.style.top = initialStart + 'px';
                 return;
             }
 
@@ -5642,6 +5700,7 @@ function attachPuzzleDragAndResizeForGhost(element, plan, pieceType, currentList
 
         element.addEventListener('pointermove', onPointerMove);
         element.addEventListener('pointerup', onPointerUp);
+        element.addEventListener('pointercancel', onPointerCancel);
     });
 
     // 2. リサイズ（下端ドラッグで長さを伸縮して実績化）
@@ -6437,32 +6496,66 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
     const resizeHandle = element.querySelector('.timeline-resize-handle');
     const tooltip = document.getElementById('puzzle-drag-tooltip');
 
-    // 1. ドラッグ移動 / タップ判定
+    // 1. 長押しドラッグ移動 / タップ判定
     element.addEventListener('pointerdown', function(e) {
         if (e.target.closest('.puzzle-del-btn') || e.target.closest('.timeline-resize-handle')) return;
 
-        e.preventDefault();
-        element.setPointerCapture(e.pointerId);
-
         const initialY = e.clientY;
         const initialX = e.clientX;
+        const pointerId = e.pointerId;
         const initialStart = timeToMins(item.start);
         let initialEnd = timeToMins(item.end);
         if (initialEnd < initialStart) initialEnd += 1440;
         const duration = initialEnd - initialStart;
+
+        let isLongPressed = false;
         let hasMoved = false;
+        let longPressTimer = null;
+
+        // 長押しタイマー（350ms）
+        longPressTimer = setTimeout(function() {
+            isLongPressed = true;
+            element.classList.add('is-dragging');
+            if (tooltip) {
+                tooltip.style.display = 'block';
+                tooltip.textContent = '📍 ' + item.start + ' - ' + item.end;
+            }
+            if (navigator.vibrate) {
+                try { navigator.vibrate(35); } catch (vErr) {}
+            }
+            try {
+                element.setPointerCapture(pointerId);
+            } catch (capErr) {}
+        }, 350);
+
+        function cleanupListeners() {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+            element.removeEventListener('pointermove', onPointerMove);
+            element.removeEventListener('pointerup', onPointerUp);
+            element.removeEventListener('pointercancel', onPointerCancel);
+        }
 
         function onPointerMove(moveEvent) {
             const deltaY = moveEvent.clientY - initialY;
             const deltaX = moveEvent.clientX - initialX;
-            if (Math.abs(deltaY) > 5 || Math.abs(deltaX) > 5) {
-                if (!hasMoved) {
-                    hasMoved = true;
-                    element.classList.add('is-dragging');
-                    if (tooltip) tooltip.style.display = 'block';
+
+            if (!isLongPressed) {
+                // 長押し前に指が動いた場合はスクロール操作とみなし、長押しタイマーを解除
+                if (Math.abs(deltaY) > 8 || Math.abs(deltaX) > 8) {
+                    if (longPressTimer) {
+                        clearTimeout(longPressTimer);
+                        longPressTimer = null;
+                    }
                 }
+                return;
             }
-            if (!hasMoved) return;
+
+            // 長押し成立後はドラッグ移動処理
+            moveEvent.preventDefault();
+            hasMoved = true;
 
             let newStart = initialStart + deltaY;
             newStart = calculateSnap(newStart, pieceType, duration, item.id, currentList);
@@ -6479,17 +6572,37 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
             }
         }
 
+        function onPointerCancel() {
+            // スクロール等でブラウザに横取りされた場合はキャンセル
+            cleanupListeners();
+            element.classList.remove('is-dragging');
+            if (tooltip) tooltip.style.display = 'none';
+        }
+
         function onPointerUp(upEvent) {
-            element.releasePointerCapture(upEvent.pointerId);
+            try {
+                element.releasePointerCapture(upEvent.pointerId);
+            } catch (rErr) {}
+
             element.classList.remove('is-dragging');
             if (tooltip) tooltip.style.display = 'none';
 
-            element.removeEventListener('pointermove', onPointerMove);
-            element.removeEventListener('pointerup', onPointerUp);
+            const wasLongPressed = isLongPressed;
+            cleanupListeners();
 
+            if (!wasLongPressed) {
+                // 長押しされずに離された ➔ 移動距離が小さければタップと判定して編集ボトムシートを開く
+                const deltaY = Math.abs(upEvent.clientY - initialY);
+                const deltaX = Math.abs(upEvent.clientX - initialX);
+                if (deltaY <= 8 && deltaX <= 8) {
+                    openTimelineBottomSheetForEdit(item, isPlan, element);
+                }
+                return;
+            }
+
+            // 長押しされたが移動させなかった場合
             if (!hasMoved) {
-                // 指を動かさずにタップした場合 ➔ ボトムシートで編集！
-                openTimelineBottomSheetForEdit(item, isPlan, element);
+                element.style.top = initialStart + 'px';
                 return;
             }
 
@@ -6511,6 +6624,7 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
 
         element.addEventListener('pointermove', onPointerMove);
         element.addEventListener('pointerup', onPointerUp);
+        element.addEventListener('pointercancel', onPointerCancel);
     });
 
     // 2. リサイズ（下端ドラッグ）
