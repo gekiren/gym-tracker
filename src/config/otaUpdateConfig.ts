@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.20',
+  version: '2.3.21',
   title: {
-    ja: '📅 Googleカレンダー連携：予定削除・時間変更の完全同期対応',
-    en: '📅 Calendar Sync: Real-time Deletion & Time Change Sync',
+    ja: '⏱️ ２４時間管理：予定追加時のカード選択自動解除',
+    en: '⏱️ 24h Timeline: Auto-deselect Card after Schedule Addition',
   },
   notes: {
     ja: [
-      'トレノート側で予定や活動記録を削除した際に、Googleカレンダー側の該当イベントも自動的に綺麗に消去されるように同期ロジック（差分パージ）を改善しました。',
-      '予定の時間を変更した際にも、変更前の古い時間のイベントがカレンダーに残って重複・増殖する問題を解消しました。',
+      '２４時間管理タイムラインで予定（ピース/カード）を追加した直後に、カードの選択状態を自動的に解除するように改善しました。連続して別の操作や記録を行う際の手間を削減します。',
     ],
     en: [
-      'Improved calendar sync to automatically purge and delete events from Google Calendar when removed in TreNote.',
-      'Resolved issue where changing event times caused duplicate old events to remain on Google Calendar.',
+      'Improved 24-hour timeline to automatically clear card selection immediately after adding a schedule, streamlining continuous logging.',
     ],
   },
 };
