@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.21',
+  version: '2.3.22',
   title: {
-    ja: '⏱️ ２４時間管理：予定追加時のカード選択自動解除',
-    en: '⏱️ 24h Timeline: Auto-deselect Card after Schedule Addition',
+    ja: '⏱️ ２４時間管理：スクロール操作性の改善（長押しドラッグ方式）',
+    en: '⏱️ 24h Timeline: Improved Scrolling & Long-press Drag',
   },
   notes: {
     ja: [
-      '２４時間管理タイムラインで予定（ピース/カード）を追加した直後に、カードの選択状態を自動的に解除するように改善しました。連続して別の操作や記録を行う際の手間を削減します。',
+      'タイムラインを右手親指等でスクロールする際に、予定ブロックに触れて時間が誤変更されるのを防ぐため、長押し（約0.35秒）でドラッグ移動を開始する方式に改善しました。通常のスクロール操作やタップ編集が快適に行えます。',
     ],
     en: [
-      'Improved 24-hour timeline to automatically clear card selection immediately after adding a schedule, streamlining continuous logging.',
+      'Improved timeline interaction to require a long-press (~0.35s) before dragging schedule blocks, preventing accidental time changes when scrolling with one hand. Regular scrolling and tap-to-edit are fully preserved.',
     ],
   },
 };
