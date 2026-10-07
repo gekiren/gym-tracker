@@ -1653,6 +1653,25 @@ input:checked + .holiday-switch-slider:before {
                 </div>
             </div>
 
+            <!-- デフォルトスケジュール専用編集モード用ヘッダーバー -->
+            <div id="def-sched-editor-bar" style="display: none; margin-bottom: 12px; padding: 10px 12px; border-radius: 10px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(59, 130, 246, 0.25)); border: 1px solid #8b5cf6; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; flex: 1; margin-right: 8px;">
+                        <span style="font-size: 0.95rem;">🎨</span>
+                        <span id="def-sched-editor-title" style="font-weight: 700; font-size: 0.88rem; color: #f3e8ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">編集中: スケジュール名</span>
+                        <span id="def-sched-editor-badge" style="background: rgba(139, 92, 246, 0.45); color: #e9d5ff; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; flex-shrink: 0;">全日共通</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                        <button type="button" id="def-sched-editor-save-btn" class="btn btn-primary" style="width: auto; padding: 4px 10px; font-size: 0.78rem; margin-bottom: 0; background: #8b5cf6; border-color: #a78bfa;">💾 保存して完了</button>
+                        <button type="button" id="def-sched-editor-cancel-btn" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.78rem; margin-bottom: 0;">✕ 中止</button>
+                    </div>
+                </div>
+                <div style="font-size: 0.72rem; color: #ddd6fe; display: flex; justify-content: space-between; align-items: center;">
+                    <span>ピースを選んでタップ、または長押しドラッグで予定を配置してください</span>
+                    <span id="def-sched-editor-count" style="font-weight: 600; flex-shrink: 0; margin-left: 6px;">0件の予定</span>
+                </div>
+            </div>
+
             <!-- デフォルトスケジュール情報バナー -->
             <div id="default-sched-banner" style="display: none; margin-bottom: 10px; padding: 6px 12px; border-radius: 8px; background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.3); font-size: 0.76rem; align-items: center; justify-content: space-between;">
                 <span id="default-sched-banner-text" style="color: #c4b5fd;">⚡ デフォルト予定: </span>
@@ -2212,11 +2231,11 @@ input:checked + .holiday-switch-slider:before {
                     </label>
                 </div>
 
-                <!-- 新規作成フォーム（現在の日の予定から） -->
+                <!-- 新規作成フォーム（専用タイムラインまたは現在の予定から） -->
                 <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px; margin-bottom: 14px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">＋ 現在の予定から作成</span>
-                        <span id="def-sched-current-plan-count" style="font-size: 0.75rem; color: #93c5fd;"></span>
+                        <span style="font-size: 0.85rem; font-weight: 700; color: #c4b5fd;">＋ 専用スケジュールを新規作成</span>
+                        <span id="def-sched-current-plan-count" style="font-size: 0.72rem; color: var(--text-secondary);"></span>
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -2249,9 +2268,14 @@ input:checked + .holiday-switch-slider:before {
                             </div>
                         </div>
 
-                        <button type="button" id="save-def-sched-btn" class="btn btn-primary" style="margin-top: 6px; padding: 8px; font-size: 0.85rem;">
-                            💾 このスケジュールを登録
-                        </button>
+                        <div style="display: flex; gap: 8px; margin-top: 6px;">
+                            <button type="button" id="start-def-sched-editor-btn" class="btn btn-primary" style="flex: 1; padding: 9px; font-size: 0.85rem; background: #8b5cf6; border-color: #a78bfa;">
+                                🎨 専用タイムラインで作成開始
+                            </button>
+                            <button type="button" id="save-def-sched-btn" class="btn btn-secondary" style="width: auto; padding: 9px 10px; font-size: 0.76rem;" title="現在の日付の予定を読み込んで登録">
+                                ⚡ 今日の予定を取り込む
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -2338,6 +2362,17 @@ const defaultSchedBannerApplyBtn = document.getElementById('default-sched-banner
 const tmplSaveAsDefaultBtn = document.getElementById('tmpl-save-as-default-btn');
 const defSchedHolidayToggle = document.getElementById('def-sched-holiday-toggle');
 const defSchedTodayHolidayBadge = document.getElementById('def-sched-today-holiday-badge');
+const startDefSchedEditorBtn = document.getElementById('start-def-sched-editor-btn');
+const defSchedEditorBar = document.getElementById('def-sched-editor-bar');
+const defSchedEditorTitle = document.getElementById('def-sched-editor-title');
+const defSchedEditorBadge = document.getElementById('def-sched-editor-badge');
+const defSchedEditorCount = document.getElementById('def-sched-editor-count');
+const defSchedEditorSaveBtn = document.getElementById('def-sched-editor-save-btn');
+const defSchedEditorCancelBtn = document.getElementById('def-sched-editor-cancel-btn');
+
+// Dedicated Default Schedule Editor State
+let isEditingDefaultSchedule = false;
+let currentEditingDefaultSchedule = null; // { id, name, days, items: [] }
 
 // State
 const storage = window.appStorage || { getItem: function() { return null; }, setItem: function() {} };
@@ -2861,6 +2896,141 @@ function initDayButtonEvents() {
     }
 }
 
+// ==========================================
+// デフォルトスケジュール専用エディター制御ロジック
+// ==========================================
+function startDefaultScheduleEditor(schedToEdit) {
+    if (!schedToEdit) {
+        // 新規作成
+        const name = (defSchedNameInput ? defSchedNameInput.value.trim() : '') || '新規スケジュール';
+        const days = getSelectedDays();
+        currentEditingDefaultSchedule = {
+            id: null,
+            name: name,
+            days: days,
+            items: []
+        };
+    } else {
+        // 既存スケジュールの編集
+        currentEditingDefaultSchedule = {
+            id: schedToEdit.id,
+            name: schedToEdit.name,
+            days: (schedToEdit.days || []).slice(),
+            items: (schedToEdit.data || []).map(function(item) {
+                return {
+                    id: Date.now() + Math.random(),
+                    date: 'default_template',
+                    start: item.start,
+                    end: item.end,
+                    category: item.category || '',
+                    items: JSON.parse(JSON.stringify(item.items || [{ name: item.activity_name || '活動', percent: 100 }])),
+                    memo: item.memo || ''
+                };
+            })
+        };
+    }
+
+    isEditingDefaultSchedule = true;
+    closeDefaultScheduleModal();
+
+    switchMainViewMode('puzzle');
+
+    const puzzleHeader = document.querySelector('.puzzle-header');
+    if (puzzleHeader) puzzleHeader.style.display = 'none';
+    if (defaultSchedBanner) defaultSchedBanner.style.display = 'none';
+
+    if (defSchedEditorBar) {
+        defSchedEditorBar.style.display = 'block';
+        if (defSchedEditorTitle) defSchedEditorTitle.textContent = '編集中: ' + currentEditingDefaultSchedule.name;
+        if (defSchedEditorBadge) {
+            if (currentEditingDefaultSchedule.days && currentEditingDefaultSchedule.days.length > 0) {
+                const dayLabels = currentEditingDefaultSchedule.days.slice().sort(function(a, b) { return a - b; }).map(function(d) { return DAY_NAMES[d]; }).join('・');
+                defSchedEditorBadge.textContent = dayLabels;
+            } else {
+                defSchedEditorBadge.textContent = '全日共通';
+            }
+        }
+        if (defSchedEditorCount) {
+            defSchedEditorCount.textContent = (currentEditingDefaultSchedule.items.length) + '件の予定';
+        }
+    }
+
+    notifyModalState(true);
+    renderPuzzle();
+}
+
+function cancelDefaultScheduleEditor() {
+    if (!isEditingDefaultSchedule) return;
+    if (currentEditingDefaultSchedule && currentEditingDefaultSchedule.items.length > 0) {
+        if (!confirm('編集中の内容を破棄して終了しますか？')) {
+            return;
+        }
+    }
+    exitDefaultScheduleEditor();
+}
+
+function saveDefaultScheduleEditor() {
+    if (!isEditingDefaultSchedule || !currentEditingDefaultSchedule) return;
+    if (!currentEditingDefaultSchedule.items || currentEditingDefaultSchedule.items.length === 0) {
+        alert('予定が1件もありません。ピースを選んでタイムラインをタップするか、空き時間をタップして予定を作成してください。');
+        return;
+    }
+
+    const cleanData = currentEditingDefaultSchedule.items.map(function(p) {
+        const primaryName = (p.items && p.items.length > 0) ? p.items[0].name : (p.activity_name || '活動');
+        return {
+            start: p.start,
+            end: p.end,
+            category: p.category || getCategoryByActivityName(primaryName),
+            items: (p.items || [{ name: primaryName, percent: 100 }]).map(function(i) {
+                return {
+                    name: i.name || '',
+                    percent: (i.percent !== undefined) ? i.percent : 100,
+                    weight: i.weight
+                };
+            }),
+            memo: p.memo || ''
+        };
+    });
+
+    if (currentEditingDefaultSchedule.id) {
+        const target = defaultSchedules.find(function(s) { return s.id === currentEditingDefaultSchedule.id; });
+        if (target) {
+            target.name = currentEditingDefaultSchedule.name;
+            target.days = currentEditingDefaultSchedule.days;
+            target.data = cleanData;
+            target.updatedAt = Date.now();
+        }
+    } else {
+        const newSched = {
+            id: Date.now(),
+            name: currentEditingDefaultSchedule.name,
+            days: currentEditingDefaultSchedule.days,
+            data: cleanData,
+            updatedAt: Date.now()
+        };
+        defaultSchedules.push(newSched);
+    }
+
+    saveDefaultSchedules();
+    alert('デフォルトスケジュール「' + currentEditingDefaultSchedule.name + '」を保存しました！');
+
+    exitDefaultScheduleEditor();
+}
+
+function exitDefaultScheduleEditor() {
+    isEditingDefaultSchedule = false;
+    currentEditingDefaultSchedule = null;
+
+    const puzzleHeader = document.querySelector('.puzzle-header');
+    if (puzzleHeader) puzzleHeader.style.display = 'flex';
+    if (defSchedEditorBar) defSchedEditorBar.style.display = 'none';
+
+    notifyModalState(false);
+    updateDefaultSchedBanner();
+    renderPuzzle();
+}
+
 function renderDefaultScheduleList() {
     if (!defSchedListContainer) return;
     defSchedListContainer.innerHTML = '';
@@ -2896,10 +3066,19 @@ function renderDefaultScheduleList() {
                 '</div>' +
                 '<button type="button" class="btn btn-secondary" style="width: auto; padding: 3px 8px; font-size: 0.74rem; color: var(--error-color); border-color: rgba(239, 68, 68, 0.4); margin-bottom: 0;" data-del-id="' + sched.id + '">削除</button>' +
             '</div>' +
-            '<div style="display: flex; gap: 6px; margin-top: 6px;">' +
-                '<button type="button" class="btn btn-secondary" style="flex: 1; padding: 5px 8px; font-size: 0.76rem; border-color: #8b5cf6; color: #c4b5fd; margin-bottom: 0;" data-apply-id="' + sched.id + '">⚡ 今日の予定に適用</button>' +
-                '<button type="button" class="btn btn-secondary" style="width: auto; padding: 5px 10px; font-size: 0.76rem; margin-bottom: 0;" data-edit-days-id="' + sched.id + '">曜日変更</button>' +
+            '<div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">' +
+                '<button type="button" class="btn btn-primary" style="flex: 1; padding: 6px 10px; font-size: 0.78rem; background: #8b5cf6; border-color: #a78bfa; margin-bottom: 0;" data-edit-timeline-id="' + sched.id + '">✏️ 予定を編集</button>' +
+                '<button type="button" class="btn btn-secondary" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; border-color: #8b5cf6; color: #c4b5fd; margin-bottom: 0;" data-apply-id="' + sched.id + '">⚡ 今日の予定に適用</button>' +
+                '<button type="button" class="btn btn-secondary" style="width: auto; padding: 6px 10px; font-size: 0.78rem; margin-bottom: 0;" data-edit-days-id="' + sched.id + '">曜日変更</button>' +
             '</div>';
+
+        // タイムライン編集ボタン
+        const editTimelineBtn = card.querySelector('[data-edit-timeline-id]');
+        if (editTimelineBtn) {
+            editTimelineBtn.onclick = function() {
+                startDefaultScheduleEditor(sched);
+            };
+        }
 
         // 削除ボタン
         const delBtn = card.querySelector('[data-del-id]');
@@ -3090,6 +3269,17 @@ function initDefaultScheduleUI() {
             }
             saveNewDefaultScheduleFromPlans(currentPlans);
         };
+    }
+    if (startDefSchedEditorBtn) {
+        startDefSchedEditorBtn.onclick = function() {
+            startDefaultScheduleEditor(null);
+        };
+    }
+    if (defSchedEditorSaveBtn) {
+        defSchedEditorSaveBtn.onclick = saveDefaultScheduleEditor;
+    }
+    if (defSchedEditorCancelBtn) {
+        defSchedEditorCancelBtn.onclick = cancelDefaultScheduleEditor;
     }
     if (tmplSaveAsDefaultBtn) {
         tmplSaveAsDefaultBtn.addEventListener('click', function() {
@@ -5350,10 +5540,10 @@ function handlePuzzleSlotClick(e, hour) {
     const rawMinute = (hour * 60) + Math.round(clickOffsetY);
 
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
-    const isPlan = (currentInputMode === 'plan');
-    const currentList = isPlan
-        ? plans.filter(function(p) { return p.date === selectedDate; })
-        : logs.filter(function(l) { return l.date === selectedDate; });
+    const isPlan = isEditingDefaultSchedule ? true : (currentInputMode === 'plan');
+    const currentList = isEditingDefaultSchedule
+        ? (currentEditingDefaultSchedule ? currentEditingDefaultSchedule.items : [])
+        : (isPlan ? plans.filter(function(p) { return p.date === selectedDate; }) : logs.filter(function(l) { return l.date === selectedDate; }));
 
     if (!selectedPuzzlePiece) {
         // パレット未選択時は、タップした時間帯をセットして新規記録ボトムシートを開く
@@ -5375,14 +5565,16 @@ function handlePuzzleSlotClick(e, hour) {
 
     const newEntry = {
         id: Date.now() + Math.floor(Math.random() * 1000),
-        date: selectedDate,
+        date: isEditingDefaultSchedule ? 'default_template' : selectedDate,
         start: startStr,
         end: endStr,
         items: [{ name: selectedPuzzlePiece.name, percent: 100 }],
         memo: ""
     };
 
-    if (isPlan) {
+    if (isEditingDefaultSchedule && currentEditingDefaultSchedule) {
+        currentEditingDefaultSchedule.items.push(newEntry);
+    } else if (isPlan) {
         plans.push(newEntry);
         savePlans();
         renderPlans();
@@ -5394,7 +5586,7 @@ function handlePuzzleSlotClick(e, hour) {
 
     clearSelectedPuzzlePiece();
 
-    renderSummary();
+    if (!isEditingDefaultSchedule) renderSummary();
     renderPuzzle();
 }
 
@@ -5778,21 +5970,30 @@ function renderPuzzle() {
 
     blocksLayer.innerHTML = '';
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
-    const isPlan = (currentInputMode === 'plan');
+    let isPlan = (currentInputMode === 'plan');
+    let currentList = [];
 
-    const badge = document.getElementById('puzzle-current-mode-badge');
-    const switchModeBtn = document.getElementById('puzzle-switch-mode-btn');
-    if (badge) {
-        badge.className = 'puzzle-mode-badge ' + (isPlan ? 'puzzle-mode-plan' : 'puzzle-mode-actual');
-        badge.textContent = isPlan ? '📅 予定' : '⏱ 実績';
-    }
-    if (switchModeBtn) {
-        switchModeBtn.textContent = isPlan ? '実績に切替' : '予定に切替';
-    }
+    if (isEditingDefaultSchedule && currentEditingDefaultSchedule) {
+        isPlan = true;
+        currentList = currentEditingDefaultSchedule.items;
+        if (defSchedEditorCount) {
+            defSchedEditorCount.textContent = currentList.length + '件の予定';
+        }
+    } else {
+        const badge = document.getElementById('puzzle-current-mode-badge');
+        const switchModeBtn = document.getElementById('puzzle-switch-mode-btn');
+        if (badge) {
+            badge.className = 'puzzle-mode-badge ' + (isPlan ? 'puzzle-mode-plan' : 'puzzle-mode-actual');
+            badge.textContent = isPlan ? '📅 予定' : '⏱ 実績';
+        }
+        if (switchModeBtn) {
+            switchModeBtn.textContent = isPlan ? '実績に切替' : '予定に切替';
+        }
 
-    const currentList = isPlan
-        ? plans.filter(function(p) { return p.date === selectedDate; })
-        : logs.filter(function(l) { return l.date === selectedDate; });
+        currentList = isPlan
+            ? plans.filter(function(p) { return p.date === selectedDate; })
+            : logs.filter(function(l) { return l.date === selectedDate; });
+    }
 
     let investMinutes = 0;
     let maintainMinutes = 0;
@@ -5852,6 +6053,11 @@ function renderPuzzle() {
         if (delBtn) {
             delBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
+                if (isEditingDefaultSchedule && currentEditingDefaultSchedule) {
+                    currentEditingDefaultSchedule.items = currentEditingDefaultSchedule.items.filter(function(p) { return p.id !== item.id; });
+                    renderPuzzle();
+                    return;
+                }
                 const gid = item.crossDayGroupId;
                 if (isPlan) {
                     if (gid) plans = plans.filter(function(p) { return p.crossDayGroupId !== gid && p.id !== item.id; });
@@ -5874,7 +6080,7 @@ function renderPuzzle() {
     });
 
     // 実績モードかつ予定ガイドが有効な場合、未反映の予定を半透明（ゴースト）ブロックとして描画
-    if (!isPlan && showPlanGhostsInActual) {
+    if (!isEditingDefaultSchedule && !isPlan && showPlanGhostsInActual) {
         const dayPlans = plans.filter(function(p) { return p.date === selectedDate; });
         const dayLogs = logs.filter(function(l) { return l.date === selectedDate; });
 
@@ -6278,6 +6484,34 @@ function handleBottomSheetSave() {
     const targetIsPlan = (bsCurrentMode === 'plan');
     const fullSpan = startVal + ' - ' + endVal;
 
+    if (isEditingDefaultSchedule && currentEditingDefaultSchedule) {
+        if (isBottomSheetNewRecord) {
+            const newEntry = {
+                id: Date.now() + Math.floor(Math.random() * 1000),
+                date: 'default_template',
+                start: startVal,
+                end: endVal,
+                items: items,
+                memo: memoVal
+            };
+            currentEditingDefaultSchedule.items.push(newEntry);
+        } else if (currentEditingTimelineItem) {
+            const target = currentEditingDefaultSchedule.items.find(function(p) { return p.id === currentEditingTimelineItem.id; });
+            if (target) {
+                target.start = startVal;
+                target.end = endVal;
+                target.items = items;
+                target.memo = memoVal;
+            }
+        }
+        renderPuzzle();
+        closeTimelineBottomSheet();
+        if (isBottomSheetNewRecord) {
+            clearSelectedPuzzlePiece();
+        }
+        return;
+    }
+
     if (isBottomSheetNewRecord) {
         if (isCrossDay) {
             const nextDate = getNextDateString(selectedDate);
@@ -6422,6 +6656,15 @@ function handleBottomSheetSave() {
 function handleBottomSheetDelete() {
     if (!currentEditingTimelineItem) return;
     if (!confirm('この活動記録を削除しますか？')) return;
+
+    if (isEditingDefaultSchedule && currentEditingDefaultSchedule) {
+        currentEditingDefaultSchedule.items = currentEditingDefaultSchedule.items.filter(function(p) {
+            return p.id !== currentEditingTimelineItem.id;
+        });
+        renderPuzzle();
+        closeTimelineBottomSheet();
+        return;
+    }
 
     const delItem = currentEditingTimelineItem;
     const delId = delItem.id;
@@ -6611,6 +6854,11 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
             const finalEndMins = finalTop + duration;
             item.end = (finalEndMins >= 1440) ? '24:00' : minsToTime(finalEndMins);
 
+            if (isEditingDefaultSchedule) {
+                renderPuzzle();
+                return;
+            }
+
             if (isPlan) {
                 savePlans();
                 renderPlans();
@@ -6669,6 +6917,11 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
 
                 const finalHeight = parseInt(element.style.height, 10) || 20;
                 item.end = (startMins + finalHeight >= 1440) ? '24:00' : minsToTime(startMins + finalHeight);
+
+                if (isEditingDefaultSchedule) {
+                    renderPuzzle();
+                    return;
+                }
 
                 if (isPlan) {
                     savePlans();
