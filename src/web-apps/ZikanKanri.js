@@ -5389,6 +5389,8 @@ function handlePuzzleSlotClick(e, hour) {
         renderLogs();
     }
 
+    clearSelectedPuzzlePiece();
+
     renderSummary();
     renderPuzzle();
 }
@@ -6353,6 +6355,9 @@ function handleBottomSheetSave() {
     renderSummary();
     renderPuzzle();
     closeTimelineBottomSheet();
+    if (isBottomSheetNewRecord) {
+        clearSelectedPuzzlePiece();
+    }
 }
 
 function handleBottomSheetDelete() {
