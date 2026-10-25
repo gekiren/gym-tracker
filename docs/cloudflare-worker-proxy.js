@@ -82,9 +82,137 @@ export default {
     try {
       const isNutritionImageEndpoint = url.pathname.endsWith("/nutrition-image");
       const isNutritionTextEndpoint = url.pathname.endsWith("/nutrition");
+      const isAccountSyncEndpoint = url.pathname.endsWith("/account/sync");
 
       // 2. Parse Incoming Payload
       const payload = await request.json();
+
+      // ─── 0. 共通Googleアカウント認証・ステータス同期 (/api/account/sync) ───
+      if (isAccountSyncEndpoint) {
+        const { idToken, appId = "trenote", localStatus = {} } = payload;
+        if (!idToken) {
+          return new Response(JSON.stringify({ success: false, error: "Missing idToken" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+          });
+        }
+
+        const expectedClientId = env.GOOGLE_WEB_CLIENT_ID || "964579885772-vj0lkavaarut3ulbli9g2m50igc8kr5c.apps.googleusercontent.com";
+        const verifyUrl = `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`;
+        const verifyRes = await fetchWithTimeout(verifyUrl, { method: "GET" }, 6000);
+
+        if (!verifyRes.ok) {
+          return new Response(JSON.stringify({ success: false, error: "Invalid Google ID Token" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+          });
+        }
+
+        const tokenInfo = await verifyRes.json();
+        if (!tokenInfo.sub || (expectedClientId && tokenInfo.aud !== expectedClientId)) {
+          return new Response(JSON.stringify({ success: false, error: "Token audience mismatch" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+          });
+        }
+
+        const userProfile = {
+          id: tokenInfo.sub,
+          email: tokenInfo.email || "",
+          name: tokenInfo.name || tokenInfo.given_name || null,
+          photoUrl: tokenInfo.picture || null,
+        };
+
+        const nowIso = new Date().toISOString();
+        const kvStore = env.USER_ACCOUNT_KV || env.AI_LIMIT_KV;
+        const kvKey = `user_account:${tokenInfo.sub}`;
+
+        let accountRecord = {
+          userId: tokenInfo.sub,
+          email: userProfile.email,
+          displayName: userProfile.name,
+          photoUrl: userProfile.photoUrl,
+          createdAt: nowIso,
+          updatedAt: nowIso,
+          isGlobalVip: false,
+          apps: {}
+        };
+
+        if (kvStore) {
+          try {
+            const rawExisting = await kvStore.get(kvKey);
+            if (rawExisting) {
+              const parsed = JSON.parse(rawExisting);
+              accountRecord = {
+                ...accountRecord,
+                ...parsed,
+                email: userProfile.email || parsed.email,
+                displayName: userProfile.name || parsed.displayName,
+                photoUrl: userProfile.photoUrl || parsed.photoUrl,
+                updatedAt: nowIso,
+                apps: parsed.apps || {}
+              };
+            }
+          } catch (kvErr) {
+            console.error("Failed to read account KV:", kvErr);
+          }
+        }
+
+        const remoteAppStatus = accountRecord.apps[appId] || {};
+        const isEarlyAdopter = Boolean(localStatus.isEarlyAdopter || remoteAppStatus.isEarlyAdopter);
+
+        let premiumUntil = "";
+        const localUntil = localStatus.premiumUntil || "";
+        const remoteUntil = remoteAppStatus.premiumUntil || "";
+
+        if (accountRecord.isGlobalVip || localUntil === "perpetual" || remoteUntil === "perpetual") {
+          premiumUntil = "perpetual";
+        } else {
+          const localTime = localUntil ? Date.parse(localUntil) : NaN;
+          const remoteTime = remoteUntil ? Date.parse(remoteUntil) : NaN;
+          const validLocal = !isNaN(localTime) ? localTime : 0;
+          const validRemote = !isNaN(remoteTime) ? remoteTime : 0;
+          if (validLocal > 0 && validLocal >= validRemote) {
+            premiumUntil = localUntil;
+          } else if (validRemote > 0) {
+            premiumUntil = remoteUntil;
+          }
+        }
+
+        const isEntitled = isEarlyAdopter || premiumUntil === "perpetual" || (premiumUntil !== "" && Date.parse(premiumUntil) > Date.now());
+        const aiTokensBalance = Math.max(
+          Number(localStatus.aiTokensBalance) || 0,
+          Number(remoteAppStatus.aiTokensBalance) || 0,
+          isEntitled ? 20 : 0
+        );
+
+        const mergedAppStatus = {
+          isEarlyAdopter,
+          premiumUntil,
+          aiTokensBalance,
+          updatedAt: nowIso
+        };
+
+        accountRecord.apps[appId] = mergedAppStatus;
+
+        if (kvStore) {
+          try {
+            await kvStore.put(kvKey, JSON.stringify(accountRecord));
+          } catch (kvPutErr) {
+            console.error("Failed to write account KV:", kvPutErr);
+          }
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          user: userProfile,
+          appStatus: mergedAppStatus,
+          isGlobalVip: Boolean(accountRecord.isGlobalVip)
+        }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
       const { message, image, imageBase64, textInput, workout_history, user_weight, weight_unit, language, ocrHintText, userMemo } = payload;
       const rawImageData = image || imageBase64;
       const reqPreferredModel = payload.preferredModel || payload.preferred_model || '';
