@@ -15,6 +15,7 @@ import { CURRENT_OTA_CONFIG } from '../config/otaUpdateConfig';
 import { syncLifelogToObsidian } from './obsidianService';
 import { syncHealthData } from './healthService';
 import { initCalendarSync } from './calendarService';
+import { initGoogleAuthOnStartup } from './accountSyncService';
 import { Alert, Linking } from 'react-native';
 import { router } from 'expo-router';
 
@@ -215,6 +216,9 @@ export async function initSubscriptionAndTokens(storedSettings: Record<string, s
       }
     }
   }
+
+  // Googleアカウント連携情報の復元とバックグラウンド同期トリガー
+  await initGoogleAuthOnStartup(storedSettings);
 
   return {
     finalPremiumUntil,

@@ -130,7 +130,8 @@
         }
       ],
       "expo-localization",
-      "expo-calendar"
+      "expo-calendar",
+      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "typedRoutes": true,
