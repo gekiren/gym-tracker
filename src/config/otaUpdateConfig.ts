@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.24',
+  version: '2.3.25',
   title: {
-    ja: '🔐 Googleアカウント連携（共通ID）＆ デフォルトスケジュール編集機能',
-    en: '🔐 Google Account Link (Common ID) & Default Schedule Editor',
+    ja: '📊 グラフ指標の選択保持 ＆ 種目履歴での推定1RM表示',
+    en: '📊 Graph Metric Persistence & 1RM Display in History',
   },
   notes: {
     ja: [
-      '設定 ＞「プラン & アプリ情報」に Googleアカウント連携（共通ID）機能を追加しました。機種変更時のプラン・特典状態の自動引き継ぎや、関連アプリ間でのステータス連動が可能になります。',
-      'デフォルトスケジュール（平日ルーティン・休日等）を、専用のタイムラインエディターで直接新規作成・再編集できるように刷新しました。',
+      '種目詳細および全体履歴のグラフにおいて、最後に選択した指標（推定1RMやセット数など）が次回以降も自動で初期表示されるようになりました。',
+      '種目詳細の「過去の履歴」テーブル各セットに、推定1RM（最大挙上可能重量）が表示されるようになりました（設定で非表示にすることも可能）。',
     ],
     en: [
-      'Added Google Account Link (Common ID) under Settings > Plan & App Info, enabling automatic plan/perk recovery across devices and companion apps.',
-      'Revamped default schedule creation to allow building and editing routines directly on a dedicated timeline editor.',
+      'The last selected chart metric (e.g. Estimated 1RM, Sets) in exercise detail and history is now remembered and shown by default.',
+      'Estimated 1RM is now displayed for each set in the exercise history table (can be toggled in settings).',
     ],
   },
 };
