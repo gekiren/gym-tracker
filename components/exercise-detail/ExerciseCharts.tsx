@@ -6,6 +6,7 @@ import { LineChart } from 'react-native-chart-kit';
 import { format, startOfWeek, startOfMonth } from 'date-fns';
 import { Theme } from '../../src/theme';
 import { calculateRM } from '../../src/utils/workoutStats';
+import { useSettingsStore } from '../../src/store/settingsStore';
 
 export type ExerciseChartMetric = 'volume' | '1rm' | 'sets' | 'avg_volume_per_set' | 'density';
 
@@ -70,7 +71,15 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
   t,
 }) => {
   const chartScrollRef = useRef<ScrollView>(null);
-  const [chartMetric, setChartMetric] = useState<ExerciseChartMetric>('volume');
+  const savedMetric = useSettingsStore(state => state.settings.lastExerciseChartMetric);
+  const setLastExerciseChartMetric = useSettingsStore(state => state.setLastExerciseChartMetric);
+  const [chartMetric, setChartMetric] = useState<ExerciseChartMetric>(savedMetric || 'volume');
+
+  useEffect(() => {
+    if (savedMetric && savedMetric !== chartMetric) {
+      setChartMetric(savedMetric);
+    }
+  }, [savedMetric]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isMetricModalVisible, setMetricModalVisible] = useState(false);
 
@@ -561,6 +570,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
                   style={[styles.metricOptionItem, isSelected && styles.metricOptionItemActive]}
                   onPress={() => {
                     setChartMetric(option.id);
+                    setLastExerciseChartMetric(option.id);
                     setMetricModalVisible(false);
                   }}
                   activeOpacity={0.7}

@@ -3,6 +3,8 @@ import { saveSetting } from '../db/database';
 import { computeIsPremium } from '../utils/subscriptionUtils';
 
 export type FeatureId = 'workout' | 'water' | 'nutrition' | 'zikan' | 'routine' | 'habit' | 'body' | 'voice_ai';
+export type ExerciseChartMetric = 'volume' | '1rm' | 'sets' | 'avg_volume_per_set' | 'density';
+export type WorkoutHistoryChartMetric = 'volume' | 'calories' | 'sets' | 'avg_volume_per_set' | 'density';
 
 export interface ApplicationSettings {
   defaultRest: number;
@@ -35,6 +37,8 @@ export interface ApplicationSettings {
   featureOrder: FeatureId[];
   featureVisibility: Record<FeatureId, boolean>;
   aiCompanionMemory: string;
+  lastExerciseChartMetric: ExerciseChartMetric;
+  lastHistoryChartMetric: WorkoutHistoryChartMetric;
 }
 
 export interface LoadSettingsPayload {
@@ -60,6 +64,8 @@ export interface LoadSettingsPayload {
   featureOrder?: FeatureId[];
   featureVisibility?: Record<FeatureId, boolean>;
   aiCompanionMemory?: string;
+  lastExerciseChartMetric?: ExerciseChartMetric;
+  lastHistoryChartMetric?: WorkoutHistoryChartMetric;
 }
 
 export interface SettingsState {
@@ -85,6 +91,8 @@ export interface SettingsState {
   setDisplayFields: (fields: Partial<{ showRpe: boolean; show1RM: boolean; showVolume: boolean; showStance: boolean }>) => void;
   setCrashConsent: (consent: 'agreed' | 'declined' | 'unset') => void;
   setAiCompanionMemory: (memory: string) => Promise<void>;
+  setLastExerciseChartMetric: (metric: ExerciseChartMetric) => void;
+  setLastHistoryChartMetric: (metric: WorkoutHistoryChartMetric) => void;
   resetSettings: () => void;
 }
 
@@ -128,6 +136,8 @@ export const initialSettings: ApplicationSettings = {
     voice_ai: true,
   },
   aiCompanionMemory: '',
+  lastExerciseChartMetric: 'volume',
+  lastHistoryChartMetric: 'volume',
 };
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -157,6 +167,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       featureOrder,
       featureVisibility,
       aiCompanionMemory,
+      lastExerciseChartMetric,
+      lastHistoryChartMetric,
     } = payload;
     const finalIndividualRestEnabled = individualRestEnabled !== undefined ? individualRestEnabled : state.settings.individualRestEnabled;
     const finalTimerNotification = timerNotification !== undefined ? timerNotification : state.settings.timerNotification;
@@ -176,6 +188,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const finalFeatureOrder = featureOrder !== undefined ? featureOrder : state.settings.featureOrder;
     const finalFeatureVisibility = featureVisibility !== undefined ? featureVisibility : state.settings.featureVisibility;
     const finalAiCompanionMemory = aiCompanionMemory !== undefined ? aiCompanionMemory : state.settings.aiCompanionMemory;
+    const finalLastExerciseChartMetric = lastExerciseChartMetric !== undefined ? lastExerciseChartMetric : state.settings.lastExerciseChartMetric;
+    const finalLastHistoryChartMetric = lastHistoryChartMetric !== undefined ? lastHistoryChartMetric : state.settings.lastHistoryChartMetric;
 
     const isPremium = computeIsPremium(finalPremiumUntil, finalIsEarlyAdopter);
     return {
@@ -203,6 +217,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         featureOrder: finalFeatureOrder,
         featureVisibility: finalFeatureVisibility,
         aiCompanionMemory: finalAiCompanionMemory,
+        lastExerciseChartMetric: finalLastExerciseChartMetric,
+        lastHistoryChartMetric: finalLastHistoryChartMetric,
       }
     };
   }),
@@ -317,6 +333,21 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       settings: { ...state.settings, aiCompanionMemory: memory }
     }));
   },
+
+  setLastExerciseChartMetric: (metric: ExerciseChartMetric) => {
+    saveSetting('last_exercise_chart_metric', metric).catch(e => console.warn('Failed to save last_exercise_chart_metric', e));
+    set((state) => ({
+      settings: { ...state.settings, lastExerciseChartMetric: metric }
+    }));
+  },
+
+  setLastHistoryChartMetric: (metric: WorkoutHistoryChartMetric) => {
+    saveSetting('last_history_chart_metric', metric).catch(e => console.warn('Failed to save last_history_chart_metric', e));
+    set((state) => ({
+      settings: { ...state.settings, lastHistoryChartMetric: metric }
+    }));
+  },
+
 
   resetSettings: () => set({
     settings: {

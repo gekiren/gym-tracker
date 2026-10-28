@@ -1,10 +1,11 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { router } from 'expo-router';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { format, startOfWeek, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { Theme } from '../../src/theme';
 import { AI_CONFIG } from '../../src/config/aiConfig';
+import { useSettingsStore } from '../../src/store/settingsStore';
 import { HistoryChart, ChartMetric } from './HistoryChart';
 
 interface HistoryWorkoutsTabProps {
@@ -37,7 +38,20 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
   const [highlightedWorkoutId, setHighlightedWorkoutId] = useState<number | null>(null);
 
   const [chartScale, setChartScale] = useState<'day' | 'week' | 'month' | 'year'>('day');
-  const [chartMetric, setChartMetric] = useState<ChartMetric>('volume');
+  const savedMetric = useSettingsStore(state => state.settings.lastHistoryChartMetric);
+  const setLastHistoryChartMetric = useSettingsStore(state => state.setLastHistoryChartMetric);
+  const [chartMetric, setChartMetric] = useState<ChartMetric>(savedMetric || 'volume');
+
+  useEffect(() => {
+    if (savedMetric && savedMetric !== chartMetric) {
+      setChartMetric(savedMetric);
+    }
+  }, [savedMetric]);
+
+  const handleSetChartMetric = (metric: ChartMetric) => {
+    setChartMetric(metric);
+    setLastHistoryChartMetric(metric);
+  };
 
   // Calendar Helpers (Memoized)
   const calendarDays = useMemo(() => {
@@ -300,7 +314,7 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
               chartScale={chartScale}
               setChartScale={setChartScale}
               chartMetric={chartMetric}
-              setChartMetric={setChartMetric}
+              setChartMetric={handleSetChartMetric}
               weightUnit={settings.weightUnit}
               setCalendarVisible={setCalendarVisible}
               t={t}

@@ -122,6 +122,8 @@ export default function RootLayout() {
 
       const timerNotification = storedSettings['timer_notification'] !== '0';
       const aiCompanionMemory = storedSettings['ai_companion_memory'] || '';
+      const lastExerciseChartMetric = storedSettings['last_exercise_chart_metric'] as any;
+      const lastHistoryChartMetric = storedSettings['last_history_chart_metric'] as any;
 
       // 5. ストアへの設定ロード
       useSettingsStore.getState().loadSettings({
@@ -147,6 +149,8 @@ export default function RootLayout() {
         featureOrder,
         featureVisibility,
         aiCompanionMemory,
+        lastExerciseChartMetric,
+        lastHistoryChartMetric,
       });
       if (expired) {
         useWorkoutStore.getState().setShouldShowPaywall(true);

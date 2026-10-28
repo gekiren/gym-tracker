@@ -20,6 +20,7 @@ import { StanceManagement } from '../../components/exercise-detail/StanceManagem
 import { RestTimerManagement } from '../../components/exercise-detail/RestTimerManagement';
 import { ExerciseCharts } from '../../components/exercise-detail/ExerciseCharts';
 import { isTreadmillExercise } from '../../src/utils/exerciseUtils';
+import { calculateRM } from '../../src/utils/workoutStats';
 
 const INITIAL_PAGE_SIZE = 20;
 
@@ -340,20 +341,33 @@ export default function ExerciseDetailScreen() {
                     if (s.rest_seconds != null && s.rest_seconds > 0) timeStr += `☕ ${fmtTime(s.rest_seconds)}`;
                     timeStr = timeStr.trim();
                     const isTreadmill = isTreadmillExercise(exercise?.name);
+                    const parsedWeight = parseFloat(s.weight);
+                    const parsedReps = parseInt(s.reps, 10);
+                    const oneRm = !isTreadmill && !isNaN(parsedWeight) && !isNaN(parsedReps) && parsedWeight > 0 && parsedReps > 0
+                      ? calculateRM(parsedWeight, parsedReps)
+                      : null;
+                    const show1RM = settings.displayFields?.show1RM !== false;
                     return (
                       <View key={idx} style={{ paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
                         <View style={[styles.setRow, { paddingVertical: 0 }]}>
                           <Text style={styles.tdSet}>{s.set_number}</Text>
                           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
                             {isTreadmill ? (
-                              <Text style={styles.tdVal}>
+                              <Text style={styles.tdValText}>
                                 {s.speed != null ? `${s.speed} km/h` : '-'}
                                 {s.incline != null ? ` (傾斜 ${s.incline}%)` : ''}
                               </Text>
                             ) : (
-                              <Text style={styles.tdVal}>
-                                {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps}${t('ui.common.reps_unit')}` : '-'}
-                              </Text>
+                              <>
+                                <Text style={styles.tdValText}>
+                                  {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps}${t('ui.common.reps_unit')}` : '-'}
+                                </Text>
+                                {show1RM && oneRm != null && (
+                                  <View style={styles.oneRmBadge}>
+                                    <Text style={styles.oneRmText}>1RM: {oneRm}{settings.weightUnit}</Text>
+                                  </View>
+                                )}
+                              </>
                             )}
                             {(s.stance || s.variation) && <View style={styles.historyVariationBadge}><Text style={styles.historyVariationText}>{translateStance(s.stance || s.variation)}</Text></View>}
                           </View>
@@ -437,6 +451,21 @@ const styles = StyleSheet.create({
   setRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
   tdSet: { width: 50, color: Theme.colors.text, fontSize: 16, fontWeight: '500' },
   tdVal: { flex: 1, color: Theme.colors.text, fontSize: 16 },
+  tdValText: { color: Theme.colors.text, fontSize: 16 },
+  oneRmBadge: {
+    backgroundColor: 'rgba(245, 166, 35, 0.12)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 166, 35, 0.25)',
+  },
+  oneRmText: {
+    color: '#f5a623',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
   tdRpe: { color: Theme.colors.textMuted, fontSize: 13, fontStyle: 'italic' },
   exportBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(79, 172, 254, 0.1)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.2)' },
   exportBtnText: { color: Theme.colors.primary, fontSize: 12, fontWeight: 'bold' },
