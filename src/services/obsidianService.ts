@@ -202,6 +202,19 @@ export const getOrCreateSubfolderUri = async (
 };
 
 /**
+ * Vaultルート配下のベース親フォルダ（デフォルト: TreNote）のURIを取得、無ければ自動作成して返す
+ * vaultFolderName が空文字列または未設定の場合は Vault ルートURIをそのまま返す
+ */
+export const getBaseFolderUri = async (settings: ObsidianSettings): Promise<string> => {
+  if (!settings.vaultUri) return '';
+  const folderName = (settings.vaultFolderName ?? 'TreNote').trim();
+  if (!folderName) {
+    return settings.vaultUri;
+  }
+  return await getOrCreateSubfolderUri(settings.vaultUri, folderName);
+};
+
+/**
  * ディレクトリ内にファイルを書き出し・追記する内部ヘルパー (失敗時のフォールバック保護機能付き)
  */
 const writeOrAppendFileToVault = async (
@@ -416,10 +429,11 @@ export const exportWorkoutToObsidian = async (workoutId: number): Promise<boolea
     let success = false;
 
     // 保存先フォルダURIの解決
-    const workoutsFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderWorkouts);
-    const exercisesFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderExercises);
-    const routinesFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderRoutines);
-    const dailyFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderDaily);
+    const baseUri = await getBaseFolderUri(settings);
+    const workoutsFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderWorkouts);
+    const exercisesFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderExercises);
+    const routinesFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderRoutines);
+    const dailyFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderDaily);
 
     // 1. 個別筋トレノートのエクスポート (exportWorkouts が true かつ append 以外)
     if (settings.exportWorkouts && settings.exportMode !== 'append') {
@@ -491,10 +505,11 @@ export const syncLifelogToObsidian = async (force: boolean = false): Promise<boo
   try {
     const dayData = await fetchDayLifelogData(todayStr, settings);
 
-    const waterFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderWater);
-    const timeFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderTime);
-    const habitsFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderHabits);
-    const dailyFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderDaily);
+    const baseUri = await getBaseFolderUri(settings);
+    const waterFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderWater);
+    const timeFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderTime);
+    const habitsFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderHabits);
+    const dailyFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderDaily);
 
     let hasAnyData = false;
 
@@ -606,13 +621,14 @@ export const exportAllDataToObsidian = async (): Promise<ObsidianExportResult> =
   const conn = getDB();
   const datesSet = new Set<string>();
 
-  const workoutsFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderWorkouts);
-  const exercisesFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderExercises);
-  const waterFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderWater);
-  const timeFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderTime);
-  const habitsFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderHabits);
-  const routinesFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderRoutines);
-  const dailyFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, settings.folderDaily);
+  const baseUri = await getBaseFolderUri(settings);
+  const workoutsFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderWorkouts);
+  const exercisesFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderExercises);
+  const waterFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderWater);
+  const timeFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderTime);
+  const habitsFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderHabits);
+  const routinesFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderRoutines);
+  const dailyFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderDaily);
 
   if (settings.exportWorkouts) {
     const rows = await conn.getAllAsync<{ start_time: string }>('SELECT start_time FROM workouts WHERE start_time IS NOT NULL');
@@ -867,8 +883,9 @@ export const exportHealthDataToObsidian = async (
   }
 
   try {
+    const baseUri = await getBaseFolderUri(settings);
     const targetFolder = subFolderOverride || settings.folderHealth;
-    const healthFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, targetFolder);
+    const healthFolderUri = await getOrCreateSubfolderUri(baseUri, targetFolder);
     const dateStr = healthData.date;
     const fileName = `${dateStr}_health.md`;
 
@@ -915,8 +932,9 @@ export const exportBodyCompositionToObsidian = async (
   }
 
   try {
+    const baseUri = await getBaseFolderUri(settings);
     const targetFolder = subFolderOverride || settings.folderDaily;
-    const dailyFolderUri = await getOrCreateSubfolderUri(settings.vaultUri, targetFolder);
+    const dailyFolderUri = await getOrCreateSubfolderUri(baseUri, targetFolder);
     const dateStr = log.date;
     const fileName = settings.exportMode === 'append' ? `${dateStr}.md` : `TreNote_${dateStr}.md`;
 
