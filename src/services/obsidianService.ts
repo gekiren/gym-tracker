@@ -160,14 +160,12 @@ const getBasenameFromUri = (uri: string): string => {
     const clean = decoded.split('?')[0];
     const trimmed = clean.endsWith('/') ? clean.slice(0, -1) : clean;
     const lastSlash = trimmed.lastIndexOf('/');
-    if (lastSlash !== -1) {
-      return trimmed.substring(lastSlash + 1);
-    }
-    const lastColon = trimmed.lastIndexOf(':');
+    let name = lastSlash !== -1 ? trimmed.substring(lastSlash + 1) : trimmed;
+    const lastColon = name.lastIndexOf(':');
     if (lastColon !== -1) {
-      return trimmed.substring(lastColon + 1);
+      name = name.substring(lastColon + 1);
     }
-    return trimmed;
+    return name;
   } catch (_) {
     return uri;
   }
@@ -188,7 +186,7 @@ export const getOrCreateSubfolderUri = async (
     const files = await FileSystem.StorageAccessFramework.readDirectoryAsync(parentUri);
     for (const fUri of files) {
       const base = getBasenameFromUri(fUri);
-      if (base === cleanName) {
+      if (base.toLowerCase() === cleanName.toLowerCase()) {
         return fUri;
       }
     }
@@ -234,7 +232,7 @@ const writeOrAppendFileToVault = async (
       // 同名ファイルを完全一致で検索
       for (const fUri of files) {
         const base = getBasenameFromUri(fUri);
-        if (base === fileName) {
+        if (base.toLowerCase() === fileName.toLowerCase()) {
           targetFileUri = fUri;
           break;
         }
@@ -897,7 +895,7 @@ export const exportHealthDataToObsidian = async (
 
     for (const fUri of files) {
       const base = getBasenameFromUri(fUri);
-      if (base === fileName) {
+      if (base.toLowerCase() === fileName.toLowerCase()) {
         targetFileUri = fUri;
         break;
       }
@@ -962,7 +960,7 @@ export const exportBodyCompositionToObsidian = async (
 
     for (const fUri of files) {
       const base = getBasenameFromUri(fUri);
-      if (base === fileName) {
+      if (base.toLowerCase() === fileName.toLowerCase()) {
         targetFileUri = fUri;
         break;
       }
