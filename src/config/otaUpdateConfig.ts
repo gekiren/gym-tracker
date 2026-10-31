@@ -11,20 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.25',
+  version: '2.3.26',
   title: {
-    ja: '📊 グラフ指標の選択保持 ＆ 種目履歴での推定1RM表示',
-    en: '📊 Graph Metric Persistence & 1RM Display in History',
+    ja: '📁 Obsidian連携の親フォルダ整理機能の追加',
+    en: '📁 Added Parent Folder Organization for Obsidian Sync',
   },
   notes: {
     ja: [
-      '種目詳細および全体履歴のグラフにおいて、最後に選択した指標（推定1RMやセット数など）が次回以降も自動で初期表示されるようになりました。',
-      '種目詳細の「過去の履歴」テーブル各セットに、推定1RM（最大挙上可能重量）が表示されるようになりました（設定で非表示にすることも可能）。',
+      'Obsidian連携において、Vaultルート直下に各カテゴリフォルダが散らばるのを防ぐため、自動的に「TreNote」親フォルダを作成して配下に整理して出力するようになりました。',
+      '設定画面の「カテゴリ別保存先フォルダ設定」にて、親フォルダ名を自由に変更・指定（空欄でVault直下保存も可能）できるようになりました。',
     ],
     en: [
-      'The last selected chart metric (e.g. Estimated 1RM, Sets) in exercise detail and history is now remembered and shown by default.',
-      'Estimated 1RM is now displayed for each set in the exercise history table (can be toggled in settings).',
+      'Obsidian export now automatically creates a parent folder (default: TreNote) to keep category folders organized.',
+      'You can now customize the parent folder name or leave it blank in the Obsidian settings.',
     ],
   },
 };
-
