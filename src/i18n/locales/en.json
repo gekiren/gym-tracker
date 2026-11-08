@@ -90,6 +90,7 @@
       "header_speed": "km/h",
       "header_incline": "Incline (%)",
       "header_time": "Time",
+      "header_stance_rm": "Stance / 1RM",
       "header_record": "Log",
       "header_weighted": "Weighted",
       "header_seconds": "Seconds",

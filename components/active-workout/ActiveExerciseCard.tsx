@@ -182,7 +182,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
       {/* Table Header */}
       <View style={styles.tableHeader}>
         <Text
-          style={[styles.th, { width: isTreadmillExercise(ex.name) ? 40 : 44 }]}
+          style={[styles.th, { width: isTreadmillExercise(ex.name) ? 40 : ex.muscle_group === '有酸素' ? 44 : 32 }]}
           numberOfLines={1}
           adjustsFontSizeToFit
           minimumFontScale={0.8}
@@ -199,24 +199,29 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
           <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>{t('ui.active_workout.header_time')}</Text>
         ) : (
           <>
-            <Text style={[styles.th, { width: 90, marginHorizontal: 3 }]}>
+            <Text style={[styles.th, { width: 60, marginHorizontal: 2 }]}>
               {ex.name === 'プランク'
                 ? t('ui.active_workout.header_weighted')
                 : ex.equipment === '自重'
                 ? `+ ${settings.weightUnit}`
                 : settings.weightUnit}
             </Text>
-            <Text style={[styles.th, { width: 70, marginHorizontal: 3 }]}>
+            <Text style={[styles.th, { width: 44, marginHorizontal: 2 }]}>
               {ex.name === 'プランク' ? t('ui.active_workout.header_seconds') : t('ui.active_workout.header_reps')}
             </Text>
             {(settings.displayFields?.showRpe || ex.name === 'プランク') && (
-              <Text style={[styles.th, { width: 55, marginHorizontal: 3 }]}>
+              <Text style={[styles.th, { width: 38, marginHorizontal: 2 }]}>
                 {ex.name === 'プランク' ? t('ui.active_workout.header_timer') : t('ui.active_workout.header_rpe')}
+              </Text>
+            )}
+            {(settings.displayFields?.showStance !== false || settings.displayFields?.show1RM !== false) && (
+              <Text style={[styles.th, { flex: 1, textAlign: 'left', paddingLeft: 6, fontSize: 11 }]}>
+                {t('ui.active_workout.header_stance_rm') || 'スタンス / 1RM'}
               </Text>
             )}
           </>
         )}
-        <Text style={[styles.th, { width: 36 }]}>{t('ui.active_workout.header_record')}</Text>
+        <Text style={[styles.th, { width: 30 }]}>{t('ui.active_workout.header_record')}</Text>
       </View>
 
       {/* Set Rows */}

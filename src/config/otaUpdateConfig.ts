@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.27',
+  version: '2.3.28',
   title: {
-    ja: '🔧 Obsidian連携のフォルダ重複（連番生成）バグ修正',
-    en: '🔧 Fix Obsidian Folder Duplicate / Numbering Issue',
+    ja: '✨ セット入力行の1行集約レイアウト最適化',
+    en: '✨ Optimize Set Row Single-Line Compact Layout',
   },
   notes: {
     ja: [
-      'Android SAFのURI仕様および大文字小文字判定の最適化により、一括出力や自動同期時に「TreNote (1)」等の重複連番フォルダが勝手に作成される問題を解消しました。',
-      '既存のTreNote/Trenoteフォルダを正確に認識して再利用するように改善しました。',
+      'セット番号の余白削減および重量・回数・RPEの入力窓をスリム化し、スタンスや1RM、トロフィー表示を1行に集約しました。',
+      '縦のスクロール量を大幅に削減し、複数セットの入力が一覧しやすくなりました。',
     ],
     en: [
-      'Fixed an issue where duplicate folders like "TreNote (1)" were generated during Obsidian export due to SAF URI parsing and case-sensitivity.',
-      'Improved existing folder detection to correctly reuse the TreNote folder.',
+      'Optimized set rows into a single compact line by slimming weight, reps, and RPE input boxes and embedding stance, 1RM, and trophy inline.',
+      'Significantly reduced vertical scrolling, making multiple sets easier to review at a glance.',
     ],
   },
 };

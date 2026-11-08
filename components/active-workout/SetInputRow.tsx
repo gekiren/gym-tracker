@@ -366,7 +366,7 @@ export function SetInputRow({
     >
       <View style={{ backgroundColor: Theme.colors.card }}>
         <View style={[styles.row, set.is_completed && styles.rowCompleted]}>
-          <View style={{ width: isTreadmill ? 40 : 44, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: isTreadmill ? 40 : (isAerobic ? 44 : 32), alignItems: 'center', justifyContent: 'center' }}>
             <Text style={styles.tdSet} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
               {set.set_number}{set.side ? `(${set.side})` : ''}
             </Text>
@@ -668,14 +668,14 @@ export function SetInputRow({
             {/* Reps Column */}
             {ex.name === 'プランク' ? (
               set.is_completed ? (
-                <View style={[styles.input, { width: 70 }, styles.inputReadOnly]}>
+                <View style={[styles.input, { width: 44, marginHorizontal: 2 }, styles.inputReadOnly]}>
                   <Text style={styles.inputReadOnlyText}>{localReps ? `${localReps}${t('ui.active_workout.seconds_unit')}` : (set.prev_reps ? `${set.prev_reps}${t('ui.active_workout.seconds_unit')}` : '-')}</Text>
                 </View>
               ) : (
                 <CompactSwipeableInput 
                   inputRef={repsInputRef}
                   panGestureRef={repsPanRef}
-                  style={[styles.input, { width: 70 }]} 
+                  style={[styles.input, { width: 44, marginHorizontal: 2 }]} 
                   keyboardType="numeric" 
                   step={1}
                   placeholder={set.prev_reps ? `${set.prev_reps}${t('ui.active_workout.seconds_unit')}` : t('ui.active_workout.seconds_unit')} 
@@ -703,14 +703,14 @@ export function SetInputRow({
                 />
               )
             ) : set.is_completed ? (
-              <View style={[styles.input, { width: 70 }, styles.inputReadOnly]}>
+              <View style={[styles.input, { width: 44, marginHorizontal: 2 }, styles.inputReadOnly]}>
                 <Text style={styles.inputReadOnlyText}>{localReps || (set.prev_reps ? String(set.prev_reps) : '-')}</Text>
               </View>
             ) : (
               <CompactSwipeableInput 
                 inputRef={repsInputRef}
                 panGestureRef={repsPanRef}
-                style={[styles.input, { width: 70 }]} 
+                style={[styles.input, { width: 44, marginHorizontal: 2 }]} 
                 keyboardType="numeric" 
                 step={1}
                 placeholder={set.prev_reps ? String(set.prev_reps) : "-"} 
@@ -748,7 +748,7 @@ export function SetInputRow({
             {displayFields?.showRpe !== false ? (
               ex.name === 'プランク' ? (
                 set.is_completed ? (
-                  <View style={[styles.input, { width: 55 }, styles.inputReadOnly]}>
+                  <View style={[styles.input, { width: 38, marginHorizontal: 2 }, styles.inputReadOnly]}>
                     <Ionicons name="timer-outline" size={18} color={Theme.colors.textMuted} />
                   </View>
                 ) : (
@@ -760,14 +760,14 @@ export function SetInputRow({
                   />
                 )
               ) : set.is_completed ? (
-                <View style={[styles.input, { width: 55 }, styles.inputReadOnly]}>
+                <View style={[styles.input, { width: 38, marginHorizontal: 2 }, styles.inputReadOnly]}>
                   <Text style={styles.inputReadOnlyText}>{localRpe || '-'}</Text>
                 </View>
               ) : (
                 <CompactSwipeableInput 
                   inputRef={rpeInputRef}
                   panGestureRef={rpePanRef}
-                  style={[styles.input, { width: 55 }]} 
+                  style={[styles.input, { width: 38, marginHorizontal: 2 }]} 
                   keyboardType="numeric" 
                   step={0.5}
                   maxValue={10}
@@ -810,11 +810,75 @@ export function SetInputRow({
                 />
               )
             ) : null}
+
+            {/* Stance & 1RM / PR Column (案B: マイクロ2段スタック) */}
+            {(displayFields?.showStance !== false || displayFields?.show1RM !== false) && (
+              <View style={styles.metaStackCell}>
+                {/* 上段: スタンス */}
+                {displayFields?.showStance !== false ? (
+                  set.is_completed ? (
+                    <Text style={styles.stackStanceText} numberOfLines={1}>
+                      {(set.stance || set.variation)
+                        ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.stance || set.variation)}`
+                        : `${t('ui.active_workout.stance_label')}: -`}
+                    </Text>
+                  ) : (
+                    <GHTouchableOpacity
+                      onPress={() => {
+                        const curStance = set.stance || set.variation || null;
+                        setStanceModalTarget({ type: 'set', exId: ex.id, setId: set.id, currentValue: curStance });
+                        setStanceModalVisible(true);
+                      }}
+                      hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                    >
+                      <Text
+                        style={[
+                          styles.stackStanceText,
+                          {
+                            color: (set.stance || set.variation) ? Theme.colors.primary : Theme.colors.textMuted,
+                            textDecorationLine: (set.stance || set.variation) ? 'none' : 'underline'
+                          }
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {(set.stance || set.variation)
+                          ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.stance || set.variation)}`
+                          : t('ui.active_workout.stance_add_link')}
+                      </Text>
+                    </GHTouchableOpacity>
+                  )
+                ) : null}
+
+                {/* 下段: 1RM / PR / 時間 */}
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  {isPR && (
+                    <Text style={styles.stackPrText} numberOfLines={1}>
+                      {t('ui.active_workout.pr_label').split(' ')[0]}
+                    </Text>
+                  )}
+                  {displayFields?.show1RM !== false && currentRM != null && (
+                    <Text style={styles.stackRmText} numberOfLines={1}>
+                      1RM: {ex.equipment === '自重' ? `BW+${currentRM}` : currentRM}
+                    </Text>
+                  )}
+                  {restTimeStr ? (
+                    <Text style={styles.stackTimeText} numberOfLines={1}>
+                      {restTimeStr}
+                    </Text>
+                  ) : null}
+                  {timeTakenStr ? (
+                    <Text style={[styles.stackTimeText, { color: Theme.colors.success }]} numberOfLines={1}>
+                      {timeTakenStr}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+            )}
           </>
         )}
 
         {/* Check Button & RM Display */}
-        <View style={{ width: 36, alignItems: 'center' }}>
+        <View style={{ width: 30, alignItems: 'center' }}>
           <GHTouchableOpacity
             style={[styles.checkBtn, set.is_completed && styles.checkBtnActive]}
             onPress={() => {
@@ -864,47 +928,10 @@ export function SetInputRow({
               toggleSetComplete(ex.id, set.id);
             }}
           >
-            <Ionicons name="checkmark" size={16} color={set.is_completed ? '#fff' : Theme.colors.textMuted} />
+            <Ionicons name="checkmark" size={15} color={set.is_completed ? '#fff' : Theme.colors.textMuted} />
           </GHTouchableOpacity>
         </View>
       </View>
-      
-      {/* Meta Row (Variation & RM & Time & PR) - 筋トレ種目のみ表示 */}
-      {!isAerobic && !isTreadmill && (
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 8, marginBottom: 8, marginTop: -4 }}>
-          {/* Left side: Variation */}
-          {displayFields?.showStance !== false ? (
-            <View style={{ flex: 1.8, flexDirection: 'row', alignItems: 'center', paddingLeft: 4 }}>
-              {set.is_completed ? (
-                <Text style={{ color: Theme.colors.textMuted, fontSize: 11 }} numberOfLines={1}>
-                  {(set.stance || set.variation) ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.stance || set.variation)}` : `${t('ui.active_workout.stance_label')}: -`}
-                </Text>
-              ) : (
-                <GHTouchableOpacity 
-                  onPress={() => {
-                    const curStance = set.stance || set.variation || null;
-                    setStanceModalTarget({ type: 'set', exId: ex.id, setId: set.id, currentValue: curStance });
-                    setStanceModalVisible(true);
-                  }}
-                  style={{ flexDirection: 'row', alignItems: 'center' }}
-                >
-                  <Text style={{ color: Theme.colors.primary, fontSize: 11, textDecorationLine: 'underline' }} numberOfLines={1}>
-                    {(set.stance || set.variation) ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.stance || set.variation)}` : t('ui.active_workout.stance_add_link')}
-                  </Text>
-                </GHTouchableOpacity>
-              )}
-            </View>
-          ) : <View style={{ flex: 1.8 }} />}
-
-           {/* Right side: RM & Time & PR */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', flex: 1.2 }}>
-             {isPR && <Text style={{ color: '#f5a623', fontSize: 11, fontWeight: 'bold', marginRight: 8 }}>{t('ui.active_workout.pr_label').split(' ')[0]}</Text>}
-             {displayFields?.show1RM !== false && currentRM != null && <Text style={{ color: Theme.colors.primary, fontSize: 11, marginRight: 8 }}>1RM: {ex.equipment === '自重' ? `BW + ${currentRM}` : currentRM}</Text>}
-             {restTimeStr ? <Text style={{ color: Theme.colors.textMuted, fontSize: 11, marginRight: 4 }}>{restTimeStr}</Text> : null}
-             {timeTakenStr ? <Text style={{ color: Theme.colors.success, fontSize: 11 }}>{timeTakenStr}</Text> : null}
-          </View>
-        </View>
-      )}
 
       {/* 手動時間入力モーダル */}
       <Modal visible={timeModalVisible} transparent animationType="fade" onRequestClose={() => setTimeModalVisible(false)}>
@@ -1002,24 +1029,24 @@ export function SetInputRow({
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, paddingHorizontal: 4 },
+  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, paddingHorizontal: 4 },
   rowCompleted: { opacity: 0.7 },
-  tdSet: { color: Theme.colors.text, textAlign: 'center', fontSize: 16, fontWeight: '500' },
+  tdSet: { color: Theme.colors.text, textAlign: 'center', fontSize: 14, fontWeight: '500' },
   input: {
     backgroundColor: '#2a2a2a',
     color: Theme.colors.text,
-    width: 90,
+    width: 60,
     height: 30,
-    marginHorizontal: 3,
+    marginHorizontal: 2,
     borderRadius: 4,
     paddingVertical: 0,
     paddingTop: 0,
     paddingBottom: 0,
-    paddingHorizontal: 4,
+    paddingHorizontal: 2,
     textAlign: 'center',
     textAlignVertical: 'center',
     includeFontPadding: false,
-    fontSize: 15,
+    fontSize: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1035,7 +1062,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 2,
   },
-  checkBtn: { width: 30, height: 30, backgroundColor: '#333', borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
+  checkBtn: { width: 28, height: 28, backgroundColor: '#333', borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
   checkBtnActive: { backgroundColor: Theme.colors.success },
   deleteAction: {
     backgroundColor: '#ff4444',
@@ -1116,5 +1143,38 @@ const styles = StyleSheet.create({
   timerModeTabTextActive: {
     color: '#000',
     fontWeight: 'bold',
+  },
+  metaStackCell: {
+    flex: 1,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingHorizontal: 4,
+  },
+  stackStanceText: {
+    fontSize: 10,
+    color: Theme.colors.primary,
+    fontWeight: '500',
+    lineHeight: 13,
+  },
+  stackPrText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#f5a623',
+    marginRight: 4,
+    lineHeight: 14,
+  },
+  stackRmText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#f5a623',
+    marginRight: 4,
+    lineHeight: 14,
+  },
+  stackTimeText: {
+    fontSize: 9.5,
+    color: Theme.colors.textMuted,
+    marginRight: 3,
+    lineHeight: 13,
   },
 });

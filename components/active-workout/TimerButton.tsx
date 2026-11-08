@@ -55,14 +55,14 @@ export function TimerButton({ onTimeCapture }: TimerButtonProps) {
 
 const styles = StyleSheet.create({
   timerInputBtn: {
-    width: 55,
-    marginHorizontal: 3,
+    width: 38,
+    marginHorizontal: 2,
     backgroundColor: '#333',
     borderRadius: 4,
-    paddingVertical: 8,
+    paddingVertical: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 28
+    height: 30
   },
   timerInputBtnText: {
     color: '#fff',

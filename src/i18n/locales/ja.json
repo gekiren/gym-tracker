@@ -90,6 +90,7 @@
       "header_speed": "km/h",
       "header_incline": "傾斜(%)",
       "header_time": "時間",
+      "header_stance_rm": "スタンス / 1RM",
       "header_record": "記録",
       "header_weighted": "加重",
       "header_seconds": "秒数",
