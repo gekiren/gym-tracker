@@ -1,8 +1,8 @@
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, router, ErrorBoundaryProps } from 'expo-router';
+import { Stack, router, usePathname, ErrorBoundaryProps } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet, Alert, AppState, ScrollView } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
@@ -12,6 +12,8 @@ import { initDB, getSettings, saveSetting, triggerBackgroundBackup } from '../sr
 import { Theme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore, FeatureId } from '../src/store/settingsStore';
+import { useNutritionStore } from '../src/store/nutritionStore';
+import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import '../src/i18n';
 import i18n from '../src/i18n';
 import { registerGlobalErrorHandler } from '../src/services/crashReporterService';
@@ -41,6 +43,12 @@ export const unstable_settings = {
 export default function RootLayout() {
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
+  const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
+
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
 
   const setupDB = async () => {
     setDbReady(false);
@@ -48,6 +56,30 @@ export default function RootLayout() {
     try {
       await initDB();
       const storedSettings = await getSettings();
+
+      // カメラ撮影中のActivity破棄からのリカバリー判定
+      let shouldRecoverNutritionCamera = false;
+      const pendingCameraRaw = storedSettings['pending_nutrition_camera_state'];
+      if (pendingCameraRaw) {
+        try {
+          const parsed = JSON.parse(pendingCameraRaw);
+          if (
+            parsed &&
+            parsed.active &&
+            typeof parsed.timestamp === 'number' &&
+            Date.now() - parsed.timestamp < 15 * 60 * 1000
+          ) {
+            useNutritionStore.getState().setPendingCameraState(parsed);
+            useOTAUpdateStore.getState().suppressModal();
+            shouldRecoverNutritionCamera = true;
+          } else {
+            await saveSetting('pending_nutrition_camera_state', '');
+          }
+        } catch (e) {
+          console.warn('Failed to parse pending_nutrition_camera_state:', e);
+          await saveSetting('pending_nutrition_camera_state', '');
+        }
+      }
 
       const defaultRest = storedSettings['default_rest_timer'] ? parseInt(storedSettings['default_rest_timer'], 10) : 90;
       const autoRest = storedSettings['auto_rest_timer'] ? storedSettings['auto_rest_timer'] === '1' : true;
@@ -187,6 +219,7 @@ export default function RootLayout() {
       const isOtaReload = storedSettings['ota_reload_in_progress'] === '1';
       if (isOtaReload) {
         await saveSetting('ota_reload_in_progress', '0');
+        if (!shouldRecoverNutritionCamera) {
         console.log('[OTA] Detected reload after OTA update. Enforcing top-level Dashboard navigation.');
         setTimeout(() => {
           try {
@@ -195,10 +228,24 @@ export default function RootLayout() {
             console.warn('Failed to force navigate to / after OTA reload:', navErr);
           }
         }, 150);
+        }
       }
 
       console.log('Database initialized successfully with settings', storedSettings);
       setDbReady(true);
+
+      if (shouldRecoverNutritionCamera) {
+        console.log('[CameraRecovery] Detected pending nutrition camera state. Navigating to /lifelog/nutrition.');
+        setTimeout(() => {
+          try {
+            if (pathnameRef.current !== '/lifelog/nutrition') {
+              router.replace('/lifelog/nutrition');
+            }
+          } catch (navErr) {
+            console.warn('Failed to navigate to /lifelog/nutrition for camera recovery:', navErr);
+          }
+        }, 100);
+      }
 
       // 7. バックグラウンド同期・アラート等の起動
       initBackgroundSyncServices(expired);

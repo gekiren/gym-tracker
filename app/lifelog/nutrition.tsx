@@ -66,6 +66,7 @@ export default function NutritionScreen() {
   const presets = useNutritionStore((state) => state.presets);
   const userGoals = useNutritionStore((state) => state.userNutritionGoals);
   const autophagyConfig = useNutritionStore((state) => state.autophagyConfig);
+  const pendingCameraState = useNutritionStore((state) => state.pendingCameraState);
   const isLoading = useNutritionStore((state) => state.isLoading);
 
   const loadMealLogs = useNutritionStore((state) => state.loadMealLogs);
@@ -161,6 +162,16 @@ export default function NutritionScreen() {
     });
     return unsubscribe;
   }, [navigation, selectedDate, isFocused]);
+
+  // カメラ撮影中のActivity破棄からの復帰時にモーダルと日付を自動復元
+  useEffect(() => {
+    if (pendingCameraState?.active) {
+      if (pendingCameraState.selectedDate) {
+        setSelectedDate(pendingCameraState.selectedDate);
+      }
+      setShowPhotoModal(true);
+    }
+  }, [pendingCameraState]);
 
   // 本日の食事ログから献立セットを新規作成
   const handleCreatePresetFromCurrentLogs = (logs: MealLog[]) => {
