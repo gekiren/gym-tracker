@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { MealFavorite } from '../../src/db/types';
+import { useAppTheme } from '../../src/theme';
 
 interface Props {
   favorites: MealFavorite[];
@@ -21,6 +22,9 @@ export default function QuickFavoritesBar({
   onSelectFavorite,
   onOpenManage,
 }: Props) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   if (favorites.length === 0) {
     return (
       <View style={styles.emptyContainer}>
@@ -67,6 +71,7 @@ export default function QuickFavoritesBar({
             onOpenManage();
           }}
           activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons name="settings-outline" size={13} color="#38bdf8" />
           <Text style={styles.editBtnText}>編集・並び替え</Text>
@@ -112,15 +117,15 @@ export default function QuickFavoritesBar({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   container: {
     marginVertical: 10,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: colors.card,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: '#1c1c1c',
+    borderColor: colors.border,
   },
   headerRow: {
     flexDirection: 'row',
@@ -131,36 +136,38 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: '#888888',
+    color: colors.textMuted,
   },
   editBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingVertical: 2,
-    paddingHorizontal: 6,
+    minHeight: 32,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     borderRadius: 6,
     backgroundColor: '#0284c71a',
   },
   editBtnText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: '#38bdf8',
   },
   emptyContainer: {
     marginVertical: 6,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: colors.card,
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#1c1c1c',
+    borderColor: colors.border,
   },
   emptyButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
+    minHeight: 36,
   },
   emptyLeft: {
     flexDirection: 'row',
@@ -170,7 +177,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textMuted,
     flex: 1,
   },
   emptyActionBadge: {
@@ -185,7 +192,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   emptyActionText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#38bdf8',
     fontWeight: 'bold',
   },
@@ -201,8 +208,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  chipName: { fontSize: 13, fontWeight: '600', color: '#e2e8f0', maxWidth: 120 },
-  chipCal: { fontSize: 11, color: '#93c5fd', fontWeight: 'bold' },
+  chipName: { fontSize: 13, fontWeight: '600', color: colors.text, maxWidth: 120 },
+  chipCal: { fontSize: 12, color: '#3b82f6', fontWeight: 'bold' },
   addChip: {
     backgroundColor: '#0284c711',
     borderColor: '#0284c7',

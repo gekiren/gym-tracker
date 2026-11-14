@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { MealPresetWithItems } from '../../src/db/types';
+import { useAppTheme } from '../../src/theme';
 
 interface Props {
   presets: MealPresetWithItems[];
@@ -32,6 +33,9 @@ export default function QuickPresetsBar({
   onSelectPreset,
   onOpenManage,
 }: Props) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   // 選択日の曜日 (0:日, 1:月, ... 6:土)
   const currentDayOfWeek = (() => {
     try {
@@ -108,6 +112,7 @@ export default function QuickPresetsBar({
             onOpenManage();
           }}
           activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons name="settings-outline" size={13} color="#10b981" />
           <Text style={styles.editBtnText}>セット管理</Text>
@@ -182,15 +187,15 @@ export default function QuickPresetsBar({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   container: {
     marginVertical: 6,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: colors.card,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: '#1c1c1c',
+    borderColor: colors.border,
   },
   headerRow: {
     flexDirection: 'row',
@@ -206,40 +211,42 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: '#94a3b8',
+    color: colors.textMuted,
   },
   subCount: {
-    fontSize: 11,
-    color: '#64748b',
+    fontSize: 12,
+    color: colors.textMuted,
   },
   editBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingVertical: 2,
-    paddingHorizontal: 6,
+    minHeight: 32,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     borderRadius: 6,
     backgroundColor: '#0478571a',
   },
   editBtnText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: '#10b981',
   },
   emptyContainer: {
     marginVertical: 6,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: colors.card,
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#1c1c1c',
+    borderColor: colors.border,
   },
   emptyButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
+    minHeight: 36,
   },
   emptyLeft: {
     flexDirection: 'row',
@@ -249,7 +256,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textMuted,
     flex: 1,
   },
   emptyActionBadge: {
@@ -264,7 +271,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   emptyActionText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#10b981',
     fontWeight: 'bold',
   },
@@ -289,7 +296,7 @@ const styles = StyleSheet.create({
   },
   chipTodayHighlight: {
     backgroundColor: '#10b98124',
-    borderColor: '#34d399',
+    borderColor: '#10b981',
     borderWidth: 1.5,
   },
   chipTopRow: {
@@ -306,7 +313,7 @@ const styles = StyleSheet.create({
   },
   todayBadgeText: {
     color: '#ffffff',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 'bold',
   },
   typeBadge: {
@@ -316,18 +323,18 @@ const styles = StyleSheet.create({
   },
   typeBadgeText: {
     color: '#ffffff',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 'bold',
   },
   timeTag: {
-    fontSize: 10,
-    color: '#94a3b8',
+    fontSize: 11,
+    color: colors.textMuted,
     fontWeight: '600',
   },
   chipName: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#f1f5f9',
+    color: colors.text,
     marginBottom: 4,
     maxWidth: 140,
   },
@@ -338,13 +345,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   itemCountText: {
-    fontSize: 11,
-    color: '#6ee7b7',
+    fontSize: 12,
+    color: '#10b981',
     fontWeight: '600',
   },
   chipCal: {
-    fontSize: 11,
-    color: '#a7f3d0',
+    fontSize: 12,
+    color: '#059669',
     fontWeight: 'bold',
   },
   addChip: {
@@ -361,7 +368,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   addChipText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#10b981',
     fontWeight: '600',
   },

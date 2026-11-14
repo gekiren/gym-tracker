@@ -4,6 +4,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   ScrollView,
   Platform,
@@ -48,8 +49,8 @@ export default function ApplyPresetModal({
   onClose,
   onApply,
 }: Props) {
-  const { backgroundTheme, colors } = useAppTheme();
-  const isPureBlack = backgroundTheme === 'pureBlack';
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [mealType, setMealType] = useState<string>(getDefaultMealType());
   const [mealTime, setMealTime] = useState<string>(getCurrentTimeStr());
@@ -138,20 +139,13 @@ export default function ApplyPresetModal({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View
-          style={[
-            styles.modalContent,
-            {
-              backgroundColor: isPureBlack ? '#000000' : '#121212',
-              borderColor: colors.border,
-            },
-          ]}
-        >
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.modalContent}>
           {/* ヘッダー */}
           <View style={styles.header}>
             <View style={{ flex: 1 }}>
               <Text style={styles.headerSubtitle}>🍱 献立セット一括記録</Text>
-              <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+              <Text style={styles.headerTitle} numberOfLines={1}>
                 {preset.name}
               </Text>
             </View>
@@ -245,7 +239,7 @@ export default function ApplyPresetModal({
                       <Ionicons
                         name={isChecked ? 'checkbox' : 'square-outline'}
                         size={20}
-                        color={isChecked ? '#10b981' : '#64748b'}
+                        color={isChecked ? '#10b981' : colors.textMuted}
                         style={{ marginRight: 8 }}
                       />
                       <View style={{ flex: 1 }}>
@@ -310,13 +304,15 @@ export default function ApplyPresetModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
   modalContent: {
+    backgroundColor: colors.card,
+    borderColor: colors.border,
     maxHeight: '90%',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -332,10 +328,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#262626',
+    borderBottomColor: colors.border,
   },
   headerSubtitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: '#10b981',
     textTransform: 'uppercase',
@@ -343,12 +339,18 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: colors.text,
     marginTop: 2,
   },
   closeButton: {
-    padding: 6,
-    borderRadius: 20,
-    backgroundColor: '#1f2937',
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   scrollBody: {
     paddingHorizontal: 16,
@@ -368,7 +370,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#cbd5e1',
+    color: colors.text,
     marginBottom: 8,
   },
   multiplierVal: {
@@ -377,8 +379,8 @@ const styles = StyleSheet.create({
     color: '#38bdf8',
   },
   tapTipText: {
-    fontSize: 11,
-    color: '#64748b',
+    fontSize: 12,
+    color: colors.textMuted,
   },
   mealTypeRow: {
     flexDirection: 'row',
@@ -388,10 +390,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   mealTypeBtnActive: {
     backgroundColor: '#04785722',
@@ -399,11 +401,11 @@ const styles = StyleSheet.create({
   },
   mealTypeBtnText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontWeight: '600',
   },
   mealTypeBtnTextActive: {
-    color: '#34d399',
+    color: '#10b981',
     fontWeight: 'bold',
   },
   multiplierRow: {
@@ -413,11 +415,13 @@ const styles = StyleSheet.create({
   multiplierChip: {
     flex: 1,
     paddingVertical: 6,
+    minHeight: 36,
+    justifyContent: 'center',
     borderRadius: 8,
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   multiplierChipActive: {
     backgroundColor: '#0284c722',
@@ -425,7 +429,7 @@ const styles = StyleSheet.create({
   },
   multiplierChipText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontWeight: '600',
   },
   multiplierChipTextActive: {
@@ -433,10 +437,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   itemsList: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#1e293b',
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   itemRow: {
@@ -445,7 +449,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1e293b',
+    borderBottomColor: colors.border,
   },
   itemRowDisabled: {
     opacity: 0.45,
@@ -453,15 +457,15 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#f8fafc',
+    color: colors.text,
   },
   itemNameDisabled: {
     textDecorationLine: 'line-through',
-    color: '#94a3b8',
+    color: colors.textMuted,
   },
   itemPfc: {
-    fontSize: 11,
-    color: '#64748b',
+    fontSize: 12,
+    color: colors.textMuted,
     marginTop: 2,
   },
   itemCal: {
@@ -470,10 +474,10 @@ const styles = StyleSheet.create({
     color: '#10b981',
   },
   itemCalDisabled: {
-    color: '#64748b',
+    color: colors.textMuted,
   },
   summaryBox: {
-    backgroundColor: '#064e3b1c',
+    backgroundColor: '#10b98114',
     borderColor: '#059669',
     borderWidth: 1,
     borderRadius: 12,
@@ -490,12 +494,12 @@ const styles = StyleSheet.create({
   summaryTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#6ee7b7',
+    color: '#059669',
   },
   summaryCal: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#34d399',
+    color: '#10b981',
   },
   summaryPfcRow: {
     flexDirection: 'row',
@@ -504,11 +508,11 @@ const styles = StyleSheet.create({
   },
   summaryPfcItem: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textMuted,
   },
   pfcVal: {
     fontWeight: 'bold',
-    color: '#f8fafc',
+    color: colors.text,
   },
   footer: {
     flexDirection: 'row',
@@ -516,26 +520,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#262626',
+    borderTopColor: colors.border,
   },
   cancelBtn: {
     flex: 1,
+    minHeight: 48,
     paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelBtnText: {
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontSize: 14,
     fontWeight: '600',
   },
   applyBtn: {
     flex: 2,
+    minHeight: 48,
     flexDirection: 'row',
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     backgroundColor: '#059669',
     alignItems: 'center',
     justifyContent: 'center',

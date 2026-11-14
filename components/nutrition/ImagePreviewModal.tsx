@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import {
   Modal,
   View,
@@ -22,6 +22,7 @@ import {
   TapGestureHandlerGestureEvent,
 } from 'react-native-gesture-handler';
 import { MealLog } from '../../src/db/types';
+import { useAppTheme } from '../../src/theme';
 
 interface Props {
   visible: boolean;
@@ -40,6 +41,8 @@ export default function ImagePreviewModal({
   onClose,
   onDeletePhoto,
 }: Props) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
 
   // ジェスチャーRef
@@ -217,7 +220,10 @@ export default function ImagePreviewModal({
       onRequestClose={onClose}
     >
       <GestureHandlerRootView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#000000" />
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor={colors.card}
+        />
 
         {/* 不透過ヘッダー */}
         <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) }]}>
@@ -231,7 +237,7 @@ export default function ImagePreviewModal({
           </View>
 
           <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.7}>
-            <Ionicons name="close" size={26} color="#ffffff" />
+            <Ionicons name="close" size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -302,7 +308,7 @@ export default function ImagePreviewModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
@@ -313,10 +319,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: '#000000',
+    backgroundColor: colors.card,
     zIndex: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1a',
+    borderBottomColor: colors.border,
   },
   headerTitleBox: {
     flex: 1,
@@ -325,17 +331,22 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#ffffff',
+    color: colors.text,
   },
   headerSubTitle: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textMuted,
     marginTop: 2,
   },
   closeBtn: {
-    padding: 6,
-    borderRadius: 20,
-    backgroundColor: '#262626',
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   imageViewerBox: {
     flex: 1,
@@ -361,20 +372,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 12,
-    backgroundColor: '#000000',
+    backgroundColor: colors.card,
     borderTopWidth: 1,
-    borderTopColor: '#1a1a1a',
+    borderTopColor: colors.border,
     zIndex: 10,
   },
   zoomHintText: {
-    fontSize: 11,
-    color: '#94a3b8',
+    fontSize: 12,
+    color: colors.textMuted,
     flex: 1,
     marginRight: 8,
   },
   deleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
     backgroundColor: '#ef444422',
     borderWidth: 1,
     borderColor: '#ef444466',

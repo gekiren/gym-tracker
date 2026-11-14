@@ -5,6 +5,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   ScrollView,
   Alert,
@@ -34,8 +35,8 @@ export default function NutritionSettingsModal({
   onSaveGoals,
   onSaveAutophagy,
 }: Props) {
-  const { backgroundTheme } = useAppTheme();
-  const isPureBlack = backgroundTheme === 'pureBlack';
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   // モード切替 ('cal_pfc' | 'pfc_p' | 'cal_p_weight_f' | 'manual')
   const [settingMode, setSettingMode] = useState<SettingMode>('cal_pfc');
@@ -373,8 +374,9 @@ export default function NutritionSettingsModal({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={[styles.sheet, isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' }]}>
-          <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.sheet}>
+          <View style={styles.header}>
             <Text style={styles.title}>⚙️ 栄養目標 ＆ タイマー設定</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
@@ -383,7 +385,7 @@ export default function NutritionSettingsModal({
 
           <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 220 }} keyboardShouldPersistTaps="handled">
             {/* BMR / TDEE 自動計算電卓 */}
-            <View style={[styles.card, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
+            <View style={styles.card}>
               <Text style={styles.cardTitle}>🧮 BMR / TDEE 目標自動計算電卓</Text>
               <Text style={styles.hintText}>
                 身体情報と運動強度から基礎代謝 (BMR) と総消費カロリー (TDEE) を算出し、最適な目標値を求めます。
@@ -501,7 +503,11 @@ export default function NutritionSettingsModal({
                     style={[styles.modeTabBtn, settingMode === tab.key && styles.modeTabBtnActive]}
                     onPress={() => setSettingMode(tab.key as SettingMode)}
                   >
-                    <Text style={[styles.modeTabBtnText, settingMode === tab.key && styles.modeTabBtnTextActive]}>
+                    <Text
+                      style={[styles.modeTabBtnText, settingMode === tab.key && styles.modeTabBtnTextActive]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                    >
                       {tab.label}
                     </Text>
                   </TouchableOpacity>
@@ -519,7 +525,7 @@ export default function NutritionSettingsModal({
                       value={mode1Calories}
                       onChangeText={setMode1Calories}
                       placeholder="2000"
-                      placeholderTextColor="#475569"
+                      placeholderTextColor={colors.textMuted}
                     />
                     <TouchableOpacity
                       style={styles.subActionBtn}
@@ -600,7 +606,7 @@ export default function NutritionSettingsModal({
                       value={mode2Protein}
                       onChangeText={setMode2Protein}
                       placeholder="104"
-                      placeholderTextColor="#475569"
+                      placeholderTextColor={colors.textMuted}
                     />
                     <TouchableOpacity
                       style={styles.subActionBtn}
@@ -684,7 +690,7 @@ export default function NutritionSettingsModal({
                       value={mode3Calories}
                       onChangeText={setMode3Calories}
                       placeholder="2000"
-                      placeholderTextColor="#475569"
+                      placeholderTextColor={colors.textMuted}
                     />
                     <TouchableOpacity
                       style={styles.subActionBtn}
@@ -702,7 +708,7 @@ export default function NutritionSettingsModal({
                       value={mode3Protein}
                       onChangeText={setMode3Protein}
                       placeholder="130"
-                      placeholderTextColor="#475569"
+                      placeholderTextColor={colors.textMuted}
                     />
                     <TouchableOpacity
                       style={styles.subActionBtn}
@@ -734,9 +740,9 @@ export default function NutritionSettingsModal({
                       value={mode3FatPerKg}
                       onChangeText={setMode3FatPerKg}
                       placeholder="0.7"
-                      placeholderTextColor="#475569"
+                      placeholderTextColor={colors.textMuted}
                     />
-                    <Text style={{ color: '#94a3b8', fontSize: 12 }}>g/kg</Text>
+                    <Text style={{ color: colors.textMuted, fontSize: 12 }}>g/kg</Text>
                     <View style={{ flex: 1, flexDirection: 'row', gap: 4, justifyContent: 'flex-end' }}>
                       {['0.7', '0.8', '1.0'].map((v) => (
                         <TouchableOpacity
@@ -760,7 +766,7 @@ export default function NutritionSettingsModal({
                     </View>
                   </View>
 
-                  <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+                  <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 4 }}>
                     💡 体重 {weight}kg × {mode3FatPerKg}g/kg = 脂質 F: <Text style={{ color: '#f59e0b', fontWeight: '700' }}>{computedModeValues.fatDisplay}g</Text> （残りが自動的に炭水化物 C に配分されます）
                   </Text>
 
@@ -905,37 +911,37 @@ export default function NutritionSettingsModal({
                 {/* 💡 カロリー密度補足注記 */}
                 <View style={styles.calExplanationBox}>
                   <Text style={styles.calExplanationText}>
-                    💡 <Text style={{ fontWeight: '700', color: '#f8fafc' }}>カロリー比率のポイント:</Text> P・Cは <Text style={{ color: '#38bdf8', fontWeight: '700' }}>1g=4kcal</Text>、Fは <Text style={{ color: '#f59e0b', fontWeight: '700' }}>1g=9kcal</Text> で計算されます。
+                    💡 <Text style={{ fontWeight: '700', color: colors.text }}>カロリー比率のポイント:</Text> P・Cは <Text style={{ color: '#38bdf8', fontWeight: '700' }}>1g=4kcal</Text>、Fは <Text style={{ color: '#f59e0b', fontWeight: '700' }}>1g=9kcal</Text> で計算されます。
                   </Text>
                 </View>
               </View>
             </View>
 
             {/* オートファジー目標時間・有効無効 */}
-            <View style={[styles.card, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
+            <View style={styles.card}>
               <Text style={styles.cardTitle}>⏳ オートファジー絶食タイマー設定</Text>
               <View style={styles.switchRow}>
                 <Text style={styles.switchLabel}>オートファジー機能を有効化</Text>
                 <Switch
                   value={autophagyEnabled}
                   onValueChange={setAutophagyEnabled}
-                  trackColor={{ false: '#334155', true: '#10b981' }}
+                  trackColor={{ false: colors.border, true: '#10b981' }}
                 />
               </View>
 
               <Text style={styles.label}>目標絶食時間 (時間)</Text>
               <TextInput
-                style={[styles.input, isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' }]}
+                style={styles.input}
                 keyboardType="numeric"
                 value={targetHours}
                 onChangeText={setTargetHours}
                 placeholder="16"
-                placeholderTextColor="#475569"
+                placeholderTextColor={colors.textMuted}
               />
             </View>
 
             {/* 🤖 外部AI連携URL設定 (MD一括取り込み用) */}
-            <View style={[styles.card, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
+            <View style={styles.card}>
               <Text style={styles.cardTitle}>🤖 外部AI連携URL設定 (MD一括取り込み用)</Text>
               <Text style={styles.hintText}>
                 Markdown一括取り込み画面の「AIを開く」ボタンから直接アクセスする外部AIサービスのURLを設定できます。
@@ -943,11 +949,11 @@ export default function NutritionSettingsModal({
 
               <Text style={styles.label}>連携先AIのURL</Text>
               <TextInput
-                style={[styles.input, isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' }]}
+                style={styles.input}
                 value={aiUrl}
                 onChangeText={setAiUrl}
                 placeholder="https://chatgpt.com"
-                placeholderTextColor="#475569"
+                placeholderTextColor={colors.textMuted}
                 keyboardType="url"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -976,7 +982,7 @@ export default function NutritionSettingsModal({
                       style={[
                         styles.chipBtnText,
                         aiUrl.trim() === item.url && styles.chipBtnTextActive,
-                        { fontSize: 11 },
+                        { fontSize: 12 },
                       ]}
                     >
                       {item.name}
@@ -1003,62 +1009,64 @@ export default function NutritionSettingsModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-start' },
   sheet: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
     marginTop: Platform.OS === 'android' ? 40 : 50,
     marginHorizontal: 8,
     maxHeight: '88%',
     overflow: 'hidden',
   },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
-  title: { fontSize: 17, fontWeight: '700', color: '#f8fafc' },
-  closeBtn: { padding: 4 },
-  closeBtnText: { fontSize: 18, color: '#94a3b8' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
+  title: { fontSize: 17, fontWeight: '700', color: colors.text },
+  closeBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: -8 },
+  closeBtnText: { fontSize: 18, color: colors.textMuted },
   body: { padding: 14 },
-  card: { backgroundColor: '#1e293b', borderRadius: 14, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#334155' },
-  cardTitle: { fontSize: 14, fontWeight: '700', color: '#f8fafc', marginBottom: 6 },
-  hintText: { fontSize: 12, color: '#94a3b8', lineHeight: 18, marginBottom: 10 },
-  label: { fontSize: 12, fontWeight: '600', color: '#94a3b8', marginTop: 8, marginBottom: 4 },
-  inputLabel: { fontSize: 11, fontWeight: '600', marginBottom: 4 },
+  card: { backgroundColor: colors.background, borderRadius: 14, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: colors.border },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 6 },
+  hintText: { fontSize: 12, color: colors.textMuted, lineHeight: 18, marginBottom: 10 },
+  label: { fontSize: 12, fontWeight: '600', color: colors.textMuted, marginTop: 8, marginBottom: 4 },
+  inputLabel: { fontSize: 12, fontWeight: '600', marginBottom: 4 },
   inputLabelCol: { fontSize: 12, fontWeight: '600', color: '#10b981', marginTop: 10, marginBottom: 4 },
   row: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   rowAlign: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  chipBtn: { flex: 1, paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8, backgroundColor: '#0f172a', borderWidth: 1, borderColor: '#334155', alignItems: 'center' },
+  chipBtn: { flex: 1, paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
   chipBtnActive: { backgroundColor: '#10b98122', borderColor: '#10b981' },
-  chipBtnText: { fontSize: 12, color: '#94a3b8', fontWeight: '600' },
+  chipBtnText: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
   chipBtnTextActive: { color: '#10b981' },
   chipList: { gap: 6 },
-  longChip: { paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8, backgroundColor: '#0f172a', borderWidth: 1, borderColor: '#334155' },
-  longChipActive: { backgroundColor: '#4facfe22', borderColor: '#4facfe' },
-  longChipText: { fontSize: 12, color: '#94a3b8' },
-  longChipTextActive: { color: '#4facfe', fontWeight: '700' },
+  longChip: { paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+  longChipActive: { backgroundColor: '#0284c722', borderColor: '#0284c7' },
+  longChipText: { fontSize: 12, color: colors.textMuted },
+  longChipTextActive: { color: '#0284c7', fontWeight: '700' },
   grid3: { flexDirection: 'row', gap: 6 },
   col3: { flex: 1 },
   grid2: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   col2: { width: '48%' },
-  input: { backgroundColor: '#0f172a', borderRadius: 8, borderWidth: 1, borderColor: '#334155', color: '#f8fafc', paddingHorizontal: 10, paddingVertical: 8, fontSize: 14 },
-  calcResultBox: { marginTop: 12, backgroundColor: '#0f172a', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#10b98144' },
+  input: { backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, color: colors.text, paddingHorizontal: 10, paddingVertical: 8, fontSize: 14 },
+  calcResultBox: { marginTop: 12, backgroundColor: colors.card, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#10b98144' },
   calcHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  calcStat: { fontSize: 12, color: '#94a3b8' },
-  calcVal: { color: '#38bdf8', fontWeight: '700' },
-  calcMainGoal: { fontSize: 14, fontWeight: '700', color: '#f8fafc', marginVertical: 2, marginBottom: 8 },
+  calcStat: { fontSize: 12, color: colors.textMuted },
+  calcVal: { color: '#3b82f6', fontWeight: '700' },
+  calcMainGoal: { fontSize: 14, fontWeight: '700', color: colors.text, marginVertical: 2, marginBottom: 8 },
   calcMainVal: { color: '#10b981', fontSize: 18 },
-  applyBtn: { backgroundColor: '#10b981', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  applyBtn: { backgroundColor: '#10b981', minHeight: 44, paddingVertical: 10, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   applyBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 
   /* モード切替タブスタイル */
-  modeTabContainer: { flexDirection: 'row', backgroundColor: '#0f172a', borderRadius: 10, padding: 3, marginBottom: 12 },
-  modeTabBtn: { flex: 1, paddingVertical: 8, paddingHorizontal: 2, alignItems: 'center', borderRadius: 8 },
+  modeTabContainer: { flexDirection: 'row', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 3, marginBottom: 12 },
+  modeTabBtn: { flex: 1, paddingVertical: 8, paddingHorizontal: 2, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
   modeTabBtnActive: { backgroundColor: '#10b981' },
-  modeTabBtnText: { fontSize: 9.5, fontWeight: '600', color: '#94a3b8', textAlign: 'center' },
+  modeTabBtnText: { fontSize: 11, fontWeight: '600', color: colors.textMuted, textAlign: 'center' },
   modeTabBtnTextActive: { color: '#ffffff', fontWeight: '700' },
 
   /* 🌟 大型リアルタイム表示カード（カロリー内訳＆バッジ追加版） */
   pfcDisplayHeroCard: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
@@ -1066,45 +1074,45 @@ const styles = StyleSheet.create({
     borderColor: '#10b98144',
     alignItems: 'center',
   },
-  heroCalText: { fontSize: 12, color: '#94a3b8', fontWeight: '600', marginBottom: 8 },
+  heroCalText: { fontSize: 12, color: colors.textMuted, fontWeight: '600', marginBottom: 8 },
   heroCalVal: { color: '#10b981', fontSize: 16, fontWeight: '700' },
   heroGramGrid: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', paddingTop: 4 },
   heroGramCol: { alignItems: 'center', flex: 1 },
-  heroGramLabel: { fontSize: 11, fontWeight: '600', color: '#94a3b8', marginBottom: 2 },
+  heroGramLabel: { fontSize: 12, fontWeight: '600', color: colors.textMuted, marginBottom: 2 },
   heroGramVal: { fontSize: 19, fontWeight: '800' },
   heroGramUnit: { fontSize: 12, fontWeight: '600' },
-  heroCalSubText: { fontSize: 10, color: '#94a3b8', marginTop: 1, fontWeight: '600' },
+  heroCalSubText: { fontSize: 11, color: colors.textMuted, marginTop: 1, fontWeight: '600' },
   pctBadge: { marginTop: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, borderWidth: 1 },
-  pctBadgeText: { fontSize: 10, fontWeight: '700' },
+  pctBadgeText: { fontSize: 11, fontWeight: '700' },
 
-  calExplanationBox: { marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#1e293b', width: '100%' },
-  calExplanationText: { fontSize: 10.5, color: '#94a3b8', lineHeight: 15 },
+  calExplanationBox: { marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.border, width: '100%' },
+  calExplanationText: { fontSize: 11, color: colors.textMuted, lineHeight: 16 },
 
   modeSection: { marginTop: 4 },
-  subActionBtn: { backgroundColor: '#0f172a', borderWidth: 1, borderColor: '#334155', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8 },
-  subActionBtnText: { fontSize: 11, color: '#38bdf8', fontWeight: '600' },
+  subActionBtn: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8 },
+  subActionBtnText: { fontSize: 12, color: '#3b82f6', fontWeight: '600' },
 
   /* 比率ステップ調整付き入力ボックス */
-  adjustInputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f172a', borderRadius: 8, borderWidth: 1, borderColor: '#334155', overflow: 'hidden' },
-  stepBtn: { width: 28, height: 36, backgroundColor: '#1e293b', justifyContent: 'center', alignItems: 'center' },
-  stepBtnText: { fontSize: 16, fontWeight: '700', color: '#38bdf8' },
-  inputStep: { flex: 1, textAlign: 'center', color: '#f8fafc', fontSize: 14, fontWeight: '600', paddingVertical: 6 },
+  adjustInputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+  stepBtn: { width: 28, height: 36, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' },
+  stepBtnText: { fontSize: 16, fontWeight: '700', color: '#3b82f6' },
+  inputStep: { flex: 1, textAlign: 'center', color: colors.text, fontSize: 14, fontWeight: '600', paddingVertical: 6 },
 
   /* 下部合計・リセットカード */
-  pfcFooterCard: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#334155' },
+  pfcFooterCard: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border },
   pfcFooterTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  pfcTotalLabel: { fontSize: 14, fontWeight: '600', color: '#f8fafc' },
+  pfcTotalLabel: { fontSize: 14, fontWeight: '600', color: colors.text },
   pfcTotalVal: { fontSize: 18, fontWeight: '800' },
   pfcTotalOk: { color: '#10b981' },
   pfcTotalWarn: { color: '#f59e0b' },
-  resetRatioBtn: { backgroundColor: '#0f172a', borderWidth: 1, borderColor: '#38bdf8', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16 },
-  resetRatioBtnText: { fontSize: 12, fontWeight: '700', color: '#38bdf8' },
-  pfcNoticeText: { fontSize: 12, fontWeight: '600', color: '#94a3b8', marginBottom: 4 },
-  pfcSubNoticeText: { fontSize: 11, color: '#64748b', lineHeight: 16 },
+  resetRatioBtn: { backgroundColor: colors.card, borderWidth: 1, borderColor: '#3b82f6', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16 },
+  resetRatioBtnText: { fontSize: 12, fontWeight: '700', color: '#3b82f6' },
+  pfcNoticeText: { fontSize: 12, fontWeight: '600', color: colors.textMuted, marginBottom: 4 },
+  pfcSubNoticeText: { fontSize: 12, color: colors.textMuted, lineHeight: 16 },
 
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 8 },
-  switchLabel: { fontSize: 13, fontWeight: '600', color: '#f8fafc' },
-  saveBtn: { backgroundColor: '#10b981', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
+  switchLabel: { fontSize: 13, fontWeight: '600', color: colors.text },
+  saveBtn: { backgroundColor: '#10b981', minHeight: 48, borderRadius: 12, paddingVertical: 14, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
   saveBtnDisabled: { opacity: 0.5 },
   saveBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 });

@@ -5,6 +5,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   ScrollView,
   Alert,
@@ -85,8 +86,8 @@ export default function ManagePresetsModal({
   onDeletePreset,
   onUpdateOrder,
 }: Props) {
-  const { backgroundTheme, colors } = useAppTheme();
-  const isPureBlack = backgroundTheme === 'pureBlack';
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   // 編集モード (null: 一覧, 'new': 新規作成, MealPresetWithItems: 編集)
   const [editingPreset, setEditingPreset] = useState<MealPresetWithItems | 'new' | null>(null);
@@ -367,14 +368,10 @@ export default function ManagePresetsModal({
         style={styles.overlay}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View
-          style={[
-            styles.sheet,
-            isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' },
-          ]}
-        >
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleModalClose} />
+        <View style={styles.sheet}>
           {/* ヘッダー */}
-          <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
+          <View style={styles.header}>
             <View style={styles.headerTitleRow}>
               {editingPreset !== null && (
                 <TouchableOpacity
@@ -394,7 +391,7 @@ export default function ManagePresetsModal({
               </Text>
             </View>
             <TouchableOpacity onPress={handleModalClose} style={styles.closeBtn} activeOpacity={0.7}>
-              <Ionicons name="close" size={22} color="#888888" />
+              <Ionicons name="close" size={22} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
 
@@ -405,11 +402,11 @@ export default function ManagePresetsModal({
               <View style={styles.fieldGroup}>
                 <Text style={styles.fieldLabel}>献立セット名 <Text style={styles.required}>*</Text></Text>
                 <TextInput
-                  style={[styles.textInput, isPureBlack && styles.textInputPureBlack]}
+                  style={styles.textInput}
                   value={formName}
                   onChangeText={setFormName}
                   placeholder="例: 定番朝食セット、筋トレ後プロテイン、昼定食"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.textMuted}
                 />
               </View>
 
@@ -507,11 +504,11 @@ export default function ManagePresetsModal({
               <View style={styles.fieldGroup}>
                 <Text style={styles.fieldLabel}>メモ (任意)</Text>
                 <TextInput
-                  style={[styles.textInput, isPureBlack && styles.textInputPureBlack]}
+                  style={styles.textInput}
                   value={formMemo}
                   onChangeText={setFormMemo}
                   placeholder="例: トレーニング日のみ卵を2個にする"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.textMuted}
                 />
               </View>
 
@@ -560,7 +557,7 @@ export default function ManagePresetsModal({
                     onPress={() => setSubDialog('favorite_select')}
                   >
                     <Ionicons name="star" size={14} color="#ffffff" />
-                    <Text style={styles.addItemActionBtnText}>お気に入りから</Text>
+                    <Text style={styles.addItemActionBtnText} numberOfLines={1} adjustsFontSizeToFit>お気に入りから</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -568,7 +565,7 @@ export default function ManagePresetsModal({
                     onPress={() => setSubDialog('history_select')}
                   >
                     <Ionicons name="time-outline" size={14} color="#ffffff" />
-                    <Text style={styles.addItemActionBtnText}>履歴から</Text>
+                    <Text style={styles.addItemActionBtnText} numberOfLines={1} adjustsFontSizeToFit>履歴から</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -576,7 +573,7 @@ export default function ManagePresetsModal({
                     onPress={() => setSubDialog('manual_item')}
                   >
                     <Ionicons name="add-circle-outline" size={14} color="#ffffff" />
-                    <Text style={styles.addItemActionBtnText}>手動追加</Text>
+                    <Text style={styles.addItemActionBtnText} numberOfLines={1} adjustsFontSizeToFit>手動追加</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -606,7 +603,7 @@ export default function ManagePresetsModal({
             /* 一覧画面 */
             <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
               <TouchableOpacity
-                style={[styles.newBtn, isPureBlack && { backgroundColor: '#047857' }]}
+                style={styles.newBtn}
                 onPress={handleStartAdd}
                 activeOpacity={0.8}
               >
@@ -616,7 +613,7 @@ export default function ManagePresetsModal({
 
               {presets.length === 0 ? (
                 <View style={styles.emptyList}>
-                  <Ionicons name="restaurant-outline" size={40} color="#64748b" style={{ marginBottom: 10 }} />
+                  <Ionicons name="restaurant-outline" size={40} color={colors.textMuted} style={{ marginBottom: 10 }} />
                   <Text style={styles.emptyTitle}>献立セットがありません</Text>
                   <Text style={styles.emptySubtitle}>
                     よく食べる朝食や昼食の組み合わせを登録すると、{'\n'}ワンタップでまとめて記録できるようになります。
@@ -643,7 +640,7 @@ export default function ManagePresetsModal({
                   return (
                     <View
                       key={`preset-card-${preset.id}`}
-                      style={[styles.presetCard, isPureBlack && styles.presetCardPureBlack]}
+                      style={styles.presetCard}
                     >
                       {/* 上段 */}
                       <View style={styles.presetCardHeader}>
@@ -675,14 +672,14 @@ export default function ManagePresetsModal({
                             onPress={() => handleMoveUp(index)}
                             disabled={index === 0}
                           >
-                            <Ionicons name="chevron-up" size={16} color={index === 0 ? '#475569' : '#94a3b8'} />
+                            <Ionicons name="chevron-up" size={16} color={index === 0 ? colors.textMuted : colors.text} />
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={[styles.orderBtn, index === presets.length - 1 && styles.orderBtnDisabled]}
                             onPress={() => handleMoveDown(index)}
                             disabled={index === presets.length - 1}
                           >
-                            <Ionicons name="chevron-down" size={16} color={index === presets.length - 1 ? '#475569' : '#94a3b8'} />
+                            <Ionicons name="chevron-down" size={16} color={index === presets.length - 1 ? colors.textMuted : colors.text} />
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -702,7 +699,7 @@ export default function ManagePresetsModal({
                             style={styles.actionBtn}
                             onPress={() => handleStartEdit(preset)}
                           >
-                            <Ionicons name="pencil" size={13} color="#38bdf8" />
+                            <Ionicons name="pencil" size={13} color="#3b82f6" />
                             <Text style={styles.actionBtnText}>編集</Text>
                           </TouchableOpacity>
 
@@ -726,20 +723,21 @@ export default function ManagePresetsModal({
           {subDialog === 'manual_item' && (
             <Modal transparent animationType="fade" visible onRequestClose={() => setSubDialog(null)}>
               <View style={styles.subModalOverlay}>
-                <View style={[styles.subModalBox, isPureBlack && { backgroundColor: '#000000' }]}>
+                <Pressable style={StyleSheet.absoluteFill} onPress={() => setSubDialog(null)} />
+                <View style={styles.subModalBox}>
                   <Text style={styles.subModalTitle}>🥗 食品を手動追加</Text>
                   <ScrollView style={{ maxHeight: 380 }}>
                     <TextInput
                       style={styles.subModalInput}
                       placeholder="食品名 (例: 白米 200g)"
-                      placeholderTextColor="#64748b"
+                      placeholderTextColor={colors.textMuted}
                       value={itemFormName}
                       onChangeText={setItemFormName}
                     />
                     <TextInput
                       style={styles.subModalInput}
                       placeholder="カロリー (kcal)"
-                      placeholderTextColor="#64748b"
+                      placeholderTextColor={colors.textMuted}
                       keyboardType="numeric"
                       value={itemFormCal}
                       onChangeText={setItemFormCal}
@@ -748,7 +746,7 @@ export default function ManagePresetsModal({
                       <TextInput
                         style={[styles.subModalInput, { flex: 1 }]}
                         placeholder="P (g)"
-                        placeholderTextColor="#64748b"
+                        placeholderTextColor={colors.textMuted}
                         keyboardType="numeric"
                         value={itemFormP}
                         onChangeText={setItemFormP}
@@ -756,7 +754,7 @@ export default function ManagePresetsModal({
                       <TextInput
                         style={[styles.subModalInput, { flex: 1 }]}
                         placeholder="F (g)"
-                        placeholderTextColor="#64748b"
+                        placeholderTextColor={colors.textMuted}
                         keyboardType="numeric"
                         value={itemFormF}
                         onChangeText={setItemFormF}
@@ -764,7 +762,7 @@ export default function ManagePresetsModal({
                       <TextInput
                         style={[styles.subModalInput, { flex: 1 }]}
                         placeholder="C (g)"
-                        placeholderTextColor="#64748b"
+                        placeholderTextColor={colors.textMuted}
                         keyboardType="numeric"
                         value={itemFormC}
                         onChangeText={setItemFormC}
@@ -774,7 +772,7 @@ export default function ManagePresetsModal({
                       <TextInput
                         style={[styles.subModalInput, { flex: 1 }]}
                         placeholder="塩分 (g)"
-                        placeholderTextColor="#64748b"
+                        placeholderTextColor={colors.textMuted}
                         keyboardType="numeric"
                         value={itemFormNa}
                         onChangeText={setItemFormNa}
@@ -782,7 +780,7 @@ export default function ManagePresetsModal({
                       <TextInput
                         style={[styles.subModalInput, { flex: 1 }]}
                         placeholder="食物繊維 (g)"
-                        placeholderTextColor="#64748b"
+                        placeholderTextColor={colors.textMuted}
                         keyboardType="numeric"
                         value={itemFormFib}
                         onChangeText={setItemFormFib}
@@ -806,7 +804,8 @@ export default function ManagePresetsModal({
           {subDialog === 'favorite_select' && (
             <Modal transparent animationType="fade" visible onRequestClose={() => setSubDialog(null)}>
               <View style={styles.subModalOverlay}>
-                <View style={[styles.subModalBox, isPureBlack && { backgroundColor: '#000000' }]}>
+                <Pressable style={StyleSheet.absoluteFill} onPress={() => setSubDialog(null)} />
+                <View style={styles.subModalBox}>
                   <Text style={styles.subModalTitle}>⭐ お気に入り食品から選んで追加</Text>
                   {favorites.length === 0 ? (
                     <Text style={styles.subModalEmptyText}>お気に入りに登録された食品がありません。</Text>
@@ -846,7 +845,8 @@ export default function ManagePresetsModal({
           {subDialog === 'history_select' && (
             <Modal transparent animationType="fade" visible onRequestClose={() => setSubDialog(null)}>
               <View style={styles.subModalOverlay}>
-                <View style={[styles.subModalBox, isPureBlack && { backgroundColor: '#000000' }]}>
+                <Pressable style={StyleSheet.absoluteFill} onPress={() => setSubDialog(null)} />
+                <View style={styles.subModalBox}>
                   <Text style={styles.subModalTitle}>📋 食事履歴から選んで追加</Text>
                   {historyLogs.length === 0 ? (
                     <Text style={styles.subModalEmptyText}>過去の食事履歴がありません。</Text>
@@ -903,16 +903,18 @@ export default function ManagePresetsModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#121212',
+    backgroundColor: colors.card,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    borderTopWidth: 1,
+    borderColor: colors.border,
     maxHeight: '92%',
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
   },
@@ -923,7 +925,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#262626',
+    borderBottomColor: colors.border,
   },
   headerTitleRow: {
     flexDirection: 'row',
@@ -931,16 +933,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backBtn: {
-    padding: 6,
-    marginRight: 6,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: -8,
+    marginRight: 2,
   },
   title: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: colors.text,
   },
   closeBtn: {
-    padding: 6,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: -8,
   },
   body: {
     flexGrow: 0,
@@ -954,6 +964,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#059669',
+    minHeight: 48,
     borderRadius: 12,
     paddingVertical: 13,
     marginBottom: 16,
@@ -971,26 +982,22 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#94a3b8',
+    color: colors.textMuted,
     marginBottom: 6,
   },
   emptySubtitle: {
     fontSize: 12,
-    color: '#64748b',
+    color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 18,
   },
   presetCard: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#334155',
-  },
-  presetCardPureBlack: {
-    backgroundColor: '#0f172a',
-    borderColor: '#1e293b',
+    borderColor: colors.border,
   },
   presetCardHeader: {
     flexDirection: 'row',
@@ -1011,7 +1018,7 @@ const styles = StyleSheet.create({
   },
   typeBadgeText: {
     color: '#ffffff',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: 'bold',
   },
   daysBadge: {
@@ -1022,7 +1029,7 @@ const styles = StyleSheet.create({
   },
   daysBadgeText: {
     color: '#ffffff',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: 'bold',
   },
   timeBadge: {
@@ -1033,13 +1040,13 @@ const styles = StyleSheet.create({
   },
   timeBadgeText: {
     color: '#ffffff',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: 'bold',
   },
   presetName: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#f8fafc',
+    color: colors.text,
     marginBottom: 6,
   },
   orderBtns: {
@@ -1049,20 +1056,24 @@ const styles = StyleSheet.create({
   orderBtn: {
     padding: 4,
     borderRadius: 6,
-    backgroundColor: '#334155',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   orderBtnDisabled: {
     opacity: 0.3,
   },
   presetItemsPreview: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: 6,
     padding: 8,
     marginVertical: 6,
   },
   presetItemSummaryText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textMuted,
     lineHeight: 16,
   },
   presetCardFooter: {
@@ -1074,7 +1085,7 @@ const styles = StyleSheet.create({
   presetTotalCal: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: '#34d399',
+    color: '#10b981',
   },
   presetCardActions: {
     flexDirection: 'row',
@@ -1087,11 +1098,11 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 6,
-    backgroundColor: '#0284c71a',
+    backgroundColor: '#3b82f61a',
   },
   actionBtnText: {
     fontSize: 12,
-    color: '#38bdf8',
+    color: '#3b82f6',
     fontWeight: '600',
   },
   deleteBtn: {
@@ -1109,24 +1120,21 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#cbd5e1',
+    color: colors.textMuted,
     marginBottom: 6,
   },
   required: {
     color: '#ef4444',
   },
   textInput: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    color: '#f8fafc',
+    color: colors.text,
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#334155',
-  },
-  textInputPureBlack: {
-    backgroundColor: '#0f172a',
+    borderColor: colors.border,
   },
   mealTypeRow: {
     flexDirection: 'row',
@@ -1136,22 +1144,22 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   mealTypeBtnActive: {
-    backgroundColor: '#04785722',
+    backgroundColor: '#10b98122',
     borderColor: '#10b981',
   },
   mealTypeBtnText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontWeight: '600',
   },
   mealTypeBtnTextActive: {
-    color: '#34d399',
+    color: '#10b981',
     fontWeight: 'bold',
   },
   labelWithActionRow: {
@@ -1161,7 +1169,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   clearDaysText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#ef4444',
     fontWeight: '600',
   },
@@ -1174,12 +1182,14 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 5,
     borderRadius: 6,
-    backgroundColor: '#334155',
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
   },
   quickDayBtnText: {
-    fontSize: 11,
-    color: '#cbd5e1',
+    fontSize: 12,
+    color: colors.textMuted,
     fontWeight: '600',
   },
   dayChipsRow: {
@@ -1190,10 +1200,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   dayChipActive: {
     backgroundColor: '#4f46e524',
@@ -1201,46 +1211,49 @@ const styles = StyleSheet.create({
   },
   dayChipText: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontWeight: '600',
   },
   dayChipTextActive: {
-    color: '#818cf8',
+    color: '#6366f1',
     fontWeight: 'bold',
   },
   toggleSwitch: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: '#334155',
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   toggleSwitchActive: {
     backgroundColor: '#059669',
+    borderColor: '#059669',
   },
   toggleSwitchText: {
-    fontSize: 11,
-    color: '#94a3b8',
+    fontSize: 12,
+    color: colors.textMuted,
     fontWeight: '600',
   },
   toggleSwitchTextActive: {
     color: '#ffffff',
   },
   itemsSection: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   itemsSectionTitle: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: '#f8fafc',
+    color: colors.text,
   },
   itemsTotalsText: {
-    fontSize: 11,
-    color: '#34d399',
+    fontSize: 12,
+    color: '#10b981',
     fontWeight: 'bold',
   },
   emptyItemsBox: {
@@ -1249,7 +1262,7 @@ const styles = StyleSheet.create({
   },
   emptyItemsText: {
     fontSize: 12,
-    color: '#64748b',
+    color: colors.textMuted,
     textAlign: 'center',
   },
   itemsListContainer: {
@@ -1260,16 +1273,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+    borderBottomColor: colors.border,
   },
   formItemName: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#f8fafc',
+    color: colors.text,
   },
   formItemMeta: {
-    fontSize: 11,
-    color: '#94a3b8',
+    fontSize: 12,
+    color: colors.textMuted,
     marginTop: 2,
   },
   removeItemBtn: {
@@ -1287,6 +1300,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
     paddingVertical: 8,
+    paddingHorizontal: 6,
+    minHeight: 40,
     borderRadius: 8,
   },
   addItemActionBtnText: {
@@ -1301,22 +1316,28 @@ const styles = StyleSheet.create({
   },
   cancelBtn: {
     flex: 1,
+    minHeight: 48,
     paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#334155',
+    borderRadius: 12,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   cancelBtnText: {
-    color: '#cbd5e1',
+    color: colors.textMuted,
     fontSize: 14,
     fontWeight: '600',
   },
   saveBtn: {
     flex: 2,
+    minHeight: 48,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     backgroundColor: '#059669',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   saveBtnDisabled: {
     opacity: 0.6,
@@ -1334,34 +1355,34 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   subModalBox: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.card,
     borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   subModalTitle: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#f8fafc',
+    color: colors.text,
     marginBottom: 12,
   },
   subModalEmptyText: {
-    color: '#64748b',
+    color: colors.textMuted,
     fontSize: 13,
     paddingVertical: 20,
     textAlign: 'center',
   },
   subModalInput: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    color: '#f8fafc',
+    color: colors.text,
     fontSize: 13,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   subModalBtnRow: {
     flexDirection: 'row',
@@ -1370,22 +1391,28 @@ const styles = StyleSheet.create({
   },
   subCancelBtn: {
     flex: 1,
+    minHeight: 44,
     paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: '#334155',
+    borderRadius: 10,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   subCancelBtnText: {
-    color: '#cbd5e1',
+    color: colors.textMuted,
     fontSize: 13,
     fontWeight: '600',
   },
   subAddBtn: {
     flex: 1,
+    minHeight: 44,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 10,
     backgroundColor: '#059669',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   subAddBtnText: {
     color: '#ffffff',
@@ -1397,16 +1424,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+    borderBottomColor: colors.border,
   },
   subSelectName: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#f8fafc',
+    color: colors.text,
   },
   subSelectMeta: {
-    fontSize: 11,
-    color: '#94a3b8',
+    fontSize: 12,
+    color: colors.textMuted,
     marginTop: 2,
   },
 });
