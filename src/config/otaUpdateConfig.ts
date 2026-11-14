@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.32',
+  version: '2.3.33',
   title: {
-    ja: '✨ ボリューム表示位置と重量増減ステップ設定の整理',
-    en: '✨ Cleaner Volume Placement & Weight Step Settings',
+    ja: '✨ ダッシュボードのデザイン統一と操作性の改善',
+    en: '✨ Unified Dashboard Design & Improved Usability',
   },
   notes: {
     ja: [
-      'ワークアウト画面の種目ごとのボリューム表示を「+ セット追加」の右上（最終セットの右下）へ移動し、カード上部をすっきり見やすく調整しました。',
-      '重量増減ステップ（±kg/lbs）の設定をワークアウト画面から非表示にし、種目詳細ページの「個別インターバル設定」の下から設定できるように移動しました。',
+      'ダッシュボードの全カードのデザイン・余白・文字サイズを統一し、背景テーマ（ダーク／ピュアブラック）の切り替えにも即時反映されるよう改善しました。',
+      '習慣カウンターの「+」ボタンや水分プリセット、日付切替ボタンなどのタップ領域を広げ、より操作しやすく調整しました。',
     ],
     en: [
-      'Moved each exercise\'s volume display to the upper-right of "+ Add Set" (below the last set\'s check button) for a cleaner workout card header.',
-      'Removed the weight step button from the active workout screen and moved it to a collapsible section on the Exercise Details page.',
+      'Unified card layout, spacing, and typography across the dashboard with instant dark/pure-black theme updates.',
+      'Expanded touch targets for habit "+" buttons, hydration presets, and date navigation controls for easier tapping.',
     ],
   },
 };
