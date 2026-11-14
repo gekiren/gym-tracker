@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { getSettings } from '../db/database';
-import { Theme } from '../theme';
+import { useAppTheme } from '../theme';
 import { purchasePremium, restorePurchases } from '../services/iapService';
 
 export type AccountType = 'basic' | 'premium' | 'premium_limited' | 'early_adopter';
@@ -19,6 +19,7 @@ export interface MenuItem {
 
 export function useProfile() {
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
   const settings = useSettingsStore(state => state.settings);
   const shouldShowPaywall = useWorkoutStore(state => state.shouldShowPaywall);
   const setShouldShowPaywall = useWorkoutStore(state => state.setShouldShowPaywall);
@@ -151,11 +152,11 @@ export function useProfile() {
         title: 'データ管理',
         desc: 'データベース初期化・デフォルトデータ復元',
         icon: 'warning-outline',
-        iconColor: Theme.colors.danger,
+        iconColor: colors.danger,
         route: '/settings/data-management',
       },
     ],
-    [accountType, settings.aiTokensBalance]
+    [accountType, settings.aiTokensBalance, colors.danger]
   );
 
   return {

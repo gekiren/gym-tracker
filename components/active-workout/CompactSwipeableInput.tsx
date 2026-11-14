@@ -8,7 +8,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 
 export interface CompactSwipeableInputHandle {
   focus: () => void;
@@ -66,6 +66,9 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   onSwipeEnd,
   panGestureRef,
 }, ref) => {
+  const { colors } = useAppTheme();
+  const primaryColor = colors.primary;
+  const textColor = colors.text;
   const [isEditing, setIsEditing] = useState(false);
   const localInputRef = useRef<TextInput>(null);
 
@@ -304,7 +307,7 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
   const dragTextStyle = useAnimatedStyle(() => {
     return {
       color: withTiming(
-        isDragging.value ? Theme.colors.primary : (style as any)?.color || Theme.colors.text,
+        isDragging.value ? primaryColor : (style as any)?.color || textColor,
         { duration: 100 }
       ),
     };
@@ -321,7 +324,7 @@ export const CompactSwipeableInput = forwardRef<CompactSwipeableInputHandle, Com
 
   const flatStyle = StyleSheet.flatten(style) || {};
   const textStyleOnly = {
-    color: flatStyle.color || Theme.colors.text,
+    color: flatStyle.color || textColor,
     fontSize: flatStyle.fontSize || 15,
     fontWeight: flatStyle.fontWeight || 'bold',
     textAlign: flatStyle.textAlign || 'center',
