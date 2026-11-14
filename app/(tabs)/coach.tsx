@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { consumeAIToken, getAITokensBalance, refundAIToken } from '../../src/db/database';
 import { sendMessageToAICoach } from '../../src/services/aiCoachService';
@@ -30,6 +30,8 @@ interface ChatMessage {
 
 export default function CoachScreen() {
   const { t } = useTranslation();
+  const { colors, spacing } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors, spacing), [colors, spacing]);
   const settings = useSettingsStore(state => state.settings);
   const setAITokensBalance = useSettingsStore(state => state.setAITokensBalance);
   const setAiChatMode = useSettingsStore(state => state.setAiChatMode);
@@ -95,7 +97,7 @@ export default function CoachScreen() {
       <View style={styles.maintenanceContainer}>
         <View style={styles.maintenanceCard}>
           <View style={styles.maintenanceIconOuter}>
-            <Ionicons name="build" size={42} color={Theme.colors.primary} />
+            <Ionicons name="build" size={42} color={colors.primary} />
           </View>
           <Text style={styles.maintenanceHeader}>
             {t('ui.coach.maintenance_title')}
@@ -277,13 +279,17 @@ export default function CoachScreen() {
       {activeContext && (
         <View style={styles.contextBadge}>
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-            <Ionicons name="link" size={16} color={Theme.colors.primary} style={{ marginRight: 6 }} />
+            <Ionicons name="link" size={16} color={colors.primary} style={{ marginRight: 6 }} />
             <Text style={styles.contextBadgeText} numberOfLines={1}>
               {t('ui.coach.linked_context', { title: contextTitle })}
             </Text>
           </View>
-          <TouchableOpacity style={styles.clearContextBtn} onPress={handleClearContext}>
-            <Ionicons name="close-circle" size={18} color={Theme.colors.textMuted} />
+          <TouchableOpacity
+            style={styles.clearContextBtn}
+            onPress={handleClearContext}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
       )}
@@ -370,7 +376,7 @@ export default function CoachScreen() {
           <View style={[styles.bubbleContainer, styles.bubbleLeft]}>
             <View style={[styles.bubble, styles.bubbleAI, styles.loadingBubble]}>
               <View style={styles.aiSideAccent} />
-              <ActivityIndicator size="small" color={Theme.colors.primary} style={{ marginRight: 10 }} />
+              <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 10 }} />
               <Text style={styles.loadingText}>
                 {currentAiChatMode === 'thinking'
                   ? t('ui.coach.analyzing_thinking')
@@ -401,7 +407,7 @@ export default function CoachScreen() {
               <Ionicons
                 name="flash"
                 size={13}
-                color={currentAiChatMode === 'quick' ? '#FFD700' : Theme.colors.textMuted}
+                color={currentAiChatMode === 'quick' ? '#FFD700' : colors.textMuted}
                 style={{ marginRight: 4 }}
               />
               <Text
@@ -426,7 +432,7 @@ export default function CoachScreen() {
               <Ionicons
                 name="bulb"
                 size={13}
-                color={currentAiChatMode === 'thinking' ? '#BB86FC' : Theme.colors.textMuted}
+                color={currentAiChatMode === 'thinking' ? '#BB86FC' : colors.textMuted}
                 style={{ marginRight: 4 }}
               />
               <Text
@@ -451,10 +457,10 @@ export default function CoachScreen() {
             contentContainerStyle={styles.chipsContainer}
           >
             <TouchableOpacity
-              style={[styles.chip, { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: '#4facfe', borderWidth: 1 }]}
+              style={[styles.chip, { backgroundColor: 'rgba(79, 172, 254, 0.16)', borderColor: colors.primary, borderWidth: 1 }]}
               onPress={() => handleChipPress('full_analysis')}
             >
-              <Text style={[styles.chipText, { color: '#4facfe', fontWeight: 'bold' }]}>🌟 本日の総合アドバイス（筋トレ・食事・ライフ）</Text>
+              <Text style={[styles.chipText, { color: colors.primary, fontWeight: 'bold' }]}>🌟 本日の総合アドバイス（筋トレ・食事・ライフ）</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.chip} onPress={() => handleChipPress('analysis')}>
               <Text style={styles.chipText}>📊 {t('ui.coach.chip_analysis')}</Text>
@@ -486,7 +492,7 @@ export default function CoachScreen() {
               ? (isBasic ? '今月の利用枠（5回）が終了しました。アップグレードしてください' : t('ui.profile.quota_exhausted_alert'))
               : t('ui.coach.input_placeholder')
           }
-          placeholderTextColor={isQuotaExhausted ? Theme.colors.danger : Theme.colors.textMuted}
+          placeholderTextColor={isQuotaExhausted ? colors.danger : colors.textMuted}
           editable={!isQuotaExhausted && !loading}
           multiline={true}
           maxLength={500}
@@ -507,12 +513,15 @@ export default function CoachScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
+const createStyles = (
+  colors: ReturnType<typeof useAppTheme>['colors'],
+  spacing: ReturnType<typeof useAppTheme>['spacing']
+) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   
   // Warning Banner
   warningBanner: {
-    backgroundColor: Theme.colors.danger,
+    backgroundColor: colors.danger,
     paddingVertical: 10,
     paddingHorizontal: 16,
     flexDirection: 'row',
@@ -532,12 +541,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  contextBadgeText: { color: Theme.colors.primary, fontSize: 13, fontWeight: 'bold' },
-  clearContextBtn: { padding: 2 },
+  contextBadgeText: { color: colors.primary, fontSize: 13, fontWeight: 'bold' },
+  clearContextBtn: {
+    padding: 6,
+    minWidth: 36,
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   // Chat Area
   chatArea: { flex: 1 },
-  chatContent: { padding: Theme.spacing.md, paddingBottom: 24 },
+  chatContent: { padding: spacing.md, paddingBottom: 24 },
   
   // Bubble Containers
   bubbleContainer: { flexDirection: 'row', width: '100%', marginBottom: 16 },
@@ -547,21 +562,21 @@ const styles = StyleSheet.create({
   // Chat Bubbles
   bubble: {
     maxWidth: '82%',
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 16,
     position: 'relative',
     overflow: 'hidden',
   },
   bubbleUser: {
-    backgroundColor: Theme.colors.primary,
-    borderBottomRightRadius: 2,
+    backgroundColor: colors.primary,
+    borderBottomRightRadius: 4,
   },
   bubbleAI: {
-    backgroundColor: Theme.colors.card,
-    borderBottomLeftRadius: 2,
+    backgroundColor: colors.card,
+    borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
     paddingLeft: 20, // offset for left side vertical accent bar
   },
   aiSideAccent: {
@@ -570,23 +585,23 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 4,
-    backgroundColor: Theme.colors.primary,
+    backgroundColor: colors.primary,
   },
   bubbleText: { fontSize: 15, lineHeight: 22 },
   bubbleTextUser: { color: '#fff' },
-  bubbleTextAI: { color: Theme.colors.text },
+  bubbleTextAI: { color: colors.text },
 
   // System Message Bubble
   systemBubble: {
     backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
-    padding: 10,
+    borderColor: colors.border,
+    padding: 12,
     marginVertical: 12,
     alignItems: 'center',
   },
-  systemBubbleText: { color: Theme.colors.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 18 },
+  systemBubbleText: { color: colors.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 18 },
 
   // Loading Bubble
   loadingBubble: {
@@ -594,48 +609,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
   },
-  loadingText: { color: Theme.colors.textMuted, fontSize: 14 },
+  loadingText: { color: colors.textMuted, fontSize: 14 },
 
   // Suggestions Chips
-  chipsOuter: { backgroundColor: Theme.colors.background, paddingVertical: 8 },
-  chipsContainer: { paddingHorizontal: Theme.spacing.md, gap: 8 },
+  chipsOuter: { backgroundColor: colors.background, paddingVertical: 8 },
+  chipsContainer: { paddingHorizontal: spacing.md, gap: 8 },
   chip: {
-    backgroundColor: '#1c1c1e',
+    backgroundColor: colors.card,
     borderRadius: 16,
     paddingVertical: 8,
     paddingHorizontal: 14,
+    minHeight: 36,
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
   },
-  chipText: { color: Theme.colors.text, fontSize: 13, fontWeight: '600' },
+  chipText: { color: colors.text, fontSize: 13, fontWeight: '600' },
 
   // Mode Selector Toggle Bar
   modeToggleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Theme.spacing.md,
+    paddingHorizontal: spacing.md,
     paddingTop: 8,
     paddingBottom: 4,
-    backgroundColor: Theme.colors.background,
+    backgroundColor: colors.background,
   },
   modeLabelText: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
   },
   modeToggleGroup: {
     flexDirection: 'row',
-    backgroundColor: '#1a1a1c',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 3,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
   },
   modeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 4,
+    paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 13,
   },
@@ -650,77 +667,72 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(187, 134, 252, 0.4)',
   },
   modeBtnText: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
   },
   modeBtnTextActive: {
-    color: Theme.colors.text,
+    color: colors.text,
     fontWeight: 'bold',
   },
 
   // Footer Input Form
   inputForm: {
     flexDirection: 'row',
-    padding: Theme.spacing.md,
-    backgroundColor: Theme.colors.card,
+    padding: spacing.md,
+    backgroundColor: colors.card,
     borderTopWidth: 1,
-    borderTopColor: Theme.colors.border,
+    borderTopColor: colors.border,
     alignItems: 'center',
     gap: 12,
   },
   textInput: {
     flex: 1,
-    backgroundColor: '#121212',
-    color: Theme.colors.text,
+    backgroundColor: colors.background,
+    color: colors.text,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: 16,
     fontSize: 15,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
     maxHeight: 100,
   },
   textInputDisabled: {
     backgroundColor: 'rgba(239, 83, 80, 0.05)',
-    borderColor: Theme.colors.danger,
-    color: Theme.colors.danger,
+    borderColor: colors.danger,
+    color: colors.danger,
   },
   sendBtn: {
-    backgroundColor: Theme.colors.primary,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    backgroundColor: colors.primary,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
   sendBtnDisabled: {
-    backgroundColor: '#222',
+    backgroundColor: colors.border,
     opacity: 0.5,
   },
   
   // Maintenance styles
   maintenanceContainer: {
     flex: 1,
-    backgroundColor: Theme.colors.background,
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: Theme.spacing.lg,
+    padding: spacing.lg,
   },
   maintenanceCard: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.lg,
+    backgroundColor: colors.card,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(79, 172, 254, 0.2)',
+    borderColor: colors.border,
     padding: 28,
     alignItems: 'center',
     width: '100%',
     maxWidth: 340,
-    shadowColor: Theme.colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 5,
   },
   maintenanceIconOuter: {
     width: 80,
@@ -736,21 +748,21 @@ const styles = StyleSheet.create({
   maintenanceHeader: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
     marginBottom: 16,
     textAlign: 'center',
   },
   maintenanceBody: {
     fontSize: 14,
     lineHeight: 22,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
     marginBottom: 14,
   },
   maintenanceFooter: {
     fontSize: 13,
     lineHeight: 20,
-    color: Theme.colors.primary,
+    color: colors.primary,
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -763,7 +775,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     marginTop: 8,
     marginBottom: 4,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(255, 183, 77, 0.3)',
     overflow: 'hidden',
@@ -774,6 +786,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 8,
     paddingHorizontal: 12,
+    minHeight: 40,
     backgroundColor: 'rgba(255, 183, 77, 0.12)',
   },
   debugContextTitle: {
@@ -782,13 +795,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   debugContextContent: {
-    padding: 10,
-    backgroundColor: '#161616',
+    padding: 12,
+    backgroundColor: colors.card,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
   debugContextText: {
-    color: '#E0E0E0',
-    fontSize: 11,
-    lineHeight: 16,
+    color: colors.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
 });
