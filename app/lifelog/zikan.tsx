@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { WebViewTab, WebViewTabRef } from '../../components/WebViewTab';
 import ZikanKanriHTML from '../../src/web-apps/ZikanKanri';
 import { useLifelogStore } from '../../src/store/lifelogStore';
@@ -21,6 +21,7 @@ import {
 } from '../../src/services/calendarService';
 
 export default function ZikanScreen() {
+  const { colors } = useAppTheme();
   const currentDate = useLifelogStore((state) => state.currentDate);
   const [showHistory, setShowHistory] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -166,31 +167,37 @@ export default function ZikanScreen() {
 
   return (
     <PanGestureHandler {...panHandlerProps}>
-      <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <Stack.Screen
           options={{
             title: '24時間管理',
-            headerStyle: { backgroundColor: Theme.colors.background },
-            headerTintColor: Theme.colors.text,
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.text,
             headerTitleStyle: { fontWeight: 'bold' },
             headerRight: () => (
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
                 <TouchableOpacity
                   onPress={handleManualCalendarSync}
                   disabled={isCalendarSyncing}
-                  style={{ padding: 6, marginRight: 6 }}
+                  style={{ minWidth: 40, minHeight: 40, padding: 8, marginRight: 2, alignItems: 'center', justifyContent: 'center' }}
                 >
                   {isCalendarSyncing ? (
-                    <ActivityIndicator size="small" color={Theme.colors.primary} />
+                    <ActivityIndicator size="small" color={colors.primary} />
                   ) : (
-                    <Ionicons name="calendar-outline" size={22} color={Theme.colors.primary} />
+                    <Ionicons name="calendar-outline" size={22} color={colors.primary} />
                   )}
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ padding: 6, marginRight: 6 }}>
-                  <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
+                <TouchableOpacity
+                  onPress={() => setShowHistory(prev => !prev)}
+                  style={{ minWidth: 40, minHeight: 40, padding: 8, marginRight: 2, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={colors.primary} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={handleOpenTagEditor} style={{ padding: 6 }}>
-                  <Ionicons name="settings-outline" size={22} color={Theme.colors.primary} />
+                <TouchableOpacity
+                  onPress={handleOpenTagEditor}
+                  style={{ minWidth: 40, minHeight: 40, padding: 8, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Ionicons name="settings-outline" size={22} color={colors.primary} />
                 </TouchableOpacity>
               </View>
             ),

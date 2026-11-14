@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { Theme, useAppTheme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { useBodyStore } from '../../src/store/bodyStore';
 import { useLifelogStore } from '../../src/store/lifelogStore';
 import { BodyCompositionLog } from '../../src/types/bodyComposition';
@@ -33,6 +33,7 @@ import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
 
 export default function BodyCompositionScreen() {
   const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const isFocused = useIsFocused();
@@ -178,39 +179,39 @@ export default function BodyCompositionScreen() {
 
   return (
     <PanGestureHandler {...panHandlerProps}>
-      <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <Stack.Screen
           options={{
             title: '体組成 ＆ 筋肥大限界',
-            headerStyle: { backgroundColor: Theme.colors.background },
-          headerTintColor: Theme.colors.text,
+            headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.text,
           headerTitleStyle: { fontWeight: 'bold' },
           headerRight: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
               <TouchableOpacity
                 onPress={() => setShowMdImportModal(true)}
-                style={{ padding: 8, marginRight: 2 }}
+                style={{ minWidth: 40, minHeight: 40, padding: 8, marginRight: 2, alignItems: 'center', justifyContent: 'center' }}
                 activeOpacity={0.7}
               >
-                <Ionicons name="document-text-outline" size={22} color={Theme.colors.primary} />
+                <Ionicons name="document-text-outline" size={22} color={colors.primary} />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setShowHistoryTab((prev) => !prev)}
-                style={{ padding: 8, marginRight: 2 }}
+                style={{ minWidth: 40, minHeight: 40, padding: 8, marginRight: 2, alignItems: 'center', justifyContent: 'center' }}
                 activeOpacity={0.7}
               >
                 <Ionicons
                   name={showHistoryTab ? 'speedometer-outline' : 'stats-chart-outline'}
                   size={22}
-                  color={Theme.colors.primary}
+                  color={colors.primary}
                 />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setShowGuideModal(true)}
-                style={{ padding: 8 }}
+                style={{ minWidth: 40, minHeight: 40, padding: 8, alignItems: 'center', justifyContent: 'center' }}
                 activeOpacity={0.7}
               >
-                <Ionicons name="help-circle-outline" size={22} color={Theme.colors.primary} />
+                <Ionicons name="help-circle-outline" size={22} color={colors.primary} />
               </TouchableOpacity>
             </View>
           ),
@@ -225,7 +226,7 @@ export default function BodyCompositionScreen() {
             onPress={() => changeDateOffset(-1)}
             activeOpacity={0.6}
           >
-            <Ionicons name="chevron-back" size={20} color={Theme.colors.text} />
+            <Ionicons name="chevron-back" size={20} color={colors.text} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -242,7 +243,7 @@ export default function BodyCompositionScreen() {
             onPress={() => changeDateOffset(1)}
             activeOpacity={0.6}
           >
-            <Ionicons name="chevron-forward" size={20} color={Theme.colors.text} />
+            <Ionicons name="chevron-forward" size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
       )}
@@ -259,7 +260,7 @@ export default function BodyCompositionScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.colors.primary} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
           }
         >
           {/* 1. 今日の体組成カード */}
@@ -320,35 +321,41 @@ export default function BodyCompositionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   dateBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.02)',
     borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
+    borderBottomColor: colors.border,
   },
   dateArrowBtn: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 8,
   },
   dateCenterBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 40,
+    paddingHorizontal: 8,
     gap: 8,
   },
   dateMainText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   todayBadge: {
-    fontSize: 11,
-    color: Theme.colors.primary,
+    fontSize: 12,
+    color: colors.primary,
     backgroundColor: 'rgba(79, 172, 254, 0.15)',
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
     fontWeight: 'bold',

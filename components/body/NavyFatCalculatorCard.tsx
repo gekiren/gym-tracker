@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { BodyCompositionLog, Gender, NavyBodyFatResult } from '../../src/types/bodyComposition';
 import { calculateNavyBodyFat } from '../../src/utils/bodyCalculators';
 
@@ -26,6 +26,8 @@ export default function NavyFatCalculatorCard({
   onApplyBodyFat,
   onOpenGuide,
 }: NavyFatCalculatorCardProps) {
+  const { colors, spacing } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors, spacing), [colors, spacing]);
   const savedMeasurements = useBodyStore((state) => state.savedMeasurements);
   const saveLastMeasurements = useBodyStore((state) => state.saveLastMeasurements);
 
@@ -168,8 +170,13 @@ export default function NavyFatCalculatorCard({
             <Text style={styles.cardSubtitle}>US Navy Circumference Method</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.guideBtn} onPress={onOpenGuide} activeOpacity={0.7}>
-          <Ionicons name="help-circle-outline" size={20} color={Theme.colors.textMuted} />
+        <TouchableOpacity
+          style={styles.guideBtn}
+          onPress={onOpenGuide}
+          activeOpacity={0.7}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <Ionicons name="help-circle-outline" size={20} color={colors.textMuted} />
         </TouchableOpacity>
       </View>
 
@@ -183,7 +190,7 @@ export default function NavyFatCalculatorCard({
               style={styles.textInput}
               keyboardType="decimal-pad"
               placeholder="38.0"
-              placeholderTextColor={Theme.colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={neckStr}
               onChangeText={handleNeckChange}
             />
@@ -199,7 +206,7 @@ export default function NavyFatCalculatorCard({
               style={styles.textInput}
               keyboardType="decimal-pad"
               placeholder="80.0"
-              placeholderTextColor={Theme.colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={waistStr}
               onChangeText={handleWaistChange}
             />
@@ -216,7 +223,7 @@ export default function NavyFatCalculatorCard({
                 style={styles.textInput}
                 keyboardType="decimal-pad"
                 placeholder="90.0"
-                placeholderTextColor={Theme.colors.textMuted}
+                placeholderTextColor={colors.textMuted}
                 value={hipStr}
                 onChangeText={handleHipChange}
               />
@@ -233,7 +240,7 @@ export default function NavyFatCalculatorCard({
               style={styles.textInput}
               keyboardType="decimal-pad"
               placeholder="175.0"
-              placeholderTextColor={Theme.colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={heightStr}
               onChangeText={handleHeightChange}
             />
@@ -281,7 +288,7 @@ export default function NavyFatCalculatorCard({
         </View>
       ) : (
         <View style={styles.placeholderBox}>
-          <Ionicons name="information-circle-outline" size={18} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
+          <Ionicons name="information-circle-outline" size={18} color={colors.textMuted} style={{ marginRight: 6 }} />
           <Text style={styles.placeholderText}>
             首回りとウエスト（女性はヒップ）を入力すると自動計算されます。
           </Text>
@@ -291,14 +298,17 @@ export default function NavyFatCalculatorCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (
+  colors: ReturnType<typeof useAppTheme>['colors'],
+  spacing: ReturnType<typeof useAppTheme>['spacing']
+) => StyleSheet.create({
   card: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.lg,
-    padding: Theme.spacing.md,
-    marginBottom: Theme.spacing.md,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -321,14 +331,18 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 17,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   cardSubtitle: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     marginTop: 2,
   },
   guideBtn: {
+    minWidth: 40,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 6,
   },
   inputsGrid: {
@@ -342,7 +356,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     marginBottom: 4,
     fontWeight: '500',
   },
@@ -350,26 +364,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     paddingHorizontal: 10,
+    minHeight: 44,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   textInput: {
     flex: 1,
-    color: Theme.colors.text,
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
     paddingVertical: 8,
   },
   inputUnit: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     marginLeft: 4,
   },
   resultBox: {
     backgroundColor: 'rgba(251, 146, 60, 0.08)',
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     padding: 14,
     borderWidth: 1,
     borderColor: 'rgba(251, 146, 60, 0.25)',
@@ -382,7 +397,7 @@ const styles = StyleSheet.create({
   },
   resultLabel: {
     fontSize: 13,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontWeight: '500',
   },
   categoryText: {
@@ -416,19 +431,20 @@ const styles = StyleSheet.create({
   },
   detailItem: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
   },
   detailBold: {
-    color: Theme.colors.text,
+    color: colors.text,
     fontWeight: 'bold',
   },
   applyBtn: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#ea580c',
     paddingVertical: 10,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
   },
   applyBtnText: {
     color: '#fff',
@@ -440,12 +456,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.02)',
     padding: 12,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
   },
   placeholderText: {
     flex: 1,
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     lineHeight: 16,
   },
 });

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { BodyCompositionLog, CaseyLimitResult } from '../../src/types/bodyComposition';
 import { calculateCaseyMuscularLimit } from '../../src/utils/bodyCalculators';
 
@@ -25,6 +25,8 @@ export default function CaseyLimitCalculatorCard({
   onSaveMeasurements,
   onOpenGuide,
 }: CaseyLimitCalculatorCardProps) {
+  const { colors, spacing } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors, spacing), [colors, spacing]);
   const savedMeasurements = useBodyStore((state) => state.savedMeasurements);
   const saveLastMeasurements = useBodyStore((state) => state.saveLastMeasurements);
 
@@ -156,8 +158,13 @@ export default function CaseyLimitCalculatorCard({
             <Text style={styles.cardSubtitle}>Dr. Casey Butt's Maximum Muscular Potential</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.guideBtn} onPress={onOpenGuide} activeOpacity={0.7}>
-          <Ionicons name="help-circle-outline" size={20} color={Theme.colors.textMuted} />
+        <TouchableOpacity
+          style={styles.guideBtn}
+          onPress={onOpenGuide}
+          activeOpacity={0.7}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <Ionicons name="help-circle-outline" size={20} color={colors.textMuted} />
         </TouchableOpacity>
       </View>
 
@@ -171,7 +178,7 @@ export default function CaseyLimitCalculatorCard({
               style={styles.textInput}
               keyboardType="decimal-pad"
               placeholder="17.0"
-              placeholderTextColor={Theme.colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={wristStr}
               onChangeText={handleWristChange}
             />
@@ -187,7 +194,7 @@ export default function CaseyLimitCalculatorCard({
               style={styles.textInput}
               keyboardType="decimal-pad"
               placeholder="22.0"
-              placeholderTextColor={Theme.colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={ankleStr}
               onChangeText={handleAnkleChange}
             />
@@ -203,7 +210,7 @@ export default function CaseyLimitCalculatorCard({
               style={styles.textInput}
               keyboardType="decimal-pad"
               placeholder="10"
-              placeholderTextColor={Theme.colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={targetFatStr}
               onChangeText={handleTargetFatChange}
             />
@@ -219,7 +226,7 @@ export default function CaseyLimitCalculatorCard({
               style={styles.textInput}
               keyboardType="decimal-pad"
               placeholder="175.0"
-              placeholderTextColor={Theme.colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={heightStr}
               onChangeText={handleHeightChange}
             />
@@ -330,7 +337,7 @@ export default function CaseyLimitCalculatorCard({
         </View>
       ) : (
         <View style={styles.placeholderBox}>
-          <Ionicons name="information-circle-outline" size={18} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
+          <Ionicons name="information-circle-outline" size={18} color={colors.textMuted} style={{ marginRight: 6 }} />
           <Text style={styles.placeholderText}>
             手首と足首の最小周囲長を入力すると、骨格フレームに基づくナチュラル筋肥大の限界値が計算されます。
           </Text>
@@ -340,14 +347,17 @@ export default function CaseyLimitCalculatorCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (
+  colors: ReturnType<typeof useAppTheme>['colors'],
+  spacing: ReturnType<typeof useAppTheme>['spacing']
+) => StyleSheet.create({
   card: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.lg,
-    padding: Theme.spacing.md,
-    marginBottom: Theme.spacing.md,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -370,14 +380,18 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 17,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   cardSubtitle: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     marginTop: 2,
   },
   guideBtn: {
+    minWidth: 40,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 6,
   },
   inputsGrid: {
@@ -391,7 +405,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     marginBottom: 4,
     fontWeight: '500',
   },
@@ -399,26 +413,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     paddingHorizontal: 10,
+    minHeight: 44,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   textInput: {
     flex: 1,
-    color: Theme.colors.text,
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
     paddingVertical: 8,
   },
   inputUnit: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     marginLeft: 4,
   },
   resultBox: {
     backgroundColor: 'rgba(167, 139, 250, 0.08)',
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     padding: 14,
     borderWidth: 1,
     borderColor: 'rgba(167, 139, 250, 0.25)',
@@ -432,42 +447,44 @@ const styles = StyleSheet.create({
   limitBox: {
     width: '48.5%',
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     padding: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   limitLabel: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
+    color: colors.textMuted,
     marginBottom: 2,
   },
   valueRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
+    flexWrap: 'wrap',
     gap: 3,
   },
   limitValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   limitUnit: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
+    color: colors.textMuted,
   },
   subHint: {
-    fontSize: 10,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
+    color: colors.textMuted,
     marginTop: 2,
   },
   togglePartsBtn: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
     backgroundColor: 'rgba(167, 139, 250, 0.12)',
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     marginBottom: 10,
   },
   togglePartsText: {
@@ -477,7 +494,7 @@ const styles = StyleSheet.create({
   },
   partsContainer: {
     backgroundColor: 'rgba(0, 0, 0, 0.25)',
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     padding: 10,
     marginBottom: 12,
     gap: 6,
@@ -492,20 +509,21 @@ const styles = StyleSheet.create({
   },
   partName: {
     fontSize: 13,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
   },
   partVal: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   saveBtn: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#7c3aed',
     paddingVertical: 10,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
   },
   saveBtnText: {
     color: '#fff',
@@ -517,12 +535,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.02)',
     padding: 12,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
   },
   placeholderText: {
     flex: 1,
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     lineHeight: 16,
   },
 });

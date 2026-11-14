@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Stack } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { WebViewTab, WebViewTabRef } from '../../components/WebViewTab';
 import HabitCounterHTML from '../../src/web-apps/HabitCounter';
 import { useLifelogStore } from '../../src/store/lifelogStore';
@@ -14,6 +14,7 @@ import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useFeatureSwipe } from '../../src/hooks/useFeatureSwipe';
 
 export default function HabitScreen() {
+  const { colors } = useAppTheme();
   const currentDate = useLifelogStore((state) => state.currentDate);
   const [showHistory, setShowHistory] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -47,20 +48,26 @@ export default function HabitScreen() {
 
   return (
     <PanGestureHandler {...panHandlerProps}>
-      <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <Stack.Screen
           options={{
             title: '習慣カウンター',
-            headerStyle: { backgroundColor: Theme.colors.background },
-            headerTintColor: Theme.colors.text,
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.text,
             headerTitleStyle: { fontWeight: 'bold' },
             headerRight: () => (
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
-                <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ padding: 6, marginRight: 6 }}>
-                  <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
+                <TouchableOpacity
+                  onPress={() => setShowHistory(prev => !prev)}
+                  style={{ minWidth: 40, minHeight: 40, padding: 8, marginRight: 2, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={colors.primary} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={handleOpenManageModal} style={{ padding: 6 }}>
-                  <Ionicons name="settings-outline" size={22} color={Theme.colors.primary} />
+                <TouchableOpacity
+                  onPress={handleOpenManageModal}
+                  style={{ minWidth: 40, minHeight: 40, padding: 8, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Ionicons name="settings-outline" size={22} color={colors.primary} />
                 </TouchableOpacity>
               </View>
             ),

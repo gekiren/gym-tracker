@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { BodyCompositionLog } from '../../src/types/bodyComposition';
 import { calculateBmi, calculateFfmi, calculateMfRatio, calculateMachoScore } from '../../src/utils/bodyCalculators';
 
@@ -26,6 +26,8 @@ export default function BodySummaryCard({
   onOpenGuideModal,
   onOpenMdImportModal,
 }: BodySummaryCardProps) {
+  const { colors, spacing, borderRadius } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors, spacing, borderRadius), [colors, spacing, borderRadius]);
   const savedMeasurements = useBodyStore((state) => state.savedMeasurements);
 
   // 表示用データの解決（currentLog優先、なければsavedMeasurements/latestLogの身長などを使用）
@@ -79,8 +81,13 @@ export default function BodySummaryCard({
           </View>
         </View>
 
-        <TouchableOpacity style={styles.guideBtn} onPress={onOpenGuideModal} activeOpacity={0.7}>
-          <Ionicons name="help-circle-outline" size={20} color={Theme.colors.textMuted} />
+        <TouchableOpacity
+          style={styles.guideBtn}
+          onPress={onOpenGuideModal}
+          activeOpacity={0.7}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <Ionicons name="help-circle-outline" size={20} color={colors.textMuted} />
         </TouchableOpacity>
       </View>
 
@@ -162,7 +169,7 @@ export default function BodySummaryCard({
             <Text
               style={[
                 styles.statValueSmall,
-                { color: mfResult && mfResult.mfRatio >= 7.0 ? '#2dd4bf' : Theme.colors.text },
+                { color: mfResult && mfResult.mfRatio >= 7.0 ? '#2dd4bf' : colors.text },
               ]}
             >
               {mfResult ? mfResult.mfRatio.toFixed(2) : '--'}
@@ -190,7 +197,7 @@ export default function BodySummaryCard({
             <Text
               style={[
                 styles.statValueSmall,
-                { color: machoResult && machoResult.score >= 21.5 ? '#f43f5e' : machoResult && machoResult.score >= 20.0 ? '#e879f9' : Theme.colors.text },
+                { color: machoResult && machoResult.score >= 21.5 ? '#f43f5e' : machoResult && machoResult.score >= 20.0 ? '#e879f9' : colors.text },
               ]}
             >
               {machoResult ? machoResult.score.toFixed(1) : '--'}
@@ -243,14 +250,18 @@ export default function BodySummaryCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (
+  colors: ReturnType<typeof useAppTheme>['colors'],
+  spacing: ReturnType<typeof useAppTheme>['spacing'],
+  borderRadius: ReturnType<typeof useAppTheme>['borderRadius']
+) => StyleSheet.create({
   card: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.lg,
-    padding: Theme.spacing.md,
-    marginBottom: Theme.spacing.md,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -273,14 +284,18 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 17,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   cardSubtitle: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     marginTop: 2,
   },
   guideBtn: {
+    minWidth: 40,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 6,
   },
   grid: {
@@ -292,59 +307,60 @@ const styles = StyleSheet.create({
   statBox: {
     width: '48.5%',
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     padding: 12,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   statLabel: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
+    color: colors.textMuted,
     marginBottom: 4,
     fontWeight: '500',
   },
   valueRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
+    flexWrap: 'wrap',
     gap: 4,
   },
   statValue: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   statValueSmall: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   statUnit: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
   },
   heightHint: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
+    color: colors.textMuted,
     marginLeft: 2,
   },
   badgeWrap: {
     backgroundColor: 'rgba(45, 212, 191, 0.15)',
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
   badgeText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#2dd4bf',
   },
   ratioDetail: {
-    fontSize: 10,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
+    color: colors.textMuted,
     marginLeft: 2,
   },
   bonusHint: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#e879f9',
     marginLeft: 2,
     fontWeight: '600',
@@ -355,12 +371,13 @@ const styles = StyleSheet.create({
   },
   syncBtn: {
     flex: 1,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(56, 189, 248, 0.12)',
     paddingVertical: 10,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(56, 189, 248, 0.3)',
   },
@@ -370,13 +387,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   mdImportBtn: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(56, 189, 248, 0.12)',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(56, 189, 248, 0.3)',
   },
@@ -386,13 +404,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   editBtn: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Theme.colors.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 18,
     paddingVertical: 10,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: borderRadius.lg,
   },
   editBtnText: {
     color: '#fff',

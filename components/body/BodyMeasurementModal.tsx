@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Modal,
   TouchableOpacity,
+  Pressable,
   ScrollView,
   TextInput,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { BodyCompositionLog, Gender } from '../../src/types/bodyComposition';
 
 import { useBodyStore } from '../../src/store/bodyStore';
@@ -33,6 +34,8 @@ export default function BodyMeasurementModal({
   onClose,
   onSave,
 }: BodyMeasurementModalProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const savedMeasurements = useBodyStore((state) => state.savedMeasurements);
 
   const [weight, setWeight] = useState('');
@@ -169,12 +172,13 @@ export default function BodyMeasurementModal({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.modalBg}
       >
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.modalCard}>
           {/* Header */}
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>体組成・身体サイズの記録</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+              <Ionicons name="close" size={24} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
 
@@ -195,7 +199,7 @@ export default function BodyMeasurementModal({
                   <Ionicons
                     name="male"
                     size={16}
-                    color={gender === 'male' ? '#fff' : Theme.colors.textMuted}
+                    color={gender === 'male' ? '#fff' : colors.textMuted}
                     style={{ marginRight: 4 }}
                   />
                   <Text style={[styles.genderBtnText, gender === 'male' && styles.genderBtnTextActive]}>
@@ -211,7 +215,7 @@ export default function BodyMeasurementModal({
                   <Ionicons
                     name="female"
                     size={16}
-                    color={gender === 'female' ? '#fff' : Theme.colors.textMuted}
+                    color={gender === 'female' ? '#fff' : colors.textMuted}
                     style={{ marginRight: 4 }}
                   />
                   <Text style={[styles.genderBtnText, gender === 'female' && styles.genderBtnTextActive]}>
@@ -231,7 +235,7 @@ export default function BodyMeasurementModal({
                     style={styles.textInput}
                     keyboardType="decimal-pad"
                     placeholder="70.5"
-                    placeholderTextColor={Theme.colors.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     value={weight}
                     onChangeText={(val) => setWeight(val.replace(',', '.'))}
                   />
@@ -246,7 +250,7 @@ export default function BodyMeasurementModal({
                     style={styles.textInput}
                     keyboardType="decimal-pad"
                     placeholder="15.0"
-                    placeholderTextColor={Theme.colors.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     value={bodyFatRate}
                     onChangeText={(val) => setBodyFatRate(val.replace(',', '.'))}
                   />
@@ -261,7 +265,7 @@ export default function BodyMeasurementModal({
                     style={styles.textInput}
                     keyboardType="decimal-pad"
                     placeholder="32.0"
-                    placeholderTextColor={Theme.colors.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     value={muscleMass}
                     onChangeText={(val) => setMuscleMass(val.replace(',', '.'))}
                   />
@@ -276,7 +280,7 @@ export default function BodyMeasurementModal({
                     style={styles.textInput}
                     keyboardType="decimal-pad"
                     placeholder="175.0"
-                    placeholderTextColor={Theme.colors.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     value={height}
                     onChangeText={(val) => setHeight(val.replace(',', '.'))}
                   />
@@ -295,7 +299,7 @@ export default function BodyMeasurementModal({
                     style={styles.textInput}
                     keyboardType="decimal-pad"
                     placeholder="38.0"
-                    placeholderTextColor={Theme.colors.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     value={neck}
                     onChangeText={(val) => setNeck(val.replace(',', '.'))}
                   />
@@ -310,7 +314,7 @@ export default function BodyMeasurementModal({
                     style={styles.textInput}
                     keyboardType="decimal-pad"
                     placeholder="80.0"
-                    placeholderTextColor={Theme.colors.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     value={waist}
                     onChangeText={(val) => setWaist(val.replace(',', '.'))}
                   />
@@ -326,7 +330,7 @@ export default function BodyMeasurementModal({
                       style={styles.textInput}
                       keyboardType="decimal-pad"
                       placeholder="90.0"
-                      placeholderTextColor={Theme.colors.textMuted}
+                      placeholderTextColor={colors.textMuted}
                       value={hip}
                       onChangeText={(val) => setHip(val.replace(',', '.'))}
                     />
@@ -342,7 +346,7 @@ export default function BodyMeasurementModal({
                     style={styles.textInput}
                     keyboardType="decimal-pad"
                     placeholder="17.0"
-                    placeholderTextColor={Theme.colors.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     value={wrist}
                     onChangeText={(val) => setWrist(val.replace(',', '.'))}
                   />
@@ -357,7 +361,7 @@ export default function BodyMeasurementModal({
                     style={styles.textInput}
                     keyboardType="decimal-pad"
                     placeholder="22.0"
-                    placeholderTextColor={Theme.colors.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     value={ankle}
                     onChangeText={(val) => setAnkle(val.replace(',', '.'))}
                   />
@@ -372,7 +376,7 @@ export default function BodyMeasurementModal({
               <TextInput
                 style={styles.memoInput}
                 placeholder="朝一番の測定、大会前など..."
-                placeholderTextColor={Theme.colors.textMuted}
+                placeholderTextColor={colors.textMuted}
                 value={memo}
                 onChangeText={setMemo}
                 multiline
@@ -402,16 +406,18 @@ export default function BodyMeasurementModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   modalBg: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'flex-end',
   },
   modalCard: {
-    backgroundColor: Theme.colors.card,
+    backgroundColor: colors.card,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    borderTopWidth: 1,
+    borderColor: colors.border,
     maxHeight: '90%',
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
   },
@@ -420,17 +426,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
+    borderBottomColor: colors.border,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   closeBtn: {
-    padding: 4,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollContent: {
     padding: 20,
@@ -445,7 +454,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   genderToggleWrap: {
     flexDirection: 'row',
@@ -454,6 +463,7 @@ const styles = StyleSheet.create({
     padding: 3,
   },
   genderBtn: {
+    minHeight: 38,
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 6,
@@ -468,7 +478,7 @@ const styles = StyleSheet.create({
   },
   genderBtnText: {
     fontSize: 13,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontWeight: '600',
   },
   genderBtnTextActive: {
@@ -477,7 +487,7 @@ const styles = StyleSheet.create({
   groupTitle: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
     marginTop: 10,
     marginBottom: 10,
   },
@@ -492,40 +502,41 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     marginBottom: 4,
   },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     paddingHorizontal: 10,
+    minHeight: 44,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   textInput: {
     flex: 1,
-    color: Theme.colors.text,
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
     paddingVertical: 8,
   },
   inputUnit: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     marginLeft: 4,
   },
   memoWrap: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     padding: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     marginBottom: 10,
   },
   memoInput: {
-    color: Theme.colors.text,
+    color: colors.text,
     fontSize: 14,
     minHeight: 48,
     textAlignVertical: 'top',
@@ -538,24 +549,26 @@ const styles = StyleSheet.create({
   },
   cancelBtn: {
     flex: 1,
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   cancelBtnText: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 15,
     fontWeight: '600',
   },
   saveBtn: {
     flex: 2,
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
-    borderRadius: Theme.borderRadius.md,
-    backgroundColor: Theme.colors.primary,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
   },
   saveBtnText: {
     color: '#fff',
