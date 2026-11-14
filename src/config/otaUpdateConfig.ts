@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.31',
+  version: '2.3.32',
   title: {
-    ja: '✨ セット行の入力幅スリム化とタイム列の整列改善',
-    en: '✨ Slimmer Reps/RPE Inputs & Aligned Timer Column',
+    ja: '✨ ボリューム表示位置と重量増減ステップ設定の整理',
+    en: '✨ Cleaner Volume Placement & Weight Step Settings',
   },
   notes: {
     ja: [
-      '回数・RPEの入力枠を2桁表示に合わせたスリムな横幅に調整し、情報表示エリアを広げました。',
-      '休憩時間（☕）を上段のスタンスと同じ行へ移動し、下段のセットタイム（⏱️）と左端を揃えたタイム列として見やすく整列しました。',
+      'ワークアウト画面の種目ごとのボリューム表示を「+ セット追加」の右上（最終セットの右下）へ移動し、カード上部をすっきり見やすく調整しました。',
+      '重量増減ステップ（±kg/lbs）の設定をワークアウト画面から非表示にし、種目詳細ページの「個別インターバル設定」の下から設定できるように移動しました。',
     ],
     en: [
-      'Slimmed down the Reps and RPE input widths to fit 2-digit numbers cleanly, giving more room to set details.',
-      'Moved rest time (☕) onto the same row as stance and left-aligned it with set work time (⏱️) in a clean column.',
+      'Moved each exercise\'s volume display to the upper-right of "+ Add Set" (below the last set\'s check button) for a cleaner workout card header.',
+      'Removed the weight step button from the active workout screen and moved it to a collapsible section on the Exercise Details page.',
     ],
   },
 };
