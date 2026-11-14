@@ -4,10 +4,9 @@ import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { loadFullWorkoutData } from '../../src/db/database';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { useTranslation } from 'react-i18next';
 import { translateExercise, translateStance } from '../../src/i18n';
-import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import * as Clipboard from 'expo-clipboard';
 import { formatWorkoutToMarkdown } from '../../src/utils/markdownExport';
@@ -17,6 +16,7 @@ import { isTreadmillExercise } from '../../src/utils/exerciseUtils';
 export default function WorkoutDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, i18n } = useTranslation();
+  const { colors } = useAppTheme();
   const isJa = i18n.language === 'ja';
   const settings = useSettingsStore(state => state.settings);
   const [workout, setWorkout] = useState<any>(null);
@@ -61,18 +61,18 @@ export default function WorkoutDetailsScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={Theme.colors.primary} />
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   if (!workout) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: Theme.colors.textMuted }}>{t('ui.history.not_found')}</Text>
-        <TouchableOpacity style={{ marginTop: 16 }} onPress={() => router.back()}>
-          <Text style={{ color: Theme.colors.primary }}>{t('ui.common.back')}</Text>
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: colors.textMuted }}>{t('ui.history.not_found')}</Text>
+        <TouchableOpacity style={{ marginTop: 16, minHeight: 44, justifyContent: 'center', paddingHorizontal: 16 }} onPress={() => router.back()}>
+          <Text style={{ color: colors.primary }}>{t('ui.common.back')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -83,19 +83,27 @@ export default function WorkoutDetailsScreen() {
     : null;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen 
         options={{ 
           title: workout.title,
-          headerStyle: { backgroundColor: Theme.colors.background },
-          headerTintColor: Theme.colors.text,
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.text,
           headerRight: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-              <TouchableOpacity onPress={() => setShareModalVisible(true)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="share-social-outline" size={24} color={Theme.colors.primary} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TouchableOpacity
+                onPress={() => setShareModalVisible(true)}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                style={styles.headerActionBtn}
+              >
+                <Ionicons name="share-social-outline" size={24} color={colors.primary} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => router.push({ pathname: '/edit-workout/[id]', params: { id: workout.id, _t: Date.now() } } as any)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="pencil" size={24} color={Theme.colors.primary} />
+              <TouchableOpacity
+                onPress={() => router.push({ pathname: '/edit-workout/[id]', params: { id: workout.id, _t: Date.now() } } as any)}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                style={styles.headerActionBtn}
+              >
+                <Ionicons name="pencil" size={24} color={colors.primary} />
               </TouchableOpacity>
             </View>
           )
@@ -104,28 +112,28 @@ export default function WorkoutDetailsScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.metaHeader}>
-          <Ionicons name="calendar-outline" size={16} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
-          <Text style={styles.dateText}>{format(new Date(workout.start_time), isJa ? 'yyyy-MM-dd HH:mm' : 'MMM d, yyyy, h:mm a')}</Text>
+          <Ionicons name="calendar-outline" size={16} color={colors.textMuted} style={{ marginRight: 6 }} />
+          <Text style={[styles.dateText, { color: colors.textMuted }]}>{format(new Date(workout.start_time), isJa ? 'yyyy-MM-dd HH:mm' : 'MMM d, yyyy, h:mm a')}</Text>
           {durationMin && (
             <>
-              <Text style={{ color: Theme.colors.textMuted, marginHorizontal: 8 }}>•</Text>
-              <Ionicons name="time-outline" size={16} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
-              <Text style={styles.dateText}>{durationMin} {t('ui.common.min_unit')}</Text>
+              <Text style={{ color: colors.textMuted, marginHorizontal: 8 }}>•</Text>
+              <Ionicons name="time-outline" size={16} color={colors.textMuted} style={{ marginRight: 6 }} />
+              <Text style={[styles.dateText, { color: colors.textMuted }]}>{durationMin} {t('ui.common.min_unit')}</Text>
             </>
           )}
           {workout.calories && (
             <>
-              <Text style={{ color: Theme.colors.textMuted, marginHorizontal: 8 }}>•</Text>
-              <Ionicons name="flame-outline" size={16} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
-              <Text style={styles.dateText}>{workout.calories} kcal</Text>
+              <Text style={{ color: colors.textMuted, marginHorizontal: 8 }}>•</Text>
+              <Ionicons name="flame-outline" size={16} color={colors.textMuted} style={{ marginRight: 6 }} />
+              <Text style={[styles.dateText, { color: colors.textMuted }]}>{workout.calories} kcal</Text>
             </>
           )}
         </View>
 
         {workout.notes ? (
           <View style={styles.workoutNotes}>
-            <Ionicons name="document-text-outline" size={16} color={Theme.colors.primary} style={{ marginRight: 8, marginTop: 2 }} />
-            <Text style={styles.workoutNotesText}>{workout.notes}</Text>
+            <Ionicons name="document-text-outline" size={16} color={colors.primary} style={{ marginRight: 8, marginTop: 2 }} />
+            <Text style={[styles.workoutNotesText, { color: colors.text }]}>{workout.notes}</Text>
           </View>
         ) : null}
 
@@ -133,18 +141,18 @@ export default function WorkoutDetailsScreen() {
           const completedSets = ex.sets.filter((s: any) => s.is_completed !== false && s.is_completed !== 0);
           if (completedSets.length === 0 && !ex.notes) return null;
           return (
-            <View key={ex.workout_exercise_id} style={styles.card}>
+            <View key={ex.workout_exercise_id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.exerciseHeader}>
                 <TouchableOpacity 
-                  style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                  style={{ flex: 1, flexDirection: 'row', alignItems: 'center', minHeight: 36 }}
                   onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: String(ex.exercise_id), _t: Date.now() } } as any)}
                 >
-                  <Text style={styles.exerciseTitle}>{translateExercise(ex.name || ex.exercise_name)}</Text>
-                  <Ionicons name="chevron-forward" size={16} color={Theme.colors.primary} />
+                  <Text style={[styles.exerciseTitle, { color: colors.primary }]}>{translateExercise(ex.name || ex.exercise_name)}</Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.primary} />
                 </TouchableOpacity>
                 <View style={styles.exerciseVolumeBadge}>
-                  <Text style={styles.exerciseVolumeLabel}>{t('ui.history.volume_label')}: </Text>
-                  <Text style={styles.exerciseVolumeValue}>
+                  <Text style={[styles.exerciseVolumeLabel, { color: colors.text }]}>{t('ui.history.volume_label')}: </Text>
+                  <Text style={[styles.exerciseVolumeValue, { color: colors.text }]}>
                     {completedSets.reduce((sum: number, s: any) => sum + (s.weight || 0) * (s.reps || 0), 0)} {settings.weightUnit}
                   </Text>
                 </View>
@@ -152,18 +160,18 @@ export default function WorkoutDetailsScreen() {
 
               {ex.notes ? (
                 <View style={styles.exerciseNotes}>
-                  <Ionicons name="chatbubble-ellipses-outline" size={14} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
-                  <Text style={styles.exerciseNotesText}>{ex.notes}</Text>
+                  <Ionicons name="chatbubble-ellipses-outline" size={14} color={colors.textMuted} style={{ marginRight: 6 }} />
+                  <Text style={[styles.exerciseNotesText, { color: colors.textMuted }]}>{ex.notes}</Text>
                 </View>
               ) : null}
 
               {isTreadmillExercise(ex.exercise_name) ? (
                 <>
-                  <View style={styles.tableHeader}>
-                    <Text style={[styles.th, { width: 40 }]}>{t('ui.active_workout.header_set')}</Text>
-                    <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_speed') || 'km/h'}</Text>
-                    <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_incline') || '傾斜(%)'}</Text>
-                    <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_time') || '時間'}</Text>
+                  <View style={[styles.tableHeader, { borderBottomColor: colors.border }]}>
+                    <Text style={[styles.th, { width: 40, color: colors.textMuted }]}>{t('ui.active_workout.header_set')}</Text>
+                    <Text style={[styles.th, { flex: 1, color: colors.textMuted }]}>{t('ui.active_workout.header_speed') || 'km/h'}</Text>
+                    <Text style={[styles.th, { flex: 1, color: colors.textMuted }]}>{t('ui.active_workout.header_incline') || '傾斜(%)'}</Text>
+                    <Text style={[styles.th, { flex: 1, color: colors.textMuted }]}>{t('ui.active_workout.header_time') || '時間'}</Text>
                   </View>
 
                   {completedSets.map((set: any) => {
@@ -175,10 +183,10 @@ export default function WorkoutDetailsScreen() {
                     return (
                       <View key={set.id} style={{ borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', paddingVertical: 8 }}>
                         <View style={[styles.row, { borderBottomWidth: 0, paddingVertical: 0 }]}>
-                          <Text style={styles.tdSet}>{set.set_number}</Text>
-                          <Text style={styles.tdValue}>{set.speed != null ? `${set.speed} km/h` : '-'}</Text>
-                          <Text style={styles.tdValue}>{set.incline != null ? `${set.incline}%` : '-'}</Text>
-                          <Text style={[styles.tdValue, { color: Theme.colors.success }]}>
+                          <Text style={[styles.tdSet, { color: colors.textMuted }]}>{set.set_number}</Text>
+                          <Text style={[styles.tdValue, { color: colors.text }]}>{set.speed != null ? `${set.speed} km/h` : '-'}</Text>
+                          <Text style={[styles.tdValue, { color: colors.text }]}>{set.incline != null ? `${set.incline}%` : '-'}</Text>
+                          <Text style={[styles.tdValue, { color: colors.success }]}>
                             {(set.work_seconds != null && set.work_seconds > 0) ? `⏱️ ${fmtTime(set.work_seconds)}` : '-'}
                           </Text>
                         </View>
@@ -188,12 +196,12 @@ export default function WorkoutDetailsScreen() {
                 </>
               ) : (
                 <>
-                  <View style={styles.tableHeader}>
-                    <Text style={[styles.th, { width: 40 }]}>{t('ui.active_workout.header_set')}</Text>
-                    <Text style={[styles.th, { flex: 1 }]}>{settings.weightUnit}</Text>
-                    <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_reps')}</Text>
-                    <Text style={[styles.th, { width: 45 }]}>{t('ui.active_workout.header_rpe')}</Text>
-                    <Text style={[styles.th, { flex: 1 }]}>1RM</Text>
+                  <View style={[styles.tableHeader, { borderBottomColor: colors.border }]}>
+                    <Text style={[styles.th, { width: 40, color: colors.textMuted }]}>{t('ui.active_workout.header_set')}</Text>
+                    <Text style={[styles.th, { flex: 1, color: colors.textMuted }]}>{settings.weightUnit}</Text>
+                    <Text style={[styles.th, { flex: 1, color: colors.textMuted }]}>{t('ui.active_workout.header_reps')}</Text>
+                    <Text style={[styles.th, { width: 45, color: colors.textMuted }]}>{t('ui.active_workout.header_rpe')}</Text>
+                    <Text style={[styles.th, { flex: 1, color: colors.textMuted }]}>1RM</Text>
                   </View>
 
                   {completedSets.map((set: any, idx: number) => {
@@ -211,18 +219,18 @@ export default function WorkoutDetailsScreen() {
                     return (
                       <View key={set.id} style={{ borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', paddingVertical: 8 }}>
                         <View style={[styles.row, { borderBottomWidth: 0, paddingVertical: 0 }]}>
-                          <Text style={styles.tdSet}>{set.set_number}</Text>
-                          <Text style={styles.tdValue}>{set.weight ?? '-'}</Text>
-                          <Text style={styles.tdValue}>{set.reps ?? '-'}</Text>
-                          <Text style={[styles.tdValue, { width: 45, flex: 0 }]}>{set.rpe ?? '-'}</Text>
-                          <Text style={[styles.tdValue, { color: Theme.colors.primary }]}>{currentRM ?? '-'}</Text>
+                          <Text style={[styles.tdSet, { color: colors.textMuted }]}>{set.set_number}</Text>
+                          <Text style={[styles.tdValue, { color: colors.text }]}>{set.weight ?? '-'}</Text>
+                          <Text style={[styles.tdValue, { color: colors.text }]}>{set.reps ?? '-'}</Text>
+                          <Text style={[styles.tdValue, { width: 45, flex: 0, color: colors.text }]}>{set.rpe ?? '-'}</Text>
+                          <Text style={[styles.tdValue, { color: colors.primary }]}>{currentRM ?? '-'}</Text>
                         </View>
                         {(hasStance || timeStr) ? (
                           <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, marginTop: 4 }}>
-                            <Text style={{ fontSize: 11, color: Theme.colors.textMuted }}>
+                            <Text style={{ fontSize: 12, color: colors.textMuted }}>
                               {hasStance ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.stance || set.variation)}` : ''}
                             </Text>
-                            <Text style={{ fontSize: 11, color: Theme.colors.textMuted }}>
+                            <Text style={{ fontSize: 12, color: colors.textMuted }}>
                               {timeStr}
                             </Text>
                           </View>
@@ -238,14 +246,14 @@ export default function WorkoutDetailsScreen() {
         
         {/* Action Buttons */}
         <View style={styles.actionButtonsContainer}>
-          <TouchableOpacity style={styles.shareButton} onPress={() => setShareModalVisible(true)}>
-            <Ionicons name="share-social-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+          <TouchableOpacity style={[styles.shareButton, { backgroundColor: colors.primary, borderColor: colors.primary }]} onPress={() => setShareModalVisible(true)}>
+            <Ionicons name="share-social-outline" size={20} color="#ffffff" style={{ marginRight: 8 }} />
             <Text style={styles.shareButtonText}>{t('ui.common.share_sns')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.exportButton} onPress={handleExportMarkdown}>
-            <Ionicons name="document-text-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-            <Text style={styles.exportButtonText}>{t('ui.common.export_markdown')}</Text>
+            <Ionicons name="document-text-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+            <Text style={[styles.exportButtonText, { color: colors.primary }]}>{t('ui.common.export_markdown')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -261,58 +269,58 @@ export default function WorkoutDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
-  content: { padding: Theme.spacing.md, paddingBottom: 100 },
-  metaHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: Theme.spacing.md, justifyContent: 'center' },
-  dateText: { color: Theme.colors.textMuted, fontSize: 14, fontWeight: '500' },
-  workoutNotes: { flexDirection: 'row', backgroundColor: 'rgba(79, 172, 254, 0.1)', padding: 12, borderRadius: Theme.borderRadius.sm, marginBottom: Theme.spacing.lg },
-  workoutNotesText: { color: Theme.colors.text, fontSize: 14, flex: 1, lineHeight: 20 },
-  card: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, marginBottom: Theme.spacing.lg, borderWidth: 1, borderColor: Theme.colors.border },
-  exerciseHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.sm },
-  exerciseTitle: { color: Theme.colors.primary, fontSize: 18, fontWeight: 'bold' },
+  container: { flex: 1 },
+  headerActionBtn: { minWidth: 40, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
+  content: { padding: 16, paddingBottom: 100 },
+  metaHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, justifyContent: 'center' },
+  dateText: { fontSize: 14, fontWeight: '500' },
+  workoutNotes: { flexDirection: 'row', backgroundColor: 'rgba(79, 172, 254, 0.1)', padding: 12, borderRadius: 12, marginBottom: 24 },
+  workoutNotesText: { fontSize: 14, flex: 1, lineHeight: 20 },
+  card: { borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 1 },
+  exerciseHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  exerciseTitle: { fontSize: 18, fontWeight: 'bold' },
   exerciseVolumeBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  exerciseVolumeLabel: { fontSize: 12, color: Theme.colors.text },
-  exerciseVolumeValue: { fontSize: 12, color: Theme.colors.text, fontWeight: 'bold' },
-  exerciseNotes: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', padding: 8, borderRadius: 6, marginBottom: 12 },
-  exerciseNotesText: { color: Theme.colors.textMuted, fontSize: 13, flex: 1 },
-  tableHeader: { flexDirection: 'row', marginBottom: 8, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: Theme.colors.border, paddingBottom: 8 },
-  th: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  exerciseVolumeLabel: { fontSize: 12 },
+  exerciseVolumeValue: { fontSize: 12, fontWeight: 'bold' },
+  exerciseNotes: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', padding: 8, borderRadius: 8, marginBottom: 12 },
+  exerciseNotesText: { fontSize: 13, flex: 1 },
+  tableHeader: { flexDirection: 'row', marginBottom: 8, paddingHorizontal: 4, borderBottomWidth: 1, paddingBottom: 8 },
+  th: { fontSize: 13, fontWeight: '600', textAlign: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
-  tdSet: { color: Theme.colors.textMuted, width: 40, textAlign: 'center', fontSize: 15 },
-  tdValue: { color: Theme.colors.text, flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '500' },
+  tdSet: { width: 40, textAlign: 'center', fontSize: 15 },
+  tdValue: { flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '500' },
   actionButtonsContainer: {
-    marginTop: Theme.spacing.lg,
+    marginTop: 24,
     gap: 12,
     paddingBottom: 20,
   },
   shareButton: {
-    backgroundColor: '#1E293B',
-    borderWidth: 1.5,
-    borderColor: '#334155',
-    paddingVertical: 16,
-    borderRadius: Theme.borderRadius.lg,
+    borderWidth: 1,
+    minHeight: 48,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
   },
   shareButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
     letterSpacing: 0.5,
   },
   exportButton: {
     backgroundColor: 'rgba(79, 172, 254, 0.1)',
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: 'rgba(79, 172, 254, 0.3)',
-    paddingVertical: 16,
-    borderRadius: Theme.borderRadius.lg,
+    minHeight: 48,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
   },
   exportButtonText: {
-    color: Theme.colors.primary,
     fontSize: 16,
     fontWeight: 'bold',
     letterSpacing: 0.5,

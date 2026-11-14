@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { translateStance } from '../../src/i18n';
 import { updateExerciseDefaultStance, updateExerciseDefaultVariation, saveSetting } from '../../src/db/database';
 import { ConfirmModal } from '../ui/ConfirmModal';
@@ -23,36 +23,45 @@ export const StanceManagement: React.FC<StanceManagementProps> = ({
   removeCustomStance,
   t,
 }) => {
+  const { colors } = useAppTheme();
   const [isStanceExpanded, setIsStanceExpanded] = useState(false);
   const [isAddingStance, setIsAddingStance] = useState(false);
   const [newStance, setNewStance] = useState('');
   const [deletingStanceTarget, setDeletingStanceTarget] = useState<string | null>(null);
 
   return (
-    <View style={styles.stanceSection}>
+    <View style={[styles.stanceSection, { borderBottomColor: colors.border }]}>
       <TouchableOpacity 
         onPress={() => setIsStanceExpanded(!isStanceExpanded)} 
         style={styles.stanceHeaderToggle}
         activeOpacity={0.7}
       >
-        <Text style={styles.stanceToggleText}>
+        <Text style={[styles.stanceToggleText, { color: colors.primary }]}>
           {t('ui.exercise_detail.section_stance')}
         </Text>
-        <Ionicons name={isStanceExpanded ? "chevron-up" : "chevron-down"} size={18} color={Theme.colors.primary} />
+        <Ionicons name={isStanceExpanded ? "chevron-up" : "chevron-down"} size={18} color={colors.primary} />
       </TouchableOpacity>
 
       {isStanceExpanded && (
         <View>
           <View style={styles.stanceList}>
             <TouchableOpacity
-              style={[styles.choiceChip, (exercise.default_stance === null || exercise.default_variation === null) && styles.choiceChipActive]}
+              style={[
+                styles.choiceChip,
+                { backgroundColor: colors.card, borderColor: colors.border },
+                (exercise.default_stance === null || exercise.default_variation === null) && [styles.choiceChipActive, { borderColor: colors.primary }]
+              ]}
               onPress={async () => {
                 await updateExerciseDefaultStance(exercise.id, null);
                 await updateExerciseDefaultVariation(exercise.id, null);
                 setExercise({ ...exercise, default_stance: null, default_variation: null });
               }}
             >
-              <Text style={[styles.choiceChipText, (exercise.default_stance === null || exercise.default_variation === null) && styles.choiceChipTextActive]}>
+              <Text style={[
+                styles.choiceChipText,
+                { color: colors.textMuted },
+                (exercise.default_stance === null || exercise.default_variation === null) && { color: colors.primary, fontWeight: 'bold' }
+              ]}>
                 {t('ui.active_workout.stance_standard')}
               </Text>
             </TouchableOpacity>
@@ -62,7 +71,11 @@ export const StanceManagement: React.FC<StanceManagementProps> = ({
               return (
                 <TouchableOpacity
                   key={s}
-                  style={[styles.choiceChip, isActive && styles.choiceChipActive]}
+                  style={[
+                    styles.choiceChip,
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                    isActive && [styles.choiceChipActive, { borderColor: colors.primary }]
+                  ]}
                   onPress={async () => {
                     await updateExerciseDefaultStance(exercise.id, s);
                     await updateExerciseDefaultVariation(exercise.id, s);
@@ -72,7 +85,11 @@ export const StanceManagement: React.FC<StanceManagementProps> = ({
                     setDeletingStanceTarget(s);
                   }}
                 >
-                  <Text style={[styles.choiceChipText, isActive && styles.choiceChipTextActive]}>
+                  <Text style={[
+                    styles.choiceChipText,
+                    { color: colors.textMuted },
+                    isActive && { color: colors.primary, fontWeight: 'bold' }
+                  ]}>
                     {translateStance(s)}
                   </Text>
                 </TouchableOpacity>
@@ -80,34 +97,34 @@ export const StanceManagement: React.FC<StanceManagementProps> = ({
             })}
 
             <TouchableOpacity 
-              style={styles.addStanceBtn} 
+              style={[styles.addStanceBtn, { borderColor: colors.primary }]} 
               onPress={() => setIsAddingStance(true)}
             >
-              <Text style={styles.addStanceBtnText}>{t('ui.active_workout.stance_add_original_btn')}</Text>
+              <Text style={[styles.addStanceBtnText, { color: colors.primary }]}>{t('ui.active_workout.stance_add_original_btn')}</Text>
             </TouchableOpacity>
           </View>
 
           {isAddingStance && (
-            <View style={styles.addStanceInputContainer}>
+            <View style={[styles.addStanceInputContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <TextInput
-                style={styles.addStanceInput}
+                style={[styles.addStanceInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
                 value={newStance}
                 onChangeText={setNewStance}
                 placeholder={t('ui.active_workout.stance_add_placeholder')}
-                placeholderTextColor={Theme.colors.textMuted}
+                placeholderTextColor={colors.textMuted}
               />
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TouchableOpacity 
-                  style={styles.addStanceActionBtn}
+                  style={[styles.addStanceActionBtn, { borderWidth: 1, borderColor: colors.border }]}
                   onPress={() => {
                     setIsAddingStance(false);
                     setNewStance('');
                   }}
                 >
-                  <Text style={{ color: Theme.colors.textMuted }}>{t('ui.active_workout.stance_cancel')}</Text>
+                  <Text style={{ color: colors.textMuted }}>{t('ui.active_workout.stance_cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  style={[styles.addStanceActionBtn, { backgroundColor: Theme.colors.primary }]}
+                  style={[styles.addStanceActionBtn, { backgroundColor: colors.primary }]}
                   onPress={async () => {
                     const val = newStance.trim();
                     if (val) {
@@ -122,7 +139,7 @@ export const StanceManagement: React.FC<StanceManagementProps> = ({
                     setIsAddingStance(false);
                   }}
                 >
-                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>{t('ui.active_workout.stance_add_to_list')}</Text>
+                  <Text style={{ color: '#ffffff', fontWeight: 'bold' }}>{t('ui.active_workout.stance_add_to_list')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -158,17 +175,16 @@ export const StanceManagement: React.FC<StanceManagementProps> = ({
 };
 
 const styles = StyleSheet.create({
-  stanceSection: { padding: Theme.spacing.lg, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  stanceHeaderToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  stanceToggleText: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.primary },
+  stanceSection: { padding: 20, borderBottomWidth: 1 },
+  stanceHeaderToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
+  stanceToggleText: { fontSize: 18, fontWeight: 'bold' },
   stanceList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  choiceChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333' },
-  choiceChipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: Theme.colors.primary },
-  choiceChipText: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: '500' },
-  choiceChipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' },
-  addStanceBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, borderStyle: 'dashed', borderWidth: 1, borderColor: Theme.colors.primary },
-  addStanceBtnText: { color: Theme.colors.primary, fontSize: 13, marginLeft: 4 },
-  addStanceInputContainer: { marginTop: 16, backgroundColor: '#1a1a1a', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#333' },
-  addStanceInput: { backgroundColor: '#121212', color: Theme.colors.text, padding: 8, borderRadius: 4, marginBottom: 12, fontSize: 14 },
-  addStanceActionBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
+  choiceChip: { paddingHorizontal: 12, paddingVertical: 8, minHeight: 38, justifyContent: 'center', borderRadius: 16, borderWidth: 1 },
+  choiceChipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)' },
+  choiceChipText: { fontSize: 13, fontWeight: '500' },
+  addStanceBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', minHeight: 38, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, borderStyle: 'dashed', borderWidth: 1 },
+  addStanceBtnText: { fontSize: 13, marginLeft: 4 },
+  addStanceInputContainer: { marginTop: 16, padding: 12, borderRadius: 12, borderWidth: 1 },
+  addStanceInput: { padding: 10, borderRadius: 8, borderWidth: 1, minHeight: 40, marginBottom: 12, fontSize: 14 },
+  addStanceActionBtn: { minHeight: 44, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
 });

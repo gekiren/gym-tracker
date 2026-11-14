@@ -1,10 +1,9 @@
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { loadFullWorkoutData, updateWorkoutTitle, updateWorkoutSet, deleteWorkoutSet, updateWorkoutOverallNotes, updateWorkoutExerciseNotes } from '../../src/db/database';
-import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../../src/i18n';
@@ -19,6 +18,8 @@ export default function EditWorkoutScreen() {
   const [deletingSetTarget, setDeletingSetTarget] = useState<{ exIdx: number; setIdx: number } | null>(null);
   const settings = useSettingsStore(state => state.settings);
   const { t } = useTranslation();
+  const { colors, spacing } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors, spacing), [colors, spacing]);
 
   useEffect(() => {
     if (id) {
@@ -85,7 +86,7 @@ export default function EditWorkoutScreen() {
   if (isLoading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={Theme.colors.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -97,11 +98,11 @@ export default function EditWorkoutScreen() {
       <Stack.Screen 
         options={{ 
           title: t('ui.edit_workout.title'),
-          headerStyle: { backgroundColor: Theme.colors.background },
-          headerTintColor: Theme.colors.primary,
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.primary,
           headerRight: () => (
-            <TouchableOpacity onPress={handleSave} style={{ backgroundColor: Theme.colors.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4 }}>
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>{t('ui.common.save')}</Text>
+            <TouchableOpacity onPress={handleSave} style={{ backgroundColor: colors.primary, paddingHorizontal: 14, minHeight: 36, justifyContent: 'center', borderRadius: 10 }}>
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14 }}>{t('ui.common.save')}</Text>
             </TouchableOpacity>
           )
         }} 
@@ -119,6 +120,7 @@ export default function EditWorkoutScreen() {
           value={data.title}
           onChangeText={handleUpdateTitle}
           placeholder={t('ui.edit_workout.workout_name_label')}
+          placeholderTextColor={colors.textMuted}
         />
 
         <Text style={styles.label}>{t('ui.edit_workout.workout_notes_label')}</Text>
@@ -127,6 +129,7 @@ export default function EditWorkoutScreen() {
           value={data.notes || ''}
           onChangeText={(text) => setData((prev: any) => ({ ...prev, notes: text }))}
           placeholder={t('ui.edit_workout.workout_notes_placeholder')}
+          placeholderTextColor={colors.textMuted}
           multiline
         />
 
@@ -143,6 +146,7 @@ export default function EditWorkoutScreen() {
                 return next;
               })}
               placeholder={t('ui.edit_workout.exercise_notes_placeholder')}
+              placeholderTextColor={colors.textMuted}
               multiline
             />
             
@@ -161,7 +165,7 @@ export default function EditWorkoutScreen() {
                   <Text style={[styles.th, { width: 45 }]}>{t('ui.edit_workout.header_rpe')}</Text>
                 </>
               )}
-              <Text style={[styles.th, { width: 36 }]}></Text>
+              <Text style={[styles.th, { width: 40 }]}></Text>
             </View>
 
             {ex.sets.map((s: any, sIdx: number) => {
@@ -208,33 +212,38 @@ export default function EditWorkoutScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
-  content: { padding: Theme.spacing.md, paddingBottom: 180 },
-  label: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: 'bold', marginBottom: 8 },
-  inputHero: { backgroundColor: Theme.colors.card, color: Theme.colors.text, fontSize: 20, fontWeight: 'bold', padding: 16, borderRadius: Theme.borderRadius.md, borderWidth: 1, borderColor: Theme.colors.border, marginBottom: 24 },
-  card: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, marginBottom: Theme.spacing.lg },
-  exerciseTitle: { color: Theme.colors.primary, fontSize: 18, fontWeight: 'bold', marginBottom: Theme.spacing.md },
+const createStyles = (
+  colors: ReturnType<typeof useAppTheme>['colors'],
+  spacing: ReturnType<typeof useAppTheme>['spacing']
+) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { padding: spacing.md, paddingBottom: 180 },
+  label: { color: colors.textMuted, fontSize: 13, fontWeight: 'bold', marginBottom: 8 },
+  inputHero: { backgroundColor: colors.card, color: colors.text, fontSize: 20, fontWeight: 'bold', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: colors.border, marginBottom: 24 },
+  card: { backgroundColor: colors.card, borderRadius: 16, padding: spacing.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
+  exerciseTitle: { color: colors.primary, fontSize: 18, fontWeight: 'bold', marginBottom: spacing.md },
   tableHeader: { flexDirection: 'row', marginBottom: 8, paddingHorizontal: 4 },
-  th: { color: Theme.colors.textMuted, fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  th: { color: colors.textMuted, fontSize: 14, fontWeight: '600', textAlign: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, paddingHorizontal: 4 },
-  tdSet: { color: Theme.colors.text, width: 40, textAlign: 'center', fontSize: 16, fontWeight: '500' },
-  input: { backgroundColor: '#2a2a2a', color: Theme.colors.text, flex: 1, marginHorizontal: 4, borderRadius: 4, paddingVertical: 6, textAlign: 'center', fontSize: 16 },
+  tdSet: { color: colors.text, width: 40, textAlign: 'center', fontSize: 16, fontWeight: '500' },
+  input: { backgroundColor: colors.background, color: colors.text, flex: 1, marginHorizontal: 4, borderRadius: 8, borderWidth: 1, borderColor: colors.border, minHeight: 40, paddingVertical: 8, textAlign: 'center', fontSize: 16 },
   notesInput: {
     fontSize: 14,
     fontWeight: 'normal',
-    color: Theme.colors.text,
+    color: colors.text,
     minHeight: 80,
     textAlignVertical: 'top'
   },
   exerciseNotesInput: {
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    color: Theme.colors.text,
-    borderRadius: 6,
-    padding: 10,
+    backgroundColor: colors.background,
+    color: colors.text,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 12,
     marginBottom: 12,
-    fontSize: 13,
-    minHeight: 40,
+    fontSize: 14,
+    minHeight: 48,
     textAlignVertical: 'top'
   }
 });
@@ -247,6 +256,8 @@ function EditWorkoutSetRow({ exIdx, sIdx, s, isTreadmill, handleChangeSet, handl
   handleChangeSet: (exIdx: number, sIdx: number, field: 'weight' | 'reps' | 'rpe' | 'speed' | 'incline' | 'work_seconds', value: string) => void;
   handleRemoveSet: (exIdx: number, sIdx: number) => void;
 }) {
+  const { colors, spacing } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors, spacing), [colors, spacing]);
   const [localWeight, setLocalWeight] = useState(s.weight !== null ? String(s.weight) : '');
   const [localReps, setLocalReps] = useState(s.reps !== null ? String(s.reps) : '');
   const [localRpe, setLocalRpe] = useState(s.rpe !== null ? String(s.rpe) : '');
@@ -372,7 +383,7 @@ function EditWorkoutSetRow({ exIdx, sIdx, s, isTreadmill, handleChangeSet, handl
           keyboardType="decimal-pad" 
           value={localSpeed}
           placeholder="km/h"
-          placeholderTextColor="rgba(255,255,255,0.2)"
+          placeholderTextColor={colors.textMuted}
           onChangeText={handleSpeedChange}
           onFocus={() => setIsFocusedSpeed(true)}
           onBlur={() => setIsFocusedSpeed(false)}
@@ -382,7 +393,7 @@ function EditWorkoutSetRow({ exIdx, sIdx, s, isTreadmill, handleChangeSet, handl
           keyboardType="decimal-pad" 
           value={localIncline}
           placeholder="%"
-          placeholderTextColor="rgba(255,255,255,0.2)"
+          placeholderTextColor={colors.textMuted}
           onChangeText={handleInclineChange}
           onFocus={() => setIsFocusedIncline(true)}
           onBlur={() => setIsFocusedIncline(false)}
@@ -392,13 +403,17 @@ function EditWorkoutSetRow({ exIdx, sIdx, s, isTreadmill, handleChangeSet, handl
           keyboardType="numeric" 
           value={localMinutes}
           placeholder="分"
-          placeholderTextColor="rgba(255,255,255,0.2)"
+          placeholderTextColor={colors.textMuted}
           onChangeText={handleMinutesChange}
           onFocus={() => setIsFocusedMinutes(true)}
           onBlur={() => setIsFocusedMinutes(false)}
         />
-        <TouchableOpacity onPress={() => handleRemoveSet(exIdx, sIdx)} style={{ width: 36, alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons name="trash-outline" size={20} color={Theme.colors.danger} />
+        <TouchableOpacity
+          onPress={() => handleRemoveSet(exIdx, sIdx)}
+          style={{ width: 40, minHeight: 40, alignItems: 'center', justifyContent: 'center' }}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <Ionicons name="trash-outline" size={20} color={colors.danger} />
         </TouchableOpacity>
       </View>
     );
@@ -431,8 +446,12 @@ function EditWorkoutSetRow({ exIdx, sIdx, s, isTreadmill, handleChangeSet, handl
         onFocus={() => setIsFocusedRpe(true)}
         onBlur={() => setIsFocusedRpe(false)}
       />
-      <TouchableOpacity onPress={() => handleRemoveSet(exIdx, sIdx)} style={{ width: 36, alignItems: 'center' }}>
-        <Ionicons name="trash-outline" size={20} color={Theme.colors.danger} />
+      <TouchableOpacity
+        onPress={() => handleRemoveSet(exIdx, sIdx)}
+        style={{ width: 40, minHeight: 40, alignItems: 'center', justifyContent: 'center' }}
+        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+      >
+        <Ionicons name="trash-outline" size={20} color={colors.danger} />
       </TouchableOpacity>
     </View>
   );

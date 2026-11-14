@@ -1,10 +1,10 @@
 import React, { useMemo, useRef, useCallback, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Dimensions, Pressable } from 'react-native';
 import Svg, { Path, Circle, Line, Defs, LinearGradient, Stop, Text as SvgText, G } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart } from 'react-native-chart-kit';
 import { format, startOfWeek, startOfMonth } from 'date-fns';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { calculateRM } from '../../src/utils/workoutStats';
 import { useSettingsStore } from '../../src/store/settingsStore';
 
@@ -70,6 +70,8 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
   setShowChartModal,
   t,
 }) => {
+  const { colors, spacing } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors, spacing), [colors, spacing]);
   const chartScrollRef = useRef<ScrollView>(null);
   const savedMetric = useSettingsStore(state => state.settings.lastExerciseChartMetric);
   const setLastExerciseChartMetric = useSettingsStore(state => state.setLastExerciseChartMetric);
@@ -324,7 +326,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
     ? `${linearPath} L ${coords[coords.length - 1].x} ${svgHeight - paddingBottom} L ${coords[0].x} ${svgHeight - paddingBottom} Z`
     : '';
 
-  const chartThemeColor = Theme.colors.primary;
+  const chartThemeColor = colors.primary;
   const currentMetricOption = METRIC_OPTIONS.find(o => o.id === chartMetric) || METRIC_OPTIONS[0];
 
   const getMetricTitle = useCallback((metric: ExerciseChartMetric) => {
@@ -365,7 +367,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
       {chartPoints.length > 0 && (
         <View style={styles.chartContainer}>
           {/* Header Row */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
             <Text style={styles.chartTitle}>
               {getMetricTitle(chartMetric)}
             </Text>
@@ -374,22 +376,22 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
               onPress={() => setCalendarVisible(true)}
               activeOpacity={0.7}
             >
-              <Ionicons name="calendar-outline" size={20} color={Theme.colors.primary} />
+              <Ionicons name="calendar-outline" size={20} color={colors.primary} />
             </TouchableOpacity>
           </View>
           
           {/* Selectors Row */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
             <TouchableOpacity
               style={styles.metricSelectButton}
               onPress={() => setMetricModalVisible(true)}
               activeOpacity={0.7}
             >
-              <Ionicons name={currentMetricOption.icon} size={15} color={Theme.colors.primary} style={{ marginRight: 6 }} />
+              <Ionicons name={currentMetricOption.icon} size={15} color={colors.primary} style={{ marginRight: 6 }} />
               <Text style={styles.metricSelectText}>
                 {t(currentMetricOption.titleKey)}
               </Text>
-              <Ionicons name="chevron-down" size={14} color={Theme.colors.textMuted} style={{ marginLeft: 4 }} />
+              <Ionicons name="chevron-down" size={14} color={colors.textMuted} style={{ marginLeft: 4 }} />
             </TouchableOpacity>
 
             <View style={styles.scaleContainer}>
@@ -502,7 +504,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
                           cx={c.x}
                           cy={c.y}
                           r={isSelected ? 5.5 : 4}
-                          fill={isSelected ? chartThemeColor : '#121212'}
+                          fill={isSelected ? chartThemeColor : colors.card}
                           stroke={isSelected ? '#ffffff' : chartThemeColor}
                           strokeWidth={isSelected ? 2 : 2.5}
                         />
@@ -511,7 +513,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
                         <SvgText
                           x={c.x}
                           y={svgHeight - 10}
-                          fill={isSelected ? chartThemeColor : Theme.colors.textMuted}
+                          fill={isSelected ? chartThemeColor : colors.textMuted}
                           fontSize={11}
                           fontWeight={isSelected ? '800' : '600'}
                           textAnchor="middle"
@@ -549,16 +551,18 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
         transparent={true}
         onRequestClose={() => setMetricModalVisible(false)}
       >
-        <TouchableOpacity
+        <Pressable
           style={styles.modalOverlay}
-          activeOpacity={1}
           onPress={() => setMetricModalVisible(false)}
         >
-          <View style={styles.metricModalContent} onStartShouldSetResponder={() => true}>
+          <Pressable style={styles.metricModalContent} onPress={(e) => e.stopPropagation()}>
             <View style={styles.metricModalHeader}>
               <Text style={styles.metricModalTitle}>{t('ui.history.metric_select_title') || '表示する指標を選択'}</Text>
-              <TouchableOpacity onPress={() => setMetricModalVisible(false)}>
-                <Ionicons name="close" size={22} color={Theme.colors.textMuted} />
+              <TouchableOpacity
+                onPress={() => setMetricModalVisible(false)}
+                style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
+              >
+                <Ionicons name="close" size={22} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
@@ -579,7 +583,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
                     <Ionicons
                       name={option.icon}
                       size={20}
-                      color={isSelected ? Theme.colors.primary : Theme.colors.textMuted}
+                      color={isSelected ? colors.primary : colors.textMuted}
                     />
                   </View>
                   <View style={{ flex: 1, marginRight: 8 }}>
@@ -598,13 +602,13 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
                     <Text style={styles.metricOptionSub}>{t(option.subKey)}</Text>
                   </View>
                   {isSelected && (
-                    <Ionicons name="checkmark-circle" size={20} color={Theme.colors.primary} />
+                    <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
                   )}
                 </TouchableOpacity>
               );
             })}
-          </View>
-        </TouchableOpacity>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       {/* PR Progression Chart Modal */}
@@ -614,14 +618,17 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
         transparent={true}
         onRequestClose={() => setShowChartModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <Pressable style={styles.modalOverlay} onPress={() => setShowChartModal(false)}>
+          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
                 {selectedChartReps ? t('ui.exercise_detail.progression_chart_title', { reps: selectedChartReps }) : ''}
               </Text>
-              <TouchableOpacity onPress={() => setShowChartModal(false)}>
-                <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+              <TouchableOpacity
+                onPress={() => setShowChartModal(false)}
+                style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
+              >
+                <Ionicons name="close" size={24} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
@@ -630,7 +637,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
               if (!res) {
                 return (
                   <View style={{ padding: 24, alignItems: 'center' }}>
-                    <Text style={{ color: Theme.colors.textMuted }}>No history found for this rep target.</Text>
+                    <Text style={{ color: colors.textMuted }}>No history found for this rep target.</Text>
                   </View>
                 );
               }
@@ -650,11 +657,11 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
                     </View>
                     <View style={styles.analysisCard}>
                       <Text style={styles.analysisLabel}>{t('ui.exercise_detail.current_pr')}</Text>
-                      <Text style={[styles.analysisValue, { color: Theme.colors.primary }]}>{currentPRWeight} {settings.weightUnit}</Text>
+                      <Text style={[styles.analysisValue, { color: colors.primary }]}>{currentPRWeight} {settings.weightUnit}</Text>
                     </View>
                     <View style={styles.analysisCard}>
                       <Text style={styles.analysisLabel}>{t('ui.exercise_detail.improvement_value')}</Text>
-                      <Text style={[styles.analysisValue, { color: diff >= 0 ? Theme.colors.success : Theme.colors.danger }]}>
+                      <Text style={[styles.analysisValue, { color: diff >= 0 ? colors.success : colors.danger }]}>
                         {diff >= 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1)} {settings.weightUnit}
                       </Text>
                     </View>
@@ -665,16 +672,16 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
                     width={Dimensions.get('window').width * 0.8}
                     height={220}
                     chartConfig={{
-                      backgroundColor: Theme.colors.card,
-                      backgroundGradientFrom: Theme.colors.card,
-                      backgroundGradientTo: Theme.colors.card,
+                      backgroundColor: colors.card,
+                      backgroundGradientFrom: colors.card,
+                      backgroundGradientTo: colors.card,
                       decimalPlaces: 1,
                       color: (opacity = 1) => `rgba(79, 172, 254, ${opacity})`,
                       labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
                       propsForDots: {
                         r: "5",
                         strokeWidth: "2",
-                        stroke: Theme.colors.primary
+                        stroke: colors.primary
                       }
                     }}
                     bezier
@@ -683,142 +690,152 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
                 </ScrollView>
               );
             })()}
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </>
   );
 };
 
-const styles = StyleSheet.create({
-  chartContainer: { paddingHorizontal: Theme.spacing.lg, marginVertical: Theme.spacing.md },
-  chartTitle: { color: Theme.colors.text, fontSize: 18, fontWeight: 'bold' },
+const createStyles = (
+  colors: ReturnType<typeof useAppTheme>['colors'],
+  spacing: ReturnType<typeof useAppTheme>['spacing']
+) => StyleSheet.create({
+  chartContainer: { paddingHorizontal: spacing.lg, marginVertical: spacing.md },
+  chartTitle: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
   metricSelectButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: Theme.borderRadius.md,
+    paddingVertical: 8,
+    minHeight: 40,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: colors.border,
   },
   metricSelectText: {
-    color: Theme.colors.text,
+    color: colors.text,
     fontSize: 13,
     fontWeight: '600',
   },
   scaleContainer: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: Theme.borderRadius.sm,
-    padding: 2,
+    backgroundColor: colors.card,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 3,
     alignSelf: 'flex-start',
   },
   scaleButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: Theme.borderRadius.sm - 2,
+    minHeight: 34,
+    justifyContent: 'center',
+    borderRadius: 8,
   },
   scaleButtonActive: {
-    backgroundColor: Theme.colors.card,
+    backgroundColor: 'rgba(79, 172, 254, 0.14)',
   },
   scaleButtonText: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 13,
     fontWeight: '500',
   },
   scaleButtonTextActive: {
-    color: Theme.colors.primary,
+    color: colors.primary,
     fontWeight: 'bold',
   },
   calendarBtn: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    width: 36,
-    height: 36,
-    borderRadius: Theme.borderRadius.md,
+    backgroundColor: colors.card,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
   },
   summaryCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: Theme.borderRadius.md,
+    backgroundColor: colors.card,
+    borderRadius: 16,
     paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: Theme.spacing.md,
+    paddingVertical: 12,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   summaryDate: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 13,
     fontWeight: '600',
   },
   summaryVal: {
-    color: Theme.colors.text,
+    color: colors.text,
     fontSize: 20,
     fontWeight: '800',
   },
   summaryUnit: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 13,
     fontWeight: '600',
   },
   chartWrapper: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.md,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { width: '90%', backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.lg, maxHeight: '95%' },
+  modalContent: { width: '90%', backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, maxHeight: '95%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: colors.text },
   analysisRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 16 },
-  analysisCard: { flex: 1, backgroundColor: '#1a1a1a', borderRadius: 8, padding: 10, marginHorizontal: 4, alignItems: 'center', borderWidth: 1, borderColor: '#333' },
-  analysisLabel: { fontSize: 11, color: Theme.colors.textMuted, marginBottom: 4 },
-  analysisValue: { fontSize: 14, fontWeight: 'bold', color: Theme.colors.text },
+  analysisCard: { flex: 1, backgroundColor: colors.background, borderRadius: 12, padding: 10, marginHorizontal: 4, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+  analysisLabel: { fontSize: 12, color: colors.textMuted, marginBottom: 4 },
+  analysisValue: { fontSize: 14, fontWeight: 'bold', color: colors.text },
 
   // Metric Modal Styles
   metricModalContent: {
     width: '90%',
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.lg,
-    padding: Theme.spacing.lg,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: colors.border,
   },
   metricModalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Theme.spacing.md,
-    paddingBottom: Theme.spacing.sm,
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomColor: colors.border,
   },
   metricModalTitle: {
     fontSize: 17,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   metricOptionItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     marginBottom: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.04)',
+    borderColor: colors.border,
   },
   metricOptionItemActive: {
     backgroundColor: 'rgba(79, 172, 254, 0.08)',
-    borderColor: Theme.colors.primary,
+    borderColor: colors.primary,
   },
   metricIconContainer: {
     width: 36,
@@ -835,15 +852,15 @@ const styles = StyleSheet.create({
   metricOptionTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   metricOptionTitleActive: {
-    color: Theme.colors.primary,
+    color: colors.primary,
     fontWeight: 'bold',
   },
   metricOptionSub: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
+    color: colors.textMuted,
     marginTop: 2,
   },
   recommendBadge: {
@@ -854,8 +871,8 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   recommendBadgeText: {
-    color: Theme.colors.primary,
-    fontSize: 10,
+    color: colors.primary,
+    fontSize: 11,
     fontWeight: 'bold',
   },
   recommendBadgeStar: {

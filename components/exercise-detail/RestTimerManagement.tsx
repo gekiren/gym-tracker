@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { updateExerciseRestSeconds } from '../../src/db/database';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 
@@ -20,6 +20,7 @@ export const RestTimerManagement: React.FC<RestTimerManagementProps> = ({
   settings,
   t,
 }) => {
+  const { colors } = useAppTheme();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const formatTime = (secs: number) => {
@@ -44,36 +45,40 @@ export const RestTimerManagement: React.FC<RestTimerManagementProps> = ({
   const isIndividualEnabled = !!settings.individualRestEnabled;
 
   return (
-    <View style={styles.section}>
+    <View style={[styles.section, { borderBottomColor: colors.border }]}>
       <TouchableOpacity 
         onPress={() => setIsExpanded(!isExpanded)} 
         style={styles.headerToggle}
         activeOpacity={0.7}
       >
         <View style={styles.headerLeft}>
-          <Ionicons name="timer-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.toggleText}>
+          <Ionicons name="timer-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+          <Text style={[styles.toggleText, { color: colors.primary }]}>
             {t('ui.exercise_detail.section_rest_timer')}
           </Text>
         </View>
         <View style={styles.headerRight}>
-          <Text style={[styles.currentValueBadge, currentRest != null && styles.currentValueBadgeActive]}>
+          <Text style={[
+            styles.currentValueBadge,
+            { color: colors.textMuted, backgroundColor: colors.card, borderColor: colors.border },
+            currentRest != null && { color: colors.primary, backgroundColor: 'rgba(79, 172, 254, 0.15)', borderColor: colors.primary, fontWeight: 'bold' }
+          ]}>
             {currentRest != null ? formatTime(currentRest) : t('ui.exercise_detail.rest_timer_not_set')}
           </Text>
-          <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={Theme.colors.primary} />
+          <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primary} />
         </View>
       </TouchableOpacity>
 
       {isExpanded && (
         <View style={styles.content}>
-          <Text style={styles.sectionDesc}>
+          <Text style={[styles.sectionDesc, { color: colors.textMuted }]}>
             {t('ui.exercise_detail.rest_timer_desc')}
           </Text>
 
           {!isIndividualEnabled && (
             <View style={styles.disabledWarningBox}>
-              <Ionicons name="information-circle-outline" size={16} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
-              <Text style={styles.disabledWarningText}>
+              <Ionicons name="information-circle-outline" size={16} color={colors.textMuted} style={{ marginRight: 6 }} />
+              <Text style={[styles.disabledWarningText, { color: colors.textMuted }]}>
                 {t('ui.exercise_detail.rest_timer_disabled_hint')}
               </Text>
             </View>
@@ -82,11 +87,19 @@ export const RestTimerManagement: React.FC<RestTimerManagementProps> = ({
           <View style={styles.chipList}>
             {/* 設定なし（全体設定に従う） */}
             <TouchableOpacity
-              style={[styles.choiceChip, currentRest == null && styles.choiceChipActive]}
+              style={[
+                styles.choiceChip,
+                { backgroundColor: colors.card, borderColor: colors.border },
+                currentRest == null && [styles.choiceChipActive, { borderColor: colors.primary }]
+              ]}
               onPress={() => handleSelectRest(null)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.choiceChipText, currentRest == null && styles.choiceChipTextActive]}>
+              <Text style={[
+                styles.choiceChipText,
+                { color: colors.textMuted },
+                currentRest == null && { color: colors.primary, fontWeight: 'bold' }
+              ]}>
                 {t('ui.exercise_detail.rest_timer_none')} ({formatTime(settings.defaultRest)})
               </Text>
             </TouchableOpacity>
@@ -97,11 +110,19 @@ export const RestTimerManagement: React.FC<RestTimerManagementProps> = ({
               return (
                 <TouchableOpacity
                   key={secs}
-                  style={[styles.choiceChip, isActive && styles.choiceChipActive]}
+                  style={[
+                    styles.choiceChip,
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                    isActive && [styles.choiceChipActive, { borderColor: colors.primary }]
+                  ]}
                   onPress={() => handleSelectRest(secs)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.choiceChipText, isActive && styles.choiceChipTextActive]}>
+                  <Text style={[
+                    styles.choiceChipText,
+                    { color: colors.textMuted },
+                    isActive && { color: colors.primary, fontWeight: 'bold' }
+                  ]}>
                     {formatTime(secs)}
                   </Text>
                 </TouchableOpacity>
@@ -116,14 +137,14 @@ export const RestTimerManagement: React.FC<RestTimerManagementProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    padding: Theme.spacing.lg,
+    padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
   },
   headerToggle: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: 44,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -137,28 +158,20 @@ const styles = StyleSheet.create({
   toggleText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Theme.colors.primary,
   },
   currentValueBadge: {
     fontSize: 13,
-    color: Theme.colors.textMuted,
-    backgroundColor: '#1f1f1f',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 8,
+    borderWidth: 1,
     overflow: 'hidden',
-  },
-  currentValueBadgeActive: {
-    color: Theme.colors.primary,
-    backgroundColor: 'rgba(79, 172, 254, 0.15)',
-    fontWeight: 'bold',
   },
   content: {
     marginTop: 12,
   },
   sectionDesc: {
     fontSize: 13,
-    color: Theme.colors.textMuted,
     marginBottom: 10,
     lineHeight: 18,
   },
@@ -168,14 +181,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 8,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   disabledWarningText: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
     flex: 1,
     lineHeight: 16,
   },
@@ -187,22 +199,16 @@ const styles = StyleSheet.create({
   choiceChip: {
     paddingHorizontal: 12,
     paddingVertical: 8,
+    minHeight: 38,
+    justifyContent: 'center',
     borderRadius: 16,
-    backgroundColor: '#1a1a1a',
     borderWidth: 1,
-    borderColor: '#333',
   },
   choiceChipActive: {
     backgroundColor: 'rgba(79, 172, 254, 0.2)',
-    borderColor: Theme.colors.primary,
   },
   choiceChipText: {
-    color: Theme.colors.textMuted,
     fontSize: 13,
     fontWeight: '500',
-  },
-  choiceChipTextActive: {
-    color: Theme.colors.primary,
-    fontWeight: 'bold',
   },
 });
