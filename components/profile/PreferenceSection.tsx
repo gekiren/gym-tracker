@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 
 interface PreferenceSectionProps {
   weightUnit: 'kg' | 'lbs';
@@ -18,10 +18,13 @@ export const PreferenceSection: React.FC<PreferenceSectionProps> = ({
   onUpdateBodyWeight,
   t,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Ionicons name="barbell-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+        <Ionicons name="barbell-outline" size={24} color={colors.primary} style={{ marginRight: 8 }} />
         <Text style={styles.sectionTitle}>{t('ui.profile.section_preferences')}</Text>
       </View>
 
@@ -52,7 +55,7 @@ export const PreferenceSection: React.FC<PreferenceSectionProps> = ({
             value={bodyWeight}
             onChangeText={onUpdateBodyWeight}
             placeholder={`e.g. 70 (${weightUnit})`}
-            placeholderTextColor={Theme.colors.textMuted}
+            placeholderTextColor={colors.textMuted}
           />
         </View>
       </View>
@@ -60,18 +63,19 @@ export const PreferenceSection: React.FC<PreferenceSectionProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  section: { marginBottom: Theme.spacing.xl },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: Theme.spacing.md },
-  sectionTitle: { fontSize: 18, color: Theme.colors.text, fontWeight: 'bold' },
-  settingCard: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, borderWidth: 1, borderColor: Theme.colors.border },
-  settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  settingLabel: { color: Theme.colors.text, fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  settingDesc: { color: Theme.colors.textMuted, fontSize: 13, paddingRight: 40, lineHeight: 18 },
-  chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
-  langChip: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 20, backgroundColor: '#222', borderWidth: 1, borderColor: Theme.colors.border },
-  chipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: Theme.colors.primary },
-  chipText: { color: Theme.colors.textMuted, fontSize: 14, fontWeight: '600' },
-  chipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' },
-  weightInput: { backgroundColor: '#121212', color: Theme.colors.text, padding: 12, borderRadius: 8, fontSize: 16, borderWidth: 1, borderColor: Theme.colors.border, width: '100%', marginTop: 12 },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    section: { marginBottom: 32 },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+    sectionTitle: { fontSize: 18, color: colors.text, fontWeight: 'bold' },
+    settingCard: { backgroundColor: colors.card, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: colors.border },
+    settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+    settingLabel: { color: colors.text, fontSize: 16, fontWeight: '600', marginBottom: 4 },
+    settingDesc: { color: colors.textMuted, fontSize: 13, paddingRight: 40, lineHeight: 18 },
+    chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
+    langChip: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 20, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
+    chipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: colors.primary },
+    chipText: { color: colors.textMuted, fontSize: 14, fontWeight: '600' },
+    chipTextActive: { color: colors.primary, fontWeight: 'bold' },
+    weightInput: { backgroundColor: colors.background, color: colors.text, padding: 12, borderRadius: 8, fontSize: 16, borderWidth: 1, borderColor: colors.border, width: '100%', marginTop: 12 },
+  });

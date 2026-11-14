@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '../../src/theme';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { useNutritionStore } from '../../src/store/nutritionStore';
 import { saveSetting } from '../../src/db/database';
@@ -175,5 +174,5 @@ export function WorkoutTimerSettingsContent() {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: Theme.spacing.md, paddingBottom: 100 },
+  content: { padding: 16, paddingBottom: 100 },
 });
