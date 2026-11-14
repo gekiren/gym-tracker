@@ -10,11 +10,12 @@ import {
   Modal,
   Dimensions,
   Alert,
+  Pressable,
 } from 'react-native';
 import Svg, { Path, Circle, Line, Defs, LinearGradient, Stop, Text as SvgText, Rect, G } from 'react-native-svg';
 import { format, startOfWeek, startOfMonth } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import {
   getAllWaterLogs,
   getAllTimeLogs,
@@ -61,6 +62,8 @@ function createLinearPath(points: { x: number; y: number }[]): string {
 }
 
 export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t }) => {
+  const { colors, spacing } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors, spacing), [colors, spacing]);
   const [loading, setLoading] = useState(true);
   const [chartScale, setChartScale] = useState<'day' | 'week' | 'month' | 'year'>('day');
   const [chartMetric, setChartMetric] = useState<
@@ -454,7 +457,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
         if (selectedFilter !== 'all' && log.habit_item_id !== parseInt(selectedFilter, 10)) return;
         const group = getOrCreateGroup(log.date);
         const itemInfo = habitItems.find((hi) => hi.id === log.habit_item_id);
-        group.items.push({ ...log, name: itemInfo ? itemInfo.name : 'Unknown Habit', color: itemInfo ? itemInfo.color : '#fff' });
+        group.items.push({ ...log, name: itemInfo ? itemInfo.name : 'Unknown Habit', color: itemInfo ? itemInfo.color : colors.text });
       });
     } else if (type === 'routine') {
       routines.forEach((r) => {
@@ -492,7 +495,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Theme.colors.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -642,13 +645,18 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
         animationType="fade"
         onRequestClose={() => setFilterModalVisible(false)}
       >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setFilterModalVisible(false)}
-        >
+        <View style={styles.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setFilterModalVisible(false)} />
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{t('ui.history.select_filter') || 'フィルター選択'}</Text>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('ui.history.select_filter') || 'フィルター選択'}</Text>
+              <TouchableOpacity
+                onPress={() => setFilterModalVisible(false)}
+                style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
+              >
+                <Ionicons name="close" size={22} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
             <FlatList
               data={filtersList}
               keyExtractor={(item) => item.id}
@@ -679,7 +687,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
               )}
             />
           </View>
-        </TouchableOpacity>
+        </View>
       </Modal>
     );
   };
@@ -692,12 +700,9 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
         animationType="fade"
         onRequestClose={() => setMetricModalVisible(false)}
       >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setMetricModalVisible(false)}
-        >
-          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+        <View style={styles.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setMetricModalVisible(false)} />
+          <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons
@@ -709,7 +714,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                       : 'water-outline'
                   }
                   size={20}
-                  color={Theme.colors.primary}
+                  color={colors.primary}
                   style={{ marginRight: 8 }}
                 />
                 <Text style={styles.modalTitle}>
@@ -718,12 +723,13 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
               </View>
               <TouchableOpacity
                 onPress={() => setMetricModalVisible(false)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
               >
-                <Ionicons name="close" size={22} color={Theme.colors.textMuted} />
+                <Ionicons name="close" size={22} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
+            <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
             {type === 'nutrition' ? (
               <>
                 <TouchableOpacity
@@ -736,7 +742,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   activeOpacity={0.7}
                 >
                   <View style={[styles.optionIconBox, chartMetric === 'calories' && styles.optionIconBoxActive]}>
-                    <Ionicons name="flame" size={20} color={chartMetric === 'calories' ? Theme.colors.primary : Theme.colors.textMuted} />
+                    <Ionicons name="flame" size={20} color={chartMetric === 'calories' ? colors.primary : colors.textMuted} />
                   </View>
                   <View style={styles.optionTextContent}>
                     <Text style={[styles.optionTitle, chartMetric === 'calories' && styles.optionTitleActive]}>
@@ -744,7 +750,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     </Text>
                     <Text style={styles.optionSub}>日々の摂取カロリーの推移を表示します</Text>
                   </View>
-                  {chartMetric === 'calories' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                  {chartMetric === 'calories' && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -757,7 +763,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   activeOpacity={0.7}
                 >
                   <View style={[styles.optionIconBox, chartMetric === 'protein' && styles.optionIconBoxActive]}>
-                    <Ionicons name="fitness" size={20} color={chartMetric === 'protein' ? Theme.colors.primary : Theme.colors.textMuted} />
+                    <Ionicons name="fitness" size={20} color={chartMetric === 'protein' ? colors.primary : colors.textMuted} />
                   </View>
                   <View style={styles.optionTextContent}>
                     <Text style={[styles.optionTitle, chartMetric === 'protein' && styles.optionTitleActive]}>
@@ -765,7 +771,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     </Text>
                     <Text style={styles.optionSub}>日々のタンパク質摂取量の推移を表示します</Text>
                   </View>
-                  {chartMetric === 'protein' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                  {chartMetric === 'protein' && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -778,7 +784,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   activeOpacity={0.7}
                 >
                   <View style={[styles.optionIconBox, chartMetric === 'fat' && styles.optionIconBoxActive]}>
-                    <Ionicons name="pizza" size={20} color={chartMetric === 'fat' ? Theme.colors.primary : Theme.colors.textMuted} />
+                    <Ionicons name="pizza" size={20} color={chartMetric === 'fat' ? colors.primary : colors.textMuted} />
                   </View>
                   <View style={styles.optionTextContent}>
                     <Text style={[styles.optionTitle, chartMetric === 'fat' && styles.optionTitleActive]}>
@@ -786,7 +792,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     </Text>
                     <Text style={styles.optionSub}>日々の脂質摂取量の推移を表示します</Text>
                   </View>
-                  {chartMetric === 'fat' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                  {chartMetric === 'fat' && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -799,7 +805,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   activeOpacity={0.7}
                 >
                   <View style={[styles.optionIconBox, chartMetric === 'carbs' && styles.optionIconBoxActive]}>
-                    <Ionicons name="nutrition" size={20} color={chartMetric === 'carbs' ? Theme.colors.primary : Theme.colors.textMuted} />
+                    <Ionicons name="nutrition" size={20} color={chartMetric === 'carbs' ? colors.primary : colors.textMuted} />
                   </View>
                   <View style={styles.optionTextContent}>
                     <Text style={[styles.optionTitle, chartMetric === 'carbs' && styles.optionTitleActive]}>
@@ -807,7 +813,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     </Text>
                     <Text style={styles.optionSub}>日々の炭水化物摂取量の推移を表示します</Text>
                   </View>
-                  {chartMetric === 'carbs' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                  {chartMetric === 'carbs' && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
                 </TouchableOpacity>
               </>
             ) : type === 'body' ? (
@@ -822,7 +828,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   activeOpacity={0.7}
                 >
                   <View style={[styles.optionIconBox, chartMetric === 'weight' && styles.optionIconBoxActive]}>
-                    <Ionicons name="scale-outline" size={20} color={chartMetric === 'weight' ? Theme.colors.primary : Theme.colors.textMuted} />
+                    <Ionicons name="scale-outline" size={20} color={chartMetric === 'weight' ? colors.primary : colors.textMuted} />
                   </View>
                   <View style={styles.optionTextContent}>
                     <Text style={[styles.optionTitle, chartMetric === 'weight' && styles.optionTitleActive]}>
@@ -830,7 +836,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     </Text>
                     <Text style={styles.optionSub}>日々の体重の推移を表示します</Text>
                   </View>
-                  {chartMetric === 'weight' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                  {chartMetric === 'weight' && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -843,7 +849,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   activeOpacity={0.7}
                 >
                   <View style={[styles.optionIconBox, chartMetric === 'body_fat_rate' && styles.optionIconBoxActive]}>
-                    <Ionicons name="pie-chart-outline" size={20} color={chartMetric === 'body_fat_rate' ? Theme.colors.primary : Theme.colors.textMuted} />
+                    <Ionicons name="pie-chart-outline" size={20} color={chartMetric === 'body_fat_rate' ? colors.primary : colors.textMuted} />
                   </View>
                   <View style={styles.optionTextContent}>
                     <Text style={[styles.optionTitle, chartMetric === 'body_fat_rate' && styles.optionTitleActive]}>
@@ -851,7 +857,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     </Text>
                     <Text style={styles.optionSub}>日々の体脂肪率の推移を表示します</Text>
                   </View>
-                  {chartMetric === 'body_fat_rate' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                  {chartMetric === 'body_fat_rate' && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -864,7 +870,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   activeOpacity={0.7}
                 >
                   <View style={[styles.optionIconBox, chartMetric === 'muscle_mass' && styles.optionIconBoxActive]}>
-                    <Ionicons name="barbell-outline" size={20} color={chartMetric === 'muscle_mass' ? Theme.colors.primary : Theme.colors.textMuted} />
+                    <Ionicons name="barbell-outline" size={20} color={chartMetric === 'muscle_mass' ? colors.primary : colors.textMuted} />
                   </View>
                   <View style={styles.optionTextContent}>
                     <Text style={[styles.optionTitle, chartMetric === 'muscle_mass' && styles.optionTitleActive]}>
@@ -872,7 +878,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     </Text>
                     <Text style={styles.optionSub}>日々の骨格筋量・筋肉量の推移を表示します</Text>
                   </View>
-                  {chartMetric === 'muscle_mass' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                  {chartMetric === 'muscle_mass' && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -885,7 +891,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   activeOpacity={0.7}
                 >
                   <View style={[styles.optionIconBox, chartMetric === 'lbm' && styles.optionIconBoxActive]}>
-                    <Ionicons name="body-outline" size={20} color={chartMetric === 'lbm' ? Theme.colors.primary : Theme.colors.textMuted} />
+                    <Ionicons name="body-outline" size={20} color={chartMetric === 'lbm' ? colors.primary : colors.textMuted} />
                   </View>
                   <View style={styles.optionTextContent}>
                     <Text style={[styles.optionTitle, chartMetric === 'lbm' && styles.optionTitleActive]}>
@@ -893,7 +899,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     </Text>
                     <Text style={styles.optionSub}>日々の除脂肪体重の推移を表示します</Text>
                   </View>
-                  {chartMetric === 'lbm' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                  {chartMetric === 'lbm' && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -906,7 +912,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   activeOpacity={0.7}
                 >
                   <View style={[styles.optionIconBox, chartMetric === 'mf_ratio' && styles.optionIconBoxActive]}>
-                    <Ionicons name="git-compare-outline" size={20} color={chartMetric === 'mf_ratio' ? Theme.colors.primary : Theme.colors.textMuted} />
+                    <Ionicons name="git-compare-outline" size={20} color={chartMetric === 'mf_ratio' ? colors.primary : colors.textMuted} />
                   </View>
                   <View style={styles.optionTextContent}>
                     <Text style={[styles.optionTitle, chartMetric === 'mf_ratio' && styles.optionTitleActive]}>
@@ -914,7 +920,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     </Text>
                     <Text style={styles.optionSub}>筋肉量 ÷ 体脂肪量による筋肉の密度推移を表示します</Text>
                   </View>
-                  {chartMetric === 'mf_ratio' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                  {chartMetric === 'mf_ratio' && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -927,7 +933,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   activeOpacity={0.7}
                 >
                   <View style={[styles.optionIconBox, chartMetric === 'macho_score' && styles.optionIconBoxActive]}>
-                    <Ionicons name="flame-outline" size={20} color={chartMetric === 'macho_score' ? Theme.colors.primary : Theme.colors.textMuted} />
+                    <Ionicons name="flame-outline" size={20} color={chartMetric === 'macho_score' ? colors.primary : colors.textMuted} />
                   </View>
                   <View style={styles.optionTextContent}>
                     <Text style={[styles.optionTitle, chartMetric === 'macho_score' && styles.optionTitleActive]}>
@@ -935,7 +941,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     </Text>
                     <Text style={styles.optionSub}>FFMI ＋ 絞りボーナスによる総合スコア推移を表示します</Text>
                   </View>
-                  {chartMetric === 'macho_score' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                  {chartMetric === 'macho_score' && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
                 </TouchableOpacity>
               </>
             ) : (
@@ -950,7 +956,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   activeOpacity={0.7}
                 >
                   <View style={[styles.optionIconBox, chartMetric === 'amount' && styles.optionIconBoxActive]}>
-                    <Ionicons name="water" size={20} color={chartMetric === 'amount' ? Theme.colors.primary : Theme.colors.textMuted} />
+                    <Ionicons name="water" size={20} color={chartMetric === 'amount' ? colors.primary : colors.textMuted} />
                   </View>
                   <View style={styles.optionTextContent}>
                     <Text style={[styles.optionTitle, chartMetric === 'amount' && styles.optionTitleActive]}>
@@ -958,7 +964,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     </Text>
                     <Text style={styles.optionSub}>日々の水分摂取量の推移を表示します</Text>
                   </View>
-                  {chartMetric === 'amount' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                  {chartMetric === 'amount' && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -971,7 +977,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   activeOpacity={0.7}
                 >
                   <View style={[styles.optionIconBox, chartMetric === 'caffeine' && styles.optionIconBoxActive]}>
-                    <Ionicons name="cafe" size={20} color={chartMetric === 'caffeine' ? Theme.colors.primary : Theme.colors.textMuted} />
+                    <Ionicons name="cafe" size={20} color={chartMetric === 'caffeine' ? colors.primary : colors.textMuted} />
                   </View>
                   <View style={styles.optionTextContent}>
                     <Text style={[styles.optionTitle, chartMetric === 'caffeine' && styles.optionTitleActive]}>
@@ -979,12 +985,13 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     </Text>
                     <Text style={styles.optionSub}>カフェイン摂取量の推移を表示します</Text>
                   </View>
-                  {chartMetric === 'caffeine' && <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />}
+                  {chartMetric === 'caffeine' && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
                 </TouchableOpacity>
               </>
             )}
+            </ScrollView>
           </View>
-        </TouchableOpacity>
+        </View>
       </Modal>
     );
   };
@@ -1043,7 +1050,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                         : (chartMetric === 'amount' ? 'water' : 'cafe')
                     }
                     size={14}
-                    color={Theme.colors.primary}
+                    color={colors.primary}
                     style={{ marginRight: 4 }}
                   />
                   <Text style={styles.metricSelectBtnText} numberOfLines={1}>
@@ -1053,7 +1060,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                       ? (chartMetric === 'weight' ? (t('ui.history.metric_weight') || '体重') : chartMetric === 'body_fat_rate' ? (t('ui.history.metric_body_fat') || '体脂肪率') : chartMetric === 'muscle_mass' ? (t('ui.history.metric_muscle_mass') || '骨格筋量') : chartMetric === 'lbm' ? (t('ui.history.metric_lbm') || '除脂肪体重') : chartMetric === 'mf_ratio' ? (t('ui.history.metric_mf_ratio') || 'MF比') : (t('ui.history.metric_macho_score') || 'MSスコア'))
                       : (chartMetric === 'amount' ? (t('ui.history.metric_water') || '水分量') : (t('ui.history.metric_caffeine') || 'カフェイン'))}
                   </Text>
-                  <Ionicons name="chevron-down" size={14} color={Theme.colors.textMuted} style={{ marginLeft: 4 }} />
+                  <Ionicons name="chevron-down" size={14} color={colors.textMuted} style={{ marginLeft: 4 }} />
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
@@ -1061,11 +1068,11 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                   onPress={() => setFilterModalVisible(true)}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="funnel-outline" size={14} color={Theme.colors.primary} />
+                  <Ionicons name="funnel-outline" size={14} color={colors.primary} />
                   <Text style={styles.dropdownBtnText} numberOfLines={1}>
                     {selectedFilterName}
                   </Text>
-                  <Ionicons name="chevron-down" size={14} color={Theme.colors.textMuted} />
+                  <Ionicons name="chevron-down" size={14} color={colors.textMuted} />
                 </TouchableOpacity>
               )}
             </View>
@@ -1136,8 +1143,8 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     <Svg width={svgWidth} height={svgHeight} style={StyleSheet.absoluteFill}>
                       <Defs>
                         <LinearGradient id="lifelogAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                          <Stop offset="0%" stopColor={Theme.colors.primary} stopOpacity={0.35} />
-                          <Stop offset="100%" stopColor={Theme.colors.primary} stopOpacity={0.0} />
+                          <Stop offset="0%" stopColor={colors.primary} stopOpacity={0.35} />
+                          <Stop offset="100%" stopColor={colors.primary} stopOpacity={0.0} />
                         </LinearGradient>
                       </Defs>
 
@@ -1149,7 +1156,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                             y1={goalY}
                             x2={svgWidth}
                             y2={goalY}
-                            stroke={type === 'habit' ? '#55efc4' : Theme.colors.primary}
+                            stroke={type === 'habit' ? '#55efc4' : colors.primary}
                             strokeOpacity={0.6}
                             strokeDasharray="4,4"
                             strokeWidth={1.5}
@@ -1157,7 +1164,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                           <SvgText
                             x={svgWidth - 10}
                             y={goalY - 6}
-                            fill={type === 'habit' ? '#55efc4' : Theme.colors.primary}
+                            fill={type === 'habit' ? '#55efc4' : colors.primary}
                             fontSize={10}
                             fontWeight="600"
                             opacity={0.9}
@@ -1174,7 +1181,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                         y1={svgHeight - paddingBottom - drawHeight * 0.5}
                         x2={svgWidth}
                         y2={svgHeight - paddingBottom - drawHeight * 0.5}
-                        stroke="rgba(255, 255, 255, 0.05)"
+                        stroke={colors.border}
                         strokeWidth={1}
                       />
 
@@ -1186,7 +1193,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                         <Path
                           d={linearPath}
                           fill="none"
-                          stroke={Theme.colors.primary}
+                          stroke={colors.primary}
                           strokeWidth={3}
                           strokeLinejoin="round"
                           strokeLinecap="round"
@@ -1211,7 +1218,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                                 y1={paddingTop - 10}
                                 x2={c.x}
                                 y2={svgHeight - paddingBottom}
-                                stroke={Theme.colors.primary}
+                                stroke={colors.primary}
                                 strokeOpacity={0.35}
                                 strokeDasharray="3,3"
                                 strokeWidth={1.5}
@@ -1225,7 +1232,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                                 cy={c.y}
                                 r={10}
                                 fill="none"
-                                stroke={Theme.colors.primary}
+                                stroke={colors.primary}
                                 strokeOpacity={0.4}
                                 strokeWidth={2}
                               />
@@ -1236,8 +1243,8 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                               cx={c.x}
                               cy={c.y}
                               r={isSelected ? 5.5 : 4}
-                              fill={isGoalReached ? '#00d2ff' : isSelected ? Theme.colors.primary : '#121212'}
-                              stroke={isSelected ? '#ffffff' : Theme.colors.primary}
+                              fill={isGoalReached ? '#00d2ff' : isSelected ? colors.primary : colors.card}
+                              stroke={isSelected ? '#ffffff' : colors.primary}
                               strokeWidth={isSelected ? 2 : 2.5}
                             />
 
@@ -1245,7 +1252,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                             <SvgText
                               x={c.x}
                               y={svgHeight - 10}
-                              fill={isSelected ? Theme.colors.primary : Theme.colors.textMuted}
+                              fill={isSelected ? colors.primary : colors.textMuted}
                               fontSize={11}
                               fontWeight={isSelected ? '800' : '600'}
                               textAnchor="middle"
@@ -1340,7 +1347,7 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                     return (
                       <View key={sub.id || idx} style={styles.listItemRow}>
                         <Ionicons name="restaurant" size={14} color="#4facfe" style={styles.listIcon} />
-                        <Text style={styles.listMainText}>{sub.name} <Text style={{ fontSize: 11, color: Theme.colors.textMuted }}>({mealTypeLabel})</Text></Text>
+                        <Text style={styles.listMainText}>{sub.name} <Text style={{ fontSize: 12, color: colors.textMuted }}>({mealTypeLabel})</Text></Text>
                         <Text style={styles.listSubText}>P:{sub.protein || 0}g F:{sub.fat || 0}g C:{sub.carbs || 0}g</Text>
                         <Text style={styles.listTimeText}>{sub.calories || 0}kcal</Text>
                       </View>
@@ -1452,9 +1459,10 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
                                 ]);
                               }}
                               style={styles.bodyDeleteBtn}
+                              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                               activeOpacity={0.7}
                             >
-                              <Ionicons name="trash-outline" size={14} color="#ef4444" />
+                              <Ionicons name="trash-outline" size={14} color={colors.danger} />
                               <Text style={styles.bodyDeleteText}>削除</Text>
                             </TouchableOpacity>
                           </View>
@@ -1482,21 +1490,24 @@ export const LifelogHistoryTab: React.FC<LifelogHistoryTabProps> = ({ type, t })
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
+const createStyles = (
+  colors: ReturnType<typeof useAppTheme>['colors'],
+  spacing: ReturnType<typeof useAppTheme>['spacing']
+) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scrollContent: { padding: Theme.spacing.md, paddingBottom: 100 },
+  scrollContent: { padding: spacing.md, paddingBottom: 100 },
   chartSectionContainer: {
-    marginBottom: Theme.spacing.md,
+    marginBottom: spacing.md,
   },
   chartHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Theme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   chartTitle: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 0,
@@ -1505,31 +1516,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Theme.spacing.md,
+    marginBottom: spacing.md,
   },
   scaleContainer: {
     flexDirection: 'row',
-    backgroundColor: '#1c1c1e',
-    borderRadius: 8,
-    padding: 2,
+    backgroundColor: colors.card,
+    borderRadius: 10,
+    padding: 3,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
   },
   scaleButton: {
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 6,
+    minHeight: 36,
+    justifyContent: 'center',
+    borderRadius: 8,
   },
   scaleButtonActive: {
     backgroundColor: 'rgba(79,172,254,0.15)',
   },
   scaleButtonText: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
   },
   scaleButtonTextActive: {
-    color: Theme.colors.primary,
+    color: colors.primary,
     fontWeight: 'bold',
   },
   metricSelectBtn: {
@@ -1539,12 +1552,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(79, 172, 254, 0.35)',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
+    paddingVertical: 8,
+    minHeight: 40,
+    borderRadius: 12,
     maxWidth: 160,
   },
   metricSelectBtnText: {
-    color: Theme.colors.primary,
+    color: colors.primary,
     fontSize: 12,
     fontWeight: 'bold',
     maxWidth: 100,
@@ -1552,29 +1566,30 @@ const styles = StyleSheet.create({
   dropdownBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1c1c1e',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
-    borderRadius: 8,
+    borderColor: colors.border,
+    borderRadius: 12,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
+    minHeight: 40,
     gap: 6,
     maxWidth: 160,
   },
   dropdownBtnText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 13,
     fontWeight: 'bold',
     flexShrink: 1,
   },
   summaryCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: Theme.borderRadius.md,
+    backgroundColor: colors.card,
+    borderRadius: 16,
     paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: Theme.spacing.md,
+    paddingVertical: 12,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -1584,7 +1599,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   summaryDate: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 2,
@@ -1596,12 +1611,12 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   summaryVal: {
-    color: Theme.colors.text,
+    color: colors.text,
     fontSize: 22,
     fontWeight: '800',
   },
   summaryUnit: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -1609,39 +1624,39 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   summarySubLabel: {
-    color: Theme.colors.textMuted,
-    fontSize: 10,
+    color: colors.textMuted,
+    fontSize: 12,
     marginBottom: 2,
   },
   summarySubVal: {
-    color: Theme.colors.text,
+    color: colors.text,
     fontSize: 13,
     fontWeight: 'bold',
   },
   badge: {
     paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingVertical: 4,
+    borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   badgeGoalReached: {
     backgroundColor: 'rgba(0, 210, 255, 0.15)',
   },
   badgeText: {
-    color: Theme.colors.textMuted,
-    fontSize: 11,
+    color: colors.textMuted,
+    fontSize: 12,
     fontWeight: '700',
   },
   badgeTextGoalReached: {
     color: '#00d2ff',
   },
   chartWrapper: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.md,
+    backgroundColor: colors.card,
+    borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: Theme.spacing.lg,
+    marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
   },
   chartScrollContent: {
     paddingLeft: 10,
@@ -1649,45 +1664,45 @@ const styles = StyleSheet.create({
   },
   emptyChart: {
     height: 180,
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.md,
+    backgroundColor: colors.card,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Theme.spacing.lg,
+    marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
   },
   listSectionTitle: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: Theme.spacing.md,
-    marginTop: Theme.spacing.xs,
+    marginBottom: spacing.md,
+    marginTop: spacing.xs,
   },
   historyCard: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.md,
-    marginBottom: Theme.spacing.md,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
   },
   historyCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
-    paddingBottom: Theme.spacing.xs,
-    marginBottom: Theme.spacing.xs,
+    borderBottomColor: colors.border,
+    paddingBottom: spacing.xs,
+    marginBottom: spacing.xs,
   },
   historyDateText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 14,
     fontWeight: 'bold',
   },
   cardTotalText: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 12,
   },
   historyCardBody: {
@@ -1708,17 +1723,17 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   listMainText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 13,
     flex: 1,
   },
   listSubText: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 12,
     marginRight: 12,
   },
   listTimeText: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 12,
     textAlign: 'right',
   },
@@ -1728,7 +1743,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emptyText: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 14,
   },
   // Modal Styles
@@ -1740,14 +1755,14 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: Theme.colors.card,
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 20,
     width: '100%',
     maxWidth: 340,
-    maxHeight: '70%',
+    maxHeight: '75%',
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1758,26 +1773,30 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.text,
   },
   filterOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    minHeight: 44,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
     marginBottom: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   filterOptionActive: {
     backgroundColor: 'rgba(79, 172, 254, 0.15)',
+    borderColor: colors.primary,
   },
   filterOptionText: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 14,
   },
   filterOptionTextActive: {
-    color: Theme.colors.primary,
+    color: colors.primary,
     fontWeight: 'bold',
   },
   colorDot: {
@@ -1789,16 +1808,16 @@ const styles = StyleSheet.create({
   metricOptionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: colors.background,
     borderRadius: 12,
     padding: 12,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: colors.border,
   },
   metricOptionItemActive: {
     backgroundColor: 'rgba(79, 172, 254, 0.12)',
-    borderColor: Theme.colors.primary,
+    borderColor: colors.primary,
   },
   optionIconBox: {
     width: 36,
@@ -1816,17 +1835,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   optionTitle: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 2,
   },
   optionTitleActive: {
-    color: Theme.colors.primary,
+    color: colors.primary,
   },
   optionSub: {
-    color: Theme.colors.textMuted,
-    fontSize: 11,
+    color: colors.textMuted,
+    fontSize: 12,
+    lineHeight: 16,
   },
   // Body History Card Styles
   bodyHistoryItem: {
@@ -1841,51 +1861,54 @@ const styles = StyleSheet.create({
   bodyStat: {
     width: '48%',
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
   },
   bodyVal: {
-    color: Theme.colors.text,
+    color: colors.text,
     fontWeight: 'bold',
   },
   bodyPartsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-    padding: 8,
-    borderRadius: 6,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 10,
+    borderRadius: 10,
     marginTop: 4,
     marginBottom: 4,
   },
   bodyPartText: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
+    color: colors.textMuted,
   },
   bodyMemoText: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     marginTop: 4,
     fontStyle: 'italic',
   },
   bodyDeleteRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: 6,
+    marginTop: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.03)',
-    paddingTop: 6,
+    borderTopColor: colors.border,
+    paddingTop: 8,
   },
   bodyDeleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    minHeight: 36,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 59, 48, 0.1)',
   },
   bodyDeleteText: {
-    color: '#ef4444',
-    fontSize: 11,
+    color: colors.danger,
+    fontSize: 12,
     fontWeight: 'bold',
     marginLeft: 4,
   },
