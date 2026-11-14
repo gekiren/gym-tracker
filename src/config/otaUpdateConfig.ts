@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.41',
+  version: '2.3.42',
   title: {
-    ja: '🎨 履歴・AIコーチ・体組成UIの最適化',
-    en: '🎨 UI & Theme Refinements (History, AI Coach & Body)',
+    ja: '🎨 栄養・プロフィール・各種設定UIのテーマ最適化',
+    en: '🎨 UI & Theme Refinements (Nutrition, Profile & Settings)',
   },
   notes: {
     ja: [
-      '履歴（ワークアウト・種目・グラフ・ライフログ）およびAIコーチ画面がダーク／ピュアブラックテーマに動的対応し、タップ領域・余白を最適化しました。',
-      '体組成 ＆ 筋肥大限界画面（サマリー・ポテンシャル・Navy/Casey計算・記録/取込モーダル）および各ライフログ画面のデザイン統一とモーダル操作性を改善しました。',
+      '栄養管理画面および関連モーダルがダーク／ピュアブラックテーマに動的対応し、操作ボタンと背景タップ閉じを最適化しました。',
+      'プロフィール画面・各種設定画面（バックアップ・AIメモリ・カレンダー連携・ヘルスコネクト等）・プライバシーポリシー・開発者メニューのデザイン統一とタップ領域を改善しました。',
     ],
     en: [
-      'Updated History (Workouts, Exercises, Charts, Lifelog) and AI Coach screens to follow Dark / Pure Black themes with improved tap targets and spacing.',
-      'Unified styling, modal backdrop dismissal, and readability across the Body Composition & Limit calculators, modals, and Lifelog screens.',
+      'Updated Nutrition screens and modals to follow Dark / Pure Black themes with improved action buttons and backdrop dismissal.',
+      'Unified styling, tap targets, and modal interactions across Profile, Settings (Backup, AI Memory, Calendar Sync, Health Connect, etc.), Privacy Policy, and Developer Menu.',
     ],
   },
 };
