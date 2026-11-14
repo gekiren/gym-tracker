@@ -5,6 +5,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   ActivityIndicator,
   ScrollView,
@@ -47,8 +48,8 @@ interface Props {
 }
 
 export default function EditMealLogModal({ visible, log, onClose, onSave }: Props) {
-  const { backgroundTheme } = useAppTheme();
-  const isPureBlack = backgroundTheme === 'pureBlack';
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const scrollViewRef = useRef<ScrollView>(null);
 
   const favorites = useNutritionStore((state) => state.favorites);
@@ -254,8 +255,9 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
         style={styles.overlay}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={[styles.sheet, isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' }]}>
-          <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.sheet}>
+          <View style={styles.header}>
             <Text style={styles.title}>✏️ 食事ログ編集</Text>
             <View style={styles.headerRight}>
               <TouchableOpacity
@@ -270,7 +272,7 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
                   <Ionicons
                     name={isFavorited ? 'star' : 'star-outline'}
                     size={22}
-                    color={isFavorited ? '#f59e0b' : '#94a3b8'}
+                    color={isFavorited ? '#f59e0b' : colors.textMuted}
                   />
                 )}
               </TouchableOpacity>
@@ -289,7 +291,6 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
                   key={t.key}
                   style={[
                     styles.mealTypeBtn,
-                    isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' },
                     mealType === t.key && styles.mealTypeBtnActive,
                   ]}
                   onPress={() => setMealType(t.key)}
@@ -310,10 +311,10 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
 
             {/* 料理名 */}
             <Text style={styles.label}>料理名</Text>
-            <TextInput style={[styles.input, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]} value={name} onChangeText={setName} placeholderTextColor="#475569" />
+            <TextInput style={styles.input} value={name} onChangeText={setName} placeholderTextColor={colors.textMuted} />
 
             {/* 倍率調整 */}
-            <View style={[styles.portionBox, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
+            <View style={styles.portionBox}>
               <Text style={styles.portionLabel}>食べた量の倍率: {multiplier}倍</Text>
               <View style={styles.presetRow}>
                 {[0.5, 0.7, 1.0, 1.2, 1.5, 2.0].map((m) => (
@@ -321,7 +322,6 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
                     key={m}
                     style={[
                       styles.presetBtn,
-                      isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' },
                       multiplier === m && !showCustomMultiplierInput && styles.presetBtnActive,
                     ]}
                     onPress={() => handleMultiplierChange(m)}
@@ -339,7 +339,6 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
                 <TouchableOpacity
                   style={[
                     styles.presetBtn,
-                    isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' },
                     (showCustomMultiplierInput || (![0.5, 0.7, 1.0, 1.2, 1.5, 2.0].includes(multiplier))) && styles.presetBtnActive,
                   ]}
                   onPress={() => {
@@ -361,12 +360,12 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
               {showCustomMultiplierInput && (
                 <View style={styles.customInputRow}>
                   <TextInput
-                    style={[styles.customInput, isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' }]}
+                    style={styles.customInput}
                     value={customMultiplierText}
                     onChangeText={setCustomMultiplierText}
                     keyboardType="decimal-pad"
                     placeholder="例: 1.3"
-                    placeholderTextColor="#475569"
+                    placeholderTextColor={colors.textMuted}
                   />
                   <Text style={styles.customInputUnit}>倍</Text>
                   <TouchableOpacity style={styles.customApplyBtn} onPress={handleApplyCustomMultiplier}>
@@ -387,14 +386,14 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
                 { key: 'sodium' as const,   label: '塩分 (g)',       value: sodium,   setter: setSodium,   color: '#f43f5e' },
                 { key: 'fiber' as const,    label: '食物繊維 (g)',   value: fiber,    setter: setFiber,    color: '#84cc16' },
               ].map((item) => (
-                <View key={item.label} style={[styles.nutriItem, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
+                <View key={item.label} style={styles.nutriItem}>
                   <Text style={[styles.nutriLabel, { color: item.color }]}>{item.label}</Text>
                   <TextInput
-                    style={[styles.nutriInput, isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' }]}
+                    style={styles.nutriInput}
                     value={item.value}
                     onChangeText={(v) => handleNutrientManualChange(item.key, v, item.setter)}
                     keyboardType="decimal-pad"
-                    placeholderTextColor="#475569"
+                    placeholderTextColor={colors.textMuted}
                   />
                 </View>
               ))}
@@ -403,12 +402,12 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
             {/* メモ */}
             <Text style={styles.label}>メモ（任意）</Text>
             <TextInput
-              style={[styles.textArea, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}
+              style={styles.textArea}
               value={memo}
               onChangeText={setMemo}
               multiline
               numberOfLines={3}
-              placeholderTextColor="#475569"
+              placeholderTextColor={colors.textMuted}
               onFocus={() => {
                 setTimeout(() => {
                   scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -421,7 +420,6 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
               style={[
                 styles.favActionBtn,
                 isFavorited ? styles.favActionBtnActive : styles.favActionBtnInactive,
-                isPureBlack && { backgroundColor: isFavorited ? '#f59e0b18' : '#080808', borderColor: isFavorited ? '#f59e0b' : '#1f1f1f' },
               ]}
               onPress={handleToggleFavorite}
               disabled={isFavLoading}
@@ -434,7 +432,7 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
                   <Ionicons
                     name={isFavorited ? 'star' : 'star-outline'}
                     size={16}
-                    color={isFavorited ? '#f59e0b' : '#94a3b8'}
+                    color={isFavorited ? '#f59e0b' : colors.textMuted}
                     style={{ marginRight: 6 }}
                   />
                   <Text style={[styles.favActionBtnText, isFavorited && styles.favActionBtnTextActive]}>
@@ -464,59 +462,61 @@ export default function EditMealLogModal({ visible, log, onClose, onSave }: Prop
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-start' },
   sheet: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
     marginTop: Platform.OS === 'android' ? 40 : 50,
     marginHorizontal: 8,
     maxHeight: '88%',
     overflow: 'hidden',
   },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
-  title: { fontSize: 18, fontWeight: '700', color: '#f8fafc' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
+  title: { fontSize: 18, fontWeight: '700', color: colors.text },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  headerFavBtn: { padding: 4 },
-  closeBtn: { padding: 4 },
-  closeBtnText: { fontSize: 18, color: '#94a3b8' },
+  headerFavBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  closeBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  closeBtnText: { fontSize: 18, color: colors.textMuted },
   body: { padding: 16 },
-  label: { fontSize: 13, fontWeight: '600', color: '#94a3b8', marginBottom: 8, marginTop: 12 },
+  label: { fontSize: 13, fontWeight: '600', color: colors.textMuted, marginBottom: 8, marginTop: 12 },
   mealTypeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 4 },
-  mealTypeBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#334155', backgroundColor: '#1e293b' },
+  mealTypeBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.background },
   mealTypeBtnActive: { backgroundColor: '#4facfe22', borderColor: '#4facfe' },
-  mealTypeBtnText: { fontSize: 12, color: '#94a3b8', fontWeight: '600' },
+  mealTypeBtnText: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
   mealTypeBtnTextActive: { color: '#4facfe' },
   input: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#334155',
-    color: '#f8fafc',
+    borderColor: colors.border,
+    color: colors.text,
     fontSize: 14,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
   nutriGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  nutriItem: { width: '48%', backgroundColor: '#1e293b', borderRadius: 10, padding: 10, borderWidth: 1, borderColor: '#334155' },
-  nutriLabel: { fontSize: 11, fontWeight: '600', marginBottom: 6 },
+  nutriItem: { width: '48%', backgroundColor: colors.background, borderRadius: 10, padding: 10, borderWidth: 1, borderColor: colors.border },
+  nutriLabel: { fontSize: 12, fontWeight: '600', marginBottom: 6 },
   nutriInput: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#334155',
-    color: '#f8fafc',
+    borderColor: colors.border,
+    color: colors.text,
     fontSize: 14,
     paddingHorizontal: 10,
     paddingVertical: 6,
     textAlign: 'right',
   },
   textArea: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#334155',
-    color: '#f8fafc',
+    borderColor: colors.border,
+    color: colors.text,
     fontSize: 14,
     padding: 12,
     minHeight: 80,
@@ -527,14 +527,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 44,
     paddingVertical: 12,
     borderRadius: 10,
     borderWidth: 1,
     marginBottom: 12,
   },
   favActionBtnInactive: {
-    backgroundColor: '#1e293b',
-    borderColor: '#334155',
+    backgroundColor: colors.background,
+    borderColor: colors.border,
   },
   favActionBtnActive: {
     backgroundColor: '#f59e0b20',
@@ -543,35 +544,35 @@ const styles = StyleSheet.create({
   favActionBtnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#94a3b8',
+    color: colors.textMuted,
   },
   favActionBtnTextActive: {
     color: '#f59e0b',
   },
-  saveBtn: { backgroundColor: '#4facfe', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  saveBtn: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 14, minHeight: 48, justifyContent: 'center', alignItems: 'center' },
   saveBtnDisabled: { opacity: 0.5 },
   saveBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
   portionBox: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 10,
     padding: 12,
     marginTop: 14,
     marginBottom: 6,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
-  portionLabel: { fontSize: 12, fontWeight: '600', color: '#94a3b8', marginBottom: 8 },
+  portionLabel: { fontSize: 12, fontWeight: '600', color: colors.textMuted, marginBottom: 8 },
   presetRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
   presetBtn: {
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: 6,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   presetBtnActive: { backgroundColor: '#10b981', borderColor: '#10b981' },
-  presetBtnText: { fontSize: 12, color: '#94a3b8' },
+  presetBtnText: { fontSize: 12, color: colors.textMuted },
   presetBtnTextActive: { color: '#fff', fontWeight: '700' },
   customInputRow: {
     flexDirection: 'row',
@@ -581,25 +582,25 @@ const styles = StyleSheet.create({
   },
   customInput: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#334155',
-    color: '#f8fafc',
+    borderColor: colors.border,
+    color: colors.text,
     fontSize: 14,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   customInputUnit: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontWeight: '600',
   },
   customApplyBtn: {
     backgroundColor: '#10b981',
     borderRadius: 8,
     paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
   customApplyBtnText: {
     color: '#fff',

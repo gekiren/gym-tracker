@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image, TextInput } from 'react-native';
 import { MealLog, MealFavorite } from '../../src/db/types';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '../../src/theme';
 
 const MEAL_TYPE_LABELS: Record<string, string> = {
   breakfast: '🌅 朝食',
@@ -45,6 +46,8 @@ export default function MealLogList({
   onDeletePresetGroup,
   onCreatePresetFromLogs,
 }: Props) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -101,17 +104,17 @@ export default function MealLogList({
 
       {/* 検索バー */}
       <View style={styles.searchBar}>
-        <Ionicons name="search" size={16} color="#94a3b8" style={{ marginRight: 6 }} />
+        <Ionicons name="search" size={16} color={colors.textMuted} style={{ marginRight: 6 }} />
         <TextInput
           style={styles.searchInput}
           placeholder="食事名やメモで検索..."
-          placeholderTextColor="#64748b"
+          placeholderTextColor={colors.textMuted}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <Ionicons name="close-circle" size={16} color="#94a3b8" />
+          <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         )}
       </View>
@@ -233,7 +236,7 @@ export default function MealLogList({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   container: { marginVertical: 12 },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -241,7 +244,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 10,
   },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#f8fafc' },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
   createPresetHeaderBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -249,12 +252,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#04785724',
     borderColor: '#059669',
     borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
   },
   createPresetHeaderBtnText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#34d399',
     fontWeight: '700',
   },
@@ -262,11 +265,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#064e3b',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 6,
   },
   presetBadgeText: {
     color: '#a7f3d0',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: 'bold',
     maxWidth: 90,
   },
@@ -276,24 +279,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   groupDeleteBtnText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#f472b6',
     fontWeight: '700',
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0f172a',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minHeight: 44,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   searchInput: {
     flex: 1,
-    color: '#f8fafc',
+    color: colors.text,
     fontSize: 13,
     padding: 0,
   },
@@ -304,61 +308,63 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   filterTab: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 16,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   filterTabActive: {
     backgroundColor: '#38bdf822',
-    borderColor: '#38bdf8',
+    borderColor: colors.primary,
   },
   filterTabText: {
-    fontSize: 11,
-    color: '#94a3b8',
+    fontSize: 12,
+    color: colors.textMuted,
     fontWeight: '600',
   },
   filterTabTextActive: {
-    color: '#38bdf8',
+    color: colors.primary,
     fontWeight: '700',
   },
   noMatchContainer: {
-    backgroundColor: '#121212',
-    borderRadius: 10,
+    backgroundColor: colors.card,
+    borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     marginVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   noMatchText: {
-    color: '#888888',
+    color: colors.textMuted,
     fontSize: 13,
   },
   emptyContainer: {
-    backgroundColor: '#0a0a0a',
-    borderRadius: 12,
+    backgroundColor: colors.card,
+    borderRadius: 16,
     padding: 24,
     alignItems: 'center',
     marginVertical: 12,
     borderWidth: 1,
-    borderColor: '#1c1c1c',
+    borderColor: colors.border,
   },
-  emptyText: { fontSize: 15, fontWeight: '700', color: '#ffffff', marginBottom: 6 },
-  emptySubText: { fontSize: 12, color: '#888888', textAlign: 'center', lineHeight: 18 },
+  emptyText: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 6 },
+  emptySubText: { fontSize: 12, color: colors.textMuted, textAlign: 'center', lineHeight: 18 },
   logCard: {
-    backgroundColor: '#0a0a0a',
-    borderRadius: 14,
+    backgroundColor: colors.card,
+    borderRadius: 16,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#1c1c1c',
+    borderColor: colors.border,
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   typeBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginRight: 8 },
-  typeBadgeText: { fontSize: 11, fontWeight: '700', color: '#ffffff' },
-  timeText: { fontSize: 11, fontWeight: '600', color: '#888888', marginRight: 8 },
-  mealName: { flex: 1, fontSize: 15, fontWeight: '700', color: '#ffffff' },
+  typeBadgeText: { fontSize: 12, fontWeight: '700', color: '#ffffff' },
+  timeText: { fontSize: 12, fontWeight: '600', color: colors.textMuted, marginRight: 8 },
+  mealName: { flex: 1, fontSize: 15, fontWeight: '700', color: colors.text },
   caloriesText: { fontSize: 15, fontWeight: '700', color: '#10b981' },
   photoContainer: {
     position: 'relative',
@@ -367,8 +373,8 @@ const styles = StyleSheet.create({
   photoThumb: {
     width: '100%',
     height: 160,
-    borderRadius: 10,
-    backgroundColor: '#0f172a',
+    borderRadius: 12,
+    backgroundColor: colors.background,
   },
   zoomOverlayBadge: {
     position: 'absolute',
@@ -383,7 +389,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   zoomOverlayText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#ffffff',
     fontWeight: '600',
   },
@@ -391,24 +397,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
-    backgroundColor: '#0f172a',
-    borderRadius: 8,
-    padding: 8,
+    backgroundColor: colors.background,
+    borderRadius: 10,
+    padding: 10,
     marginVertical: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  pfcItem: { fontSize: 12, color: '#94a3b8' },
-  pfcVal: { fontWeight: '700', color: '#f8fafc' },
-  memoText: { fontSize: 12, color: '#cbd5e1', marginTop: 4, marginBottom: 8 },
+  pfcItem: { fontSize: 12, color: colors.textMuted },
+  pfcVal: { fontWeight: '700', color: colors.text },
+  memoText: { fontSize: 12, color: colors.textMuted, marginTop: 4, marginBottom: 8 },
   actionRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 6 },
   actionBtn: {
-    paddingHorizontal: 10,
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: '#0f172a',
+    borderRadius: 8,
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
-  actionBtnText: { fontSize: 11, fontWeight: '600', color: '#94a3b8' },
+  actionBtnText: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
   deleteBtn: { borderColor: '#ef444455' },
-  deleteBtnText: { fontSize: 11, fontWeight: '600', color: '#f87171' },
+  deleteBtnText: { fontSize: 12, fontWeight: '600', color: '#f87171' },
 });

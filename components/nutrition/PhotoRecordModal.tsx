@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Modal,
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   ActivityIndicator,
   ScrollView,
@@ -12,7 +13,6 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  TouchableWithoutFeedback,
 } from 'react-native';
 import { isStagingOrDev, getLatestAIDebugLog, getAIDebugLogs } from '../../src/utils/debugLogStore';
 
@@ -83,8 +83,8 @@ interface Props {
 }
 
 export default function PhotoRecordModal({ visible, onClose, onSave, selectedDate }: Props) {
-  const { backgroundTheme } = useAppTheme();
-  const isPureBlack = backgroundTheme === 'pureBlack';
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const scrollViewRef = useRef<ScrollView>(null);
 
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
@@ -525,12 +525,10 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={handleClose} transparent>
-      <TouchableWithoutFeedback onPress={handleClose}>
-        <View style={styles.overlay} />
-      </TouchableWithoutFeedback>
       <KeyboardAvoidingView style={styles.sheetContainer} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={[styles.sheet, isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' }]}>
-          <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+        <View style={styles.sheet}>
+          <View style={styles.header}>
             <Text style={styles.title}>📷 写真から食事記録</Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
@@ -557,7 +555,6 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
                   key={t.key}
                   style={[
                     styles.mealTypeBtn,
-                    isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' },
                     mealType === t.key && styles.mealTypeBtnActive,
                   ]}
                   onPress={() => setMealType(t.key)}
@@ -579,11 +576,11 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
             {/* 補足メモ */}
             <Text style={styles.label}>食事内容メモ（例: カツカレー大盛り、スープ半分残した）</Text>
             <TextInput
-              style={[styles.memoInput, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}
+              style={styles.memoInput}
               value={userMemo}
               onChangeText={setUserMemo}
               placeholder="例: サラダチキン1個、おにぎり1個"
-              placeholderTextColor="#475569"
+              placeholderTextColor={colors.textMuted}
               onFocus={() => {
                 setTimeout(() => {
                   scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -623,8 +620,8 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
                     <TouchableOpacity style={[styles.pickBtn, { backgroundColor: '#0284c7' }]} onPress={handleTakePhoto}>
                       <Text style={styles.pickBtnText}>📸 写真を撮影する</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.pickBtn, { backgroundColor: '#334155' }]} onPress={handleSelectImage}>
-                      <Text style={styles.pickBtnText}>🖼️ ギャラリーから選択</Text>
+                    <TouchableOpacity style={[styles.pickBtn, styles.pickBtnSecondary]} onPress={handleSelectImage}>
+                      <Text style={[styles.pickBtnText, styles.pickBtnSecondaryText]}>🖼️ ギャラリーから選択</Text>
                     </TouchableOpacity>
                   </>
                 )}
@@ -635,7 +632,7 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
             {/* 解析中表示 */}
             {isAnalyzing && (
               <View style={styles.loadingBox}>
-                <ActivityIndicator size="large" color="#4facfe" />
+                <ActivityIndicator size="large" color={colors.primary} />
                 <Text style={styles.loadingText}>🤖 AIが食事内容と栄養価を解析中...</Text>
               </View>
             )}
@@ -650,7 +647,7 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
 
             {/* 倍率調整 */}
             {aiResult && (
-              <View style={[styles.portionBox, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
+              <View style={styles.portionBox}>
                 <Text style={styles.label}>食べた量の倍率: {multiplier}倍</Text>
                 <View style={styles.presetRow}>
                   {[0.5, 0.7, 1.0, 1.2, 1.5, 2.0].map((m) => (
@@ -688,12 +685,12 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
                 {showCustomMultiplierInput && (
                   <View style={styles.customInputRow}>
                     <TextInput
-                      style={[styles.customInput, isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' }]}
+                      style={styles.customInput}
                       value={customMultiplierText}
                       onChangeText={setCustomMultiplierText}
                       keyboardType="decimal-pad"
                       placeholder="例: 1.3"
-                      placeholderTextColor="#475569"
+                      placeholderTextColor={colors.textMuted}
                     />
                     <Text style={styles.customInputUnit}>倍</Text>
                     <TouchableOpacity style={styles.customApplyBtn} onPress={handleApplyCustomMultiplier}>
@@ -707,7 +704,7 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
             {/* 栄養数値入力フォーム */}
             <View style={styles.formSection}>
               <Text style={styles.label}>料理名</Text>
-              <TextInput style={[styles.input, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]} value={mealName} onChangeText={setMealName} placeholder="例: 鶏胸肉とブロッコリー" placeholderTextColor="#475569" />
+              <TextInput style={styles.input} value={mealName} onChangeText={setMealName} placeholder="例: 鶏胸肉とブロッコリー" placeholderTextColor={colors.textMuted} />
 
               <Text style={styles.label}>栄養成分</Text>
               <View style={styles.nutriGrid}>
@@ -719,15 +716,15 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
                   { label: '塩分', val: sodium, setter: setSodium, unit: 'g', color: '#f43f5e' },
                   { label: '食物繊維', val: fiber, setter: setFiber, unit: 'g', color: '#84cc16' },
                 ].map((item) => (
-                  <View key={item.label} style={[styles.nutriCell, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
+                  <View key={item.label} style={styles.nutriCell}>
                     <Text style={[styles.cellLabel, { color: item.color }]}>{item.label}</Text>
                     <TextInput
-                      style={[styles.cellInput, isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' }]}
+                      style={styles.cellInput}
                       value={item.val}
                       onChangeText={item.setter}
                       keyboardType="decimal-pad"
                       placeholder="0"
-                      placeholderTextColor="#475569"
+                      placeholderTextColor={colors.textMuted}
                     />
                   </View>
                 ))}
@@ -765,6 +762,7 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
       {isStagingOrDev() && (
         <Modal visible={showDebugModal} animationType="slide" transparent={true} onRequestClose={() => setShowDebugModal(false)}>
           <View style={styles.debugModalOverlay}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowDebugModal(false)} />
             <View style={styles.debugModalContent}>
               <View style={styles.debugModalHeader}>
                 <Text style={styles.debugModalTitle}>🔍 AI通信 バックデータ（Raw Log）</Text>
@@ -824,54 +822,55 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: '#00000088' },
-  sheetContainer: { flex: 1, justifyContent: 'flex-end' },
-  sheet: { backgroundColor: '#0f172a', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '92%' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
-  title: { fontSize: 18, fontWeight: '700', color: '#f8fafc' },
-  closeBtn: { padding: 4 },
-  closeBtnText: { fontSize: 18, color: '#94a3b8' },
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
+  sheetContainer: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: colors.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, borderTopWidth: 1, borderColor: colors.border, maxHeight: '92%' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
+  title: { fontSize: 18, fontWeight: '700', color: colors.text },
+  closeBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  closeBtnText: { fontSize: 18, color: colors.textMuted },
   body: { padding: 16 },
   warningBanner: { backgroundColor: '#f59e0b22', borderWidth: 1, borderColor: '#f59e0b', padding: 12, borderRadius: 10, marginBottom: 12 },
   warningBannerTitle: { fontSize: 13, fontWeight: '700', color: '#f59e0b', marginBottom: 4 },
-  warningBannerText: { fontSize: 12, color: '#cbd5e1', lineHeight: 17 },
-  label: { fontSize: 13, fontWeight: '600', color: '#94a3b8', marginBottom: 8, marginTop: 10 },
+  warningBannerText: { fontSize: 12, color: colors.text, lineHeight: 17 },
+  label: { fontSize: 13, fontWeight: '600', color: colors.textMuted, marginBottom: 8, marginTop: 10 },
   mealTypeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 4 },
-  mealTypeBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#334155', backgroundColor: '#1e293b' },
+  mealTypeBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.background },
   mealTypeBtnActive: { backgroundColor: '#4facfe22', borderColor: '#4facfe' },
-  mealTypeBtnText: { fontSize: 12, color: '#94a3b8', fontWeight: '600' },
+  mealTypeBtnText: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
   mealTypeBtnTextActive: { color: '#4facfe' },
   memoInput: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#334155',
-    color: '#f8fafc',
+    borderColor: colors.border,
+    color: colors.text,
     fontSize: 13,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   pickBox: { gap: 10, marginVertical: 12 },
-  pickBtn: { paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+  pickBtn: { paddingVertical: 14, minHeight: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   pickBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  pickBtnSecondary: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
+  pickBtnSecondaryText: { color: colors.text },
   previewContainer: { marginVertical: 12 },
-  previewImage: { width: '100%', height: 180, borderRadius: 12, backgroundColor: '#1e293b' },
+  previewImage: { width: '100%', height: 180, borderRadius: 12, backgroundColor: colors.background },
   rePickRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  rePickBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, backgroundColor: '#334155', alignItems: 'center' },
-  rePickBtnText: { fontSize: 12, color: '#94a3b8', fontWeight: '600' },
+  rePickBtn: { flex: 1, minHeight: 36, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  rePickBtnText: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
   reAnalyzeBtn: { backgroundColor: '#4facfe22', borderWidth: 1, borderColor: '#4facfe' },
   reAnalyzeBtnText: { fontSize: 12, color: '#4facfe', fontWeight: '700' },
-  loadingBox: { padding: 20, alignItems: 'center', backgroundColor: '#1e293b', borderRadius: 12, marginVertical: 10 },
-  loadingText: { color: '#4facfe', marginTop: 10, fontSize: 13, fontWeight: '600' },
+  loadingBox: { padding: 20, alignItems: 'center', backgroundColor: colors.background, borderRadius: 12, borderWidth: 1, borderColor: colors.border, marginVertical: 10 },
+  loadingText: { color: colors.primary, marginTop: 10, fontSize: 13, fontWeight: '600' },
   adviceBox: { backgroundColor: '#10b98115', borderWidth: 1, borderColor: '#10b98144', padding: 12, borderRadius: 10, marginVertical: 8 },
   adviceTitle: { fontSize: 13, fontWeight: '700', color: '#10b981', marginBottom: 4 },
-  adviceText: { fontSize: 12, color: '#e2e8f0', lineHeight: 18 },
-  portionBox: { backgroundColor: '#1e293b', borderRadius: 10, padding: 12, marginVertical: 8, borderWidth: 1, borderColor: '#334155' },
+  adviceText: { fontSize: 12, color: colors.text, lineHeight: 18 },
+  portionBox: { backgroundColor: colors.background, borderRadius: 10, padding: 12, marginVertical: 8, borderWidth: 1, borderColor: colors.border },
   presetRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
-  presetBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, backgroundColor: '#0f172a', borderWidth: 1, borderColor: '#334155' },
+  presetBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
   presetBtnActive: { backgroundColor: '#10b981', borderColor: '#10b981' },
-  presetBtnText: { fontSize: 12, color: '#94a3b8' },
+  presetBtnText: { fontSize: 12, color: colors.textMuted },
   presetBtnTextActive: { color: '#fff', fontWeight: '700' },
   customInputRow: {
     flexDirection: 'row',
@@ -881,18 +880,18 @@ const styles = StyleSheet.create({
   },
   customInput: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#334155',
-    color: '#f8fafc',
+    borderColor: colors.border,
+    color: colors.text,
     fontSize: 14,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   customInputUnit: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontWeight: '600',
   },
   customApplyBtn: {
@@ -907,17 +906,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   formSection: { marginTop: 8 },
-  input: { backgroundColor: '#1e293b', borderRadius: 10, borderWidth: 1, borderColor: '#334155', color: '#f8fafc', fontSize: 14, padding: 10, marginBottom: 8 },
+  input: { backgroundColor: colors.background, borderRadius: 10, borderWidth: 1, borderColor: colors.border, color: colors.text, fontSize: 14, padding: 10, marginBottom: 8 },
   nutriGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
-  nutriCell: { width: '48%', backgroundColor: '#1e293b', borderRadius: 10, padding: 10, borderWidth: 1, borderColor: '#334155' },
-  cellLabel: { fontSize: 11, fontWeight: '600', marginBottom: 4 },
-  cellInput: { backgroundColor: '#0f172a', borderRadius: 6, borderWidth: 1, borderColor: '#334155', color: '#f8fafc', fontSize: 14, paddingHorizontal: 10, paddingVertical: 6, textAlign: 'right' },
-  saveBtn: { backgroundColor: '#10b981', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  nutriCell: { width: '48%', backgroundColor: colors.background, borderRadius: 10, padding: 10, borderWidth: 1, borderColor: colors.border },
+  cellLabel: { fontSize: 12, fontWeight: '600', marginBottom: 4 },
+  cellInput: { backgroundColor: colors.card, borderRadius: 6, borderWidth: 1, borderColor: colors.border, color: colors.text, fontSize: 14, paddingHorizontal: 10, paddingVertical: 6, textAlign: 'right' },
+  saveBtn: { backgroundColor: '#10b981', borderRadius: 12, paddingVertical: 14, minHeight: 48, justifyContent: 'center', alignItems: 'center' },
   saveBtnDisabled: { opacity: 0.5 },
   saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   debugBtn: {
     marginTop: 12,
     paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: 'center',
     borderRadius: 8,
     backgroundColor: '#3b82f622',
     borderWidth: 1,
@@ -926,19 +927,19 @@ const styles = StyleSheet.create({
   },
   debugBtnText: { color: '#60a5fa', fontSize: 12, fontWeight: '700' },
   debugModalOverlay: { flex: 1, backgroundColor: '#000000bb', justifyContent: 'center', padding: 16 },
-  debugModalContent: { backgroundColor: '#0f172a', borderRadius: 16, maxHeight: '85%', borderWidth: 1, borderColor: '#334155', padding: 16 },
-  debugModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderBottomWidth: 1, borderBottomColor: '#1e293b', paddingBottom: 8 },
+  debugModalContent: { backgroundColor: colors.card, borderRadius: 16, maxHeight: '85%', borderWidth: 1, borderColor: colors.border, padding: 16 },
+  debugModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 8 },
   debugModalTitle: { color: '#60a5fa', fontSize: 15, fontWeight: '700' },
   debugModalBody: { flexGrow: 0 },
-  debugTextEmpty: { color: '#64748b', fontSize: 13, textAlign: 'center', marginVertical: 20 },
-  debugLogCard: { backgroundColor: '#1e293b', borderRadius: 10, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: '#334155' },
+  debugTextEmpty: { color: colors.textMuted, fontSize: 13, textAlign: 'center', marginVertical: 20 },
+  debugLogCard: { backgroundColor: colors.background, borderRadius: 10, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: colors.border },
   debugLogHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  debugLogBadge: { color: '#f8fafc', fontSize: 12, fontWeight: '700', backgroundColor: '#334155', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-  debugLogTime: { color: '#94a3b8', fontSize: 11 },
+  debugLogBadge: { color: colors.text, fontSize: 12, fontWeight: '700', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  debugLogTime: { color: colors.textMuted, fontSize: 12 },
   debugLogStatus: { fontSize: 12, fontWeight: '700' },
   debugLogErrorText: { color: '#f43f5e', fontSize: 12, marginBottom: 6, fontWeight: '600' },
-  debugSubLabel: { color: '#94a3b8', fontSize: 11, fontWeight: '600', marginTop: 6, marginBottom: 2 },
-  debugCodeInput: { backgroundColor: '#0f172a', color: '#38bdf8', fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', padding: 8, borderRadius: 6, maxHeight: 150 },
-  debugCloseActionBtn: { backgroundColor: '#334155', borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginTop: 12 },
-  debugCloseActionBtnText: { color: '#f8fafc', fontWeight: '700', fontSize: 13 },
+  debugSubLabel: { color: colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 6, marginBottom: 2 },
+  debugCodeInput: { backgroundColor: colors.card, color: '#38bdf8', fontSize: 12, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', padding: 8, borderRadius: 6, maxHeight: 150 },
+  debugCloseActionBtn: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: 10, minHeight: 44, justifyContent: 'center', alignItems: 'center', marginTop: 12 },
+  debugCloseActionBtnText: { color: colors.text, fontWeight: '700', fontSize: 13 },
 });
