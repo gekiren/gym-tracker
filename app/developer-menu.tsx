@@ -1,9 +1,9 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, TextInput, Modal, Platform, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, TextInput, Modal, Platform, Switch, Pressable } from 'react-native';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../src/theme';
+import { useAppTheme } from '../src/theme';
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
 import { pickAndImportCSV } from '../src/utils/csvImporter';
 import { importWorkoutFromSelectedFile, importWorkoutFromMarkdownText } from '../src/services/workoutImportService';
@@ -26,6 +26,8 @@ import { useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
 import { AD_CONFIG } from '../src/config/adConfig';
 
 function DeveloperMenuScreenInternal() {
+  const { colors, spacing, borderRadius } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors, spacing, borderRadius), [colors, spacing, borderRadius]);
 
   const { t } = useTranslation();
   const enableAiDebugContext = useSettingsStore(state => state.settings.enableAiDebugContext);
@@ -719,14 +721,14 @@ function DeveloperMenuScreenInternal() {
       <Stack.Screen
         options={{
           title: t('ui.developer_menu.title'),
-          headerStyle: { backgroundColor: Theme.colors.background },
-          headerTintColor: Theme.colors.text,
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.text,
           headerShadowVisible: false,
         }}
       />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <Ionicons name="bug-outline" size={48} color={Theme.colors.primary} style={{ marginBottom: 12 }} />
+          <Ionicons name="bug-outline" size={48} color={colors.primary} style={{ marginBottom: 12 }} />
           <Text style={styles.title}>{t('ui.developer_menu.title')}</Text>
           <Text style={styles.subtitle}>Developer-only database utilities & EAS Updates</Text>
         </View>
@@ -734,7 +736,7 @@ function DeveloperMenuScreenInternal() {
         {/* EAS Update Info Section */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="git-branch-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Ionicons name="git-branch-outline" size={24} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.cardTitle}>{t('ui.developer_menu.update_info_title')}</Text>
           </View>
           
@@ -781,11 +783,11 @@ function DeveloperMenuScreenInternal() {
           </View>
 
           <TouchableOpacity 
-            style={[styles.btnOutline, { marginTop: Theme.spacing.md }]} 
+            style={[styles.btnOutline, { marginTop: spacing.md }]} 
             onPress={handleCheckUpdate}
             disabled={isChecking}
           >
-            <Ionicons name="refresh-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Ionicons name="refresh-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.btnOutlineText}>
               {isChecking ? t('ui.developer_menu.update_checking') : t('ui.developer_menu.update_check_btn')}
             </Text>
@@ -794,7 +796,7 @@ function DeveloperMenuScreenInternal() {
           <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.05)', paddingTop: 16 }}>
             <Text style={[styles.cardDesc, { marginBottom: 12, fontWeight: 'bold' }]}>OTAチャンネル切替 (Channel Surfing):</Text>
             <Text style={[styles.cardDesc, { fontSize: 13, marginBottom: 8 }]}>
-              現在の適用設定: <Text style={{ color: Theme.colors.primary, fontWeight: 'bold' }}>{channelOverride}</Text>
+              現在の適用設定: <Text style={{ color: colors.primary, fontWeight: 'bold' }}>{channelOverride}</Text>
             </Text>
             <View style={{ flexDirection: 'row', gap: 6, marginBottom: 12 }}>
               {['development', 'staging', 'production'].map((ch) => (
@@ -803,12 +805,12 @@ function DeveloperMenuScreenInternal() {
                   style={[
                     styles.btnOutline,
                     { flex: 1, paddingVertical: 8 },
-                    channelOverride === ch && { borderColor: Theme.colors.success, backgroundColor: 'rgba(76, 175, 80, 0.1)' }
+                    channelOverride === ch && { borderColor: colors.success, backgroundColor: 'rgba(76, 175, 80, 0.1)' }
                   ]}
                   onPress={() => handleSwitchChannelAndCheckUpdate(ch)}
                   disabled={isChecking}
                 >
-                  <Text style={[styles.btnOutlineText, channelOverride === ch && { color: Theme.colors.success }, { fontSize: 12 }]}>
+                  <Text style={[styles.btnOutlineText, channelOverride === ch && { color: colors.success }, { fontSize: 12 }]}>
                     {ch === 'development' ? 'Dev' : ch === 'staging' ? 'Staging' : 'Prod'}
                   </Text>
                 </TouchableOpacity>
@@ -832,7 +834,7 @@ function DeveloperMenuScreenInternal() {
                 }
               }}
             >
-              <Ionicons name="document-text-outline" size={18} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+              <Ionicons name="document-text-outline" size={18} color={colors.primary} style={{ marginRight: 8 }} />
               <Text style={styles.btnOutlineText}>同期ログを表示 / コピー</Text>
             </TouchableOpacity>
           </View>
@@ -841,13 +843,13 @@ function DeveloperMenuScreenInternal() {
             <Text style={[styles.cardDesc, { marginBottom: 12 }]}>OTAポップアップの検証・デバッグ：</Text>
             <View style={{ flexDirection: 'column', gap: 10 }}>
               <TouchableOpacity style={styles.btnOutline} onPress={handleShowOtaPopup}>
-                <Ionicons name="eye-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+                <Ionicons name="eye-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
                 <Text style={styles.btnOutlineText}>ポップアップを手動表示</Text>
               </TouchableOpacity>
               
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TouchableOpacity style={[styles.btnOutline, { flex: 1 }]} onPress={handleSimulateOtaLaunch}>
-                  <Ionicons name="sparkles-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 4 }} />
+                  <Ionicons name="sparkles-outline" size={20} color={colors.primary} style={{ marginRight: 4 }} />
                   <Text style={[styles.btnOutlineText, { fontSize: 13 }]}>次回起動時シミュレート</Text>
                 </TouchableOpacity>
                 
@@ -863,7 +865,7 @@ function DeveloperMenuScreenInternal() {
         {/* Account Tier Testing Section */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="people-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Ionicons name="people-outline" size={24} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.cardTitle}>プラン制限のテスト (アカウント種別変更)</Text>
           </View>
           <Text style={styles.cardDesc}>
@@ -939,7 +941,7 @@ function DeveloperMenuScreenInternal() {
               <Switch
                 value={forceUnlockAll}
                 onValueChange={(val) => setForceUnlockAll(val)}
-                trackColor={{ false: '#333', true: Theme.colors.primary }}
+                trackColor={{ false: '#333', true: colors.primary }}
                 thumbColor="#fff"
               />
             </View>
@@ -975,7 +977,7 @@ function DeveloperMenuScreenInternal() {
               style={[styles.btnOutline, { flex: 1, paddingVertical: 10 }]}
               onPress={() => setShowCustomPointsModal(true)}
             >
-              <Ionicons name="create-outline" size={16} color={Theme.colors.primary} style={{ marginRight: 4 }} />
+              <Ionicons name="create-outline" size={16} color={colors.primary} style={{ marginRight: 4 }} />
               <Text style={[styles.btnOutlineText, { fontSize: 12 }]}>任意の数値を設定</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -1033,7 +1035,7 @@ function DeveloperMenuScreenInternal() {
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Ionicons name={meta.icon} size={18} color={meta.iconColor} style={{ marginRight: 8 }} />
-                    <Text style={{ color: Theme.colors.text, fontSize: 13, fontWeight: '600' }}>
+                    <Text style={{ color: colors.text, fontSize: 13, fontWeight: '600' }}>
                       {meta.title}
                     </Text>
                   </View>
@@ -1108,7 +1110,7 @@ function DeveloperMenuScreenInternal() {
         {/* Ads Testing Section */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="megaphone-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Ionicons name="megaphone-outline" size={24} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.cardTitle}>広告表示のテスト (Ads Testing)</Text>
           </View>
           <Text style={styles.cardDesc}>
@@ -1119,17 +1121,17 @@ function DeveloperMenuScreenInternal() {
               style={styles.btnOutline} 
               onPress={handleResetAdSkipCount}
             >
-              <Ionicons name="refresh-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+              <Ionicons name="refresh-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
               <Text style={styles.btnOutlineText}>次回ワークアウト完了時に強制表示 (スキップ残数リセット)</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={[styles.btnOutline, { borderColor: Theme.colors.success, backgroundColor: 'rgba(76, 175, 80, 0.05)' }]} 
+              style={[styles.btnOutline, { borderColor: colors.success, backgroundColor: 'rgba(76, 175, 80, 0.05)' }]} 
               onPress={handleShowAdImmediately}
               disabled={loadingAd}
             >
-              <Ionicons name="play-outline" size={20} color={Theme.colors.success} style={{ marginRight: 8 }} />
-              <Text style={[styles.btnOutlineText, { color: Theme.colors.success }]}>
+              <Ionicons name="play-outline" size={20} color={colors.success} style={{ marginRight: 8 }} />
+              <Text style={[styles.btnOutlineText, { color: colors.success }]}>
                 {loadingAd ? '広告ロード中...' : 'その場でリワード広告を表示 (ロード＆再生)'}
               </Text>
             </TouchableOpacity>
@@ -1139,7 +1141,7 @@ function DeveloperMenuScreenInternal() {
         {/* CSV Import Section */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="swap-horizontal-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Ionicons name="swap-horizontal-outline" size={24} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.cardTitle}>他社CSVインポートテスト</Text>
           </View>
           <Text style={styles.cardDesc}>
@@ -1160,7 +1162,7 @@ function DeveloperMenuScreenInternal() {
         {/* Review Dialog Testing Section */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="star-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Ionicons name="star-outline" size={24} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.cardTitle}>レビュー促進ポップアップテスト</Text>
           </View>
           <Text style={styles.cardDesc}>
@@ -1168,7 +1170,7 @@ function DeveloperMenuScreenInternal() {
           </Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <TouchableOpacity style={[styles.btnOutline, { flex: 1 }]} onPress={() => showReviewDialog(10)}>
-              <Ionicons name="play-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 4 }} />
+              <Ionicons name="play-outline" size={20} color={colors.primary} style={{ marginRight: 4 }} />
               <Text style={styles.btnOutlineText}>ダイアログ起動</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.btnOutline, { flex: 1, borderColor: '#ff4d4f', backgroundColor: 'rgba(255, 77, 79, 0.05)' }]} onPress={handleResetReviewFlag}>
@@ -1181,7 +1183,7 @@ function DeveloperMenuScreenInternal() {
         {/* Crash Opt-in Testing Section */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="bug-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Ionicons name="bug-outline" size={24} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.cardTitle}>クラッシュレポート機能テスト</Text>
           </View>
           <Text style={styles.cardDesc}>
@@ -1189,18 +1191,18 @@ function DeveloperMenuScreenInternal() {
           </Text>
           <View style={{ flexDirection: 'column', gap: 10 }}>
             <TouchableOpacity style={styles.btnOutline} onPress={handleGenerateDummyCrashLog}>
-              <Ionicons name="document-text-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+              <Ionicons name="document-text-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
               <Text style={styles.btnOutlineText}>ダミークラッシュログ生成</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.btnOutline} onPress={handleCopyCrashLog}>
-              <Ionicons name="copy-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+              <Ionicons name="copy-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
               <Text style={styles.btnOutlineText}>クラッシュログをコピー</Text>
             </TouchableOpacity>
             
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <TouchableOpacity style={[styles.btnOutline, { flex: 1 }]} onPress={handleResetCrashConsent}>
-                <Ionicons name="refresh-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 4 }} />
+                <Ionicons name="refresh-outline" size={20} color={colors.primary} style={{ marginRight: 4 }} />
                 <Text style={styles.btnOutlineText}>同意状態リセット</Text>
               </TouchableOpacity>
               
@@ -1215,7 +1217,7 @@ function DeveloperMenuScreenInternal() {
         {/* Maintenance: Markdown Workout Importer */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="document-text-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Ionicons name="document-text-outline" size={24} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.cardTitle}>🛠️ メンテナンス: MDワークアウト復元</Text>
           </View>
           <Text style={styles.cardDesc}>
@@ -1228,7 +1230,7 @@ function DeveloperMenuScreenInternal() {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.btnOutline} onPress={() => setShowMDTextModal(true)}>
-              <Ionicons name="create-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+              <Ionicons name="create-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
               <Text style={styles.btnOutlineText}>MDテキストを貼り付けてインポート</Text>
             </TouchableOpacity>
           </View>
@@ -1242,14 +1244,15 @@ function DeveloperMenuScreenInternal() {
           onRequestClose={() => setShowMDTextModal(false)}
         >
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 20 }}>
-            <View style={{ backgroundColor: Theme.colors.card, borderRadius: 12, padding: 20, maxHeight: '80%', borderWidth: 1, borderColor: Theme.colors.border }}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowMDTextModal(false)} />
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: 20, maxHeight: '80%', borderWidth: 1, borderColor: colors.border }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <Text style={{ fontSize: 18, fontWeight: 'bold', color: Theme.colors.text }}>MDテキストからの取り込み</Text>
-                <TouchableOpacity onPress={() => setShowMDTextModal(false)}>
-                  <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.text }}>MDテキストからの取り込み</Text>
+                <TouchableOpacity onPress={() => setShowMDTextModal(false)} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="close" size={24} color={colors.textMuted} />
                 </TouchableOpacity>
               </View>
-              <Text style={{ fontSize: 13, color: Theme.colors.textMuted, marginBottom: 10 }}>
+              <Text style={{ fontSize: 13, color: colors.textMuted, marginBottom: 10 }}>
                 ワークアウト記録の Markdown 本言（Frontmatter、見出し、セットテーブル等）を下に貼り付けてください。
               </Text>
               <TextInput
@@ -1263,7 +1266,7 @@ function DeveloperMenuScreenInternal() {
                   fontSize: 13,
                   fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
                   borderWidth: 1,
-                  borderColor: Theme.colors.border,
+                  borderColor: colors.border,
                   marginBottom: 16
                 }}
                 multiline={true}
@@ -1292,14 +1295,15 @@ function DeveloperMenuScreenInternal() {
           onRequestClose={() => setShowCustomPointsModal(false)}
         >
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', padding: 20 }}>
-            <View style={{ backgroundColor: Theme.colors.card, borderRadius: 12, padding: 20, borderWidth: 1, borderColor: Theme.colors.border }}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCustomPointsModal(false)} />
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: 20, borderWidth: 1, borderColor: colors.border }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <Text style={{ fontSize: 18, fontWeight: 'bold', color: Theme.colors.text }}>Pポイント残高の設定</Text>
-                <TouchableOpacity onPress={() => setShowCustomPointsModal(false)}>
-                  <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.text }}>Pポイント残高の設定</Text>
+                <TouchableOpacity onPress={() => setShowCustomPointsModal(false)} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="close" size={24} color={colors.textMuted} />
                 </TouchableOpacity>
               </View>
-              <Text style={{ fontSize: 13, color: Theme.colors.textMuted, marginBottom: 12 }}>
+              <Text style={{ fontSize: 13, color: colors.textMuted, marginBottom: 12 }}>
                 設定したいPポイント残高の数値を入力してください。
               </Text>
               <TextInput
@@ -1311,7 +1315,7 @@ function DeveloperMenuScreenInternal() {
                   fontSize: 18,
                   fontWeight: 'bold',
                   borderWidth: 1,
-                  borderColor: Theme.colors.border,
+                  borderColor: colors.border,
                   marginBottom: 16
                 }}
                 keyboardType="numeric"
@@ -1342,7 +1346,7 @@ function DeveloperMenuScreenInternal() {
         {/* AI Model Selection Section */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="options-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Ionicons name="options-outline" size={24} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.cardTitle}>使用AIモデルの選択 (AI Model Selection)</Text>
           </View>
           <Text style={styles.cardDesc}>
@@ -1357,11 +1361,11 @@ function DeveloperMenuScreenInternal() {
                   backgroundColor: '#121214',
                   borderRadius: 8,
                   borderWidth: 1,
-                  borderColor: Theme.colors.border,
+                  borderColor: colors.border,
                   padding: 12,
                 },
                 preferredAiModel === 'gemini' && {
-                  borderColor: Theme.colors.primary,
+                  borderColor: colors.primary,
                   backgroundColor: 'rgba(79, 172, 254, 0.08)',
                 }
               ]}
@@ -1373,16 +1377,16 @@ function DeveloperMenuScreenInternal() {
                   <Ionicons 
                     name={preferredAiModel === 'gemini' ? 'radio-button-on' : 'radio-button-off'} 
                     size={20} 
-                    color={preferredAiModel === 'gemini' ? Theme.colors.primary : Theme.colors.textMuted} 
+                    color={preferredAiModel === 'gemini' ? colors.primary : colors.textMuted} 
                     style={{ marginRight: 8 }}
                   />
-                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: Theme.colors.text }}>Gemini 3.7 / 3.5 Flash</Text>
+                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: colors.text }}>Gemini 3.7 / 3.5 Flash</Text>
                 </View>
                 <View style={{ backgroundColor: 'rgba(79, 172, 254, 0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
-                  <Text style={{ fontSize: 11, color: Theme.colors.primary, fontWeight: 'bold' }}>標準・推奨</Text>
+                  <Text style={{ fontSize: 11, color: colors.primary, fontWeight: 'bold' }}>標準・推奨</Text>
                 </View>
               </View>
-              <Text style={{ fontSize: 12, color: Theme.colors.textMuted, lineHeight: 17, paddingLeft: 28 }}>
+              <Text style={{ fontSize: 12, color: colors.textMuted, lineHeight: 17, paddingLeft: 28 }}>
                 Googleの最高性能フラッグシップ。高速かつ正確な日本語と高いトレーニング・栄養理解度で応答します。
               </Text>
             </TouchableOpacity>
@@ -1394,7 +1398,7 @@ function DeveloperMenuScreenInternal() {
                   backgroundColor: '#121214',
                   borderRadius: 8,
                   borderWidth: 1,
-                  borderColor: Theme.colors.border,
+                  borderColor: colors.border,
                   padding: 12,
                 },
                 preferredAiModel === 'gemma-31b' && {
@@ -1410,16 +1414,16 @@ function DeveloperMenuScreenInternal() {
                   <Ionicons 
                     name={preferredAiModel === 'gemma-31b' ? 'radio-button-on' : 'radio-button-off'} 
                     size={20} 
-                    color={preferredAiModel === 'gemma-31b' ? '#00E676' : Theme.colors.textMuted} 
+                    color={preferredAiModel === 'gemma-31b' ? '#00E676' : colors.textMuted} 
                     style={{ marginRight: 8 }}
                   />
-                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: Theme.colors.text }}>Gemma 4 31B (AI Studio)</Text>
+                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: colors.text }}>Gemma 4 31B (AI Studio)</Text>
                 </View>
                 <View style={{ backgroundColor: 'rgba(0, 230, 118, 0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
                   <Text style={{ fontSize: 11, color: '#00E676', fontWeight: 'bold' }}>実験・31B</Text>
                 </View>
               </View>
-              <Text style={{ fontSize: 12, color: Theme.colors.textMuted, lineHeight: 17, paddingLeft: 28 }}>
+              <Text style={{ fontSize: 12, color: colors.textMuted, lineHeight: 17, paddingLeft: 28 }}>
                 Googleの最新オープンモデル Gemma 4 (31B Instruct)。AI Studio 無料枠で動作する大型オープンウェイトモデルです。
               </Text>
             </TouchableOpacity>
@@ -1431,7 +1435,7 @@ function DeveloperMenuScreenInternal() {
                   backgroundColor: '#121214',
                   borderRadius: 8,
                   borderWidth: 1,
-                  borderColor: Theme.colors.border,
+                  borderColor: colors.border,
                   padding: 12,
                 },
                 preferredAiModel === 'gemma-26b' && {
@@ -1447,16 +1451,16 @@ function DeveloperMenuScreenInternal() {
                   <Ionicons 
                     name={preferredAiModel === 'gemma-26b' ? 'radio-button-on' : 'radio-button-off'} 
                     size={20} 
-                    color={preferredAiModel === 'gemma-26b' ? '#FFAB00' : Theme.colors.textMuted} 
+                    color={preferredAiModel === 'gemma-26b' ? '#FFAB00' : colors.textMuted} 
                     style={{ marginRight: 8 }}
                   />
-                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: Theme.colors.text }}>Gemma 4 26B (AI Studio)</Text>
+                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: colors.text }}>Gemma 4 26B (AI Studio)</Text>
                 </View>
                 <View style={{ backgroundColor: 'rgba(255, 171, 0, 0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
                   <Text style={{ fontSize: 11, color: '#FFAB00', fontWeight: 'bold' }}>実験・26B</Text>
                 </View>
               </View>
-              <Text style={{ fontSize: 12, color: Theme.colors.textMuted, lineHeight: 17, paddingLeft: 28 }}>
+              <Text style={{ fontSize: 12, color: colors.textMuted, lineHeight: 17, paddingLeft: 28 }}>
                 Googleの最新オープンモデル Gemma 4 (26B MoE/A4B)。軽量かつ効率的なアーキテクチャの実験モデルです。
               </Text>
             </TouchableOpacity>
@@ -1468,11 +1472,11 @@ function DeveloperMenuScreenInternal() {
                   backgroundColor: '#121214',
                   borderRadius: 8,
                   borderWidth: 1,
-                  borderColor: Theme.colors.border,
+                  borderColor: colors.border,
                   padding: 12,
                 },
                 preferredAiModel === 'deepseek' && {
-                  borderColor: Theme.colors.primary,
+                  borderColor: colors.primary,
                   backgroundColor: 'rgba(79, 172, 254, 0.08)',
                 }
               ]}
@@ -1484,24 +1488,24 @@ function DeveloperMenuScreenInternal() {
                   <Ionicons 
                     name={preferredAiModel === 'deepseek' ? 'radio-button-on' : 'radio-button-off'} 
                     size={20} 
-                    color={preferredAiModel === 'deepseek' ? Theme.colors.primary : Theme.colors.textMuted} 
+                    color={preferredAiModel === 'deepseek' ? colors.primary : colors.textMuted} 
                     style={{ marginRight: 8 }}
                   />
-                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: Theme.colors.text }}>DeepSeek V4 Pro</Text>
+                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: colors.text }}>DeepSeek V4 Pro</Text>
                 </View>
                 <View style={{ backgroundColor: 'rgba(156, 39, 176, 0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
                   <Text style={{ fontSize: 11, color: '#ba68c8', fontWeight: 'bold' }}>深層分析</Text>
                 </View>
               </View>
-              <Text style={{ fontSize: 12, color: Theme.colors.textMuted, lineHeight: 17, paddingLeft: 28 }}>
+              <Text style={{ fontSize: 12, color: colors.textMuted, lineHeight: 17, paddingLeft: 28 }}>
                 高度な論理推論に強いオープン重みAI。トレーニングプログラムや理論の深い解説・分析が得意です。
               </Text>
             </TouchableOpacity>
           </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: 6, padding: 10, marginTop: 4 }}>
-            <Ionicons name="shield-checkmark-outline" size={16} color={Theme.colors.primary} style={{ marginRight: 6 }} />
-            <Text style={{ fontSize: 12, color: Theme.colors.textMuted, flex: 1, lineHeight: 16 }}>
+            <Ionicons name="shield-checkmark-outline" size={16} color={colors.primary} style={{ marginRight: 6 }} />
+            <Text style={{ fontSize: 12, color: colors.textMuted, flex: 1, lineHeight: 16 }}>
               障害・混雑時には自動でもう一方のモデルに相互フォールバックし、中断なく応答を提供します。
             </Text>
           </View>
@@ -1510,7 +1514,7 @@ function DeveloperMenuScreenInternal() {
         {/* AI Coach Debug Section */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="bug-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Ionicons name="bug-outline" size={24} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.cardTitle}>AIコーチ 送信コンテキストデバッグ</Text>
           </View>
           <Text style={styles.cardDesc}>
@@ -1521,7 +1525,7 @@ function DeveloperMenuScreenInternal() {
             <Switch
               value={enableAiDebugContext}
               onValueChange={(val) => setEnableAiDebugContext(val)}
-              trackColor={{ false: '#333', true: Theme.colors.primary }}
+              trackColor={{ false: '#333', true: colors.primary }}
               thumbColor="#fff"
             />
           </View>
@@ -1530,7 +1534,7 @@ function DeveloperMenuScreenInternal() {
         {/* Export Section */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="cloud-upload-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Ionicons name="cloud-upload-outline" size={24} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.cardTitle}>{t('ui.developer_menu.backup_title')}</Text>
           </View>
           <Text style={styles.cardDesc}>{t('ui.developer_menu.backup_desc')}</Text>
@@ -1581,14 +1585,14 @@ function DeveloperMenuScreenInternal() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.btnDanger, { marginTop: 4, backgroundColor: '#334155' }]}
+              style={[styles.btnDanger, { marginTop: 4, backgroundColor: colors.border }]}
               onPress={() => {
                 clearAIDebugLogs();
                 Alert.alert('クリア', 'AI通信ログをクリアしました。');
               }}
             >
-              <Ionicons name="trash-outline" size={18} color="#94a3b8" style={{ marginRight: 8 }} />
-              <Text style={[styles.btnDangerText, { color: '#94a3b8' }]}>ログメモリをクリア</Text>
+              <Ionicons name="trash-outline" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
+              <Text style={[styles.btnDangerText, { color: colors.textMuted }]}>ログメモリをクリア</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1597,53 +1601,57 @@ function DeveloperMenuScreenInternal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (
+  colors: ReturnType<typeof useAppTheme>['colors'],
+  spacing: ReturnType<typeof useAppTheme>['spacing'],
+  borderRadius: ReturnType<typeof useAppTheme>['borderRadius'],
+) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Theme.colors.background,
+    backgroundColor: colors.background,
   },
   content: {
-    padding: Theme.spacing.md,
+    padding: spacing.md,
     paddingBottom: 60,
   },
   header: {
     alignItems: 'center',
-    marginVertical: Theme.spacing.xl,
+    marginVertical: spacing.xl,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   subtitle: {
     fontSize: 14,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     marginTop: 4,
     textAlign: 'center',
   },
   card: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.md,
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
-    marginBottom: Theme.spacing.lg,
+    borderColor: colors.border,
+    marginBottom: spacing.lg,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Theme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   cardDesc: {
     fontSize: 14,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     lineHeight: 20,
-    marginBottom: Theme.spacing.md,
+    marginBottom: spacing.md,
   },
   infoRow: {
     flexDirection: 'row',
@@ -1654,37 +1662,39 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   infoLabel: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 14,
     fontWeight: '500',
   },
   infoValue: {
-    color: Theme.colors.text,
+    color: colors.text,
     fontSize: 14,
     fontWeight: '600',
   },
   btnOutline: {
     borderWidth: 1,
-    borderColor: Theme.colors.primary,
+    borderColor: colors.primary,
     backgroundColor: 'rgba(79, 172, 254, 0.05)',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    borderRadius: Theme.borderRadius.sm,
+    minHeight: 48,
+    borderRadius: 12,
   },
   btnOutlineText: {
-    color: Theme.colors.primary,
+    color: colors.primary,
     fontSize: 15,
     fontWeight: '700',
   },
   btnPrimary: {
-    backgroundColor: Theme.colors.primary,
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
-    borderRadius: Theme.borderRadius.sm,
+    minHeight: 48,
+    borderRadius: 12,
   },
   btnPrimaryText: {
     color: '#000',
@@ -1692,12 +1702,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   btnDanger: {
-    backgroundColor: '#ff4d4f',
+    backgroundColor: colors.danger,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
-    borderRadius: Theme.borderRadius.sm,
+    minHeight: 48,
+    borderRadius: 12,
   },
   btnDangerText: {
     color: '#fff',

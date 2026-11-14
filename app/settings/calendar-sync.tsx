@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import * as Calendar from 'expo-calendar';
 import {
   CalendarSyncSettings,
@@ -28,6 +28,8 @@ import {
 } from '../../src/services/calendarService';
 
 export default function CalendarSyncScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -150,7 +152,7 @@ export default function CalendarSyncScreen() {
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color={Theme.colors.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -164,7 +166,7 @@ export default function CalendarSyncScreen() {
           onPress={() => router.back()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="chevron-back" size={24} color={Theme.colors.text} />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('ui.calendar_sync.title', 'Googleカレンダー連携')}</Text>
         <View style={{ width: 24 }} />
@@ -196,7 +198,7 @@ export default function CalendarSyncScreen() {
             <Switch
               value={settings.enabled}
               onValueChange={handleToggleMainSwitch}
-              trackColor={{ false: Theme.colors.border, true: Theme.colors.primary }}
+              trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor="#ffffff"
             />
           </View>
@@ -206,7 +208,7 @@ export default function CalendarSyncScreen() {
           <>
             {/* 予定の取り込み（Import）設定 */}
             <View style={styles.sectionHeader}>
-              <Ionicons name="cloud-download-outline" size={18} color={Theme.colors.primary} style={{ marginRight: 6 }} />
+              <Ionicons name="cloud-download-outline" size={18} color={colors.primary} style={{ marginRight: 6 }} />
               <Text style={styles.sectionTitle}>{t('ui.calendar_sync.import_section', '予定の取り込み (Google ➔ TreNote)')}</Text>
             </View>
 
@@ -219,7 +221,7 @@ export default function CalendarSyncScreen() {
                 <Switch
                   value={settings.importEnabled}
                   onValueChange={(v) => updateSetting('importEnabled', v)}
-                  trackColor={{ false: Theme.colors.border, true: Theme.colors.primary }}
+                  trackColor={{ false: colors.border, true: colors.primary }}
                 />
               </View>
 
@@ -234,7 +236,7 @@ export default function CalendarSyncScreen() {
                     <Switch
                       value={settings.importOnScreenFocus}
                       onValueChange={(v) => updateSetting('importOnScreenFocus', v)}
-                      trackColor={{ false: Theme.colors.border, true: Theme.colors.primary }}
+                      trackColor={{ false: colors.border, true: colors.primary }}
                     />
                   </View>
 
@@ -247,7 +249,7 @@ export default function CalendarSyncScreen() {
                     <Switch
                       value={settings.excludeAllDay}
                       onValueChange={(v) => updateSetting('excludeAllDay', v)}
-                      trackColor={{ false: Theme.colors.border, true: Theme.colors.primary }}
+                      trackColor={{ false: colors.border, true: colors.primary }}
                     />
                   </View>
 
@@ -260,7 +262,7 @@ export default function CalendarSyncScreen() {
                     <Switch
                       value={settings.importHolidays ?? true}
                       onValueChange={(v) => updateSetting('importHolidays', v)}
-                      trackColor={{ false: Theme.colors.border, true: Theme.colors.primary }}
+                      trackColor={{ false: colors.border, true: colors.primary }}
                     />
                   </View>
 
@@ -273,7 +275,7 @@ export default function CalendarSyncScreen() {
                     <Switch
                       value={settings.treatHolidaysAsSunday ?? true}
                       onValueChange={(v) => updateSetting('treatHolidaysAsSunday', v)}
-                      trackColor={{ false: Theme.colors.border, true: Theme.colors.primary }}
+                      trackColor={{ false: colors.border, true: colors.primary }}
                     />
                   </View>
 
@@ -286,7 +288,7 @@ export default function CalendarSyncScreen() {
                     <Switch
                       value={settings.importBgDaily}
                       onValueChange={(v) => updateSetting('importBgDaily', v)}
-                      trackColor={{ false: Theme.colors.border, true: Theme.colors.primary }}
+                      trackColor={{ false: colors.border, true: colors.primary }}
                     />
                   </View>
                 </>
@@ -308,7 +310,7 @@ export default function CalendarSyncScreen() {
                 <Switch
                   value={settings.exportEnabled}
                   onValueChange={(v) => updateSetting('exportEnabled', v)}
-                  trackColor={{ false: Theme.colors.border, true: Theme.colors.primary }}
+                  trackColor={{ false: colors.border, true: colors.primary }}
                 />
               </View>
 
@@ -323,7 +325,7 @@ export default function CalendarSyncScreen() {
                     <Switch
                       value={settings.exportOnSave}
                       onValueChange={(v) => updateSetting('exportOnSave', v)}
-                      trackColor={{ false: Theme.colors.border, true: Theme.colors.primary }}
+                      trackColor={{ false: colors.border, true: colors.primary }}
                     />
                   </View>
 
@@ -336,7 +338,7 @@ export default function CalendarSyncScreen() {
                     <Switch
                       value={settings.exportBgDaily}
                       onValueChange={(v) => updateSetting('exportBgDaily', v)}
-                      trackColor={{ false: Theme.colors.border, true: Theme.colors.primary }}
+                      trackColor={{ false: colors.border, true: colors.primary }}
                     />
                   </View>
 
@@ -383,78 +385,80 @@ export default function CalendarSyncScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
-  center: { justifyContent: 'center', alignItems: 'center' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Theme.spacing.md,
-    paddingTop: 54,
-    paddingBottom: Theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
-  },
-  backButton: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
-  content: { padding: Theme.spacing.md, paddingBottom: 60, gap: 14 },
-  warningCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fffbeb',
-    borderColor: '#fef3c7',
-    borderWidth: 1,
-    borderRadius: Theme.borderRadius.md,
-    padding: 12,
-  },
-  warningTitle: { fontSize: 14, fontWeight: 'bold', color: '#b45309', marginBottom: 2 },
-  warningDesc: { fontSize: 12, color: '#92400e', lineHeight: 17 },
-  card: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.lg,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  cardTitle: { fontSize: 16, fontWeight: 'bold', color: Theme.colors.text, marginBottom: 4 },
-  cardDesc: { fontSize: 12, color: Theme.colors.textMuted, lineHeight: 18, paddingRight: 8 },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-    paddingHorizontal: 4,
-  },
-  sectionTitle: { fontSize: 14, fontWeight: 'bold', color: Theme.colors.textMuted },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  settingLabel: { fontSize: 14, fontWeight: '600', color: Theme.colors.text },
-  settingSubtext: { fontSize: 12, color: Theme.colors.textMuted, marginTop: 2, lineHeight: 16 },
-  cardHelpText: { fontSize: 11, color: Theme.colors.textMuted, marginTop: 4, lineHeight: 15 },
-  divider: { height: 1, backgroundColor: Theme.colors.border, marginVertical: 4 },
-  syncButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Theme.colors.primary,
-    borderRadius: Theme.borderRadius.md,
-    paddingVertical: 14,
-  },
-  syncButtonDisabled: { opacity: 0.6 },
-  syncButtonText: { color: '#ffffff', fontSize: 15, fontWeight: 'bold' },
-  syncStatusText: {
-    fontSize: 12,
-    color: Theme.colors.textMuted,
-    textAlign: 'center',
-    marginTop: 10,
-  },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    center: { justifyContent: 'center', alignItems: 'center' },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingTop: 54,
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    backButton: { padding: 4 },
+    headerTitle: { fontSize: 18, fontWeight: 'bold', color: colors.text },
+    content: { padding: 16, paddingBottom: 60, gap: 14 },
+    warningCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#fffbeb',
+      borderColor: '#fef3c7',
+      borderWidth: 1,
+      borderRadius: 8,
+      padding: 12,
+    },
+    warningTitle: { fontSize: 14, fontWeight: 'bold', color: '#b45309', marginBottom: 2 },
+    warningDesc: { fontSize: 12, color: '#92400e', lineHeight: 17 },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    cardHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    cardTitle: { fontSize: 16, fontWeight: 'bold', color: colors.text, marginBottom: 4 },
+    cardDesc: { fontSize: 12, color: colors.textMuted, lineHeight: 18, paddingRight: 8 },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 6,
+      paddingHorizontal: 4,
+    },
+    sectionTitle: { fontSize: 14, fontWeight: 'bold', color: colors.textMuted },
+    settingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 8,
+    },
+    settingLabel: { fontSize: 14, fontWeight: '600', color: colors.text },
+    settingSubtext: { fontSize: 12, color: colors.textMuted, marginTop: 2, lineHeight: 16 },
+    cardHelpText: { fontSize: 11, color: colors.textMuted, marginTop: 4, lineHeight: 15 },
+    divider: { height: 1, backgroundColor: colors.border, marginVertical: 4 },
+    syncButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.primary,
+      borderRadius: 12,
+      minHeight: 48,
+      paddingVertical: 14,
+    },
+    syncButtonDisabled: { opacity: 0.6 },
+    syncButtonText: { color: '#ffffff', fontSize: 15, fontWeight: 'bold' },
+    syncStatusText: {
+      fontSize: 12,
+      color: colors.textMuted,
+      textAlign: 'center',
+      marginTop: 10,
+    },
+  });

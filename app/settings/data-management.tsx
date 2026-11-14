@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { DangerZoneSection } from '../../components/profile/DangerZoneSection';
 import { RestorePresetsModal } from '../../components/profile/RestorePresetsModal';
 import { resetDatabase, saveSetting } from '../../src/db/database';
@@ -14,6 +14,8 @@ import { useLifelogStore } from '../../src/store/lifelogStore';
 import * as Updates from 'expo-updates';
 
 export default function DataManagementSettingsScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { t, i18n } = useTranslation();
   const [isResetModalVisible, setIsResetModalVisible] = useState(false);
   const [isRestoreModalVisible, setIsRestoreModalVisible] = useState(false);
@@ -79,7 +81,7 @@ export default function DataManagementSettingsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="chevron-back" size={24} color={Theme.colors.text} />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>データ管理</Text>
         <View style={{ width: 24 }} />
@@ -108,19 +110,20 @@ export default function DataManagementSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingHorizontal: Theme.spacing.md, 
-    paddingTop: 54, 
-    paddingBottom: Theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border
-  },
-  backButton: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
-  content: { padding: Theme.spacing.md, paddingBottom: 60 },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      justifyContent: 'space-between', 
+      paddingHorizontal: 16, 
+      paddingTop: 54, 
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border
+    },
+    backButton: { padding: 4 },
+    headerTitle: { fontSize: 18, fontWeight: 'bold', color: colors.text },
+    content: { padding: 16, paddingBottom: 60 },
+  });

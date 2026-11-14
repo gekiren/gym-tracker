@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -39,6 +39,8 @@ const getTodayDateStr = () => {
 };
 
 export default function DataExportScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { t } = useTranslation();
   const [selectedDate] = useState(getTodayDateStr());
   const [loading, setLoading] = useState(false);
@@ -185,7 +187,7 @@ export default function DataExportScreen() {
           onPress={() => router.back()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="chevron-back" size={24} color={Theme.colors.text} />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>日次ログ Markdown 出力</Text>
         <View style={{ width: 24 }} />
@@ -218,14 +220,14 @@ export default function DataExportScreen() {
             onPress={handleShareFile}
             disabled={loading || !exportedContent}
           >
-            <Ionicons name="share-outline" size={18} color={Theme.colors.text} style={{ marginRight: 6 }} />
+            <Ionicons name="share-outline" size={18} color={colors.text} style={{ marginRight: 6 }} />
             <Text style={styles.secondaryButtonText}>ファイル共有 (.md)</Text>
           </TouchableOpacity>
         </View>
 
         {loading ? (
           <View style={styles.loadingBox}>
-            <ActivityIndicator size="large" color={Theme.colors.primary} />
+            <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.loadingText}>Markdown生成中...</Text>
           </View>
         ) : (
@@ -241,34 +243,35 @@ export default function DataExportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Theme.spacing.md,
-    paddingTop: 54,
-    paddingBottom: Theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
-  },
-  backButton: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
-  content: { padding: Theme.spacing.md, paddingBottom: 60 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  sectionTitle: { fontSize: 18, color: Theme.colors.text, fontWeight: 'bold' },
-  descText: { fontSize: 13, color: Theme.colors.textMuted, lineHeight: 18, marginBottom: Theme.spacing.md },
-  actionRow: { flexDirection: 'row', gap: Theme.spacing.sm, marginBottom: Theme.spacing.lg },
-  button: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: Theme.borderRadius.md },
-  primaryButton: { backgroundColor: '#4caf50' },
-  secondaryButton: { backgroundColor: Theme.colors.card, borderWidth: 1, borderColor: Theme.colors.border },
-  primaryButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-  secondaryButtonText: { color: Theme.colors.text, fontWeight: '600', fontSize: 14 },
-  loadingBox: { padding: 30, alignItems: 'center' },
-  loadingText: { color: Theme.colors.textMuted, marginTop: 8, fontSize: 13 },
-  previewCard: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, borderWidth: 1, borderColor: Theme.colors.border, padding: Theme.spacing.md },
-  previewTitle: { fontSize: 14, fontWeight: 'bold', color: Theme.colors.text, marginBottom: 8 },
-  previewScroll: { maxHeight: 400, backgroundColor: '#111', borderRadius: Theme.borderRadius.sm, padding: Theme.spacing.sm },
-  previewCode: { fontFamily: 'monospace', fontSize: 12, color: '#4caf50', lineHeight: 18 },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingTop: 54,
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    backButton: { padding: 4 },
+    headerTitle: { fontSize: 18, fontWeight: 'bold', color: colors.text },
+    content: { padding: 16, paddingBottom: 60 },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+    sectionTitle: { fontSize: 18, color: colors.text, fontWeight: 'bold' },
+    descText: { fontSize: 13, color: colors.textMuted, lineHeight: 18, marginBottom: 16 },
+    actionRow: { flexDirection: 'row', gap: 8, marginBottom: 24 },
+    button: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', minHeight: 48, paddingVertical: 12, borderRadius: 12 },
+    primaryButton: { backgroundColor: '#4caf50' },
+    secondaryButton: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+    primaryButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+    secondaryButtonText: { color: colors.text, fontWeight: '600', fontSize: 14 },
+    loadingBox: { padding: 30, alignItems: 'center' },
+    loadingText: { color: colors.textMuted, marginTop: 8, fontSize: 13 },
+    previewCard: { backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16 },
+    previewTitle: { fontSize: 14, fontWeight: 'bold', color: colors.text, marginBottom: 8 },
+    previewScroll: { maxHeight: 400, backgroundColor: colors.background, borderRadius: 4, padding: 8 },
+    previewCode: { fontFamily: 'monospace', fontSize: 12, color: '#4caf50', lineHeight: 18 },
+  });

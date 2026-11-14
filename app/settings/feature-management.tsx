@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { useSettingsStore, FeatureId } from '../../src/store/settingsStore';
 import { useFeatureUnlockStore, isFeatureUnlockedHelper } from '../../src/store/featureUnlockStore';
 import { ALL_FEATURE_IDS, FEATURE_UNLOCK_METAS, getUnlockCost } from '../../src/constants/featureUnlockConstants';
@@ -22,6 +22,9 @@ const DEFAULT_VISIBILITY: Record<FeatureId, boolean> = {
 };
 
 export default function FeatureManagementScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const currentOrder = useSettingsStore(state => state.settings.featureOrder);
   const currentVisibility = useSettingsStore(state => state.settings.featureVisibility);
   const setFeatureConfig = useSettingsStore(state => state.setFeatureConfig);
@@ -152,7 +155,7 @@ export default function FeatureManagementScreen() {
           onPress={() => router.back()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="chevron-back" size={24} color={Theme.colors.text} />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>機能管理 ＆ 解放</Text>
         <PointBadge />
@@ -171,7 +174,7 @@ export default function FeatureManagementScreen() {
               </Text>
             </View>
             <View style={styles.statusBadge}>
-              <Ionicons name="lock-open" size={16} color={Theme.colors.primary} style={{ marginRight: 4 }} />
+              <Ionicons name="lock-open" size={16} color={colors.primary} style={{ marginRight: 4 }} />
               <Text style={styles.statusBadgeText}>{unlockedCount}/{ALL_FEATURE_IDS.length}</Text>
             </View>
           </View>
@@ -205,7 +208,7 @@ export default function FeatureManagementScreen() {
             <Switch
               value={forceUnlockAll}
               onValueChange={setForceUnlockAll}
-              trackColor={{ false: '#3a3a3c', true: Theme.colors.primary }}
+              trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor={forceUnlockAll ? '#ffffff' : '#8e8e93'}
             />
           </View>
@@ -275,7 +278,7 @@ export default function FeatureManagementScreen() {
                         <Ionicons
                           name="chevron-up"
                           size={18}
-                          color={isFirst ? '#444' : Theme.colors.text}
+                          color={isFirst ? colors.border : colors.text}
                         />
                       </TouchableOpacity>
 
@@ -288,7 +291,7 @@ export default function FeatureManagementScreen() {
                         <Ionicons
                           name="chevron-down"
                           size={18}
-                          color={isLast ? '#444' : Theme.colors.text}
+                          color={isLast ? colors.border : colors.text}
                         />
                       </TouchableOpacity>
                     </View>
@@ -297,7 +300,7 @@ export default function FeatureManagementScreen() {
                     <Switch
                       value={isVisible}
                       onValueChange={(val) => handleToggleVisibility(id, val)}
-                      trackColor={{ false: '#3a3a3c', true: Theme.colors.primary }}
+                      trackColor={{ false: colors.border, true: colors.primary }}
                       thumbColor={isVisible ? '#ffffff' : '#8e8e93'}
                     />
                   </>
@@ -319,7 +322,7 @@ export default function FeatureManagementScreen() {
 
         {/* Reset Button */}
         <TouchableOpacity style={styles.resetButton} onPress={handleReset} activeOpacity={0.7}>
-          <Ionicons name="refresh-outline" size={18} color={Theme.colors.textMuted} style={{ marginRight: 6 }} />
+          <Ionicons name="refresh-outline" size={18} color={colors.textMuted} style={{ marginRight: 6 }} />
           <Text style={styles.resetButtonText}>表示設定を初期化</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -333,212 +336,214 @@ export default function FeatureManagementScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Theme.spacing.md,
-    paddingTop: 54,
-    paddingBottom: Theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
-  },
-  backButton: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
-  content: { padding: Theme.spacing.md, paddingBottom: 60 },
-  statusCard: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.md,
-    padding: 16,
-    marginBottom: Theme.spacing.md,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  statusHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  statusTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 2,
-  },
-  statusSubtitle: {
-    fontSize: 12,
-    color: Theme.colors.textMuted,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(79, 172, 254, 0.15)',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-  },
-  statusBadgeText: {
-    color: Theme.colors.primary,
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  progressBarBg: {
-    height: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: Theme.colors.primary,
-    borderRadius: 3,
-  },
-  nextCostHint: {
-    fontSize: 12,
-    color: Theme.colors.textMuted,
-    marginTop: 10,
-  },
-  forceUnlockCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: Theme.borderRadius.md,
-    padding: 14,
-    marginBottom: Theme.spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  forceUnlockTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 2,
-  },
-  forceUnlockDesc: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
-  },
-  listContainer: { gap: 12 },
-  featureCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.md,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  featureCardLocked: {
-    borderColor: 'rgba(255, 152, 0, 0.3)',
-    backgroundColor: 'rgba(255, 152, 0, 0.03)',
-  },
-  featureCardDisabled: {
-    opacity: 0.55,
-  },
-  iconColumn: {
-    alignItems: 'center',
-    width: 44,
-    marginRight: 12,
-  },
-  iconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  featureInfo: {
-    flex: 1,
-    marginRight: 8,
-  },
-  featureTitle: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: Theme.colors.text,
-    marginBottom: 2,
-  },
-  textDisabled: {
-    color: Theme.colors.textMuted,
-  },
-  featureDesc: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
-    lineHeight: 15,
-  },
-  unlockedTag: {
-    backgroundColor: 'rgba(76, 175, 80, 0.15)',
-    paddingVertical: 1,
-    paddingHorizontal: 4,
-    borderRadius: 4,
-    marginTop: 4,
-    alignItems: 'center',
-  },
-  unlockedTagText: {
-    color: '#4caf50',
-    fontSize: 9,
-    fontWeight: 'bold',
-  },
-  lockedTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 152, 0, 0.15)',
-    paddingVertical: 1,
-    paddingHorizontal: 4,
-    borderRadius: 4,
-    marginTop: 4,
-  },
-  lockedTagText: {
-    color: '#ff9800',
-    fontSize: 9,
-    fontWeight: 'bold',
-  },
-  orderControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 8,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 8,
-    padding: 2,
-  },
-  reorderBtn: {
-    padding: 6,
-  },
-  reorderBtnDisabled: {
-    opacity: 0.3,
-  },
-  unlockActionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 215, 0, 0.15)',
-    borderColor: 'rgba(255, 215, 0, 0.4)',
-    borderWidth: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-  },
-  unlockActionBtnText: {
-    color: '#ffd700',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  resetButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 28,
-    paddingVertical: 12,
-    borderRadius: Theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-    backgroundColor: 'rgba(255,255,255,0.02)',
-  },
-  resetButtonText: {
-    color: Theme.colors.textMuted,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingTop: 54,
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    backButton: { padding: 4 },
+    headerTitle: { fontSize: 18, fontWeight: 'bold', color: colors.text },
+    content: { padding: 16, paddingBottom: 60 },
+    statusCard: {
+      backgroundColor: colors.card,
+      borderRadius: 8,
+      padding: 16,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    statusHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    statusTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 2,
+    },
+    statusSubtitle: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    statusBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(79, 172, 254, 0.15)',
+      paddingVertical: 4,
+      paddingHorizontal: 8,
+      borderRadius: 12,
+    },
+    statusBadgeText: {
+      color: colors.primary,
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    progressBarBg: {
+      height: 6,
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      borderRadius: 3,
+      overflow: 'hidden',
+    },
+    progressBarFill: {
+      height: '100%',
+      backgroundColor: colors.primary,
+      borderRadius: 3,
+    },
+    nextCostHint: {
+      fontSize: 12,
+      color: colors.textMuted,
+      marginTop: 10,
+    },
+    forceUnlockCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+      borderRadius: 8,
+      padding: 14,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    forceUnlockTitle: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 2,
+    },
+    forceUnlockDesc: {
+      fontSize: 11,
+      color: colors.textMuted,
+    },
+    listContainer: { gap: 12 },
+    featureCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: 8,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    featureCardLocked: {
+      borderColor: 'rgba(255, 152, 0, 0.3)',
+      backgroundColor: 'rgba(255, 152, 0, 0.03)',
+    },
+    featureCardDisabled: {
+      opacity: 0.55,
+    },
+    iconColumn: {
+      alignItems: 'center',
+      width: 44,
+      marginRight: 12,
+    },
+    iconBox: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    featureInfo: {
+      flex: 1,
+      marginRight: 8,
+    },
+    featureTitle: {
+      fontSize: 15,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 2,
+    },
+    textDisabled: {
+      color: colors.textMuted,
+    },
+    featureDesc: {
+      fontSize: 11,
+      color: colors.textMuted,
+      lineHeight: 15,
+    },
+    unlockedTag: {
+      backgroundColor: 'rgba(76, 175, 80, 0.15)',
+      paddingVertical: 1,
+      paddingHorizontal: 4,
+      borderRadius: 4,
+      marginTop: 4,
+      alignItems: 'center',
+    },
+    unlockedTagText: {
+      color: '#4caf50',
+      fontSize: 9,
+      fontWeight: 'bold',
+    },
+    lockedTag: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(255, 152, 0, 0.15)',
+      paddingVertical: 1,
+      paddingHorizontal: 4,
+      borderRadius: 4,
+      marginTop: 4,
+    },
+    lockedTagText: {
+      color: '#ff9800',
+      fontSize: 9,
+      fontWeight: 'bold',
+    },
+    orderControls: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: 8,
+      backgroundColor: 'rgba(255,255,255,0.05)',
+      borderRadius: 8,
+      padding: 2,
+    },
+    reorderBtn: {
+      padding: 6,
+    },
+    reorderBtnDisabled: {
+      opacity: 0.3,
+    },
+    unlockActionBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255, 215, 0, 0.15)',
+      borderColor: 'rgba(255, 215, 0, 0.4)',
+      borderWidth: 1,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 10,
+    },
+    unlockActionBtnText: {
+      color: '#ffd700',
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    resetButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 28,
+      minHeight: 48,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: 'rgba(255,255,255,0.02)',
+    },
+    resetButtonText: {
+      color: colors.textMuted,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+  });

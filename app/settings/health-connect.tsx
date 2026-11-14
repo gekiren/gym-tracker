@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import {
   isHealthDataAvailable,
   hasHealthPermissions,
@@ -27,6 +27,9 @@ import {
 import { exportHealthDataToObsidian, getObsidianSettings } from '../../src/services/obsidianService';
 
 export default function HealthConnectSettingsScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [hasPermissions, setHasPermissions] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -164,7 +167,7 @@ export default function HealthConnectSettingsScreen() {
           onPress={() => router.back()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="chevron-back" size={24} color={Theme.colors.text} />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Health Connect 連携</Text>
         <View style={{ width: 24 }} />
@@ -174,12 +177,12 @@ export default function HealthConnectSettingsScreen() {
         {/* Status Card */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="heart-circle" size={24} color={Theme.colors.primary} />
+            <Ionicons name="heart-circle" size={24} color={colors.primary} />
             <Text style={styles.cardTitle}>ステータス確認</Text>
           </View>
 
           {isLoading ? (
-            <ActivityIndicator style={{ marginVertical: 12 }} color={Theme.colors.primary} />
+            <ActivityIndicator style={{ marginVertical: 12 }} color={colors.primary} />
           ) : (
             <View style={styles.statusContainer}>
               <View style={styles.statusRow}>
@@ -247,7 +250,7 @@ export default function HealthConnectSettingsScreen() {
         {/* Auto Sync Settings Card */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="time-outline" size={24} color={Theme.colors.primary} />
+            <Ionicons name="time-outline" size={24} color={colors.primary} />
             <Text style={styles.cardTitle}>自動アクセスの設定</Text>
           </View>
           <Text style={styles.description}>
@@ -262,7 +265,7 @@ export default function HealthConnectSettingsScreen() {
             <Switch
               value={syncSettings.autoSyncOnLaunch}
               onValueChange={handleToggleLaunchSync}
-              trackColor={{ false: '#3a3a3c', true: Theme.colors.primary }}
+              trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor="#ffffff"
             />
           </View>
@@ -275,7 +278,7 @@ export default function HealthConnectSettingsScreen() {
             <Switch
               value={syncSettings.autoSyncPeriodic}
               onValueChange={handleTogglePeriodicSync}
-              trackColor={{ false: '#3a3a3c', true: Theme.colors.primary }}
+              trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor="#ffffff"
             />
           </View>
@@ -341,7 +344,7 @@ export default function HealthConnectSettingsScreen() {
         {/* Sync Action Card */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="sync-circle" size={24} color={Theme.colors.primary} />
+            <Ionicons name="sync-circle" size={24} color={colors.primary} />
             <Text style={styles.cardTitle}>Obsidian デイリーノートへ書き込み</Text>
           </View>
           <Text style={styles.description}>
@@ -368,7 +371,7 @@ export default function HealthConnectSettingsScreen() {
             onPress={() => handleFetchAndExport(true)}
             disabled={isFetching}
           >
-            <Ionicons name="flask-outline" size={18} color="#4facfe" style={{ marginRight: 8 }} />
+            <Ionicons name="flask-outline" size={18} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.mockButtonText}>モックデータで動作テスト送信</Text>
           </TouchableOpacity>
         </View>
@@ -377,7 +380,7 @@ export default function HealthConnectSettingsScreen() {
         {healthData && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Ionicons name="analytics" size={24} color={Theme.colors.primary} />
+              <Ionicons name="analytics" size={24} color={colors.primary} />
               <Text style={styles.cardTitle}>取得データプレビュー ({healthData.date})</Text>
             </View>
 
@@ -421,184 +424,189 @@ export default function HealthConnectSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Theme.spacing.md,
-    paddingTop: 54,
-    paddingBottom: Theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
-  },
-  backButton: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
-  content: { padding: Theme.spacing.md, paddingBottom: 60 },
-  card: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: 16,
-    padding: Theme.spacing.lg,
-    marginBottom: Theme.spacing.md,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Theme.spacing.md,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Theme.colors.text,
-    marginLeft: 8,
-  },
-  description: {
-    fontSize: 13,
-    color: Theme.colors.textMuted,
-    lineHeight: 18,
-    marginBottom: Theme.spacing.md,
-  },
-  statusContainer: {
-    backgroundColor: '#1c1c1e',
-    borderRadius: 12,
-    padding: Theme.spacing.md,
-    marginBottom: Theme.spacing.md,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 6,
-  },
-  statusLabel: { fontSize: 13, color: Theme.colors.textMuted },
-  statusValue: { fontSize: 13, fontWeight: '600', color: Theme.colors.text },
-  badgeContainer: { flexDirection: 'row', alignItems: 'center' },
-  badgeText: { fontSize: 13, fontWeight: '600', marginLeft: 4 },
-  primaryButton: {
-    backgroundColor: Theme.colors.primary,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  secondaryButton: {
-    backgroundColor: '#3a3a3c',
-  },
-  primaryButtonText: { color: '#ffffff', fontSize: 14, fontWeight: 'bold' },
-  syncButton: {
-    backgroundColor: '#30d158',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  syncButtonText: { color: '#ffffff', fontSize: 14, fontWeight: 'bold' },
-  mockButton: {
-    backgroundColor: '#1c1c1e',
-    borderColor: '#4facfe',
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  mockButtonText: { color: '#4facfe', fontSize: 14, fontWeight: '600' },
-  disabledButton: { opacity: 0.5 },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  gridItem: {
-    width: '48%',
-    backgroundColor: '#1c1c1e',
-    borderRadius: 12,
-    padding: Theme.spacing.md,
-    marginBottom: 10,
-  },
-  gridValue: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.primary, marginBottom: 2 },
-  gridLabel: { fontSize: 12, color: Theme.colors.textMuted },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-  },
-  settingTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Theme.colors.text,
-  },
-  settingSubtext: {
-    fontSize: 12,
-    color: Theme.colors.textMuted,
-    marginTop: 2,
-  },
-  intervalButtonRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 8,
-    gap: 8,
-  },
-  intervalChip: {
-    backgroundColor: '#1c1c1e',
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: '#3a3a3c',
-  },
-  intervalChipActive: {
-    backgroundColor: Theme.colors.primary,
-    borderColor: Theme.colors.primary,
-  },
-  intervalChipText: {
-    fontSize: 12,
-    color: Theme.colors.textMuted,
-    fontWeight: '500',
-  },
-  intervalChipTextActive: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-  },
-  lastSyncContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#1c1c1e',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginTop: 14,
-    marginBottom: 12,
-  },
-  lastSyncLabel: {
-    fontSize: 12,
-    color: Theme.colors.textMuted,
-  },
-  lastSyncValue: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Theme.colors.primary,
-  },
-  syncNowButton: {
-    backgroundColor: Theme.colors.primary,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  syncNowButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingTop: 54,
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    backButton: { padding: 4 },
+    headerTitle: { fontSize: 18, fontWeight: 'bold', color: colors.text },
+    content: { padding: 16, paddingBottom: 60 },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 24,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    cardTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginLeft: 8,
+    },
+    description: {
+      fontSize: 13,
+      color: colors.textMuted,
+      lineHeight: 18,
+      marginBottom: 16,
+    },
+    statusContainer: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+    },
+    statusRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 6,
+    },
+    statusLabel: { fontSize: 13, color: colors.textMuted },
+    statusValue: { fontSize: 13, fontWeight: '600', color: colors.text },
+    badgeContainer: { flexDirection: 'row', alignItems: 'center' },
+    badgeText: { fontSize: 13, fontWeight: '600', marginLeft: 4 },
+    primaryButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 12,
+      minHeight: 48,
+      paddingVertical: 12,
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'center',
+    },
+    secondaryButton: {
+      backgroundColor: colors.border,
+    },
+    primaryButtonText: { color: '#ffffff', fontSize: 14, fontWeight: 'bold' },
+    syncButton: {
+      backgroundColor: '#30d158',
+      borderRadius: 12,
+      minHeight: 48,
+      paddingVertical: 14,
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    syncButtonText: { color: '#ffffff', fontSize: 14, fontWeight: 'bold' },
+    mockButton: {
+      backgroundColor: colors.background,
+      borderColor: colors.primary,
+      borderWidth: 1,
+      borderRadius: 12,
+      minHeight: 48,
+      paddingVertical: 12,
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'center',
+    },
+    mockButtonText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
+    disabledButton: { opacity: 0.5 },
+    grid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+    gridItem: {
+      width: '48%',
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 10,
+    },
+    gridValue: { fontSize: 18, fontWeight: 'bold', color: colors.primary, marginBottom: 2 },
+    gridLabel: { fontSize: 12, color: colors.textMuted },
+    settingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 10,
+    },
+    settingTitle: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    settingSubtext: {
+      fontSize: 12,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    intervalButtonRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginTop: 8,
+      gap: 8,
+    },
+    intervalChip: {
+      backgroundColor: colors.background,
+      borderRadius: 16,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    intervalChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    intervalChipText: {
+      fontSize: 12,
+      color: colors.textMuted,
+      fontWeight: '500',
+    },
+    intervalChipTextActive: {
+      color: '#ffffff',
+      fontWeight: 'bold',
+    },
+    lastSyncContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      marginTop: 14,
+      marginBottom: 12,
+    },
+    lastSyncLabel: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    lastSyncValue: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    syncNowButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 12,
+      minHeight: 48,
+      paddingVertical: 12,
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'center',
+    },
+    syncNowButtonText: {
+      color: '#ffffff',
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+  });

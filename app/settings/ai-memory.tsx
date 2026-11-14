@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,11 +13,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { AiCoachSection } from '../../components/profile/AiCoachSection';
 
 export default function AiMemorySettingsScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { t } = useTranslation();
   const settings = useSettingsStore((state) => state.settings);
   const aiCompanionMemory = settings.aiCompanionMemory;
@@ -78,7 +80,7 @@ export default function AiMemorySettingsScreen() {
             onPress={() => router.back()}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="chevron-back" size={24} color={Theme.colors.text} />
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>AIアシスタント</Text>
           <View style={{ width: 24 }} />
@@ -117,7 +119,7 @@ export default function AiMemorySettingsScreen() {
               value={memoryText}
               onChangeText={setMemoryText}
               placeholder={'例:\n・右肩を痛めているため高重量プレスは避ける\n・水筒の容量は600ml\n・朝型でトレーニングは午前中に行うことが多い'}
-              placeholderTextColor={Theme.colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               textAlignVertical="top"
             />
           </View>
@@ -140,7 +142,7 @@ export default function AiMemorySettingsScreen() {
                 onPress={handleClear}
                 activeOpacity={0.8}
               >
-                <Ionicons name="trash-outline" size={18} color={Theme.colors.danger} />
+                <Ionicons name="trash-outline" size={18} color={colors.danger} />
                 <Text style={styles.clearButtonText}>記憶をすべて消去</Text>
               </TouchableOpacity>
             )}
@@ -151,124 +153,127 @@ export default function AiMemorySettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Theme.colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Theme.spacing.md,
-    paddingTop: 54,
-    paddingBottom: Theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Theme.colors.text,
-  },
-  content: {
-    padding: Theme.spacing.md,
-    paddingBottom: 60,
-  },
-  infoCard: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: 12,
-    padding: Theme.spacing.md,
-    marginBottom: Theme.spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(79, 172, 254, 0.25)',
-  },
-  iconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  infoTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#4facfe',
-  },
-  infoText: {
-    fontSize: 13,
-    color: Theme.colors.textMuted,
-    lineHeight: 19,
-  },
-  editorCard: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: 12,
-    padding: Theme.spacing.md,
-    marginBottom: Theme.spacing.md,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  editorHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  editorTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Theme.colors.text,
-  },
-  charCount: {
-    fontSize: 12,
-    color: Theme.colors.textMuted,
-  },
-  textInput: {
-    minHeight: 180,
-    maxHeight: 350,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: 8,
-    padding: 12,
-    color: Theme.colors.text,
-    fontSize: 14,
-    lineHeight: 20,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  buttonContainer: {
-    gap: 12,
-    marginTop: 8,
-  },
-  saveButton: {
-    backgroundColor: Theme.colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 10,
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  clearButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 59, 48, 0.3)',
-    backgroundColor: 'rgba(255, 59, 48, 0.08)',
-  },
-  clearButtonText: {
-    color: Theme.colors.danger,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingTop: 54,
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    backButton: {
+      padding: 4,
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: colors.text,
+    },
+    content: {
+      padding: 16,
+      paddingBottom: 60,
+    },
+    infoCard: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: 'rgba(79, 172, 254, 0.25)',
+    },
+    iconRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 6,
+    },
+    infoTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    infoText: {
+      fontSize: 13,
+      color: colors.textMuted,
+      lineHeight: 19,
+    },
+    editorCard: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    editorHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    editorTitle: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    charCount: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    textInput: {
+      minHeight: 180,
+      maxHeight: 350,
+      backgroundColor: colors.background,
+      borderRadius: 8,
+      padding: 12,
+      color: colors.text,
+      fontSize: 14,
+      lineHeight: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    buttonContainer: {
+      gap: 12,
+      marginTop: 8,
+    },
+    saveButton: {
+      backgroundColor: colors.primary,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      minHeight: 48,
+      paddingVertical: 14,
+      borderRadius: 12,
+    },
+    saveButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '700',
+    },
+    clearButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      minHeight: 48,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 59, 48, 0.3)',
+      backgroundColor: 'rgba(255, 59, 48, 0.08)',
+    },
+    clearButtonText: {
+      color: colors.danger,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+  });
