@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View, Pressable } from 'react-native';
-import { Theme } from '../src/theme';
+import { useAppTheme } from '../src/theme';
 import { useReviewStore } from '../src/store/reviewStore';
 import {
   markReviewPromptShown,
@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 export const ReviewPromptModal = () => {
+  const { colors } = useAppTheme();
   const { isVisible, step, currentWorkoutCount, hidePrompt, setStep } = useReviewStore();
 
   if (!isVisible) return null;
@@ -46,32 +47,32 @@ export const ReviewPromptModal = () => {
         return (
           <View style={styles.content}>
             <View style={styles.iconContainer}>
-              <Ionicons name="sparkles" size={32} color={Theme.colors.primary} />
+              <Ionicons name="sparkles" size={32} color={colors.primary} />
             </View>
-            <Text style={styles.title}>TreNoteはいかがですか？</Text>
+            <Text style={[styles.title, { color: colors.text }]}>TreNoteはいかがですか？</Text>
             
             <View style={styles.buttonRow}>
               <TouchableOpacity
-                style={[styles.button, styles.buttonDark]}
+                style={[styles.button, styles.buttonSecondary, { borderColor: colors.border }]}
                 onPress={handleUnsatisfied}
                 activeOpacity={0.8}
               >
-                <Ionicons name="close-circle-outline" size={16} color="#fff" style={styles.btnIcon} />
-                <Text style={styles.buttonText} numberOfLines={2}>改善してほしい</Text>
+                <Ionicons name="close-circle-outline" size={16} color={colors.text} style={styles.btnIcon} />
+                <Text style={[styles.buttonText, { color: colors.text }]} numberOfLines={2}>改善してほしい</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.button, styles.buttonLight]}
+                style={[styles.button, { backgroundColor: colors.primary }]}
                 onPress={handleSatisfied}
                 activeOpacity={0.8}
               >
                 <Ionicons name="checkmark-circle" size={16} color="#fff" style={styles.btnIcon} />
-                <Text style={styles.buttonText} numberOfLines={2}>満足している！</Text>
+                <Text style={styles.buttonPrimaryText} numberOfLines={2}>満足している！</Text>
               </TouchableOpacity>
             </View>
 
             <TouchableOpacity style={styles.laterButton} onPress={handleLater} activeOpacity={0.7}>
-              <Text style={styles.laterText}>また今度</Text>
+              <Text style={[styles.laterText, { color: colors.textMuted }]}>また今度</Text>
             </TouchableOpacity>
           </View>
         );
@@ -80,27 +81,29 @@ export const ReviewPromptModal = () => {
         return (
           <View style={styles.content}>
             <View style={styles.iconContainer}>
-              <Ionicons name="heart" size={36} color="#ff3b30" />
+              <Ionicons name="heart" size={36} color={colors.danger} />
             </View>
-            <Text style={styles.title}>ありがとうございます！</Text>
-            <Text style={styles.subtitle}>励みになりますのでストアで応援してください！</Text>
+            <Text style={[styles.title, { color: colors.text }]}>ありがとうございます！</Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+              励みになりますのでストアで応援してください！
+            </Text>
             
             <View style={styles.buttonRow}>
               <TouchableOpacity
-                style={[styles.button, styles.buttonDark]}
+                style={[styles.button, styles.buttonSecondary, { borderColor: colors.border }]}
                 onPress={hidePrompt}
                 activeOpacity={0.8}
               >
-                <Text style={styles.buttonText}>閉じる</Text>
+                <Text style={[styles.buttonText, { color: colors.text }]}>閉じる</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.button, styles.buttonLight]}
+                style={[styles.button, { backgroundColor: colors.primary }]}
                 onPress={handleReview}
                 activeOpacity={0.8}
               >
                 <Ionicons name="star" size={16} color="#fff" style={styles.btnIcon} />
-                <Text style={styles.buttonText}>レビューする</Text>
+                <Text style={styles.buttonPrimaryText}>レビューする</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -110,29 +113,29 @@ export const ReviewPromptModal = () => {
         return (
           <View style={styles.content}>
             <View style={styles.iconContainer}>
-              <Ionicons name="chatbubble-ellipses" size={32} color={Theme.colors.primary} />
+              <Ionicons name="chatbubble-ellipses" size={32} color={colors.primary} />
             </View>
-            <Text style={styles.title}>ご意見をお聞かせください</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.title, { color: colors.text }]}>ご意見をお聞かせください</Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
               ご不便をおかけしてすみません。直接開発者へご意見をお寄せください。
             </Text>
             
             <View style={styles.buttonRow}>
               <TouchableOpacity
-                style={[styles.button, styles.buttonDark]}
+                style={[styles.button, styles.buttonSecondary, { borderColor: colors.border }]}
                 onPress={hidePrompt}
                 activeOpacity={0.8}
               >
-                <Text style={styles.buttonText}>閉じる</Text>
+                <Text style={[styles.buttonText, { color: colors.text }]}>閉じる</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.button, styles.buttonLight]}
+                style={[styles.button, { backgroundColor: colors.primary }]}
                 onPress={handleFeedback}
                 activeOpacity={0.8}
               >
                 <Ionicons name="mail" size={16} color="#fff" style={styles.btnIcon} />
-                <Text style={styles.buttonText}>意見を送る</Text>
+                <Text style={styles.buttonPrimaryText}>意見を送る</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -151,7 +154,10 @@ export const ReviewPromptModal = () => {
       onRequestClose={handleLater}
     >
       <Pressable style={styles.overlay} onPress={handleLater}>
-        <Pressable style={styles.dialogContainer} onPress={(e) => e.stopPropagation()}>
+        <Pressable
+          style={[styles.dialogContainer, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={(e) => e.stopPropagation()}
+        >
           {renderContent()}
         </Pressable>
       </Pressable>
@@ -169,20 +175,13 @@ const styles = StyleSheet.create({
   },
   dialogContainer: {
     width: '100%',
-    maxWidth: 320,
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.xl,
+    maxWidth: 340,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
   },
   content: {
-    padding: Theme.spacing.lg,
+    padding: 24,
     alignItems: 'center',
   },
   iconContainer: {
@@ -190,22 +189,20 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
-    color: Theme.colors.text,
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 12,
   },
   subtitle: {
-    color: Theme.colors.textMuted,
     fontSize: 13,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 19,
     marginBottom: 20,
   },
   buttonRow: {
@@ -216,22 +213,25 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    height: 48,
-    borderRadius: Theme.borderRadius.md,
+    minHeight: 48,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
   },
-  buttonLight: {
-    backgroundColor: Theme.colors.primary,
-  },
-  buttonDark: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  buttonSecondary: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
   },
   buttonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  buttonPrimaryText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 'bold',
     textAlign: 'center',
   },
@@ -239,12 +239,13 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   laterButton: {
-    marginTop: 20,
-    paddingVertical: 8,
+    marginTop: 16,
+    minHeight: 44,
     paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   laterText: {
-    color: Theme.colors.textMuted,
     fontSize: 14,
     textDecorationLine: 'underline',
   },

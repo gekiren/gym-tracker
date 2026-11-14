@@ -3,9 +3,8 @@ import React from 'react';
 import { Platform, View } from 'react-native';
 import AdBanner from '../../components/AdBanner';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme, useAppTheme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { useTranslation } from 'react-i18next';
-import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { AI_CONFIG } from '../../src/config/aiConfig';
 
@@ -56,6 +55,7 @@ export default function TabLayout() {
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
           backgroundColor: colors.background,
+          borderTopWidth: 1,
           borderTopColor: colors.border,
           height: tabHeight,
           paddingBottom: tabPaddingBottom,

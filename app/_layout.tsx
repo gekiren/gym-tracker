@@ -2,14 +2,14 @@ import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, router, usePathname, ErrorBoundaryProps } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet, Alert, AppState, ScrollView } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import * as Updates from 'expo-updates';
 import mobileAds from 'react-native-google-mobile-ads';
 import { initDB, getSettings, saveSetting, triggerBackgroundBackup } from '../src/db/database';
-import { Theme } from '../src/theme';
+import { useAppTheme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore, FeatureId } from '../src/store/settingsStore';
 import { useNutritionStore } from '../src/store/nutritionStore';
@@ -41,6 +41,21 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
+  const { colors } = useAppTheme();
+  const navigationTheme = useMemo(
+    () => ({
+      ...DarkTheme,
+      colors: {
+        ...DarkTheme.colors,
+        background: colors.background,
+        card: colors.card,
+        text: colors.text,
+        border: colors.border,
+        primary: colors.primary,
+      },
+    }),
+    [colors]
+  );
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
   const pathname = usePathname();
@@ -320,11 +335,11 @@ export default function RootLayout() {
 
   if (dbError) {
     return (
-      <View style={[styles.center, { padding: 40 }]}>
-        <Text style={styles.errorTitle}>{i18n.t('ui.profile.db_error_title')}</Text>
-        <Text style={styles.errorText}>{i18n.t('ui.profile.db_error_text')}</Text>
-        <Text style={[styles.errorText, { color: '#ff4444', fontSize: 12 }]}>{dbError}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={setupDB}>
+      <View style={[styles.center, { backgroundColor: colors.background, padding: 32 }]}>
+        <Text style={[styles.errorTitle, { color: colors.text }]}>{i18n.t('ui.profile.db_error_title')}</Text>
+        <Text style={[styles.errorText, { color: colors.textMuted }]}>{i18n.t('ui.profile.db_error_text')}</Text>
+        <Text style={[styles.errorText, { color: colors.danger, fontSize: 12 }]}>{dbError}</Text>
+        <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.primary }]} onPress={setupDB}>
           <Text style={styles.retryBtnText}>{i18n.t('ui.profile.retry')}</Text>
         </TouchableOpacity>
       </View>
@@ -333,8 +348,8 @@ export default function RootLayout() {
 
   if (!dbReady) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={Theme.colors.primary} />
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -342,8 +357,14 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider statusBarTranslucent={true}>
-        <ThemeProvider value={DarkTheme}>
-          <Stack>
+        <ThemeProvider value={navigationTheme}>
+          <Stack
+            screenOptions={{
+              headerStyle: { backgroundColor: colors.background },
+              headerTintColor: colors.text,
+              contentStyle: { backgroundColor: colors.background },
+            }}
+          >
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="settings" options={{ headerShown: false }} />
@@ -372,27 +393,26 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   center: {
     flex: 1,
-    backgroundColor: Theme.colors.background,
     justifyContent: 'center',
     alignItems: 'center'
   },
   errorTitle: {
-    color: Theme.colors.text,
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16
   },
   errorText: {
-    color: Theme.colors.textMuted,
     textAlign: 'center',
     marginBottom: 12,
     lineHeight: 20
   },
   retryBtn: {
-    backgroundColor: Theme.colors.primary,
+    minHeight: 48,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginTop: 20
   },
   retryBtnText: {
@@ -402,20 +422,28 @@ const styles = StyleSheet.create({
 });
 
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const { colors } = useAppTheme();
   return (
-    <View style={errorStyles.container}>
-      <View style={errorStyles.card}>
+    <View style={[errorStyles.container, { backgroundColor: colors.background }]}>
+      <View style={[errorStyles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={errorStyles.iconOuter}>
-          <Ionicons name="alert-circle-outline" size={48} color={Theme.colors.danger} />
+          <Ionicons name="alert-circle-outline" size={48} color={colors.danger} />
         </View>
-        <Text style={errorStyles.title}>問題が発生しました</Text>
-        <Text style={errorStyles.message}>
+        <Text style={[errorStyles.title, { color: colors.text }]}>問題が発生しました</Text>
+        <Text style={[errorStyles.message, { color: colors.textMuted }]}>
           アプリの実行中に予期しないエラーが発生しました。お手数ですが、以下のボタンから再試行してください。
         </Text>
-        <ScrollView style={errorStyles.errorDetailsContainer} contentContainerStyle={{ padding: 10 }}>
+        <ScrollView
+          style={[errorStyles.errorDetailsContainer, { borderColor: colors.border }]}
+          contentContainerStyle={{ padding: 12 }}
+        >
           <Text style={errorStyles.errorText}>{error.stack || error.message}</Text>
         </ScrollView>
-        <TouchableOpacity style={errorStyles.retryButton} onPress={retry} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={[errorStyles.retryButton, { backgroundColor: colors.primary }]}
+          onPress={retry}
+          activeOpacity={0.8}
+        >
           <Text style={errorStyles.retryButtonText}>再試行する</Text>
         </TouchableOpacity>
       </View>
@@ -426,20 +454,17 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 const errorStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Theme.colors.background,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 24,
   },
   card: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 16,
     padding: 24,
     width: '100%',
     maxWidth: 400,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
   },
   iconOuter: {
     width: 80,
@@ -451,14 +476,12 @@ const errorStyles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    color: Theme.colors.text,
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 12,
     textAlign: 'center',
   },
   message: {
-    color: Theme.colors.textMuted,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
@@ -468,23 +491,23 @@ const errorStyles = StyleSheet.create({
     width: '100%',
     maxHeight: 150,
     backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: Theme.borderRadius.sm,
+    borderRadius: 8,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
   },
   errorText: {
     color: '#ff6b6b',
     fontFamily: 'monospace',
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 18,
   },
   retryButton: {
-    backgroundColor: Theme.colors.primary,
-    paddingVertical: 14,
+    minHeight: 48,
+    paddingVertical: 12,
     paddingHorizontal: 32,
-    borderRadius: Theme.borderRadius.sm,
+    borderRadius: 12,
     width: '100%',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   retryButtonText: {

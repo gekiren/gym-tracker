@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, Modal, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { format, startOfWeek, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
-import { Theme } from '../src/theme';
+import { useAppTheme } from '../src/theme';
 import { useTranslation } from 'react-i18next';
 import { getDB } from '../src/db/database';
 
@@ -21,6 +21,7 @@ export function DashboardCalendarModal({
   onSelectDate,
   type = 'workout',
 }: DashboardCalendarModalProps) {
+  const { colors } = useAppTheme();
   const { i18n } = useTranslation();
   const isJa = i18n.language === 'ja';
 
@@ -186,37 +187,44 @@ export function DashboardCalendarModal({
       onRequestClose={onClose}
     >
       <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+        <Pressable
+          style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={(e) => e.stopPropagation()}
+        >
           <View style={styles.calendarModalHeader}>
-            <Text style={styles.calendarModalTitle}>
+            <Text style={[styles.calendarModalTitle, { color: colors.text }]}>
               {isJa ? '日付を選択' : 'Select Date'}
             </Text>
-            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={onClose}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            >
+              <Ionicons name="close" size={24} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.monthSelector}>
+          <View style={[styles.monthSelector, { borderColor: colors.border }]}>
             <TouchableOpacity
               onPress={() => handleNavigateMonth(-1)}
               style={styles.monthNavButton}
               activeOpacity={0.7}
             >
-              <Ionicons name="chevron-back" size={22} color={Theme.colors.primary} />
+              <Ionicons name="chevron-back" size={22} color={colors.primary} />
             </TouchableOpacity>
-            <Text style={styles.monthText}>{monthYearText}</Text>
+            <Text style={[styles.monthText, { color: colors.text }]}>{monthYearText}</Text>
             <TouchableOpacity
               onPress={() => handleNavigateMonth(1)}
               style={styles.monthNavButton}
               activeOpacity={0.7}
             >
-              <Ionicons name="chevron-forward" size={22} color={Theme.colors.primary} />
+              <Ionicons name="chevron-forward" size={22} color={colors.primary} />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.weekdaysContainer}>
+          <View style={[styles.weekdaysContainer, { borderBottomColor: colors.border }]}>
             {weekdays.map((day, idx) => (
-              <Text key={idx} style={styles.weekdayText}>{day}</Text>
+              <Text key={idx} style={[styles.weekdayText, { color: colors.textMuted }]}>{day}</Text>
             ))}
           </View>
 
@@ -240,16 +248,17 @@ export function DashboardCalendarModal({
                 >
                   <View style={[
                     styles.dayBox,
-                    isSelected && styles.selectedDayBox,
-                    isToday && !isSelected && styles.todayDayBox,
-                    hasData && !isSelected && styles.workoutDayBox
+                    isSelected && { backgroundColor: colors.primary },
+                    isToday && !isSelected && [styles.todayDayBox, { borderColor: colors.primary }],
+                    hasData && !isSelected && [styles.workoutDayBox, { borderColor: colors.primary }],
                   ]}>
                     <Text style={[
                       styles.dayText,
-                      !isCurrentMonth && styles.dimmedDayText,
+                      { color: colors.text },
+                      !isCurrentMonth && { color: colors.textMuted, opacity: 0.45 },
                       isSelected && styles.selectedDayText,
-                      isToday && !isSelected && styles.todayDayText,
-                      hasData && !isSelected && styles.workoutDayText
+                      isToday && !isSelected && [styles.todayDayText, { color: colors.primary }],
+                      hasData && !isSelected && [styles.workoutDayText, { color: colors.primary }],
                     ]}>
                       {format(day, 'd')}
                     </Text>
@@ -259,16 +268,16 @@ export function DashboardCalendarModal({
             })}
           </View>
 
-          <View style={styles.footerContainer}>
-            <TouchableOpacity 
-              style={styles.todayButton}
+          <View style={[styles.footerContainer, { borderTopColor: colors.border }]}>
+            <TouchableOpacity
+              style={[styles.todayButton, { borderColor: colors.border }]}
               onPress={() => {
                 onSelectDate(todayStr);
                 onClose();
               }}
               activeOpacity={0.8}
             >
-              <Text style={styles.todayButtonText}>
+              <Text style={[styles.todayButtonText, { color: colors.text }]}>
                 {isJa ? '今日を選択' : 'Select Today'}
               </Text>
             </TouchableOpacity>
@@ -280,48 +289,66 @@ export function DashboardCalendarModal({
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { width: '90%', backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.lg, padding: Theme.spacing.lg, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 16,
+    padding: 24,
+    borderWidth: 1,
+  },
   calendarModalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Theme.spacing.md,
+    marginBottom: 16,
   },
   calendarModalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+  },
+  closeButton: {
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   monthSelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: Theme.borderRadius.sm,
-    paddingVertical: Theme.spacing.xs,
-    paddingHorizontal: Theme.spacing.sm,
-    marginBottom: Theme.spacing.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    marginBottom: 16,
   },
   monthNavButton: {
-    padding: Theme.spacing.xs,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   monthText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: Theme.colors.text,
   },
   weekdaysContainer: {
     flexDirection: 'row',
-    paddingVertical: Theme.spacing.xs,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
-    marginBottom: Theme.spacing.xs,
+    marginBottom: 8,
   },
   weekdayText: {
     width: '14.28%',
     textAlign: 'center',
-    color: Theme.colors.textMuted,
     fontSize: 12,
     fontWeight: 'bold',
   },
@@ -344,56 +371,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'center',
   },
-  selectedDayBox: {
-    backgroundColor: Theme.colors.primary,
-  },
   todayDayBox: {
     borderWidth: 1.5,
-    borderColor: Theme.colors.primary,
   },
   dayText: {
-    color: Theme.colors.text,
     fontSize: 14,
     fontWeight: '500',
-  },
-  dimmedDayText: {
-    color: '#444444',
   },
   selectedDayText: {
     color: '#000000',
     fontWeight: 'bold',
   },
   todayDayText: {
-    color: Theme.colors.primary,
     fontWeight: 'bold',
   },
   footerContainer: {
-    marginTop: Theme.spacing.md,
-    paddingTop: Theme.spacing.md,
+    marginTop: 16,
+    paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: Theme.colors.border,
     alignItems: 'center',
   },
   todayButton: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: Theme.borderRadius.md,
-    paddingVertical: Theme.spacing.sm,
-    paddingHorizontal: Theme.spacing.lg,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
   },
   todayButtonText: {
-    color: Theme.colors.text,
     fontSize: 14,
     fontWeight: 'bold',
   },
   workoutDayBox: {
     backgroundColor: 'rgba(79, 172, 254, 0.15)',
     borderWidth: 1,
-    borderColor: Theme.colors.primary,
   },
   workoutDayText: {
-    color: Theme.colors.primary,
     fontWeight: 'bold',
-  }
+  },
 });

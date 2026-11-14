@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View, Pressable, ScrollView } from 'react-native';
-import { Theme } from '../src/theme';
+import { useAppTheme } from '../src/theme';
 import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import { CURRENT_OTA_CONFIG } from '../src/config/otaUpdateConfig';
 import { saveSetting } from '../src/db/database';
@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import i18n from '../src/i18n';
 
 export const OTAUpdateModal = () => {
+  const { colors } = useAppTheme();
   const { isVisible, hideModal } = useOTAUpdateStore();
 
   if (!isVisible) return null;
@@ -34,17 +35,20 @@ export const OTAUpdateModal = () => {
       onRequestClose={handleClose}
     >
       <Pressable style={styles.overlay} onPress={handleClose}>
-        <Pressable style={styles.dialogContainer} onPress={(e) => e.stopPropagation()}>
+        <Pressable
+          style={[styles.dialogContainer, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={(e) => e.stopPropagation()}
+        >
           <View style={styles.content}>
             {/* Header Icon Container */}
             <View style={styles.iconContainer}>
-              <Ionicons name="rocket-outline" size={32} color={Theme.colors.primary} />
+              <Ionicons name="rocket-outline" size={32} color={colors.primary} />
             </View>
 
             {/* Title & Version */}
-            <Text style={styles.title}>{title}</Text>
-            <View style={styles.versionBadge}>
-              <Text style={styles.versionText}>v{version}</Text>
+            <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+            <View style={[styles.versionBadge, { borderColor: colors.border }]}>
+              <Text style={[styles.versionText, { color: colors.textMuted }]}>v{version}</Text>
             </View>
 
             {/* Scrollable Release Notes */}
@@ -56,16 +60,16 @@ export const OTAUpdateModal = () => {
               {notes.map((note, index) => (
                 <View key={index} style={styles.noteItem}>
                   <View style={styles.bulletContainer}>
-                    <Ionicons name="checkmark-circle-outline" size={16} color={Theme.colors.primary} />
+                    <Ionicons name="checkmark-circle-outline" size={16} color={colors.primary} />
                   </View>
-                  <Text style={styles.noteText}>{note}</Text>
+                  <Text style={[styles.noteText, { color: colors.text }]}>{note}</Text>
                 </View>
               ))}
             </ScrollView>
 
             {/* Close Button */}
             <TouchableOpacity
-              style={styles.closeButton}
+              style={[styles.closeButton, { backgroundColor: colors.primary }]}
               onPress={handleClose}
               activeOpacity={0.8}
             >
@@ -91,20 +95,13 @@ const styles = StyleSheet.create({
   },
   dialogContainer: {
     width: '100%',
-    maxWidth: 320,
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.xl,
+    maxWidth: 340,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
   },
   content: {
-    padding: Theme.spacing.lg,
+    padding: 24,
     alignItems: 'center',
   },
   iconContainer: {
@@ -112,28 +109,25 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(79, 172, 254, 0.1)',
+    backgroundColor: 'rgba(79, 172, 254, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
-    color: Theme.colors.text,
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
   },
   versionBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    paddingHorizontal: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: Theme.borderRadius.sm,
+    borderRadius: 8,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   versionText: {
-    color: Theme.colors.textMuted,
     fontSize: 12,
     fontFamily: 'monospace',
     fontWeight: '600',
@@ -150,7 +144,7 @@ const styles = StyleSheet.create({
   noteItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 10,
+    marginBottom: 12,
     width: '100%',
   },
   bulletContainer: {
@@ -159,23 +153,16 @@ const styles = StyleSheet.create({
   },
   noteText: {
     flex: 1,
-    color: Theme.colors.text,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
   },
   closeButton: {
     flexDirection: 'row',
-    backgroundColor: Theme.colors.primary,
     width: '100%',
-    height: 48,
-    borderRadius: Theme.borderRadius.md,
+    minHeight: 48,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Theme.colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 3,
   },
   closeButtonText: {
     color: '#000',

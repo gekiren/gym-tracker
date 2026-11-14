@@ -9,11 +9,12 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFeatureUnlockStore } from '../src/store/featureUnlockStore';
-import { Theme } from '../src/theme';
+import { useAppTheme } from '../src/theme';
 
 const TOAST_DURATION = 2600; // 表示時間 (ms)
 
 export const PointAwardToast: React.FC = () => {
+  const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const pendingPointNotice = useFeatureUnlockStore((state) => state.pendingPointNotice);
   const clearPendingPointNotice = useFeatureUnlockStore((state) => state.clearPendingPointNotice);
@@ -96,6 +97,7 @@ export const PointAwardToast: React.FC = () => {
         style={[
           styles.toastCard,
           {
+            backgroundColor: colors.card,
             transform: [{ translateY }],
             opacity,
           },
@@ -112,19 +114,19 @@ export const PointAwardToast: React.FC = () => {
 
           <View style={styles.contentContainer}>
             <View style={styles.titleRow}>
-              <Text style={styles.titleText} numberOfLines={1}>
+              <Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1}>
                 {pendingPointNotice.title}
               </Text>
               <View style={styles.pointBadge}>
                 <Text style={styles.pointBadgeText}>+{pendingPointNotice.points}P</Text>
               </View>
             </View>
-            <Text style={styles.descText} numberOfLines={1}>
+            <Text style={[styles.descText, { color: colors.textMuted }]} numberOfLines={1}>
               {pendingPointNotice.desc || `+${pendingPointNotice.points} P を獲得しました`}
             </Text>
           </View>
 
-          <Ionicons name="close" size={18} color={Theme.colors.textMuted} style={styles.closeIcon} />
+          <Ionicons name="close" size={18} color={colors.textMuted} style={styles.closeIcon} />
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -143,22 +145,22 @@ const styles = StyleSheet.create({
   toastCard: {
     width: '100%',
     maxWidth: 440,
-    backgroundColor: '#1e2029',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 215, 0, 0.45)',
-    shadowColor: '#ffd700',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 12,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
     overflow: 'hidden',
   },
   touchableArea: {
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
   },
   iconContainer: {
     width: 38,
@@ -184,25 +186,23 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#fff',
     marginRight: 8,
   },
   pointBadge: {
     backgroundColor: 'rgba(255, 215, 0, 0.2)',
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: 'rgba(255, 215, 0, 0.4)',
   },
   pointBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: 'bold',
     color: '#ffd700',
   },
   descText: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
     marginTop: 1,
   },
   closeIcon: {

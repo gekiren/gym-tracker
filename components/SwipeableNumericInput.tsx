@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../src/theme';
+import { useAppTheme } from '../src/theme';
 import { useIsKeyboardVisible } from '../src/hooks/useKeyboardVisible';
 
 interface SwipeableNumericInputProps {
@@ -36,6 +36,10 @@ export default function SwipeableNumericInput({
   maxLength = 5,
   keyboardType = 'numeric',
 }: SwipeableNumericInputProps) {
+  const { colors } = useAppTheme();
+  const primaryColor = colors.primary;
+  const borderColor = colors.border;
+  const textColor = colors.text;
   const [isEditing, setIsEditing] = useState(false);
   const isKeyboardVisible = useIsKeyboardVisible();
   const [sel, setSel] = useState<{ start: number; end: number } | undefined>(undefined);
@@ -124,15 +128,11 @@ export default function SwipeableNumericInput({
         },
       ],
       borderColor: withTiming(
-        isDragging.value ? Theme.colors.primary : Theme.colors.border,
+        isDragging.value ? primaryColor : borderColor,
         { duration: 150 }
       ),
-      shadowColor: Theme.colors.primary,
-      shadowOpacity: withTiming(isDragging.value ? 0.3 : 0, { duration: 150 }),
-      shadowRadius: withTiming(isDragging.value ? 8 : 0, { duration: 150 }),
-      shadowOffset: { width: 0, height: 0 },
     };
-  });
+  }, [primaryColor, borderColor]);
 
   // Left Arrow style (moves slightly outward and scales based on drag)
   const leftArrowStyle = useAnimatedStyle(() => {
@@ -178,7 +178,7 @@ export default function SwipeableNumericInput({
   const valueTextStyle = useAnimatedStyle(() => {
     return {
       color: withTiming(
-        isDragging.value ? Theme.colors.primary : Theme.colors.text,
+        isDragging.value ? primaryColor : textColor,
         { duration: 150 }
       ),
       transform: [
@@ -187,16 +187,24 @@ export default function SwipeableNumericInput({
         },
       ],
     };
-  });
+  }, [primaryColor, textColor]);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, { color: colors.textMuted }]}>{label}</Text>
 
       {isEditing ? (
         <TextInput
           ref={inputRef}
-          style={[styles.input, styles.activeInput]}
+          style={[
+            styles.input,
+            {
+              backgroundColor: colors.background,
+              color: colors.text,
+              borderColor: colors.primary,
+            },
+            styles.activeInput,
+          ]}
           keyboardType={keyboardType}
           value={value}
           onChangeText={onChangeText}
@@ -214,15 +222,21 @@ export default function SwipeableNumericInput({
         />
       ) : (
         <GestureDetector gesture={gesture}>
-          <Animated.View style={[styles.dragArea, containerAnimatedStyle]}>
+          <Animated.View
+            style={[
+              styles.dragArea,
+              { backgroundColor: colors.background, borderColor: colors.border },
+              containerAnimatedStyle,
+            ]}
+          >
             {/* Keyboard Icon Indicator for direct input */}
-            <View style={{ position: 'absolute', top: 6, right: 8, opacity: 0.25 }}>
-              <Ionicons name="create-outline" size={12} color={Theme.colors.textMuted} />
+            <View style={{ position: 'absolute', top: 6, right: 8, opacity: 0.35 }}>
+              <Ionicons name="create-outline" size={12} color={colors.textMuted} />
             </View>
 
             {/* Left Indicator Arrow */}
             <Animated.View style={[styles.arrowContainer, leftArrowStyle]}>
-              <Ionicons name="chevron-back" size={24} color={Theme.colors.primary} />
+              <Ionicons name="chevron-back" size={24} color={colors.primary} />
             </Animated.View>
 
             {/* Displayed Value */}
@@ -232,7 +246,7 @@ export default function SwipeableNumericInput({
 
             {/* Right Indicator Arrow */}
             <Animated.View style={[styles.arrowContainer, rightArrowStyle]}>
-              <Ionicons name="chevron-forward" size={24} color={Theme.colors.primary} />
+              <Ionicons name="chevron-forward" size={24} color={colors.primary} />
             </Animated.View>
           </Animated.View>
         </GestureDetector>
@@ -246,32 +260,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   label: {
-    color: Theme.colors.textMuted,
     fontSize: 13,
     fontWeight: 'bold',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   input: {
-    backgroundColor: '#1A1A1A',
-    color: Theme.colors.text,
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
     paddingVertical: 12,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
     height: 58, // Fixed height to prevent layouts jumping on mode switch
   },
   activeInput: {
-    borderColor: Theme.colors.primary,
-    backgroundColor: '#222222',
+    backgroundColor: 'rgba(79, 172, 254, 0.06)',
   },
   dragArea: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
