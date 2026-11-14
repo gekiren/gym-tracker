@@ -583,7 +583,8 @@
       "copy": " (Copy)",
       "add": "Add",
       "share_sns": "Share",
-      "export_markdown": "Export as Markdown"
+      "export_markdown": "Export as Markdown",
+      "back_to_today": "Today"
     },
     "markdown": {
       "date_label": "Date",

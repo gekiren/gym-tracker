@@ -1,14 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
-import { Theme } from '../../theme';
+import { useAppTheme } from '../../theme';
 import { useLifelogStore } from '../../store/lifelogStore';
+import { HomeCard } from './HomeCard';
 
 export const WaterCard = () => {
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
 
   // Lifelog Store
   const currentDate = useLifelogStore(state => state.currentDate);
@@ -29,105 +30,72 @@ export const WaterCard = () => {
   };
 
   return (
-    <View style={styles.card}>
-      <TouchableOpacity 
-        style={styles.cardHeader}
-        activeOpacity={0.7}
-        onPress={() => router.push('/lifelog/water')}
-      >
-        <View style={[styles.iconContainer, { backgroundColor: 'rgba(0, 210, 255, 0.15)' }]}>
-          <Ionicons name="water" size={24} color="#00d2ff" />
-        </View>
-        <Text style={styles.cardTitle}>{t('ui.home.card_water') || '水分補給'}</Text>
-        <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-      </TouchableOpacity>
-
-      <View style={styles.cardBody}>
-        <View style={styles.statRow}>
-          <Text style={styles.statVal}>{daySummary?.water.amount ?? 0} <Text style={styles.statUnit}>ml</Text></Text>
-          <Text style={styles.statGoal}>/ {daySummary?.water.goal ?? 2000} ml</Text>
-        </View>
-
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBarBg}>
-            <View 
-              style={[
-                styles.progressBarFill, 
-                { 
-                  width: `${Math.min(100, daySummary?.water.percentage ?? 0)}%`,
-                  backgroundColor: '#00d2ff' 
-                }
-              ]} 
-            />
-          </View>
-          <Text style={styles.progressPercent}>{daySummary?.water.percentage ?? 0}%</Text>
-        </View>
-
-        <View style={styles.presetsRow}>
-          {waterPresets.map((preset, idx) => (
-            <TouchableOpacity 
-              key={idx}
-              style={styles.presetBtn} 
-              onPress={() => handleAddWaterAmount(preset.amount, preset.caffeine)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.presetBtnText}>
-                {preset.caffeine > 0 ? `☕${preset.amount}ml` : `${preset.amount}ml`}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+    <HomeCard
+      title={t('ui.home.card_water') || '水分補給'}
+      iconName="water"
+      iconColor="#00d2ff"
+      iconBgColor="rgba(0, 210, 255, 0.15)"
+      onHeaderPress={() => router.push('/lifelog/water')}
+    >
+      <View style={styles.statRow}>
+        <Text style={[styles.statVal, { color: colors.text }]}>
+          {daySummary?.water.amount ?? 0}{' '}
+          <Text style={[styles.statUnit, { color: colors.textMuted }]}>ml</Text>
+        </Text>
+        <Text style={[styles.statGoal, { color: colors.textMuted }]}>
+          / {daySummary?.water.goal ?? 2000} ml
+        </Text>
       </View>
-    </View>
+
+      <View style={styles.progressContainer}>
+        <View style={styles.progressBarBg}>
+          <View
+            style={[
+              styles.progressBarFill,
+              {
+                width: `${Math.min(100, daySummary?.water.percentage ?? 0)}%`,
+                backgroundColor: '#00d2ff',
+              },
+            ]}
+          />
+        </View>
+        <Text style={[styles.progressPercent, { color: colors.text }]}>
+          {daySummary?.water.percentage ?? 0}%
+        </Text>
+      </View>
+
+      <View style={styles.presetsRow}>
+        {waterPresets.map((preset, idx) => (
+          <TouchableOpacity
+            key={idx}
+            style={[styles.presetBtn, { borderColor: colors.border }]}
+            onPress={() => handleAddWaterAmount(preset.amount, preset.caffeine)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.presetBtnText, { color: colors.text }]}>
+              {preset.caffeine > 0 ? `☕ ${preset.amount}ml` : `${preset.amount}ml`}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </HomeCard>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  cardTitle: {
-    color: Theme.colors.text,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  cardBody: {
-    paddingLeft: 52,
-  },
   statRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     marginBottom: 8,
   },
   statVal: {
-    color: Theme.colors.text,
     fontSize: 28,
     fontWeight: 'bold',
   },
   statUnit: {
     fontSize: 16,
-    color: Theme.colors.textMuted,
   },
   statGoal: {
-    color: Theme.colors.textMuted,
     fontSize: 14,
     marginLeft: 8,
   },
@@ -139,7 +107,7 @@ const styles = StyleSheet.create({
   progressBarBg: {
     flex: 1,
     height: 8,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 4,
     marginRight: 12,
     overflow: 'hidden',
@@ -149,10 +117,9 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   progressPercent: {
-    color: Theme.colors.text,
     fontSize: 14,
     fontWeight: 'bold',
-    width: 45,
+    width: 48,
     textAlign: 'right',
   },
   presetsRow: {
@@ -162,15 +129,16 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   presetBtn: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    minHeight: 44,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   presetBtnText: {
-    color: Theme.colors.text,
     fontSize: 14,
     fontWeight: '500',
   },

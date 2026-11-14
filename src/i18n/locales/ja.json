@@ -580,7 +580,8 @@
       "copy": "のコピー",
       "add": "追加",
       "share_sns": "SNSにシェア",
-      "export_markdown": "Markdownで書き出し"
+      "export_markdown": "Markdownで書き出し",
+      "back_to_today": "今日に戻る"
     },
     "markdown": {
       "date_label": "日付",
