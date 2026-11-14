@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.38',
+  version: '2.3.39',
   title: {
-    ja: '🎨 ワークアウト周辺・詳細画面のUI/UX改善',
-    en: '🎨 Workout Flow & Detail Screens UI/UX Improvements',
+    ja: '📐 ルーティン作成でのスタンス設定に対応',
+    en: '📐 Stance Selection in Routine Builder',
   },
   notes: {
     ja: [
-      '種目選択・ルーティン作成・完了画面・1RM計算・種目詳細（推移グラフ／各種設定）・過去ログ詳細および編集画面をダーク／ピュアブラックテーマに完全対応しました。',
-      'カード・モーダル・入力欄の角丸と枠線、ボタンのタップ領域を統一し、視認性と操作性を向上させました。',
+      'ルーティン作成・編集画面で、セットごとにスタンス（ナロー・ワイド・カスタム等）を設定できるようになりました。',
+      '種目に設定されたデフォルトスタンスの自動反映や、セット追加時の引き継ぎにも対応しています。',
     ],
     en: [
-      'Updated exercise selection, routine builder, workout completion, 1RM calculator, exercise details/charts, and workout history detail/edit screens for full Dark and Pure Black theme support.',
-      'Unified card/modal/input corners, 1px borders, typography readability, and tap targets across these screens.',
+      'You can now set a stance (Narrow, Wide, Custom, etc.) for each set in the routine builder and editor.',
+      'Default stances from exercises are automatically applied, and newly added sets inherit the previous set\'s stance.',
     ],
   },
 };
