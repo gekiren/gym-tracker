@@ -5,7 +5,7 @@ import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-han
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { translateStance } from '../../src/i18n';
 import { TimerButton } from './TimerButton';
 import { CompactSwipeableInput } from './CompactSwipeableInput';
@@ -77,6 +77,7 @@ export function SetInputRow({
   displayFields
 }: SetInputRowProps) {
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
   const isAerobic = ex.muscle_group === '有酸素';
   const isTreadmill = isTreadmillExercise(ex.name);
 
@@ -365,10 +366,10 @@ export function SetInputRow({
       leftThreshold={40}
       rightThreshold={40}
     >
-      <View style={{ backgroundColor: Theme.colors.card }}>
+      <View style={{ backgroundColor: colors.card }}>
         <View style={[styles.row, set.is_completed && styles.rowCompleted]}>
           <View style={{ width: isTreadmill ? 40 : (isAerobic ? 44 : 32), alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            <Text style={styles.tdSet} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65}>
+            <Text style={[styles.tdSet, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65}>
               {!isTreadmill && !isAerobic && isPR ? '🏆' : ''}{set.set_number}{set.side ? `(${set.side})` : ''}
             </Text>
           </View>
@@ -379,7 +380,7 @@ export function SetInputRow({
             {/* Speed Column */}
             {set.is_completed ? (
               <View style={[styles.input, { width: 54, marginHorizontal: 2 }, styles.inputReadOnly]}>
-                <Text style={styles.inputReadOnlyText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                <Text style={[styles.inputReadOnlyText, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                   {localSpeed ? `${localSpeed}` : (set.speed != null ? `${set.speed}` : (set.prev_speed != null ? `${set.prev_speed}` : '-'))}
                 </Text>
               </View>
@@ -387,7 +388,7 @@ export function SetInputRow({
               <CompactSwipeableInput 
                 inputRef={speedInputRef}
                 panGestureRef={speedPanRef}
-                style={[styles.input, { width: 54, marginHorizontal: 2 }]} 
+                style={[styles.input, { width: 54, marginHorizontal: 2, color: colors.text }]} 
                 keyboardType="decimal-pad" 
                 step={0.1}
                 placeholder={set.prev_speed != null ? String(set.prev_speed) : "-"} 
@@ -419,7 +420,7 @@ export function SetInputRow({
             {/* Incline Column */}
             {set.is_completed ? (
               <View style={[styles.input, { width: 48, marginHorizontal: 2 }, styles.inputReadOnly]}>
-                <Text style={styles.inputReadOnlyText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                <Text style={[styles.inputReadOnlyText, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                   {localIncline ? `${localIncline}%` : (set.incline != null ? `${set.incline}%` : (set.prev_incline != null ? `${set.prev_incline}%` : '-'))}
                 </Text>
               </View>
@@ -427,7 +428,7 @@ export function SetInputRow({
               <CompactSwipeableInput 
                 inputRef={inclineInputRef}
                 panGestureRef={inclinePanRef}
-                style={[styles.input, { width: 48, marginHorizontal: 2 }]} 
+                style={[styles.input, { width: 48, marginHorizontal: 2, color: colors.text }]} 
                 keyboardType="decimal-pad" 
                 step={1}
                 placeholder={set.prev_incline != null ? `${set.prev_incline}%` : "-"} 
@@ -458,7 +459,7 @@ export function SetInputRow({
             {/* Time / Stopwatch Column */}
             <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 2 }}>
               {set.is_completed ? (
-                <Text style={{ color: Theme.colors.success, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 }}>
+                <Text style={{ color: colors.success, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 }}>
                   {formatTimerDisplay(set.work_seconds ?? swElapsed)}
                 </Text>
               ) : (
@@ -471,11 +472,11 @@ export function SetInputRow({
                   >
                     {timerMode === 'countdown' ? (
                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                        <Ionicons pointerEvents="none" name="hourglass-outline" size={12} color={Theme.colors.primary} style={{ marginRight: 2 }} />
+                        <Ionicons pointerEvents="none" name="hourglass-outline" size={12} color={colors.primary} style={{ marginRight: 2 }} />
                         <Text
                           pointerEvents="none"
                           numberOfLines={1}
-                          style={{ color: Theme.colors.primary, fontSize: 13, fontWeight: 'bold', letterSpacing: 0.3 }}
+                          style={{ color: colors.primary, fontSize: 13, fontWeight: 'bold', letterSpacing: 0.3 }}
                         >
                           {formatTimerDisplay(countdownRemaining)}
                         </Text>
@@ -487,7 +488,7 @@ export function SetInputRow({
                         style={{
                           color: (!swRunning && swElapsed === 0 && set.work_seconds == null && set.prev_work_seconds != null)
                             ? 'rgba(255,255,255,0.4)'
-                            : Theme.colors.primary,
+                            : colors.primary,
                           fontSize: 14,
                           fontWeight: 'bold',
                           letterSpacing: 0.5,
@@ -503,7 +504,7 @@ export function SetInputRow({
                     disallowInterruption={true}
                     activeOpacity={0.7}
                     style={{
-                      backgroundColor: swRunning ? Theme.colors.danger : Theme.colors.success,
+                      backgroundColor: swRunning ? colors.danger : colors.success,
                       width: 28,
                       height: 28,
                       borderRadius: 14,
@@ -572,7 +573,7 @@ export function SetInputRow({
                         }
                       }}
                     >
-                      <Ionicons pointerEvents="none" name="refresh" size={15} color={Theme.colors.textMuted} />
+                      <Ionicons pointerEvents="none" name="refresh" size={15} color={colors.textMuted} />
                     </GHTouchableOpacity>
                   )}
                 </View>
@@ -583,19 +584,19 @@ export function SetInputRow({
           /* 有酸素モード: ストップウォッチ表示 */
           set.is_completed ? (
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 }}>
-              <Text style={{ color: Theme.colors.success, fontSize: 22, fontWeight: 'bold', letterSpacing: 2 }}>
+              <Text style={{ color: colors.success, fontSize: 22, fontWeight: 'bold', letterSpacing: 2 }}>
                 {formatAerobicTime(set.work_seconds ?? swElapsed)}
               </Text>
             </View>
           ) : (
             <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-              <Text style={{ color: Theme.colors.primary, fontSize: 22, fontWeight: 'bold', letterSpacing: 2, minWidth: 60, textAlign: 'center' }}>
+              <Text style={{ color: colors.primary, fontSize: 22, fontWeight: 'bold', letterSpacing: 2, minWidth: 60, textAlign: 'center' }}>
                 {formatAerobicTime(swElapsed)}
               </Text>
               <GHTouchableOpacity
                 disallowInterruption={true}
                 activeOpacity={0.7}
-                style={{ backgroundColor: swRunning ? Theme.colors.danger : Theme.colors.success, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 }}
+                style={{ backgroundColor: swRunning ? colors.danger : colors.success, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 }}
                 onPress={() => {
                   if (!swRunning) {
                     const now = Date.now() - swElapsed * 1000;
@@ -618,7 +619,7 @@ export function SetInputRow({
                   hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
                   onPress={() => { setSwElapsed(0); setSwStartTs(null); updateSet(ex.id, set.id, { work_seconds: null }); }}
                 >
-                  <Ionicons pointerEvents="none" name="refresh" size={18} color={Theme.colors.textMuted} />
+                  <Ionicons pointerEvents="none" name="refresh" size={18} color={colors.textMuted} />
                 </GHTouchableOpacity>
               )}
             </View>
@@ -627,17 +628,17 @@ export function SetInputRow({
           <>
             {/* Weight Column */}
             {ex.name === 'プランク' ? (
-              <View style={[styles.input, styles.inputReadOnly, { backgroundColor: '#1e1e1e' }]}>
-                <Text style={[styles.inputReadOnlyText, { color: Theme.colors.textMuted }]}>{t('equipment.自重')}</Text>
+              <View style={[styles.input, styles.inputReadOnly, { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border }]}>
+                <Text style={[styles.inputReadOnlyText, { color: colors.textMuted }]}>{t('equipment.自重')}</Text>
               </View>
             ) : set.is_completed ? (
               <View style={[styles.input, styles.inputReadOnly]}>
-                <Text style={styles.inputReadOnlyText}>{localWeight || (set.prev_weight ? String(set.prev_weight) : '-')}</Text>
+                <Text style={[styles.inputReadOnlyText, { color: colors.text }]}>{localWeight || (set.prev_weight ? String(set.prev_weight) : '-')}</Text>
               </View>
             ) : (
               <CompactSwipeableInput 
                 panGestureRef={weightPanRef}
-                style={styles.input} 
+                style={[styles.input, { color: colors.text }]} 
                 keyboardType="decimal-pad" 
                 step={ex.weight_step ?? 2.5}
                 placeholder={set.prev_weight ? String(set.prev_weight) : "-"} 
@@ -670,7 +671,7 @@ export function SetInputRow({
             {ex.name === 'プランク' ? (
               set.is_completed ? (
                 <View style={[styles.input, { width: 36, marginHorizontal: 2 }, styles.inputReadOnly]}>
-                  <Text style={styles.inputReadOnlyText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                  <Text style={[styles.inputReadOnlyText, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                     {localReps ? `${localReps}${t('ui.active_workout.seconds_unit')}` : (set.prev_reps ? `${set.prev_reps}${t('ui.active_workout.seconds_unit')}` : '-')}
                   </Text>
                 </View>
@@ -678,7 +679,7 @@ export function SetInputRow({
                 <CompactSwipeableInput 
                   inputRef={repsInputRef}
                   panGestureRef={repsPanRef}
-                  style={[styles.input, { width: 36, marginHorizontal: 2 }]} 
+                  style={[styles.input, { width: 36, marginHorizontal: 2, color: colors.text }]} 
                   keyboardType="numeric" 
                   step={1}
                   placeholder={set.prev_reps ? `${set.prev_reps}${t('ui.active_workout.seconds_unit')}` : t('ui.active_workout.seconds_unit')} 
@@ -707,7 +708,7 @@ export function SetInputRow({
               )
             ) : set.is_completed ? (
               <View style={[styles.input, { width: 36, marginHorizontal: 2 }, styles.inputReadOnly]}>
-                <Text style={styles.inputReadOnlyText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                <Text style={[styles.inputReadOnlyText, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                   {localReps || (set.prev_reps ? String(set.prev_reps) : '-')}
                 </Text>
               </View>
@@ -715,7 +716,7 @@ export function SetInputRow({
               <CompactSwipeableInput 
                 inputRef={repsInputRef}
                 panGestureRef={repsPanRef}
-                style={[styles.input, { width: 36, marginHorizontal: 2 }]} 
+                style={[styles.input, { width: 36, marginHorizontal: 2, color: colors.text }]} 
                 keyboardType="numeric" 
                 step={1}
                 placeholder={set.prev_reps ? String(set.prev_reps) : "-"} 
@@ -754,7 +755,7 @@ export function SetInputRow({
               ex.name === 'プランク' ? (
                 set.is_completed ? (
                   <View style={[styles.input, { width: 32, marginHorizontal: 2 }, styles.inputReadOnly]}>
-                    <Ionicons name="timer-outline" size={18} color={Theme.colors.textMuted} />
+                    <Ionicons name="timer-outline" size={18} color={colors.textMuted} />
                   </View>
                 ) : (
                   <TimerButton 
@@ -766,7 +767,7 @@ export function SetInputRow({
                 )
               ) : set.is_completed ? (
                 <View style={[styles.input, { width: 32, marginHorizontal: 2 }, styles.inputReadOnly]}>
-                  <Text style={styles.inputReadOnlyText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                  <Text style={[styles.inputReadOnlyText, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                     {localRpe || '-'}
                   </Text>
                 </View>
@@ -774,7 +775,7 @@ export function SetInputRow({
                 <CompactSwipeableInput 
                   inputRef={rpeInputRef}
                   panGestureRef={rpePanRef}
-                  style={[styles.input, { width: 32, marginHorizontal: 2 }]} 
+                  style={[styles.input, { width: 32, marginHorizontal: 2, color: colors.text }]} 
                   keyboardType="numeric" 
                   step={0.5}
                   maxValue={10}
@@ -830,7 +831,7 @@ export function SetInputRow({
                           <Text
                             style={[
                               styles.stackStanceText,
-                              !(set.stance || set.variation) && { color: Theme.colors.textMuted }
+                              { color: (set.stance || set.variation) ? colors.primary : colors.textMuted }
                             ]}
                             numberOfLines={1}
                             adjustsFontSizeToFit
@@ -854,7 +855,7 @@ export function SetInputRow({
                               style={[
                                 styles.stackStanceText,
                                 {
-                                  color: (set.stance || set.variation) ? Theme.colors.primary : Theme.colors.textMuted,
+                                  color: (set.stance || set.variation) ? colors.primary : colors.textMuted,
                                   textDecorationLine: (set.stance || set.variation) ? 'none' : 'underline'
                                 }
                               ]}
@@ -874,7 +875,7 @@ export function SetInputRow({
                       <View style={styles.metaTimeCol}>
                         {restTimeStr ? (
                           <Text
-                            style={styles.stackTimeText}
+                            style={[styles.stackTimeText, { color: colors.textMuted }]}
                             numberOfLines={1}
                             adjustsFontSizeToFit
                             minimumFontScale={0.7}
@@ -906,7 +907,7 @@ export function SetInputRow({
                       <View style={styles.metaTimeCol}>
                         {timeTakenStr ? (
                           <Text
-                            style={[styles.stackTimeText, { color: Theme.colors.success }]}
+                            style={[styles.stackTimeText, { color: colors.success }]}
                             numberOfLines={1}
                             adjustsFontSizeToFit
                             minimumFontScale={0.7}
@@ -926,7 +927,11 @@ export function SetInputRow({
         {/* Check Button & RM Display */}
         <View style={{ width: 30, alignItems: 'center' }}>
           <GHTouchableOpacity
-            style={[styles.checkBtn, set.is_completed && styles.checkBtnActive]}
+            style={[
+              styles.checkBtn,
+              set.is_completed && { backgroundColor: colors.success },
+            ]}
+            hitSlop={{ top: 8, bottom: 8, left: 6, right: 8 }}
             onPress={() => {
               Keyboard.dismiss();
               if ((isAerobic || isTreadmill) && !set.is_completed) {
@@ -974,7 +979,7 @@ export function SetInputRow({
               toggleSetComplete(ex.id, set.id);
             }}
           >
-            <Ionicons name="checkmark" size={15} color={set.is_completed ? '#fff' : Theme.colors.textMuted} />
+            <Ionicons name="checkmark" size={16} color={set.is_completed ? '#fff' : colors.textMuted} />
           </GHTouchableOpacity>
         </View>
       </View>
@@ -982,25 +987,25 @@ export function SetInputRow({
       {/* 手動時間入力モーダル */}
       <Modal visible={timeModalVisible} transparent animationType="fade" onRequestClose={() => setTimeModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{t('ui.active_workout.manual_time_prompt') || '走行時間の手動設定'}</Text>
+          <View style={[styles.modalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('ui.active_workout.manual_time_prompt') || '走行時間の手動設定'}</Text>
             
             {/* モード切替タブ（トレッドミルのみ） */}
             {isTreadmill && (
-              <View style={styles.timerModeTabContainer}>
+              <View style={[styles.timerModeTabContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
                 <TouchableOpacity
-                  style={[styles.timerModeTab, modalTimerMode === 'countup' && styles.timerModeTabActive]}
+                  style={[styles.timerModeTab, modalTimerMode === 'countup' && { backgroundColor: colors.primary }]}
                   onPress={() => setModalTimerMode('countup')}
                 >
-                  <Text style={[styles.timerModeTabText, modalTimerMode === 'countup' && styles.timerModeTabTextActive]}>
+                  <Text style={[styles.timerModeTabText, { color: colors.textMuted }, modalTimerMode === 'countup' && styles.timerModeTabTextActive]}>
                     {t('ui.active_workout.timer_mode_countup') || '⏱️ カウントアップ'}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.timerModeTab, modalTimerMode === 'countdown' && styles.timerModeTabActive]}
+                  style={[styles.timerModeTab, modalTimerMode === 'countdown' && { backgroundColor: colors.primary }]}
                   onPress={() => setModalTimerMode('countdown')}
                 >
-                  <Text style={[styles.timerModeTabText, modalTimerMode === 'countdown' && styles.timerModeTabTextActive]}>
+                  <Text style={[styles.timerModeTabText, { color: colors.textMuted }, modalTimerMode === 'countdown' && styles.timerModeTabTextActive]}>
                     {t('ui.active_workout.timer_mode_countdown') || '⏳ カウントダウン'}
                   </Text>
                 </TouchableOpacity>
@@ -1009,7 +1014,7 @@ export function SetInputRow({
 
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 16 }}>
               <TextInput
-                style={styles.timeModalInput}
+                style={[styles.timeModalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
                 keyboardType="numeric"
                 value={manualMinutes}
                 onChangeText={setManualMinutes}
@@ -1017,16 +1022,16 @@ export function SetInputRow({
                 placeholderTextColor="rgba(255,255,255,0.3)"
                 autoFocus
               />
-              <Text style={{ color: Theme.colors.text, fontSize: 16, marginHorizontal: 6 }}>{t('ui.active_workout.minutes_unit') || '分'}</Text>
+              <Text style={{ color: colors.text, fontSize: 16, marginHorizontal: 6 }}>{t('ui.active_workout.minutes_unit') || '分'}</Text>
               <TextInput
-                style={styles.timeModalInput}
+                style={[styles.timeModalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
                 keyboardType="numeric"
                 value={manualSeconds}
                 onChangeText={setManualSeconds}
                 placeholder="00"
                 placeholderTextColor="rgba(255,255,255,0.3)"
               />
-              <Text style={{ color: Theme.colors.text, fontSize: 16, marginLeft: 6 }}>{t('ui.active_workout.seconds_unit') || '秒'}</Text>
+              <Text style={{ color: colors.text, fontSize: 16, marginLeft: 6 }}>{t('ui.active_workout.seconds_unit') || '秒'}</Text>
             </View>
 
             {/* クイック分選択ボタン */}
@@ -1034,7 +1039,7 @@ export function SetInputRow({
               {[5, 10, 15, 20, 30].map(m => (
                 <TouchableOpacity
                   key={m}
-                  style={styles.quickTimeBtn}
+                  style={[styles.quickTimeBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
                   onPress={() => {
                     setManualMinutes(String(m));
                     setManualSeconds('0');
@@ -1043,27 +1048,27 @@ export function SetInputRow({
                     }
                   }}
                 >
-                  <Text style={styles.quickTimeBtnText}>{m}分</Text>
+                  <Text style={[styles.quickTimeBtnText, { color: colors.primary }]}>{m}分</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
               <TouchableOpacity
-                style={[styles.modalBtn, { backgroundColor: '#333' }]}
+                style={[styles.modalBtn, { backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1 }]}
                 onPress={() => setTimeModalVisible(false)}
               >
-                <Text style={{ color: Theme.colors.textMuted, fontWeight: 'bold' }}>{t('ui.common.cancel')}</Text>
+                <Text style={{ color: colors.text, fontWeight: '600' }}>{t('ui.common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalBtn, { backgroundColor: Theme.colors.primary }]}
+                style={[styles.modalBtn, { backgroundColor: colors.primary }]}
                 onPress={() => {
                   const m = parseInt(manualMinutes, 10) || 0;
                   const s = parseInt(manualSeconds, 10) || 0;
                   handleSaveManualTime(m, s, modalTimerMode);
                 }}
               >
-                <Text style={{ color: '#000', fontWeight: 'bold' }}>{t('ui.common.confirm') || '確定'}</Text>
+                <Text style={{ color: '#ffffff', fontWeight: 'bold' }}>{t('ui.common.confirm') || '確定'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1077,14 +1082,13 @@ export function SetInputRow({
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, paddingHorizontal: 4 },
   rowCompleted: { opacity: 0.7 },
-  tdSet: { width: '100%', color: Theme.colors.text, textAlign: 'center', fontSize: 14, fontWeight: '500' },
+  tdSet: { width: '100%', textAlign: 'center', fontSize: 14, fontWeight: '500' },
   input: {
-    backgroundColor: '#2a2a2a',
-    color: Theme.colors.text,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     width: 60,
     height: 30,
     marginHorizontal: 2,
-    borderRadius: 4,
+    borderRadius: 6,
     paddingVertical: 0,
     paddingTop: 0,
     paddingBottom: 0,
@@ -1097,19 +1101,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   inputReadOnly: { opacity: 0.7, justifyContent: 'center', alignItems: 'center' },
-  inputReadOnlyText: { color: Theme.colors.text, fontSize: 15, textAlign: 'center', textAlignVertical: 'center', includeFontPadding: false },
+  inputReadOnlyText: { fontSize: 15, textAlign: 'center', textAlignVertical: 'center', includeFontPadding: false },
   timeInputBtn: {
     width: 68,
     height: 30,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 6,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 2,
   },
-  checkBtn: { width: 28, height: 28, backgroundColor: '#333', borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
-  checkBtnActive: { backgroundColor: Theme.colors.success },
+  checkBtn: { width: 28, height: 28, backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   deleteAction: {
     backgroundColor: '#ff4444',
     justifyContent: 'center',
@@ -1119,75 +1122,74 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.65)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalCard: {
-    backgroundColor: '#222',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 20,
     width: '100%',
     maxWidth: 340,
     borderWidth: 1,
-    borderColor: '#333',
   },
   modalTitle: {
-    color: Theme.colors.text,
     fontSize: 17,
     fontWeight: 'bold',
     textAlign: 'center',
   },
   timeModalInput: {
-    backgroundColor: '#333',
-    color: Theme.colors.text,
     fontSize: 22,
     fontWeight: 'bold',
-    width: 65,
+    width: 68,
     height: 44,
     borderRadius: 8,
+    borderWidth: 1,
     textAlign: 'center',
   },
   quickTimeBtn: {
-    backgroundColor: '#333',
-    paddingHorizontal: 10,
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   quickTimeBtnText: {
-    color: Theme.colors.primary,
     fontSize: 13,
     fontWeight: '600',
   },
   modalBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 12,
   },
   timerModeTabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#1f1f1f',
     borderRadius: 8,
-    padding: 3,
+    borderWidth: 1,
+    padding: 4,
+    marginTop: 12,
     marginBottom: 8,
   },
   timerModeTab: {
     flex: 1,
+    minHeight: 36,
+    justifyContent: 'center',
     paddingVertical: 8,
     alignItems: 'center',
     borderRadius: 6,
   },
-  timerModeTabActive: {
-    backgroundColor: Theme.colors.primary,
-  },
   timerModeTabText: {
-    color: Theme.colors.textMuted,
     fontSize: 13,
     fontWeight: '600',
   },
   timerModeTabTextActive: {
-    color: '#000',
+    color: '#ffffff',
     fontWeight: 'bold',
   },
   metaStackCell: {
@@ -1218,7 +1220,6 @@ const styles = StyleSheet.create({
   },
   stackStanceText: {
     fontSize: 10,
-    color: Theme.colors.primary,
     fontWeight: '500',
     lineHeight: 13,
     maxWidth: '100%',
@@ -1234,7 +1235,6 @@ const styles = StyleSheet.create({
     width: '100%',
     textAlign: 'left',
     fontSize: 9.5,
-    color: Theme.colors.textMuted,
     lineHeight: 13,
   },
 });
