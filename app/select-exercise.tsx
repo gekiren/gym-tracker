@@ -114,7 +114,14 @@ export default function SelectExerciseScreen() {
 
   const handleSelect = async (ex: Exercise) => {
     if (mode === 'routine') {
-      addDraftExercise({ id: ex.id, name: ex.name });
+      addDraftExercise({
+        id: ex.id,
+        name: ex.name,
+        is_unilateral: ex.is_unilateral,
+        equipment: ex.equipment,
+        default_stance: ex.default_stance,
+        default_variation: ex.default_variation,
+      });
       router.back();
       return;
     }

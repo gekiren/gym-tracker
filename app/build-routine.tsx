@@ -1,16 +1,17 @@
 import { View, Text, StyleSheet, TouchableOpacity, Pressable, ScrollView, TextInput, Alert, Modal } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../src/theme';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useRoutineDraftStore } from '../src/store/routineDraftStore';
-import { addRoutine, updateRoutine, getRoutines, loadFullWorkoutData, getDB } from '../src/db/database';
+import { addRoutine, updateRoutine, getRoutines, loadFullWorkoutData, getDB, saveSetting } from '../src/db/database';
 import { useTranslation } from 'react-i18next';
-import { translateExercise } from '../src/i18n';
+import { translateExercise, translateStance } from '../src/i18n';
 import { useShallow } from 'zustand/react/shallow';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { isTreadmillExercise } from '../src/utils/exerciseUtils';
+import { StanceModal } from '../components/active-workout/StanceModal';
 
 export default function BuildRoutineScreen() {
   const { id: routineIdString } = useLocalSearchParams<{ id: string }>();
@@ -34,7 +35,48 @@ export default function BuildRoutineScreen() {
 
   const isPremium = useSettingsStore(state => state.settings.isPremium);
   const isEarly = useSettingsStore(state => state.settings.isEarlyAdopter);
+  const customStances = useSettingsStore(state => state.settings.customStances);
   const isBasic = !isPremium && !isEarly;
+  const presetStances = customStances || [];
+
+  const [stanceModalVisible, setStanceModalVisible] = useState(false);
+  const [stanceModalTarget, setStanceModalTarget] = useState<{
+    type: 'set';
+    exId: string;
+    setId?: string;
+    currentValue: string | null;
+  } | null>(null);
+
+  const handleOpenStanceModal = useCallback((exIdx: number, setIdx: number, currentValue: string | null) => {
+    setStanceModalTarget({
+      type: 'set',
+      exId: String(exIdx),
+      setId: String(setIdx),
+      currentValue,
+    });
+    setStanceModalVisible(true);
+  }, []);
+
+  const handleSelectStance = useCallback((val: string | null) => {
+    if (stanceModalTarget?.type === 'set' && stanceModalTarget.setId !== undefined) {
+      updateDraftSet(Number(stanceModalTarget.exId), Number(stanceModalTarget.setId), {
+        stance: val,
+        variation: val,
+      });
+    }
+  }, [stanceModalTarget, updateDraftSet]);
+
+  const handleAddCustomStance = useCallback((val: string) => {
+    useSettingsStore.getState().addCustomStance(val);
+    const updatedStances = Array.from(new Set([...(customStances || []), val]));
+    saveSetting('custom_stances', JSON.stringify(updatedStances));
+  }, [customStances]);
+
+  const handleRemoveCustomStance = useCallback(async (val: string) => {
+    const next = (customStances || []).filter((s: string) => s !== val);
+    useSettingsStore.getState().removeCustomStance(val);
+    await saveSetting('custom_stances', JSON.stringify(next));
+  }, [customStances]);
 
   const handleRestrictedFeatureAlert = () => {
     Alert.alert(
@@ -348,14 +390,15 @@ export default function BuildRoutineScreen() {
                 {/* セットの一覧 */}
                 <View style={styles.setsContainer}>
                   <View style={styles.setsHeaderRow}>
-                    <Text style={[styles.setsHeaderTh, { width: 50, color: colors.textMuted }]}>{t('ui.build_routine.set_label')}</Text>
+                    <Text style={[styles.setsHeaderTh, { width: 34, color: colors.textMuted }]}>{t('ui.build_routine.set_label')}</Text>
+                    <Text style={[styles.setsHeaderTh, { width: 82, color: colors.textMuted }]}>{t('ui.active_workout.stance_label')}</Text>
                     <Text style={[styles.setsHeaderTh, { flex: 1, color: colors.textMuted }]}>
                       {isTreadmillExercise(ex.name) ? (t('ui.build_routine.speed_placeholder') || '速度 (km/h)') : t('ui.build_routine.weight_placeholder')}
                     </Text>
                     <Text style={[styles.setsHeaderTh, { flex: 1, color: colors.textMuted }]}>
                       {isTreadmillExercise(ex.name) ? (t('ui.build_routine.incline_placeholder') || '傾斜 (%)') : t('ui.build_routine.reps_placeholder')}
                     </Text>
-                    <Text style={[styles.setsHeaderTh, { width: 40 }]}></Text>
+                    <Text style={[styles.setsHeaderTh, { width: 34 }]}></Text>
                   </View>
 
                   {ex.sets.map((set: any, setIdx: number) => (
@@ -367,6 +410,7 @@ export default function BuildRoutineScreen() {
                       isTreadmill={isTreadmillExercise(ex.name)}
                       updateDraftSet={updateDraftSet}
                       removeDraftSet={removeDraftSet}
+                      onOpenStanceModal={handleOpenStanceModal}
                       setsCount={ex.sets.length}
                       t={t}
                     />
@@ -465,6 +509,16 @@ export default function BuildRoutineScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <StanceModal
+        visible={stanceModalVisible}
+        target={stanceModalTarget}
+        onClose={() => setStanceModalVisible(false)}
+        presetStances={presetStances}
+        onSelectStance={handleSelectStance}
+        onAddCustomStance={handleAddCustomStance}
+        onRemoveCustomStance={handleRemoveCustomStance}
+      />
     </View>
   );
 }
@@ -491,8 +545,10 @@ const styles = StyleSheet.create({
   setsHeaderTh: { fontSize: 13, fontWeight: '600', textAlign: 'center' },
   setRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, paddingHorizontal: 4 },
   setNumberText: { fontSize: 14, fontWeight: '600' },
-  setInput: { flex: 1, marginHorizontal: 4, borderRadius: 8, borderWidth: 1, minHeight: 38, paddingVertical: 6, paddingHorizontal: 12, textAlign: 'center', fontSize: 15 },
-  deleteSetBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  stanceBtn: { width: 82, minHeight: 38, marginHorizontal: 2, borderRadius: 8, borderWidth: 1, paddingHorizontal: 6, justifyContent: 'center', alignItems: 'center' },
+  stanceBtnText: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
+  setInput: { flex: 1, marginHorizontal: 3, borderRadius: 8, borderWidth: 1, minHeight: 38, paddingVertical: 6, paddingHorizontal: 6, textAlign: 'center', fontSize: 15 },
+  deleteSetBtn: { width: 34, height: 38, alignItems: 'center', justifyContent: 'center' },
   addSetRowBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 8, minHeight: 44, paddingVertical: 8 },
   addSetRowBtnText: { fontSize: 14, fontWeight: '600' },
   addExerciseBtn: { backgroundColor: 'rgba(79, 172, 254, 0.1)', minHeight: 48, paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginVertical: 24, borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.3)' },
@@ -519,13 +575,14 @@ const styles = StyleSheet.create({
   modalListItemSubtext: { fontSize: 12 }
 });
 
-function RoutineSetRow({ exIdx, setIdx, set, isTreadmill, updateDraftSet, removeDraftSet, setsCount, t }: {
+function RoutineSetRow({ exIdx, setIdx, set, isTreadmill, updateDraftSet, removeDraftSet, onOpenStanceModal, setsCount, t }: {
   exIdx: number;
   setIdx: number;
   set: any;
   isTreadmill?: boolean;
   updateDraftSet: (exIdx: number, setIdx: number, changes: any) => void;
   removeDraftSet: (exIdx: number, setIdx: number) => void;
+  onOpenStanceModal: (exIdx: number, setIdx: number, currentValue: string | null) => void;
   setsCount: number;
   t: any;
 }) {
@@ -610,11 +667,37 @@ function RoutineSetRow({ exIdx, setIdx, set, isTreadmill, updateDraftSet, remove
     }
   };
 
+  const currentStance = set.stance || set.variation || null;
+
   return (
     <View style={styles.setRow}>
-      <View style={{ width: 50, alignItems: 'center' }}>
+      <View style={{ width: 34, alignItems: 'center' }}>
         <Text style={[styles.setNumberText, { color: colors.text }]}>{set.set_number}</Text>
       </View>
+
+      <TouchableOpacity
+        style={[
+          styles.stanceBtn,
+          {
+            backgroundColor: colors.background,
+            borderColor: currentStance ? colors.primary : colors.border,
+          },
+        ]}
+        onPress={() => onOpenStanceModal(exIdx, setIdx, currentStance)}
+        hitSlop={{ top: 4, bottom: 4, left: 2, right: 2 }}
+      >
+        <Text
+          style={[
+            styles.stanceBtnText,
+            { color: currentStance ? colors.primary : colors.textMuted },
+          ]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.75}
+        >
+          {currentStance ? translateStance(currentStance) : t('ui.active_workout.stance_standard')}
+        </Text>
+      </TouchableOpacity>
 
       {isTreadmill ? (
         <>
