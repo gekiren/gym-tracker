@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.30',
+  version: '2.3.31',
   title: {
-    ja: '✨ セット行のスタンス・トロフィー・時間表示のレイアウト改善',
-    en: '✨ Improved Set Row Stance, Trophy, and Timer Layout',
+    ja: '✨ セット行の入力幅スリム化とタイム列の整列改善',
+    en: '✨ Slimmer Reps/RPE Inputs & Aligned Timer Column',
   },
   notes: {
     ja: [
-      'スタンス選択時は「スタンス」のラベルを省略してスタンス名のみをシンプルに表示し、未選択時は「スタンス」と表示するように改善しました。',
-      '自己ベスト更新時のトロフィー（🏆）をセット番号の左側に移動し、1RMや休憩・計測時間が記録チェックボタンと重ならないよう自動縮小・レイアウト調整を行いました。',
+      '回数・RPEの入力枠を2桁表示に合わせたスリムな横幅に調整し、情報表示エリアを広げました。',
+      '休憩時間（☕）を上段のスタンスと同じ行へ移動し、下段のセットタイム（⏱️）と左端を揃えたタイム列として見やすく整列しました。',
     ],
     en: [
-      'Simplified stance display to show only the stance name when selected, and "Stance" when unselected.',
-      'Moved the PR trophy (🏆) to the left of the set number and adjusted the layout with auto-scaling so 1RM and rest/work timers never overlap the check button.',
+      'Slimmed down the Reps and RPE input widths to fit 2-digit numbers cleanly, giving more room to set details.',
+      'Moved rest time (☕) onto the same row as stance and left-aligned it with set work time (⏱️) in a clean column.',
     ],
   },
 };

@@ -339,6 +339,7 @@ export function SetInputRow({
       timeTakenStr = `⏱️${fmt}`;
     }
   }
+  const hasAnyTime = !!(restTimeStr || timeTakenStr);
 
   const handleDeleteSet = () => {
     if (set.is_completed) {
@@ -668,14 +669,16 @@ export function SetInputRow({
             {/* Reps Column */}
             {ex.name === 'プランク' ? (
               set.is_completed ? (
-                <View style={[styles.input, { width: 44, marginHorizontal: 2 }, styles.inputReadOnly]}>
-                  <Text style={styles.inputReadOnlyText}>{localReps ? `${localReps}${t('ui.active_workout.seconds_unit')}` : (set.prev_reps ? `${set.prev_reps}${t('ui.active_workout.seconds_unit')}` : '-')}</Text>
+                <View style={[styles.input, { width: 36, marginHorizontal: 2 }, styles.inputReadOnly]}>
+                  <Text style={styles.inputReadOnlyText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                    {localReps ? `${localReps}${t('ui.active_workout.seconds_unit')}` : (set.prev_reps ? `${set.prev_reps}${t('ui.active_workout.seconds_unit')}` : '-')}
+                  </Text>
                 </View>
               ) : (
                 <CompactSwipeableInput 
                   inputRef={repsInputRef}
                   panGestureRef={repsPanRef}
-                  style={[styles.input, { width: 44, marginHorizontal: 2 }]} 
+                  style={[styles.input, { width: 36, marginHorizontal: 2 }]} 
                   keyboardType="numeric" 
                   step={1}
                   placeholder={set.prev_reps ? `${set.prev_reps}${t('ui.active_workout.seconds_unit')}` : t('ui.active_workout.seconds_unit')} 
@@ -703,14 +706,16 @@ export function SetInputRow({
                 />
               )
             ) : set.is_completed ? (
-              <View style={[styles.input, { width: 44, marginHorizontal: 2 }, styles.inputReadOnly]}>
-                <Text style={styles.inputReadOnlyText}>{localReps || (set.prev_reps ? String(set.prev_reps) : '-')}</Text>
+              <View style={[styles.input, { width: 36, marginHorizontal: 2 }, styles.inputReadOnly]}>
+                <Text style={styles.inputReadOnlyText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                  {localReps || (set.prev_reps ? String(set.prev_reps) : '-')}
+                </Text>
               </View>
             ) : (
               <CompactSwipeableInput 
                 inputRef={repsInputRef}
                 panGestureRef={repsPanRef}
-                style={[styles.input, { width: 44, marginHorizontal: 2 }]} 
+                style={[styles.input, { width: 36, marginHorizontal: 2 }]} 
                 keyboardType="numeric" 
                 step={1}
                 placeholder={set.prev_reps ? String(set.prev_reps) : "-"} 
@@ -748,7 +753,7 @@ export function SetInputRow({
             {displayFields?.showRpe !== false ? (
               ex.name === 'プランク' ? (
                 set.is_completed ? (
-                  <View style={[styles.input, { width: 38, marginHorizontal: 2 }, styles.inputReadOnly]}>
+                  <View style={[styles.input, { width: 32, marginHorizontal: 2 }, styles.inputReadOnly]}>
                     <Ionicons name="timer-outline" size={18} color={Theme.colors.textMuted} />
                   </View>
                 ) : (
@@ -760,14 +765,16 @@ export function SetInputRow({
                   />
                 )
               ) : set.is_completed ? (
-                <View style={[styles.input, { width: 38, marginHorizontal: 2 }, styles.inputReadOnly]}>
-                  <Text style={styles.inputReadOnlyText}>{localRpe || '-'}</Text>
+                <View style={[styles.input, { width: 32, marginHorizontal: 2 }, styles.inputReadOnly]}>
+                  <Text style={styles.inputReadOnlyText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                    {localRpe || '-'}
+                  </Text>
                 </View>
               ) : (
                 <CompactSwipeableInput 
                   inputRef={rpeInputRef}
                   panGestureRef={rpePanRef}
-                  style={[styles.input, { width: 38, marginHorizontal: 2 }]} 
+                  style={[styles.input, { width: 32, marginHorizontal: 2 }]} 
                   keyboardType="numeric" 
                   step={0.5}
                   maxValue={10}
@@ -811,79 +818,105 @@ export function SetInputRow({
               )
             ) : null}
 
-            {/* Stance & 1RM / PR Column (案B: マイクロ2段スタック) */}
+            {/* Stance & 1RM / Timer Column (案B: マイクロ2段スタック) */}
             {(displayFields?.showStance !== false || displayFields?.show1RM !== false) && (
               <View style={styles.metaStackCell}>
-                {/* 上段: スタンス */}
-                {displayFields?.showStance !== false ? (
-                  set.is_completed ? (
-                    <Text
-                      style={[
-                        styles.stackStanceText,
-                        !(set.stance || set.variation) && { color: Theme.colors.textMuted }
-                      ]}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
-                      minimumFontScale={0.75}
-                    >
-                      {(set.stance || set.variation)
-                        ? translateStance(set.stance || set.variation)
-                        : '-'}
-                    </Text>
-                  ) : (
-                    <GHTouchableOpacity
-                      style={{ maxWidth: '100%' }}
-                      onPress={() => {
-                        const curStance = set.stance || set.variation || null;
-                        setStanceModalTarget({ type: 'set', exId: ex.id, setId: set.id, currentValue: curStance });
-                        setStanceModalVisible(true);
-                      }}
-                      hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                    >
-                      <Text
-                        style={[
-                          styles.stackStanceText,
-                          {
-                            color: (set.stance || set.variation) ? Theme.colors.primary : Theme.colors.textMuted,
-                            textDecorationLine: (set.stance || set.variation) ? 'none' : 'underline'
-                          }
-                        ]}
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        minimumFontScale={0.75}
-                      >
-                        {(set.stance || set.variation)
-                          ? translateStance(set.stance || set.variation)
-                          : t('ui.active_workout.stance_add_link')}
-                      </Text>
-                    </GHTouchableOpacity>
-                  )
-                ) : null}
-
-                {/* 下段: 1RM / 時間 */}
-                {((displayFields?.show1RM !== false && currentRM != null) || !!restTimeStr || !!timeTakenStr) && (
-                  <Text
-                    style={styles.stackBottomRowText}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.65}
-                  >
-                    {displayFields?.show1RM !== false && currentRM != null && (
-                      <Text style={styles.stackRmText}>
-                        1RM:{ex.equipment === '自重' ? `BW+${currentRM}` : currentRM}
-                      </Text>
+                {/* 上段: スタンス ＋ 休憩時間 */}
+                {(displayFields?.showStance !== false || !!restTimeStr) && (
+                  <View style={styles.metaRow}>
+                    <View style={styles.metaLeftCol}>
+                      {displayFields?.showStance !== false ? (
+                        set.is_completed ? (
+                          <Text
+                            style={[
+                              styles.stackStanceText,
+                              !(set.stance || set.variation) && { color: Theme.colors.textMuted }
+                            ]}
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                            minimumFontScale={0.75}
+                          >
+                            {(set.stance || set.variation)
+                              ? translateStance(set.stance || set.variation)
+                              : '-'}
+                          </Text>
+                        ) : (
+                          <GHTouchableOpacity
+                            style={{ maxWidth: '100%' }}
+                            onPress={() => {
+                              const curStance = set.stance || set.variation || null;
+                              setStanceModalTarget({ type: 'set', exId: ex.id, setId: set.id, currentValue: curStance });
+                              setStanceModalVisible(true);
+                            }}
+                            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                          >
+                            <Text
+                              style={[
+                                styles.stackStanceText,
+                                {
+                                  color: (set.stance || set.variation) ? Theme.colors.primary : Theme.colors.textMuted,
+                                  textDecorationLine: (set.stance || set.variation) ? 'none' : 'underline'
+                                }
+                              ]}
+                              numberOfLines={1}
+                              adjustsFontSizeToFit
+                              minimumFontScale={0.75}
+                            >
+                              {(set.stance || set.variation)
+                                ? translateStance(set.stance || set.variation)
+                                : t('ui.active_workout.stance_add_link')}
+                            </Text>
+                          </GHTouchableOpacity>
+                        )
+                      ) : null}
+                    </View>
+                    {hasAnyTime && (
+                      <View style={styles.metaTimeCol}>
+                        {restTimeStr ? (
+                          <Text
+                            style={styles.stackTimeText}
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                            minimumFontScale={0.7}
+                          >
+                            {restTimeStr}
+                          </Text>
+                        ) : null}
+                      </View>
                     )}
-                    {restTimeStr ? (
-                      <Text style={styles.stackTimeText}>
-                        {displayFields?.show1RM !== false && currentRM != null ? ' ' : ''}{restTimeStr}
-                      </Text>
-                    ) : null}
-                    {timeTakenStr ? (
-                      <Text style={[styles.stackTimeText, { color: Theme.colors.success }]}>
-                        {(displayFields?.show1RM !== false && currentRM != null) || restTimeStr ? ' ' : ''}{timeTakenStr}
-                      </Text>
-                    ) : null}
-                  </Text>
+                  </View>
+                )}
+
+                {/* 下段: 1RM ＋ セットタイム */}
+                {((displayFields?.show1RM !== false && currentRM != null) || !!timeTakenStr) && (
+                  <View style={styles.metaRow}>
+                    <View style={styles.metaLeftCol}>
+                      {displayFields?.show1RM !== false && currentRM != null && (
+                        <Text
+                          style={styles.stackRmText}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.7}
+                        >
+                          1RM:{ex.equipment === '自重' ? `BW+${currentRM}` : currentRM}
+                        </Text>
+                      )}
+                    </View>
+                    {hasAnyTime && (
+                      <View style={styles.metaTimeCol}>
+                        {timeTakenStr ? (
+                          <Text
+                            style={[styles.stackTimeText, { color: Theme.colors.success }]}
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                            minimumFontScale={0.7}
+                          >
+                            {timeTakenStr}
+                          </Text>
+                        ) : null}
+                      </View>
+                    )}
+                  </View>
                 )}
               </View>
             )}
@@ -1163,9 +1196,25 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     height: 32,
     justifyContent: 'center',
-    alignItems: 'flex-start',
     paddingLeft: 4,
     paddingRight: 2,
+  },
+  metaRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metaLeftCol: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  metaTimeCol: {
+    width: 42,
+    paddingLeft: 2,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
   },
   stackStanceText: {
     fontSize: 10,
@@ -1174,18 +1223,16 @@ const styles = StyleSheet.create({
     lineHeight: 13,
     maxWidth: '100%',
   },
-  stackBottomRowText: {
-    width: '100%',
-    fontSize: 10.5,
-    lineHeight: 14,
-  },
   stackRmText: {
-    fontSize: 10.5,
+    fontSize: 10,
     fontWeight: '700',
     color: '#f5a623',
     lineHeight: 14,
+    maxWidth: '100%',
   },
   stackTimeText: {
+    width: '100%',
+    textAlign: 'left',
     fontSize: 9.5,
     color: Theme.colors.textMuted,
     lineHeight: 13,

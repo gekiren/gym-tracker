@@ -206,11 +206,21 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
                 ? `+ ${settings.weightUnit}`
                 : settings.weightUnit}
             </Text>
-            <Text style={[styles.th, { width: 44, marginHorizontal: 2 }]}>
+            <Text
+              style={[styles.th, { width: 36, marginHorizontal: 2 }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+            >
               {ex.name === 'プランク' ? t('ui.active_workout.header_seconds') : t('ui.active_workout.header_reps')}
             </Text>
             {(settings.displayFields?.showRpe || ex.name === 'プランク') && (
-              <Text style={[styles.th, { width: 38, marginHorizontal: 2 }]}>
+              <Text
+                style={[styles.th, { width: 32, marginHorizontal: 2 }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
                 {ex.name === 'プランク' ? t('ui.active_workout.header_timer') : t('ui.active_workout.header_rpe')}
               </Text>
             )}
