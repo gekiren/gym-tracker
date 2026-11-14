@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, Alert, UIManager, NativeModules } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, Alert, UIManager, NativeModules, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../src/theme';
+import { useAppTheme } from '../src/theme';
 import { useTranslation } from 'react-i18next';
 import type ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -16,8 +16,6 @@ try {
   console.warn('react-native-view-shot module require failed:', e);
 }
 
-const APP_ICON = require('../assets/images/icon.png');
-
 interface WorkoutShareModalProps {
   visible: boolean;
   onClose: () => void;
@@ -29,7 +27,8 @@ interface WorkoutShareModalProps {
 }
 
 export default function WorkoutShareModal({ visible, onClose, workout, settings }: WorkoutShareModalProps) {
-  const { t, i18n } = useTranslation();
+  const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const [sharePattern, setSharePattern] = useState<'A' | 'B' | 'C'>('A');
   const [isSharing, setIsSharing] = useState(false);
   const [viewShotAvailable, setViewShotAvailable] = useState(false);
@@ -109,56 +108,72 @@ export default function WorkoutShareModal({ visible, onClose, workout, settings 
     <>
       {/* Pattern Selection Modal */}
       <Modal visible={visible && !isSharing} transparent={true} animationType="slide" onRequestClose={onClose}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.bottomSheetContent}>
-            <Text style={styles.modalTitle}>{t('ui.share_modal.title')}</Text>
+        <Pressable style={styles.modalOverlay} onPress={onClose}>
+          <Pressable
+            style={[styles.bottomSheetContent, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('ui.share_modal.title')}</Text>
             
-            <TouchableOpacity style={styles.patternOption} onPress={() => handleShare('A')}>
+            <TouchableOpacity
+              style={[styles.patternOption, { borderColor: colors.border }]}
+              onPress={() => handleShare('A')}
+              activeOpacity={0.8}
+            >
               <View style={styles.patternIconCircle}>
                 <Ionicons name="sparkles" size={24} color="#ffd700" />
               </View>
               <View style={styles.patternTextContainer}>
-                <Text style={styles.patternName}>{t('ui.share_modal.pattern_a_name')}</Text>
-                <Text style={styles.patternDesc}>{t('ui.share_modal.pattern_a_desc')}</Text>
+                <Text style={[styles.patternName, { color: colors.text }]}>{t('ui.share_modal.pattern_a_name')}</Text>
+                <Text style={[styles.patternDesc, { color: colors.textMuted }]}>{t('ui.share_modal.pattern_a_desc')}</Text>
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.patternOption} onPress={() => handleShare('B')}>
+            <TouchableOpacity
+              style={[styles.patternOption, { borderColor: colors.border }]}
+              onPress={() => handleShare('B')}
+              activeOpacity={0.8}
+            >
               <View style={styles.patternIconCircle}>
-                <Ionicons name="list" size={24} color={Theme.colors.primary} />
+                <Ionicons name="list" size={24} color={colors.primary} />
               </View>
               <View style={styles.patternTextContainer}>
-                <Text style={styles.patternName}>{t('ui.share_modal.pattern_b_name')}</Text>
-                <Text style={styles.patternDesc}>{t('ui.share_modal.pattern_b_desc')}</Text>
+                <Text style={[styles.patternName, { color: colors.text }]}>{t('ui.share_modal.pattern_b_name')}</Text>
+                <Text style={[styles.patternDesc, { color: colors.textMuted }]}>{t('ui.share_modal.pattern_b_desc')}</Text>
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.patternOption} onPress={() => handleShare('C')}>
+            <TouchableOpacity
+              style={[styles.patternOption, { borderColor: colors.border }]}
+              onPress={() => handleShare('C')}
+              activeOpacity={0.8}
+            >
               <View style={styles.patternIconCircle}>
-                <Ionicons name="stats-chart" size={24} color={Theme.colors.success} />
+                <Ionicons name="stats-chart" size={24} color={colors.success} />
               </View>
               <View style={styles.patternTextContainer}>
-                <Text style={styles.patternName}>{t('ui.share_modal.pattern_c_name')}</Text>
-                <Text style={styles.patternDesc}>{t('ui.share_modal.pattern_c_desc')}</Text>
+                <Text style={[styles.patternName, { color: colors.text }]}>{t('ui.share_modal.pattern_c_name')}</Text>
+                <Text style={[styles.patternDesc, { color: colors.textMuted }]}>{t('ui.share_modal.pattern_c_desc')}</Text>
               </View>
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={styles.cancelButton} 
+              style={[styles.cancelButton, { borderColor: colors.border }]} 
               onPress={onClose}
+              activeOpacity={0.8}
             >
-              <Text style={styles.cancelButtonText}>{t('ui.common.cancel')}</Text>
+              <Text style={[styles.cancelButtonText, { color: colors.text }]}>{t('ui.common.cancel')}</Text>
             </TouchableOpacity>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       {/* Share Loading Overlay */}
       {isSharing && (
         <View style={styles.loadingOverlay}>
-          <View style={styles.loadingContent}>
-            <ActivityIndicator size="large" color={Theme.colors.primary} />
-            <Text style={styles.loadingText}>{t('ui.share_modal.generating')}</Text>
+          <View style={[styles.loadingContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.text }]}>{t('ui.share_modal.generating')}</Text>
           </View>
         </View>
       )}
@@ -179,41 +194,38 @@ export default function WorkoutShareModal({ visible, onClose, workout, settings 
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.65)',
     justifyContent: 'flex-end',
   },
   bottomSheetContent: {
-    backgroundColor: Theme.colors.card,
-    borderTopLeftRadius: Theme.borderRadius.lg,
-    borderTopRightRadius: Theme.borderRadius.lg,
-    padding: Theme.spacing.lg,
-    gap: 16,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 24,
+    gap: 12,
     borderTopWidth: 1,
-    borderColor: Theme.colors.border,
     paddingBottom: 40,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
     textAlign: 'center',
     marginBottom: 8,
   },
   patternOption: {
+    minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
-    borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.md,
+    borderRadius: 12,
+    padding: 16,
     gap: 16,
   },
   patternIconCircle: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -223,22 +235,23 @@ const styles = StyleSheet.create({
   patternName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
   },
   patternDesc: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
     marginTop: 4,
   },
   cancelButton: {
-    paddingVertical: 14,
+    minHeight: 48,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
   },
   cancelButtonText: {
-    fontSize: 16,
-    color: Theme.colors.textMuted,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '600',
   },
   loadingOverlay: {
     position: 'absolute',
@@ -252,16 +265,13 @@ const styles = StyleSheet.create({
     zIndex: 10000,
   },
   loadingContent: {
-    backgroundColor: Theme.colors.card,
     padding: 24,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 16,
     alignItems: 'center',
     gap: 16,
     borderWidth: 1,
-    borderColor: '#333',
   },
   loadingText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },

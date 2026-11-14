@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../src/theme';
+import { useAppTheme } from '../src/theme';
 import { FeatureId } from '../src/store/settingsStore';
 import { ALL_FEATURE_IDS, FEATURE_UNLOCK_METAS, POINT_REWARDS } from '../src/constants/featureUnlockConstants';
-import { useFeatureUnlockStore } from '../src/store/featureUnlockStore';
 
 interface InitialFeatureSelectModalProps {
   visible: boolean;
@@ -15,6 +14,7 @@ export const InitialFeatureSelectModal: React.FC<InitialFeatureSelectModalProps>
   visible,
   onComplete,
 }) => {
+  const { colors } = useAppTheme();
   const [selected, setSelected] = useState<FeatureId[]>(['workout', 'water']);
 
   const handleToggle = (id: FeatureId) => {
@@ -43,14 +43,14 @@ export const InitialFeatureSelectModal: React.FC<InitialFeatureSelectModalProps>
   return (
     <Modal visible={visible} animationType="fade" transparent={true}>
       <View style={styles.modalBg}>
-        <View style={styles.modalCard}>
+        <View style={[styles.modalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.iconCircle}>
-              <Ionicons name="sparkles" size={28} color={Theme.colors.primary} />
+              <Ionicons name="sparkles" size={28} color={colors.primary} />
             </View>
-            <Text style={styles.title}>最初に使う機能を2つ選択</Text>
-            <Text style={styles.desc}>
+            <Text style={[styles.title, { color: colors.text }]}>最初に使う機能を2つ選択</Text>
+            <Text style={[styles.desc, { color: colors.textMuted }]}>
               最初はシンプルな機能からスタート！{'\n'}
               記録をつけると<Text style={{ color: '#ffd700', fontWeight: 'bold' }}>Pポイント</Text>が貯まり、後からいつでも好きな機能を開放できます。
             </Text>
@@ -69,7 +69,11 @@ export const InitialFeatureSelectModal: React.FC<InitialFeatureSelectModalProps>
               return (
                 <TouchableOpacity
                   key={id}
-                  style={[styles.featureItem, isSelected && styles.featureItemSelected]}
+                  style={[
+                    styles.featureItem,
+                    { borderColor: colors.border },
+                    isSelected && [styles.featureItemSelected, { borderColor: colors.primary }],
+                  ]}
                   onPress={() => handleToggle(id)}
                   activeOpacity={0.7}
                 >
@@ -78,15 +82,21 @@ export const InitialFeatureSelectModal: React.FC<InitialFeatureSelectModalProps>
                   </View>
 
                   <View style={styles.featureInfo}>
-                    <Text style={[styles.featureTitle, isSelected && styles.textSelected]}>
+                    <Text style={[styles.featureTitle, { color: colors.text }, isSelected && { color: colors.primary }]}>
                       {meta.title}
                     </Text>
-                    <Text style={styles.featureDesc} numberOfLines={2}>
+                    <Text style={[styles.featureDesc, { color: colors.textMuted }]} numberOfLines={2}>
                       {meta.shortDesc}
                     </Text>
                   </View>
 
-                  <View style={[styles.checkCircle, isSelected && styles.checkCircleSelected]}>
+                  <View
+                    style={[
+                      styles.checkCircle,
+                      { borderColor: colors.border },
+                      isSelected && { backgroundColor: colors.primary, borderColor: colors.primary },
+                    ]}
+                  >
                     {isSelected && <Ionicons name="checkmark" size={16} color="#fff" />}
                   </View>
                 </TouchableOpacity>
@@ -95,12 +105,16 @@ export const InitialFeatureSelectModal: React.FC<InitialFeatureSelectModalProps>
           </ScrollView>
 
           {/* Footer CTA */}
-          <View style={styles.footer}>
-            <Text style={styles.selectedCounter}>
-              選択中: <Text style={{ color: Theme.colors.primary, fontWeight: 'bold' }}>{selected.length} / 2</Text>
+          <View style={[styles.footer, { borderTopColor: colors.border }]}>
+            <Text style={[styles.selectedCounter, { color: colors.textMuted }]}>
+              選択中: <Text style={{ color: colors.primary, fontWeight: 'bold' }}>{selected.length} / 2</Text>
             </Text>
             <TouchableOpacity
-              style={[styles.confirmBtn, !isReady && styles.confirmBtnDisabled]}
+              style={[
+                styles.confirmBtn,
+                { backgroundColor: colors.primary },
+                !isReady && styles.confirmBtnDisabled,
+              ]}
               onPress={handleConfirm}
               disabled={!isReady}
               activeOpacity={0.8}
@@ -125,14 +139,12 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   modalCard: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: 20,
+    borderRadius: 16,
     width: '100%',
     maxWidth: 480,
     maxHeight: '90%',
     borderWidth: 1,
-    borderColor: Theme.colors.border,
-    padding: 20,
+    padding: 24,
   },
   header: {
     alignItems: 'center',
@@ -150,13 +162,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 6,
+    marginBottom: 8,
     textAlign: 'center',
   },
   desc: {
     fontSize: 13,
-    color: Theme.colors.textMuted,
     textAlign: 'center',
     lineHeight: 19,
   },
@@ -169,7 +179,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 12,
     borderRadius: 14,
-    marginTop: 10,
+    marginTop: 12,
   },
   bonusText: {
     color: '#ffd700',
@@ -184,16 +194,15 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   featureItem: {
+    minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderRadius: 12,
     padding: 12,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
+    borderWidth: 1,
   },
   featureItemSelected: {
-    borderColor: Theme.colors.primary,
     backgroundColor: 'rgba(79, 172, 254, 0.08)',
   },
   iconBox: {
@@ -211,45 +220,33 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#fff',
     marginBottom: 2,
   },
-  textSelected: {
-    color: Theme.colors.primary,
-  },
   featureDesc: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
-    lineHeight: 15,
+    fontSize: 12,
+    lineHeight: 16,
   },
   checkCircle: {
     width: 24,
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#555',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkCircleSelected: {
-    backgroundColor: Theme.colors.primary,
-    borderColor: Theme.colors.primary,
-  },
   footer: {
     marginTop: 16,
-    paddingTop: 12,
+    paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: Theme.colors.border,
   },
   selectedCounter: {
     fontSize: 13,
-    color: Theme.colors.textMuted,
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   confirmBtn: {
-    backgroundColor: Theme.colors.primary,
-    paddingVertical: 14,
+    minHeight: 48,
+    paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',

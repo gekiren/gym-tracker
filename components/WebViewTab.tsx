@@ -395,7 +395,7 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['bottom']}>
       {loading || !initialData ? (
         <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-          <ActivityIndicator size="large" color="#4facfe" />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.text }]}>読み込み中...</Text>
         </View>
       ) : (
@@ -417,21 +417,17 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#121212',
   },
   webview: {
     flex: 1,
-    backgroundColor: '#121212',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#121212',
   },
   loadingText: {
-    marginTop: 10,
-    color: '#e0e0e0',
+    marginTop: 12,
     fontSize: 14,
   },
 });

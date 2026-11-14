@@ -4,13 +4,13 @@ import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../src/theme';
+import { useAppTheme } from '../src/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AD_CONFIG } from '../src/config/adConfig';
-import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore } from '../src/store/settingsStore';
 
 function AdBannerInternal() {
+  const { colors } = useAppTheme();
   const settings = useSettingsStore(state => state.settings);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -83,7 +83,18 @@ function AdBannerInternal() {
   if (adFailed) {
     const currentPromo = promos[promoIndex];
     return (
-      <Animated.View style={[styles.container, { opacity: fadeAnim, height: 52 + bannerPaddingBottom, paddingBottom: bannerPaddingBottom }]}>
+      <Animated.View
+        style={[
+          styles.container,
+          {
+            backgroundColor: colors.background,
+            borderTopColor: colors.border,
+            opacity: fadeAnim,
+            height: 52 + bannerPaddingBottom,
+            paddingBottom: bannerPaddingBottom,
+          },
+        ]}
+      >
         <TouchableOpacity
           style={styles.promoPressable}
           onPress={handlePromoPress}
@@ -91,16 +102,16 @@ function AdBannerInternal() {
         >
           <View style={styles.promoContent}>
             <View style={styles.iconCircle}>
-              <Ionicons name={currentPromo.icon as any} size={15} color={Theme.colors.primary} />
+              <Ionicons name={currentPromo.icon as any} size={15} color={colors.primary} />
             </View>
             <View style={styles.textContainer}>
               <View style={styles.titleRow}>
-                <Text style={styles.promoTag}>PREMIUM</Text>
-                <Text style={styles.promoTitle} numberOfLines={1}>{currentPromo.title}</Text>
+                <Text style={[styles.promoTag, { color: colors.primary }]}>PREMIUM</Text>
+                <Text style={[styles.promoTitle, { color: colors.text }]} numberOfLines={1}>{currentPromo.title}</Text>
               </View>
-              <Text style={styles.promoDesc} numberOfLines={1}>{currentPromo.desc}</Text>
+              <Text style={[styles.promoDesc, { color: colors.textMuted }]} numberOfLines={1}>{currentPromo.desc}</Text>
             </View>
-            <View style={styles.actionBtn}>
+            <View style={[styles.actionBtn, { backgroundColor: colors.primary }]}>
               <Text style={styles.actionBtnText}>{t('ui.ads.upgrade_btn') || '詳細'}</Text>
               <Ionicons name="chevron-forward" size={12} color="#fff" />
             </View>
@@ -111,7 +122,18 @@ function AdBannerInternal() {
   }
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim, height: 52 + bannerPaddingBottom, paddingBottom: bannerPaddingBottom }]}>
+    <Animated.View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
+          opacity: fadeAnim,
+          height: 52 + bannerPaddingBottom,
+          paddingBottom: bannerPaddingBottom,
+        },
+      ]}
+    >
       <View style={styles.adWrapper}>
         <BannerAd
           unitId={adUnitId}
@@ -130,22 +152,9 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     height: 52,
-    backgroundColor: '#0a0a0a',
     borderTopWidth: 1,
-    borderTopColor: Theme.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 2,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
   },
   adWrapper: {
     width: '100%',
@@ -165,9 +174,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   iconCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: 'rgba(79, 172, 254, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -183,13 +192,12 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   promoTag: {
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: '900',
-    color: Theme.colors.primary,
     backgroundColor: 'rgba(79, 172, 254, 0.15)',
     paddingHorizontal: 4,
     paddingVertical: 1,
-    borderRadius: 3,
+    borderRadius: 4,
     marginRight: 6,
     overflow: 'hidden',
     letterSpacing: 0.5,
@@ -197,27 +205,24 @@ const styles = StyleSheet.create({
   promoTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#ffffff',
     letterSpacing: 0.2,
   },
   promoDesc: {
-    fontSize: 10,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
   },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Theme.colors.primary,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    marginLeft: 10,
+    marginLeft: 12,
   },
   actionBtnText: {
     color: '#ffffff',
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
-    marginRight: 1,
+    marginRight: 2,
   },
 });
 
