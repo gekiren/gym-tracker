@@ -10,9 +10,6 @@ import { AI_CONFIG } from '../../src/config/aiConfig';
 import { translateExercise, translateStance } from '../../src/i18n';
 import { SetInputRow } from './SetInputRow';
 import { StanceModalTarget } from '../../src/hooks/useActiveWorkout';
-import { WeightStepModal } from './WeightStepModal';
-import { updateExerciseWeightStep } from '../../src/db/repositories/exerciseRepository';
-import { useWorkoutStore } from '../../src/store/workoutStore';
 import { isTreadmillExercise } from '../../src/utils/exerciseUtils';
 
 interface ActiveExerciseCardProps {
@@ -83,11 +80,18 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
   calculateRM,
 }) => {
   const { colors } = useAppTheme();
-  const [weightStepModalVisible, setWeightStepModalVisible] = React.useState(false);
 
   const currentStance = ex.default_stance || ex.default_variation || null;
   const exerciseNameText = translateExercise(ex.name);
   const isLongName = exerciseNameText.length > 13;
+  const showVolume = ex.muscle_group !== '有酸素' && !!settings.displayFields?.showVolume;
+  const totalVolume = showVolume
+    ? ex.sets.reduce((sum: number, s: any) => {
+        if (!s.is_completed) return sum;
+        const bw = ex.equipment === '自重' && settings.bodyWeight ? settings.bodyWeight : 0;
+        return sum + ((s.weight || 0) + bw) * (s.reps || 0);
+      }, 0)
+    : 0;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card }]}>
@@ -123,32 +127,6 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
                   {exerciseNameText}
                 </Text>
               </GHTouchableOpacity>
-              <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginTop: 2 }}>
-                {ex.muscle_group !== '有酸素' && settings.displayFields?.showVolume && (
-                  <View style={styles.exerciseVolumeContainer}>
-                    <Text style={styles.exerciseVolumeLabel}>{t('ui.history.volume_label')}: </Text>
-                    <Text style={styles.exerciseVolumeValue}>
-                      {ex.sets.reduce((sum: number, s: any) => {
-                        if (!s.is_completed) return sum;
-                        const bw = ex.equipment === '自重' && settings.bodyWeight ? settings.bodyWeight : 0;
-                        return sum + ((s.weight || 0) + bw) * (s.reps || 0);
-                      }, 0)}{' '}
-                      {settings.weightUnit}
-                    </Text>
-                  </View>
-                )}
-                {ex.muscle_group !== '有酸素' && (
-                  <GHTouchableOpacity
-                    style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#2a2a2a', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 }}
-                    onPress={() => setWeightStepModalVisible(true)}
-                  >
-                    <Ionicons name="swap-horizontal-outline" size={12} color={Theme.colors.primary} style={{ marginRight: 2 }} />
-                    <Text style={{ color: Theme.colors.primary, fontSize: 11, fontWeight: 'bold' }}>
-                      ±{ex.weight_step ?? 2.5}kg
-                    </Text>
-                  </GHTouchableOpacity>
-                )}
-              </View>
             </View>
             <View style={styles.headerIcons}>
               {AI_CONFIG.status === 'active' && (
@@ -284,21 +262,24 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
           <Text style={styles.addSetBtnText}>{t('ui.active_workout.add_set_label')}</Text>
         </GHTouchableOpacity>
 
-        <View style={styles.bottomRightPlaceholder} />
+        <View style={styles.bottomRightContainer}>
+          {showVolume && (
+            <View style={styles.exerciseVolumeContainer}>
+              <Text
+                style={styles.exerciseVolumeLabel}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {t('ui.history.volume_label')}:{' '}
+                <Text style={styles.exerciseVolumeValue}>
+                  {totalVolume} {settings.weightUnit}
+                </Text>
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
-
-      <WeightStepModal
-        visible={weightStepModalVisible}
-        onClose={() => setWeightStepModalVisible(false)}
-        currentStep={ex.weight_step ?? 2.5}
-        exerciseName={translateExercise(ex.name)}
-        onSelectStep={async (newStep: number) => {
-          useWorkoutStore.getState().updateExerciseWeightStep(ex.id, newStep);
-          if (ex.exercise_id || ex.id) {
-            await updateExerciseWeightStep(ex.exercise_id || ex.id, newStep);
-          }
-        }}
-      />
     </View>
   );
 });
@@ -327,9 +308,9 @@ const styles = StyleSheet.create({
   },
   bottomRowContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 4,
     minHeight: 40,
     paddingHorizontal: 2,
   },
@@ -338,9 +319,14 @@ const styles = StyleSheet.create({
     minWidth: 0,
     alignItems: 'flex-start',
     justifyContent: 'center',
+    paddingTop: 6,
   },
-  bottomRightPlaceholder: {
+  bottomRightContainer: {
     flex: 1,
+    minWidth: 0,
+    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
+    paddingTop: 0,
   },
   exerciseVariationBtnBottom: {
     flexDirection: 'row',
@@ -362,14 +348,17 @@ const styles = StyleSheet.create({
   exerciseVolumeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 0,
+    justifyContent: 'flex-end',
+    maxWidth: '100%',
+    paddingRight: 2,
   },
   exerciseVolumeLabel: {
-    fontSize: 12,
-    color: Theme.colors.text,
+    fontSize: 11,
+    color: Theme.colors.textMuted,
+    textAlign: 'right',
   },
   exerciseVolumeValue: {
-    fontSize: 12,
+    fontSize: 11,
     color: Theme.colors.text,
     fontWeight: 'bold',
   },
@@ -400,7 +389,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   addSetBtn: {
-    paddingVertical: 8,
+    paddingTop: 10,
+    paddingBottom: 6,
     paddingHorizontal: 16,
     alignItems: 'center',
   },

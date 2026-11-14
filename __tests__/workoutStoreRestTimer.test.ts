@@ -117,6 +117,27 @@ describe('WorkoutStore - Exercise Specific Rest Timer', () => {
     expect(ex.rest_seconds).toBe(60);
   });
 
+  it('correctly updates exercise weight_step via updateExerciseWeightStep', () => {
+    const store = useWorkoutStore.getState();
+    store.startWorkout('Test Workout');
+
+    store.addExercise({
+      id: 4,
+      name: 'ダンベルカール',
+      weight_step: 2.5,
+    });
+
+    // Update by exercise DB ID
+    useWorkoutStore.getState().updateExerciseWeightStep(4, 1.25);
+    let ex = useWorkoutStore.getState().exercises[0];
+    expect(ex.weight_step).toBe(1.25);
+
+    // Update by session UUID
+    useWorkoutStore.getState().updateExerciseWeightStep(ex.id, 5);
+    ex = useWorkoutStore.getState().exercises[0];
+    expect(ex.weight_step).toBe(5);
+  });
+
   it('does NOT record 0 seconds for work_seconds when first set completed without starting timer', () => {
     const store = useWorkoutStore.getState();
     store.startWorkout('Test Workout');

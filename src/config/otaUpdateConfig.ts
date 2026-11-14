@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.31',
+  version: '2.3.33',
   title: {
-    ja: '✨ セット行の入力幅スリム化とタイム列の整列改善',
-    en: '✨ Slimmer Reps/RPE Inputs & Aligned Timer Column',
+    ja: '✨ ダッシュボードのデザイン統一と操作性の改善',
+    en: '✨ Unified Dashboard Design & Improved Usability',
   },
   notes: {
     ja: [
-      '回数・RPEの入力枠を2桁表示に合わせたスリムな横幅に調整し、情報表示エリアを広げました。',
-      '休憩時間（☕）を上段のスタンスと同じ行へ移動し、下段のセットタイム（⏱️）と左端を揃えたタイム列として見やすく整列しました。',
+      'ダッシュボードの全カードのデザイン・余白・文字サイズを統一し、背景テーマ（ダーク／ピュアブラック）の切り替えにも即時反映されるよう改善しました。',
+      '習慣カウンターの「+」ボタンや水分プリセット、日付切替ボタンなどのタップ領域を広げ、より操作しやすく調整しました。',
     ],
     en: [
-      'Slimmed down the Reps and RPE input widths to fit 2-digit numbers cleanly, giving more room to set details.',
-      'Moved rest time (☕) onto the same row as stance and left-aligned it with set work time (⏱️) in a clean column.',
+      'Unified card layout, spacing, and typography across the dashboard with instant dark/pure-black theme updates.',
+      'Expanded touch targets for habit "+" buttons, hydration presets, and date navigation controls for easier tapping.',
     ],
   },
 };

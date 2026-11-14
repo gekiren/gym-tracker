@@ -80,7 +80,7 @@ interface WorkoutState {
   updateExerciseNotes: (exerciseId: string, notes: string) => void;
   updateExerciseVariation: (exerciseId: string, variation: string | null) => void;
   updateExerciseStance: (exerciseId: string, stance: string | null) => void;
-  updateExerciseWeightStep: (exerciseId: string, weightStep: number) => void;
+  updateExerciseWeightStep: (exerciseId: string | number, weightStep: number) => void;
   updateExerciseRestSeconds: (exerciseId: string | number, restSeconds: number | null) => void;
   endWorkout: () => void;
   addExercise: (exercise: { id: number; name: string; previousSets?: Omit<WorkoutSet, 'id' | 'is_completed'>[]; personalRecords?: Record<string, Record<number, number>>; is_unilateral?: number; default_variation?: string | null; default_stance?: string | null; equipment?: string; muscle_group?: string; routineSets?: Omit<WorkoutSet, 'id' | 'is_completed'>[]; weight_step?: number; rest_seconds?: number | null; }, alwaysOneSet?: boolean) => void;
@@ -180,7 +180,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
   updateExerciseWeightStep: (exerciseId, weightStep) => set((state) => ({
     exercises: state.exercises.map(ex => 
-      ex.id === exerciseId ? { ...ex, weight_step: weightStep } : ex
+      (ex.id === exerciseId || ex.exercise_id === exerciseId) ? { ...ex, weight_step: weightStep } : ex
     )
   })),
 

@@ -4,12 +4,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
-import { Theme } from '../../theme';
+import { useAppTheme } from '../../theme';
 import { useLifelogStore } from '../../store/lifelogStore';
+import { HomeCard } from './HomeCard';
 
 export const HabitCard = () => {
   const { t } = useTranslation();
-  
+  const { colors } = useAppTheme();
+
   const currentDate = useLifelogStore(state => state.currentDate);
   const daySummary = useLifelogStore(state => state.daySummary);
   const addHabitLog = useLifelogStore(state => state.addHabitLog);
@@ -27,97 +29,78 @@ export const HabitCard = () => {
   };
 
   return (
-    <View style={styles.card}>
-      <TouchableOpacity 
-        style={styles.cardHeader}
-        activeOpacity={0.7}
-        onPress={() => router.push('/lifelog/habit')}
-      >
-        <View style={[styles.iconContainer, { backgroundColor: 'rgba(233, 30, 99, 0.15)' }]}>
-          <Ionicons name="checkmark-circle" size={24} color="#e91e63" />
-        </View>
-        <Text style={styles.cardTitle}>{t('ui.home.card_habits') || '習慣カウンター'}</Text>
-        <Ionicons name="chevron-forward" size={20} color={Theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-      </TouchableOpacity>
-
-      <View style={styles.cardBody}>
-        {daySummary?.habits && daySummary.habits.length > 0 ? (
-          <View style={styles.habitList}>
-            {daySummary.habits.slice(0, 3).map((habit) => (
-              <View key={habit.id} style={styles.habitRow}>
+    <HomeCard
+      title={t('ui.home.card_habits') || '習慣カウンター'}
+      iconName="checkmark-circle"
+      iconColor="#e91e63"
+      iconBgColor="rgba(233, 30, 99, 0.15)"
+      onHeaderPress={() => router.push('/lifelog/habit')}
+    >
+      {daySummary?.habits && daySummary.habits.length > 0 ? (
+        <View style={styles.habitList}>
+          {daySummary.habits.slice(0, 3).map((habit) => (
+            <View
+              key={habit.id}
+              style={[styles.habitRow, { borderColor: colors.border }]}
+            >
+              <TouchableOpacity
+                style={styles.habitMainClickArea}
+                onPress={() => router.push('/lifelog/habit')}
+                activeOpacity={0.7}
+              >
+                <View style={styles.habitInfo}>
+                  <View
+                    style={[
+                      styles.habitColorDot,
+                      { backgroundColor: habit.color || colors.text },
+                    ]}
+                  />
+                  <Text style={[styles.habitName, { color: colors.text }]} numberOfLines={1}>
+                    {habit.name}
+                  </Text>
+                </View>
+                <Text style={[styles.habitCount, { color: colors.text }]}>
+                  {habit.count} {t('ui.home.unit_times') || '回'}
+                </Text>
+              </TouchableOpacity>
+              <View style={[styles.habitActionContainer, { borderLeftColor: colors.border }]}>
                 <TouchableOpacity
-                  style={styles.habitMainClickArea}
-                  onPress={() => router.push('/lifelog/habit')}
+                  style={styles.habitAddBtn}
+                  onPress={() => handleIncrementHabit(habit.id)}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.habitInfo}>
-                    <View style={[styles.habitColorDot, { backgroundColor: habit.color || '#fff' }]} />
-                    <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
-                  </View>
-                  <Text style={styles.habitCount}>{habit.count} {t('ui.home.unit_times') || '回'}</Text>
+                  <Ionicons name="add" size={20} color="#ffffff" />
                 </TouchableOpacity>
-                <View style={styles.habitActionContainer}>
-                  <TouchableOpacity
-                    style={styles.habitAddBtn}
-                    onPress={() => handleIncrementHabit(habit.id)}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="add" size={16} color="#fff" />
-                  </TouchableOpacity>
-                </View>
               </View>
-            ))}
-          </View>
-        ) : (
-          <Text style={styles.emptyText}>{t('ui.home.no_habits') || '習慣が登録されていません'}</Text>
-        )}
-      </View>
-    </View>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+          {t('ui.home.no_habits') || '習慣が登録されていません'}
+        </Text>
+      )}
+    </HomeCard>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  cardTitle: {
-    color: Theme.colors.text,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  cardBody: {
-    paddingLeft: 52,
-  },
   habitList: {
     gap: 8,
   },
   habitRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 8,
-    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 4,
+    paddingLeft: 12,
+    paddingRight: 4,
   },
   habitMainClickArea: {
     flex: 1,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -127,36 +110,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginRight: 8,
   },
   habitColorDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     marginRight: 8,
   },
   habitName: {
-    color: Theme.colors.text,
     fontSize: 15,
     flex: 1,
   },
   habitCount: {
-    color: Theme.colors.text,
     fontSize: 15,
     fontWeight: 'bold',
   },
   habitActionContainer: {
     borderLeftWidth: 1,
-    borderLeftColor: 'rgba(255,255,255,0.1)',
-    paddingLeft: 8,
+    paddingLeft: 4,
   },
   habitAddBtn: {
-    backgroundColor: 'rgba(233, 30, 99, 0.2)',
-    padding: 6,
-    borderRadius: 6,
+    width: 44,
+    height: 44,
+    backgroundColor: 'rgba(233, 30, 99, 0.24)',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emptyText: {
-    color: Theme.colors.textMuted,
     fontSize: 14,
-    fontStyle: 'italic',
+    lineHeight: 20,
   },
 });

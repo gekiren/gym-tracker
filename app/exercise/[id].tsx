@@ -18,6 +18,7 @@ import { HistoryCalendarModal } from '../../components/active-workout/HistoryCal
 // Subcomponents
 import { StanceManagement } from '../../components/exercise-detail/StanceManagement';
 import { RestTimerManagement } from '../../components/exercise-detail/RestTimerManagement';
+import { WeightStepManagement } from '../../components/exercise-detail/WeightStepManagement';
 import { ExerciseCharts } from '../../components/exercise-detail/ExerciseCharts';
 import { isTreadmillExercise } from '../../src/utils/exerciseUtils';
 import { calculateRM } from '../../src/utils/workoutStats';
@@ -247,6 +248,16 @@ export default function ExerciseDetailScreen() {
           settings={settings}
           t={t}
         />
+
+        {/* Weight Step Management Section */}
+        {exercise.muscle_group !== '有酸素' && (
+          <WeightStepManagement
+            exercise={exercise}
+            setExercise={setExercise}
+            settings={settings}
+            t={t}
+          />
+        )}
 
         {/* PR Section */}
         <PersonalRecordsList

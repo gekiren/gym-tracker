@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../src/theme';
+import { useTranslation } from 'react-i18next';
+import { useAppTheme } from '../src/theme';
 import { useLifelogStore } from '../src/store/lifelogStore';
 import { DashboardCalendarModal } from './DashboardCalendarModal';
 
@@ -11,6 +12,8 @@ interface LifelogDateHeaderProps {
 }
 
 export function LifelogDateHeader({ style, type }: LifelogDateHeaderProps) {
+  const { t } = useTranslation();
+  const { colors } = useAppTheme();
   const currentDate = useLifelogStore((state) => state.currentDate);
   const setCurrentDate = useLifelogStore((state) => state.setCurrentDate);
   const [isCalendarVisible, setCalendarVisible] = useState(false);
@@ -64,32 +67,53 @@ export function LifelogDateHeader({ style, type }: LifelogDateHeaderProps) {
   const isToday = currentDate === getTodayStr();
 
   return (
-    <View style={[styles.dateHeader, style]}>
-      <TouchableOpacity onPress={handlePrevDay} style={styles.dateNavBtn}>
-        <Ionicons name="chevron-back" size={24} color="#fff" />
+    <View
+      style={[
+        styles.dateHeader,
+        { backgroundColor: colors.card, borderBottomColor: colors.border },
+        style,
+      ]}
+    >
+      <TouchableOpacity
+        onPress={handlePrevDay}
+        style={styles.dateNavBtn}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="chevron-back" size={24} color={colors.text} />
       </TouchableOpacity>
-      
+
       <View style={styles.dateTextContainer}>
-        <TouchableOpacity 
-          onPress={() => setCalendarVisible(true)} 
+        <TouchableOpacity
+          onPress={() => setCalendarVisible(true)}
           style={styles.dateSelectorTrigger}
           activeOpacity={0.7}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
         >
-          <Text style={styles.dateText}>{currentDate || getTodayStr()}</Text>
-          <View style={styles.calendarIconBtn}>
-            <Ionicons name="calendar-outline" size={20} color={Theme.colors.primary} />
-          </View>
+          <Text style={[styles.dateText, { color: colors.text }]}>
+            {currentDate || getTodayStr()}
+          </Text>
+          <Ionicons name="calendar-outline" size={20} color={colors.primary} />
         </TouchableOpacity>
         {!isToday && (
-          <TouchableOpacity onPress={handleGoToday} style={styles.todayBadge}>
-            <Text style={styles.todayBadgeText}>今日に戻る</Text>
+          <TouchableOpacity
+            onPress={handleGoToday}
+            style={styles.todayBadge}
+            activeOpacity={0.7}
+            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+          >
+            <Text style={[styles.todayBadgeText, { color: colors.primary }]}>
+              {t('ui.common.back_to_today') || '今日に戻る'}
+            </Text>
           </TouchableOpacity>
         )}
       </View>
 
-      <TouchableOpacity onPress={handleNextDay} style={styles.dateNavBtn}>
-        <Ionicons name="chevron-forward" size={24} color="#fff" />
+      <TouchableOpacity
+        onPress={handleNextDay}
+        style={styles.dateNavBtn}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="chevron-forward" size={24} color={colors.text} />
       </TouchableOpacity>
 
       <DashboardCalendarModal
@@ -108,16 +132,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Theme.colors.card,
     paddingVertical: 12,
-    paddingHorizontal: Theme.spacing.md,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
   },
   dateNavBtn: {
-    padding: 8,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   dateTextContainer: {
     alignItems: 'center',
@@ -125,38 +150,29 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   dateSelectorTrigger: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: Theme.borderRadius.md,
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
   },
   dateText: {
-    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
     letterSpacing: 0.5,
   },
-  calendarIconBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(79, 172, 254, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(79, 172, 254, 0.3)',
-  },
   todayBadge: {
-    backgroundColor: 'rgba(79, 172, 254, 0.2)',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: Theme.borderRadius.sm,
+    minHeight: 36,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(79, 172, 254, 0.18)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
   },
   todayBadgeText: {
-    color: Theme.colors.primary,
     fontSize: 12,
     fontWeight: '600',
   },
