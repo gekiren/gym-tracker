@@ -1,10 +1,9 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { useState, useCallback, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { getWorkoutsWithStats, loadFullWorkoutData, deleteWorkout, getExercises, addCustomExercise, deleteExercise, getFavoriteIds, toggleFavorite, getCustomExercisesCount, saveSetting, WorkoutWithStats, FullWorkoutData } from '../../src/db/database';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { useFocusEffect, router } from 'expo-router';
-import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { useTranslation } from 'react-i18next';
 import { translateExercise } from '../../src/i18n';
@@ -30,6 +29,8 @@ export default function HistoryScreen() {
 
   const [workouts, setWorkouts] = useState<WorkoutWithStats[]>([]);
   const { t, i18n } = useTranslation();
+  const { colors, spacing } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors, spacing), [colors, spacing]);
 
   const [activeTab, setActiveTab] = useState<'workouts' | 'exercises'>('workouts');
   const [isCalendarVisible, setCalendarVisible] = useState(false);
@@ -279,28 +280,15 @@ export default function HistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
-  header: { borderBottomWidth: 1, borderBottomColor: Theme.colors.border, backgroundColor: Theme.colors.background, paddingTop: 10, paddingBottom: 10 },
-  tabContainer: { flexDirection: 'row', paddingHorizontal: Theme.spacing.md, gap: 12 },
-  tabButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'transparent' },
-  tabButtonActive: { backgroundColor: 'rgba(79, 172, 254, 0.1)', borderColor: Theme.colors.primary },
-  tabButtonText: { color: Theme.colors.textMuted, fontSize: 15, fontWeight: 'bold', textAlign: 'center' },
-  tabButtonTextActive: { color: Theme.colors.primary },
-  calendarBtnHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    backgroundColor: 'rgba(79, 172, 254, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(79, 172, 254, 0.3)',
-    marginRight: Theme.spacing.md,
-  },
-  calendarBtnHeaderText: {
-    color: Theme.colors.primary,
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
+const createStyles = (
+  colors: ReturnType<typeof useAppTheme>['colors'],
+  spacing: ReturnType<typeof useAppTheme>['spacing']
+) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  header: { borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.background, paddingTop: 10, paddingBottom: 10 },
+  tabContainer: { flexDirection: 'row', paddingHorizontal: spacing.md, gap: 12 },
+  tabButton: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+  tabButtonActive: { backgroundColor: 'rgba(79, 172, 254, 0.12)', borderColor: colors.primary },
+  tabButtonText: { color: colors.textMuted, fontSize: 15, fontWeight: 'bold', textAlign: 'center' },
+  tabButtonTextActive: { color: colors.primary },
 });

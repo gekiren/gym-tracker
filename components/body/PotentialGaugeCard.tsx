@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { BodyCompositionLog } from '../../src/types/bodyComposition';
 import { analyzeMusclePotential } from '../../src/utils/bodyCalculators';
 
@@ -16,6 +16,8 @@ export default function PotentialGaugeCard({
   currentLog,
   latestLog,
 }: PotentialGaugeCardProps) {
+  const { colors, spacing } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors, spacing), [colors, spacing]);
   const savedMeasurements = useBodyStore((state) => state.savedMeasurements);
 
   const weight = currentLog?.weight ?? latestLog?.weight ?? null;
@@ -45,7 +47,7 @@ export default function PotentialGaugeCard({
         </View>
 
         <View style={styles.emptyBox}>
-          <Ionicons name="analytics-outline" size={24} color={Theme.colors.textMuted} style={{ marginBottom: 6 }} />
+          <Ionicons name="analytics-outline" size={24} color={colors.textMuted} style={{ marginBottom: 6 }} />
           <Text style={styles.emptyText}>
             体重・体脂肪率、および手首・足首サイズが記録されると、骨格限界に対する到達率と残存ポテンシャルが診断されます。
           </Text>
@@ -128,14 +130,17 @@ export default function PotentialGaugeCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (
+  colors: ReturnType<typeof useAppTheme>['colors'],
+  spacing: ReturnType<typeof useAppTheme>['spacing']
+) => StyleSheet.create({
   card: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.lg,
-    padding: Theme.spacing.md,
-    marginBottom: Theme.spacing.md,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -158,16 +163,16 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 17,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   cardSubtitle: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     marginTop: 2,
   },
   gaugeSection: {
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     padding: 14,
     marginBottom: 14,
   },
@@ -178,14 +183,14 @@ const styles = StyleSheet.create({
   },
   gaugeLabel: {
     fontSize: 13,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontWeight: '500',
   },
   gaugeSubHint: {
-    fontSize: 10,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
+    color: colors.textMuted,
     marginTop: 2,
-    opacity: 0.8,
+    opacity: 0.85,
   },
   reachWrap: {
     flexDirection: 'row',
@@ -209,29 +214,29 @@ const styles = StyleSheet.create({
   numberBox: {
     width: '48.5%',
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     padding: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   numberLabel: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
+    color: colors.textMuted,
     marginBottom: 2,
   },
   numberValue: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   numberUnit: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontWeight: 'normal',
   },
   adviceBox: {
     backgroundColor: 'rgba(74, 222, 128, 0.08)',
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     padding: 12,
     borderWidth: 1,
     borderColor: 'rgba(74, 222, 128, 0.2)',
@@ -248,7 +253,7 @@ const styles = StyleSheet.create({
   },
   adviceText: {
     fontSize: 12,
-    color: Theme.colors.text,
+    color: colors.text,
     lineHeight: 18,
   },
   emptyBox: {
@@ -257,7 +262,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 18,
     paddingHorizontal: 12,

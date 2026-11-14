@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Modal,
   TouchableOpacity,
+  Pressable,
   ScrollView,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 
 interface BodyGuideModalProps {
   visible: boolean;
@@ -17,18 +18,22 @@ interface BodyGuideModalProps {
 }
 
 export default function BodyGuideModal({ visible, onClose }: BodyGuideModalProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
       <View style={styles.modalBg}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.modalCard}>
           {/* Header */}
           <View style={styles.modalHeader}>
             <View style={styles.titleRow}>
-              <Ionicons name="book-outline" size={22} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+              <Ionicons name="book-outline" size={22} color={colors.primary} style={{ marginRight: 8 }} />
               <Text style={styles.modalTitle}>体組成・骨格測定ガイド</Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+              <Ionicons name="close" size={24} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
 
@@ -171,16 +176,18 @@ export default function BodyGuideModal({ visible, onClose }: BodyGuideModalProps
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   modalBg: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'flex-end',
   },
   modalCard: {
-    backgroundColor: Theme.colors.card,
+    backgroundColor: colors.card,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    borderTopWidth: 1,
+    borderColor: colors.border,
     maxHeight: '85%',
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
   },
@@ -189,9 +196,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
+    borderBottomColor: colors.border,
   },
   titleRow: {
     flexDirection: 'row',
@@ -200,10 +207,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   closeBtn: {
-    padding: 4,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollContent: {
     padding: 16,
@@ -211,10 +221,10 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: colors.border,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -224,18 +234,18 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   descText: {
     fontSize: 13,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     lineHeight: 19,
     marginBottom: 8,
   },
   subTitle: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
     marginTop: 6,
     marginBottom: 6,
   },
@@ -245,11 +255,11 @@ const styles = StyleSheet.create({
   guideItemTitle: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: Theme.colors.primary,
+    color: colors.primary,
   },
   guideItemText: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     lineHeight: 17,
     marginTop: 2,
   },
@@ -259,10 +269,10 @@ const styles = StyleSheet.create({
   },
   ffmiRow: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
   },
   ffmiBold: {
-    color: Theme.colors.text,
+    color: colors.text,
     fontWeight: 'bold',
   },
   formulaBox: {
@@ -283,10 +293,12 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   okBtn: {
-    backgroundColor: Theme.colors.primary,
+    minHeight: 48,
+    backgroundColor: colors.primary,
     paddingVertical: 14,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   okBtnText: {
     color: '#fff',

@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.40',
+  version: '2.3.41',
   title: {
-    ja: '🎯 ルーティン作成でのRPE入力に対応',
-    en: '🎯 RPE Input in Routine Builder',
+    ja: '🎨 履歴・AIコーチ・体組成UIの最適化',
+    en: '🎨 UI & Theme Refinements (History, AI Coach & Body)',
   },
   notes: {
     ja: [
-      'ルーティン作成・編集画面で、セットごとに RPE（主観的運動強度）を設定できるようになりました。',
-      'ルーティンからワークアウトを開始した際も、設定した RPE が各セットに引き継がれます。',
+      '履歴（ワークアウト・種目・グラフ・ライフログ）およびAIコーチ画面がダーク／ピュアブラックテーマに動的対応し、タップ領域・余白を最適化しました。',
+      '体組成 ＆ 筋肥大限界画面（サマリー・ポテンシャル・Navy/Casey計算・記録/取込モーダル）および各ライフログ画面のデザイン統一とモーダル操作性を改善しました。',
     ],
     en: [
-      'You can now set RPE (Rate of Perceived Exertion) for each set in the routine builder and editor.',
-      'Configured RPE values are carried over to sets when starting a workout from a routine.',
+      'Updated History (Workouts, Exercises, Charts, Lifelog) and AI Coach screens to follow Dark / Pure Black themes with improved tap targets and spacing.',
+      'Unified styling, modal backdrop dismissal, and readability across the Body Composition & Limit calculators, modals, and Lifelog screens.',
     ],
   },
 };

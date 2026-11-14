@@ -5,6 +5,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   ScrollView,
   Alert,
@@ -14,7 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
-import { Theme, useAppTheme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { parseBodyCompositionMarkdown, ParsedBodyRecord } from '../../src/utils/markdownBodyParser';
 import { useBodyStore } from '../../src/store/bodyStore';
 
@@ -44,8 +45,8 @@ export default function BodyMarkdownImportModal({
   onClose,
   onImportSuccess,
 }: BodyMarkdownImportModalProps) {
-  const { colors, backgroundTheme } = useAppTheme();
-  const isPureBlack = backgroundTheme === 'pureBlack';
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [mdText, setMdText] = useState('');
   const [showHelp, setShowHelp] = useState(false);
@@ -142,12 +143,8 @@ export default function BodyMarkdownImportModal({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.overlay}
       >
-        <View
-          style={[
-            styles.modalContainer,
-            { backgroundColor: isPureBlack ? '#0a0a0a' : Theme.colors.card },
-          ]}
-        >
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.modalContainer}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.titleRow}>
@@ -157,7 +154,7 @@ export default function BodyMarkdownImportModal({
               <Text style={styles.title}>体組成 Markdown 取込</Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
-              <Ionicons name="close" size={22} color={Theme.colors.textMuted} />
+              <Ionicons name="close" size={22} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
 
@@ -201,7 +198,7 @@ export default function BodyMarkdownImportModal({
                 <Ionicons
                   name={showHelp ? 'chevron-up' : 'help-circle-outline'}
                   size={16}
-                  color={Theme.colors.primary}
+                  color={colors.primary}
                   style={{ marginRight: 4 }}
                 />
                 <Text style={styles.helpToggleText}>
@@ -246,7 +243,7 @@ export default function BodyMarkdownImportModal({
               <TextInput
                 style={styles.textInput}
                 placeholder="Markdownテキストをここに貼り付けてください...&#10;例:&#10;| 測定日 | 体重 | 体脂肪率 | 骨格筋量 |&#10;| 2026-09-14 | 70.5 | 15.2 | 33.2 |"
-                placeholderTextColor={Theme.colors.textMuted}
+                placeholderTextColor={colors.textMuted}
                 multiline
                 numberOfLines={7}
                 value={mdText}
@@ -375,18 +372,19 @@ export default function BodyMarkdownImportModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
   modalContainer: {
+    backgroundColor: colors.card,
     maxHeight: '90%',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
     paddingTop: 16,
     paddingBottom: Platform.OS === 'ios' ? 32 : 16,
   },
@@ -397,7 +395,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
+    borderBottomColor: colors.border,
   },
   titleRow: {
     flexDirection: 'row',
@@ -415,10 +413,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   closeBtn: {
-    padding: 6,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollArea: {
     flexGrow: 1,
@@ -428,7 +429,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 13,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     lineHeight: 19,
     marginBottom: 14,
   },
@@ -440,6 +441,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   pasteBtn: {
+    minHeight: 38,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(56, 189, 248, 0.12)',
@@ -455,6 +457,7 @@ const styles = StyleSheet.create({
     color: '#38bdf8',
   },
   clearBtn: {
+    minHeight: 38,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -468,6 +471,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   helpToggleBtn: {
+    minHeight: 38,
     flexDirection: 'row',
     alignItems: 'center',
     marginLeft: 'auto',
@@ -476,50 +480,51 @@ const styles = StyleSheet.create({
   },
   helpToggleText: {
     fontSize: 12,
-    color: Theme.colors.primary,
+    color: colors.primary,
     fontWeight: '600',
   },
   helpBox: {
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 14,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
   },
   helpTitle: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
     marginBottom: 8,
   },
   templateSectionLabel: {
     fontSize: 12,
-    color: Theme.colors.primary,
+    color: colors.primary,
     fontWeight: '600',
     marginBottom: 4,
   },
   templateCode: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 11,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
+    color: colors.textMuted,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     padding: 8,
     borderRadius: 6,
-    lineHeight: 16,
+    lineHeight: 18,
   },
   applyTemplateBtn: {
+    minHeight: 36,
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
     marginTop: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     backgroundColor: 'rgba(56, 189, 248, 0.1)',
-    borderRadius: 6,
+    borderRadius: 8,
   },
   applyTemplateBtnText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#38bdf8',
     fontWeight: 'bold',
   },
@@ -527,13 +532,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
     marginBottom: 16,
   },
   textInput: {
     padding: 14,
     fontSize: 13,
-    color: Theme.colors.text,
+    color: colors.text,
     minHeight: 130,
     maxHeight: 200,
     lineHeight: 20,
@@ -551,7 +556,7 @@ const styles = StyleSheet.create({
   previewTitle: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   badgeSuccess: {
     flexDirection: 'row',
@@ -584,10 +589,10 @@ const styles = StyleSheet.create({
   },
   previewCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
   },
   cardTopRow: {
     flexDirection: 'row',
@@ -602,16 +607,16 @@ const styles = StyleSheet.create({
   dateChipText: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   currentDateBadge: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#38bdf8',
     backgroundColor: 'rgba(56, 189, 248, 0.15)',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 6,
   },
   statsRow: {
     flexDirection: 'row',
@@ -625,13 +630,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statItemLabel: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
+    color: colors.textMuted,
   },
   statItemValue: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+    color: colors.text,
   },
   cardSubDetails: {
     flexDirection: 'row',
@@ -644,12 +649,12 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255, 255, 255, 0.05)',
   },
   subDetailText: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
+    color: colors.textMuted,
   },
   noDataHint: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontStyle: 'italic',
     textAlign: 'center',
     paddingVertical: 14,
@@ -662,26 +667,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: Theme.colors.border,
+    borderTopColor: colors.border,
   },
   cancelBtn: {
+    minHeight: 48,
+    justifyContent: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
   },
   cancelBtnText: {
     fontSize: 14,
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontWeight: '600',
   },
   importBtn: {
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Theme.colors.primary,
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   importBtnDisabled: {
     opacity: 0.4,

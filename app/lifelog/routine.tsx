@@ -3,7 +3,7 @@ import { View, TouchableOpacity, Alert, BackHandler } from 'react-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { useKeepAwake } from 'expo-keep-awake';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { WebViewTab, WebViewTabRef } from '../../components/WebViewTab';
 import RoutineTrackerHTML from '../../src/web-apps/RoutineTracker';
 import { useLifelogStore } from '../../src/store/lifelogStore';
@@ -20,6 +20,7 @@ function KeepAwakeController() {
 }
 
 export default function RoutineScreen() {
+  const { colors } = useAppTheme();
   const currentDate = useLifelogStore((state) => state.currentDate);
   const isExecuting = useLifelogStore((state) => state.activeRoutineState?.isExecuting || false);
   const [showHistory, setShowHistory] = useState(false);
@@ -94,26 +95,35 @@ export default function RoutineScreen() {
 
   return (
     <PanGestureHandler {...panHandlerProps}>
-      <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         {isFocused && isExecuting && <KeepAwakeController />}
         <Stack.Screen
           options={{
             title: 'ルーティン管理',
-            headerStyle: { backgroundColor: Theme.colors.background },
-            headerTintColor: Theme.colors.text,
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.text,
             headerTitleStyle: { fontWeight: 'bold' },
             headerLeft: () => (
-              <TouchableOpacity onPress={handleBack} style={{ marginLeft: 8, padding: 4 }}>
-                <Ionicons name="arrow-back" size={24} color={Theme.colors.primary} />
+              <TouchableOpacity
+                onPress={handleBack}
+                style={{ marginLeft: 4, minWidth: 40, minHeight: 40, padding: 8, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Ionicons name="arrow-back" size={24} color={colors.primary} />
               </TouchableOpacity>
             ),
             headerRight: () => (
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
-                <TouchableOpacity onPress={() => setShowHistory(prev => !prev)} style={{ padding: 6, marginRight: 6 }}>
-                  <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={Theme.colors.primary} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
+                <TouchableOpacity
+                  onPress={() => setShowHistory(prev => !prev)}
+                  style={{ minWidth: 40, minHeight: 40, padding: 8, marginRight: 2, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={colors.primary} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={handleOpenManageView} style={{ padding: 6 }}>
-                  <Ionicons name="settings-outline" size={22} color={Theme.colors.primary} />
+                <TouchableOpacity
+                  onPress={handleOpenManageView}
+                  style={{ minWidth: 40, minHeight: 40, padding: 8, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Ionicons name="settings-outline" size={22} color={colors.primary} />
                 </TouchableOpacity>
               </View>
             ),
