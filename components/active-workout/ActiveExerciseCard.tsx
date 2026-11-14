@@ -252,11 +252,20 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
                 onOpenStanceModal({ type: 'exercise', exId: ex.id, currentValue: currentStance });
               }}
             >
-              <Text style={styles.exerciseVariationTextBottom}>
-                {t('ui.active_workout.stance_label')}:{'\n'}
-                {currentStance ? translateStance(currentStance as string) : t('ui.active_workout.stance_standard')}
+              <Text
+                style={[styles.exerciseVariationTextBottom, { flexShrink: 1 }]}
+                numberOfLines={currentStance ? 1 : 2}
+              >
+                {currentStance
+                  ? translateStance(currentStance as string)
+                  : `${t('ui.active_workout.stance_label')}:\n${t('ui.active_workout.stance_standard')}`}
               </Text>
-              <Ionicons name="chevron-down" size={10} color={Theme.colors.primary} style={{ marginLeft: 2, alignSelf: 'flex-end', marginBottom: 2 }} />
+              <Ionicons
+                name="chevron-down"
+                size={10}
+                color={Theme.colors.primary}
+                style={{ marginLeft: 2, alignSelf: currentStance ? 'center' : 'flex-end', marginBottom: currentStance ? 0 : 2 }}
+              />
             </GHTouchableOpacity>
           )}
         </View>
@@ -316,6 +325,7 @@ const styles = StyleSheet.create({
   },
   bottomLeftContainer: {
     flex: 1,
+    minWidth: 0,
     alignItems: 'flex-start',
     justifyContent: 'center',
   },
@@ -325,6 +335,7 @@ const styles = StyleSheet.create({
   exerciseVariationBtnBottom: {
     flexDirection: 'row',
     alignItems: 'center',
+    maxWidth: '100%',
     backgroundColor: 'rgba(79, 172, 254, 0.1)',
     paddingHorizontal: 8,
     paddingVertical: 4,

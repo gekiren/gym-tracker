@@ -118,7 +118,7 @@
       "stance_add_original_btn": "+ Add Original Stance",
       "stance_exercise_hint": "Changing this will automatically apply the stance to subsequent sets.",
       "stance_label": "Stance",
-      "stance_add_link": "Stance: Add",
+      "stance_add_link": "Stance",
       "pr_label": "🏆 New PR!",
       "stance_delete_title": "Delete Stance",
       "stance_delete_message": "Delete \"{{name}}\" from the preset list?",

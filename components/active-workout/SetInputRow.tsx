@@ -366,9 +366,9 @@ export function SetInputRow({
     >
       <View style={{ backgroundColor: Theme.colors.card }}>
         <View style={[styles.row, set.is_completed && styles.rowCompleted]}>
-          <View style={{ width: isTreadmill ? 40 : (isAerobic ? 44 : 32), alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={styles.tdSet} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-              {set.set_number}{set.side ? `(${set.side})` : ''}
+          <View style={{ width: isTreadmill ? 40 : (isAerobic ? 44 : 32), alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <Text style={styles.tdSet} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65}>
+              {!isTreadmill && !isAerobic && isPR ? '🏆' : ''}{set.set_number}{set.side ? `(${set.side})` : ''}
             </Text>
           </View>
 
@@ -817,13 +817,22 @@ export function SetInputRow({
                 {/* 上段: スタンス */}
                 {displayFields?.showStance !== false ? (
                   set.is_completed ? (
-                    <Text style={styles.stackStanceText} numberOfLines={1}>
+                    <Text
+                      style={[
+                        styles.stackStanceText,
+                        !(set.stance || set.variation) && { color: Theme.colors.textMuted }
+                      ]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.75}
+                    >
                       {(set.stance || set.variation)
-                        ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.stance || set.variation)}`
-                        : `${t('ui.active_workout.stance_label')}: -`}
+                        ? translateStance(set.stance || set.variation)
+                        : '-'}
                     </Text>
                   ) : (
                     <GHTouchableOpacity
+                      style={{ maxWidth: '100%' }}
                       onPress={() => {
                         const curStance = set.stance || set.variation || null;
                         setStanceModalTarget({ type: 'set', exId: ex.id, setId: set.id, currentValue: curStance });
@@ -840,38 +849,42 @@ export function SetInputRow({
                           }
                         ]}
                         numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.75}
                       >
                         {(set.stance || set.variation)
-                          ? `${t('ui.active_workout.stance_label')}: ${translateStance(set.stance || set.variation)}`
+                          ? translateStance(set.stance || set.variation)
                           : t('ui.active_workout.stance_add_link')}
                       </Text>
                     </GHTouchableOpacity>
                   )
                 ) : null}
 
-                {/* 下段: 1RM / PR / 時間 */}
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  {isPR && (
-                    <Text style={styles.stackPrText} numberOfLines={1}>
-                      {t('ui.active_workout.pr_label').split(' ')[0]}
-                    </Text>
-                  )}
-                  {displayFields?.show1RM !== false && currentRM != null && (
-                    <Text style={styles.stackRmText} numberOfLines={1}>
-                      1RM: {ex.equipment === '自重' ? `BW+${currentRM}` : currentRM}
-                    </Text>
-                  )}
-                  {restTimeStr ? (
-                    <Text style={styles.stackTimeText} numberOfLines={1}>
-                      {restTimeStr}
-                    </Text>
-                  ) : null}
-                  {timeTakenStr ? (
-                    <Text style={[styles.stackTimeText, { color: Theme.colors.success }]} numberOfLines={1}>
-                      {timeTakenStr}
-                    </Text>
-                  ) : null}
-                </View>
+                {/* 下段: 1RM / 時間 */}
+                {((displayFields?.show1RM !== false && currentRM != null) || !!restTimeStr || !!timeTakenStr) && (
+                  <Text
+                    style={styles.stackBottomRowText}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.65}
+                  >
+                    {displayFields?.show1RM !== false && currentRM != null && (
+                      <Text style={styles.stackRmText}>
+                        1RM:{ex.equipment === '自重' ? `BW+${currentRM}` : currentRM}
+                      </Text>
+                    )}
+                    {restTimeStr ? (
+                      <Text style={styles.stackTimeText}>
+                        {displayFields?.show1RM !== false && currentRM != null ? ' ' : ''}{restTimeStr}
+                      </Text>
+                    ) : null}
+                    {timeTakenStr ? (
+                      <Text style={[styles.stackTimeText, { color: Theme.colors.success }]}>
+                        {(displayFields?.show1RM !== false && currentRM != null) || restTimeStr ? ' ' : ''}{timeTakenStr}
+                      </Text>
+                    ) : null}
+                  </Text>
+                )}
               </View>
             )}
           </>
@@ -1031,7 +1044,7 @@ export function SetInputRow({
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, paddingHorizontal: 4 },
   rowCompleted: { opacity: 0.7 },
-  tdSet: { color: Theme.colors.text, textAlign: 'center', fontSize: 14, fontWeight: '500' },
+  tdSet: { width: '100%', color: Theme.colors.text, textAlign: 'center', fontSize: 14, fontWeight: '500' },
   input: {
     backgroundColor: '#2a2a2a',
     color: Theme.colors.text,
@@ -1146,35 +1159,35 @@ const styles = StyleSheet.create({
   },
   metaStackCell: {
     flex: 1,
+    minWidth: 0,
+    overflow: 'hidden',
     height: 32,
     justifyContent: 'center',
     alignItems: 'flex-start',
-    paddingHorizontal: 4,
+    paddingLeft: 4,
+    paddingRight: 2,
   },
   stackStanceText: {
     fontSize: 10,
     color: Theme.colors.primary,
     fontWeight: '500',
     lineHeight: 13,
+    maxWidth: '100%',
   },
-  stackPrText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#f5a623',
-    marginRight: 4,
+  stackBottomRowText: {
+    width: '100%',
+    fontSize: 10.5,
     lineHeight: 14,
   },
   stackRmText: {
     fontSize: 10.5,
     fontWeight: '700',
     color: '#f5a623',
-    marginRight: 4,
     lineHeight: 14,
   },
   stackTimeText: {
     fontSize: 9.5,
     color: Theme.colors.textMuted,
-    marginRight: 3,
     lineHeight: 13,
   },
 });
