@@ -1,9 +1,9 @@
 import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { router } from 'expo-router';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { format, startOfWeek, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval } from 'date-fns';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { AI_CONFIG } from '../../src/config/aiConfig';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { HistoryChart, ChartMetric } from './HistoryChart';
@@ -31,6 +31,8 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
   t,
   i18n,
 }) => {
+  const { colors, spacing } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors, spacing), [colors, spacing]);
   const flatListRef = useRef<FlatList>(null);
   const isJa = i18n.language === 'ja';
   const cardOffsets = useRef<{ [key: number]: number }>({});
@@ -132,14 +134,17 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
         animationType="fade"
         onRequestClose={() => setCalendarVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: '90%' }]}>
+        <Pressable style={styles.modalOverlay} onPress={() => setCalendarVisible(false)}>
+          <Pressable style={[styles.modalContent, { maxHeight: '90%' }]} onPress={(e) => e.stopPropagation()}>
             <View style={styles.calendarModalHeader}>
               <Text style={styles.calendarModalTitle}>
                 {isJa ? 'ワークアウト履歴カレンダー' : 'Workout Calendar'}
               </Text>
-              <TouchableOpacity onPress={() => setCalendarVisible(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+              <TouchableOpacity
+                onPress={() => setCalendarVisible(false)}
+                style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
+              >
+                <Ionicons name="close" size={24} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
@@ -148,14 +153,14 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
                 onPress={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
                 style={styles.monthNavButton}
               >
-                <Ionicons name="chevron-back" size={22} color={Theme.colors.primary} />
+                <Ionicons name="chevron-back" size={22} color={colors.primary} />
               </TouchableOpacity>
               <Text style={styles.monthText}>{monthYearText}</Text>
               <TouchableOpacity
                 onPress={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
                 style={styles.monthNavButton}
               >
-                <Ionicons name="chevron-forward" size={22} color={Theme.colors.primary} />
+                <Ionicons name="chevron-forward" size={22} color={colors.primary} />
               </TouchableOpacity>
             </View>
 
@@ -218,8 +223,8 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
                 </View>
               </View>
             </View>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     );
   };
@@ -238,7 +243,7 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
             <TouchableOpacity 
               style={[
                 styles.card,
-                isHighlighted && { borderColor: Theme.colors.primary, borderWidth: 2 }
+                isHighlighted && { borderColor: colors.primary, borderWidth: 2 }
               ]}
               activeOpacity={0.7}
               onLayout={(e) => {
@@ -253,24 +258,27 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
                     <TouchableOpacity 
                       onPress={() => onAICoachHistory(w.id, w.title)} 
                       style={[styles.exportIcon, { marginRight: 8 }]}
+                      hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                       accessibilityLabel={t('ui.accessibility.ai_coach_history')}
                     >
-                      <Ionicons name="sparkles" size={18} color={Theme.colors.primary} />
+                      <Ionicons name="sparkles" size={18} color={colors.primary} />
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity 
                     onPress={() => onSNSShare(w.id)} 
                     style={[styles.exportIcon, { marginRight: 8 }]}
+                    hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                     accessibilityLabel={t('ui.accessibility.share_sns')}
                   >
-                    <Ionicons name="share-social" size={18} color={Theme.colors.primary} />
+                    <Ionicons name="share-social" size={18} color={colors.primary} />
                   </TouchableOpacity>
                   <TouchableOpacity 
                     onPress={() => onDeleteWorkout(w.id, w.title)} 
-                    style={[styles.exportIcon, { backgroundColor: 'rgba(255,50,50,0.1)' }]}
+                    style={[styles.exportIcon, { backgroundColor: 'rgba(255,59,48,0.12)', borderColor: 'rgba(255,59,48,0.3)' }]}
+                    hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                     accessibilityLabel={t('ui.accessibility.delete_workout')}
                   >
-                    <Ionicons name="trash" size={18} color={Theme.colors.danger} />
+                    <Ionicons name="trash" size={18} color={colors.danger} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -285,7 +293,7 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
               
               {w.notes && (
                 <View style={styles.notesPreview}>
-                  <Ionicons name="document-text-outline" size={14} color={Theme.colors.textMuted} style={{ marginRight: 4 }} />
+                  <Ionicons name="document-text-outline" size={14} color={colors.textMuted} style={{ marginRight: 4 }} />
                   <Text style={styles.notesPreviewText} numberOfLines={2}>{w.notes}</Text>
                 </View>
               )}
@@ -334,46 +342,49 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (
+  colors: ReturnType<typeof useAppTheme>['colors'],
+  spacing: ReturnType<typeof useAppTheme>['spacing']
+) => StyleSheet.create({
   subContainer: { flex: 1 },
-  content: { padding: Theme.spacing.md, paddingBottom: 100 },
-  subtitle: { color: Theme.colors.textMuted, fontSize: 14, fontWeight: '600', marginTop: Theme.spacing.xs, marginBottom: Theme.spacing.md },
-  card: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, marginBottom: Theme.spacing.md, borderWidth: 1, borderColor: Theme.colors.border },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.xs },
-  cardTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', flex: 1, marginRight: 8 },
-  exportIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' },
-  dateText: { color: Theme.colors.textMuted, fontSize: 13 },
-  durationText: { color: Theme.colors.textMuted, fontSize: 13 },
-  notesPreview: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', padding: 8, borderRadius: 6, marginBottom: 12 },
-  notesPreviewText: { color: Theme.colors.textMuted, fontSize: 13, flex: 1 },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: Theme.colors.border, paddingTop: Theme.spacing.md },
+  content: { padding: spacing.md, paddingBottom: 100 },
+  subtitle: { color: colors.textMuted, fontSize: 14, fontWeight: '600', marginTop: spacing.xs, marginBottom: spacing.md },
+  card: { backgroundColor: colors.card, borderRadius: 16, padding: spacing.md, marginBottom: spacing.md, borderWidth: 1, borderColor: colors.border },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs },
+  cardTitle: { color: colors.text, fontSize: 18, fontWeight: 'bold', flex: 1, marginRight: 8 },
+  exportIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' },
+  dateText: { color: colors.textMuted, fontSize: 13 },
+  durationText: { color: colors.textMuted, fontSize: 13 },
+  notesPreview: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, padding: 10, borderRadius: 10, marginBottom: 12 },
+  notesPreviewText: { color: colors.textMuted, fontSize: 13, flex: 1 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md },
   statBlock: { alignItems: 'center', flex: 1 },
-  statLabel: { color: Theme.colors.textMuted, fontSize: 11, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
-  statValue: { color: Theme.colors.text, fontSize: 15, fontWeight: 'bold' },
+  statLabel: { color: colors.textMuted, fontSize: 12, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+  statValue: { color: colors.text, fontSize: 15, fontWeight: 'bold' },
   emptyState: { padding: 40, alignItems: 'center', justifyContent: 'center' },
-  emptyStateText: { color: Theme.colors.textMuted, fontSize: 14, textAlign: 'center' },
+  emptyStateText: { color: colors.textMuted, fontSize: 14, textAlign: 'center' },
 
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.75)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  modalContent: { backgroundColor: Theme.colors.card, borderRadius: 16, padding: 20, width: '100%', maxWidth: 360, borderWidth: 1, borderColor: Theme.colors.border },
+  modalContent: { backgroundColor: colors.card, borderRadius: 16, padding: 20, width: '100%', maxWidth: 360, borderWidth: 1, borderColor: colors.border },
   calendarModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  calendarModalTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-  monthSelector: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, backgroundColor: '#1c1c1e', borderRadius: 8, padding: 4 },
-  monthNavButton: { padding: 6 },
-  monthText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  calendarModalTitle: { fontSize: 18, fontWeight: 'bold', color: colors.text },
+  monthSelector: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 4 },
+  monthNavButton: { minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
+  monthText: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
   weekdaysContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  weekdayText: { color: Theme.colors.textMuted, fontSize: 12, width: 40, textAlign: 'center', fontWeight: '600' },
+  weekdayText: { color: colors.textMuted, fontSize: 12, width: 40, textAlign: 'center', fontWeight: '600' },
   daysGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8 },
   dayCell: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   dayBox: { width: 34, height: 34, borderRadius: 17, justifyContent: 'center', alignItems: 'center' },
-  workoutDayBox: { backgroundColor: 'rgba(79, 172, 254, 0.15)', borderWidth: 1, borderColor: Theme.colors.primary },
-  dayText: { color: '#fff', fontSize: 14 },
-  dimmedDayText: { color: 'rgba(255,255,255,0.15)' },
-  workoutDayText: { color: Theme.colors.primary, fontWeight: 'bold' },
-  summaryContainer: { marginTop: 20, paddingTop: 16, borderTopWidth: 1, borderTopColor: Theme.colors.border },
-  summaryTitle: { fontSize: 15, fontWeight: 'bold', color: '#fff', marginBottom: 12 },
+  workoutDayBox: { backgroundColor: 'rgba(79, 172, 254, 0.15)', borderWidth: 1, borderColor: colors.primary },
+  dayText: { color: colors.text, fontSize: 14 },
+  dimmedDayText: { color: colors.textMuted, opacity: 0.35 },
+  workoutDayText: { color: colors.primary, fontWeight: 'bold' },
+  summaryContainer: { marginTop: 20, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.border },
+  summaryTitle: { fontSize: 15, fontWeight: 'bold', color: colors.text, marginBottom: 12 },
   summaryStatsRow: { flexDirection: 'row', justifyContent: 'space-between' },
   summaryStatBlock: { alignItems: 'center', flex: 1 },
-  summaryStatLabel: { color: Theme.colors.textMuted, fontSize: 10, marginBottom: 4 },
-  summaryStatValue: { color: Theme.colors.text, fontSize: 14, fontWeight: 'bold' },
+  summaryStatLabel: { color: colors.textMuted, fontSize: 12, marginBottom: 4 },
+  summaryStatValue: { color: colors.text, fontSize: 14, fontWeight: 'bold' },
 });

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ScrollView, Modal, Switch, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ScrollView, Modal, Switch, KeyboardAvoidingView, Platform, Alert, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { translateExercise, translateMuscleGroup, translateEquipment } from '../../src/i18n';
 import { router } from 'expo-router';
 
@@ -21,6 +21,7 @@ interface SwipeDeleteActionProps {
 }
 
 function SwipeDeleteAction({ drag, onPress }: SwipeDeleteActionProps) {
+  const { colors } = useAppTheme();
   const styleAnimation = useAnimatedStyle(() => {
     return {
       transform: [{ translateX: drag.value + 80 }],
@@ -28,10 +29,10 @@ function SwipeDeleteAction({ drag, onPress }: SwipeDeleteActionProps) {
   });
 
   return (
-    <View style={{ width: 80, flexDirection: 'row' }}>
+    <View style={{ width: 80, flexDirection: 'row', marginBottom: 10 }}>
       <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
         <GHTouchableOpacity 
-          style={styles.deleteAction}
+          style={{ flex: 1, backgroundColor: colors.danger, justifyContent: 'center', alignItems: 'center', borderRadius: 16 }}
           onPress={onPress}
         >
           <Ionicons name="trash-outline" size={24} color="#fff" />
@@ -60,6 +61,8 @@ export const HistoryExercisesTab: React.FC<HistoryExercisesTabProps> = ({
   isBasic,
   t,
 }) => {
+  const { colors, spacing } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors, spacing), [colors, spacing]);
   const [search, setSearch] = useState('');
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('すべて');
@@ -136,11 +139,11 @@ export const HistoryExercisesTab: React.FC<HistoryExercisesTabProps> = ({
     <View style={styles.subContainer}>
       <View style={styles.actionRow}>
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={Theme.colors.textMuted} style={{ marginRight: 8 }} />
+          <Ionicons name="search" size={20} color={colors.textMuted} style={{ marginRight: 8 }} />
           <TextInput
             style={styles.searchInput}
             placeholder={t('ui.exercise_library.search_placeholder')}
-            placeholderTextColor={Theme.colors.textMuted}
+            placeholderTextColor={colors.textMuted}
             value={search}
             onChangeText={setSearch}
           />
@@ -151,7 +154,7 @@ export const HistoryExercisesTab: React.FC<HistoryExercisesTabProps> = ({
       </View>
 
       {/* Category Filter Chips */}
-      <View style={{ height: 40, marginBottom: 8 }}>
+      <View style={{ minHeight: 44, marginBottom: 8 }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipContainer}>
           {filterCategories.map(cat => (
             <TouchableOpacity 
@@ -166,7 +169,7 @@ export const HistoryExercisesTab: React.FC<HistoryExercisesTabProps> = ({
       </View>
 
       {/* Equipment Filter Chips */}
-      <View style={{ height: 40, marginBottom: 12 }}>
+      <View style={{ minHeight: 44, marginBottom: 12 }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipContainer}>
           {filterEquipments.map(eq => (
             <TouchableOpacity 
@@ -204,11 +207,11 @@ export const HistoryExercisesTab: React.FC<HistoryExercisesTabProps> = ({
                     <Text style={styles.exerciseMeta}>{translateEquipment(item.equipment)}</Text>
                   </View>
                 </View>
-                <GHTouchableOpacity onPress={() => onToggleFavorite(item)} style={{ padding: 6 }}>
+                <GHTouchableOpacity onPress={() => onToggleFavorite(item)} style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}>
                   <Ionicons 
                     name={isFav ? "star" : "star-outline"} 
                     size={22} 
-                    color={isFav ? '#ffd700' : Theme.colors.textMuted} 
+                    color={isFav ? '#ffd700' : colors.textMuted} 
                   />
                 </GHTouchableOpacity>
               </GHTouchableOpacity>
@@ -223,13 +226,14 @@ export const HistoryExercisesTab: React.FC<HistoryExercisesTabProps> = ({
       />
 
       {/* Add Custom Exercise Modal */}
-      <Modal visible={isModalVisible} animationType="slide" transparent={true}>
+      <Modal visible={isModalVisible} animationType="slide" transparent={true} onRequestClose={() => setModalVisible(false)}>
         <KeyboardAvoidingView 
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <View style={styles.modalBg}>
-            <View style={styles.modalCard}>
+          <Pressable style={styles.modalBg} onPress={() => setModalVisible(false)}>
+            <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <Text style={styles.modalTitle}>{t('ui.exercise_library.add_custom_title')}</Text>
               
               <Text style={styles.fieldLabel}>{t('ui.exercise_library.label_name')}</Text>
@@ -238,7 +242,7 @@ export const HistoryExercisesTab: React.FC<HistoryExercisesTabProps> = ({
                 value={newName}
                 onChangeText={setNewName}
                 placeholder={t('ui.exercise_library.placeholder_name')}
-                placeholderTextColor="rgba(255,255,255,0.3)"
+                placeholderTextColor={colors.textMuted}
               />
 
               <Text style={styles.fieldLabel}>{t('ui.exercise_library.label_muscle')}</Text>
@@ -279,7 +283,7 @@ export const HistoryExercisesTab: React.FC<HistoryExercisesTabProps> = ({
                 <Switch
                   value={isUnilateral}
                   onValueChange={setIsUnilateral}
-                  trackColor={{ false: '#333', true: Theme.colors.primary }}
+                  trackColor={{ false: colors.border, true: colors.primary }}
                   thumbColor={'#fff'}
                 />
               </View>
@@ -292,7 +296,7 @@ export const HistoryExercisesTab: React.FC<HistoryExercisesTabProps> = ({
                 <Switch
                   value={useDefaultStance}
                   onValueChange={setUseDefaultStance}
-                  trackColor={{ false: '#333', true: Theme.colors.primary }}
+                  trackColor={{ false: colors.border, true: colors.primary }}
                   thumbColor={'#fff'}
                 />
               </View>
@@ -305,7 +309,7 @@ export const HistoryExercisesTab: React.FC<HistoryExercisesTabProps> = ({
                     value={newDefaultStance}
                     onChangeText={setNewDefaultStance}
                     placeholder="例: ナロー"
-                    placeholderTextColor="rgba(255,255,255,0.3)"
+                    placeholderTextColor={colors.textMuted}
                   />
                 </View>
               )}
@@ -318,49 +322,51 @@ export const HistoryExercisesTab: React.FC<HistoryExercisesTabProps> = ({
                   <Text style={styles.modalConfirmBtnText}>{t('ui.common.add')}</Text>
                 </TouchableOpacity>
               </View>
-            </View>
-          </View>
+              </ScrollView>
+            </Pressable>
+          </Pressable>
         </KeyboardAvoidingView>
       </Modal>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (
+  colors: ReturnType<typeof useAppTheme>['colors'],
+  spacing: ReturnType<typeof useAppTheme>['spacing']
+) => StyleSheet.create({
   subContainer: { flex: 1 },
-  actionRow: { flexDirection: 'row', gap: 10, paddingHorizontal: Theme.spacing.md, paddingVertical: 8, alignItems: 'center' },
-  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: Theme.colors.card, borderRadius: 8, paddingHorizontal: 12, height: 44, borderWidth: 1, borderColor: Theme.colors.border },
-  searchInput: { flex: 1, color: Theme.colors.text, fontSize: 16 },
-  addBtn: { width: 44, height: 44, borderRadius: 8, backgroundColor: Theme.colors.primary, justifyContent: 'center', alignItems: 'center' },
-  chipContainer: { flexDirection: 'row', gap: 6, paddingHorizontal: Theme.spacing.md },
-  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: Theme.colors.card, borderWidth: 1, borderColor: Theme.colors.border, height: 32, justifyContent: 'center' },
-  chipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: Theme.colors.primary },
-  chipText: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: '500' },
-  chipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' },
-  exerciseCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Theme.colors.card, borderRadius: 8, padding: 16, marginHorizontal: Theme.spacing.md, marginBottom: 8, borderWidth: 1, borderColor: Theme.colors.border },
-  exerciseName: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  exerciseMeta: { color: Theme.colors.textMuted, fontSize: 12 },
+  actionRow: { flexDirection: 'row', gap: 10, paddingHorizontal: spacing.md, paddingVertical: 8, alignItems: 'center' },
+  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 12, paddingHorizontal: 12, height: 44, borderWidth: 1, borderColor: colors.border },
+  searchInput: { flex: 1, color: colors.text, fontSize: 16 },
+  addBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' },
+  chipContainer: { flexDirection: 'row', gap: 8, paddingHorizontal: spacing.md, alignItems: 'center' },
+  chip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 18, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, minHeight: 36, justifyContent: 'center' },
+  chipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: colors.primary },
+  chipText: { color: colors.textMuted, fontSize: 13, fontWeight: '500' },
+  chipTextActive: { color: colors.primary, fontWeight: 'bold' },
+  exerciseCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 16, padding: 16, marginHorizontal: spacing.md, marginBottom: 10, borderWidth: 1, borderColor: colors.border },
+  exerciseName: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
+  exerciseMeta: { color: colors.textMuted, fontSize: 12 },
   emptyState: { padding: 40, alignItems: 'center', justifyContent: 'center' },
-  emptyStateText: { color: Theme.colors.textMuted, fontSize: 14, textAlign: 'center' },
-  
-  deleteAction: { backgroundColor: Theme.colors.danger, justifyContent: 'center', alignItems: 'center', width: 80, height: '88%', borderRadius: 8 },
+  emptyStateText: { color: colors.textMuted, fontSize: 14, textAlign: 'center' },
 
   // Modal styles
   modalBg: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.75)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  modalCard: { backgroundColor: Theme.colors.card, borderRadius: 16, padding: 20, width: '100%', maxWidth: 400, borderWidth: 1, borderColor: Theme.colors.border },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: Theme.colors.text, marginBottom: 16, textAlign: 'center' },
-  fieldLabel: { color: Theme.colors.text, fontSize: 14, fontWeight: 'bold', marginBottom: 6, width: '100%' },
-  fieldDesc: { color: Theme.colors.textMuted, fontSize: 11, marginBottom: 6, lineHeight: 15 },
-  modalInput: { backgroundColor: '#121212', color: Theme.colors.text, padding: 10, borderRadius: 8, fontSize: 16, borderWidth: 1, borderColor: Theme.colors.border, width: '100%', marginBottom: 16 },
-  selectRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, width: '100%', marginBottom: 16 },
-  selectChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: '#222', borderWidth: 1, borderColor: Theme.colors.border },
-  selectChipActive: { backgroundColor: 'rgba(79,172,254,0.15)', borderColor: Theme.colors.primary },
-  selectChipText: { color: Theme.colors.textMuted, fontSize: 12 },
-  selectChipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' },
-  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 12, borderBottomWidth: 1, borderBottomColor: Theme.colors.border, paddingBottom: 12 },
+  modalCard: { backgroundColor: colors.card, borderRadius: 16, padding: 20, width: '100%', maxWidth: 400, maxHeight: '88%', borderWidth: 1, borderColor: colors.border },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 16, textAlign: 'center' },
+  fieldLabel: { color: colors.text, fontSize: 14, fontWeight: 'bold', marginBottom: 6, width: '100%' },
+  fieldDesc: { color: colors.textMuted, fontSize: 12, marginBottom: 6, lineHeight: 16 },
+  modalInput: { backgroundColor: colors.background, color: colors.text, padding: 12, borderRadius: 12, fontSize: 16, minHeight: 44, borderWidth: 1, borderColor: colors.border, width: '100%', marginBottom: 16 },
+  selectRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, width: '100%', marginBottom: 16 },
+  selectChip: { paddingHorizontal: 12, paddingVertical: 6, minHeight: 36, justifyContent: 'center', borderRadius: 10, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
+  selectChipActive: { backgroundColor: 'rgba(79,172,254,0.15)', borderColor: colors.primary },
+  selectChipText: { color: colors.textMuted, fontSize: 12 },
+  selectChipTextActive: { color: colors.primary, fontWeight: 'bold' },
+  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 12 },
   modalBtnContainer: { flexDirection: 'row', gap: 10, width: '100%', marginTop: 8 },
-  modalCancelBtn: { flex: 1, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: Theme.colors.border, alignItems: 'center' },
-  modalCancelBtnText: { color: Theme.colors.text, fontSize: 15, fontWeight: '600' },
-  modalConfirmBtn: { flex: 1, paddingVertical: 12, borderRadius: 8, backgroundColor: Theme.colors.primary, alignItems: 'center' },
+  modalCancelBtn: { flex: 1, minHeight: 48, justifyContent: 'center', borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
+  modalCancelBtnText: { color: colors.text, fontSize: 15, fontWeight: '600' },
+  modalConfirmBtn: { flex: 1, minHeight: 48, justifyContent: 'center', borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center' },
   modalConfirmBtnText: { color: '#000', fontSize: 15, fontWeight: 'bold' },
 });

@@ -1,9 +1,9 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Modal, Pressable } from 'react-native';
 import Svg, { Path, Circle, Line, Defs, LinearGradient, Stop, Text as SvgText, Rect, G } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { format, startOfWeek, startOfMonth } from 'date-fns';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { getWorkoutPRStatsMap, WorkoutPRStat } from '../../src/db/database';
 
 export type ChartMetric = 'volume' | 'calories' | 'sets' | 'avg_volume_per_set' | 'density';
@@ -114,6 +114,8 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
   setCalendarVisible,
   t,
 }) => {
+  const { colors, spacing } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors, spacing), [colors, spacing]);
   const chartScrollRef = useRef<ScrollView>(null);
   const [prStatsMap, setPrStatsMap] = useState<Record<number, WorkoutPRStat>>({});
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -400,11 +402,11 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
           onPress={() => setMetricModalVisible(true)}
           activeOpacity={0.7}
         >
-          <Ionicons name={currentOption.icon} size={15} color={Theme.colors.primary} style={{ marginRight: 5 }} />
+          <Ionicons name={currentOption.icon} size={15} color={colors.primary} style={{ marginRight: 5 }} />
           <Text style={styles.metricSelectBtnText} numberOfLines={1}>
             {t(currentOption.titleKey)}
           </Text>
-          <Ionicons name="chevron-down" size={14} color={Theme.colors.textMuted} style={{ marginLeft: 4 }} />
+          <Ionicons name="chevron-down" size={14} color={colors.textMuted} style={{ marginLeft: 4 }} />
         </TouchableOpacity>
       </View>
 
@@ -440,7 +442,7 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
               onPress={() => setCalendarVisible(true)}
               activeOpacity={0.7}
             >
-              <Ionicons name="calendar-outline" size={16} color={Theme.colors.primary} style={{ marginRight: 5 }} />
+              <Ionicons name="calendar-outline" size={16} color={colors.primary} style={{ marginRight: 5 }} />
               <Text style={styles.calendarBtnText}>{t('ui.history.calendar_btn') || 'カレンダー'}</Text>
             </TouchableOpacity>
           )}
@@ -461,8 +463,8 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
             <Svg width={svgWidth} height={svgHeight} style={StyleSheet.absoluteFill}>
               <Defs>
                 <LinearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <Stop offset="0%" stopColor={Theme.colors.primary} stopOpacity={0.35} />
-                  <Stop offset="100%" stopColor={Theme.colors.primary} stopOpacity={0.0} />
+                  <Stop offset="0%" stopColor={colors.primary} stopOpacity={0.35} />
+                  <Stop offset="100%" stopColor={colors.primary} stopOpacity={0.0} />
                 </LinearGradient>
               </Defs>
 
@@ -474,7 +476,7 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
                     y1={prTargetY}
                     x2={svgWidth}
                     y2={prTargetY}
-                    stroke={Theme.colors.primary}
+                    stroke={colors.primary}
                     strokeOpacity={0.35}
                     strokeDasharray="4,4"
                     strokeWidth={1.5}
@@ -482,7 +484,7 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
                   <SvgText
                     x={svgWidth - 10}
                     y={prTargetY - 6}
-                    fill={Theme.colors.primary}
+                    fill={colors.primary}
                     fontSize={10}
                     fontWeight="600"
                     opacity={0.7}
@@ -499,7 +501,7 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
                 y1={svgHeight - paddingBottom - drawHeight * 0.5}
                 x2={svgWidth}
                 y2={svgHeight - paddingBottom - drawHeight * 0.5}
-                stroke="rgba(255, 255, 255, 0.05)"
+                stroke={colors.border}
                 strokeWidth={1}
               />
 
@@ -513,7 +515,7 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
                 <Path
                   d={linearPath}
                   fill="none"
-                  stroke={Theme.colors.primary}
+                  stroke={colors.primary}
                   strokeWidth={3}
                   strokeLinejoin="round"
                   strokeLinecap="round"
@@ -534,7 +536,7 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
                         y1={paddingTop - 10}
                         x2={c.x}
                         y2={svgHeight - paddingBottom}
-                        stroke={Theme.colors.primary}
+                        stroke={colors.primary}
                         strokeOpacity={0.35}
                         strokeDasharray="3,3"
                         strokeWidth={1.5}
@@ -565,7 +567,7 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
                         cy={c.y}
                         r={10}
                         fill="none"
-                        stroke={Theme.colors.primary}
+                        stroke={colors.primary}
                         strokeOpacity={0.4}
                         strokeWidth={2}
                       />
@@ -576,8 +578,8 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
                       cx={c.x}
                       cy={c.y}
                       r={isSelected ? 5.5 : 4}
-                      fill={isPR ? '#fbbf24' : (isSelected ? Theme.colors.primary : '#121212')}
-                      stroke={isSelected ? '#ffffff' : (isPR ? '#ffffff' : Theme.colors.primary)}
+                      fill={isPR ? '#fbbf24' : (isSelected ? colors.primary : colors.card)}
+                      stroke={isSelected ? '#ffffff' : (isPR ? '#ffffff' : colors.primary)}
                       strokeWidth={isSelected ? 2 : 2.5}
                     />
 
@@ -585,7 +587,7 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
                     <SvgText
                       x={c.x}
                       y={svgHeight - 10}
-                      fill={isSelected ? Theme.colors.primary : (isPR ? '#fbbf24' : Theme.colors.textMuted)}
+                      fill={isSelected ? colors.primary : (isPR ? '#fbbf24' : colors.textMuted)}
                       fontSize={11}
                       fontWeight={isSelected ? '800' : '600'}
                       textAnchor="middle"
@@ -621,24 +623,23 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
         animationType="fade"
         onRequestClose={() => setMetricModalVisible(false)}
       >
-        <TouchableOpacity
+        <Pressable
           style={styles.modalOverlay}
-          activeOpacity={1}
           onPress={() => setMetricModalVisible(false)}
         >
-          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name="stats-chart" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+                <Ionicons name="stats-chart" size={20} color={colors.primary} style={{ marginRight: 8 }} />
                 <Text style={styles.modalTitle}>
                   {t('ui.history.metric_select_title') || 'グラフの指標を選択'}
                 </Text>
               </View>
               <TouchableOpacity
                 onPress={() => setMetricModalVisible(false)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
               >
-                <Ionicons name="close" size={22} color={Theme.colors.textMuted} />
+                <Ionicons name="close" size={22} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
@@ -660,7 +661,7 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
                       <Ionicons
                         name={option.icon}
                         size={20}
-                        color={isSelected ? Theme.colors.primary : Theme.colors.textMuted}
+                        color={isSelected ? colors.primary : colors.textMuted}
                       />
                     </View>
                     <View style={styles.optionTextContent}>
@@ -679,31 +680,34 @@ export const HistoryChart: React.FC<HistoryChartProps> = ({
                       <Text style={styles.optionSub}>{t(option.subKey)}</Text>
                     </View>
                     {isSelected && (
-                      <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />
+                      <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
                     )}
                   </TouchableOpacity>
                 );
               })}
             </ScrollView>
-          </View>
-        </TouchableOpacity>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (
+  colors: ReturnType<typeof useAppTheme>['colors'],
+  spacing: ReturnType<typeof useAppTheme>['spacing']
+) => StyleSheet.create({
   chartContainer: {
-    marginBottom: Theme.spacing.xl,
+    marginBottom: spacing.xl,
   },
   chartHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Theme.spacing.md,
+    marginBottom: spacing.md,
   },
   chartTitle: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 0,
@@ -712,31 +716,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Theme.spacing.md,
+    marginBottom: spacing.md,
   },
   scaleContainer: {
     flexDirection: 'row',
-    backgroundColor: '#1c1c1e',
-    borderRadius: 8,
-    padding: 2,
+    backgroundColor: colors.card,
+    borderRadius: 10,
+    padding: 3,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
   },
   scaleButton: {
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 6,
+    minHeight: 36,
+    justifyContent: 'center',
+    borderRadius: 8,
   },
   scaleButtonActive: {
     backgroundColor: 'rgba(79,172,254,0.15)',
   },
   scaleButtonText: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
   },
   scaleButtonTextActive: {
-    color: Theme.colors.primary,
+    color: colors.primary,
     fontWeight: 'bold',
   },
   metricSelectBtn: {
@@ -746,24 +752,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(79, 172, 254, 0.35)',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
+    paddingVertical: 8,
+    minHeight: 40,
+    borderRadius: 12,
     maxWidth: 160,
   },
   metricSelectBtnText: {
-    color: Theme.colors.primary,
+    color: colors.primary,
     fontSize: 12,
     fontWeight: 'bold',
     maxWidth: 100,
   },
   summaryCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: Theme.borderRadius.md,
+    backgroundColor: colors.card,
+    borderRadius: 16,
     paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: Theme.spacing.md,
+    paddingVertical: 12,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -773,7 +780,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   summaryDate: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 2,
@@ -784,12 +791,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   summaryVal: {
-    color: Theme.colors.text,
+    color: colors.text,
     fontSize: 22,
     fontWeight: '800',
   },
   summaryUnit: {
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -801,11 +808,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(79, 172, 254, 0.35)',
     paddingHorizontal: 12,
     paddingVertical: 8,
+    minHeight: 40,
     borderRadius: 12,
     flexShrink: 0,
   },
   calendarBtnText: {
-    color: Theme.colors.primary,
+    color: colors.primary,
     fontSize: 12,
     fontWeight: 'bold',
   },
@@ -822,7 +830,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(251, 191, 36, 0.4)',
   },
   badgeText: {
-    color: Theme.colors.primary,
+    color: colors.primary,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -830,11 +838,11 @@ const styles = StyleSheet.create({
     color: '#fbbf24',
   },
   chartWrapper: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.md,
+    backgroundColor: colors.card,
+    borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    borderColor: colors.border,
   },
   chartScrollContent: {
     paddingLeft: 10,
@@ -850,13 +858,13 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: '#1c1c1e',
-    borderRadius: 18,
+    backgroundColor: colors.card,
+    borderRadius: 16,
     padding: 20,
     width: '100%',
     maxWidth: 360,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.border,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -865,12 +873,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomColor: colors.border,
   },
   modalTitle: {
     fontSize: 17,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: colors.text,
   },
   metricOptionItem: {
     flexDirection: 'row',
@@ -878,13 +886,13 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     marginBottom: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: colors.border,
   },
   metricOptionItemActive: {
     backgroundColor: 'rgba(79, 172, 254, 0.12)',
-    borderColor: Theme.colors.primary,
+    borderColor: colors.primary,
   },
   optionIconBox: {
     width: 38,
@@ -905,16 +913,16 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#e5e5e7',
+    color: colors.text,
   },
   optionTitleActive: {
-    color: Theme.colors.primary,
+    color: colors.primary,
   },
   optionSub: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
+    color: colors.textMuted,
     marginTop: 2,
-    lineHeight: 15,
+    lineHeight: 16,
   },
   recommendBadge: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -924,9 +932,9 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   recommendBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: 'bold',
-    color: Theme.colors.textMuted,
+    color: colors.textMuted,
   },
   recommendBadgeStar: {
     backgroundColor: 'rgba(251, 191, 36, 0.2)',
