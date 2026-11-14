@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { useTranslation } from 'react-i18next';
 
 interface PlateCalculatorModalProps {
@@ -18,6 +18,7 @@ export const PlateCalculatorModal: React.FC<PlateCalculatorModalProps> = ({
   onApply,
 }) => {
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
   const [plateCalcBar, setPlateCalcBar] = useState(20);
   const [platesOnOneSide, setPlatesOnOneSide] = useState<number[]>([]);
   const [isCustomBar, setIsCustomBar] = useState(false);
@@ -44,56 +45,72 @@ export const PlateCalculatorModal: React.FC<PlateCalculatorModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.md }}>
-            <Text style={styles.modalTitle}>{t('ui.active_workout.plate_calc_title')}</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+        <View style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.modalHeader}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('ui.active_workout.plate_calc_title')}</Text>
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.closeBtn}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            >
+              <Ionicons name="close" size={24} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.calcResultContainer}>
-            <Text style={styles.calcResultText}>{totalPlateWeight} {weightUnit}</Text>
-            <Text style={styles.calcFormulaText}>
+          <View style={[styles.calcResultContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
+            <Text style={[styles.calcResultText, { color: colors.primary }]}>{totalPlateWeight} {weightUnit}</Text>
+            <Text style={[styles.calcFormulaText, { color: colors.textMuted }]}>
               {t('ui.active_workout.plate_calc_bar_weight')} {plateCalcBar}{weightUnit} + {t('ui.active_workout.plate_calc_add_plates')} {platesOnOneSide.reduce((a, b) => a + b, 0)}{weightUnit} × 2
             </Text>
           </View>
 
           {/* バーの選択 */}
-          <Text style={styles.sectionTitle}>{t('ui.active_workout.plate_calc_bar_weight')}</Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: Theme.spacing.md }}>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('ui.active_workout.plate_calc_bar_weight')}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
             {(weightUnit === 'lbs' ? [45, 35] : [20, 10, 7]).map(w => {
               const isActive = !isCustomBar && plateCalcBar === w;
               return (
                 <TouchableOpacity
                   key={w}
-                  style={[styles.barBtn, isActive && styles.barBtnActive]}
+                  style={[
+                    styles.barBtn,
+                    { backgroundColor: colors.background, borderColor: colors.border },
+                    isActive && [styles.barBtnActive, { borderColor: colors.primary }],
+                  ]}
                   onPress={() => {
                     setIsCustomBar(false);
                     setPlateCalcBar(w);
                   }}
                 >
-                  <Text style={[styles.barBtnText, isActive && styles.barBtnTextActive]}>{w} {weightUnit}</Text>
+                  <Text style={[styles.barBtnText, { color: colors.textMuted }, isActive && { color: colors.primary }]}>
+                    {w} {weightUnit}
+                  </Text>
                 </TouchableOpacity>
               );
             })}
             <TouchableOpacity
-              style={[styles.barBtn, isCustomBar && styles.barBtnActive]}
+              style={[
+                styles.barBtn,
+                { backgroundColor: colors.background, borderColor: colors.border },
+                isCustomBar && [styles.barBtnActive, { borderColor: colors.primary }],
+              ]}
               onPress={() => {
                 setIsCustomBar(true);
                 setPlateCalcBar(parseFloat(customBarText) || 0);
               }}
             >
-              <Text style={[styles.barBtnText, isCustomBar && styles.barBtnTextActive]}>{t('ui.active_workout.plate_calc_bar_custom')}</Text>
+              <Text style={[styles.barBtnText, { color: colors.textMuted }, isCustomBar && { color: colors.primary }]}>
+                {t('ui.active_workout.plate_calc_bar_custom')}
+              </Text>
             </TouchableOpacity>
           </View>
 
           {isCustomBar && (
             <TextInput
-              style={styles.modalInput}
+              style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
               keyboardType="decimal-pad"
               placeholder={t('ui.active_workout.plate_calc_bar_custom_placeholder')}
-              placeholderTextColor={Theme.colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={customBarText}
               onChangeText={(val) => {
                 if (val === '' || /^\d{0,3}(\.\d{0,2})?$/.test(val)) {
@@ -104,13 +121,13 @@ export const PlateCalculatorModal: React.FC<PlateCalculatorModalProps> = ({
             />
           )}
 
-          <View style={{ height: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: Theme.spacing.md, backgroundColor: '#000', borderRadius: 8, overflow: 'hidden' }}>
+          <View style={[styles.barVisualizer, { borderColor: colors.border }]}>
             <View style={{ width: 10, height: '100%', backgroundColor: '#666' }} />
             {/* 真ん中のバー部分 */}
             <View style={{ flex: 1, height: 16, backgroundColor: '#888', flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center' }}>
               {/* プレートの描画 (内側から外側へ) */}
               {platesOnOneSide.map((p, i) => {
-                let h = 20, w = 8, color = Theme.colors.primary;
+                let h = 20, w = 8, color = colors.primary;
                 if (weightUnit === 'lbs') {
                   switch (p) {
                     case 45: h = 56; w = 30; color = '#e53935'; break; // 赤
@@ -146,26 +163,33 @@ export const PlateCalculatorModal: React.FC<PlateCalculatorModalProps> = ({
           </View>
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <Text style={styles.sectionTitle}>{t('ui.active_workout.plate_calc_add_plates')}</Text>
-            <TouchableOpacity onPress={() => setPlatesOnOneSide(prev => prev.slice(0, -1))} disabled={platesOnOneSide.length === 0}>
-              <Text style={{ color: platesOnOneSide.length > 0 ? Theme.colors.danger : Theme.colors.textMuted }}>{t('ui.active_workout.plate_calc_undo')}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textMuted, marginBottom: 0 }]}>{t('ui.active_workout.plate_calc_add_plates')}</Text>
+            <TouchableOpacity
+              onPress={() => setPlatesOnOneSide(prev => prev.slice(0, -1))}
+              disabled={platesOnOneSide.length === 0}
+              style={styles.undoBtn}
+              hitSlop={{ top: 6, bottom: 6, left: 8, right: 8 }}
+            >
+              <Text style={{ color: platesOnOneSide.length > 0 ? colors.danger : colors.textMuted, fontWeight: '600' }}>
+                {t('ui.active_workout.plate_calc_undo')}
+              </Text>
             </TouchableOpacity>
           </View>
 
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: Theme.spacing.lg }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
             {(weightUnit === 'lbs' ? [45, 35, 25, 10, 5, 2.5] : [25, 20, 15, 10, 5, 2.5, 1.25]).map(w => (
               <TouchableOpacity
                 key={w}
-                style={styles.plateBtn}
+                style={[styles.plateBtn, { borderColor: colors.border }]}
                 onPress={() => setPlatesOnOneSide(prev => [...prev, w])}
               >
-                <Text style={styles.plateBtnText}>+ {w}</Text>
+                <Text style={[styles.plateBtnText, { color: colors.text }]}>+ {w}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
           <TouchableOpacity
-            style={styles.applyBtn}
+            style={[styles.applyBtn, { backgroundColor: colors.primary }]}
             onPress={handleApply}
           >
             <Text style={styles.applyBtnText}>{t('ui.active_workout.plate_calc_apply_btn')}</Text>
@@ -177,21 +201,24 @@ export const PlateCalculatorModal: React.FC<PlateCalculatorModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { width: '90%', backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.lg, maxHeight: '90%' },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
-  modalInput: { backgroundColor: '#121212', color: Theme.colors.text, padding: 12, borderRadius: 4, fontSize: 16, borderWidth: 1, borderColor: Theme.colors.border, marginBottom: 16 },
-  calcResultContainer: { alignItems: 'center', backgroundColor: '#1a1a1a', padding: 16, borderRadius: Theme.borderRadius.md, marginBottom: Theme.spacing.md },
-  calcResultText: { fontSize: 36, fontWeight: 'bold', color: Theme.colors.primary, marginBottom: 4 },
-  calcFormulaText: { fontSize: 14, color: Theme.colors.textMuted },
-  sectionTitle: { fontSize: 14, color: Theme.colors.textMuted, marginBottom: 8, fontWeight: 'bold' },
-  barBtn: { flex: 1, marginHorizontal: 4, paddingVertical: 12, backgroundColor: '#111', borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#333' },
-  barBtnActive: { borderColor: Theme.colors.primary, backgroundColor: 'rgba(79, 172, 254, 0.1)' },
-  barBtnText: { color: Theme.colors.textMuted, fontSize: 14, fontWeight: 'bold' },
-  barBtnTextActive: { color: Theme.colors.primary },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { width: '90%', borderRadius: 16, borderWidth: 1, padding: 20, maxHeight: '90%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  closeBtn: { minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold' },
+  modalInput: { padding: 12, borderRadius: 8, fontSize: 16, borderWidth: 1, marginBottom: 16 },
+  calcResultContainer: { alignItems: 'center', padding: 16, borderRadius: 12, borderWidth: 1, marginBottom: 16 },
+  calcResultText: { fontSize: 34, fontWeight: 'bold', marginBottom: 4 },
+  calcFormulaText: { fontSize: 13 },
+  sectionTitle: { fontSize: 14, marginBottom: 8, fontWeight: 'bold' },
+  barBtn: { flex: 1, marginHorizontal: 4, minHeight: 44, paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  barBtnActive: { backgroundColor: 'rgba(79, 172, 254, 0.12)' },
+  barBtnText: { fontSize: 14, fontWeight: 'bold' },
+  barVisualizer: { height: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 16, backgroundColor: '#000', borderRadius: 8, borderWidth: 1, overflow: 'hidden' },
   plateVisual: { marginHorizontal: 1, borderRadius: 2 },
-  plateBtn: { paddingVertical: 12, paddingHorizontal: 16, backgroundColor: '#222', borderRadius: 8, minWidth: '22%', alignItems: 'center' },
-  plateBtnText: { color: Theme.colors.text, fontWeight: 'bold', fontSize: 14 },
-  applyBtn: { backgroundColor: Theme.colors.primary, paddingVertical: 14, borderRadius: Theme.borderRadius.md, alignItems: 'center', marginTop: 8 },
+  undoBtn: { minHeight: 40, justifyContent: 'center', paddingHorizontal: 8 },
+  plateBtn: { minHeight: 44, justifyContent: 'center', paddingVertical: 10, paddingHorizontal: 16, backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: 8, borderWidth: 1, minWidth: '22%', alignItems: 'center' },
+  plateBtnText: { fontWeight: 'bold', fontSize: 14 },
+  applyBtn: { minHeight: 48, paddingVertical: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
   applyBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

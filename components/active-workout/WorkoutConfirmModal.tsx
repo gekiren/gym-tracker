@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 
 interface WorkoutConfirmModalProps {
   visible: boolean;
@@ -36,6 +36,7 @@ export const WorkoutConfirmModal: React.FC<WorkoutConfirmModalProps> = ({
   saveText,
   cancelText = 'キャンセル',
 }) => {
+  const { colors } = useAppTheme();
   if (!visible) return null;
 
   const isPause = type === 'pause';
@@ -48,20 +49,23 @@ export const WorkoutConfirmModal: React.FC<WorkoutConfirmModalProps> = ({
       onRequestClose={onCancel}
     >
       <Pressable style={styles.overlay} onPress={onCancel}>
-        <Pressable style={styles.dialogContainer} onPress={(e) => e.stopPropagation()}>
+        <Pressable
+          style={[styles.dialogContainer, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={(e) => e.stopPropagation()}
+        >
           <View style={styles.content}>
             {/* Header Icon Badge */}
             <View style={[styles.iconContainer, isPause ? styles.iconContainerPause : styles.iconContainerFinish]}>
               <Ionicons
                 name={isPause ? 'exit-outline' : 'checkmark-circle-outline'}
                 size={32}
-                color={isPause ? '#ff9f0a' : Theme.colors.primary}
+                color={isPause ? '#ff9f0a' : colors.primary}
               />
             </View>
 
             {/* Title & Message */}
-            <Text style={styles.title}>{title}</Text>
-            <Text style={styles.message}>{message}</Text>
+            <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+            <Text style={[styles.message, { color: colors.textMuted }]}>{message}</Text>
 
             {/* Button Actions */}
             <View style={styles.buttonStack}>
@@ -69,7 +73,7 @@ export const WorkoutConfirmModal: React.FC<WorkoutConfirmModalProps> = ({
                 <>
                   {/* Leave in background (Primary) */}
                   <TouchableOpacity
-                    style={[styles.button, styles.buttonPrimary]}
+                    style={[styles.button, { backgroundColor: colors.primary }]}
                     onPress={onLeave}
                     activeOpacity={0.8}
                   >
@@ -89,18 +93,18 @@ export const WorkoutConfirmModal: React.FC<WorkoutConfirmModalProps> = ({
 
                   {/* Cancel button */}
                   <TouchableOpacity
-                    style={[styles.button, styles.buttonSecondary]}
+                    style={[styles.button, styles.buttonSecondary, { borderColor: colors.border }]}
                     onPress={onCancel}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.buttonSecondaryText}>{cancelText}</Text>
+                    <Text style={[styles.buttonSecondaryText, { color: colors.text }]}>{cancelText}</Text>
                   </TouchableOpacity>
                 </>
               ) : (
                 <>
                   {/* Save workout (Primary) */}
                   <TouchableOpacity
-                    style={[styles.button, styles.buttonPrimary, isSaving && styles.buttonDisabled]}
+                    style={[styles.button, { backgroundColor: colors.primary }, isSaving && styles.buttonDisabled]}
                     onPress={onSave}
                     disabled={isSaving}
                     activeOpacity={0.8}
@@ -113,12 +117,12 @@ export const WorkoutConfirmModal: React.FC<WorkoutConfirmModalProps> = ({
 
                   {/* Cancel button */}
                   <TouchableOpacity
-                    style={[styles.button, styles.buttonSecondary]}
+                    style={[styles.button, styles.buttonSecondary, { borderColor: colors.border }]}
                     onPress={onCancel}
                     disabled={isSaving}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.buttonSecondaryText}>{cancelText}</Text>
+                    <Text style={[styles.buttonSecondaryText, { color: colors.text }]}>{cancelText}</Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -141,16 +145,9 @@ const styles = StyleSheet.create({
   dialogContainer: {
     width: '100%',
     maxWidth: 340,
-    backgroundColor: Theme.colors.card,
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 12,
   },
   content: {
     padding: 24,
@@ -171,14 +168,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(79, 172, 254, 0.12)',
   },
   title: {
-    color: Theme.colors.text,
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   message: {
-    color: Theme.colors.textMuted,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
@@ -186,24 +181,16 @@ const styles = StyleSheet.create({
   },
   buttonStack: {
     width: '100%',
-    gap: 10,
+    gap: 12,
   },
   button: {
     width: '100%',
-    height: 48,
+    minHeight: 48,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
     paddingHorizontal: 16,
-  },
-  buttonPrimary: {
-    backgroundColor: Theme.colors.primary,
-    shadowColor: Theme.colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 3,
   },
   buttonPrimaryText: {
     color: '#ffffff',
@@ -223,10 +210,8 @@ const styles = StyleSheet.create({
   buttonSecondary: {
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   buttonSecondaryText: {
-    color: Theme.colors.text,
     fontSize: 14,
     fontWeight: '600',
   },

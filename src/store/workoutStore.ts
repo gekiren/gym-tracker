@@ -78,8 +78,6 @@ interface WorkoutState {
   beginWorkoutTimer: () => void;
   updateWorkoutNotes: (notes: string) => void;
   updateExerciseNotes: (exerciseId: string, notes: string) => void;
-  updateExerciseVariation: (exerciseId: string, variation: string | null) => void;
-  updateExerciseStance: (exerciseId: string, stance: string | null) => void;
   updateExerciseWeightStep: (exerciseId: string | number, weightStep: number) => void;
   updateExerciseRestSeconds: (exerciseId: string | number, restSeconds: number | null) => void;
   endWorkout: () => void;
@@ -156,26 +154,6 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     exercises: state.exercises.map(ex => 
       ex.id === exerciseId ? { ...ex, notes } : ex
     )
-  })),
-
-  updateExerciseVariation: (exerciseId, variation) => set((state) => ({
-    exercises: state.exercises.map(ex => {
-      if (ex.id === exerciseId) {
-        const newSets = ex.sets.map(s => s.is_completed ? s : { ...s, variation });
-        return { ...ex, default_variation: variation, sets: newSets };
-      }
-      return ex;
-    })
-  })),
-
-  updateExerciseStance: (exerciseId, stance) => set((state) => ({
-    exercises: state.exercises.map(ex => {
-      if (ex.id === exerciseId) {
-        const newSets = ex.sets.map(s => s.is_completed ? s : { ...s, stance });
-        return { ...ex, default_stance: stance, sets: newSets };
-      }
-      return ex;
-    })
   })),
 
   updateExerciseWeightStep: (exerciseId, weightStep) => set((state) => ({

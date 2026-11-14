@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { ElapsedTimerHeader } from './ElapsedTimerHeader';
 
 interface ActiveWorkoutHeaderRightProps {
@@ -26,38 +26,44 @@ export const ActiveWorkoutHeaderRight: React.FC<ActiveWorkoutHeaderRightProps> =
   onManualTimer,
   onFinish,
 }) => {
+  const { colors } = useAppTheme();
+
   return (
     <View style={styles.container}>
       {isWorkoutStarted && (
-        <ElapsedTimerHeader startTime={startTime} style={styles.headerTimeText} />
+        <ElapsedTimerHeader startTime={startTime} style={[styles.headerTimeText, { color: colors.text }]} />
       )}
       <TouchableOpacity
         onPress={() => router.push('/rm-calculator')}
         style={styles.calcBtn}
+        hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
         accessibilityLabel={t('ui.accessibility.rm_calculator')}
       >
-        <Ionicons name="calculator-outline" size={26} color={Theme.colors.primary} />
+        <Ionicons name="calculator-outline" size={24} color={colors.primary} />
       </TouchableOpacity>
       <TouchableOpacity
         onPress={onOpenPlateCalc}
         style={styles.iconBtn}
+        hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
         accessibilityLabel={t('ui.accessibility.plate_calculator')}
       >
-        <Ionicons name="barbell-outline" size={26} color={Theme.colors.primary} />
+        <Ionicons name="barbell-outline" size={24} color={colors.primary} />
       </TouchableOpacity>
       {!restTimerActive && (
         <TouchableOpacity
           onPress={onManualTimer}
           style={styles.iconBtn}
+          hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
           accessibilityLabel={t('ui.accessibility.timer_setting')}
         >
-          <Ionicons name="timer-outline" size={26} color={Theme.colors.primary} />
+          <Ionicons name="timer-outline" size={24} color={colors.primary} />
         </TouchableOpacity>
       )}
       <TouchableOpacity
         disabled={isSaving}
         onPress={onFinish}
-        style={[styles.finishBtn, { opacity: isSaving ? 0.5 : 1 }]}
+        hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
+        style={[styles.finishBtn, { backgroundColor: colors.primary, opacity: isSaving ? 0.5 : 1 }]}
       >
         <Text style={styles.finishBtnText}>{t('ui.active_workout.finish')}</Text>
       </TouchableOpacity>
@@ -71,8 +77,14 @@ interface ActiveWorkoutHeaderLeftProps {
 }
 
 export const ActiveWorkoutHeaderLeft: React.FC<ActiveWorkoutHeaderLeftProps> = React.memo(({ t, onBack }) => {
+  const { colors } = useAppTheme();
+
   return (
-    <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+    <TouchableOpacity
+      onPress={onBack}
+      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+      style={[styles.backBtn, { backgroundColor: colors.primary }]}
+    >
       <Text style={styles.backBtnText}>{t('ui.common.back')}</Text>
     </TouchableOpacity>
   );
@@ -84,23 +96,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTimeText: {
-    color: Theme.colors.text,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
   calcBtn: {
-    marginRight: 16,
-    marginLeft: 8,
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 4,
+    marginRight: 4,
+    borderRadius: 8,
   },
   iconBtn: {
-    marginRight: 16,
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 4,
+    borderRadius: 8,
   },
   finishBtn: {
+    marginLeft: 4,
     marginRight: 8,
-    backgroundColor: Theme.colors.primary,
+    minHeight: 36,
+    justifyContent: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
   finishBtnText: {
     color: '#ffffff',
@@ -108,10 +131,11 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     marginLeft: 8,
-    backgroundColor: Theme.colors.primary,
+    minHeight: 36,
+    justifyContent: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
   backBtnText: {
     color: '#ffffff',
