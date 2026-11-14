@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, ActivityIndicator, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 
 interface PromoCodeModalProps {
   visible: boolean;
@@ -22,9 +22,17 @@ export const PromoCodeModal: React.FC<PromoCodeModalProps> = ({
   onApplyPromo,
   t,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const handleRequestClose = () => {
+    if (!isApplyingPromo) onClose();
+  };
+
   return (
-    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={handleRequestClose}>
       <View style={styles.modalBg}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleRequestClose} />
         <View style={[styles.modalCard, { borderColor: 'rgba(192, 132, 252, 0.3)' }]}>
           <Ionicons name="gift-outline" size={56} color="#c084fc" style={{ marginBottom: 16 }} />
           <Text style={styles.modalTitle}>{t('ui.profile.promo_modal_title')}</Text>
@@ -38,7 +46,7 @@ export const PromoCodeModal: React.FC<PromoCodeModalProps> = ({
             value={promoInputText}
             onChangeText={onChangePromoInputText}
             placeholder={t('ui.profile.promo_input_placeholder')}
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholderTextColor={colors.textMuted}
             autoCapitalize="characters"
             autoCorrect={false}
             editable={!isApplyingPromo}
@@ -75,29 +83,30 @@ export const PromoCodeModal: React.FC<PromoCodeModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  modalBg: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.75)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modalCard: { backgroundColor: Theme.colors.card, borderRadius: 16, padding: 24, width: '100%', maxWidth: 400, alignItems: 'center', borderWidth: 1, borderColor: Theme.colors.border },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: Theme.colors.text, marginBottom: 12, textAlign: 'center' },
-  modalDesc: { color: Theme.colors.textMuted, fontSize: 14, lineHeight: 20, textAlign: 'center', marginBottom: 16 },
-  modalBtnContainer: { flexDirection: 'row', gap: 12, width: '100%' },
-  modalCancelBtn: { flex: 1, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: Theme.colors.border, alignItems: 'center' },
-  modalCancelBtnText: { color: Theme.colors.text, fontSize: 15, fontWeight: '600' },
-  modalConfirmBtn: { flex: 1, paddingVertical: 12, borderRadius: 8, backgroundColor: Theme.colors.danger, alignItems: 'center', justifyContent: 'center' },
-  modalConfirmBtnDisabled: { opacity: 0.3 },
-  modalConfirmBtnText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
-  promoInput: { 
-    backgroundColor: '#121212', 
-    color: Theme.colors.text, 
-    padding: 12, 
-    borderRadius: 8, 
-    fontSize: 16, 
-    borderWidth: 1, 
-    borderColor: Theme.colors.border, 
-    width: '100%', 
-    marginBottom: 20, 
-    textAlign: 'center', 
-    fontWeight: 'bold', 
-    letterSpacing: 2 
-  },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    modalBg: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.75)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+    modalCard: { backgroundColor: colors.card, borderRadius: 16, padding: 24, width: '100%', maxWidth: 400, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+    modalTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 12, textAlign: 'center' },
+    modalDesc: { color: colors.textMuted, fontSize: 14, lineHeight: 20, textAlign: 'center', marginBottom: 16 },
+    modalBtnContainer: { flexDirection: 'row', gap: 12, width: '100%' },
+    modalCancelBtn: { flex: 1, minHeight: 48, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+    modalCancelBtnText: { color: colors.text, fontSize: 15, fontWeight: '600' },
+    modalConfirmBtn: { flex: 1, minHeight: 48, paddingVertical: 12, borderRadius: 12, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center' },
+    modalConfirmBtnDisabled: { opacity: 0.3 },
+    modalConfirmBtnText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
+    promoInput: { 
+      backgroundColor: colors.background, 
+      color: colors.text, 
+      padding: 12, 
+      borderRadius: 8, 
+      fontSize: 16, 
+      borderWidth: 1, 
+      borderColor: colors.border, 
+      width: '100%', 
+      marginBottom: 20, 
+      textAlign: 'center', 
+      fontWeight: 'bold', 
+      letterSpacing: 2 
+    },
+  });

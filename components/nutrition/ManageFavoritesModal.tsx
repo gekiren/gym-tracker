@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   Modal,
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   ScrollView,
   Alert,
@@ -50,8 +51,8 @@ export default function ManageFavoritesModal({
   onDeleteFavorite,
   onUpdateOrder,
 }: Props) {
-  const { backgroundTheme, colors } = useAppTheme();
-  const isPureBlack = backgroundTheme === 'pureBlack';
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   // 編集フォームステート (null = 一覧モード, 'new' = 新規作成, MealFavorite = 編集)
   const [editingItem, setEditingItem] = useState<MealFavorite | 'new' | null>(null);
@@ -173,14 +174,10 @@ export default function ManageFavoritesModal({
         style={styles.overlay}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View
-          style={[
-            styles.sheet,
-            isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' },
-          ]}
-        >
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleModalClose} />
+        <View style={styles.sheet}>
           {/* ヘッダー */}
-          <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
+          <View style={styles.header}>
             <View style={styles.headerTitleRow}>
               {editingItem !== null && (
                 <TouchableOpacity
@@ -221,7 +218,6 @@ export default function ManageFavoritesModal({
                     key={t.key}
                     style={[
                       styles.mealTypeBtn,
-                      isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' },
                       formMealType === t.key && styles.mealTypeBtnActive,
                     ]}
                     onPress={() => setFormMealType(t.key)}
@@ -241,14 +237,11 @@ export default function ManageFavoritesModal({
               {/* 料理名 */}
               <Text style={styles.label}>料理名 *</Text>
               <TextInput
-                style={[
-                  styles.input,
-                  isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' },
-                ]}
+                style={styles.input}
                 value={formName}
                 onChangeText={setFormName}
                 placeholder="例: プロテインシェイク、鶏胸肉200g"
-                placeholderTextColor="#475569"
+                placeholderTextColor={colors.textMuted}
               />
 
               {/* 栄養素 */}
@@ -262,24 +255,15 @@ export default function ManageFavoritesModal({
                   { label: '塩分 (g)',       value: formSodium,   setter: setFormSodium,   color: '#f43f5e' },
                   { label: '食物繊維 (g)',   value: formFiber,    setter: setFormFiber,    color: '#84cc16' },
                 ].map((item) => (
-                  <View
-                    key={item.label}
-                    style={[
-                      styles.nutriItem,
-                      isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' },
-                    ]}
-                  >
+                  <View key={item.label} style={styles.nutriItem}>
                     <Text style={[styles.nutriLabel, { color: item.color }]}>{item.label}</Text>
                     <TextInput
-                      style={[
-                        styles.nutriInput,
-                        isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' },
-                      ]}
+                      style={styles.nutriInput}
                       value={item.value}
                       onChangeText={item.setter}
                       keyboardType="decimal-pad"
                       placeholder="0"
-                      placeholderTextColor="#475569"
+                      placeholderTextColor={colors.textMuted}
                     />
                   </View>
                 ))}
@@ -288,22 +272,19 @@ export default function ManageFavoritesModal({
               {/* メモ */}
               <Text style={styles.label}>メモ（任意）</Text>
               <TextInput
-                style={[
-                  styles.textArea,
-                  isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' },
-                ]}
+                style={styles.textArea}
                 value={formMemo}
                 onChangeText={setFormMemo}
                 multiline
                 numberOfLines={2}
                 placeholder="ブランド名や補足情報など"
-                placeholderTextColor="#475569"
+                placeholderTextColor={colors.textMuted}
               />
 
               {/* アクションボタン */}
               <View style={styles.formActionRow}>
                 <TouchableOpacity
-                  style={[styles.cancelBtn, isPureBlack && { borderColor: '#334155' }]}
+                  style={styles.cancelBtn}
                   onPress={() => setEditingItem(null)}
                 >
                   <Text style={styles.cancelBtnText}>キャンセル</Text>
@@ -328,10 +309,7 @@ export default function ManageFavoritesModal({
             >
               {/* 新規追加ボタン */}
               <TouchableOpacity
-                style={[
-                  styles.addNewBtn,
-                  isPureBlack && { backgroundColor: '#080808', borderColor: '#0284c7' },
-                ]}
+                style={styles.addNewBtn}
                 onPress={handleStartAdd}
                 activeOpacity={0.8}
               >
@@ -358,13 +336,7 @@ export default function ManageFavoritesModal({
                     const isLast = index === favorites.length - 1;
 
                     return (
-                      <View
-                        key={`fav-manage-${item.id}`}
-                        style={[
-                          styles.favCard,
-                          isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' },
-                        ]}
-                      >
+                      <View key={`fav-manage-${item.id}`} style={styles.favCard}>
                         {/* 左側: 並び替えボタン */}
                         <View style={styles.orderControls}>
                           <TouchableOpacity
@@ -375,7 +347,7 @@ export default function ManageFavoritesModal({
                             <Ionicons
                               name="chevron-up"
                               size={18}
-                              color={isFirst ? '#475569' : '#38bdf8'}
+                              color={isFirst ? colors.textMuted : '#38bdf8'}
                             />
                           </TouchableOpacity>
                           <TouchableOpacity
@@ -386,7 +358,7 @@ export default function ManageFavoritesModal({
                             <Ionicons
                               name="chevron-down"
                               size={18}
-                              color={isLast ? '#475569' : '#38bdf8'}
+                              color={isLast ? colors.textMuted : '#38bdf8'}
                             />
                           </TouchableOpacity>
                         </View>
@@ -454,11 +426,13 @@ export default function ManageFavoritesModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-start' },
   sheet: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
     marginTop: Platform.OS === 'android' ? 40 : 50,
     marginHorizontal: 8,
     maxHeight: '90%',
@@ -470,13 +444,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#1e293b',
+    borderBottomColor: colors.border,
   },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
-  backBtn: { padding: 4, marginRight: 2 },
-  title: { fontSize: 16, fontWeight: '700', color: '#f8fafc', flex: 1 },
-  closeBtn: { padding: 4 },
-  closeBtnText: { fontSize: 18, color: '#94a3b8' },
+  backBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -8 },
+  title: { fontSize: 16, fontWeight: '700', color: colors.text, flex: 1 },
+  closeBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: -8 },
+  closeBtnText: { fontSize: 18, color: colors.textMuted },
   body: { padding: 16 },
 
   // 新規追加ボタン
@@ -485,6 +459,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    minHeight: 44,
     backgroundColor: '#0284c722',
     borderWidth: 1,
     borderColor: '#0284c7',
@@ -498,66 +473,74 @@ const styles = StyleSheet.create({
   // 空状態
   emptyBox: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
   emptyIcon: { fontSize: 36, marginBottom: 10 },
-  emptyTitle: { fontSize: 16, fontWeight: '700', color: '#f8fafc', marginBottom: 6 },
-  emptySub: { fontSize: 12, color: '#94a3b8', textAlign: 'center', lineHeight: 18 },
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 6 },
+  emptySub: { fontSize: 12, color: colors.textMuted, textAlign: 'center', lineHeight: 18 },
 
   // 一覧
   listContainer: { gap: 10 },
-  listHint: { fontSize: 11, color: '#64748b', marginBottom: 4 },
+  listHint: { fontSize: 12, color: colors.textMuted, marginBottom: 4 },
   favCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
     gap: 8,
   },
   orderControls: { flexDirection: 'column', gap: 2, alignItems: 'center', justifyContent: 'center' },
   orderBtn: {
     padding: 3,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   orderBtnDisabled: { opacity: 0.25 },
   favInfo: { flex: 1, marginLeft: 2 },
-  favName: { fontSize: 14, fontWeight: '700', color: '#f8fafc', marginBottom: 3 },
+  favName: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 3 },
   favPfcRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   favCal: { fontSize: 12, color: '#10b981', fontWeight: '700' },
-  favPfc: { fontSize: 11, color: '#94a3b8' },
+  favPfc: { fontSize: 12, color: colors.textMuted },
   actionBtns: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   iconActionBtn: {
     padding: 8,
-    backgroundColor: '#0f172a',
+    minWidth: 36,
+    minHeight: 36,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   // フォーム用スタイル
-  label: { fontSize: 13, fontWeight: '600', color: '#94a3b8', marginBottom: 8, marginTop: 12 },
+  label: { fontSize: 13, fontWeight: '600', color: colors.textMuted, marginBottom: 8, marginTop: 12 },
   mealTypeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 4 },
   mealTypeBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
+    minHeight: 36,
+    justifyContent: 'center',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#334155',
-    backgroundColor: '#1e293b',
+    borderColor: colors.border,
+    backgroundColor: colors.background,
   },
   mealTypeBtnActive: { backgroundColor: '#0284c733', borderColor: '#38bdf8' },
-  mealTypeBtnText: { fontSize: 12, color: '#94a3b8', fontWeight: '600' },
+  mealTypeBtnText: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
   mealTypeBtnTextActive: { color: '#38bdf8', fontWeight: '700' },
   input: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#334155',
-    color: '#f8fafc',
+    borderColor: colors.border,
+    color: colors.text,
     fontSize: 14,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -565,30 +548,30 @@ const styles = StyleSheet.create({
   nutriGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   nutriItem: {
     width: '48%',
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 10,
     padding: 10,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
-  nutriLabel: { fontSize: 11, fontWeight: '600', marginBottom: 6 },
+  nutriLabel: { fontSize: 12, fontWeight: '600', marginBottom: 6 },
   nutriInput: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#334155',
-    color: '#f8fafc',
+    borderColor: colors.border,
+    color: colors.text,
     fontSize: 14,
     paddingHorizontal: 10,
     paddingVertical: 6,
     textAlign: 'right',
   },
   textArea: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#334155',
-    color: '#f8fafc',
+    borderColor: colors.border,
+    color: colors.text,
     fontSize: 14,
     padding: 12,
     minHeight: 60,
@@ -597,16 +580,19 @@ const styles = StyleSheet.create({
   formActionRow: { flexDirection: 'row', gap: 12, marginTop: 24, marginBottom: 20 },
   cancelBtn: {
     flex: 1,
+    minHeight: 48,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#475569',
+    borderColor: colors.border,
+    backgroundColor: colors.background,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelBtnText: { fontSize: 14, fontWeight: '700', color: '#94a3b8' },
+  cancelBtnText: { fontSize: 14, fontWeight: '700', color: colors.textMuted },
   saveBtn: {
     flex: 2,
+    minHeight: 48,
     backgroundColor: '#0284c7',
     borderRadius: 12,
     paddingVertical: 14,

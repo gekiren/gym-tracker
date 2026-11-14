@@ -48,6 +48,9 @@ const MEAL_TYPES = [
 ] as const;
 
 export default function NutritionSummaryCard({ mealLogs, userGoals }: Props) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const goals = {
     calories: userGoals.calories || 2000,
     protein:  userGoals.protein  || 60,
@@ -134,7 +137,7 @@ export default function NutritionSummaryCard({ mealLogs, userGoals }: Props) {
               {pfc.cRatio > 0 && <View style={[styles.pfcPropSeg, { width: `${pfc.cRatio}%`, backgroundColor: '#a855f7' }]} />}
             </>
           ) : (
-            <View style={[styles.pfcPropSeg, { width: '100%', backgroundColor: '#334155' }]} />
+            <View style={[styles.pfcPropSeg, { width: '100%', backgroundColor: colors.border }]} />
           )}
         </View>
         <View style={styles.pfcValLegendRow}>
@@ -204,53 +207,53 @@ export default function NutritionSummaryCard({ mealLogs, userGoals }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   card: {
-    backgroundColor: '#0a0a0a',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     marginVertical: 8,
     borderWidth: 1,
-    borderColor: '#1c1c1c',
+    borderColor: colors.border,
   },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#ffffff', marginBottom: 12 },
-  mainCalBox: { backgroundColor: '#121212', borderRadius: 12, padding: 12, marginBottom: 12 },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 12 },
+  mainCalBox: { backgroundColor: colors.background, borderRadius: 12, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: colors.border },
   mainCalTextRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  mainCalLabel: { fontSize: 13, fontWeight: '600', color: '#888888' },
+  mainCalLabel: { fontSize: 13, fontWeight: '600', color: colors.textMuted },
   mainCalVal: { fontSize: 18, fontWeight: '700', color: '#10b981' },
-  unitText: { fontSize: 12, color: '#888888', fontWeight: '400' },
-  progressBg: { height: 10, backgroundColor: '#1c1c1c', borderRadius: 5, overflow: 'hidden' },
+  unitText: { fontSize: 12, color: colors.textMuted, fontWeight: '400' },
+  progressBg: { height: 10, backgroundColor: colors.border, borderRadius: 5, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 5 },
-  pfcRatioBox: { backgroundColor: '#121212', borderRadius: 12, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: '#1c1c1c' },
-  pfcHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  pfcRatioTitle: { fontSize: 13, fontWeight: '700', color: '#ffffff' },
-  pfcIdeaHint: { fontSize: 10, color: '#888888' },
-  pfcPropBarBg: { height: 14, backgroundColor: '#1c1c1c', borderRadius: 7, overflow: 'hidden', flexDirection: 'row', marginBottom: 10 },
+  pfcRatioBox: { backgroundColor: colors.background, borderRadius: 12, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: colors.border },
+  pfcHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4, marginBottom: 8 },
+  pfcRatioTitle: { fontSize: 13, fontWeight: '700', color: colors.text },
+  pfcIdeaHint: { fontSize: 11, color: colors.textMuted },
+  pfcPropBarBg: { height: 14, backgroundColor: colors.border, borderRadius: 7, overflow: 'hidden', flexDirection: 'row', marginBottom: 10 },
   pfcPropSeg: { height: '100%' },
   pfcValLegendRow: { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 },
   pfcLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   pfcDot: { width: 8, height: 8, borderRadius: 4 },
-  pfcLegendLabel: { fontSize: 11, color: '#888888', fontWeight: '600' },
-  pfcLegendVal: { fontSize: 12, fontWeight: '700', color: '#ffffff' },
-  pfcLegendKcal: { fontSize: 10, color: '#888888' },
+  pfcLegendLabel: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
+  pfcLegendVal: { fontSize: 12, fontWeight: '700', color: colors.text },
+  pfcLegendKcal: { fontSize: 11, color: colors.textMuted },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
-  gridItem: { width: '48%', backgroundColor: '#121212', borderRadius: 10, padding: 10 },
-  gridItemFull: { width: '100%', backgroundColor: '#121212', borderRadius: 10, padding: 10 },
+  gridItem: { width: '48%', backgroundColor: colors.background, borderRadius: 12, padding: 10, borderWidth: 1, borderColor: colors.border },
+  gridItemFull: { width: '100%', backgroundColor: colors.background, borderRadius: 12, padding: 10, borderWidth: 1, borderColor: colors.border },
   itemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  itemLabel: { fontSize: 12, fontWeight: '600', color: '#94a3b8' },
-  itemVal: { fontSize: 13, fontWeight: '700', color: '#f8fafc' },
-  subUnit: { fontSize: 10, color: '#64748b', fontWeight: '400' },
-  subProgressBg: { height: 6, backgroundColor: '#334155', borderRadius: 3, overflow: 'hidden' },
+  itemLabel: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
+  itemVal: { fontSize: 13, fontWeight: '700', color: colors.text },
+  subUnit: { fontSize: 11, color: colors.textMuted, fontWeight: '400' },
+  subProgressBg: { height: 6, backgroundColor: colors.border, borderRadius: 3, overflow: 'hidden' },
   subProgressFill: { height: '100%', borderRadius: 3 },
   mealBreakdownSection: { marginTop: 4 },
-  mealBreakdownTitle: { fontSize: 13, fontWeight: '700', color: '#f8fafc', marginBottom: 8 },
+  mealBreakdownTitle: { fontSize: 13, fontWeight: '700', color: colors.text, marginBottom: 8 },
   mealBreakdownGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  mealBreakdownCard: { width: '48%', backgroundColor: '#0f172a', borderRadius: 10, padding: 10, borderWidth: 1, borderColor: '#334155' },
+  mealBreakdownCard: { width: '48%', backgroundColor: colors.background, borderRadius: 12, padding: 10, borderWidth: 1, borderColor: colors.border },
   mealCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  mealIconLabel: { fontSize: 12, fontWeight: '700', color: '#f8fafc' },
-  mealBadge: { fontSize: 10, fontWeight: '600', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 10, borderWidth: 1 },
+  mealIconLabel: { fontSize: 12, fontWeight: '700', color: colors.text },
+  mealBadge: { fontSize: 11, fontWeight: '600', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 10, borderWidth: 1 },
   mealCalVal: { fontSize: 15, fontWeight: '800', color: '#38bdf8', marginBottom: 4 },
-  mealCalUnit: { fontSize: 10, color: '#64748b', fontWeight: '400' },
-  mealPfcMiniRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
-  mealPfcText: { fontSize: 10, color: '#94a3b8', fontWeight: '600' },
+  mealCalUnit: { fontSize: 11, color: colors.textMuted, fontWeight: '400' },
+  mealPfcMiniRow: { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, marginTop: 2 },
+  mealPfcText: { fontSize: 11, color: colors.textMuted, fontWeight: '600' },
 });

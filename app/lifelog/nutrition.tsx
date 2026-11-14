@@ -13,7 +13,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { Theme, useAppTheme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { useNutritionStore } from '../../src/store/nutritionStore';
 import { MealLog, MealFavorite, NutritionGoals, AutophagyConfig } from '../../src/db/types';
 import {
@@ -51,6 +51,7 @@ import { MealPresetWithItems, MealPresetItem } from '../../src/db/types';
 
 export default function NutritionScreen() {
   const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const isFocused = useIsFocused();
@@ -416,7 +417,7 @@ export default function NutritionScreen() {
 
         {/* 食事ログ一覧 */}
         {isLoading ? (
-          <ActivityIndicator size="large" color="#4facfe" style={{ marginVertical: 20 }} />
+          <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: 20 }} />
         ) : (
           <MealLogList
             mealLogs={sortedMealLogs}
@@ -620,23 +621,33 @@ export default function NutritionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   dateBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.card,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
-    elevation: 2,
+    borderBottomColor: colors.border,
     zIndex: 10,
   },
-  dateNavBtn: { padding: 8 },
-  dateCenterBtn: { paddingHorizontal: 12, paddingVertical: 4 },
-  dateText: { fontSize: 14, fontWeight: '700', color: '#f8fafc' },
+  dateNavBtn: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+  },
+  dateCenterBtn: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  dateText: { fontSize: 14, fontWeight: '700', color: colors.text },
   scrollBody: { flex: 1 },
   scrollContent: { paddingHorizontal: 12, paddingTop: 10, paddingBottom: 40 },
   actionSection: {
@@ -649,15 +660,11 @@ const styles = StyleSheet.create({
   },
   actionGridBtn: {
     flex: 1,
+    minHeight: 44,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
   },
   actionGridBtnText: {
     color: '#ffffff',

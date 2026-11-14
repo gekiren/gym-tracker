@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 
 interface DisplayFieldsSectionProps {
   showRpe: boolean;
@@ -24,10 +24,13 @@ export const DisplayFieldsSection: React.FC<DisplayFieldsSectionProps> = ({
   onUpdateAlwaysOneSet,
   t,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Ionicons name="eye-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+        <Ionicons name="eye-outline" size={24} color={colors.primary} style={{ marginRight: 8 }} />
         <Text style={styles.sectionTitle}>{t('ui.profile.section_display_fields')}</Text>
       </View>
       <Text style={[styles.settingDesc, { marginBottom: 12, paddingRight: 0 }]}>{t('ui.profile.display_fields_desc')}</Text>
@@ -40,7 +43,7 @@ export const DisplayFieldsSection: React.FC<DisplayFieldsSectionProps> = ({
           <Switch
             value={showRpe}
             onValueChange={(v) => onToggleDisplayField('showRpe', v)}
-            trackColor={{ false: '#333', true: Theme.colors.primary }}
+            trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor={'#fff'}
           />
         </View>
@@ -52,7 +55,7 @@ export const DisplayFieldsSection: React.FC<DisplayFieldsSectionProps> = ({
           <Switch
             value={show1RM}
             onValueChange={(v) => onToggleDisplayField('show1RM', v)}
-            trackColor={{ false: '#333', true: Theme.colors.primary }}
+            trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor={'#fff'}
           />
         </View>
@@ -64,7 +67,7 @@ export const DisplayFieldsSection: React.FC<DisplayFieldsSectionProps> = ({
           <Switch
             value={showVolume}
             onValueChange={(v) => onToggleDisplayField('showVolume', v)}
-            trackColor={{ false: '#333', true: Theme.colors.primary }}
+            trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor={'#fff'}
           />
         </View>
@@ -76,7 +79,7 @@ export const DisplayFieldsSection: React.FC<DisplayFieldsSectionProps> = ({
           <Switch
             value={showStance}
             onValueChange={(v) => onToggleDisplayField('showStance', v)}
-            trackColor={{ false: '#333', true: Theme.colors.primary }}
+            trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor={'#fff'}
           />
         </View>
@@ -88,7 +91,7 @@ export const DisplayFieldsSection: React.FC<DisplayFieldsSectionProps> = ({
           <Switch
             value={alwaysOneSet}
             onValueChange={onUpdateAlwaysOneSet}
-            trackColor={{ false: '#333', true: Theme.colors.primary }}
+            trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor={'#fff'}
           />
         </View>
@@ -97,12 +100,13 @@ export const DisplayFieldsSection: React.FC<DisplayFieldsSectionProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  section: { marginBottom: Theme.spacing.xl },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: Theme.spacing.md },
-  sectionTitle: { fontSize: 18, color: Theme.colors.text, fontWeight: 'bold' },
-  settingCard: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, borderWidth: 1, borderColor: Theme.colors.border },
-  settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  settingLabel: { color: Theme.colors.text, fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  settingDesc: { color: Theme.colors.textMuted, fontSize: 13, paddingRight: 40, lineHeight: 18 },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    section: { marginBottom: 32 },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+    sectionTitle: { fontSize: 18, color: colors.text, fontWeight: 'bold' },
+    settingCard: { backgroundColor: colors.card, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: colors.border },
+    settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+    settingLabel: { color: colors.text, fontSize: 16, fontWeight: '600', marginBottom: 4 },
+    settingDesc: { color: colors.textMuted, fontSize: 13, paddingRight: 40, lineHeight: 18 },
+  });

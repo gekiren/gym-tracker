@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 
 const REST_OPTIONS = [30, 60, 90, 120, 150, 180, 240, 300]; // in seconds
 
@@ -36,6 +36,9 @@ export const TimerSection: React.FC<TimerSectionProps> = ({
   onUpdateRest,
   t,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const formatTime = (secs: number) => {
     if (secs < 60) return `${secs}${t('ui.common.secs_unit')}`;
     const m = Math.floor(secs / 60);
@@ -46,7 +49,7 @@ export const TimerSection: React.FC<TimerSectionProps> = ({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Ionicons name="timer-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+        <Ionicons name="timer-outline" size={24} color={colors.primary} style={{ marginRight: 8 }} />
         <Text style={styles.sectionTitle}>{t('ui.profile.section_timer')}</Text>
       </View>
 
@@ -59,7 +62,7 @@ export const TimerSection: React.FC<TimerSectionProps> = ({
           <Switch
             value={autoRest}
             onValueChange={onUpdateAuto}
-            trackColor={{ false: '#333', true: Theme.colors.primary }}
+            trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor={'#fff'}
           />
         </View>
@@ -72,7 +75,7 @@ export const TimerSection: React.FC<TimerSectionProps> = ({
           <Switch
             value={individualRestEnabled}
             onValueChange={onUpdateIndividualRest}
-            trackColor={{ false: '#333', true: Theme.colors.primary }}
+            trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor={'#fff'}
           />
         </View>
@@ -85,7 +88,7 @@ export const TimerSection: React.FC<TimerSectionProps> = ({
           <Switch
             value={timerNotification}
             onValueChange={onUpdateNotification}
-            trackColor={{ false: '#333', true: Theme.colors.primary }}
+            trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor={'#fff'}
           />
         </View>
@@ -98,7 +101,7 @@ export const TimerSection: React.FC<TimerSectionProps> = ({
           <Switch
             value={timerVibrate}
             onValueChange={onUpdateVibrate}
-            trackColor={{ false: '#333', true: Theme.colors.primary }}
+            trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor={'#fff'}
           />
         </View>
@@ -111,7 +114,7 @@ export const TimerSection: React.FC<TimerSectionProps> = ({
           <Switch
             value={keepAwake}
             onValueChange={onUpdateKeepAwake}
-            trackColor={{ false: '#333', true: Theme.colors.primary }}
+            trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor={'#fff'}
           />
         </View>
@@ -140,17 +143,18 @@ export const TimerSection: React.FC<TimerSectionProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  section: { marginBottom: Theme.spacing.xl },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: Theme.spacing.md },
-  sectionTitle: { fontSize: 18, color: Theme.colors.text, fontWeight: 'bold' },
-  settingCard: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, borderWidth: 1, borderColor: Theme.colors.border },
-  settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  settingLabel: { color: Theme.colors.text, fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  settingDesc: { color: Theme.colors.textMuted, fontSize: 13, paddingRight: 40, lineHeight: 18 },
-  chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
-  chip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#222', borderWidth: 1, borderColor: Theme.colors.border },
-  chipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: Theme.colors.primary },
-  chipText: { color: Theme.colors.textMuted, fontSize: 14, fontWeight: '600' },
-  chipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    section: { marginBottom: 32 },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+    sectionTitle: { fontSize: 18, color: colors.text, fontWeight: 'bold' },
+    settingCard: { backgroundColor: colors.card, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: colors.border },
+    settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+    settingLabel: { color: colors.text, fontSize: 16, fontWeight: '600', marginBottom: 4 },
+    settingDesc: { color: colors.textMuted, fontSize: 13, paddingRight: 40, lineHeight: 18 },
+    chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
+    chip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
+    chipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: colors.primary },
+    chipText: { color: colors.textMuted, fontSize: 14, fontWeight: '600' },
+    chipTextActive: { color: colors.primary, fontWeight: 'bold' },
+  });

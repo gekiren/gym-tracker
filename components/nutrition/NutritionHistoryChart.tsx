@@ -1,6 +1,7 @@
 import React, { useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { MealLog, NutritionGoals } from '../../src/db/types';
+import { useAppTheme } from '../../src/theme';
 
 interface Props {
   allLogs: MealLog[];
@@ -11,6 +12,8 @@ const TRACK_HEIGHT = 110;
 const DATE_LABEL_HEIGHT = 18;
 
 export default function NutritionHistoryChart({ allLogs, goals }: Props) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const targetCal = goals.calories || 2000;
   const scrollRef = useRef<ScrollView>(null);
 
@@ -107,16 +110,16 @@ export default function NutritionHistoryChart({ allLogs, goals }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   card: {
-    backgroundColor: '#0a0a0a',
-    borderRadius: 14,
+    backgroundColor: colors.card,
+    borderRadius: 16,
     padding: 14,
     marginVertical: 8,
     borderWidth: 1,
-    borderColor: '#1c1c1c',
+    borderColor: colors.border,
   },
-  title: { fontSize: 15, fontWeight: '700', color: '#ffffff', marginBottom: 12 },
+  title: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 12 },
   chartContainer: { height: 160, width: 440, position: 'relative' },
   plotArea: {
     position: 'absolute',
@@ -137,15 +140,15 @@ const styles = StyleSheet.create({
   goalLabel: {
     position: 'absolute',
     right: 0,
-    fontSize: 9,
+    fontSize: 11,
     color: '#f59e0b',
     fontWeight: '700',
     marginBottom: 2,
   },
   barsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: '100%' },
   barCol: { width: 26, alignItems: 'center', height: '100%', justifyContent: 'flex-end' },
-  barVal: { fontSize: 8, color: '#94a3b8', marginBottom: 2, height: 12 },
-  barTrack: { width: 14, backgroundColor: '#0f172a', borderRadius: 7, overflow: 'hidden', justifyContent: 'flex-end' },
+  barVal: { fontSize: 10, color: colors.textMuted, marginBottom: 2, height: 14 },
+  barTrack: { width: 14, backgroundColor: colors.background, borderRadius: 7, overflow: 'hidden', justifyContent: 'flex-end' },
   barFill: { width: '100%', borderRadius: 7 },
-  barDate: { fontSize: 9, color: '#64748b', marginTop: 4, height: DATE_LABEL_HEIGHT - 4 },
+  barDate: { fontSize: 10, color: colors.textMuted, marginTop: 4, height: DATE_LABEL_HEIGHT - 4 },
 });

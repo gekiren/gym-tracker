@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,10 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { getMissingPresets, restorePresets } from '../../src/db/database';
 
 interface RestorePresetsModalProps {
@@ -27,6 +28,9 @@ export const RestorePresetsModal: React.FC<RestorePresetsModalProps> = ({
   onRestore,
   t,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [loading, setLoading] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [activeTab, setActiveTab] = useState<'exercises' | 'routines'>('exercises');
@@ -135,25 +139,30 @@ export const RestorePresetsModal: React.FC<RestorePresetsModalProps> = ({
 
   const hasItems = missingExercises.length > 0 || missingRoutines.length > 0;
 
+  const handleRequestClose = () => {
+    if (!restoring) onClose();
+  };
+
   return (
-    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={handleRequestClose}>
       <View style={styles.modalBg}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleRequestClose} />
         <View style={styles.modalCard}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>{t('ui.profile.restore_modal_title') || 'デフォルトデータの復元'}</Text>
-            <TouchableOpacity onPress={onClose} disabled={restoring}>
-              <Ionicons name="close" size={24} color={Theme.colors.text} />
+            <TouchableOpacity style={styles.closeBtn} onPress={handleRequestClose} disabled={restoring}>
+              <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
           {loading ? (
             <View style={styles.centerContainer}>
-              <ActivityIndicator size="large" color={Theme.colors.primary} />
+              <ActivityIndicator size="large" color={colors.primary} />
             </View>
           ) : !hasItems ? (
             <View style={styles.centerContainer}>
-              <Ionicons name="checkmark-circle-outline" size={48} color={Theme.colors.success} style={{ marginBottom: 12 }} />
+              <Ionicons name="checkmark-circle-outline" size={48} color={colors.success} style={{ marginBottom: 12 }} />
               <Text style={styles.noItemsText}>
                 {t('ui.profile.restore_no_items') || '復元可能なデフォルトデータはありません（すべて登録済みです）。'}
               </Text>
@@ -211,7 +220,7 @@ export const RestorePresetsModal: React.FC<RestorePresetsModalProps> = ({
                               <Ionicons
                                 name={isSelected ? 'checkbox' : 'square-outline'}
                                 size={22}
-                                color={isSelected ? Theme.colors.primary : Theme.colors.textMuted}
+                                color={isSelected ? colors.primary : colors.textMuted}
                                 style={{ marginRight: 12 }}
                               />
                               <View style={{ flex: 1 }}>
@@ -239,7 +248,7 @@ export const RestorePresetsModal: React.FC<RestorePresetsModalProps> = ({
                         <Ionicons
                           name={isSelected ? 'checkbox' : 'square-outline'}
                           size={22}
-                          color={isSelected ? Theme.colors.primary : Theme.colors.textMuted}
+                          color={isSelected ? colors.primary : colors.textMuted}
                           style={{ marginRight: 12 }}
                         />
                         <View style={{ flex: 1 }}>
@@ -283,152 +292,162 @@ export const RestorePresetsModal: React.FC<RestorePresetsModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  modalBg: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  modalCard: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: 16,
-    padding: 20,
-    width: '100%',
-    maxWidth: 500,
-    height: Dimensions.get('window').height * 0.8,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Theme.colors.text,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  noItemsText: {
-    color: Theme.colors.textMuted,
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
-    marginBottom: 12,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: Theme.colors.primary,
-  },
-  tabText: {
-    color: Theme.colors.textMuted,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  activeTabText: {
-    color: Theme.colors.primary,
-  },
-  bulkActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-  },
-  bulkBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    backgroundColor: '#2a2a2a',
-  },
-  bulkBtnText: {
-    color: Theme.colors.text,
-    fontSize: 13,
-  },
-  scrollArea: {
-    flex: 1,
-    marginBottom: 16,
-  },
-  groupContainer: {
-    marginBottom: 16,
-  },
-  groupHeader: {
-    color: Theme.colors.primary,
-    fontSize: 14,
-    fontWeight: 'bold',
-    backgroundColor: '#121212',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
-  },
-  itemName: {
-    color: Theme.colors.text,
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  itemSub: {
-    color: Theme.colors.textMuted,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  emptyText: {
-    color: Theme.colors.textMuted,
-    textAlign: 'center',
-    marginTop: 24,
-  },
-  footer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  cancelBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-    alignItems: 'center',
-  },
-  cancelBtnText: {
-    color: Theme.colors.text,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  confirmBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: Theme.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmBtnText: {
-    color: '#000',
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    modalBg: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.75)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 16,
+    },
+    modalCard: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 20,
+      width: '100%',
+      maxWidth: 500,
+      height: Dimensions.get('window').height * 0.8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    closeBtn: {
+      width: 44,
+      height: 44,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: colors.text,
+    },
+    centerContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+    },
+    noItemsText: {
+      color: colors.textMuted,
+      fontSize: 16,
+      textAlign: 'center',
+      lineHeight: 24,
+    },
+    tabContainer: {
+      flexDirection: 'row',
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      marginBottom: 12,
+    },
+    tab: {
+      flex: 1,
+      paddingVertical: 12,
+      alignItems: 'center',
+    },
+    activeTab: {
+      borderBottomWidth: 2,
+      borderBottomColor: colors.primary,
+    },
+    tabText: {
+      color: colors.textMuted,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    activeTabText: {
+      color: colors.primary,
+    },
+    bulkActions: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 12,
+    },
+    bulkBtn: {
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderRadius: 4,
+      backgroundColor: colors.background,
+    },
+    bulkBtnText: {
+      color: colors.text,
+      fontSize: 13,
+    },
+    scrollArea: {
+      flex: 1,
+      marginBottom: 16,
+    },
+    groupContainer: {
+      marginBottom: 16,
+    },
+    groupHeader: {
+      color: colors.primary,
+      fontSize: 14,
+      fontWeight: 'bold',
+      backgroundColor: colors.background,
+      paddingVertical: 4,
+      paddingHorizontal: 8,
+      borderRadius: 4,
+      marginBottom: 8,
+    },
+    itemRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    itemName: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    itemSub: {
+      color: colors.textMuted,
+      fontSize: 12,
+      marginTop: 2,
+    },
+    emptyText: {
+      color: colors.textMuted,
+      textAlign: 'center',
+      marginTop: 24,
+    },
+    footer: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    cancelBtn: {
+      flex: 1,
+      minHeight: 48,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cancelBtnText: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    confirmBtn: {
+      flex: 1,
+      minHeight: 48,
+      paddingVertical: 12,
+      borderRadius: 12,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    confirmBtnText: {
+      color: '#000',
+      fontSize: 15,
+      fontWeight: 'bold',
+    },
+  });

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, Pressable } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { FeatureId } from '../../src/store/settingsStore';
 import { getSettings, saveSetting } from '../../src/db/database';
 
@@ -34,6 +34,9 @@ function SlotIcon({ config, size, color }: { config: SlotConfig; size: number; c
 }
 
 export default function WidgetLauncherSettingsScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [slots, setSlots] = useState<(FeatureId | 'empty')[]>(['workout', 'water', 'nutrition', 'zikan', 'routine', 'body', 'voice_ai']);
   const [loading, setLoading] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
@@ -121,7 +124,7 @@ export default function WidgetLauncherSettingsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={Theme.colors.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>ウィジェット設定 (7枠)</Text>
         <TouchableOpacity 
@@ -147,7 +150,7 @@ export default function WidgetLauncherSettingsScreen() {
               if (!config) return null;
               return (
                 <View key={`preview-${i}`} style={styles.previewSlot}>
-                  <SlotIcon config={config} size={24} color={Theme.colors.primary} />
+                  <SlotIcon config={config} size={24} color={colors.primary} />
                 </View>
               );
             })}
@@ -168,13 +171,13 @@ export default function WidgetLauncherSettingsScreen() {
                     <SlotIcon 
                       config={config} 
                       size={20} 
-                      color={config.id === 'empty' ? Theme.colors.textMuted : Theme.colors.primary} 
+                      color={config.id === 'empty' ? colors.textMuted : colors.primary} 
                     />
                   </View>
                   <Text style={[styles.featureText, config.id === 'empty' && styles.featureTextEmpty]}>
                     {config.label}
                   </Text>
-                  <Ionicons name="chevron-down" size={16} color={Theme.colors.textMuted} />
+                  <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
                 </TouchableOpacity>
 
                 <View style={styles.controls}>
@@ -183,14 +186,14 @@ export default function WidgetLauncherSettingsScreen() {
                     onPress={() => moveUp(index)}
                     disabled={index === 0}
                   >
-                    <Ionicons name="chevron-up" size={24} color={index === 0 ? Theme.colors.border : Theme.colors.text} />
+                    <Ionicons name="chevron-up" size={24} color={index === 0 ? colors.border : colors.text} />
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={[styles.controlBtn, index === slots.length - 1 && styles.controlBtnDisabled]} 
                     onPress={() => moveDown(index)}
                     disabled={index === slots.length - 1}
                   >
-                    <Ionicons name="chevron-down" size={24} color={index === slots.length - 1 ? Theme.colors.border : Theme.colors.text} />
+                    <Ionicons name="chevron-down" size={24} color={index === slots.length - 1 ? colors.border : colors.text} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -213,7 +216,7 @@ export default function WidgetLauncherSettingsScreen() {
                 {selectingSlotIndex !== null ? `スロット ${selectingSlotIndex + 1} の機能を選択` : '機能の選択'}
               </Text>
               <TouchableOpacity onPress={() => setSelectingSlotIndex(null)} style={styles.modalCloseBtn}>
-                <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+                <Ionicons name="close" size={24} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
@@ -231,7 +234,7 @@ export default function WidgetLauncherSettingsScreen() {
                       <SlotIcon 
                         config={item} 
                         size={22} 
-                        color={item.id === 'empty' ? Theme.colors.textMuted : isSelected ? '#FFF' : Theme.colors.primary} 
+                        color={item.id === 'empty' ? colors.textMuted : isSelected ? '#FFF' : colors.primary} 
                       />
                     </View>
                     <View style={styles.modalItemTextContainer}>
@@ -243,7 +246,7 @@ export default function WidgetLauncherSettingsScreen() {
                       ) : null}
                     </View>
                     {isSelected ? (
-                      <Ionicons name="checkmark-circle" size={22} color={Theme.colors.primary} />
+                      <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
                     ) : null}
                   </TouchableOpacity>
                 );
@@ -256,218 +259,222 @@ export default function WidgetLauncherSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Theme.colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 50,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    backgroundColor: Theme.colors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
-  },
-  backBtn: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Theme.colors.text,
-  },
-  saveBtn: {
-    backgroundColor: Theme.colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  saveBtnDisabled: {
-    backgroundColor: Theme.colors.border,
-  },
-  saveBtnText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  description: {
-    color: Theme.colors.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 24,
-  },
-  previewContainer: {
-    marginBottom: 32,
-  },
-  previewLabel: {
-    color: Theme.colors.text,
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  previewWidget: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 16,
-    height: 60,
-    paddingHorizontal: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  previewSlot: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  listContainer: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  listItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
-  },
-  slotNumber: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Theme.colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  slotNumberText: {
-    color: Theme.colors.text,
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  featureSelectBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Theme.colors.background,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  featureIconContainer: {
-    marginRight: 10,
-    width: 24,
-    alignItems: 'center',
-  },
-  featureText: {
-    flex: 1,
-    color: Theme.colors.text,
-    fontSize: 16,
-  },
-  featureTextEmpty: {
-    color: Theme.colors.textMuted,
-    fontStyle: 'italic',
-  },
-  controls: {
-    flexDirection: 'row',
-    marginLeft: 12,
-  },
-  controlBtn: {
-    padding: 8,
-    marginLeft: 4,
-    backgroundColor: Theme.colors.background,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  controlBtnDisabled: {
-    opacity: 0.5,
-  },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    width: '100%',
-    maxHeight: '80%',
-    backgroundColor: Theme.colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-    padding: 16,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
-    marginBottom: 8,
-  },
-  modalTitle: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: Theme.colors.text,
-  },
-  modalCloseBtn: {
-    padding: 4,
-  },
-  modalList: {
-    maxHeight: 400,
-  },
-  modalItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    marginBottom: 6,
-  },
-  modalItemSelected: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  modalItemIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: Theme.colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  modalItemIconContainerSelected: {
-    backgroundColor: Theme.colors.primary,
-  },
-  modalItemTextContainer: {
-    flex: 1,
-  },
-  modalItemLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Theme.colors.text,
-    marginBottom: 2,
-  },
-  modalItemLabelSelected: {
-    color: Theme.colors.primary,
-  },
-  modalItemDescription: {
-    fontSize: 12,
-    color: Theme.colors.textMuted,
-  },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingTop: 50,
+      paddingBottom: 16,
+      paddingHorizontal: 16,
+      backgroundColor: colors.card,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    backBtn: {
+      padding: 4,
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: colors.text,
+    },
+    saveBtn: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+    },
+    saveBtnDisabled: {
+      backgroundColor: colors.border,
+    },
+    saveBtnText: {
+      color: '#FFF',
+      fontWeight: 'bold',
+    },
+    content: {
+      flex: 1,
+      padding: 16,
+    },
+    description: {
+      color: colors.textMuted,
+      fontSize: 14,
+      lineHeight: 20,
+      marginBottom: 24,
+    },
+    previewContainer: {
+      marginBottom: 32,
+    },
+    previewLabel: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: 'bold',
+      marginBottom: 8,
+    },
+    previewWidget: {
+      flexDirection: 'row',
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      borderRadius: 16,
+      height: 60,
+      paddingHorizontal: 8,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.1)',
+    },
+    previewSlot: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    listContainer: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    listItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    slotNumber: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: colors.border,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    slotNumberText: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    featureSelectBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    featureIconContainer: {
+      marginRight: 10,
+      width: 24,
+      alignItems: 'center',
+    },
+    featureText: {
+      flex: 1,
+      color: colors.text,
+      fontSize: 16,
+    },
+    featureTextEmpty: {
+      color: colors.textMuted,
+      fontStyle: 'italic',
+    },
+    controls: {
+      flexDirection: 'row',
+      marginLeft: 12,
+    },
+    controlBtn: {
+      padding: 8,
+      marginLeft: 4,
+      backgroundColor: colors.background,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    controlBtnDisabled: {
+      opacity: 0.5,
+    },
+    // Modal styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    modalContent: {
+      width: '100%',
+      maxHeight: '80%',
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingBottom: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      marginBottom: 8,
+    },
+    modalTitle: {
+      fontSize: 17,
+      fontWeight: 'bold',
+      color: colors.text,
+    },
+    modalCloseBtn: {
+      width: 44,
+      height: 44,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalList: {
+      maxHeight: 400,
+    },
+    modalItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      borderRadius: 10,
+      marginBottom: 6,
+    },
+    modalItemSelected: {
+      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    },
+    modalItemIconContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: 8,
+      backgroundColor: colors.background,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    modalItemIconContainerSelected: {
+      backgroundColor: colors.primary,
+    },
+    modalItemTextContainer: {
+      flex: 1,
+    },
+    modalItemLabel: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 2,
+    },
+    modalItemLabelSelected: {
+      color: colors.primary,
+    },
+    modalItemDescription: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+  });

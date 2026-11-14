@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Modal,
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   ScrollView,
   Alert,
@@ -47,8 +48,8 @@ interface Props {
 }
 
 export default function MdImportModal({ visible, onClose, onImport, selectedDate, aiUrl }: Props) {
-  const { backgroundTheme } = useAppTheme();
-  const isPureBlack = backgroundTheme === 'pureBlack';
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [mdText, setMdText] = useState('');
   const [copied, setCopied] = useState(false);
@@ -159,8 +160,9 @@ export default function MdImportModal({ visible, onClose, onImport, selectedDate
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
       <View style={styles.overlay}>
-        <View style={[styles.sheet, isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' }]}>
-          <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.sheet}>
+          <View style={styles.header}>
             <Text style={styles.title}>📋 Markdown一括取り込み</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
@@ -169,7 +171,7 @@ export default function MdImportModal({ visible, onClose, onImport, selectedDate
 
           <ScrollView style={styles.body}>
             {/* AIプロンプトコピーボタン領域 */}
-            <View style={[styles.promptCard, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
+            <View style={styles.promptCard}>
               <View style={styles.promptHeader}>
                 <Text style={styles.promptTitle}>🤖 外部AI用プロンプト</Text>
                 <Text style={styles.promptSubtitle}>ChatGPTやClaudeに食事写真・メモを解析させる専用プロンプト</Text>
@@ -197,18 +199,18 @@ export default function MdImportModal({ visible, onClose, onImport, selectedDate
               </View>
             </View>
 
-            <Text style={[styles.hint, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f', borderWidth: 1 }]}>
+            <Text style={styles.hint}>
               取り込み形式例:{'\n'}
               - 鶏胸肉サラダ: 250kcal, P:30g, F:5g, C:10g{'\n'}
               - 白米200g: 330kcal, P:5g, F:1g, C:75g
             </Text>
 
             <TextInput
-              style={[styles.textArea, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}
+              style={styles.textArea}
               value={mdText}
               onChangeText={setMdText}
               placeholder="ここにMarkdown形式の食事リストを貼り付け..."
-              placeholderTextColor="#475569"
+              placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={8}
             />
@@ -224,28 +226,30 @@ export default function MdImportModal({ visible, onClose, onImport, selectedDate
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-start' },
   sheet: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
     marginTop: Platform.OS === 'android' ? 40 : 50,
     marginHorizontal: 8,
     maxHeight: '85%',
     overflow: 'hidden',
   },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
-  title: { fontSize: 18, fontWeight: '700', color: '#f8fafc' },
-  closeBtn: { padding: 4 },
-  closeBtnText: { fontSize: 18, color: '#94a3b8' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
+  title: { fontSize: 18, fontWeight: '700', color: colors.text },
+  closeBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  closeBtnText: { fontSize: 18, color: colors.textMuted },
   body: { padding: 16 },
   promptCard: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   promptHeader: {
     marginBottom: 8,
@@ -257,9 +261,9 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   promptSubtitle: {
-    fontSize: 11,
-    color: '#94a3b8',
-    lineHeight: 15,
+    fontSize: 12,
+    color: colors.textMuted,
+    lineHeight: 16,
   },
   promptBtnRow: {
     flexDirection: 'row',
@@ -269,6 +273,7 @@ const styles = StyleSheet.create({
   copyBtn: {
     backgroundColor: '#0284c7',
     borderRadius: 8,
+    minHeight: 40,
     paddingVertical: 10,
     paddingHorizontal: 12,
     alignItems: 'center',
@@ -286,6 +291,7 @@ const styles = StyleSheet.create({
     flex: 0.9,
     backgroundColor: '#8b5cf6',
     borderRadius: 8,
+    minHeight: 40,
     paddingVertical: 10,
     paddingHorizontal: 12,
     alignItems: 'center',
@@ -296,9 +302,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-  hint: { fontSize: 12, color: '#94a3b8', backgroundColor: '#1e293b', padding: 10, borderRadius: 8, lineHeight: 18, marginBottom: 12 },
-  textArea: { backgroundColor: '#1e293b', borderRadius: 10, borderWidth: 1, borderColor: '#334155', color: '#f8fafc', padding: 12, fontSize: 13, minHeight: 140, textAlignVertical: 'top', marginBottom: 16 },
-  importBtn: { backgroundColor: '#10b981', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  hint: { fontSize: 12, color: colors.textMuted, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, padding: 10, borderRadius: 8, lineHeight: 18, marginBottom: 12 },
+  textArea: { backgroundColor: colors.background, borderRadius: 10, borderWidth: 1, borderColor: colors.border, color: colors.text, padding: 12, fontSize: 13, minHeight: 140, textAlignVertical: 'top', marginBottom: 16 },
+  importBtn: { backgroundColor: '#10b981', borderRadius: 12, minHeight: 48, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
   importBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 });
 

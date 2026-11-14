@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { AccountCard } from '../../components/profile/AccountCard';
@@ -21,6 +21,8 @@ import * as Updates from 'expo-updates';
 import Constants from 'expo-constants';
 
 export default function AccountSettingsScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { t, i18n } = useTranslation();
   const settings = useSettingsStore(state => state.settings);
   const setBackgroundTheme = useSettingsStore(state => state.setBackgroundTheme);
@@ -161,7 +163,7 @@ export default function AccountSettingsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="chevron-back" size={24} color={Theme.colors.text} />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>プラン & アプリ情報</Text>
         <View style={{ width: 24 }} />
@@ -183,9 +185,9 @@ export default function AccountSettingsScreen() {
         />
 
         {/* Environment & Preferences Section */}
-        <View style={{ marginTop: Theme.spacing.md }}>
+        <View style={{ marginTop: 16 }}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="settings-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+            <Ionicons name="settings-outline" size={24} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.sectionTitle}>環境設定</Text>
           </View>
           <View style={styles.preferenceCard}>
@@ -238,7 +240,7 @@ export default function AccountSettingsScreen() {
             <Switch
               value={crashConsent === 'agreed'}
               onValueChange={handleUpdateCrashConsent}
-              trackColor={{ false: '#333', true: Theme.colors.primary }}
+              trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor={'#fff'}
             />
           </View>
@@ -254,7 +256,12 @@ export default function AccountSettingsScreen() {
         </View>
       </ScrollView>
 
-      <Modal visible={isPaywallVisible} animationType="slide" transparent={true}>
+      <Modal
+        visible={isPaywallVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => !isPurchasing && setIsPaywallVisible(false)}
+      >
         <PaywallModal
           isPurchasing={isPurchasing}
           isPremium={isPremium}
@@ -282,36 +289,37 @@ export default function AccountSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingHorizontal: Theme.spacing.md, 
-    paddingTop: 54, 
-    paddingBottom: Theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border
-  },
-  backButton: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
-  content: { padding: Theme.spacing.md, paddingBottom: 60 },
-  card: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, borderWidth: 1, borderColor: Theme.colors.border, marginTop: Theme.spacing.md },
-  menuRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: Theme.spacing.md, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  menuTitle: { fontSize: 16, fontWeight: '600', color: Theme.colors.text },
-  preferenceCard: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, borderWidth: 1, borderColor: Theme.colors.border },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: Theme.spacing.md },
-  sectionTitle: { fontSize: 18, color: Theme.colors.text, fontWeight: 'bold' },
-  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: Theme.spacing.sm },
-  preferenceCardTitle: { fontSize: 16, fontWeight: 'bold', color: Theme.colors.text },
-  settingItemRow: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  settingItemLabel: { color: Theme.colors.text, fontSize: 15, fontWeight: '600', marginBottom: 2 },
-  settingItemDesc: { color: Theme.colors.textMuted, fontSize: 12, lineHeight: 16 },
-  chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
-  langChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#222', borderWidth: 1, borderColor: Theme.colors.border },
-  chipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: Theme.colors.primary },
-  chipText: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: '600' },
-  chipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' },
-  appInfoWrapper: { marginTop: Theme.spacing.xl },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      justifyContent: 'space-between', 
+      paddingHorizontal: 16, 
+      paddingTop: 54, 
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border
+    },
+    backButton: { padding: 4 },
+    headerTitle: { fontSize: 18, fontWeight: 'bold', color: colors.text },
+    content: { padding: 16, paddingBottom: 60 },
+    card: { backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, marginTop: 16 },
+    menuRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
+    menuTitle: { fontSize: 16, fontWeight: '600', color: colors.text },
+    preferenceCard: { backgroundColor: colors.card, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: colors.border },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+    sectionTitle: { fontSize: 18, color: colors.text, fontWeight: 'bold' },
+    cardHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+    preferenceCardTitle: { fontSize: 16, fontWeight: 'bold', color: colors.text },
+    settingItemRow: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+    settingItemLabel: { color: colors.text, fontSize: 15, fontWeight: '600', marginBottom: 2 },
+    settingItemDesc: { color: colors.textMuted, fontSize: 12, lineHeight: 16 },
+    chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+    langChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
+    chipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: colors.primary },
+    chipText: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
+    chipTextActive: { color: colors.primary, fontWeight: 'bold' },
+    appInfoWrapper: { marginTop: 32 },
+  });

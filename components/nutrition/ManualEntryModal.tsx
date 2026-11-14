@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Modal,
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   ActivityIndicator,
   ScrollView,
@@ -32,8 +33,8 @@ interface Props {
 }
 
 export default function ManualEntryModal({ visible, onClose, onSave, selectedDate }: Props) {
-  const { backgroundTheme } = useAppTheme();
-  const isPureBlack = backgroundTheme === 'pureBlack';
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const scrollViewRef = useRef<ScrollView>(null);
 
   const [name, setName] = useState('');
@@ -105,8 +106,9 @@ export default function ManualEntryModal({ visible, onClose, onSave, selectedDat
         style={styles.overlay}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={[styles.sheet, isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' }]}>
-          <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+        <View style={styles.sheet}>
+          <View style={styles.header}>
             <Text style={styles.title}>✏️ 手動入力</Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
@@ -122,7 +124,6 @@ export default function ManualEntryModal({ visible, onClose, onSave, selectedDat
                   key={t.key}
                   style={[
                     styles.mealTypeBtn,
-                    isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' },
                     mealType === t.key && styles.mealTypeBtnActive,
                   ]}
                   onPress={() => setMealType(t.key)}
@@ -144,11 +145,11 @@ export default function ManualEntryModal({ visible, onClose, onSave, selectedDat
             {/* 料理名 */}
             <Text style={styles.label}>料理名 <Text style={styles.required}>*</Text></Text>
             <TextInput
-              style={[styles.input, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}
+              style={styles.input}
               value={name}
               onChangeText={setName}
               placeholder="例: チキンサラダ"
-              placeholderTextColor="#475569"
+              placeholderTextColor={colors.textMuted}
             />
 
             {/* 栄養値入力グリッド */}
@@ -162,15 +163,15 @@ export default function ManualEntryModal({ visible, onClose, onSave, selectedDat
                 { label: '塩分 (g)',       value: sodium,  setter: setSodium,  color: '#f43f5e' },
                 { label: '食物繊維 (g)',   value: fiber,   setter: setFiber,   color: '#84cc16' },
               ].map((item) => (
-                <View key={item.label} style={[styles.nutriItem, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
+                <View key={item.label} style={styles.nutriItem}>
                   <Text style={[styles.nutriLabel, { color: item.color }]}>{item.label}</Text>
                   <TextInput
-                    style={[styles.nutriInput, isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' }]}
+                    style={styles.nutriInput}
                     value={item.value}
                     onChangeText={item.setter}
                     keyboardType="decimal-pad"
                     placeholder="0"
-                    placeholderTextColor="#475569"
+                    placeholderTextColor={colors.textMuted}
                   />
                 </View>
               ))}
@@ -179,11 +180,11 @@ export default function ManualEntryModal({ visible, onClose, onSave, selectedDat
             {/* メモ */}
             <Text style={styles.label}>メモ（任意）</Text>
             <TextInput
-              style={[styles.textArea, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}
+              style={styles.textArea}
               value={memo}
               onChangeText={setMemo}
               placeholder="食材・調理法・感想など"
-              placeholderTextColor="#475569"
+              placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={3}
               onFocus={() => {
@@ -213,66 +214,68 @@ export default function ManualEntryModal({ visible, onClose, onSave, selectedDat
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-start' },
   sheet: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
     marginTop: Platform.OS === 'android' ? 40 : 50,
     marginHorizontal: 8,
     maxHeight: '88%',
     overflow: 'hidden',
   },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
-  title: { fontSize: 18, fontWeight: '700', color: '#f8fafc' },
-  closeBtn: { padding: 4 },
-  closeBtnText: { fontSize: 18, color: '#94a3b8' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
+  title: { fontSize: 18, fontWeight: '700', color: colors.text },
+  closeBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  closeBtnText: { fontSize: 18, color: colors.textMuted },
   body: { padding: 16 },
-  label: { fontSize: 13, fontWeight: '600', color: '#94a3b8', marginBottom: 8, marginTop: 12 },
-  required: { color: '#ef4444' },
+  label: { fontSize: 13, fontWeight: '600', color: colors.textMuted, marginBottom: 8, marginTop: 12 },
+  required: { color: colors.danger },
   mealTypeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 4 },
-  mealTypeBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#334155', backgroundColor: '#1e293b' },
+  mealTypeBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.background },
   mealTypeBtnActive: { backgroundColor: '#4facfe22', borderColor: '#4facfe' },
-  mealTypeBtnText: { fontSize: 12, color: '#94a3b8', fontWeight: '600' },
+  mealTypeBtnText: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
   mealTypeBtnTextActive: { color: '#4facfe' },
   input: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#334155',
-    color: '#f8fafc',
+    borderColor: colors.border,
+    color: colors.text,
     fontSize: 14,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 4,
   },
   nutriGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 4 },
-  nutriItem: { width: '48%', backgroundColor: '#1e293b', borderRadius: 10, padding: 10, borderWidth: 1, borderColor: '#334155' },
-  nutriLabel: { fontSize: 11, fontWeight: '600', marginBottom: 6 },
+  nutriItem: { width: '48%', backgroundColor: colors.background, borderRadius: 10, padding: 10, borderWidth: 1, borderColor: colors.border },
+  nutriLabel: { fontSize: 12, fontWeight: '600', marginBottom: 6 },
   nutriInput: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#334155',
-    color: '#f8fafc',
+    borderColor: colors.border,
+    color: colors.text,
     fontSize: 14,
     paddingHorizontal: 10,
     paddingVertical: 6,
     textAlign: 'right',
   },
   textArea: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#334155',
-    color: '#f8fafc',
+    borderColor: colors.border,
+    color: colors.text,
     fontSize: 14,
     padding: 12,
     minHeight: 80,
     textAlignVertical: 'top',
     marginBottom: 16,
   },
-  saveBtn: { backgroundColor: '#10b981', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  saveBtn: { backgroundColor: '#10b981', borderRadius: 12, paddingVertical: 14, minHeight: 48, justifyContent: 'center', alignItems: 'center' },
   saveBtnDisabled: { opacity: 0.5 },
   saveBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
   bottomPad: { height: 24 },

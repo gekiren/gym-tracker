@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Modal,
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '../../src/theme';
 import { AutophagyAIProposal } from '../../src/services/aiCoachService';
 
 interface Props {
@@ -23,6 +25,8 @@ export default function AutophagyAiModal({
   onClose,
   onApplyTargetHours,
 }: Props) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   if (!proposal) return null;
 
   const handleApply = () => {
@@ -38,6 +42,7 @@ export default function AutophagyAiModal({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.container}>
           {/* ヘッダー */}
           <View style={styles.header}>
@@ -46,7 +51,7 @@ export default function AutophagyAiModal({
               <Text style={styles.title}>オートファジー時間最適化</Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close" size={22} color="#94a3b8" />
+              <Ionicons name="close" size={22} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
 
@@ -92,37 +97,33 @@ export default function AutophagyAiModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    backgroundColor: 'rgba(0, 0, 0, 0.78)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
   },
   container: {
     width: '100%',
+    maxWidth: 420,
     maxHeight: '85%',
-    backgroundColor: '#1e293b',
-    borderRadius: 18,
+    backgroundColor: colors.card,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
     paddingHorizontal: 20,
-    paddingTop: 18,
+    paddingTop: 16,
     paddingBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 14,
+    paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+    borderBottomColor: colors.border,
   },
   titleRow: {
     flexDirection: 'row',
@@ -132,27 +133,30 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#f8fafc',
+    color: colors.text,
   },
   closeBtn: {
-    padding: 4,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     marginTop: 14,
   },
   recommendCard: {
-    backgroundColor: '#0f172a',
-    borderRadius: 14,
+    backgroundColor: colors.background,
+    borderRadius: 12,
     paddingVertical: 18,
     paddingHorizontal: 16,
     alignItems: 'center',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#38bdf8',
+    borderColor: colors.primary,
   },
   recommendSub: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontWeight: '600',
     marginBottom: 4,
   },
@@ -164,25 +168,25 @@ const styles = StyleSheet.create({
   hoursUnit: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#f8fafc',
+    color: colors.text,
   },
   section: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#f8fafc',
+    color: colors.text,
     marginBottom: 6,
   },
   bodyText: {
     fontSize: 13,
-    color: '#cbd5e1',
+    color: colors.text,
     lineHeight: 20,
   },
   footer: {
@@ -190,6 +194,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   applyBtn: {
+    minHeight: 48,
     backgroundColor: '#0284c7',
     borderRadius: 12,
     paddingVertical: 13,
@@ -203,12 +208,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   cancelBtn: {
+    minHeight: 48,
+    justifyContent: 'center',
     paddingVertical: 10,
     alignItems: 'center',
+    borderRadius: 12,
   },
   cancelBtnText: {
-    color: '#64748b',
-    fontSize: 13,
+    color: colors.textMuted,
+    fontSize: 14,
     fontWeight: '600',
   },
 });

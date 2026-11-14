@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 
 interface AccountCardProps {
   accountType: 'basic' | 'premium' | 'premium_limited' | 'early_adopter';
@@ -20,6 +20,9 @@ export const AccountCard: React.FC<AccountCardProps> = ({
   onPressPromo,
   t,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const getRemainingDaysText = (until: string) => {
     if (!until || until === 'perpetual') return '';
     const expiry = Date.parse(until);
@@ -35,7 +38,7 @@ export const AccountCard: React.FC<AccountCardProps> = ({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Ionicons name="card-outline" size={24} color={Theme.colors.primary} style={{ marginRight: 8 }} />
+        <Ionicons name="card-outline" size={24} color={colors.primary} style={{ marginRight: 8 }} />
         <Text style={styles.sectionTitle}>プラン情報</Text>
       </View>
 
@@ -56,9 +59,9 @@ export const AccountCard: React.FC<AccountCardProps> = ({
               size={22} 
               color={
                 accountType === 'early_adopter' ? '#ffd700' : 
-                accountType === 'premium' ? '#4facfe' : 
+                accountType === 'premium' ? colors.primary : 
                 accountType === 'premium_limited' ? '#c084fc' :
-                Theme.colors.textMuted
+                colors.textMuted
               } 
             />
           </View>
@@ -78,7 +81,7 @@ export const AccountCard: React.FC<AccountCardProps> = ({
               }
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
+          <Ionicons name="chevron-forward" size={20} color={colors.border} />
         </TouchableOpacity>
 
         {/* 2. プラン詳細 / アップグレード */}
@@ -91,7 +94,7 @@ export const AccountCard: React.FC<AccountCardProps> = ({
             <Ionicons name="ribbon-outline" size={20} color="#ffd700" style={{ marginRight: 12 }} />
             <Text style={styles.menuTitle}>プラン詳細 / アップグレード</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
+          <Ionicons name="chevron-forward" size={20} color={colors.border} />
         </TouchableOpacity>
 
         {/* 3. プロモーションコード入力 */}
@@ -101,66 +104,67 @@ export const AccountCard: React.FC<AccountCardProps> = ({
           activeOpacity={0.7}
         >
           <View style={styles.menuLeft}>
-            <Ionicons name="ticket-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 12 }} />
+            <Ionicons name="ticket-outline" size={20} color={colors.primary} style={{ marginRight: 12 }} />
             <Text style={styles.menuTitle}>プロモーションコード入力</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
+          <Ionicons name="chevron-forward" size={20} color={colors.border} />
         </TouchableOpacity>
       </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  section: { marginBottom: 0 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: Theme.spacing.md },
-  sectionTitle: { fontSize: 18, color: Theme.colors.text, fontWeight: 'bold' },
-  cardContainer: { 
-    backgroundColor: Theme.colors.card, 
-    borderRadius: Theme.borderRadius.md, 
-    borderWidth: 1, 
-    borderColor: Theme.colors.border, 
-    overflow: 'hidden',
-  },
-  headerRow: {
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
-  },
-  accountIconContainer: { 
-    width: 40, 
-    height: 40, 
-    borderRadius: 20, 
-    backgroundColor: '#1c1c1e', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: Theme.colors.border
-  },
-  accountInfo: { flex: 1 },
-  accountLabel: { 
-    color: Theme.colors.textMuted, 
-    fontSize: 12, 
-    textTransform: 'uppercase', 
-    letterSpacing: 0.5, 
-    marginBottom: 2 
-  },
-  accountValue: { color: Theme.colors.text, fontSize: 16, fontWeight: 'bold' },
-  accountValueEarly: { color: '#ffd700' },
-  accountValuePremium: { color: '#4facfe' },
-  accountValuePremiumLimited: { color: '#c084fc' },
-  menuRow: {
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    paddingHorizontal: 16,
-    paddingVertical: 14, 
-    borderBottomWidth: 1, 
-    borderBottomColor: Theme.colors.border
-  },
-  menuLeft: { flexDirection: 'row', alignItems: 'center' },
-  menuTitle: { fontSize: 15, fontWeight: '600', color: Theme.colors.text },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    section: { marginBottom: 0 },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+    sectionTitle: { fontSize: 18, color: colors.text, fontWeight: 'bold' },
+    cardContainer: { 
+      backgroundColor: colors.card, 
+      borderRadius: 8, 
+      borderWidth: 1, 
+      borderColor: colors.border, 
+      overflow: 'hidden',
+    },
+    headerRow: {
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    accountIconContainer: { 
+      width: 40, 
+      height: 40, 
+      borderRadius: 20, 
+      backgroundColor: colors.background, 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      marginRight: 12,
+      borderWidth: 1,
+      borderColor: colors.border
+    },
+    accountInfo: { flex: 1 },
+    accountLabel: { 
+      color: colors.textMuted, 
+      fontSize: 12, 
+      textTransform: 'uppercase', 
+      letterSpacing: 0.5, 
+      marginBottom: 2 
+    },
+    accountValue: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
+    accountValueEarly: { color: '#ffd700' },
+    accountValuePremium: { color: colors.primary },
+    accountValuePremiumLimited: { color: '#c084fc' },
+    menuRow: {
+      flexDirection: 'row', 
+      justifyContent: 'space-between', 
+      alignItems: 'center', 
+      paddingHorizontal: 16,
+      paddingVertical: 14, 
+      borderBottomWidth: 1, 
+      borderBottomColor: colors.border
+    },
+    menuLeft: { flexDirection: 'row', alignItems: 'center' },
+    menuTitle: { fontSize: 15, fontWeight: '600', color: colors.text },
+  });

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { MenuItem } from '../../src/hooks/useProfile';
 
 interface ProfileMenuCardProps {
@@ -10,6 +10,9 @@ interface ProfileMenuCardProps {
 }
 
 export const ProfileMenuCard: React.FC<ProfileMenuCardProps> = React.memo(({ item, onPress }) => {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <TouchableOpacity style={styles.menuCard} activeOpacity={0.7} onPress={() => onPress(item.route)}>
       <View style={[styles.iconContainer, { backgroundColor: `${item.iconColor}15` }]}>
@@ -21,44 +24,45 @@ export const ProfileMenuCard: React.FC<ProfileMenuCardProps> = React.memo(({ ite
         <Text style={styles.cardDesc}>{item.desc}</Text>
       </View>
 
-      <Ionicons name="chevron-forward" size={20} color={Theme.colors.border} />
+      <Ionicons name="chevron-forward" size={20} color={colors.border} />
     </TouchableOpacity>
   );
 });
 
-const styles = StyleSheet.create({
-  menuCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.md,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  iconContainer: {
-    width: 46,
-    height: 46,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Theme.spacing.md,
-  },
-  cardContent: {
-    flex: 1,
-    paddingRight: 8,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Theme.colors.text,
-    marginBottom: 2,
-  },
-  cardDesc: {
-    fontSize: 12,
-    color: Theme.colors.textMuted,
-    lineHeight: 16,
-  },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    menuCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: 8,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    iconContainer: {
+      width: 46,
+      height: 46,
+      borderRadius: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    cardContent: {
+      flex: 1,
+      paddingRight: 8,
+    },
+    cardTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 2,
+    },
+    cardDesc: {
+      fontSize: 12,
+      color: colors.textMuted,
+      lineHeight: 16,
+    },
+  });
 
 ProfileMenuCard.displayName = 'ProfileMenuCard';

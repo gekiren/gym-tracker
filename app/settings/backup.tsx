@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { getDB, closeDB, exportDatabaseBackup } from '../../src/db/database';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -12,6 +12,8 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as Updates from 'expo-updates';
 
 export default function BackupSettingsScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { t } = useTranslation();
   const settings = useSettingsStore(state => state.settings);
 
@@ -150,7 +152,7 @@ export default function BackupSettingsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="chevron-back" size={24} color={Theme.colors.text} />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('ui.profile.section_backup') || 'バックアップ・復元'}</Text>
         <View style={{ width: 24 }} />
@@ -159,7 +161,7 @@ export default function BackupSettingsScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         {!isPaidPremium && (
           <View style={styles.proNoticeBanner}>
-            <Ionicons name="shield-checkmark" size={24} color="#4facfe" style={{ marginRight: 12 }} />
+            <Ionicons name="shield-checkmark" size={24} color={colors.primary} style={{ marginRight: 12 }} />
             <View style={{ flex: 1 }}>
               <Text style={styles.proNoticeTitle}>プレミアム限定機能</Text>
               <Text style={styles.proNoticeDesc}>データのバックアップと復元はプレミアム会員専用のセキュリティ機能です。</Text>
@@ -169,7 +171,7 @@ export default function BackupSettingsScreen() {
 
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="cloud-upload-outline" size={28} color={Theme.colors.primary} style={{ marginRight: 10 }} />
+            <Ionicons name="cloud-upload-outline" size={28} color={colors.primary} style={{ marginRight: 10 }} />
             <View style={{ flex: 1 }}>
               <Text style={styles.cardTitle}>{t('ui.profile.backup_modal_title') || 'SQLiteデータベースバックアップ'}</Text>
               <Text style={styles.cardDesc}>{t('ui.profile.backup_modal_desc') || '全てのトレーニング履歴、ライフログ、カスタム種目設定をバックアップファイル(.db)として書き出します。'}</Text>
@@ -206,51 +208,52 @@ export default function BackupSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingHorizontal: Theme.spacing.md, 
-    paddingTop: 54, 
-    paddingBottom: Theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border
-  },
-  backButton: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
-  content: { padding: Theme.spacing.md, paddingBottom: 60 },
-  proNoticeBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(79, 172, 254, 0.12)',
-    borderWidth: 1,
-    borderColor: '#4facfe',
-    borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.md,
-    marginBottom: Theme.spacing.md,
-  },
-  proNoticeTitle: { fontSize: 15, fontWeight: 'bold', color: '#4facfe', marginBottom: 2 },
-  proNoticeDesc: { fontSize: 12, color: Theme.colors.textMuted },
-  card: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, borderWidth: 1, borderColor: Theme.colors.border },
-  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: Theme.spacing.md },
-  cardTitle: { fontSize: 16, fontWeight: 'bold', color: Theme.colors.text, marginBottom: 4 },
-  cardDesc: { fontSize: 13, color: Theme.colors.textMuted, lineHeight: 18 },
-  warningBox: {
-    backgroundColor: 'rgba(255, 165, 0, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 165, 0, 0.3)',
-    borderRadius: 8,
-    padding: 12,
-    flexDirection: 'row',
-    marginBottom: Theme.spacing.md,
-  },
-  warningText: { color: Theme.colors.textMuted, fontSize: 12, lineHeight: 18, flex: 1 },
-  buttonGroup: { gap: 12 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: Theme.borderRadius.md },
-  exportBtn: { backgroundColor: Theme.colors.primary },
-  exportBtnText: { color: '#000', fontWeight: 'bold', fontSize: 15 },
-  importBtn: { backgroundColor: '#ff4d4f' },
-  importBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      justifyContent: 'space-between', 
+      paddingHorizontal: 16, 
+      paddingTop: 54, 
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border
+    },
+    backButton: { padding: 4 },
+    headerTitle: { fontSize: 18, fontWeight: 'bold', color: colors.text },
+    content: { padding: 16, paddingBottom: 60 },
+    proNoticeBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(79, 172, 254, 0.12)',
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderRadius: 8,
+      padding: 16,
+      marginBottom: 16,
+    },
+    proNoticeTitle: { fontSize: 15, fontWeight: 'bold', color: colors.primary, marginBottom: 2 },
+    proNoticeDesc: { fontSize: 12, color: colors.textMuted },
+    card: { backgroundColor: colors.card, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: colors.border },
+    cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 },
+    cardTitle: { fontSize: 16, fontWeight: 'bold', color: colors.text, marginBottom: 4 },
+    cardDesc: { fontSize: 13, color: colors.textMuted, lineHeight: 18 },
+    warningBox: {
+      backgroundColor: 'rgba(255, 165, 0, 0.08)',
+      borderWidth: 1,
+      borderColor: 'rgba(255, 165, 0, 0.3)',
+      borderRadius: 8,
+      padding: 12,
+      flexDirection: 'row',
+      marginBottom: 16,
+    },
+    warningText: { color: colors.textMuted, fontSize: 12, lineHeight: 18, flex: 1 },
+    buttonGroup: { gap: 12 },
+    actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', minHeight: 48, paddingVertical: 14, borderRadius: 12 },
+    exportBtn: { backgroundColor: colors.primary },
+    exportBtnText: { color: '#000', fontWeight: 'bold', fontSize: 15 },
+    importBtn: { backgroundColor: colors.danger },
+    importBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  });

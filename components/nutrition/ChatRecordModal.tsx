@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Modal,
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   ActivityIndicator,
   ScrollView,
@@ -34,8 +35,8 @@ interface Props {
 }
 
 export default function ChatRecordModal({ visible, onClose, onSave, selectedDate }: Props) {
-  const { backgroundTheme } = useAppTheme();
-  const isPureBlack = backgroundTheme === 'pureBlack';
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [textInput, setTextInput] = useState('');
   const [mealType, setMealType] = useState<string>(getDefaultMealType());
@@ -152,8 +153,9 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
         style={styles.overlay}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={[styles.sheet, isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' }]}>
-          <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+        <View style={styles.sheet}>
+          <View style={styles.header}>
             <Text style={styles.title}>💬 チャット記録</Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
@@ -169,7 +171,6 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
                   key={t.key}
                   style={[
                     styles.mealTypeBtn,
-                    isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' },
                     mealType === t.key && styles.mealTypeBtnActive,
                   ]}
                   onPress={() => setMealType(t.key)}
@@ -191,11 +192,11 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
             {/* テキスト入力 */}
             <Text style={styles.label}>食事内容を入力</Text>
             <TextInput
-              style={[styles.textArea, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}
+              style={styles.textArea}
               value={textInput}
               onChangeText={setTextInput}
               placeholder="例: ラーメン大盛りと餃子3個、コーラ500ml"
-              placeholderTextColor="#475569"
+              placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={4}
               editable={!isLoading}
@@ -216,7 +217,7 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
 
             {/* 解析結果 */}
             {result && (
-              <View style={[styles.resultCard, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}>
+              <View style={styles.resultCard}>
                 <Text style={styles.resultTitle}>✅ 解析結果: {result.mealName}</Text>
                 <View style={styles.nutriGrid}>
                   {[
@@ -227,7 +228,7 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
                     { label: '塩分', val: `${(result.sodium * multiplier).toFixed(1)} g`, color: '#f43f5e' },
                     { label: '食物繊維', val: `${(result.fiber * multiplier).toFixed(1)} g`, color: '#84cc16' },
                   ].map((item) => (
-                    <View key={item.label} style={[styles.nutriItem, isPureBlack && { backgroundColor: '#000000' }]}>
+                    <View key={item.label} style={styles.nutriItem}>
                       <Text style={styles.nutriLabel}>{item.label}</Text>
                       <Text style={[styles.nutriVal, { color: item.color }]}>{item.val}</Text>
                     </View>
@@ -235,7 +236,7 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
                 </View>
 
                 {/* 倍率調整 */}
-                <View style={[styles.portionBox, isPureBlack && { backgroundColor: '#000000', borderColor: '#1f1f1f' }]}>
+                <View style={styles.portionBox}>
                   <Text style={styles.portionLabel}>食べた量の倍率: {multiplier}倍</Text>
                   <View style={styles.presetRow}>
                     {[0.5, 0.7, 1.0, 1.2, 1.5, 2.0].map((m) => (
@@ -273,12 +274,12 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
                   {showCustomMultiplierInput && (
                     <View style={styles.customInputRow}>
                       <TextInput
-                        style={[styles.customInput, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}
+                        style={styles.customInput}
                         value={customMultiplierText}
                         onChangeText={setCustomMultiplierText}
                         keyboardType="decimal-pad"
                         placeholder="例: 1.3"
-                        placeholderTextColor="#475569"
+                        placeholderTextColor={colors.textMuted}
                       />
                       <Text style={styles.customInputUnit}>倍</Text>
                       <TouchableOpacity style={styles.customApplyBtn} onPress={handleApplyCustomMultiplier}>
@@ -289,7 +290,7 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
                 </View>
 
                 {result.advice && (
-                  <Text style={[styles.adviceText, isPureBlack && { backgroundColor: '#000000' }]}>💡 {result.advice}</Text>
+                  <Text style={styles.adviceText}>💡 {result.advice}</Text>
                 )}
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
                   <TouchableOpacity
@@ -307,7 +308,7 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
                     style={[styles.mealTypeBtn, { justifyContent: 'center', alignItems: 'center', paddingHorizontal: 12 }]}
                     onPress={() => copyAIDebugLogsToClipboard(true)}
                   >
-                    <Text style={{ fontSize: 12, color: '#4facfe', fontWeight: '600' }}>📋 ログコピー</Text>
+                    <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '600' }}>📋 ログコピー</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -319,55 +320,57 @@ export default function ChatRecordModal({ visible, onClose, onSave, selectedDate
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-start' },
   sheet: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
     marginTop: Platform.OS === 'android' ? 40 : 50,
     marginHorizontal: 8,
     maxHeight: '85%',
     overflow: 'hidden',
   },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
-  title: { fontSize: 18, fontWeight: '700', color: '#f8fafc' },
-  closeBtn: { padding: 4 },
-  closeBtnText: { fontSize: 18, color: '#94a3b8' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
+  title: { fontSize: 18, fontWeight: '700', color: colors.text },
+  closeBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  closeBtnText: { fontSize: 18, color: colors.textMuted },
   body: { padding: 16 },
-  label: { fontSize: 13, fontWeight: '600', color: '#94a3b8', marginBottom: 8, marginTop: 12 },
+  label: { fontSize: 13, fontWeight: '600', color: colors.textMuted, marginBottom: 8, marginTop: 12 },
   mealTypeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 4 },
-  mealTypeBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#334155', backgroundColor: '#1e293b' },
+  mealTypeBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.background },
   mealTypeBtnActive: { backgroundColor: '#4facfe22', borderColor: '#4facfe' },
-  mealTypeBtnText: { fontSize: 12, color: '#94a3b8', fontWeight: '600' },
+  mealTypeBtnText: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
   mealTypeBtnTextActive: { color: '#4facfe' },
   textArea: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#334155',
-    color: '#f8fafc',
+    borderColor: colors.border,
+    color: colors.text,
     fontSize: 14,
     padding: 12,
     minHeight: 100,
     textAlignVertical: 'top',
     marginBottom: 12,
   },
-  analyzeBtn: { backgroundColor: '#4facfe', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginBottom: 16 },
+  analyzeBtn: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 14, minHeight: 48, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
   analyzeBtnDisabled: { opacity: 0.5 },
   analyzeBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  resultCard: { backgroundColor: '#1e293b', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#334155', marginBottom: 24 },
-  resultTitle: { fontSize: 15, fontWeight: '700', color: '#f8fafc', marginBottom: 12 },
+  resultCard: { backgroundColor: colors.background, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: colors.border, marginBottom: 24 },
+  resultTitle: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 12 },
   nutriGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  nutriItem: { width: '48%', backgroundColor: '#0f172a', borderRadius: 8, padding: 10 },
-  nutriLabel: { fontSize: 11, color: '#64748b', marginBottom: 2 },
+  nutriItem: { width: '48%', backgroundColor: colors.card, borderRadius: 8, padding: 10, borderWidth: 1, borderColor: colors.border },
+  nutriLabel: { fontSize: 12, color: colors.textMuted, marginBottom: 2 },
   nutriVal: { fontSize: 14, fontWeight: '700' },
-  adviceText: { fontSize: 12, color: '#94a3b8', lineHeight: 18, marginBottom: 12, backgroundColor: '#0f172a', borderRadius: 8, padding: 10 },
-  portionBox: { backgroundColor: '#0f172a', borderRadius: 10, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: '#334155' },
-  portionLabel: { fontSize: 12, fontWeight: '600', color: '#94a3b8', marginBottom: 8 },
+  adviceText: { fontSize: 12, color: colors.textMuted, lineHeight: 18, marginBottom: 12, backgroundColor: colors.card, borderRadius: 8, padding: 10, borderWidth: 1, borderColor: colors.border },
+  portionBox: { backgroundColor: colors.card, borderRadius: 10, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: colors.border },
+  portionLabel: { fontSize: 12, fontWeight: '600', color: colors.textMuted, marginBottom: 8 },
   presetRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
-  presetBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, backgroundColor: '#1e293b', borderWidth: 1, borderColor: '#334155' },
+  presetBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
   presetBtnActive: { backgroundColor: '#10b981', borderColor: '#10b981' },
-  presetBtnText: { fontSize: 12, color: '#94a3b8' },
+  presetBtnText: { fontSize: 12, color: colors.textMuted },
   presetBtnTextActive: { color: '#fff', fontWeight: '700' },
   customInputRow: {
     flexDirection: 'row',
@@ -377,32 +380,32 @@ const styles = StyleSheet.create({
   },
   customInput: {
     flex: 1,
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#334155',
-    color: '#f8fafc',
+    borderColor: colors.border,
+    color: colors.text,
     fontSize: 14,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   customInputUnit: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontWeight: '600',
   },
   customApplyBtn: {
     backgroundColor: '#10b981',
     borderRadius: 8,
     paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
   customApplyBtnText: {
     color: '#fff',
     fontSize: 13,
     fontWeight: '700',
   },
-  saveBtn: { backgroundColor: '#10b981', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+  saveBtn: { backgroundColor: '#10b981', borderRadius: 12, paddingVertical: 12, minHeight: 48, justifyContent: 'center', alignItems: 'center' },
   saveBtnDisabled: { opacity: 0.5 },
   saveBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
 });

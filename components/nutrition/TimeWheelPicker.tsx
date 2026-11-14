@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -45,6 +45,7 @@ interface WheelColumnProps {
   unit: string;
   padZero?: boolean;
   columnWidth?: number;
+  styles: ReturnType<typeof createStyles>;
 }
 
 function WheelColumn({
@@ -54,6 +55,7 @@ function WheelColumn({
   unit,
   padZero = false,
   columnWidth = 72,
+  styles,
 }: WheelColumnProps) {
   const flatListRef = useRef<FlatList<{ key: string; val: number; indexInBase: number }>>(null);
 
@@ -178,8 +180,8 @@ export default function TimeWheelPicker({
   onChange,
   label = '食事時間',
 }: Props) {
-  const { backgroundTheme } = useAppTheme();
-  const isPureBlack = backgroundTheme === 'pureBlack';
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -287,10 +289,7 @@ export default function TimeWheelPicker({
     <View style={styles.container}>
       {/* インラインのタップ可能な時間表示カード */}
       <TouchableOpacity
-        style={[
-          styles.triggerCard,
-          isPureBlack && { backgroundColor: '#0a0a0a', borderColor: '#1f1f1f' },
-        ]}
+        style={styles.triggerCard}
         onPress={openModal}
         activeOpacity={0.7}
       >
@@ -319,12 +318,7 @@ export default function TimeWheelPicker({
         <TouchableWithoutFeedback onPress={handleCancel}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
-              <View
-                style={[
-                  styles.modalCard,
-                  isPureBlack && { backgroundColor: '#080808', borderColor: '#262626' },
-                ]}
-              >
+              <View style={styles.modalCard}>
                 {/* モーダルヘッダー */}
                 <View style={styles.modalHeader}>
                   <View style={styles.modalTitleRow}>
@@ -333,9 +327,10 @@ export default function TimeWheelPicker({
                   </View>
                   <TouchableOpacity
                     onPress={handleCancel}
+                    style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
-                    <Ionicons name="close" size={22} color="#94a3b8" />
+                    <Ionicons name="close" size={22} color={colors.textMuted} />
                   </TouchableOpacity>
                 </View>
 
@@ -354,7 +349,6 @@ export default function TimeWheelPicker({
                     style={[
                       styles.ampmBtn,
                       !tempIsPm && styles.ampmBtnActive,
-                      isPureBlack && !tempIsPm && { backgroundColor: '#1e3a8a', borderColor: '#3b82f6' },
                     ]}
                     onPress={() => handleToggleAmPm(false)}
                     activeOpacity={0.7}
@@ -373,7 +367,6 @@ export default function TimeWheelPicker({
                     style={[
                       styles.ampmBtn,
                       tempIsPm && styles.ampmBtnActive,
-                      isPureBlack && tempIsPm && { backgroundColor: '#1e3a8a', borderColor: '#3b82f6' },
                     ]}
                     onPress={() => handleToggleAmPm(true)}
                     activeOpacity={0.7}
@@ -427,6 +420,7 @@ export default function TimeWheelPicker({
                     onSelect={setTempHour12}
                     unit="時"
                     columnWidth={74}
+                    styles={styles}
                   />
 
                   <Text style={styles.colonSeparator}>:</Text>
@@ -439,6 +433,7 @@ export default function TimeWheelPicker({
                     onSelect={setTempTens}
                     unit="分の十位"
                     columnWidth={70}
+                    styles={styles}
                   />
 
                   {/* 分 (一の位: 0〜9) */}
@@ -449,6 +444,7 @@ export default function TimeWheelPicker({
                     onSelect={setTempOnes}
                     unit="分の一位"
                     columnWidth={70}
+                    styles={styles}
                   />
                 </View>
 
@@ -483,7 +479,7 @@ export default function TimeWheelPicker({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   container: {
     marginVertical: 6,
   },
@@ -491,12 +487,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   triggerLeft: {
     flexDirection: 'column',
@@ -505,12 +501,12 @@ const styles = StyleSheet.create({
   triggerLabel: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#e2e8f0',
+    color: colors.text,
   },
   triggerSubText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
-    color: '#64748b',
+    color: colors.textMuted,
   },
   triggerRight: {
     flexDirection: 'row',
@@ -540,16 +536,11 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 350,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
     padding: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -565,14 +556,16 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#f8fafc',
+    color: colors.text,
   },
   previewContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 6,
-    backgroundColor: '#1e293b55',
+    backgroundColor: colors.background,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
     marginBottom: 12,
   },
   previewText: {
@@ -584,7 +577,7 @@ const styles = StyleSheet.create({
   previewSubText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#94a3b8',
+    color: colors.textMuted,
     marginTop: 2,
   },
   ampmRow: {
@@ -594,11 +587,12 @@ const styles = StyleSheet.create({
   },
   ampmBtn: {
     flex: 1,
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
+    minHeight: 44,
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -609,7 +603,7 @@ const styles = StyleSheet.create({
   ampmBtnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#94a3b8',
+    color: colors.textMuted,
   },
   ampmBtnTextActive: {
     color: '#ffffff',
@@ -622,28 +616,29 @@ const styles = StyleSheet.create({
   },
   presetBtn: {
     flex: 1,
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
+    minHeight: 36,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   presetBtnText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
-    color: '#cbd5e1',
+    color: colors.text,
   },
   wheelsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1e293b88',
+    backgroundColor: colors.background,
     borderRadius: 16,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
     marginBottom: 16,
     gap: 4,
   },
@@ -651,9 +646,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   columnUnitText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
-    color: '#64748b',
+    color: colors.textMuted,
     marginBottom: 4,
   },
   wheelWrapper: {
@@ -682,12 +677,12 @@ const styles = StyleSheet.create({
   wheelItemText: {
     fontSize: 18,
     fontWeight: '500',
-    color: '#64748b',
+    color: colors.textMuted,
   },
   wheelItemTextSelected: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#f8fafc',
+    color: colors.text,
   },
   colonSeparator: {
     fontSize: 26,
@@ -702,24 +697,26 @@ const styles = StyleSheet.create({
   },
   cancelBtn: {
     flex: 1,
+    minHeight: 48,
     paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#94a3b8',
+    color: colors.textMuted,
   },
   confirmBtn: {
     flex: 1.3,
     flexDirection: 'row',
+    minHeight: 48,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     backgroundColor: '#0284c7',
     alignItems: 'center',
     justifyContent: 'center',

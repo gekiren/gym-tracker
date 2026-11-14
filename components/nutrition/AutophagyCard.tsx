@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '../../src/theme';
 import { AutophagyConfig, MealLog } from '../../src/db/types';
 import { getMealLogsLast24Hours } from '../../src/db/database';
 import { analyzeAutophagyRecommendation, AutophagyAIProposal } from '../../src/services/aiCoachService';
@@ -14,6 +15,8 @@ interface Props {
 }
 
 export default function AutophagyCard({ config, lastMealLog, onUpdateConfig }: Props) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [proposal, setProposal] = useState<AutophagyAIProposal | null>(null);
@@ -174,7 +177,7 @@ export default function AutophagyCard({ config, lastMealLog, onUpdateConfig }: P
             styles.progressFill,
             {
               width: `${progressPct}%`,
-              backgroundColor: isGoalReached ? '#10b981' : '#4facfe',
+              backgroundColor: isGoalReached ? '#10b981' : colors.primary,
             },
           ]}
         />
@@ -225,51 +228,52 @@ export default function AutophagyCard({ config, lastMealLog, onUpdateConfig }: P
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   card: {
-    backgroundColor: '#0a0a0a',
-    borderRadius: 14,
+    backgroundColor: colors.card,
+    borderRadius: 16,
     padding: 14,
     marginVertical: 8,
     borderWidth: 1,
-    borderColor: '#1c1c1c',
+    borderColor: colors.border,
   },
   cardOff: {
-    backgroundColor: '#0a0a0a',
-    borderRadius: 14,
+    backgroundColor: colors.card,
+    borderRadius: 16,
     padding: 12,
     marginVertical: 8,
     borderWidth: 1,
-    borderColor: '#1c1c1c',
+    borderColor: colors.border,
     opacity: 0.6,
   },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { fontSize: 14, fontWeight: '700', color: '#f8fafc' },
-  titleOff: { fontSize: 14, fontWeight: '600', color: '#64748b' },
+  title: { fontSize: 14, fontWeight: '700', color: colors.text },
+  titleOff: { fontSize: 14, fontWeight: '600', color: colors.textMuted },
   timerDisplay: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 8 },
   timerLeft: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  timeText: { fontSize: 24, fontWeight: '800', color: '#4facfe' },
-  targetText: { fontSize: 13, color: '#64748b' },
+  timeText: { fontSize: 24, fontWeight: '800', color: colors.primary },
+  targetText: { fontSize: 13, color: colors.textMuted },
   startTimeBadge: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
-  startTimeBadgeText: { fontSize: 11, fontWeight: '600', color: '#94a3b8' },
-  progressBg: { height: 8, backgroundColor: '#0f172a', borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
+  startTimeBadgeText: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
+  progressBg: { height: 8, backgroundColor: colors.background, borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
   progressFill: { height: '100%', borderRadius: 4 },
   statusRow: { marginBottom: 10 },
-  statusText: { fontSize: 12, color: '#94a3b8', fontWeight: '600' },
+  statusText: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
   aiOptimizeBtn: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#0284c7',
-    borderRadius: 8,
-    paddingVertical: 9,
+    borderRadius: 12,
+    paddingVertical: 10,
     marginBottom: 8,
   },
   aiOptimizeBtnText: {
@@ -278,8 +282,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   btnRow: { flexDirection: 'row', gap: 8 },
-  actionBtn: { flex: 1, backgroundColor: '#0f172a', borderRadius: 8, paddingVertical: 8, alignItems: 'center', borderWidth: 1, borderColor: '#334155' },
-  actionBtnText: { fontSize: 12, fontWeight: '700', color: '#4facfe' },
-  resetBtn: { flex: 0.4, borderColor: '#334155' },
-  resetBtnText: { fontSize: 12, color: '#64748b' },
+  actionBtn: {
+    flex: 1,
+    minHeight: 44,
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  actionBtnText: { fontSize: 12, fontWeight: '700', color: colors.primary },
+  resetBtn: { flex: 0.4, borderColor: colors.border },
+  resetBtnText: { fontSize: 12, color: colors.textMuted },
 });

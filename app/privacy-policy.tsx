@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Modal, TextInput, TouchableWithoutFeedback } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Theme } from '../src/theme';
+import { useAppTheme } from '../src/theme';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import * as Updates from 'expo-updates';
 
 const CONTACT_EMAIL = 'trenotesupport@gmail.com';
@@ -10,6 +10,8 @@ const LAST_UPDATED_JA = '2026年6月4日';
 const LAST_UPDATED_EN = 'June 4, 2026';
 
 export default function PrivacyPolicyScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { t, i18n } = useTranslation();
   const isEn = i18n.language === 'en';
 
@@ -61,7 +63,7 @@ export default function PrivacyPolicyScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: isEn ? 'Privacy Policy' : 'プライバシーポリシー', headerStyle: { backgroundColor: Theme.colors.background }, headerTintColor: Theme.colors.text }} />
+      <Stack.Screen options={{ title: isEn ? 'Privacy Policy' : 'プライバシーポリシー', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.text }} />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>{isEn ? 'Privacy Policy' : 'プライバシーポリシー'}</Text>
         <Text style={styles.updated}>{isEn ? `Last updated: ${LAST_UPDATED_EN}` : `最終更新日: ${LAST_UPDATED_JA}`}</Text>
@@ -182,7 +184,7 @@ export default function PrivacyPolicyScreen() {
                   value={passcode}
                   onChangeText={setPasscode}
                   placeholder={t('ui.developer_menu.secret_placeholder')}
-                  placeholderTextColor={Theme.colors.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   secureTextEntry={true}
                   autoFocus={true}
                   autoCapitalize="none"
@@ -209,6 +211,9 @@ export default function PrivacyPolicyScreen() {
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const { colors } = useAppTheme();
+  const sectionStyles = useMemo(() => createSectionStyles(colors), [colors]);
+
   return (
     <View style={sectionStyles.container}>
       <Text style={sectionStyles.title}>{title}</Text>
@@ -217,105 +222,108 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
-  content: { padding: 20, paddingBottom: 60 },
-  title: { fontSize: 24, fontWeight: 'bold', color: Theme.colors.text, marginBottom: 6 },
-  updated: { fontSize: 13, color: Theme.colors.textMuted, marginBottom: 24 },
-  bold: { fontWeight: 'bold', color: Theme.colors.text },
-  emailBtn: {
-    marginTop: 8,
-    padding: 14,
-    backgroundColor: 'rgba(79, 172, 254, 0.1)',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(79, 172, 254, 0.3)',
-    alignItems: 'center',
-  },
-  emailText: { color: Theme.colors.primary, fontSize: 15, fontWeight: '600' },
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContainer: {
-    width: '100%',
-    maxWidth: 320,
-    backgroundColor: Theme.colors.card,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-    padding: 24,
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Theme.colors.text,
-    marginBottom: 8,
-  },
-  modalDesc: {
-    fontSize: 14,
-    color: Theme.colors.textMuted,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  modalInput: {
-    width: '100%',
-    backgroundColor: '#121212',
-    color: Theme.colors.text,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-    fontSize: 16,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  modalError: {
-    color: '#ff4d4f',
-    fontSize: 13,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-    width: '100%',
-  },
-  modalBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalBtnCancel: {
-    backgroundColor: '#222',
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  modalBtnSubmit: {
-    backgroundColor: Theme.colors.primary,
-  },
-  modalBtnTextCancel: {
-    color: Theme.colors.textMuted,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  modalBtnTextSubmit: {
-    color: '#000',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { padding: 20, paddingBottom: 60 },
+    title: { fontSize: 24, fontWeight: 'bold', color: colors.text, marginBottom: 6 },
+    updated: { fontSize: 13, color: colors.textMuted, marginBottom: 24 },
+    bold: { fontWeight: 'bold', color: colors.text },
+    emailBtn: {
+      marginTop: 8,
+      padding: 14,
+      backgroundColor: 'rgba(79, 172, 254, 0.1)',
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: 'rgba(79, 172, 254, 0.3)',
+      alignItems: 'center',
+    },
+    emailText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
+    // Modal Styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.75)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    modalContainer: {
+      width: '100%',
+      maxWidth: 320,
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 24,
+      alignItems: 'center',
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 8,
+    },
+    modalDesc: {
+      fontSize: 14,
+      color: colors.textMuted,
+      textAlign: 'center',
+      marginBottom: 20,
+    },
+    modalInput: {
+      width: '100%',
+      backgroundColor: colors.background,
+      color: colors.text,
+      padding: 12,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      fontSize: 16,
+      marginBottom: 12,
+      textAlign: 'center',
+    },
+    modalError: {
+      color: colors.danger,
+      fontSize: 13,
+      marginBottom: 12,
+      textAlign: 'center',
+    },
+    modalButtons: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 8,
+      width: '100%',
+    },
+    modalBtn: {
+      flex: 1,
+      minHeight: 48,
+      paddingVertical: 12,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    modalBtnCancel: {
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modalBtnSubmit: {
+      backgroundColor: colors.primary,
+    },
+    modalBtnTextCancel: {
+      color: colors.textMuted,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    modalBtnTextSubmit: {
+      color: '#000',
+      fontSize: 15,
+      fontWeight: '700',
+    },
+  });
 
-const sectionStyles = StyleSheet.create({
-  container: { marginBottom: 24 },
-  title: { fontSize: 16, fontWeight: 'bold', color: Theme.colors.primary, marginBottom: 8 },
-  body: { fontSize: 14, color: Theme.colors.textMuted, lineHeight: 22 },
-});
+const createSectionStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    container: { marginBottom: 24 },
+    title: { fontSize: 16, fontWeight: 'bold', color: colors.primary, marginBottom: 8 },
+    body: { fontSize: 14, color: colors.textMuted, lineHeight: 22 },
+  });

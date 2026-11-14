@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Modal,
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   ScrollView,
   Alert,
@@ -29,8 +30,8 @@ export default function HistorySelectModal({
   onSelect,
   selectedDate,
 }: Props) {
-  const { backgroundTheme } = useAppTheme();
-  const isPureBlack = backgroundTheme === 'pureBlack';
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -74,8 +75,9 @@ export default function HistorySelectModal({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
       <View style={styles.overlay}>
-        <View style={[styles.sheet, isPureBlack && { backgroundColor: '#000000', borderWidth: 1, borderColor: '#1f1f1f' }]}>
-          <View style={[styles.header, isPureBlack && { borderBottomColor: '#1f1f1f' }]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.sheet}>
+          <View style={styles.header}>
             <Text style={styles.title}>⭐ 過去の履歴から再使用</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
@@ -84,11 +86,11 @@ export default function HistorySelectModal({
 
           <View style={styles.searchBox}>
             <TextInput
-              style={[styles.searchInput, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}
+              style={styles.searchInput}
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder="料理名で検索..."
-              placeholderTextColor="#475569"
+              placeholderTextColor={colors.textMuted}
             />
           </View>
 
@@ -101,7 +103,7 @@ export default function HistorySelectModal({
               displayItems.map((item) => (
                 <TouchableOpacity
                   key={`hist-${item.id}`}
-                  style={[styles.itemCard, isPureBlack && { backgroundColor: '#080808', borderColor: '#1f1f1f' }]}
+                  style={styles.itemCard}
                   onPress={() => handleSelect(item)}
                 >
                   <View style={styles.itemHeader}>
@@ -126,29 +128,31 @@ export default function HistorySelectModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-start' },
   sheet: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.card,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
     marginTop: Platform.OS === 'android' ? 40 : 50,
     marginHorizontal: 8,
     maxHeight: '85%',
     overflow: 'hidden',
   },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
-  title: { fontSize: 18, fontWeight: '700', color: '#f8fafc' },
-  closeBtn: { padding: 4 },
-  closeBtnText: { fontSize: 18, color: '#94a3b8' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
+  title: { fontSize: 18, fontWeight: '700', color: colors.text },
+  closeBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  closeBtnText: { fontSize: 18, color: colors.textMuted },
   searchBox: { padding: 12 },
-  searchInput: { backgroundColor: '#1e293b', borderRadius: 10, borderWidth: 1, borderColor: '#334155', color: '#f8fafc', paddingHorizontal: 12, paddingVertical: 8, fontSize: 14 },
+  searchInput: { backgroundColor: colors.background, borderRadius: 10, borderWidth: 1, borderColor: colors.border, color: colors.text, paddingHorizontal: 12, paddingVertical: 8, fontSize: 14 },
   body: { paddingHorizontal: 12 },
   emptyBox: { padding: 30, alignItems: 'center' },
-  emptyText: { color: '#64748b', fontSize: 14 },
-  itemCard: { backgroundColor: '#1e293b', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#334155' },
+  emptyText: { color: colors.textMuted, fontSize: 14 },
+  itemCard: { backgroundColor: colors.background, borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: colors.border },
   itemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  itemName: { fontSize: 15, fontWeight: '700', color: '#f8fafc', flex: 1 },
+  itemName: { fontSize: 15, fontWeight: '700', color: colors.text, flex: 1 },
   itemCal: { fontSize: 14, fontWeight: '700', color: '#10b981' },
   itemPfcRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  pfcText: { fontSize: 11, color: '#94a3b8' },
+  pfcText: { fontSize: 12, color: colors.textMuted },
 });

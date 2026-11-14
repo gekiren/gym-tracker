@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { calculateShareStats } from '../../src/services/shareService';
 import { translateExercise } from '../../src/i18n';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 
 const APP_ICON = require('../../assets/images/icon.png');
 
@@ -32,6 +32,8 @@ interface ShareCardViewProps {
 
 export function ShareCardView({ workout, settings, pattern }: ShareCardViewProps) {
   const { t, i18n } = useTranslation();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const stats = calculateShareStats(workout, settings);
   const currentLang = i18n.language;
   const locale = currentLang === 'ja' ? 'ja-JP' : 'en-US';
@@ -171,7 +173,7 @@ export function ShareCardView({ workout, settings, pattern }: ShareCardViewProps
                     <View key={idx} style={styles.hybridRow}>
                       <Text style={styles.hybridExerciseName} numberOfLines={1}>{translateExercise(ex.name)}</Text>
                       <Text style={styles.hybridStats}>
-                        {ex.setsCount} sets  |  Max 1RM: <Text style={{ color: Theme.colors.primary, fontWeight: 'bold' }}>{ex.max1RM}{stats.weightUnit}</Text>
+                        {ex.setsCount} sets  |  Max 1RM: <Text style={{ color: colors.primary, fontWeight: 'bold' }}>{ex.max1RM}{stats.weightUnit}</Text>
                       </Text>
                     </View>
                   ))}
@@ -200,7 +202,7 @@ export function ShareCardView({ workout, settings, pattern }: ShareCardViewProps
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   // Share Card Canvas Styles
   cardCanvas: {
     width: 1080,
@@ -217,14 +219,14 @@ const styles = StyleSheet.create({
   cardHeaderBadge: {
     width: 80,
     height: 6,
-    backgroundColor: Theme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: 3,
     marginBottom: 16,
   },
   cardHeaderTitle: {
     fontSize: 24,
     fontWeight: '900',
-    color: Theme.colors.primary,
+    color: colors.primary,
     letterSpacing: 2,
   },
   cardHeaderDate: {
@@ -304,7 +306,7 @@ const styles = StyleSheet.create({
   },
   detailSetsCount: {
     fontSize: 22,
-    color: Theme.colors.primary,
+    color: colors.primary,
     fontWeight: 'bold',
   },
   detailSetsDetail: {

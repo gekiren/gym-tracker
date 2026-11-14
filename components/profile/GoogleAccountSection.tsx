@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { useAuthStore } from '../../src/store/authStore';
 import {
   signInWithGoogle,
@@ -26,6 +26,9 @@ export const GoogleAccountSection: React.FC<GoogleAccountSectionProps> = ({
   onSyncComplete,
   t,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const user = useAuthStore((state) => state.user);
   const isSyncing = useAuthStore((state) => state.isSyncing);
   const lastSyncedAt = useAuthStore((state) => state.lastSyncedAt);
@@ -98,7 +101,7 @@ export const GoogleAccountSection: React.FC<GoogleAccountSectionProps> = ({
         <Ionicons
           name="logo-google"
           size={22}
-          color={Theme.colors.primary}
+          color={colors.primary}
           style={{ marginRight: 8 }}
         />
         <Text style={styles.sectionTitle}>
@@ -114,7 +117,7 @@ export const GoogleAccountSection: React.FC<GoogleAccountSectionProps> = ({
                 <Image source={{ uri: user.photoUrl }} style={styles.avatarImage} />
               ) : (
                 <View style={styles.avatarPlaceholder}>
-                  <Ionicons name="logo-google" size={20} color="#4facfe" />
+                  <Ionicons name="logo-google" size={20} color={colors.primary} />
                 </View>
               )}
               <View style={styles.userInfo}>
@@ -148,13 +151,13 @@ export const GoogleAccountSection: React.FC<GoogleAccountSectionProps> = ({
                 activeOpacity={0.7}
               >
                 {isSyncing ? (
-                  <ActivityIndicator size="small" color={Theme.colors.primary} />
+                  <ActivityIndicator size="small" color={colors.primary} />
                 ) : (
                   <>
                     <Ionicons
                       name="sync-outline"
                       size={16}
-                      color={Theme.colors.primary}
+                      color={colors.primary}
                       style={{ marginRight: 6 }}
                     />
                     <Text style={styles.syncButtonText}>
@@ -212,148 +215,149 @@ export const GoogleAccountSection: React.FC<GoogleAccountSectionProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  section: {
-    marginBottom: Theme.spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Theme.spacing.md,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    color: Theme.colors.text,
-    fontWeight: 'bold',
-  },
-  cardContainer: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-    padding: 16,
-  },
-  unlinkedContainer: {
-    gap: 14,
-  },
-  descriptionText: {
-    color: Theme.colors.textMuted,
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  googleSignInButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#2563eb',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: Theme.borderRadius.sm,
-  },
-  googleSignInButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  linkedContainer: {
-    gap: 14,
-  },
-  userRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarImage: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  avatarPlaceholder: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#1c1c1e',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  userInfo: {
-    flex: 1,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 2,
-  },
-  userName: {
-    color: Theme.colors.text,
-    fontSize: 15,
-    fontWeight: 'bold',
-    flexShrink: 1,
-  },
-  linkedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    gap: 4,
-  },
-  linkedBadgeText: {
-    color: '#10b981',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  userEmail: {
-    color: Theme.colors.textMuted,
-    fontSize: 13,
-  },
-  syncTimeText: {
-    color: Theme.colors.textMuted,
-    fontSize: 11,
-    marginTop: 3,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: Theme.colors.border,
-    paddingTop: 12,
-    gap: 10,
-  },
-  syncButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(79, 172, 254, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(79, 172, 254, 0.3)',
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-    borderRadius: Theme.borderRadius.sm,
-  },
-  syncButtonText: {
-    color: Theme.colors.primary,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  unlinkButton: {
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-    borderRadius: Theme.borderRadius.sm,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  unlinkButtonText: {
-    color: Theme.colors.textMuted,
-    fontSize: 12,
-  },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    section: {
+      marginBottom: 16,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      color: colors.text,
+      fontWeight: 'bold',
+    },
+    cardContainer: {
+      backgroundColor: colors.card,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+    },
+    unlinkedContainer: {
+      gap: 14,
+    },
+    descriptionText: {
+      color: colors.textMuted,
+      fontSize: 13,
+      lineHeight: 19,
+    },
+    googleSignInButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#2563eb',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 4,
+    },
+    googleSignInButtonText: {
+      color: '#ffffff',
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+    linkedContainer: {
+      gap: 14,
+    },
+    userRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    avatarImage: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      marginRight: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    avatarPlaceholder: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.background,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    userInfo: {
+      flex: 1,
+    },
+    badgeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 2,
+    },
+    userName: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: 'bold',
+      flexShrink: 1,
+    },
+    linkedBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(16, 185, 129, 0.15)',
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 10,
+      gap: 4,
+    },
+    linkedBadgeText: {
+      color: '#10b981',
+      fontSize: 11,
+      fontWeight: 'bold',
+    },
+    userEmail: {
+      color: colors.textMuted,
+      fontSize: 13,
+    },
+    syncTimeText: {
+      color: colors.textMuted,
+      fontSize: 11,
+      marginTop: 3,
+    },
+    actionRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 12,
+      gap: 10,
+    },
+    syncButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(79, 172, 254, 0.12)',
+      borderWidth: 1,
+      borderColor: 'rgba(79, 172, 254, 0.3)',
+      paddingVertical: 9,
+      paddingHorizontal: 12,
+      borderRadius: 4,
+    },
+    syncButtonText: {
+      color: colors.primary,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    unlinkButton: {
+      paddingVertical: 9,
+      paddingHorizontal: 12,
+      borderRadius: 4,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    unlinkButtonText: {
+      color: colors.textMuted,
+      fontSize: 12,
+    },
+  });

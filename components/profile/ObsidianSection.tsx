@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert, ActivityIndicator, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { ConfirmModal } from '../ui/ConfirmModal';
 import {
   getObsidianSettings,
@@ -19,6 +19,9 @@ interface ObsidianSectionProps {
 }
 
 export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [settings, setSettings] = useState<ObsidianSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
@@ -163,7 +166,7 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
   if (isLoading || !settings) {
     return (
       <View style={styles.card}>
-        <ActivityIndicator color={Theme.colors.primary} />
+        <ActivityIndicator color={colors.primary} />
       </View>
     );
   }
@@ -183,13 +186,13 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
     <View style={styles.card}>
       <View style={styles.cardHeader}>
         <View style={styles.headerLeft}>
-          <Ionicons name="document-text" size={22} color={Theme.colors.primary} />
+          <Ionicons name="document-text" size={22} color={colors.primary} />
           <Text style={styles.cardTitle}>Obsidian 自動連携・蓄積</Text>
         </View>
         <Switch
           value={settings.enabled}
           onValueChange={handleToggleEnabled}
-          trackColor={{ false: '#3a3a3c', true: Theme.colors.primary }}
+          trackColor={{ false: colors.border, true: colors.primary }}
           thumbColor="#ffffff"
         />
       </View>
@@ -223,7 +226,7 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
       {/* Vault Directory Selector */}
       <TouchableOpacity style={styles.folderButton} onPress={handleSelectFolder}>
         <View style={styles.folderInfo}>
-          <Ionicons name="folder-open-outline" size={20} color={Theme.colors.textMuted} />
+          <Ionicons name="folder-open-outline" size={20} color={colors.textMuted} />
           <View style={styles.folderTextContainer}>
             <Text style={styles.folderLabel}>保存先 Obsidian Vault (ルート)</Text>
             <Text style={styles.folderValue} numberOfLines={1}>
@@ -231,7 +234,7 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
             </Text>
           </View>
         </View>
-        <Ionicons name="chevron-forward" size={18} color={Theme.colors.textMuted} />
+        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
       </TouchableOpacity>
 
       {/* Health Connect Button */}
@@ -248,7 +251,7 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
             </Text>
           </View>
         </View>
-        <Ionicons name="chevron-forward" size={18} color={Theme.colors.textMuted} />
+        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
       </TouchableOpacity>
 
       {settings.enabled && (
@@ -282,7 +285,7 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
             <Switch
               value={settings.syncOnLaunch}
               onValueChange={handleToggleSyncOnLaunch}
-              trackColor={{ false: '#3a3a3c', true: Theme.colors.primary }}
+              trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor="#ffffff"
             />
           </View>
@@ -294,7 +297,7 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
               value={settings.scheduleTime}
               onChangeText={handleUpdateScheduleTime}
               placeholder="22:00"
-              placeholderTextColor="#666"
+              placeholderTextColor={colors.textMuted}
               maxLength={5}
             />
           </View>
@@ -358,10 +361,10 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
             onPress={() => setIsFoldersExpanded(!isFoldersExpanded)}
           >
             <View style={styles.folderHeaderLeft}>
-              <Ionicons name="folder-outline" size={16} color={Theme.colors.primary} />
+              <Ionicons name="folder-outline" size={16} color={colors.primary} />
               <Text style={styles.folderHeaderTitle}>カテゴリ別保存先フォルダ設定</Text>
             </View>
-            <Ionicons name={isFoldersExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={Theme.colors.textMuted} />
+            <Ionicons name={isFoldersExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
           </TouchableOpacity>
 
           {isFoldersExpanded && (
@@ -505,261 +508,262 @@ export const ObsidianSection: React.FC<ObsidianSectionProps> = ({ t }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.lg,
-    padding: Theme.spacing.md,
-    marginBottom: Theme.spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Theme.spacing.xs,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Theme.colors.text,
-  },
-  description: {
-    fontSize: 13,
-    color: Theme.colors.textMuted,
-    marginBottom: Theme.spacing.sm,
-    lineHeight: 18,
-  },
-  folderButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.sm,
-    marginTop: Theme.spacing.xs,
-  },
-  folderInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  folderTextContainer: {
-    flex: 1,
-  },
-  folderLabel: {
-    fontSize: 12,
-    color: Theme.colors.textMuted,
-  },
-  folderValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Theme.colors.primary,
-    marginTop: 2,
-  },
-  settingsSection: {
-    marginTop: Theme.spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
-    paddingTop: Theme.spacing.sm,
-  },
-  subTitle: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: Theme.colors.text,
-    marginTop: Theme.spacing.sm,
-    marginBottom: Theme.spacing.xs,
-  },
-  modeContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  modeButton: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: Theme.borderRadius.sm,
-    alignItems: 'center',
-  },
-  modeButtonActive: {
-    backgroundColor: Theme.colors.primary,
-  },
-  modeText: {
-    fontSize: 12,
-    color: Theme.colors.textMuted,
-    fontWeight: '500',
-  },
-  modeTextActive: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-  },
-  rowItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-  },
-  rowLabel: {
-    fontSize: 14,
-    color: Theme.colors.text,
-  },
-  timeInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    color: Theme.colors.text,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    fontSize: 14,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    width: 70,
-  },
-  chipContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 4,
-  },
-  chip: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  chipActive: {
-    backgroundColor: 'rgba(99, 102, 241, 0.25)',
-    borderColor: Theme.colors.primary,
-    borderWidth: 1,
-  },
-  chipText: {
-    fontSize: 12,
-    color: Theme.colors.textMuted,
-  },
-  chipTextActive: {
-    color: Theme.colors.primary,
-    fontWeight: 'bold',
-  },
-  actionButtonsContainer: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: Theme.spacing.md,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: Theme.borderRadius.md,
-    gap: 6,
-  },
-  syncNowButton: {
-    backgroundColor: '#3b82f6',
-  },
-  exportAllButton: {
-    backgroundColor: Theme.colors.primary,
-  },
-  actionButtonText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  folderSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: Theme.spacing.md,
-    marginBottom: Theme.spacing.xs,
-    paddingVertical: 4,
-  },
-  folderHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  folderHeaderTitle: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: Theme.colors.text,
-  },
-  folderInputsContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.sm,
-    gap: 8,
-    marginTop: 4,
-    marginBottom: Theme.spacing.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  folderInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  folderInputLabel: {
-    fontSize: 12,
-    color: Theme.colors.text,
-    flex: 1,
-  },
-  folderTextInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    color: Theme.colors.text,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    fontSize: 13,
-    width: 140,
-  },
-  errorStatusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 69, 58, 0.15)',
-    borderWidth: 1,
-    borderColor: '#ff453a',
-    borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.sm,
-    marginBottom: Theme.spacing.sm,
-  },
-  statusTextContainer: {
-    flex: 1,
-    marginLeft: 8,
-  },
-  errorStatusTitle: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#ff453a',
-    marginBottom: 2,
-  },
-  errorStatusText: {
-    fontSize: 12,
-    color: Theme.colors.text,
-    lineHeight: 16,
-  },
-  successStatusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(48, 209, 88, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(48, 209, 88, 0.3)',
-    borderRadius: Theme.borderRadius.md,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    marginBottom: Theme.spacing.sm,
-    gap: 6,
-  },
-  successStatusText: {
-    fontSize: 12,
-    color: '#30d158',
-    fontWeight: '600',
-  },
-});
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 4,
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    cardTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: colors.text,
+    },
+    description: {
+      fontSize: 13,
+      color: colors.textMuted,
+      marginBottom: 8,
+      lineHeight: 18,
+    },
+    folderButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      borderRadius: 8,
+      padding: 8,
+      marginTop: 4,
+    },
+    folderInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      flex: 1,
+    },
+    folderTextContainer: {
+      flex: 1,
+    },
+    folderLabel: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    folderValue: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.primary,
+      marginTop: 2,
+    },
+    settingsSection: {
+      marginTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 8,
+    },
+    subTitle: {
+      fontSize: 13,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginTop: 8,
+      marginBottom: 4,
+    },
+    modeContainer: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    modeButton: {
+      flex: 1,
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      borderRadius: 4,
+      alignItems: 'center',
+    },
+    modeButtonActive: {
+      backgroundColor: colors.primary,
+    },
+    modeText: {
+      fontSize: 12,
+      color: colors.textMuted,
+      fontWeight: '500',
+    },
+    modeTextActive: {
+      color: '#ffffff',
+      fontWeight: 'bold',
+    },
+    rowItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 6,
+    },
+    rowLabel: {
+      fontSize: 14,
+      color: colors.text,
+    },
+    timeInput: {
+      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+      color: colors.text,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 6,
+      fontSize: 14,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      width: 70,
+    },
+    chipContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+      marginTop: 4,
+    },
+    chip: {
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderRadius: 16,
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    },
+    chipActive: {
+      backgroundColor: 'rgba(99, 102, 241, 0.25)',
+      borderColor: colors.primary,
+      borderWidth: 1,
+    },
+    chipText: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    chipTextActive: {
+      color: colors.primary,
+      fontWeight: 'bold',
+    },
+    actionButtonsContainer: {
+      flexDirection: 'row',
+      gap: 10,
+      marginTop: 16,
+    },
+    actionButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 10,
+      borderRadius: 8,
+      gap: 6,
+    },
+    syncNowButton: {
+      backgroundColor: '#3b82f6',
+    },
+    exportAllButton: {
+      backgroundColor: colors.primary,
+    },
+    actionButtonText: {
+      color: '#ffffff',
+      fontSize: 13,
+      fontWeight: 'bold',
+    },
+    folderSectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: 16,
+      marginBottom: 4,
+      paddingVertical: 4,
+    },
+    folderHeaderLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    folderHeaderTitle: {
+      fontSize: 13,
+      fontWeight: 'bold',
+      color: colors.text,
+    },
+    folderInputsContainer: {
+      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+      borderRadius: 8,
+      padding: 8,
+      gap: 8,
+      marginTop: 4,
+      marginBottom: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    folderInputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 10,
+    },
+    folderInputLabel: {
+      fontSize: 12,
+      color: colors.text,
+      flex: 1,
+    },
+    folderTextInput: {
+      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+      color: colors.text,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 6,
+      fontSize: 13,
+      width: 140,
+    },
+    errorStatusBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255, 69, 58, 0.15)',
+      borderWidth: 1,
+      borderColor: '#ff453a',
+      borderRadius: 8,
+      padding: 8,
+      marginBottom: 8,
+    },
+    statusTextContainer: {
+      flex: 1,
+      marginLeft: 8,
+    },
+    errorStatusTitle: {
+      fontSize: 13,
+      fontWeight: 'bold',
+      color: '#ff453a',
+      marginBottom: 2,
+    },
+    errorStatusText: {
+      fontSize: 12,
+      color: colors.text,
+      lineHeight: 16,
+    },
+    successStatusBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(48, 209, 88, 0.12)',
+      borderWidth: 1,
+      borderColor: 'rgba(48, 209, 88, 0.3)',
+      borderRadius: 8,
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+      marginBottom: 8,
+      gap: 6,
+    },
+    successStatusText: {
+      fontSize: 12,
+      color: '#30d158',
+      fontWeight: '600',
+    },
+  });

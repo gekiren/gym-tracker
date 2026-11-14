@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { MealLog } from '../../src/db/types';
+import { useAppTheme } from '../../src/theme';
 import { ConfirmModal } from '../ui/ConfirmModal';
 
 interface Props {
@@ -57,6 +58,8 @@ export default function PhotoGalleryModal({
   onPreviewPhoto,
   onDeletePhoto,
 }: Props) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -149,7 +152,7 @@ export default function PhotoGalleryModal({
             onPress={() => setDeletingLogId(item.id)}
             activeOpacity={0.7}
           >
-            <Ionicons name="trash-outline" size={14} color="#f87171" />
+            <Ionicons name="trash-outline" size={14} color="#ef4444" />
             <Text style={styles.deleteBtnText}>写真のみ削除</Text>
           </TouchableOpacity>
         </View>
@@ -165,7 +168,10 @@ export default function PhotoGalleryModal({
       transparent={false}
     >
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#0f172a" />
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor={colors.card}
+        />
 
         {/* モーダルヘッダー */}
         <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
@@ -176,24 +182,24 @@ export default function PhotoGalleryModal({
           </View>
 
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-            <Ionicons name="close" size={24} color="#94a3b8" />
+            <Ionicons name="close" size={24} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
 
         {/* 検索・ソートコントロールバー */}
         <View style={styles.controlSection}>
           <View style={styles.searchBar}>
-            <Ionicons name="search" size={16} color="#94a3b8" style={{ marginRight: 6 }} />
+            <Ionicons name="search" size={16} color={colors.textMuted} style={{ marginRight: 6 }} />
             <TextInput
               style={styles.searchInput}
               placeholder="日付・料理名・メモで検索..."
-              placeholderTextColor="#64748b"
+              placeholderTextColor={colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={16} color="#94a3b8" />
+              <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close-circle" size={16} color={colors.textMuted} />
               </TouchableOpacity>
             )}
           </View>
@@ -234,7 +240,7 @@ export default function PhotoGalleryModal({
         {/* 写真一覧グリッド */}
         {photoLogs.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="image-outline" size={48} color="#475569" style={{ marginBottom: 12 }} />
+            <Ionicons name="image-outline" size={48} color={colors.textMuted} style={{ marginBottom: 12 }} />
             <Text style={styles.emptyText}>該当する食事写真が見つかりません。</Text>
             <Text style={styles.emptySubText}>
               写真解析や写真記録から食事を追加すると、ここに自動的に写真が集約・保管されます。
@@ -266,10 +272,10 @@ export default function PhotoGalleryModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090d16',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -278,8 +284,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1e293b',
-    backgroundColor: '#0f172a',
+    borderBottomColor: colors.border,
+    backgroundColor: colors.card,
   },
   headerTitleRow: {
     flexDirection: 'row',
@@ -288,15 +294,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#f8fafc',
+    color: colors.text,
   },
   countBadge: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: colors.textMuted,
     marginLeft: 6,
   },
   closeBtn: {
-    padding: 4,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   controlSection: {
     flexDirection: 'row',
@@ -310,28 +319,29 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.card,
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 7,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   searchInput: {
     flex: 1,
-    color: '#f8fafc',
+    color: colors.text,
     fontSize: 13,
     padding: 0,
   },
   sortBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.card,
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 8,
+    minHeight: 36,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
     gap: 4,
   },
   sortBtnText: {
@@ -348,10 +358,12 @@ const styles = StyleSheet.create({
   filterTab: {
     paddingHorizontal: 12,
     paddingVertical: 6,
+    minHeight: 32,
+    justifyContent: 'center',
     borderRadius: 16,
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   filterTabActive: {
     backgroundColor: '#38bdf822',
@@ -359,7 +371,7 @@ const styles = StyleSheet.create({
   },
   filterTabText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontWeight: '600',
   },
   filterTabTextActive: {
@@ -376,16 +388,16 @@ const styles = StyleSheet.create({
   },
   card: {
     width: COLUMN_WIDTH,
-    backgroundColor: '#0f172a',
-    borderRadius: 12,
+    backgroundColor: colors.card,
+    borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#1e293b',
+    borderColor: colors.border,
   },
   imageContainer: {
     width: '100%',
     height: 120,
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     position: 'relative',
   },
   cardImage: {
@@ -405,7 +417,7 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   zoomOverlayText: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#ffffff',
     fontWeight: '600',
   },
@@ -424,18 +436,18 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   typeBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: '#ffffff',
   },
   dateText: {
-    fontSize: 10,
-    color: '#94a3b8',
+    fontSize: 11,
+    color: colors.textMuted,
   },
   mealName: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#f8fafc',
+    color: colors.text,
     marginBottom: 4,
   },
   caloriesRow: {
@@ -450,24 +462,25 @@ const styles = StyleSheet.create({
     color: '#10b981',
   },
   pfcBriefText: {
-    fontSize: 10,
-    color: '#64748b',
+    fontSize: 11,
+    color: colors.textMuted,
   },
   deleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 36,
     backgroundColor: '#ef444415',
     borderWidth: 1,
     borderColor: '#ef444444',
-    borderRadius: 6,
-    paddingVertical: 4,
+    borderRadius: 8,
+    paddingVertical: 6,
     gap: 4,
   },
   deleteBtnText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
-    color: '#f87171',
+    color: '#ef4444',
   },
   emptyContainer: {
     flex: 1,
@@ -478,12 +491,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#f8fafc',
+    color: colors.text,
     marginBottom: 6,
   },
   emptySubText: {
     fontSize: 12,
-    color: '#64748b',
+    color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 18,
   },
