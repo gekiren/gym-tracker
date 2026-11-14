@@ -82,7 +82,7 @@ export default function ActiveWorkoutScreen() {
   const safeBottomOffset = isAndroid ? (insets.bottom === 0 ? 48 : insets.bottom) : insets.bottom;
 
   const handleOpenStanceModal = useCallback(
-    (target: { type: 'exercise' | 'set'; exId: string; setId?: string; currentValue: string | null }) => {
+    (target: { type: 'set'; exId: string; setId?: string; currentValue: string | null }) => {
       setStanceModalTarget(target);
       setStanceModalVisible(true);
     },

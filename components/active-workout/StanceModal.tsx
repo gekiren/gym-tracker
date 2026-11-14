@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { translateStance } from '../../src/i18n';
 
 interface StanceModalTarget {
-  type: 'exercise' | 'set';
+  type: 'set';
   exId: string;
   setId?: string;
   currentValue: string | null;
@@ -76,7 +76,7 @@ export const StanceModal: React.FC<StanceModalProps> = ({
         <View style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>
-              {target?.type === 'exercise' ? t('ui.active_workout.stance_modal_title_exercise') : t('ui.active_workout.stance_modal_title_set')}
+              {t('ui.active_workout.stance_modal_title_set')}
             </Text>
             <TouchableOpacity
               onPress={() => { onClose(); setIsAddingStance(false); }}
@@ -153,12 +153,6 @@ export const StanceModal: React.FC<StanceModalProps> = ({
                 >
                   <Text style={{ color: colors.primary, fontWeight: 'bold', textAlign: 'center' }}>{t('ui.active_workout.stance_add_original_btn')}</Text>
                 </TouchableOpacity>
-
-                {target?.type === 'exercise' && (
-                  <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 12 }}>
-                    {t('ui.active_workout.stance_exercise_hint')}
-                  </Text>
-                )}
               </>
             )}
           </View>

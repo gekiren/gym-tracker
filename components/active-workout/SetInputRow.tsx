@@ -28,7 +28,7 @@ interface SetInputRowProps {
   setActiveSetForCalc: (val: { exId: string; setId: string } | null) => void;
   calculateRM: (weight: number | null, reps: number | null) => number | null;
   startTime: string | null;
-  setStanceModalTarget: (val: { type: 'exercise' | 'set'; exId: string; setId?: string; currentValue: string | null } | null) => void;
+  setStanceModalTarget: (val: { type: 'set'; exId: string; setId?: string; currentValue: string | null } | null) => void;
   setStanceModalVisible: (visible: boolean) => void;
   displayFields: any;
 }

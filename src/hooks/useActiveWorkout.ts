@@ -9,7 +9,7 @@ import { translateExercise, translateStance } from '../i18n';
 import { computeCalories, computeAchievements, computeStreaks, computeWeeklyWorkoutCount } from '../utils/workoutStats';
 
 export interface StanceModalTarget {
-  type: 'exercise' | 'set';
+  type: 'set';
   exId: string;
   setId?: string;
   currentValue: string | null;
@@ -366,10 +366,7 @@ export function useActiveWorkout() {
 
   const handleSelectStance = useCallback(
     (val: string | null) => {
-      if (stanceModalTarget?.type === 'exercise') {
-        useWorkoutStore.getState().updateExerciseStance(stanceModalTarget.exId, val);
-        useWorkoutStore.getState().updateExerciseVariation(stanceModalTarget.exId, val);
-      } else if (stanceModalTarget?.type === 'set' && stanceModalTarget.setId) {
+      if (stanceModalTarget?.type === 'set' && stanceModalTarget.setId) {
         useWorkoutStore.getState().updateSet(stanceModalTarget.exId, stanceModalTarget.setId, { stance: val, variation: val });
       }
     },

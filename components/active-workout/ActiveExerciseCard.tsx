@@ -7,7 +7,7 @@ import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-han
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 import { useAppTheme } from '../../src/theme';
 import { AI_CONFIG } from '../../src/config/aiConfig';
-import { translateExercise, translateStance } from '../../src/i18n';
+import { translateExercise } from '../../src/i18n';
 import { SetInputRow } from './SetInputRow';
 import { StanceModalTarget } from '../../src/hooks/useActiveWorkout';
 import { isTreadmillExercise } from '../../src/utils/exerciseUtils';
@@ -81,7 +81,6 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
 }) => {
   const { colors } = useAppTheme();
 
-  const currentStance = ex.default_stance || ex.default_variation || null;
   const exerciseNameText = translateExercise(ex.name);
   const isLongName = exerciseNameText.length > 13;
   const showVolume = ex.muscle_group !== '有酸素' && !!settings.displayFields?.showVolume;
@@ -248,32 +247,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
       ))}
 
       <View style={styles.bottomRowContainer}>
-        <View style={styles.bottomLeftContainer}>
-          {settings.displayFields?.showStance && ex.muscle_group !== '有酸素' && !isTreadmillExercise(ex.name) && (
-            <GHTouchableOpacity
-              style={styles.exerciseVariationBtnBottom}
-              hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
-              onPress={() => {
-                onOpenStanceModal({ type: 'exercise', exId: ex.id, currentValue: currentStance });
-              }}
-            >
-              <Text
-                style={[styles.exerciseVariationTextBottom, { color: colors.primary, flexShrink: 1 }]}
-                numberOfLines={currentStance ? 1 : 2}
-              >
-                {currentStance
-                  ? translateStance(currentStance as string)
-                  : `${t('ui.active_workout.stance_label')}:\n${t('ui.active_workout.stance_standard')}`}
-              </Text>
-              <Ionicons
-                name="chevron-down"
-                size={12}
-                color={colors.primary}
-                style={{ marginLeft: 4, alignSelf: currentStance ? 'center' : 'flex-end', marginBottom: currentStance ? 0 : 2 }}
-              />
-            </GHTouchableOpacity>
-          )}
-        </View>
+        <View style={styles.bottomLeftContainer} />
 
         <GHTouchableOpacity style={styles.addSetBtn} onPress={() => onAddSet(ex.id)}>
           <Text style={[styles.addSetBtnText, { color: colors.primary }]}>{t('ui.active_workout.add_set_label')}</Text>
@@ -341,23 +315,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
     alignItems: 'flex-end',
     justifyContent: 'center',
-  },
-  exerciseVariationBtnBottom: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    maxWidth: '100%',
-    minHeight: 36,
-    backgroundColor: 'rgba(79, 172, 254, 0.1)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(79, 172, 254, 0.3)',
-  },
-  exerciseVariationTextBottom: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    lineHeight: 16,
   },
   exerciseVolumeContainer: {
     flexDirection: 'row',
