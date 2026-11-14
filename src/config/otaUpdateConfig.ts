@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.37',
+  version: '2.3.38',
   title: {
-    ja: '✨ 共通モーダル・ナビゲーションのUI/UX改善',
-    en: '✨ Shared Modals & Navigation UI/UX Improvements',
+    ja: '🎨 ワークアウト周辺・詳細画面のUI/UX改善',
+    en: '🎨 Workout Flow & Detail Screens UI/UX Improvements',
   },
   notes: {
     ja: [
-      '各種確認モーダル、カレンダー、お知らせ・共有シートなどの共通UIをダーク／ピュアブラックテーマに完全対応し、角丸・枠線・ボタンの押しやすさを統一しました。',
+      '種目選択・ルーティン作成・完了画面・1RM計算・種目詳細（推移グラフ／各種設定）・過去ログ詳細および編集画面をダーク／ピュアブラックテーマに完全対応しました。',
+      'カード・モーダル・入力欄の角丸と枠線、ボタンのタップ領域を統一し、視認性と操作性を向上させました。',
     ],
     en: [
-      'Updated shared modals, calendar, update/share sheets, and root navigation to fully support Dark and Pure Black themes with unified spacing, borders, and larger tap targets.',
+      'Updated exercise selection, routine builder, workout completion, 1RM calculator, exercise details/charts, and workout history detail/edit screens for full Dark and Pure Black theme support.',
+      'Unified card/modal/input corners, 1px borders, typography readability, and tap targets across these screens.',
     ],
   },
 };
