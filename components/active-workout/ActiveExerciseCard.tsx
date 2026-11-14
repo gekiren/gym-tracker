@@ -182,7 +182,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
       {/* Table Header */}
       <View style={styles.tableHeader}>
         <Text
-          style={[styles.th, { width: isTreadmillExercise(ex.name) ? 40 : 44 }]}
+          style={[styles.th, { width: isTreadmillExercise(ex.name) ? 40 : ex.muscle_group === '有酸素' ? 44 : 32 }]}
           numberOfLines={1}
           adjustsFontSizeToFit
           minimumFontScale={0.8}
@@ -199,24 +199,39 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
           <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>{t('ui.active_workout.header_time')}</Text>
         ) : (
           <>
-            <Text style={[styles.th, { width: 90, marginHorizontal: 3 }]}>
+            <Text style={[styles.th, { width: 60, marginHorizontal: 2 }]}>
               {ex.name === 'プランク'
                 ? t('ui.active_workout.header_weighted')
                 : ex.equipment === '自重'
                 ? `+ ${settings.weightUnit}`
                 : settings.weightUnit}
             </Text>
-            <Text style={[styles.th, { width: 70, marginHorizontal: 3 }]}>
+            <Text
+              style={[styles.th, { width: 36, marginHorizontal: 2 }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+            >
               {ex.name === 'プランク' ? t('ui.active_workout.header_seconds') : t('ui.active_workout.header_reps')}
             </Text>
             {(settings.displayFields?.showRpe || ex.name === 'プランク') && (
-              <Text style={[styles.th, { width: 55, marginHorizontal: 3 }]}>
+              <Text
+                style={[styles.th, { width: 32, marginHorizontal: 2 }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
                 {ex.name === 'プランク' ? t('ui.active_workout.header_timer') : t('ui.active_workout.header_rpe')}
+              </Text>
+            )}
+            {(settings.displayFields?.showStance !== false || settings.displayFields?.show1RM !== false) && (
+              <Text style={[styles.th, { flex: 1, textAlign: 'left', paddingLeft: 6, fontSize: 11 }]}>
+                {t('ui.active_workout.header_stance_rm') || 'スタンス / 1RM'}
               </Text>
             )}
           </>
         )}
-        <Text style={[styles.th, { width: 36 }]}>{t('ui.active_workout.header_record')}</Text>
+        <Text style={[styles.th, { width: 30 }]}>{t('ui.active_workout.header_record')}</Text>
       </View>
 
       {/* Set Rows */}
@@ -247,11 +262,20 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
                 onOpenStanceModal({ type: 'exercise', exId: ex.id, currentValue: currentStance });
               }}
             >
-              <Text style={styles.exerciseVariationTextBottom}>
-                {t('ui.active_workout.stance_label')}:{'\n'}
-                {currentStance ? translateStance(currentStance as string) : t('ui.active_workout.stance_standard')}
+              <Text
+                style={[styles.exerciseVariationTextBottom, { flexShrink: 1 }]}
+                numberOfLines={currentStance ? 1 : 2}
+              >
+                {currentStance
+                  ? translateStance(currentStance as string)
+                  : `${t('ui.active_workout.stance_label')}:\n${t('ui.active_workout.stance_standard')}`}
               </Text>
-              <Ionicons name="chevron-down" size={10} color={Theme.colors.primary} style={{ marginLeft: 2, alignSelf: 'flex-end', marginBottom: 2 }} />
+              <Ionicons
+                name="chevron-down"
+                size={10}
+                color={Theme.colors.primary}
+                style={{ marginLeft: 2, alignSelf: currentStance ? 'center' : 'flex-end', marginBottom: currentStance ? 0 : 2 }}
+              />
             </GHTouchableOpacity>
           )}
         </View>
@@ -311,6 +335,7 @@ const styles = StyleSheet.create({
   },
   bottomLeftContainer: {
     flex: 1,
+    minWidth: 0,
     alignItems: 'flex-start',
     justifyContent: 'center',
   },
@@ -320,6 +345,7 @@ const styles = StyleSheet.create({
   exerciseVariationBtnBottom: {
     flexDirection: 'row',
     alignItems: 'center',
+    maxWidth: '100%',
     backgroundColor: 'rgba(79, 172, 254, 0.1)',
     paddingHorizontal: 8,
     paddingVertical: 4,

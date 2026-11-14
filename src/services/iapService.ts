@@ -12,6 +12,7 @@ import {
 import { saveSetting } from '../db/database';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useSettingsStore } from '../store/settingsStore';
+import { syncAccountStatusSilently } from './accountSyncService';
 
 export const PREMIUM_PRODUCT_ID = 'com.gekirennomad.trenote.premium';
 
@@ -69,6 +70,7 @@ export const setupIAPListeners = (
         useSettingsStore.getState().setPremiumUntil('perpetual');
         useSettingsStore.getState().setIsEarlyAdopter(false);
         useSettingsStore.getState().setAITokensBalance(20);
+        syncAccountStatusSilently().catch((e) => console.warn('IAP cloud sync skipped:', e));
         
         onSuccess();
       } catch (err) {
@@ -146,6 +148,7 @@ export const restorePurchases = async (): Promise<boolean> => {
       useSettingsStore.getState().setPremiumUntil('perpetual');
       useSettingsStore.getState().setIsEarlyAdopter(false);
       useSettingsStore.getState().setAITokensBalance(20);
+      syncAccountStatusSilently().catch((e) => console.warn('IAP restore cloud sync skipped:', e));
       return true;
     }
     return false;

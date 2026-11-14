@@ -397,8 +397,10 @@ const withAndroidWidget = (config) => {
   }
 
   override fun onDestroy() {
-    // 再起動（recreate / reloadAsync）時に古いディープリンク Intent が引き継がれないようクリーンな Intent にリセット
-    intent = Intent(this, MainActivity::class.java)
+    // アプリ完全終了（isFinishing）時のみ古いディープリンク Intent をリセット（カメラ起動等の一時的な再生成時は保持）
+    if (isFinishing) {
+      intent = Intent(this, MainActivity::class.java)
+    }
     super.onDestroy()
   }
 

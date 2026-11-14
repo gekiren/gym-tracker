@@ -35,6 +35,16 @@ import { recordFeatureAction } from '../services/featureUnlockService';
 
 // ─── 型定義 ────────────────────────────────────────────
 
+export interface PendingNutritionCameraState {
+  active: boolean;
+  timestamp: number;
+  selectedDate: string;
+  mealType: string;
+  mealTime: string;
+  userMemo: string;
+  multiplier: number;
+}
+
 interface NutritionState {
   mealLogs: MealLog[];
   allHistoryLogs: MealLog[];
@@ -43,9 +53,11 @@ interface NutritionState {
   selectedDate: string;
   userNutritionGoals: NutritionGoals;
   autophagyConfig: AutophagyConfig;
+  pendingCameraState: PendingNutritionCameraState | null;
   isLoading: boolean;
 
   // Actions
+  setPendingCameraState: (state: PendingNutritionCameraState | null) => void;
   loadMealLogs: (date: string) => Promise<void>;
   loadAllHistory: () => Promise<void>;
   addMeal: (log: Omit<MealLog, 'id'>) => Promise<void>;
@@ -109,7 +121,12 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
   selectedDate: '',
   userNutritionGoals: DEFAULT_GOALS,
   autophagyConfig: DEFAULT_AUTOPHAGY,
+  pendingCameraState: null,
   isLoading: false,
+
+  setPendingCameraState: (state: PendingNutritionCameraState | null) => {
+    set({ pendingCameraState: state });
+  },
 
   setSelectedDate: (date: string) => {
     set({ selectedDate: date });
@@ -433,6 +450,7 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
       selectedDate: '',
       userNutritionGoals: DEFAULT_GOALS,
       autophagyConfig: DEFAULT_AUTOPHAGY,
+      pendingCameraState: null,
       isLoading: false,
     });
   },

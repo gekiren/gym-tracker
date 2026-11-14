@@ -62,6 +62,8 @@ const safeGetImageManipulator = () => {
 import { analyzeMealImage, NutritionAIResult } from '../../src/services/aiCoachService';
 import { copyAIDebugLogsToClipboard } from '../../src/utils/debugLogStore';
 import { MealLog } from '../../src/db/types';
+import { saveSetting } from '../../src/db/database';
+import { useNutritionStore, PendingNutritionCameraState } from '../../src/store/nutritionStore';
 import { useAppTheme } from '../../src/theme';
 import { getDefaultMealType, getCurrentTimeStr } from '../../src/utils/nutritionUtils';
 import TimeWheelPicker from './TimeWheelPicker';
@@ -92,9 +94,20 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
   const [mealTime, setMealTime] = useState<string>(getCurrentTimeStr());
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiResult, setAiResult] = useState<NutritionAIResult | null>(null);
+  const pendingCameraState = useNutritionStore((state) => state.pendingCameraState);
+  const isRecoveringRef = useRef(false);
+  const isCameraLaunchingRef = useRef(false);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    if (visible) {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (visible && !useNutritionStore.getState().pendingCameraState?.active && !isRecoveringRef.current) {
       setMealType(getDefaultMealType());
       setMealTime(getCurrentTimeStr());
     }
@@ -142,7 +155,12 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
   };
 
   // 画像圧縮＆Base64変換 (最大幅600pxにリサイズして軽量化、多重フォールバック対応)
-  const processImage = async (uri: string, initialBase64?: string | null) => {
+  const processImage = async (
+    uri: string,
+    initialBase64?: string | null,
+    overrideMemo?: string,
+    overrideMultiplier?: number
+  ) => {
     try {
       setIsAnalyzing(true);
       setSelectedImageUri(uri);
@@ -199,13 +217,136 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
       const cleanB64Str = b64Str.replace(/[\r\n\s]/g, '');
       const formattedB64 = cleanB64Str.startsWith('data:') ? cleanB64Str : `data:image/jpeg;base64,${cleanB64Str}`;
       setBase64Data(formattedB64);
-      await runAnalysis(formattedB64);
+      await runAnalysis(formattedB64, overrideMemo, overrideMultiplier);
     } catch (err: any) {
       setIsAnalyzing(false);
       console.error('[PhotoRecordModal] processImage error:', err);
       Alert.alert('画像処理エラー', '画像の読み込みに失敗しました。');
     }
   };
+
+  const clearPendingCameraState = async () => {
+    useNutritionStore.getState().setPendingCameraState(null);
+    try {
+      await saveSetting('pending_nutrition_camera_state', '');
+    } catch (e) {
+      console.warn('[PhotoRecordModal] Failed to clear pending_nutrition_camera_state:', e);
+    }
+  };
+
+  // Activity破棄からの復帰時に撮影写真を自動回収して解析する
+  useEffect(() => {
+    if (!visible || !pendingCameraState?.active || isRecoveringRef.current || isCameraLaunchingRef.current) {
+      return;
+    }
+
+    isRecoveringRef.current = true;
+    const stateToRecover = { ...pendingCameraState };
+
+    useNutritionStore.getState().setPendingCameraState(null);
+    saveSetting('pending_nutrition_camera_state', '').catch((e) => {
+      console.warn('[PhotoRecordModal] Failed to clear pending_nutrition_camera_state:', e);
+    });
+
+    const restoredMemo = stateToRecover.userMemo || '';
+    const restoredMultiplier = typeof stateToRecover.multiplier === 'number' ? stateToRecover.multiplier : 1.0;
+
+    setMealType(stateToRecover.mealType || getDefaultMealType());
+    setMealTime(stateToRecover.mealTime || getCurrentTimeStr());
+    setUserMemo(restoredMemo);
+    setMultiplier(restoredMultiplier);
+
+    const recoverCapturedPhoto = async () => {
+      setIsAnalyzing(true);
+      try {
+        const ImagePicker = safeGetImagePicker();
+        let recoveredUri: string | null = null;
+        let recoveredBase64: string | null = null;
+
+        // 1. expo-image-picker の getPendingResultAsync() を短いリトライ付きで確認
+        if (ImagePicker && typeof (ImagePicker as any).getPendingResultAsync === 'function') {
+          const delays = [0, 150, 300, 500, 800, 1200];
+          for (const delay of delays) {
+            if (!isMountedRef.current) return;
+            if (delay > 0) {
+              await new Promise((resolve) => setTimeout(resolve, delay));
+            }
+            try {
+              const pendingRes: any = await (ImagePicker as any).getPendingResultAsync();
+              if (pendingRes) {
+                const items = Array.isArray(pendingRes) ? pendingRes : [pendingRes];
+                const validItem = items.find(
+                  (item: any) => item && !item.canceled && item.assets && item.assets[0]?.uri
+                );
+                if (validItem?.assets?.[0]?.uri) {
+                  recoveredUri = validItem.assets[0].uri;
+                  recoveredBase64 = validItem.assets[0].base64 || null;
+                  break;
+                }
+              }
+            } catch (err) {
+              console.warn('[PhotoRecordModal] getPendingResultAsync attempt failed:', err);
+            }
+          }
+        }
+
+        // 2. フォールバック: cacheDirectory/ImagePicker 内の最新画像ファイルを直接回収
+        if (!recoveredUri && isMountedRef.current) {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            const FileSystem = require('expo-file-system/legacy') || require('expo-file-system');
+            if (FileSystem?.cacheDirectory && FileSystem?.readDirectoryAsync && FileSystem?.getInfoAsync) {
+              const pickerCacheDir = `${FileSystem.cacheDirectory}ImagePicker`;
+              const dirInfo = await FileSystem.getInfoAsync(pickerCacheDir);
+              if (dirInfo.exists && dirInfo.isDirectory) {
+                const files: string[] = await FileSystem.readDirectoryAsync(pickerCacheDir);
+                let newestFileUri: string | null = null;
+                let newestMtimeMs = 0;
+
+                for (const fileName of files) {
+                  if (!/\.(jpe?g|png)$/i.test(fileName)) continue;
+                  const fullUri = `${pickerCacheDir}/${fileName}`;
+                  const info = await FileSystem.getInfoAsync(fullUri);
+                  if (info.exists && !info.isDirectory && typeof info.size === 'number' && info.size > 0) {
+                    const rawMtime = typeof info.modificationTime === 'number' ? info.modificationTime : 0;
+                    const mtimeMs = rawMtime > 1e12 ? rawMtime : rawMtime * 1000;
+                    if (mtimeMs >= stateToRecover.timestamp - 10000 && mtimeMs > newestMtimeMs) {
+                      newestMtimeMs = mtimeMs;
+                      newestFileUri = fullUri;
+                    }
+                  }
+                }
+
+                if (newestFileUri) {
+                  recoveredUri = newestFileUri;
+                }
+              }
+            }
+          } catch (fsErr) {
+            console.warn('[PhotoRecordModal] Cache fallback search failed:', fsErr);
+          }
+        }
+
+        if (!isMountedRef.current) return;
+
+        if (recoveredUri) {
+          await processImage(recoveredUri, recoveredBase64, restoredMemo, restoredMultiplier);
+        } else {
+          // キャンセルされた等で撮影画像が見つからない場合はローディング解除のみ行う
+          setIsAnalyzing(false);
+        }
+      } catch (err) {
+        console.warn('[PhotoRecordModal] recoverCapturedPhoto error:', err);
+        if (isMountedRef.current) {
+          setIsAnalyzing(false);
+        }
+      } finally {
+        isRecoveringRef.current = false;
+      }
+    };
+
+    recoverCapturedPhoto();
+  }, [visible, pendingCameraState]);
 
   // カメラで撮影 (allowsEditing を無効化してクロップ画面のクラッシュ・キャンセルを完全防止し、base64: true で即座に画像データ取得)
   const handleTakePhoto = async () => {
@@ -214,12 +355,27 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
       Alert.alert('機能制限', 'カメラ機能はこのビルドでは利用できません。最新のNative APKを更新してください。');
       return;
     }
+    isCameraLaunchingRef.current = true;
     try {
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (!perm.granted) {
         Alert.alert('権限エラー', 'カメラの使用を許可してください。');
         return;
       }
+
+      // Activity破棄に備えて現在の入力状態と時刻を保存
+      const pendingState: PendingNutritionCameraState = {
+        active: true,
+        timestamp: Date.now(),
+        selectedDate,
+        mealType,
+        mealTime,
+        userMemo,
+        multiplier,
+      };
+      useNutritionStore.getState().setPendingCameraState(pendingState);
+      await saveSetting('pending_nutrition_camera_state', JSON.stringify(pendingState));
+
       // allowsEditing: false (クロップ画面をスキップして即確定し、クラッシュやキャンセルを防止)
       // quality: 0.3 & base64: true (メモリ消費を抑えつつ直接Base64を取得)
       const res = await ImagePicker.launchCameraAsync({
@@ -228,12 +384,18 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
         quality: 0.3,
         base64: true,
       });
+
+      await clearPendingCameraState();
+
       if (!res.canceled && res.assets && res.assets[0]?.uri) {
         await processImage(res.assets[0].uri, res.assets[0].base64);
       }
     } catch (err: any) {
+      await clearPendingCameraState();
       console.error('[PhotoRecordModal] handleTakePhoto error:', err);
       Alert.alert('カメラエラー', err?.message || 'カメラの起動に失敗しました。');
+    } finally {
+      isCameraLaunchingRef.current = false;
     }
   };
 
@@ -265,14 +427,20 @@ export default function PhotoRecordModal({ visible, onClose, onSave, selectedDat
   };
 
   // AI解析の実行 (画像)
-  const runAnalysis = async (b64: string) => {
+  const runAnalysis = async (
+    b64: string,
+    overrideMemo?: string,
+    overrideMultiplier?: number
+  ) => {
     setIsAnalyzing(true);
     setAiResult(null);
     try {
-      const res = await analyzeMealImage(b64, '', userMemo);
+      const effectiveMemo = overrideMemo !== undefined ? overrideMemo : userMemo;
+      const effectiveMultiplier = overrideMultiplier !== undefined ? overrideMultiplier : multiplier;
+      const res = await analyzeMealImage(b64, '', effectiveMemo);
       setAiResult(res);
       setMealName(res.mealName);
-      applyMultiplier(res, multiplier);
+      applyMultiplier(res, effectiveMultiplier);
     } catch (err: any) {
       Alert.alert(
         'AI解析エラー',

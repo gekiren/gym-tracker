@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -7,6 +7,7 @@ import { Theme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { AccountCard } from '../../components/profile/AccountCard';
+import { GoogleAccountSection } from '../../components/profile/GoogleAccountSection';
 import { PromoCodeModal } from '../../components/profile/PromoCodeModal';
 import { PaywallModal } from '../../components/active-workout/PaywallModal';
 import { AppInfoSection } from '../../components/profile/AppInfoSection';
@@ -14,6 +15,7 @@ import { getSettings, saveSetting, activatePremiumFromPromo } from '../../src/db
 import { changeLanguage, getCurrentLanguage } from '../../src/i18n';
 import { checkNativeVersion, checkAndApplyOTAUpdate, verifyPromoCode } from '../../src/services/promoService';
 import { purchasePremium, restorePurchases } from '../../src/services/iapService';
+import { syncAccountStatusSilently } from '../../src/services/accountSyncService';
 import { CURRENT_OTA_CONFIG } from '../../src/config/otaUpdateConfig';
 import * as Updates from 'expo-updates';
 import Constants from 'expo-constants';
@@ -59,25 +61,26 @@ export default function AccountSettingsScreen() {
     setBackgroundTheme(theme);
   };
 
-  useEffect(() => {
-    const fetchAccountType = async () => {
-      try {
-        const stored = await getSettings();
-        const isEarlyAdopter = stored['is_early_adopter'] === 'true';
-        const premiumUntilVal = stored['premium_until'] || '';
-        const isPremiumPerpetual = premiumUntilVal === 'perpetual';
-        const isPremiumLimited = premiumUntilVal !== '' && premiumUntilVal !== 'perpetual' && !isNaN(Date.parse(premiumUntilVal)) && Date.parse(premiumUntilVal) > Date.now();
+  const fetchAccountType = useCallback(async () => {
+    try {
+      const stored = await getSettings();
+      const isEarlyAdopter = stored['is_early_adopter'] === 'true';
+      const premiumUntilVal = stored['premium_until'] || '';
+      const isPremiumPerpetual = premiumUntilVal === 'perpetual';
+      const isPremiumLimited = premiumUntilVal !== '' && premiumUntilVal !== 'perpetual' && !isNaN(Date.parse(premiumUntilVal)) && Date.parse(premiumUntilVal) > Date.now();
 
-        if (isEarlyAdopter) setAccountType('early_adopter');
-        else if (isPremiumPerpetual) setAccountType('premium');
-        else if (isPremiumLimited) setAccountType('premium_limited');
-        else setAccountType('basic');
-      } catch (err) {
-        console.warn('Failed to fetch account type', err);
-      }
-    };
+      if (isEarlyAdopter) setAccountType('early_adopter');
+      else if (isPremiumPerpetual) setAccountType('premium');
+      else if (isPremiumLimited) setAccountType('premium_limited');
+      else setAccountType('basic');
+    } catch (err) {
+      console.warn('Failed to fetch account type', err);
+    }
+  }, []);
+
+  useEffect(() => {
     fetchAccountType();
-  }, [settings]);
+  }, [settings, fetchAccountType]);
 
   const handlePurchase = async () => {
     setIsPurchasing(true);
@@ -143,6 +146,7 @@ export default function AccountSettingsScreen() {
       }
       const newExpiry = await activatePremiumFromPromo();
       useSettingsStore.getState().updatePremiumStatus(newExpiry);
+      syncAccountStatusSilently().catch((e) => console.warn('Promo cloud sync skipped:', e));
       setIsPromoModalVisible(false);
       setPromoInputText('');
       Alert.alert('適用完了', 'プロモーションコードが適用されました！プレミアムプランが1ヶ月間有効になりました。');
@@ -164,6 +168,11 @@ export default function AccountSettingsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        <GoogleAccountSection
+          onSyncComplete={fetchAccountType}
+          t={t}
+        />
+
         <AccountCard
           accountType={accountType}
           premiumUntil={settings.premiumUntil}

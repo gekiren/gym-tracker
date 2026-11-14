@@ -1,0 +1,11 @@
+{
+  "name": "gym-tracker-ai-proxy",
+  "main": "cloudflare-worker-proxy.js",
+  "compatibility_date": "2026-08-20",
+  "kv_namespaces": [
+    {
+      "binding": "USER_ACCOUNT_KV",
+      "id": "526774b9480142b4bcaef7cf45e7db3e"
+    }
+  ]
+}

@@ -11,18 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.21',
+  version: '2.3.31',
   title: {
-    ja: '⏱️ ２４時間管理：予定追加時のカード選択自動解除',
-    en: '⏱️ 24h Timeline: Auto-deselect Card after Schedule Addition',
+    ja: '✨ セット行の入力幅スリム化とタイム列の整列改善',
+    en: '✨ Slimmer Reps/RPE Inputs & Aligned Timer Column',
   },
   notes: {
     ja: [
-      '２４時間管理タイムラインで予定（ピース/カード）を追加した直後に、カードの選択状態を自動的に解除するように改善しました。連続して別の操作や記録を行う際の手間を削減します。',
+      '回数・RPEの入力枠を2桁表示に合わせたスリムな横幅に調整し、情報表示エリアを広げました。',
+      '休憩時間（☕）を上段のスタンスと同じ行へ移動し、下段のセットタイム（⏱️）と左端を揃えたタイム列として見やすく整列しました。',
     ],
     en: [
-      'Improved 24-hour timeline to automatically clear card selection immediately after adding a schedule, streamlining continuous logging.',
+      'Slimmed down the Reps and RPE input widths to fit 2-digit numbers cleanly, giving more room to set details.',
+      'Moved rest time (☕) onto the same row as stance and left-aligned it with set work time (⏱️) in a clean column.',
     ],
   },
 };
-

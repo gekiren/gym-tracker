@@ -5,7 +5,7 @@
       "ja": "./locales/ja.json"
     },
     "slug": "gym-tracker",
-    "version": "2.3.0",
+    "version": "2.3.24",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "gymtracker",
@@ -30,7 +30,7 @@
     },
     "android": {
       "package": "com.gekirennomad.trenote",
-      "versionCode": 47,
+      "versionCode": 48,
       "permissions": [
         "com.android.vending.BILLING",
         "android.permission.SCHEDULE_EXACT_ALARM",
@@ -130,7 +130,8 @@
         }
       ],
       "expo-localization",
-      "expo-calendar"
+      "expo-calendar",
+      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "typedRoutes": true,

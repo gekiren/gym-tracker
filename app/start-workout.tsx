@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Redirect } from 'expo-router';
 import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
+import { useNutritionStore } from '../src/store/nutritionStore';
 import { saveSetting } from '../src/db/database';
 import { CURRENT_OTA_CONFIG } from '../src/config/otaUpdateConfig';
 
@@ -14,6 +15,10 @@ import { CURRENT_OTA_CONFIG } from '../src/config/otaUpdateConfig';
  * URL: gymtracker:///start-workout
  */
 export default function StartWorkout() {
+  const pendingCameraState =
+    useNutritionStore((state) => state.pendingCameraState) ||
+    useNutritionStore.getState().pendingCameraState;
+
   // 同期的にモーダルを抑止（タイマー発火前ガード）
   useOTAUpdateStore.getState().suppressModal();
 
@@ -23,6 +28,10 @@ export default function StartWorkout() {
       console.warn('[Widget] Failed to auto-acknowledge OTA version on widget start-workout:', e);
     });
   }, []);
+
+  if (pendingCameraState?.active) {
+    return <Redirect href="/lifelog/nutrition" />;
+  }
 
   return <Redirect href="/(tabs)/" />;
 }
