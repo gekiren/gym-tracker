@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { updateExerciseWeightStep } from '../../src/db/database';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 
@@ -20,6 +20,7 @@ export const WeightStepManagement: React.FC<WeightStepManagementProps> = ({
   settings,
   t,
 }) => {
+  const { colors } = useAppTheme();
   const [isExpanded, setIsExpanded] = useState(false);
   const currentStep = exercise.weight_step ?? 2.5;
   const weightUnit = settings.weightUnit || 'kg';
@@ -56,33 +57,37 @@ export const WeightStepManagement: React.FC<WeightStepManagementProps> = ({
   };
 
   return (
-    <View style={styles.section}>
+    <View style={[styles.section, { borderBottomColor: colors.border }]}>
       <TouchableOpacity
         onPress={() => setIsExpanded(!isExpanded)}
         style={styles.headerToggle}
         activeOpacity={0.7}
       >
         <View style={styles.headerLeft}>
-          <Ionicons name="swap-horizontal-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.toggleText}>
+          <Ionicons name="swap-horizontal-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+          <Text style={[styles.toggleText, { color: colors.primary }]}>
             {t('ui.exercise_detail.section_weight_step')}
           </Text>
         </View>
         <View style={styles.headerRight}>
-          <Text style={[styles.currentValueBadge, currentStep !== 2.5 && styles.currentValueBadgeActive]}>
+          <Text style={[
+            styles.currentValueBadge,
+            { color: colors.textMuted, backgroundColor: colors.card, borderColor: colors.border },
+            currentStep !== 2.5 && { color: colors.primary, backgroundColor: 'rgba(79, 172, 254, 0.15)', borderColor: colors.primary, fontWeight: 'bold' }
+          ]}>
             ±{currentStep} {weightUnit}
           </Text>
-          <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={Theme.colors.primary} />
+          <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primary} />
         </View>
       </TouchableOpacity>
 
       {isExpanded && (
         <View style={styles.content}>
-          <Text style={styles.sectionDesc}>
+          <Text style={[styles.sectionDesc, { color: colors.textMuted }]}>
             {t('ui.exercise_detail.weight_step_desc')}
           </Text>
 
-          <Text style={styles.subLabel}>
+          <Text style={[styles.subLabel, { color: colors.textMuted }]}>
             {t('ui.exercise_detail.weight_step_preset_label')}
           </Text>
           <View style={styles.chipList}>
@@ -91,11 +96,19 @@ export const WeightStepManagement: React.FC<WeightStepManagementProps> = ({
               return (
                 <TouchableOpacity
                   key={step}
-                  style={[styles.choiceChip, isActive && styles.choiceChipActive]}
+                  style={[
+                    styles.choiceChip,
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                    isActive && [styles.choiceChipActive, { borderColor: colors.primary }]
+                  ]}
                   onPress={() => handleSelectStep(step)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.choiceChipText, isActive && styles.choiceChipTextActive]}>
+                  <Text style={[
+                    styles.choiceChipText,
+                    { color: colors.textMuted },
+                    isActive && { color: colors.primary, fontWeight: 'bold' }
+                  ]}>
                     ±{step} {weightUnit}
                   </Text>
                 </TouchableOpacity>
@@ -103,22 +116,22 @@ export const WeightStepManagement: React.FC<WeightStepManagementProps> = ({
             })}
           </View>
 
-          <Text style={[styles.subLabel, { marginTop: 14 }]}>
+          <Text style={[styles.subLabel, { color: colors.textMuted, marginTop: 14 }]}>
             {t('ui.exercise_detail.weight_step_custom_label')}
           </Text>
           <View style={styles.customRow}>
             <TextInput
-              style={styles.customInput}
+              style={[styles.customInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
               keyboardType="decimal-pad"
               placeholder={t('ui.exercise_detail.weight_step_custom_placeholder')}
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor={colors.textMuted}
               value={customVal}
               onChangeText={setCustomVal}
               returnKeyType="done"
               onSubmitEditing={handleApplyCustom}
             />
-            <Text style={styles.unitText}>{weightUnit}</Text>
-            <TouchableOpacity style={styles.applyBtn} onPress={handleApplyCustom} activeOpacity={0.7}>
+            <Text style={[styles.unitText, { color: colors.text }]}>{weightUnit}</Text>
+            <TouchableOpacity style={[styles.applyBtn, { backgroundColor: colors.primary }]} onPress={handleApplyCustom} activeOpacity={0.7}>
               <Text style={styles.applyBtnText}>{t('ui.exercise_detail.weight_step_apply')}</Text>
             </TouchableOpacity>
           </View>
@@ -130,14 +143,14 @@ export const WeightStepManagement: React.FC<WeightStepManagementProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    padding: Theme.spacing.lg,
+    padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
   },
   headerToggle: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: 44,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -154,35 +167,26 @@ const styles = StyleSheet.create({
   toggleText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Theme.colors.primary,
     flexShrink: 1,
   },
   currentValueBadge: {
     fontSize: 13,
-    color: Theme.colors.textMuted,
-    backgroundColor: '#1f1f1f',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 8,
+    borderWidth: 1,
     overflow: 'hidden',
-  },
-  currentValueBadgeActive: {
-    color: Theme.colors.primary,
-    backgroundColor: 'rgba(79, 172, 254, 0.15)',
-    fontWeight: 'bold',
   },
   content: {
     marginTop: 12,
   },
   sectionDesc: {
     fontSize: 13,
-    color: Theme.colors.textMuted,
     marginBottom: 12,
     lineHeight: 18,
   },
   subLabel: {
     fontSize: 12,
-    color: Theme.colors.textMuted,
     fontWeight: '600',
     marginBottom: 8,
   },
@@ -194,23 +198,17 @@ const styles = StyleSheet.create({
   choiceChip: {
     paddingHorizontal: 12,
     paddingVertical: 8,
+    minHeight: 38,
+    justifyContent: 'center',
     borderRadius: 16,
-    backgroundColor: '#1a1a1a',
     borderWidth: 1,
-    borderColor: '#333',
   },
   choiceChipActive: {
     backgroundColor: 'rgba(79, 172, 254, 0.2)',
-    borderColor: Theme.colors.primary,
   },
   choiceChipText: {
-    color: Theme.colors.textMuted,
     fontSize: 13,
     fontWeight: '500',
-  },
-  choiceChipTextActive: {
-    color: Theme.colors.primary,
-    fontWeight: 'bold',
   },
   customRow: {
     flexDirection: 'row',
@@ -219,24 +217,19 @@ const styles = StyleSheet.create({
   },
   customInput: {
     flex: 1,
-    minHeight: 40,
-    backgroundColor: '#1a1a1a',
-    color: Theme.colors.text,
+    minHeight: 44,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#333',
   },
   unitText: {
-    color: Theme.colors.text,
     fontSize: 14,
     fontWeight: '600',
   },
   applyBtn: {
-    minHeight: 40,
-    backgroundColor: Theme.colors.primary,
+    minHeight: 44,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
@@ -244,7 +237,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   applyBtnText: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: 'bold',
     fontSize: 14,
   },

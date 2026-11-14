@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.37',
+  version: '2.3.39',
   title: {
-    ja: '✨ 共通モーダル・ナビゲーションのUI/UX改善',
-    en: '✨ Shared Modals & Navigation UI/UX Improvements',
+    ja: '📐 ルーティン作成でのスタンス設定に対応',
+    en: '📐 Stance Selection in Routine Builder',
   },
   notes: {
     ja: [
-      '各種確認モーダル、カレンダー、お知らせ・共有シートなどの共通UIをダーク／ピュアブラックテーマに完全対応し、角丸・枠線・ボタンの押しやすさを統一しました。',
+      'ルーティン作成・編集画面で、セットごとにスタンス（ナロー・ワイド・カスタム等）を設定できるようになりました。',
+      '種目に設定されたデフォルトスタンスの自動反映や、セット追加時の引き継ぎにも対応しています。',
     ],
     en: [
-      'Updated shared modals, calendar, update/share sheets, and root navigation to fully support Dark and Pure Black themes with unified spacing, borders, and larger tap targets.',
+      'You can now set a stance (Narrow, Wide, Custom, etc.) for each set in the routine builder and editor.',
+      'Default stances from exercises are automatically applied, and newly added sets inherit the previous set\'s stance.',
     ],
   },
 };

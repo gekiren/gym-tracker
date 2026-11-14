@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { translateExercise } from '../../src/i18n';
 
 interface AchievementsSectionProps {
@@ -34,29 +34,31 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
   onAskAICoach,
   t,
 }) => {
+  const { colors } = useAppTheme();
+
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{t('ui.workout_completion.subtitle')}</Text>
+      <Text style={[styles.sectionTitle, { color: colors.primary }]}>{t('ui.workout_completion.subtitle')}</Text>
       
       <View style={styles.achievementGrid}>
         {/* P-Points Earned Card removed as per user request */}
 
         {/* Weekly Workout Count Card */}
-        <View style={styles.achievementCard}>
+        <View style={[styles.achievementCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={[styles.cardIconCircle, { backgroundColor: 'rgba(255, 87, 34, 0.15)' }]}>
             <Ionicons name="flame" size={24} color="#ff5722" />
           </View>
-          <Text style={styles.cardValue}>
+          <Text style={[styles.cardValue, { color: colors.text }]}>
             {t('ui.workout_completion.weekly_workout_count', { count: achievements.weeklyWorkoutCount })}
           </Text>
         </View>
 
         {/* Streak Weeks Card */}
-        <View style={styles.achievementCard}>
+        <View style={[styles.achievementCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={[styles.cardIconCircle, { backgroundColor: 'rgba(79, 172, 254, 0.15)' }]}>
-            <Ionicons name="calendar" size={24} color={Theme.colors.primary} />
+            <Ionicons name="calendar" size={24} color={colors.primary} />
           </View>
-          <Text style={styles.cardValue}>
+          <Text style={[styles.cardValue, { color: colors.text }]}>
             {t('ui.workout_completion.streak_weeks', { count: achievements.streakWeeks })}
           </Text>
         </View>
@@ -64,7 +66,7 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
 
       {/* 1RM Record Card */}
       {achievements.is1RMUpdated && (
-        <View style={[styles.achievementCardLong, { borderColor: '#ffd700', borderWidth: 1 }]}>
+        <View style={[styles.achievementCardLong, { backgroundColor: colors.card, borderColor: '#ffd700', borderWidth: 1 }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
             <Ionicons name="star" size={20} color="#ffd700" style={{ marginRight: 8 }} />
             <Text style={[styles.longCardHeader, { color: '#ffd700' }]}>
@@ -73,8 +75,8 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
           </View>
           {achievements.updated1RMs.map((item, idx) => (
             <View key={idx} style={styles.recordDetailRow}>
-              <Text style={styles.recordDetailName}>{translateExercise(item.name)}</Text>
-              <Text style={styles.recordDetailValue}>
+              <Text style={[styles.recordDetailName, { color: colors.text }]}>{translateExercise(item.name)}</Text>
+              <Text style={[styles.recordDetailValue, { color: colors.textMuted }]}>
                 {item.oldVal}{settings.weightUnit} → <Text style={{ color: '#ffd700', fontWeight: 'bold' }}>{item.newVal}{settings.weightUnit}</Text>
               </Text>
             </View>
@@ -84,18 +86,18 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
 
       {/* Volume Record Card */}
       {achievements.isVolumeUpdated && (
-        <View style={[styles.achievementCardLong, { borderColor: Theme.colors.success, borderWidth: 1 }]}>
+        <View style={[styles.achievementCardLong, { backgroundColor: colors.card, borderColor: colors.success, borderWidth: 1 }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-            <Ionicons name="trending-up" size={20} color={Theme.colors.success} style={{ marginRight: 8 }} />
-            <Text style={[styles.longCardHeader, { color: Theme.colors.success }]}>
+            <Ionicons name="trending-up" size={20} color={colors.success} style={{ marginRight: 8 }} />
+            <Text style={[styles.longCardHeader, { color: colors.success }]}>
               {t('ui.workout_completion.volume_updated')}
             </Text>
           </View>
           {achievements.updatedVolumes.map((item, idx) => (
             <View key={idx} style={styles.recordDetailRow}>
-              <Text style={styles.recordDetailName}>{translateExercise(item.name)}</Text>
-              <Text style={styles.recordDetailValue}>
-                {item.oldVal}{settings.weightUnit} → <Text style={{ color: Theme.colors.success, fontWeight: 'bold' }}>{item.newVal}{settings.weightUnit}</Text>
+              <Text style={[styles.recordDetailName, { color: colors.text }]}>{translateExercise(item.name)}</Text>
+              <Text style={[styles.recordDetailValue, { color: colors.textMuted }]}>
+                {item.oldVal}{settings.weightUnit} → <Text style={{ color: colors.success, fontWeight: 'bold' }}>{item.newVal}{settings.weightUnit}</Text>
               </Text>
             </View>
           ))}
@@ -104,21 +106,25 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
 
       {/* Encouraging message if no PRs */}
       {!achievements.is1RMUpdated && !achievements.isVolumeUpdated && (
-        <View style={styles.encouragingCard}>
+        <View style={[styles.encouragingCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.encouragingHeader}>
-            <Ionicons name="sparkles-outline" size={22} color={Theme.colors.primary} />
+            <Ionicons name="sparkles-outline" size={22} color={colors.primary} />
             {!aiComment && !loadingAI && (
-              <TouchableOpacity style={styles.aiAskButton} onPress={onAskAICoach}>
-                <Text style={styles.aiAskButtonText}>
+              <TouchableOpacity
+                style={styles.aiAskButton}
+                onPress={onAskAICoach}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              >
+                <Text style={[styles.aiAskButtonText, { color: colors.primary }]}>
                   {t('ui.workout_completion.ask_ai_coach', { balance: settings.aiTokensBalance, max: maxTokens })}
                 </Text>
               </TouchableOpacity>
             )}
             {loadingAI && (
-              <ActivityIndicator size="small" color={Theme.colors.primary} style={{ marginLeft: 8 }} />
+              <ActivityIndicator size="small" color={colors.primary} style={{ marginLeft: 8 }} />
             )}
           </View>
-          <Text style={styles.encouragingText}>
+          <Text style={[styles.encouragingText, { color: colors.textMuted }]}>
             {aiComment ?? t('ui.workout_completion.no_achievements')}
           </Text>
         </View>
@@ -129,28 +135,25 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: Theme.spacing.xl,
+    marginBottom: 32,
   },
   sectionTitle: {
-    color: Theme.colors.primary,
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: Theme.spacing.md,
+    marginBottom: 16,
     letterSpacing: 0.5,
   },
   achievementGrid: {
     flexDirection: 'row',
-    gap: Theme.spacing.md,
-    marginBottom: Theme.spacing.md,
+    gap: 16,
+    marginBottom: 16,
   },
   achievementCard: {
     flex: 1,
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.md,
+    borderRadius: 16,
+    padding: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Theme.colors.border,
   },
   cardIconCircle: {
     width: 48,
@@ -163,14 +166,12 @@ const styles = StyleSheet.create({
   cardValue: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#fff',
     textAlign: 'center',
   },
   achievementCardLong: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.md,
-    marginBottom: Theme.spacing.md,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
   },
   longCardHeader: {
     fontSize: 16,
@@ -184,24 +185,20 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   recordDetailName: {
-    color: '#fff',
     fontSize: 14,
     fontWeight: '500',
     flex: 1.2,
   },
   recordDetailValue: {
-    color: Theme.colors.textMuted,
     fontSize: 14,
     flex: 1,
     textAlign: 'right',
   },
   encouragingCard: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Theme.colors.border,
   },
   encouragingHeader: {
     flexDirection: 'row',
@@ -211,17 +208,17 @@ const styles = StyleSheet.create({
   aiAskButton: {
     backgroundColor: 'rgba(79, 172, 254, 0.15)',
     borderRadius: 12,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     marginLeft: 8,
   },
   aiAskButtonText: {
-    color: Theme.colors.primary,
     fontSize: 12,
     fontWeight: '600',
   },
   encouragingText: {
-    color: Theme.colors.textMuted,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,

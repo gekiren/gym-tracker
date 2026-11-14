@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Theme } from '../src/theme';
+import { useAppTheme } from '../src/theme';
 import { ShareCardView } from '../components/active-workout/ShareCardView';
 import { AchievementsSection } from '../components/workout-completion/AchievementsSection';
 import { WorkoutDetailsList } from '../components/workout-completion/WorkoutDetailsList';
@@ -19,6 +19,7 @@ try {
 
 export default function WorkoutCompletionScreen() {
   const insets = useSafeAreaInsets();
+  const { colors } = useAppTheme();
   const {
     t,
     completionData,
@@ -53,7 +54,7 @@ export default function WorkoutCompletionScreen() {
       : null;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Top Header / Congratulations & Meta Stats */}
         <CompletionHeader
@@ -81,13 +82,13 @@ export default function WorkoutCompletionScreen() {
         <View style={{ height: 40 }} />
 
         {/* SNS Share Button */}
-        <TouchableOpacity style={styles.shareButton} onPress={handleShareButtonPress}>
-          <Ionicons name="share-social-outline" size={20} color={Theme.colors.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.shareButtonText}>{t('ui.common.share_sns')}</Text>
+        <TouchableOpacity style={[styles.shareButton, { backgroundColor: colors.card, borderColor: colors.primary }]} onPress={handleShareButtonPress}>
+          <Ionicons name="share-social-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+          <Text style={[styles.shareButtonText, { color: colors.primary }]}>{t('ui.common.share_sns')}</Text>
         </TouchableOpacity>
 
         {/* Done Button */}
-        <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
+        <TouchableOpacity style={[styles.doneButton, { backgroundColor: colors.primary }]} onPress={handleDone}>
           <Text style={styles.doneButtonText}>{t('ui.workout_completion.done_btn')}</Text>
         </TouchableOpacity>
 
@@ -97,9 +98,9 @@ export default function WorkoutCompletionScreen() {
       {/* Share Loading Overlay */}
       {isSharing && (
         <View style={styles.loadingOverlay}>
-          <View style={styles.loadingContent}>
-            <ActivityIndicator size="large" color={Theme.colors.primary} />
-            <Text style={styles.loadingText}>{t('ui.share_modal.generating')}</Text>
+          <View style={[styles.loadingContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.text }]}>{t('ui.share_modal.generating')}</Text>
           </View>
         </View>
       )}
@@ -131,36 +132,33 @@ export default function WorkoutCompletionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Theme.colors.background,
   },
   scrollContent: {
-    padding: Theme.spacing.md,
+    padding: 16,
   },
   shareButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Theme.colors.card,
     borderWidth: 1,
-    borderColor: Theme.colors.primary,
+    minHeight: 48,
     paddingVertical: 12,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     marginBottom: 12,
   },
   shareButtonText: {
-    color: Theme.colors.primary,
     fontSize: 16,
     fontWeight: 'bold',
   },
   doneButton: {
-    backgroundColor: Theme.colors.primary,
+    minHeight: 48,
     paddingVertical: 14,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   doneButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -172,14 +170,13 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   loadingContent: {
-    backgroundColor: Theme.colors.card,
     padding: 24,
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: 16,
+    borderWidth: 1,
     alignItems: 'center',
     gap: 12,
   },
   loadingText: {
-    color: '#fff',
     fontSize: 15,
   },
   hiddenCaptureView: {

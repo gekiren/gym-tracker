@@ -28,7 +28,7 @@ export interface RoutineDraftState {
     exercises: DraftExercise[];
   };
   updateDraftTitle: (title: string) => void;
-  addDraftExercise: (exercise: { id: number; name: string; is_unilateral?: number; equipment?: string }) => void;
+  addDraftExercise: (exercise: { id: number; name: string; is_unilateral?: number; equipment?: string; default_stance?: string | null; default_variation?: string | null }) => void;
   removeDraftExercise: (index: number) => void;
   addDraftSet: (exerciseIndex: number) => void;
   removeDraftSet: (exerciseIndex: number, setIndex: number) => void;
@@ -43,6 +43,7 @@ export const useRoutineDraftStore = create<RoutineDraftState>((set) => ({
     draftRoutine: { ...state.draftRoutine, title }
   })),
   addDraftExercise: (exercise) => set((state) => {
+    const initialStance = exercise.default_stance || exercise.default_variation || null;
     const defaultSet: DraftExerciseSet = {
       id: Math.random().toString(36).substring(7),
       set_number: 1,
@@ -51,7 +52,9 @@ export const useRoutineDraftStore = create<RoutineDraftState>((set) => ({
       rpe: null,
       speed: null,
       incline: null,
-      work_seconds: null
+      work_seconds: null,
+      stance: initialStance,
+      variation: initialStance
     };
     const enrichedExercise: DraftExercise = {
       id: exercise.id,
@@ -83,7 +86,9 @@ export const useRoutineDraftStore = create<RoutineDraftState>((set) => ({
           rpe: lastSet ? lastSet.rpe : null,
           speed: lastSet ? (lastSet.speed ?? null) : null,
           incline: lastSet ? (lastSet.incline ?? null) : null,
-          work_seconds: lastSet ? (lastSet.work_seconds ?? null) : null
+          work_seconds: lastSet ? (lastSet.work_seconds ?? null) : null,
+          stance: lastSet ? (lastSet.stance ?? null) : null,
+          variation: lastSet ? (lastSet.variation ?? null) : null
         };
         return { ...ex, sets: [...ex.sets, newSet] };
       }

@@ -1,16 +1,16 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Modal } from 'react-native';
 import { useState, useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../src/theme';
+import { useAppTheme } from '../src/theme';
 import { useTranslation } from 'react-i18next';
-import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore } from '../src/store/settingsStore';
 import SwipeableNumericInput from '../components/SwipeableNumericInput';
 import { saveSetting, getSettings } from '../src/db/database';
 
 export default function RMCalculatorScreen() {
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
   const settings = useSettingsStore(state => state.settings);
   const [weight, setWeight] = useState('60');
   const [reps, setReps] = useState('10');
@@ -116,27 +116,27 @@ export default function RMCalculatorScreen() {
   const estimated1RM = isValid && rmList.length > 0 ? rmList[0].weight : 0;
 
   return (
-    <View style={styles.container}>
-      <Stack.Screen options={{ title: t('ui.rm_calc.title'), headerStyle: { backgroundColor: Theme.colors.background }, headerTintColor: Theme.colors.primary }} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Stack.Screen options={{ title: t('ui.rm_calc.title'), headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.primary }} />
         
-        <View style={styles.inputSection}>
+        <View style={[styles.inputSection, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
             <View style={styles.headerRow}>
-              <Text style={styles.subtitle}>{t('ui.rm_calc.subtitle')}</Text>
+              <Text style={[styles.subtitle, { color: colors.textMuted }]}>{t('ui.rm_calc.subtitle')}</Text>
               
               <View style={styles.headerControls}>
                 {/* 公式切り替えタブ */}
-                <View style={styles.formulaTabGroup}>
+                <View style={[styles.formulaTabGroup, { backgroundColor: colors.background, borderColor: colors.border }]}>
                   <TouchableOpacity
-                    style={[styles.formulaTab, formula === 'epley' && styles.formulaTabActive]}
+                    style={[styles.formulaTab, formula === 'epley' && { backgroundColor: colors.primary }]}
                     onPress={() => setFormula('epley')}
                   >
-                    <Text style={[styles.formulaTabText, formula === 'epley' && styles.formulaTabTextActive]}>Epley</Text>
+                    <Text style={[styles.formulaTabText, { color: colors.textMuted }, formula === 'epley' && styles.formulaTabTextActive]}>Epley</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.formulaTab, formula === 'brzycki' && styles.formulaTabActive]}
+                    style={[styles.formulaTab, formula === 'brzycki' && { backgroundColor: colors.primary }]}
                     onPress={() => setFormula('brzycki')}
                   >
-                    <Text style={[styles.formulaTabText, formula === 'brzycki' && styles.formulaTabTextActive]}>Brzycki</Text>
+                    <Text style={[styles.formulaTabText, { color: colors.textMuted }, formula === 'brzycki' && styles.formulaTabTextActive]}>Brzycki</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -147,7 +147,7 @@ export default function RMCalculatorScreen() {
                   activeOpacity={0.7}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Ionicons name="help-circle-outline" size={24} color={Theme.colors.primary} />
+                  <Ionicons name="help-circle-outline" size={24} color={colors.primary} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -175,16 +175,16 @@ export default function RMCalculatorScreen() {
             </View>
 
             {/* Helper Text explaining both Tap and Swipe actions */}
-            <Text style={{ color: Theme.colors.textMuted, fontSize: 11, textAlign: 'center', marginTop: -8, marginBottom: Theme.spacing.md, fontStyle: 'italic' }}>
+            <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center', marginTop: -8, marginBottom: 16, fontStyle: 'italic' }}>
                 💡 {t('ui.rm_calc.interaction_hint')} (公式: {formula === 'epley' ? 'Epley式 [1RM = W × (1 + R/30)]' : 'Brzycki式 [1RM = W × 36/(37-R)]'})
             </Text>
 
             {isValid && (
                 <View style={styles.resultBanner}>
-                    <Text style={styles.resultLabel}>{t('ui.rm_calc.estimated_1rm')} ({formula.toUpperCase()})</Text>
+                    <Text style={[styles.resultLabel, { color: colors.primary }]}>{t('ui.rm_calc.estimated_1rm')} ({formula.toUpperCase()})</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-                        <Text style={styles.resultValue}>{Math.round(estimated1RM)}</Text>
-                        <Text style={styles.resultUnit}>{settings.weightUnit}</Text>
+                        <Text style={[styles.resultValue, { color: colors.text }]}>{Math.round(estimated1RM)}</Text>
+                        <Text style={[styles.resultUnit, { color: colors.textMuted }]}>{settings.weightUnit}</Text>
                     </View>
                 </View>
             )}
@@ -196,19 +196,19 @@ export default function RMCalculatorScreen() {
           keyboardShouldPersistTaps="handled"
         >
             {isValid ? (
-                <View style={styles.tableCard}>
-                    <View style={styles.tableHeader}>
-                        <Text style={[styles.th, { width: 45 }]}>RM</Text>
-                        <Text style={[styles.th, { flex: 1 }]}>{t('ui.rm_calc.estimated_weight')}</Text>
-                        <Text style={[styles.th, { width: 60 }]}>{t('ui.rm_calc.ratio_1rm')}</Text>
-                        <Text style={[styles.th, { width: 75, textAlign: 'right' }]}>目的に適合</Text>
+                <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <View style={[styles.tableHeader, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+                        <Text style={[styles.th, { width: 45, color: colors.textMuted }]}>RM</Text>
+                        <Text style={[styles.th, { flex: 1, color: colors.textMuted }]}>{t('ui.rm_calc.estimated_weight')}</Text>
+                        <Text style={[styles.th, { width: 60, color: colors.textMuted }]}>{t('ui.rm_calc.ratio_1rm')}</Text>
+                        <Text style={[styles.th, { width: 80, textAlign: 'right', color: colors.textMuted }]}>目的に適合</Text>
                     </View>
                     
                     {rmList.map((item) => (
-                        <View key={item.rep} style={[styles.tableRow, item.rep === rNum && styles.highlightRow]}>
-                            <Text style={styles.tdRep}>{item.rep}</Text>
-                            <Text style={styles.tdWeight}>{item.weight} {settings.weightUnit}</Text>
-                            <Text style={styles.tdPercent}>{item.percent}%</Text>
+                        <View key={item.rep} style={[styles.tableRow, { borderBottomColor: colors.border }, item.rep === rNum && styles.highlightRow]}>
+                            <Text style={[styles.tdRep, { color: colors.primary }]}>{item.rep}</Text>
+                            <Text style={[styles.tdWeight, { color: colors.text }]}>{item.weight} {settings.weightUnit}</Text>
+                            <Text style={[styles.tdPercent, { color: colors.textMuted }]}>{item.percent}%</Text>
                             <View style={[styles.zoneBadge, { backgroundColor: item.zone.bg }]}>
                               <Text style={[styles.zoneText, { color: item.zone.color }]}>{item.zone.label}</Text>
                             </View>
@@ -217,7 +217,7 @@ export default function RMCalculatorScreen() {
                 </View>
             ) : (
                 <View style={styles.emptyState}>
-                    <Text style={styles.emptyText}>{t('ui.rm_calc.invalid_input')}</Text>
+                    <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t('ui.rm_calc.invalid_input')}</Text>
                 </View>
             )}
         </ScrollView>
@@ -229,105 +229,105 @@ export default function RMCalculatorScreen() {
           animationType="fade"
           onRequestClose={() => setIsHelpModalVisible(false)}
         >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>💡 1RM計算と公式の解説</Text>
-                <TouchableOpacity onPress={() => setIsHelpModalVisible(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+          <Pressable style={styles.modalOverlay} onPress={() => setIsHelpModalVisible(false)}>
+            <Pressable
+              style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>💡 1RM計算と公式の解説</Text>
+                <TouchableOpacity onPress={() => setIsHelpModalVisible(false)} style={styles.modalHeaderCloseBtn}>
+                  <Ionicons name="close" size={24} color={colors.textMuted} />
                 </TouchableOpacity>
               </View>
 
               <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                <Text style={styles.modalSectionTitle}>🏋️‍♂️ 1RM (1 Rep Maximum) とは？</Text>
-                <Text style={styles.modalText}>
+                <Text style={[styles.modalSectionTitle, { color: colors.primary }]}>🏋️‍♂️ 1RM (1 Rep Maximum) とは？</Text>
+                <Text style={[styles.modalText, { color: colors.textMuted }]}>
                   「1回だけ正しく挙げることができる限界の最大重量」のことです。筋トレの強度設定や成長の指標として使われます。
                 </Text>
 
-                <View style={styles.modalDivider} />
+                <View style={[styles.modalDivider, { backgroundColor: colors.border }]} />
 
-                <Text style={styles.modalSectionTitle}>⚡ Epley（エプリー）式</Text>
-                <Text style={styles.modalFormulaText}>公式: 1RM = 重量 × (1 + 回数 / 30)</Text>
-                <Text style={styles.modalText}>
+                <Text style={[styles.modalSectionTitle, { color: colors.primary }]}>⚡ Epley（エプリー）式</Text>
+                <Text style={[styles.modalFormulaText, { backgroundColor: colors.background }]}>公式: 1RM = 重量 × (1 + 回数 / 30)</Text>
+                <Text style={[styles.modalText, { color: colors.textMuted }]}>
                   ・1〜8回程度の低〜中レップ数で特に高い精度を発揮します。{"\n"}
                   ・世界中で最も広く使われている定番の推算式です。{"\n"}
                   ・やや積極的（高め）な数値が算出される傾向があります。
                 </Text>
 
-                <View style={styles.modalDivider} />
+                <View style={[styles.modalDivider, { backgroundColor: colors.border }]} />
 
-                <Text style={styles.modalSectionTitle}>🛡️ Brzycki（ブリジッキ）式</Text>
-                <Text style={styles.modalFormulaText}>公式: 1RM = 重量 × 36 / (37 - 回数)</Text>
-                <Text style={styles.modalText}>
+                <Text style={[styles.modalSectionTitle, { color: colors.primary }]}>🛡️ Brzycki（ブリジッキ）式</Text>
+                <Text style={[styles.modalFormulaText, { backgroundColor: colors.background }]}>公式: 1RM = 重量 × 36 / (37 - 回数)</Text>
+                <Text style={[styles.modalText, { color: colors.textMuted }]}>
                   ・5〜10回程度の中〜高レップ数からの推定に適しています。{"\n"}
                   ・Epley式に比べて高回数での数値が過大評価されにくく、保守的（控えめ・安全）な推測値を出します。
                 </Text>
 
-                <View style={styles.modalDivider} />
+                <View style={[styles.modalDivider, { backgroundColor: colors.border }]} />
 
-                <Text style={styles.modalSectionTitle}>🎯 どちらを選ぶべき？</Text>
-                <Text style={styles.modalText}>
+                <Text style={[styles.modalSectionTitle, { color: colors.primary }]}>🎯 どちらを選ぶべき？</Text>
+                <Text style={[styles.modalText, { color: colors.textMuted }]}>
                   基本的にはデフォルトの「Epley式」で問題ありません。高回数のセットから安全に目標設定を行いたい場合は「Brzycki式」に切り替えるのがおすすめです。
                 </Text>
               </ScrollView>
 
               <TouchableOpacity
-                style={styles.modalCloseButton}
+                style={[styles.modalCloseButton, { backgroundColor: colors.primary }]}
                 onPress={() => setIsHelpModalVisible(false)}
               >
                 <Text style={styles.modalCloseButtonText}>閉じる</Text>
               </TouchableOpacity>
-            </View>
-          </View>
+            </Pressable>
+          </Pressable>
         </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
-  inputSection: { padding: Theme.spacing.lg, backgroundColor: Theme.colors.card, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacing.md },
-  subtitle: { flex: 1, color: Theme.colors.textMuted, fontSize: 12, lineHeight: 17, marginRight: 8 },
-  headerControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  helpButton: { padding: 2 },
-  formulaTabGroup: { flexDirection: 'row', backgroundColor: '#1A1A1A', borderRadius: 8, padding: 2, borderWidth: 1, borderColor: Theme.colors.border },
-  formulaTab: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  formulaTabActive: { backgroundColor: Theme.colors.primary },
-  formulaTabText: { color: Theme.colors.textMuted, fontSize: 11, fontWeight: '600' },
+  container: { flex: 1 },
+  inputSection: { padding: 20, borderBottomWidth: 1 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  subtitle: { flex: 1, fontSize: 12, lineHeight: 17, marginRight: 8 },
+  headerControls: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  helpButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginRight: -8 },
+  formulaTabGroup: { flexDirection: 'row', borderRadius: 8, padding: 2, borderWidth: 1 },
+  formulaTab: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 },
+  formulaTabText: { fontSize: 12, fontWeight: '600' },
   formulaTabTextActive: { color: '#000', fontWeight: '700' },
-  inputRow: { flexDirection: 'row', gap: 16, marginBottom: Theme.spacing.lg },
-  inputGroup: { flex: 1 },
-  label: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: 'bold', marginBottom: 6 },
-  input: { backgroundColor: '#1A1A1A', color: Theme.colors.text, fontSize: 24, fontWeight: 'bold', textAlign: 'center', paddingVertical: 12, borderRadius: Theme.borderRadius.md, borderWidth: 1, borderColor: Theme.colors.border },
-  resultBanner: { backgroundColor: 'rgba(79, 172, 254, 0.1)', padding: 16, borderRadius: Theme.borderRadius.md, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.3)' },
-  resultLabel: { color: Theme.colors.primary, fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
-  resultValue: { color: Theme.colors.text, fontSize: 36, fontWeight: '900' },
-  resultUnit: { color: Theme.colors.textMuted, fontSize: 16, fontWeight: 'bold', marginLeft: 4 },
-  listSection: { padding: Theme.spacing.lg, paddingBottom: 60 },
-  tableCard: { backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, borderWidth: 1, borderColor: Theme.colors.border, overflow: 'hidden' },
-  tableHeader: { flexDirection: 'row', backgroundColor: '#1A1A1A', paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  th: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: 'bold' },
-  tableRow: { flexDirection: 'row', paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: Theme.colors.border, alignItems: 'center' },
+  inputRow: { flexDirection: 'row', gap: 16, marginBottom: 20 },
+  resultBanner: { backgroundColor: 'rgba(79, 172, 254, 0.1)', padding: 16, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.3)' },
+  resultLabel: { fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
+  resultValue: { fontSize: 36, fontWeight: '900' },
+  resultUnit: { fontSize: 16, fontWeight: 'bold', marginLeft: 4 },
+  listSection: { padding: 20, paddingBottom: 60 },
+  tableCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
+  tableHeader: { flexDirection: 'row', paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 1 },
+  th: { fontSize: 13, fontWeight: 'bold' },
+  tableRow: { flexDirection: 'row', paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 1, alignItems: 'center' },
   highlightRow: { backgroundColor: 'rgba(79, 172, 254, 0.05)' },
-  tdRep: { width: 45, color: Theme.colors.primary, fontSize: 16, fontWeight: 'bold' },
-  tdWeight: { flex: 1, color: Theme.colors.text, fontSize: 16, fontWeight: '600' },
-  tdPercent: { width: 60, color: Theme.colors.textMuted, fontSize: 14 },
-  zoneBadge: { width: 75, paddingVertical: 3, paddingHorizontal: 6, borderRadius: 6, alignItems: 'center' },
-  zoneText: { fontSize: 10, fontWeight: '700' },
+  tdRep: { width: 45, fontSize: 16, fontWeight: 'bold' },
+  tdWeight: { flex: 1, fontSize: 16, fontWeight: '600' },
+  tdPercent: { width: 60, fontSize: 14 },
+  zoneBadge: { width: 80, paddingVertical: 4, paddingHorizontal: 6, borderRadius: 6, alignItems: 'center' },
+  zoneText: { fontSize: 12, fontWeight: '700' },
   emptyState: { alignItems: 'center', padding: 32 },
-  emptyText: { color: Theme.colors.textMuted, fontSize: 14 },
+  emptyText: { fontSize: 14 },
 
   // モーダル用スタイル
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.75)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  modalContent: { width: '100%', maxHeight: '82%', backgroundColor: Theme.colors.card, borderRadius: 16, borderWidth: 1, borderColor: Theme.colors.border, padding: 20 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  modalTitle: { color: Theme.colors.text, fontSize: 16, fontWeight: 'bold' },
+  modalContent: { width: '100%', maxWidth: 420, maxHeight: '82%', borderRadius: 16, borderWidth: 1, padding: 20 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingBottom: 12, borderBottomWidth: 1 },
+  modalHeaderCloseBtn: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginRight: -8 },
+  modalTitle: { fontSize: 16, fontWeight: 'bold' },
   modalBody: { marginBottom: 16 },
-  modalSectionTitle: { color: Theme.colors.primary, fontSize: 14, fontWeight: 'bold', marginBottom: 6 },
-  modalFormulaText: { color: '#38ef7d', fontSize: 12, fontWeight: '600', backgroundColor: '#1A1A1A', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, marginVertical: 6, alignSelf: 'flex-start' },
-  modalText: { color: Theme.colors.textMuted, fontSize: 13, lineHeight: 19 },
-  modalDivider: { height: 1, backgroundColor: Theme.colors.border, marginVertical: 14 },
-  modalCloseButton: { backgroundColor: Theme.colors.primary, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
+  modalSectionTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 6 },
+  modalFormulaText: { color: '#38ef7d', fontSize: 12, fontWeight: '600', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, marginVertical: 6, alignSelf: 'flex-start', overflow: 'hidden' },
+  modalText: { fontSize: 13, lineHeight: 19 },
+  modalDivider: { height: 1, marginVertical: 14 },
+  modalCloseButton: { minHeight: 48, paddingVertical: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   modalCloseButtonText: { color: '#000', fontWeight: 'bold', fontSize: 15 }
 });
