@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.35',
+  version: '2.3.36',
   title: {
-    ja: '✨ トレーニング中画面の操作性・デザイン改善',
-    en: '✨ Active Workout UI & Usability Improvements',
+    ja: '✨ トレーニング中画面のUI・スタンス操作整理',
+    en: '✨ Active Workout UI & Stance Cleanup',
   },
   notes: {
     ja: [
-      'トレーニング中の種目カードや各種モーダル（プレート計算・スタンス選択・確認ダイアログ等）を統一デザインへ刷新し、背景テーマへの即時追従に対応しました。',
-      '入力欄のスリムな操作性を保ったまま、ヘッダーアイコンやチェックボタン等のタップ領域を広げ、誤タップしにくく改善しました。',
+      'トレーニング中の種目カードからデフォルトスタンス設定ボタンを削除し、画面をすっきり整理しました（初期スタンスは種目詳細画面から設定でき、各セット個別の変更は引き続き可能です）。',
     ],
     en: [
-      'Unified the design and instant dark/pure-black theme support across active workout cards, timers, and modals (Plate Calculator, Stance Picker, Confirmation Dialog).',
-      'Expanded touch targets for header icons, check buttons, and modal controls while preserving the compact set input layout.',
+      'Removed the exercise-level default stance button from active workout cards for a cleaner layout (default stance remains configurable in Exercise Details, and per-set changes are still supported).',
     ],
   },
 };
