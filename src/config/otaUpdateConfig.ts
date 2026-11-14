@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.34',
+  version: '2.3.35',
   title: {
-    ja: '✨ ワークアウトトップ画面のカード化と操作性改善',
-    en: '✨ Workout Home Card Redesign & Usability Improvements',
+    ja: '✨ トレーニング中画面の操作性・デザイン改善',
+    en: '✨ Active Workout UI & Usability Improvements',
   },
   notes: {
     ja: [
-      'ワークアウト画面のルーティン一覧をダッシュボードと統一されたカードデザインへ刷新し、背景テーマ切り替えにも即時追従するよう改善しました。',
-      '戻るボタンや「すべて見る」のタップ領域を広げ、ルーティン未登録時には作成画面へすぐ進める導線を追加しました。',
+      'トレーニング中の種目カードや各種モーダル（プレート計算・スタンス選択・確認ダイアログ等）を統一デザインへ刷新し、背景テーマへの即時追従に対応しました。',
+      '入力欄のスリムな操作性を保ったまま、ヘッダーアイコンやチェックボタン等のタップ領域を広げ、誤タップしにくく改善しました。',
     ],
     en: [
-      'Redesigned the workout screen\'s routine list into unified cards matching the dashboard with instant dark/pure-black theme support.',
-      'Expanded touch targets for navigation controls and added a quick "Create Routine" button when no routines exist.',
+      'Unified the design and instant dark/pure-black theme support across active workout cards, timers, and modals (Plate Calculator, Stance Picker, Confirmation Dialog).',
+      'Expanded touch targets for header icons, check buttons, and modal controls while preserving the compact set input layout.',
     ],
   },
 };
