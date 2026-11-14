@@ -390,15 +390,16 @@ export default function BuildRoutineScreen() {
                 {/* セットの一覧 */}
                 <View style={styles.setsContainer}>
                   <View style={styles.setsHeaderRow}>
-                    <Text style={[styles.setsHeaderTh, { width: 34, color: colors.textMuted }]}>{t('ui.build_routine.set_label')}</Text>
-                    <Text style={[styles.setsHeaderTh, { width: 82, color: colors.textMuted }]}>{t('ui.active_workout.stance_label')}</Text>
+                    <Text style={[styles.setsHeaderTh, { width: 28, color: colors.textMuted }]}>{t('ui.build_routine.set_label')}</Text>
+                    <Text style={[styles.setsHeaderTh, { width: 74, color: colors.textMuted }]}>{t('ui.active_workout.stance_label')}</Text>
                     <Text style={[styles.setsHeaderTh, { flex: 1, color: colors.textMuted }]}>
                       {isTreadmillExercise(ex.name) ? (t('ui.build_routine.speed_placeholder') || '速度 (km/h)') : t('ui.build_routine.weight_placeholder')}
                     </Text>
                     <Text style={[styles.setsHeaderTh, { flex: 1, color: colors.textMuted }]}>
                       {isTreadmillExercise(ex.name) ? (t('ui.build_routine.incline_placeholder') || '傾斜 (%)') : t('ui.build_routine.reps_placeholder')}
                     </Text>
-                    <Text style={[styles.setsHeaderTh, { width: 34 }]}></Text>
+                    <Text style={[styles.setsHeaderTh, { width: 48, color: colors.textMuted }]}>{t('ui.active_workout.header_rpe')}</Text>
+                    <Text style={[styles.setsHeaderTh, { width: 30 }]}></Text>
                   </View>
 
                   {ex.sets.map((set: any, setIdx: number) => (
@@ -545,10 +546,11 @@ const styles = StyleSheet.create({
   setsHeaderTh: { fontSize: 13, fontWeight: '600', textAlign: 'center' },
   setRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, paddingHorizontal: 4 },
   setNumberText: { fontSize: 14, fontWeight: '600' },
-  stanceBtn: { width: 82, minHeight: 38, marginHorizontal: 2, borderRadius: 8, borderWidth: 1, paddingHorizontal: 6, justifyContent: 'center', alignItems: 'center' },
+  stanceBtn: { width: 74, minHeight: 38, marginHorizontal: 2, borderRadius: 8, borderWidth: 1, paddingHorizontal: 4, justifyContent: 'center', alignItems: 'center' },
   stanceBtnText: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
-  setInput: { flex: 1, marginHorizontal: 3, borderRadius: 8, borderWidth: 1, minHeight: 38, paddingVertical: 6, paddingHorizontal: 6, textAlign: 'center', fontSize: 15 },
-  deleteSetBtn: { width: 34, height: 38, alignItems: 'center', justifyContent: 'center' },
+  setInput: { flex: 1, marginHorizontal: 2, borderRadius: 8, borderWidth: 1, minHeight: 38, paddingVertical: 6, paddingHorizontal: 4, textAlign: 'center', fontSize: 15 },
+  rpeInput: { width: 48, marginHorizontal: 2, borderRadius: 8, borderWidth: 1, minHeight: 38, paddingVertical: 6, paddingHorizontal: 4, textAlign: 'center', fontSize: 15 },
+  deleteSetBtn: { width: 30, height: 38, alignItems: 'center', justifyContent: 'center' },
   addSetRowBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 8, minHeight: 44, paddingVertical: 8 },
   addSetRowBtnText: { fontSize: 14, fontWeight: '600' },
   addExerciseBtn: { backgroundColor: 'rgba(79, 172, 254, 0.1)', minHeight: 48, paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginVertical: 24, borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.3)' },
@@ -591,10 +593,12 @@ function RoutineSetRow({ exIdx, setIdx, set, isTreadmill, updateDraftSet, remove
   const [localReps, setLocalReps] = useState(set.reps !== null ? String(set.reps) : '');
   const [localSpeed, setLocalSpeed] = useState(set.speed != null ? String(set.speed) : '');
   const [localIncline, setLocalIncline] = useState(set.incline != null ? String(set.incline) : '');
+  const [localRpe, setLocalRpe] = useState(set.rpe != null ? String(set.rpe) : '');
   const [isFocusedWeight, setIsFocusedWeight] = useState(false);
   const [isFocusedReps, setIsFocusedReps] = useState(false);
   const [isFocusedSpeed, setIsFocusedSpeed] = useState(false);
   const [isFocusedIncline, setIsFocusedIncline] = useState(false);
+  const [isFocusedRpe, setIsFocusedRpe] = useState(false);
 
   // 外部/親からの更新があった場合のみ同期
   useEffect(() => {
@@ -636,6 +640,16 @@ function RoutineSetRow({ exIdx, setIdx, set, isTreadmill, updateDraftSet, remove
     }
   }, [set.incline]);
 
+  useEffect(() => {
+    if (isFocusedRpe) return;
+    if (set.rpe != null) {
+      const currentLocalFloat = parseFloat(localRpe.replace(',', '.'));
+      if (currentLocalFloat !== set.rpe) setLocalRpe(String(set.rpe));
+    } else {
+      setLocalRpe('');
+    }
+  }, [set.rpe]);
+
   const handleWeightChange = (val: string) => {
     if (val === '' || /^\d{0,3}([.,]\d{0,1})?$/.test(val)) {
       setLocalWeight(val);
@@ -667,11 +681,25 @@ function RoutineSetRow({ exIdx, setIdx, set, isTreadmill, updateDraftSet, remove
     }
   };
 
+  const handleRpeChange = (val: string) => {
+    if (val === '' || /^\d{0,2}([.,]\d{0,1})?$/.test(val)) {
+      const parsedVal = val.replace(',', '.');
+      const num = parsedVal !== '' && parsedVal !== '.' ? parseFloat(parsedVal) : null;
+      if (num !== null && num > 10) {
+        setLocalRpe('10');
+        updateDraftSet(exIdx, setIdx, { rpe: 10 });
+      } else {
+        setLocalRpe(val);
+        updateDraftSet(exIdx, setIdx, { rpe: num });
+      }
+    }
+  };
+
   const currentStance = set.stance || set.variation || null;
 
   return (
     <View style={styles.setRow}>
-      <View style={{ width: 34, alignItems: 'center' }}>
+      <View style={{ width: 28, alignItems: 'center' }}>
         <Text style={[styles.setNumberText, { color: colors.text }]}>{set.set_number}</Text>
       </View>
 
@@ -747,6 +775,24 @@ function RoutineSetRow({ exIdx, setIdx, set, isTreadmill, updateDraftSet, remove
           />
         </>
       )}
+
+      <TextInput
+        style={[styles.rpeInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+        keyboardType="decimal-pad"
+        placeholder="—"
+        placeholderTextColor={colors.textMuted}
+        value={localRpe}
+        onChangeText={handleRpeChange}
+        onFocus={() => setIsFocusedRpe(true)}
+        onBlur={() => {
+          setIsFocusedRpe(false);
+          const trimmed = localRpe.trim();
+          if (trimmed === '.' || trimmed === ',') {
+            setLocalRpe('');
+            updateDraftSet(exIdx, setIdx, { rpe: null });
+          }
+        }}
+      />
 
       <TouchableOpacity 
         onPress={() => removeDraftSet(exIdx, setIdx)} 
