@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.36',
+  version: '2.3.37',
   title: {
-    ja: '✨ トレーニング中画面のUI・スタンス操作整理',
-    en: '✨ Active Workout UI & Stance Cleanup',
+    ja: '✨ 共通モーダル・ナビゲーションのUI/UX改善',
+    en: '✨ Shared Modals & Navigation UI/UX Improvements',
   },
   notes: {
     ja: [
-      'トレーニング中の種目カードからデフォルトスタンス設定ボタンを削除し、画面をすっきり整理しました（初期スタンスは種目詳細画面から設定でき、各セット個別の変更は引き続き可能です）。',
+      '各種確認モーダル、カレンダー、お知らせ・共有シートなどの共通UIをダーク／ピュアブラックテーマに完全対応し、角丸・枠線・ボタンの押しやすさを統一しました。',
     ],
     en: [
-      'Removed the exercise-level default stance button from active workout cards for a cleaner layout (default stance remains configurable in Exercise Details, and per-set changes are still supported).',
+      'Updated shared modals, calendar, update/share sheets, and root navigation to fully support Dark and Pure Black themes with unified spacing, borders, and larger tap targets.',
     ],
   },
 };
