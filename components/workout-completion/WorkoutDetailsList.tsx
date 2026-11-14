@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { translateExercise, translateStance } from '../../src/i18n';
 
 interface SetData {
@@ -52,19 +52,21 @@ export const WorkoutDetailsList: React.FC<WorkoutDetailsListProps> = ({
   settings,
   t,
 }) => {
+  const { colors } = useAppTheme();
+
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{t('ui.workout_completion.workout_details')}</Text>
+      <Text style={[styles.sectionTitle, { color: colors.primary }]}>{t('ui.workout_completion.workout_details')}</Text>
 
       {workout.notes ? (
         <View style={styles.workoutNotes}>
           <Ionicons
             name="document-text-outline"
             size={16}
-            color={Theme.colors.primary}
+            color={colors.primary}
             style={{ marginRight: 8, marginTop: 2 }}
           />
-          <Text style={styles.workoutNotesText}>{workout.notes}</Text>
+          <Text style={[styles.workoutNotesText, { color: colors.text }]}>{workout.notes}</Text>
         </View>
       ) : null}
 
@@ -73,12 +75,12 @@ export const WorkoutDetailsList: React.FC<WorkoutDetailsListProps> = ({
         if (completedSets.length === 0) return null;
 
         return (
-          <View key={ex.id} style={styles.card}>
+          <View key={ex.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.exerciseHeader}>
-              <Text style={styles.exerciseTitle}>{translateExercise(ex.name)}</Text>
+              <Text style={[styles.exerciseTitle, { color: colors.primary }]}>{translateExercise(ex.name)}</Text>
               <View style={styles.exerciseVolumeBadge}>
-                <Text style={styles.exerciseVolumeLabel}>{t('ui.history.volume_label')}: </Text>
-                <Text style={styles.exerciseVolumeValue}>
+                <Text style={[styles.exerciseVolumeLabel, { color: colors.text }]}>{t('ui.history.volume_label')}: </Text>
+                <Text style={[styles.exerciseVolumeValue, { color: colors.text }]}>
                   {completedSets.reduce((sum, s) => {
                     const exBw = (ex.equipment === '自重' && settings.bodyWeight) ? settings.bodyWeight : 0;
                     return sum + ((s.weight || 0) + exBw) * (s.reps || 0);
@@ -92,22 +94,22 @@ export const WorkoutDetailsList: React.FC<WorkoutDetailsListProps> = ({
                 <Ionicons
                   name="chatbubble-ellipses-outline"
                   size={14}
-                  color={Theme.colors.textMuted}
+                  color={colors.textMuted}
                   style={{ marginRight: 6 }}
                 />
-                <Text style={styles.exerciseNotesText}>{ex.notes}</Text>
+                <Text style={[styles.exerciseNotesText, { color: colors.textMuted }]}>{ex.notes}</Text>
               </View>
             ) : null}
 
-            <View style={styles.tableHeader}>
-              <Text style={[styles.th, { width: 40 }]}>{t('ui.active_workout.header_set')}</Text>
-              <Text style={[styles.th, { width: 90 }]}>{settings.weightUnit}</Text>
-              <Text style={[styles.th, { flex: 1 }]}>{t('ui.active_workout.header_reps')}</Text>
+            <View style={[styles.tableHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.th, { width: 40, color: colors.textMuted }]}>{t('ui.active_workout.header_set')}</Text>
+              <Text style={[styles.th, { width: 90, color: colors.textMuted }]}>{settings.weightUnit}</Text>
+              <Text style={[styles.th, { flex: 1, color: colors.textMuted }]}>{t('ui.active_workout.header_reps')}</Text>
               {settings.displayFields.showRpe && (
-                <Text style={[styles.th, { width: 45 }]}>{t('ui.active_workout.header_rpe')}</Text>
+                <Text style={[styles.th, { width: 45, color: colors.textMuted }]}>{t('ui.active_workout.header_rpe')}</Text>
               )}
               {settings.displayFields.show1RM && (
-                <Text style={[styles.th, { flex: 1 }]}>1RM</Text>
+                <Text style={[styles.th, { flex: 1, color: colors.textMuted }]}>1RM</Text>
               )}
             </View>
 
@@ -126,14 +128,14 @@ export const WorkoutDetailsList: React.FC<WorkoutDetailsListProps> = ({
               return (
                 <View key={set.id} style={styles.setRowWrapper}>
                   <View style={styles.setRow}>
-                    <Text style={styles.tdSet}>{set.set_number}{set.side ? `(${set.side})` : ''}</Text>
-                    <Text style={[styles.tdValue, { width: 90 }]}>{set.weight ?? '-'}</Text>
-                    <Text style={styles.tdValue}>{set.reps ?? '-'}</Text>
+                    <Text style={[styles.tdSet, { color: colors.textMuted }]}>{set.set_number}{set.side ? `(${set.side})` : ''}</Text>
+                    <Text style={[styles.tdValue, { width: 90, color: colors.text }]}>{set.weight ?? '-'}</Text>
+                    <Text style={[styles.tdValue, { color: colors.text }]}>{set.reps ?? '-'}</Text>
                     {settings.displayFields.showRpe && (
-                      <Text style={[styles.tdValue, { width: 45, flex: 0 }]}>{set.rpe ?? '-'}</Text>
+                      <Text style={[styles.tdValue, { width: 45, flex: 0, color: colors.text }]}>{set.rpe ?? '-'}</Text>
                     )}
                     {settings.displayFields.show1RM && (
-                      <Text style={[styles.tdValue, { color: Theme.colors.primary }]}>{currentRM ?? '-'}</Text>
+                      <Text style={[styles.tdValue, { color: colors.primary }]}>{currentRM ?? '-'}</Text>
                     )}
                   </View>
                   
@@ -141,12 +143,12 @@ export const WorkoutDetailsList: React.FC<WorkoutDetailsListProps> = ({
                   {(set.variation || timeStr) ? (
                     <View style={styles.setSubRow}>
                       {set.variation ? (
-                        <Text style={styles.stanceBadge}>
+                        <Text style={[styles.stanceBadge, { color: colors.primary }]}>
                           {t('ui.active_workout.stance_label')}: {translateStance(set.variation)}
                         </Text>
                       ) : <View />}
                       {timeStr ? (
-                        <Text style={styles.timeBadge}>{timeStr}</Text>
+                        <Text style={[styles.timeBadge, { color: colors.textMuted }]}>{timeStr}</Text>
                       ) : null}
                     </View>
                   ) : null}
@@ -162,44 +164,39 @@ export const WorkoutDetailsList: React.FC<WorkoutDetailsListProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: Theme.spacing.xl,
+    marginBottom: 32,
   },
   sectionTitle: {
-    color: Theme.colors.primary,
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: Theme.spacing.md,
+    marginBottom: 16,
     letterSpacing: 0.5,
   },
   workoutNotes: {
     flexDirection: 'row',
     backgroundColor: 'rgba(79, 172, 254, 0.15)',
     padding: 12,
-    borderRadius: Theme.borderRadius.sm,
-    marginBottom: Theme.spacing.lg,
+    borderRadius: 12,
+    marginBottom: 24,
   },
   workoutNotesText: {
-    color: Theme.colors.text,
     fontSize: 14,
     flex: 1,
     lineHeight: 20,
   },
   card: {
-    backgroundColor: Theme.colors.card,
-    borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.md,
-    marginBottom: Theme.spacing.lg,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
   },
   exerciseHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Theme.spacing.sm,
+    marginBottom: 8,
   },
   exerciseTitle: {
-    color: Theme.colors.primary,
     fontSize: 18,
     fontWeight: 'bold',
     flex: 1.2,
@@ -214,11 +211,9 @@ const styles = StyleSheet.create({
   },
   exerciseVolumeLabel: {
     fontSize: 12,
-    color: Theme.colors.text,
   },
   exerciseVolumeValue: {
     fontSize: 12,
-    color: Theme.colors.text,
     fontWeight: 'bold',
   },
   exerciseNotes: {
@@ -226,11 +221,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.05)',
     padding: 8,
-    borderRadius: 6,
+    borderRadius: 8,
     marginBottom: 12,
   },
   exerciseNotesText: {
-    color: Theme.colors.textMuted,
     fontSize: 13,
     flex: 1,
   },
@@ -239,11 +233,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingHorizontal: 4,
     borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
     paddingBottom: 8,
   },
   th: {
-    color: Theme.colors.textMuted,
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
@@ -259,13 +251,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   tdSet: {
-    color: Theme.colors.textMuted,
     width: 40,
     textAlign: 'center',
     fontSize: 15,
   },
   tdValue: {
-    color: Theme.colors.text,
     flex: 1,
     textAlign: 'center',
     fontSize: 16,
@@ -279,15 +269,14 @@ const styles = StyleSheet.create({
     paddingLeft: 44,
   },
   stanceBadge: {
-    fontSize: 11,
-    color: Theme.colors.primary,
+    fontSize: 12,
     backgroundColor: 'rgba(79, 172, 254, 0.1)',
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
+    overflow: 'hidden',
   },
   timeBadge: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
   },
 });

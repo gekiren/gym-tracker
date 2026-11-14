@@ -1,9 +1,8 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Pressable, ScrollView, TextInput, Alert, Modal } from 'react-native';
 import { useEffect, useState } from 'react';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../src/theme';
-import { useWorkoutStore } from '../src/store/workoutStore';
+import { useAppTheme } from '../src/theme';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useRoutineDraftStore } from '../src/store/routineDraftStore';
 import { addRoutine, updateRoutine, getRoutines, loadFullWorkoutData, getDB } from '../src/db/database';
@@ -31,6 +30,7 @@ export default function BuildRoutineScreen() {
     clearDraft: state.clearDraft
   })));
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
 
   const isPremium = useSettingsStore(state => state.settings.isPremium);
   const isEarly = useSettingsStore(state => state.settings.isEarlyAdopter);
@@ -230,15 +230,15 @@ export default function BuildRoutineScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
-          <Ionicons name="close" size={28} color={Theme.colors.primary} />
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerCloseBtn}>
+          <Ionicons name="close" size={28} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.title}>{isEditMode ? 'ルーティン編集' : t('ui.build_routine.title')}</Text>
-        <TouchableOpacity onPress={handleSave} style={styles.saveBtn}>
+        <Text style={[styles.title, { color: colors.text }]}>{isEditMode ? 'ルーティン編集' : t('ui.build_routine.title')}</Text>
+        <TouchableOpacity onPress={handleSave} style={[styles.saveBtn, { backgroundColor: colors.primary }]}>
           <Text style={styles.saveBtnText}>{t('ui.common.save')}</Text>
         </TouchableOpacity>
       </View>
@@ -248,27 +248,27 @@ export default function BuildRoutineScreen() {
         keyboardShouldPersistTaps="handled" 
         bottomOffset={16}
       >
-        <Text style={styles.label}>{t('ui.build_routine.routine_name_label')}</Text>
+        <Text style={[styles.label, { color: colors.textMuted }]}>{t('ui.build_routine.routine_name_label')}</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
           placeholder={t('ui.build_routine.routine_name_placeholder')}
-          placeholderTextColor={Theme.colors.textMuted}
+          placeholderTextColor={colors.textMuted}
           value={draftRoutine.title}
           onChangeText={updateDraftTitle}
         />
 
         {draftRoutine.exercises.length === 0 ? (
-          <View style={[styles.importBlock, isBasic && styles.importBlockDisabled]}>
+          <View style={[styles.importBlock, { backgroundColor: colors.card }, isBasic && styles.importBlockDisabled]}>
             <Ionicons 
               name={isBasic ? "lock-closed-outline" : "copy-outline"} 
               size={36} 
-              color={isBasic ? Theme.colors.textMuted : Theme.colors.primary} 
+              color={isBasic ? colors.textMuted : colors.primary} 
               style={{ marginBottom: 12 }} 
             />
-            <Text style={[styles.importTitle, isBasic && styles.importTitleDisabled]}>
+            <Text style={[styles.importTitle, { color: isBasic ? colors.textMuted : colors.text }]}>
               {t('ui.build_routine.import_title')}{isBasic && '（プレミアム限定）'}
             </Text>
-            <Text style={styles.importDesc}>
+            <Text style={[styles.importDesc, { color: colors.textMuted }]}>
               {isBasic 
                 ? '※この機能はベーシックプランでは制限されています。ルーティンを自動作成するにはプレミアムプランへのアップグレードが必要です。'
                 : t('ui.build_routine.import_desc')
@@ -293,10 +293,10 @@ export default function BuildRoutineScreen() {
                 <Ionicons 
                   name={isBasic ? "lock-closed-outline" : "barbell-outline"} 
                   size={20} 
-                  color={isBasic ? Theme.colors.textMuted : Theme.colors.primary} 
+                  color={isBasic ? colors.textMuted : colors.primary} 
                   style={{ marginBottom: 6 }} 
                 />
-                <Text style={[styles.importBtnText, isBasic && styles.importBtnTextDisabled]} numberOfLines={2}>
+                <Text style={[styles.importBtnText, { color: isBasic ? colors.textMuted : colors.text }]} numberOfLines={2}>
                   {t('ui.build_routine.copy_routine_btn')}
                 </Text>
               </TouchableOpacity>
@@ -318,10 +318,10 @@ export default function BuildRoutineScreen() {
                 <Ionicons 
                   name={isBasic ? "lock-closed-outline" : "time-outline"} 
                   size={20} 
-                  color={isBasic ? Theme.colors.textMuted : Theme.colors.primary} 
+                  color={isBasic ? colors.textMuted : colors.primary} 
                   style={{ marginBottom: 6 }} 
                 />
-                <Text style={[styles.importBtnText, isBasic && styles.importBtnTextDisabled]} numberOfLines={2}>
+                <Text style={[styles.importBtnText, { color: isBasic ? colors.textMuted : colors.text }]} numberOfLines={2}>
                   {t('ui.build_routine.copy_workout_btn')}
                 </Text>
               </TouchableOpacity>
@@ -330,29 +330,29 @@ export default function BuildRoutineScreen() {
         ) : (
           <>
             <View style={styles.exercisesHeader}>
-              <Text style={styles.label}>{t('ui.build_routine.exercises_count_label', { count: draftRoutine.exercises.length })}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{t('ui.build_routine.exercises_count_label', { count: draftRoutine.exercises.length })}</Text>
             </View>
 
             {draftRoutine.exercises.map((ex: any, exIdx: number) => (
-              <View key={`${ex.id}-${exIdx}`} style={styles.exerciseCard}>
+              <View key={`${ex.id}-${exIdx}`} style={[styles.exerciseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.exerciseCardHeader}>
-                  <View style={styles.badge}>
+                  <View style={[styles.badge, { backgroundColor: colors.primary }]}>
                     <Text style={styles.badgeText}>{exIdx + 1}</Text>
                   </View>
-                  <Text style={styles.exerciseName}>{translateExercise(ex.name)}</Text>
-                  <TouchableOpacity onPress={() => removeDraftExercise(exIdx)} style={{ padding: 8 }}>
-                    <Ionicons name="trash-outline" size={20} color={Theme.colors.danger} />
+                  <Text style={[styles.exerciseName, { color: colors.text }]}>{translateExercise(ex.name)}</Text>
+                  <TouchableOpacity onPress={() => removeDraftExercise(exIdx)} style={styles.removeExerciseBtn}>
+                    <Ionicons name="trash-outline" size={20} color={colors.danger} />
                   </TouchableOpacity>
                 </View>
 
                 {/* セットの一覧 */}
                 <View style={styles.setsContainer}>
                   <View style={styles.setsHeaderRow}>
-                    <Text style={[styles.setsHeaderTh, { width: 50 }]}>{t('ui.build_routine.set_label')}</Text>
-                    <Text style={[styles.setsHeaderTh, { flex: 1 }]}>
+                    <Text style={[styles.setsHeaderTh, { width: 50, color: colors.textMuted }]}>{t('ui.build_routine.set_label')}</Text>
+                    <Text style={[styles.setsHeaderTh, { flex: 1, color: colors.textMuted }]}>
                       {isTreadmillExercise(ex.name) ? (t('ui.build_routine.speed_placeholder') || '速度 (km/h)') : t('ui.build_routine.weight_placeholder')}
                     </Text>
-                    <Text style={[styles.setsHeaderTh, { flex: 1 }]}>
+                    <Text style={[styles.setsHeaderTh, { flex: 1, color: colors.textMuted }]}>
                       {isTreadmillExercise(ex.name) ? (t('ui.build_routine.incline_placeholder') || '傾斜 (%)') : t('ui.build_routine.reps_placeholder')}
                     </Text>
                     <Text style={[styles.setsHeaderTh, { width: 40 }]}></Text>
@@ -376,7 +376,7 @@ export default function BuildRoutineScreen() {
                     style={styles.addSetRowBtn} 
                     onPress={() => addDraftSet(exIdx)}
                   >
-                    <Text style={styles.addSetRowBtnText}>{t('ui.build_routine.add_set_label')}</Text>
+                    <Text style={[styles.addSetRowBtnText, { color: colors.primary }]}>{t('ui.build_routine.add_set_label')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -388,19 +388,22 @@ export default function BuildRoutineScreen() {
           style={styles.addExerciseBtn} 
           onPress={() => router.push('/select-exercise?mode=routine')}
         >
-          <Text style={styles.addExerciseBtnText}>{t('ui.build_routine.add_exercise_btn')}</Text>
+          <Text style={[styles.addExerciseBtnText, { color: colors.primary }]}>{t('ui.build_routine.add_exercise_btn')}</Text>
         </TouchableOpacity>
 
       </KeyboardAwareScrollView>
 
       {/* Routine Selection Modal */}
-      <Modal visible={showRoutineModal} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+      <Modal visible={showRoutineModal} animationType="slide" transparent={true} onRequestClose={() => setShowRoutineModal(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setShowRoutineModal(false)}>
+          <Pressable
+            style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={(e) => e.stopPropagation()}
+          >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('ui.build_routine.modal_select_routine')}</Text>
-              <TouchableOpacity onPress={() => setShowRoutineModal(false)}>
-                <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('ui.build_routine.modal_select_routine')}</Text>
+              <TouchableOpacity onPress={() => setShowRoutineModal(false)} style={styles.modalCloseBtn}>
+                <Ionicons name="close" size={24} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
             <ScrollView style={{ maxHeight: 400 }}>
@@ -410,30 +413,33 @@ export default function BuildRoutineScreen() {
                   style={styles.modalListItem} 
                   onPress={() => handleCopyFromRoutine(r)}
                 >
-                  <Text style={styles.modalListItemText}>{r.title}</Text>
-                  <Text style={styles.modalListItemSubtext} numberOfLines={1}>
+                  <Text style={[styles.modalListItemText, { color: colors.text }]}>{r.title}</Text>
+                  <Text style={[styles.modalListItemSubtext, { color: colors.textMuted }]} numberOfLines={1}>
                     {r.exercises?.map((e: any) => translateExercise(e.name)).join(', ') || 'No exercises'}
                   </Text>
                 </TouchableOpacity>
               ))}
               {routinesList.length === 0 && (
                 <View style={{ padding: 24, alignItems: 'center' }}>
-                  <Text style={{ color: Theme.colors.textMuted }}>{t('ui.routines.empty')}</Text>
+                  <Text style={{ color: colors.textMuted }}>{t('ui.routines.empty')}</Text>
                 </View>
               )}
             </ScrollView>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       {/* Workout Selection Modal */}
-      <Modal visible={showHistoryModal} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+      <Modal visible={showHistoryModal} animationType="slide" transparent={true} onRequestClose={() => setShowHistoryModal(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setShowHistoryModal(false)}>
+          <Pressable
+            style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={(e) => e.stopPropagation()}
+          >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('ui.build_routine.modal_select_workout')}</Text>
-              <TouchableOpacity onPress={() => setShowHistoryModal(false)}>
-                <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('ui.build_routine.modal_select_workout')}</Text>
+              <TouchableOpacity onPress={() => setShowHistoryModal(false)} style={styles.modalCloseBtn}>
+                <Ionicons name="close" size={24} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
             <ScrollView style={{ maxHeight: 400 }}>
@@ -445,71 +451,72 @@ export default function BuildRoutineScreen() {
                     style={styles.modalListItem} 
                     onPress={() => handleCopyFromWorkout(w.id, w.title)}
                   >
-                    <Text style={styles.modalListItemText}>{w.title}</Text>
-                    <Text style={styles.modalListItemSubtext}>{dateStr}</Text>
+                    <Text style={[styles.modalListItemText, { color: colors.text }]}>{w.title}</Text>
+                    <Text style={[styles.modalListItemSubtext, { color: colors.textMuted }]}>{dateStr}</Text>
                   </TouchableOpacity>
                 );
               })}
               {historyList.length === 0 && (
                 <View style={{ padding: 24, alignItems: 'center' }}>
-                  <Text style={{ color: Theme.colors.textMuted }}>{t('ui.history.empty')}</Text>
+                  <Text style={{ color: colors.textMuted }}>{t('ui.history.empty')}</Text>
                 </View>
               )}
             </ScrollView>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Theme.spacing.md, paddingTop: 50, backgroundColor: Theme.colors.card, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  title: { fontSize: 20, fontWeight: 'bold', color: Theme.colors.text, flex: 1 },
-  saveBtn: { backgroundColor: Theme.colors.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  saveBtnText: { color: '#fff', fontWeight: 'bold' },
-  content: { padding: Theme.spacing.md, paddingBottom: 180 },
-  label: { color: Theme.colors.textMuted, marginBottom: 8, fontSize: 16, fontWeight: '600' },
-  input: { backgroundColor: Theme.colors.card, color: Theme.colors.text, padding: 16, borderRadius: Theme.borderRadius.md, fontSize: 18, borderWidth: 1, borderColor: Theme.colors.border, marginBottom: 24 },
+  container: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50, borderBottomWidth: 1 },
+  headerCloseBtn: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginRight: 8, marginLeft: -8 },
+  title: { fontSize: 20, fontWeight: 'bold', flex: 1 },
+  saveBtn: { minHeight: 38, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  saveBtnText: { color: '#ffffff', fontWeight: 'bold' },
+  content: { padding: 16, paddingBottom: 180 },
+  label: { marginBottom: 8, fontSize: 16, fontWeight: '600' },
+  input: { padding: 16, borderRadius: 12, fontSize: 18, borderWidth: 1, marginBottom: 24 },
   exercisesHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  exerciseCard: { backgroundColor: Theme.colors.card, padding: Theme.spacing.md, borderRadius: Theme.borderRadius.md, marginBottom: Theme.spacing.md, borderWidth: 1, borderColor: Theme.colors.border },
+  exerciseCard: { padding: 16, borderRadius: 16, marginBottom: 16, borderWidth: 1 },
   exerciseCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  badge: { width: 28, height: 28, borderRadius: 14, backgroundColor: Theme.colors.primary, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
-  badgeText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-  exerciseName: { flex: 1, color: Theme.colors.text, fontSize: 16, fontWeight: '500' },
+  badge: { width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  badgeText: { color: '#ffffff', fontWeight: 'bold', fontSize: 14 },
+  exerciseName: { flex: 1, fontSize: 16, fontWeight: '500' },
+  removeExerciseBtn: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginRight: -8 },
   setsContainer: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 12 },
   setsHeaderRow: { flexDirection: 'row', marginBottom: 6, paddingHorizontal: 4 },
-  setsHeaderTh: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  setsHeaderTh: { fontSize: 13, fontWeight: '600', textAlign: 'center' },
   setRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, paddingHorizontal: 4 },
-  setNumberText: { color: Theme.colors.text, fontSize: 14, fontWeight: '600' },
-  setInput: { backgroundColor: '#2a2a2a', color: Theme.colors.text, flex: 1, marginHorizontal: 4, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12, textAlign: 'center', fontSize: 15 },
-  deleteSetBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  addSetRowBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 8, paddingVertical: 8 },
-  addSetRowBtnText: { color: Theme.colors.primary, fontSize: 14, fontWeight: '600' },
-  addExerciseBtn: { backgroundColor: 'rgba(79, 172, 254, 0.1)', paddingVertical: 16, borderRadius: Theme.borderRadius.md, alignItems: 'center', marginVertical: Theme.spacing.xl, borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.3)' },
-  addExerciseBtnText: { color: Theme.colors.primary, fontSize: 18, fontWeight: 'bold' },
+  setNumberText: { fontSize: 14, fontWeight: '600' },
+  setInput: { flex: 1, marginHorizontal: 4, borderRadius: 8, borderWidth: 1, minHeight: 38, paddingVertical: 6, paddingHorizontal: 12, textAlign: 'center', fontSize: 15 },
+  deleteSetBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  addSetRowBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 8, minHeight: 44, paddingVertical: 8 },
+  addSetRowBtnText: { fontSize: 14, fontWeight: '600' },
+  addExerciseBtn: { backgroundColor: 'rgba(79, 172, 254, 0.1)', minHeight: 48, paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginVertical: 24, borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.3)' },
+  addExerciseBtnText: { fontSize: 18, fontWeight: 'bold' },
 
   // Import UI Styles
-  importBlock: { backgroundColor: Theme.colors.card, borderStyle: 'dashed', borderWidth: 1.5, borderColor: 'rgba(79, 172, 254, 0.3)', borderRadius: Theme.borderRadius.lg, padding: 20, alignItems: 'center', marginVertical: 12 },
+  importBlock: { borderStyle: 'dashed', borderWidth: 1.5, borderColor: 'rgba(79, 172, 254, 0.3)', borderRadius: 16, padding: 20, alignItems: 'center', marginVertical: 12 },
   importBlockDisabled: { borderColor: 'rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.01)' },
-  importTitle: { color: Theme.colors.text, fontSize: 16, fontWeight: 'bold', marginBottom: 6 },
-  importTitleDisabled: { color: Theme.colors.textMuted },
-  importDesc: { color: Theme.colors.textMuted, fontSize: 13, textAlign: 'center', lineHeight: 18, marginBottom: 16, paddingHorizontal: 12 },
+  importTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 6 },
+  importDesc: { fontSize: 13, textAlign: 'center', lineHeight: 18, marginBottom: 16, paddingHorizontal: 12 },
   importButtonsRow: { flexDirection: 'row', width: '100%' },
-  importBtn: { flex: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 8, paddingVertical: 14, paddingHorizontal: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  importBtn: { flex: 1, minHeight: 72, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   importBtnDisabled: { borderColor: 'rgba(255,255,255,0.04)', backgroundColor: 'rgba(0,0,0,0.2)', opacity: 0.5 },
-  importBtnText: { color: Theme.colors.text, fontSize: 13, fontWeight: '600', textAlign: 'center', lineHeight: 16 },
-  importBtnTextDisabled: { color: Theme.colors.textMuted },
+  importBtnText: { fontSize: 13, fontWeight: '600', textAlign: 'center', lineHeight: 16 },
 
   // Modal Selection Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { width: '90%', backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.lg, maxHeight: '80%' },
+  modalContent: { width: '90%', maxWidth: 420, borderRadius: 16, borderWidth: 1, padding: 24, maxHeight: '80%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.text },
+  modalCloseBtn: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginRight: -8 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold' },
   modalListItem: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
-  modalListItemText: { color: Theme.colors.text, fontSize: 16, fontWeight: 'bold', marginBottom: 2 },
-  modalListItemSubtext: { color: Theme.colors.textMuted, fontSize: 12 }
+  modalListItemText: { fontSize: 16, fontWeight: 'bold', marginBottom: 2 },
+  modalListItemSubtext: { fontSize: 12 }
 });
 
 function RoutineSetRow({ exIdx, setIdx, set, isTreadmill, updateDraftSet, removeDraftSet, setsCount, t }: {
@@ -522,6 +529,7 @@ function RoutineSetRow({ exIdx, setIdx, set, isTreadmill, updateDraftSet, remove
   setsCount: number;
   t: any;
 }) {
+  const { colors } = useAppTheme();
   const [localWeight, setLocalWeight] = useState(set.weight !== null ? String(set.weight) : '');
   const [localReps, setLocalReps] = useState(set.reps !== null ? String(set.reps) : '');
   const [localSpeed, setLocalSpeed] = useState(set.speed != null ? String(set.speed) : '');
@@ -605,26 +613,26 @@ function RoutineSetRow({ exIdx, setIdx, set, isTreadmill, updateDraftSet, remove
   return (
     <View style={styles.setRow}>
       <View style={{ width: 50, alignItems: 'center' }}>
-        <Text style={styles.setNumberText}>{set.set_number}</Text>
+        <Text style={[styles.setNumberText, { color: colors.text }]}>{set.set_number}</Text>
       </View>
 
       {isTreadmill ? (
         <>
           <TextInput
-            style={styles.setInput}
+            style={[styles.setInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
             keyboardType="decimal-pad"
             placeholder="—"
-            placeholderTextColor="rgba(255,255,255,0.2)"
+            placeholderTextColor={colors.textMuted}
             value={localSpeed}
             onChangeText={handleSpeedChange}
             onFocus={() => setIsFocusedSpeed(true)}
             onBlur={() => setIsFocusedSpeed(false)}
           />
           <TextInput
-            style={styles.setInput}
+            style={[styles.setInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
             keyboardType="decimal-pad"
             placeholder="—"
-            placeholderTextColor="rgba(255,255,255,0.2)"
+            placeholderTextColor={colors.textMuted}
             value={localIncline}
             onChangeText={handleInclineChange}
             onFocus={() => setIsFocusedIncline(true)}
@@ -634,10 +642,10 @@ function RoutineSetRow({ exIdx, setIdx, set, isTreadmill, updateDraftSet, remove
       ) : (
         <>
           <TextInput
-            style={styles.setInput}
+            style={[styles.setInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
             keyboardType="decimal-pad"
             placeholder="—"
-            placeholderTextColor="rgba(255,255,255,0.2)"
+            placeholderTextColor={colors.textMuted}
             value={localWeight}
             onChangeText={handleWeightChange}
             onFocus={() => setIsFocusedWeight(true)}
@@ -645,10 +653,10 @@ function RoutineSetRow({ exIdx, setIdx, set, isTreadmill, updateDraftSet, remove
           />
 
           <TextInput
-            style={styles.setInput}
+            style={[styles.setInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
             keyboardType="numeric"
             placeholder="—"
-            placeholderTextColor="rgba(255,255,255,0.2)"
+            placeholderTextColor={colors.textMuted}
             value={localReps}
             onChangeText={handleRepsChange}
             onFocus={() => setIsFocusedReps(true)}
@@ -660,12 +668,13 @@ function RoutineSetRow({ exIdx, setIdx, set, isTreadmill, updateDraftSet, remove
       <TouchableOpacity 
         onPress={() => removeDraftSet(exIdx, setIdx)} 
         style={styles.deleteSetBtn}
+        hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
         disabled={setsCount <= 1}
       >
         <Ionicons 
           name="close" 
           size={20} 
-          color={setsCount > 1 ? Theme.colors.textMuted : 'rgba(255,255,255,0.08)'} 
+          color={setsCount > 1 ? colors.textMuted : 'rgba(255,255,255,0.08)'} 
         />
       </TouchableOpacity>
     </View>

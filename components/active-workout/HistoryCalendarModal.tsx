@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { format, startOfWeek, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval } from 'date-fns';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { useTranslation } from 'react-i18next';
 
 interface HistoryCalendarModalProps {
@@ -25,6 +25,7 @@ export function HistoryCalendarModal({
   onDatePress
 }: HistoryCalendarModalProps) {
   const { t, i18n } = useTranslation();
+  const { colors } = useAppTheme();
   const isJa = i18n.language === 'ja';
 
   const monthYearText = isJa
@@ -78,14 +79,17 @@ export function HistoryCalendarModal({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { maxHeight: '90%' }]}>
+      <Pressable style={styles.modalOverlay} onPress={onClose}>
+        <Pressable
+          style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border, maxHeight: '90%' }]}
+          onPress={(e) => e.stopPropagation()}
+        >
           <View style={styles.calendarModalHeader}>
-            <Text style={styles.calendarModalTitle}>
+            <Text style={[styles.calendarModalTitle, { color: colors.text }]}>
               {isJa ? 'トレーニング履歴カレンダー' : 'Training Calendar'}
             </Text>
-            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="close" size={24} color={Theme.colors.textMuted} />
+            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+              <Ionicons name="close" size={24} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
 
@@ -94,20 +98,20 @@ export function HistoryCalendarModal({
               onPress={() => onNavigateMonth(-1)}
               style={styles.monthNavButton}
             >
-              <Ionicons name="chevron-back" size={22} color={Theme.colors.primary} />
+              <Ionicons name="chevron-back" size={22} color={colors.primary} />
             </TouchableOpacity>
-            <Text style={styles.monthText}>{monthYearText}</Text>
+            <Text style={[styles.monthText, { color: colors.text }]}>{monthYearText}</Text>
             <TouchableOpacity
               onPress={() => onNavigateMonth(1)}
               style={styles.monthNavButton}
             >
-              <Ionicons name="chevron-forward" size={22} color={Theme.colors.primary} />
+              <Ionicons name="chevron-forward" size={22} color={colors.primary} />
             </TouchableOpacity>
           </View>
 
           <View style={styles.weekdaysContainer}>
             {weekdays.map((day, idx) => (
-              <Text key={idx} style={styles.weekdayText}>{day}</Text>
+              <Text key={idx} style={[styles.weekdayText, { color: colors.textMuted }]}>{day}</Text>
             ))}
           </View>
 
@@ -126,12 +130,13 @@ export function HistoryCalendarModal({
                 >
                   <View style={[
                     styles.dayBox,
-                    hasWorkout && styles.workoutDayBox
+                    hasWorkout && [styles.workoutDayBox, { borderColor: colors.primary }]
                   ]}>
                     <Text style={[
                       styles.dayText,
-                      !isCurrentMonth && styles.dimmedDayText,
-                      hasWorkout && styles.workoutDayText
+                      { color: colors.text },
+                      !isCurrentMonth && { color: colors.textMuted, opacity: 0.45 },
+                      hasWorkout && { color: colors.primary, fontWeight: 'bold' }
                     ]}>
                       {format(day, 'd')}
                     </Text>
@@ -141,78 +146,85 @@ export function HistoryCalendarModal({
             })}
           </View>
 
-          <View style={styles.summaryContainer}>
-            <Text style={styles.summaryTitle}>
+          <View style={[styles.summaryContainer, { borderTopColor: colors.border }]}>
+            <Text style={[styles.summaryTitle, { color: colors.text }]}>
               {isJa ? '月間サマリー' : 'Monthly Summary'}
             </Text>
-            <View style={styles.summaryStatsRow}>
+            <View style={[styles.summaryStatsRow, { borderColor: colors.border }]}>
               <View style={styles.summaryStatBlock}>
-                <Text style={styles.summaryStatLabel}>{isJa ? '実施日数' : 'Workouts'}</Text>
-                <Text style={styles.summaryStatValue}>{count}{isJa ? '日' : ''}</Text>
+                <Text style={[styles.summaryStatLabel, { color: colors.textMuted }]}>{isJa ? '実施日数' : 'Workouts'}</Text>
+                <Text style={[styles.summaryStatValue, { color: colors.text }]}>{count}{isJa ? '日' : ''}</Text>
               </View>
               <View style={styles.summaryStatBlock}>
-                <Text style={styles.summaryStatLabel}>{isJa ? '総ボリューム' : 'Total Volume'}</Text>
-                <Text style={styles.summaryStatValue}>
+                <Text style={[styles.summaryStatLabel, { color: colors.textMuted }]}>{isJa ? '総ボリューム' : 'Total Volume'}</Text>
+                <Text style={[styles.summaryStatValue, { color: colors.text }]}>
                   {volume > 0 ? `${volume.toLocaleString()} ${weightUnit}` : '-'}
                 </Text>
               </View>
               <View style={styles.summaryStatBlock}>
-                <Text style={styles.summaryStatLabel}>{isJa ? '総セット数' : 'Total Sets'}</Text>
-                <Text style={styles.summaryStatValue}>
+                <Text style={[styles.summaryStatLabel, { color: colors.textMuted }]}>{isJa ? '総セット数' : 'Total Sets'}</Text>
+                <Text style={[styles.summaryStatValue, { color: colors.text }]}>
                   {set_count > 0 ? `${set_count}${isJa ? 'セット' : ' sets'}` : '-'}
                 </Text>
               </View>
             </View>
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { width: '90%', backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.lg, maxHeight: '95%' },
+  modalContent: { width: '90%', maxWidth: 400, borderRadius: 16, borderWidth: 1, padding: 24, maxHeight: '95%' },
   calendarModalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Theme.spacing.md,
+    marginBottom: 16,
   },
   calendarModalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Theme.colors.text,
+  },
+  closeBtn: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: -8,
   },
   monthSelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: Theme.borderRadius.sm,
-    paddingVertical: Theme.spacing.xs,
-    paddingHorizontal: Theme.spacing.sm,
-    marginBottom: Theme.spacing.md,
+    borderRadius: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    marginBottom: 16,
   },
   monthNavButton: {
-    padding: Theme.spacing.xs,
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   monthText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: Theme.colors.text,
   },
   weekdaysContainer: {
     flexDirection: 'row',
-    paddingVertical: Theme.spacing.xs,
+    paddingVertical: 4,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.05)',
-    marginBottom: Theme.spacing.xs,
+    marginBottom: 4,
   },
   weekdayText: {
     width: '14.28%',
     textAlign: 'center',
-    color: Theme.colors.textMuted,
     fontSize: 12,
     fontWeight: 'bold',
   },
@@ -230,6 +242,7 @@ const styles = StyleSheet.create({
   dayBox: {
     width: 36,
     height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
@@ -237,53 +250,39 @@ const styles = StyleSheet.create({
   workoutDayBox: {
     backgroundColor: 'rgba(79, 172, 254, 0.15)',
     borderWidth: 1.5,
-    borderColor: Theme.colors.primary,
   },
   dayText: {
-    color: Theme.colors.text,
     fontSize: 14,
     fontWeight: '500',
   },
-  dimmedDayText: {
-    color: '#444444',
-  },
-  workoutDayText: {
-    color: Theme.colors.primary,
-    fontWeight: 'bold',
-  },
   summaryContainer: {
-    marginTop: Theme.spacing.md,
-    paddingTop: Theme.spacing.md,
+    marginTop: 16,
+    paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: Theme.colors.border,
   },
   summaryTitle: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: Theme.colors.text,
-    marginBottom: Theme.spacing.sm,
+    marginBottom: 8,
   },
   summaryStatsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: 'rgba(255, 255, 255, 0.02)',
-    borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.sm,
+    borderRadius: 12,
+    padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   summaryStatBlock: {
     flex: 1,
     alignItems: 'center',
   },
   summaryStatLabel: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
+    fontSize: 12,
     marginBottom: 2,
   },
   summaryStatValue: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: Theme.colors.text,
   }
 });

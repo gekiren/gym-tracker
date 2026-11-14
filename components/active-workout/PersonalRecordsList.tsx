@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 import { translateStance } from '../../src/i18n';
 import { useTranslation } from 'react-i18next';
 
@@ -28,21 +28,22 @@ export function PersonalRecordsList({
   onPrPress
 }: PersonalRecordsListProps) {
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
   const [isExpanded, setIsExpanded] = useState(true);
   
   if (Object.keys(personalRecords).length === 0) return null;
 
   return (
-    <View style={styles.prSection}>
+    <View style={[styles.prSection, { borderBottomColor: colors.border }]}>
       <TouchableOpacity 
         onPress={() => setIsExpanded(!isExpanded)} 
         style={styles.prHeaderToggle}
         activeOpacity={0.7}
       >
-        <Text style={styles.sectionTitle}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
           {t('ui.exercise_detail.section_pr')}
         </Text>
-        <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={18} color={Theme.colors.primary} />
+        <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={18} color={colors.primary} />
       </TouchableOpacity>
 
       {isExpanded && (
@@ -54,7 +55,7 @@ export function PersonalRecordsList({
             return (
               <View key={variation} style={{ marginBottom: 12 }}>
                 {variation !== 'default' && (
-                  <Text style={styles.prVariationTitle}>
+                  <Text style={[styles.prVariationTitle, { color: colors.textMuted }]}>
                     {t('ui.active_workout.stance_label')}: {translateStance(variation)}
                   </Text>
                 )}
@@ -68,12 +69,12 @@ export function PersonalRecordsList({
                         return (
                           <TouchableOpacity 
                             key={reps} 
-                            style={styles.prItem}
+                            style={[styles.prItem, { backgroundColor: colors.card, borderColor: colors.border }]}
                             activeOpacity={0.7}
                             onPress={() => onPrPress(repNum, variation)}
                           >
                             <Text 
-                              style={styles.prReps} 
+                              style={[styles.prReps, { color: colors.textMuted }]} 
                               numberOfLines={1}
                               adjustsFontSizeToFit
                               minimumFontScale={0.8}
@@ -81,7 +82,7 @@ export function PersonalRecordsList({
                               {reps}{t('ui.common.reps_unit')}
                             </Text>
                             <Text 
-                              style={styles.prWeight} 
+                              style={[styles.prWeight, { color: colors.primary }]} 
                               numberOfLines={1} 
                               adjustsFontSizeToFit 
                               minimumFontScale={0.7}
@@ -123,30 +124,28 @@ export function PersonalRecordsList({
 const styles = StyleSheet.create({
   prSection: { 
     borderBottomWidth: 1, 
-    borderBottomColor: Theme.colors.border, 
-    paddingBottom: Theme.spacing.md, 
-    paddingTop: Theme.spacing.md 
+    paddingBottom: 16, 
+    paddingTop: 16 
   },
   prHeaderToggle: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     justifyContent: 'space-between', 
-    paddingHorizontal: Theme.spacing.md 
+    paddingHorizontal: 16,
+    minHeight: 44
   },
   sectionTitle: { 
     fontSize: 18, 
     fontWeight: 'bold', 
-    color: Theme.colors.text 
   },
   prVariationTitle: { 
-    color: Theme.colors.textMuted, 
     fontSize: 13, 
     fontWeight: 'bold', 
-    paddingHorizontal: Theme.spacing.md, 
+    paddingHorizontal: 16, 
     marginBottom: 6 
   },
   prList: { 
-    paddingHorizontal: Theme.spacing.md, 
+    paddingHorizontal: 16, 
     gap: GAP, 
   },
   prRow: {
@@ -155,33 +154,29 @@ const styles = StyleSheet.create({
   },
   prItem: { 
     flex: 1,
-    backgroundColor: '#1a1a1a', 
-    paddingHorizontal: 2, 
-    paddingVertical: 6, 
-    borderRadius: 8, 
+    paddingHorizontal: 4, 
+    paddingVertical: 8, 
+    borderRadius: 12, 
     alignItems: 'center', 
     justifyContent: 'center',
     borderWidth: 1, 
-    borderColor: '#333', 
     minHeight: 66,
   },
   prItemDummy: {
     flex: 1,
   },
   prReps: { 
-    color: Theme.colors.textMuted, 
     fontSize: 12, 
     fontWeight: 'bold', 
     marginBottom: 1 
   },
   prWeight: { 
-    color: Theme.colors.primary, 
     fontSize: 15.5, 
     fontWeight: 'bold' 
   },
   prOneRm: { 
     color: '#f5a623', 
-    fontSize: 11, 
+    fontSize: 12, 
     fontWeight: 'bold', 
     marginTop: 2 
   },

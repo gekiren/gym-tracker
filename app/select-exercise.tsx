@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SectionList, TouchableOpacity, TextInput, Modal, Alert, ScrollView, Switch, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, SectionList, TouchableOpacity, Pressable, TextInput, Modal, Alert, ScrollView, Switch, KeyboardAvoidingView, Platform } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getDB, addCustomExercise, getPreviousWorkoutSets, getPersonalRecords, getFavoriteIds, toggleFavorite, deleteExercise, saveSetting, getCustomExercisesCount } from '../src/db/database';
-import { Theme } from '../src/theme';
+import { useAppTheme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useRoutineDraftStore } from '../src/store/routineDraftStore';
@@ -32,6 +32,7 @@ interface SwipeDeleteActionProps {
 }
 
 function SwipeDeleteAction({ drag, onPress }: SwipeDeleteActionProps) {
+  const { colors } = useAppTheme();
   const styleAnimation = useAnimatedStyle(() => {
     return {
       transform: [{ translateX: drag.value + 80 }],
@@ -42,10 +43,10 @@ function SwipeDeleteAction({ drag, onPress }: SwipeDeleteActionProps) {
     <View style={{ width: 80, flexDirection: 'row' }}>
       <Reanimated.View style={[styleAnimation, { flex: 1 }]}>
         <GHTouchableOpacity 
-          style={styles.deleteAction}
+          style={[styles.deleteAction, { backgroundColor: colors.danger }]}
           onPress={onPress}
         >
-          <Ionicons name="trash-outline" size={24} color="#fff" />
+          <Ionicons name="trash-outline" size={24} color="#ffffff" />
         </GHTouchableOpacity>
       </Reanimated.View>
     </View>
@@ -54,6 +55,7 @@ function SwipeDeleteAction({ drag, onPress }: SwipeDeleteActionProps) {
 
 export default function SelectExerciseScreen() {
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState('');
@@ -221,35 +223,36 @@ export default function SelectExerciseScreen() {
         rightThreshold={40}
       >
         <GHTouchableOpacity 
-          style={styles.item} 
+          style={[styles.item, { borderBottomColor: colors.border }]} 
           onPress={() => handleSelect(item)}
           activeOpacity={0.7}
         >
           <View style={{ flex: 1, marginRight: 8 }}>
-            <Text style={styles.name}>{translateExercise(item.name)}</Text>
-            <Text style={styles.meta}>{translateMuscleGroup(item.muscle_group)} • {translateEquipment(item.equipment)}</Text>
+            <Text style={[styles.name, { color: colors.text }]}>{translateExercise(item.name)}</Text>
+            <Text style={[styles.meta, { color: colors.textMuted }]}>{translateMuscleGroup(item.muscle_group)} • {translateEquipment(item.equipment)}</Text>
           </View>
           <GHTouchableOpacity
             style={styles.listHowToBtn}
             onPress={() => openYouTubeSearch(item.name)}
+            hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
             activeOpacity={0.7}
           >
-            <Ionicons name="play" size={10} color={Theme.colors.primary} />
-            <Text style={styles.listHowToText}>How To</Text>
+            <Ionicons name="play" size={11} color={colors.primary} />
+            <Text style={[styles.listHowToText, { color: colors.primary }]}>How To</Text>
           </GHTouchableOpacity>
           <GHTouchableOpacity
             onPress={() => handleToggleFavorite(item)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             style={styles.starBtn}
           >
             <Ionicons
               name={isFav ? 'star' : 'star-outline'}
               size={22}
-              color={isFav ? '#f5a623' : Theme.colors.textMuted}
+              color={isFav ? '#f5a623' : colors.textMuted}
             />
           </GHTouchableOpacity>
-          <View style={{ paddingLeft: 8 }}>
-            <Ionicons name="add-circle" size={24} color={Theme.colors.primary} />
+          <View style={{ paddingLeft: 4 }}>
+            <Ionicons name="add-circle" size={24} color={colors.primary} />
           </View>
         </GHTouchableOpacity>
       </Swipeable>
@@ -257,21 +260,21 @@ export default function SelectExerciseScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Stack.Screen options={{ title: t('ui.profile.screen_title_select_exercise') }} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Stack.Screen options={{ title: t('ui.profile.screen_title_select_exercise'), headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.text }} />
       <View style={styles.actionRow}>
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={Theme.colors.textMuted} style={styles.searchIcon} />
+        <View style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.text }]}
             placeholder={t('ui.exercise_select.search_placeholder')}
-            placeholderTextColor={Theme.colors.textMuted}
+            placeholderTextColor={colors.textMuted}
             value={search}
             onChangeText={setSearch}
           />
         </View>
-        <TouchableOpacity style={styles.addBtn} onPress={() => { setNewName(search); setModalVisible(true); setUseDefaultStance(false); setNewDefaultStance(''); }}>
-          <Ionicons name="add" size={24} color="#fff" />
+        <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={() => { setNewName(search); setModalVisible(true); setUseDefaultStance(false); setNewDefaultStance(''); }}>
+          <Ionicons name="add" size={24} color="#ffffff" />
         </TouchableOpacity>
       </View>
 
@@ -281,25 +284,45 @@ export default function SelectExerciseScreen() {
           {filterCategories.map(cat => (
             <TouchableOpacity
               key={cat}
-              style={[styles.chip, selectedCategory === cat && styles.chipActive]}
+              style={[
+                styles.chip,
+                { backgroundColor: colors.card, borderColor: colors.border },
+                selectedCategory === cat && [styles.chipActive, { borderColor: colors.primary }]
+              ]}
               onPress={() => setSelectedCategory(cat)}
             >
-              <Text style={[styles.chipText, selectedCategory === cat && styles.chipTextActive]}>{translateMuscleGroup(cat)}</Text>
+              <Text style={[
+                styles.chipText,
+                { color: colors.textMuted },
+                selectedCategory === cat && { color: colors.primary, fontWeight: 'bold' }
+              ]}>
+                {translateMuscleGroup(cat)}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
       {/* Equipment Filter Chips */}
-      <View style={{ height: 40, marginBottom: Theme.spacing.md }}>
+      <View style={{ height: 40, marginBottom: 16 }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipContainer}>
           {filterEquipments.map(equip => (
             <TouchableOpacity
               key={equip}
-              style={[styles.chip, selectedEquipment === equip && { backgroundColor: 'rgba(79, 172, 254, 0.1)', borderColor: 'rgba(79, 172, 254, 0.5)' }]}
+              style={[
+                styles.chip,
+                { backgroundColor: colors.card, borderColor: colors.border },
+                selectedEquipment === equip && { backgroundColor: 'rgba(79, 172, 254, 0.1)', borderColor: colors.primary }
+              ]}
               onPress={() => setSelectedEquipment(equip)}
             >
-              <Text style={[styles.chipText, selectedEquipment === equip && styles.chipTextActive]}>{translateEquipment(equip)}</Text>
+              <Text style={[
+                styles.chipText,
+                { color: colors.textMuted },
+                selectedEquipment === equip && { color: colors.primary, fontWeight: 'bold' }
+              ]}>
+                {translateEquipment(equip)}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -307,7 +330,7 @@ export default function SelectExerciseScreen() {
 
       {sections.length === 0 ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: Theme.colors.textMuted }}>{t('ui.exercise_select.not_found')}</Text>
+          <Text style={{ color: colors.textMuted }}>{t('ui.exercise_select.not_found')}</Text>
         </View>
       ) : (
         <SectionList
@@ -318,24 +341,27 @@ export default function SelectExerciseScreen() {
           removeClippedSubviews={false}
           contentContainerStyle={styles.listContent}
           renderSectionHeader={({ section }) => (
-            <View style={styles.sectionHeader}>
+            <View style={[styles.sectionHeader, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
               {section.title === t('ui.exercise_select.section_favorites') && (
                 <Ionicons name="star" size={14} color="#f5a623" style={{ marginRight: 6 }} />
               )}
-              <Text style={styles.sectionHeaderText}>{section.title}</Text>
+              <Text style={[styles.sectionHeaderText, { color: colors.textMuted }]}>{section.title}</Text>
             </View>
           )}
         />
       )}
 
-      <Modal visible={isModalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
+      <Modal visible={isModalVisible} animationType="slide" transparent={true} onRequestClose={() => setModalVisible(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={{ width: '100%', alignItems: 'center' }}
           >
-            <View style={[styles.modalContent, { maxHeight: '85%' }]}>
-              <Text style={styles.modalTitle}>{t('ui.exercise_select.create_modal_title')}</Text>
+            <Pressable
+              style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border, maxHeight: '85%' }]}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('ui.exercise_select.create_modal_title')}</Text>
 
               <ScrollView 
                 showsVerticalScrollIndicator={true}
@@ -343,42 +369,88 @@ export default function SelectExerciseScreen() {
                 keyboardShouldPersistTaps="handled"
                 contentContainerStyle={{ paddingBottom: 16 }}
               >
-                <Text style={styles.label}>{t('ui.exercise_select.label_name')}</Text>
-                <TextInput style={styles.modalInput} placeholder={t('ui.exercise_select.label_name_placeholder')} placeholderTextColor={Theme.colors.textMuted} value={newName} onChangeText={setNewName} />
+                <Text style={[styles.label, { color: colors.textMuted }]}>{t('ui.exercise_select.label_name')}</Text>
+                <TextInput
+                  style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                  placeholder={t('ui.exercise_select.label_name_placeholder')}
+                  placeholderTextColor={colors.textMuted}
+                  value={newName}
+                  onChangeText={setNewName}
+                />
 
-                <Text style={styles.label}>{t('ui.exercise_select.label_group')}</Text>
+                <Text style={[styles.label, { color: colors.textMuted }]}>{t('ui.exercise_select.label_group')}</Text>
                 <View style={styles.choiceContainer}>
                   {allCategories.map(g => (
-                    <TouchableOpacity key={g} onPress={() => setNewGroup(g)} style={[styles.choiceChip, newGroup === g && styles.choiceChipActive]}>
-                      <Text style={[styles.choiceChipText, newGroup === g && styles.choiceChipTextActive]}>{translateMuscleGroup(g)}</Text>
+                    <TouchableOpacity
+                      key={g}
+                      onPress={() => setNewGroup(g)}
+                      style={[
+                        styles.choiceChip,
+                        { backgroundColor: colors.background, borderColor: colors.border },
+                        newGroup === g && [styles.choiceChipActive, { borderColor: colors.primary }]
+                      ]}
+                    >
+                      <Text style={[
+                        styles.choiceChipText,
+                        { color: colors.textMuted },
+                        newGroup === g && { color: colors.primary, fontWeight: 'bold' }
+                      ]}>
+                        {translateMuscleGroup(g)}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
-                <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder={t('ui.exercise_select.label_other_input')} placeholderTextColor={Theme.colors.textMuted} value={translateMuscleGroup(newGroup)} onChangeText={setNewGroup} />
+                <TextInput
+                  style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border, marginTop: 8 }]}
+                  placeholder={t('ui.exercise_select.label_other_input')}
+                  placeholderTextColor={colors.textMuted}
+                  value={translateMuscleGroup(newGroup)}
+                  onChangeText={setNewGroup}
+                />
 
-                <Text style={styles.label}>{t('ui.exercise_select.label_equip')}</Text>
+                <Text style={[styles.label, { color: colors.textMuted }]}>{t('ui.exercise_select.label_equip')}</Text>
                 <View style={styles.choiceContainer}>
                   {allEquipments.map(e => (
-                    <TouchableOpacity key={e} onPress={() => setNewEquip(e)} style={[styles.choiceChip, newEquip === e && styles.choiceChipActive]}>
-                      <Text style={[styles.choiceChipText, newEquip === e && styles.choiceChipTextActive]}>{translateEquipment(e)}</Text>
+                    <TouchableOpacity
+                      key={e}
+                      onPress={() => setNewEquip(e)}
+                      style={[
+                        styles.choiceChip,
+                        { backgroundColor: colors.background, borderColor: colors.border },
+                        newEquip === e && [styles.choiceChipActive, { borderColor: colors.primary }]
+                      ]}
+                    >
+                      <Text style={[
+                        styles.choiceChipText,
+                        { color: colors.textMuted },
+                        newEquip === e && { color: colors.primary, fontWeight: 'bold' }
+                      ]}>
+                        {translateEquipment(e)}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
-                <TextInput style={[styles.modalInput, { marginTop: 8 }]} placeholder={t('ui.exercise_select.label_other_input')} placeholderTextColor={Theme.colors.textMuted} value={translateEquipment(newEquip)} onChangeText={setNewEquip} />
+                <TextInput
+                  style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border, marginTop: 8 }]}
+                  placeholder={t('ui.exercise_select.label_other_input')}
+                  placeholderTextColor={colors.textMuted}
+                  value={translateEquipment(newEquip)}
+                  onChangeText={setNewEquip}
+                />
 
-                <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 16 }} />
-                <Text style={{ fontSize: 12, color: Theme.colors.textMuted, textAlign: 'center', marginBottom: 8 }}>
+                <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 16 }} />
+                <Text style={{ fontSize: 12, color: colors.textMuted, textAlign: 'center', marginBottom: 8 }}>
                   {t('ui.exercise_library.label_scroll_more')}
                 </Text>
 
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
-                  <Text style={styles.label}>{t('ui.exercise_select.label_unilateral')}</Text>
-                  <Switch value={isUnilateral} onValueChange={setIsUnilateral} trackColor={{ true: Theme.colors.primary }} />
+                  <Text style={[styles.label, { color: colors.textMuted }]}>{t('ui.exercise_select.label_unilateral')}</Text>
+                  <Switch value={isUnilateral} onValueChange={setIsUnilateral} trackColor={{ true: colors.primary }} />
                 </View>
 
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
-                  <Text style={styles.label}>{t('ui.exercise_select.label_default_stance')}</Text>
-                  <Switch value={useDefaultStance} onValueChange={setUseDefaultStance} trackColor={{ true: Theme.colors.primary }} />
+                  <Text style={[styles.label, { color: colors.textMuted }]}>{t('ui.exercise_select.label_default_stance')}</Text>
+                  <Switch value={useDefaultStance} onValueChange={setUseDefaultStance} trackColor={{ true: colors.primary }} />
                 </View>
                 
                 {useDefaultStance && (
@@ -387,17 +459,27 @@ export default function SelectExerciseScreen() {
                       {presetStances.map((preset: string) => (
                         <TouchableOpacity
                           key={preset}
-                          style={[styles.choiceChip, newDefaultStance === preset && styles.choiceChipActive]}
+                          style={[
+                            styles.choiceChip,
+                            { backgroundColor: colors.background, borderColor: colors.border },
+                            newDefaultStance === preset && [styles.choiceChipActive, { borderColor: colors.primary }]
+                          ]}
                           onPress={() => setNewDefaultStance(preset)}
                         >
-                          <Text style={[styles.choiceChipText, newDefaultStance === preset && styles.choiceChipTextActive]}>{translateStance(preset)}</Text>
+                          <Text style={[
+                            styles.choiceChipText,
+                            { color: colors.textMuted },
+                            newDefaultStance === preset && { color: colors.primary, fontWeight: 'bold' }
+                          ]}>
+                            {translateStance(preset)}
+                          </Text>
                         </TouchableOpacity>
                       ))}
                     </View>
                     <TextInput 
-                      style={styles.modalInput} 
+                      style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]} 
                       placeholder={t('ui.exercise_select.label_other_input_stance')} 
-                      placeholderTextColor={Theme.colors.textMuted} 
+                      placeholderTextColor={colors.textMuted} 
                       value={translateStance(newDefaultStance)} 
                       onChangeText={setNewDefaultStance} 
                     />
@@ -407,15 +489,15 @@ export default function SelectExerciseScreen() {
 
               <View style={styles.modalActions}>
                 <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
-                  <Text style={styles.cancelBtnText}>{t('ui.common.cancel')}</Text>
+                  <Text style={[styles.cancelBtnText, { color: colors.textMuted }]}>{t('ui.common.cancel')}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.saveBtn} onPress={handleCreate}>
+                <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }]} onPress={handleCreate}>
                   <Text style={styles.saveBtnText}>{t('ui.exercise_select.create_and_add')}</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </Pressable>
           </KeyboardAvoidingView>
-        </View>
+        </Pressable>
       </Modal>
 
       <ConfirmModal
@@ -444,58 +526,55 @@ export default function SelectExerciseScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
+  container: { flex: 1 },
   listContent: { paddingBottom: 120 },
-  actionRow: { flexDirection: 'row', paddingHorizontal: Theme.spacing.md, marginVertical: 8 },
-  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: Theme.colors.card, paddingHorizontal: Theme.spacing.sm, borderRadius: Theme.borderRadius.md, marginRight: Theme.spacing.md },
+  actionRow: { flexDirection: 'row', paddingHorizontal: 16, marginVertical: 8 },
+  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, marginRight: 12 },
   searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, color: Theme.colors.text, paddingVertical: 10, fontSize: 16 },
-  addBtn: { backgroundColor: Theme.colors.primary, width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
-  chipContainer: { paddingHorizontal: Theme.spacing.md, gap: 8, alignItems: 'center' },
-  chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: Theme.colors.card, borderWidth: 1, borderColor: Theme.colors.border },
-  chipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: Theme.colors.primary },
-  chipText: { color: Theme.colors.textMuted, fontSize: 14, fontWeight: '500' },
-  chipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', backgroundColor: Theme.colors.background, paddingHorizontal: Theme.spacing.md, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  sectionHeaderText: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 },
-  item: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Theme.spacing.md, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  name: { fontSize: 16, color: Theme.colors.text, fontWeight: 'bold', marginBottom: 4 },
-  meta: { fontSize: 13, color: Theme.colors.textMuted },
+  searchInput: { flex: 1, paddingVertical: 10, fontSize: 16 },
+  addBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  chipContainer: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
+  chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  chipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)' },
+  chipText: { fontSize: 14, fontWeight: '500' },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1 },
+  sectionHeaderText: { fontSize: 13, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  item: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1 },
+  name: { fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
+  meta: { fontSize: 13 },
   listHowToBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(79, 172, 254, 0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    minHeight: 32,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: 'rgba(79, 172, 254, 0.2)',
     marginRight: 4,
   },
   listHowToText: {
-    color: Theme.colors.primary,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: 'bold',
-    marginLeft: 3,
+    marginLeft: 4,
   },
-  starBtn: { paddingHorizontal: 8 },
+  starBtn: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { width: '90%', backgroundColor: Theme.colors.card, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.lg },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: Theme.colors.text, marginBottom: Theme.spacing.md },
-  label: { color: Theme.colors.textMuted, marginBottom: 6, marginTop: 12, fontWeight: '600' },
-  modalInput: { backgroundColor: '#121212', color: Theme.colors.text, padding: 12, borderRadius: Theme.borderRadius.sm, fontSize: 16, borderWidth: 1, borderColor: Theme.colors.border },
+  modalContent: { width: '90%', maxWidth: 420, borderRadius: 16, borderWidth: 1, padding: 24 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
+  label: { marginBottom: 6, marginTop: 12, fontWeight: '600' },
+  modalInput: { padding: 12, borderRadius: 12, fontSize: 16, borderWidth: 1 },
   choiceContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  choiceChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, backgroundColor: '#121212', borderWidth: 1, borderColor: Theme.colors.border },
-  choiceChipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)', borderColor: Theme.colors.primary },
-  choiceChipText: { color: Theme.colors.textMuted, fontSize: 13, fontWeight: '500' },
-  choiceChipTextActive: { color: Theme.colors.primary, fontWeight: 'bold' },
+  choiceChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, borderWidth: 1 },
+  choiceChipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)' },
+  choiceChipText: { fontSize: 13, fontWeight: '500' },
   modalActions: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 24 },
-  cancelBtn: { padding: 12, marginRight: 8 },
-  cancelBtnText: { color: Theme.colors.textMuted, fontSize: 16 },
-  saveBtn: { backgroundColor: Theme.colors.primary, paddingVertical: 12, paddingHorizontal: 20, borderRadius: Theme.borderRadius.md },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  cancelBtn: { minHeight: 44, paddingVertical: 10, paddingHorizontal: 16, justifyContent: 'center', marginRight: 8 },
+  cancelBtnText: { fontSize: 16 },
+  saveBtn: { minHeight: 44, paddingVertical: 10, paddingHorizontal: 20, borderRadius: 12, justifyContent: 'center' },
+  saveBtnText: { color: '#ffffff', fontSize: 16, fontWeight: 'bold' },
   deleteAction: {
-    backgroundColor: '#ff4444',
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,
