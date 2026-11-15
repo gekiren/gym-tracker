@@ -18,8 +18,10 @@ import { useAppTheme } from '../../src/theme';
 import { useGoogleDriveSyncStore } from '../../src/store/googleDriveSyncStore';
 import {
   approvePendingProposal,
+  browseDriveFolders,
   checkDriveForProposals,
   connectGoogleDriveAccount,
+  createAndSelectDriveFolder,
   dismissPendingProposal,
   DRIVE_FILES,
   importProposalsFromLocalFile,
@@ -29,8 +31,10 @@ import {
   loadSavedAdvices,
   resolveRestorePause,
   saveDriveSyncSettings,
+  selectDriveSyncFolder,
   uploadAppRecordsToDrive,
 } from '../../src/services/googleDriveSyncService';
+import type { DriveFileMetadata } from '../../src/services/googleDrive/driveApiClient';
 import { buildAgentGuideMarkdown } from '../../src/services/googleDrive/drivePayloadBuilder';
 import { normalizeAdviceEntries } from '../../src/services/googleDrive/driveProposalApplier';
 
@@ -58,13 +62,18 @@ export default function GoogleDriveSyncSettingsScreen() {
   const appliedHistory = useGoogleDriveSyncStore((s) => s.appliedHistory);
   const lastStatusMessage = useGoogleDriveSyncStore((s) => s.lastStatusMessage);
 
-  const [folderInput, setFolderInput] = useState(settings.folderName || 'TreNote_AI_Sync');
   const [isConnecting, setIsConnecting] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
-
-  useEffect(() => {
-    setFolderInput(settings.folderName || 'TreNote_AI_Sync');
-  }, [settings.folderName]);
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [folderStack, setFolderStack] = useState<Array<{ id: string; name: string }>>([
+    { id: 'root', name: 'マイドライブ' },
+  ]);
+  const [folderItems, setFolderItems] = useState<DriveFileMetadata[]>([]);
+  const [folderLoading, setFolderLoading] = useState(false);
+  const [folderPickerError, setFolderPickerError] = useState<string | null>(null);
+  const [folderSearch, setFolderSearch] = useState('');
+  const [newFolderName, setNewFolderName] = useState('');
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -177,12 +186,93 @@ export default function GoogleDriveSyncSettingsScreen() {
     await dismissPendingProposal(true);
   };
 
-  const handleSaveFolderName = async () => {
-    const cleaned = folderInput.trim() || 'TreNote_AI_Sync';
-    await saveDriveSyncSettings({ folderName: cleaned, folderId: undefined });
-    setFolderInput(cleaned);
-    Alert.alert('保存完了', `同期フォルダ名を「${cleaned}」に更新しました。`);
+  const loadFolderLevel = async (parentId: string) => {
+    setFolderLoading(true);
+    setFolderPickerError(null);
+    try {
+      const items = await browseDriveFolders(parentId);
+      setFolderItems(items);
+    } catch (err: any) {
+      setFolderItems([]);
+      setFolderPickerError(err?.message || 'フォルダ一覧の取得に失敗しました');
+    } finally {
+      setFolderLoading(false);
+    }
   };
+
+  const handleOpenFolderPicker = () => {
+    const initialStack = [{ id: 'root', name: 'マイドライブ' }];
+    setFolderStack(initialStack);
+    setFolderSearch('');
+    setNewFolderName('');
+    setShowFolderModal(true);
+    void loadFolderLevel('root');
+  };
+
+  const handleDrillDownFolder = (folder: DriveFileMetadata) => {
+    const nextStack = [...folderStack, { id: folder.id, name: folder.name }];
+    setFolderStack(nextStack);
+    setFolderSearch('');
+    void loadFolderLevel(folder.id);
+  };
+
+  const handleNavigateUpFolder = () => {
+    if (folderStack.length <= 1) return;
+    const nextStack = folderStack.slice(0, -1);
+    const parent = nextStack[nextStack.length - 1];
+    setFolderStack(nextStack);
+    setFolderSearch('');
+    void loadFolderLevel(parent.id);
+  };
+
+  const handleChooseFolder = async (folder: { id: string; name: string }, customPath?: string) => {
+    const currentPathNames = folderStack.map((item) => item.name);
+    const resolvedPath = customPath || [...currentPathNames, folder.name].join(' / ');
+    await selectDriveSyncFolder({
+      id: folder.id,
+      name: folder.name,
+      path: resolvedPath,
+    });
+    setShowFolderModal(false);
+    Alert.alert('保存完了', `同期フォルダを「${resolvedPath}」に設定しました。`);
+  };
+
+  const handleCreateFolder = async () => {
+    const trimmed = newFolderName.trim();
+    if (!trimmed) {
+      Alert.alert('入力エラー', '作成するフォルダ名を入力してください。');
+      return;
+    }
+    const currentLevel = folderStack[folderStack.length - 1];
+    const currentPath = folderStack.map((item) => item.name).join(' / ');
+    setIsCreatingFolder(true);
+    setFolderPickerError(null);
+    try {
+      const { folder, settings: updated } = await createAndSelectDriveFolder({
+        folderName: trimmed,
+        parentId: currentLevel.id,
+        parentPath: currentPath,
+      });
+      setNewFolderName('');
+      setShowFolderModal(false);
+      Alert.alert(
+        'フォルダ作成・設定完了',
+        `「${updated.folderPath || folder.name}」を作成し、同期フォルダに設定しました。`
+      );
+    } catch (err: any) {
+      setFolderPickerError(err?.message || 'フォルダの作成に失敗しました');
+    } finally {
+      setIsCreatingFolder(false);
+    }
+  };
+
+  const currentFolderLevel = folderStack[folderStack.length - 1];
+  const currentBreadcrumbPath = folderStack.map((item) => item.name).join(' / ');
+  const filteredFolderItems = useMemo(() => {
+    const q = folderSearch.trim().toLowerCase();
+    if (!q) return folderItems;
+    return folderItems.filter((item) => item.name.toLowerCase().includes(q));
+  }, [folderItems, folderSearch]);
 
   const handleCopyGuide = async () => {
     await Clipboard.setStringAsync(buildAgentGuideMarkdown());
@@ -472,19 +562,28 @@ export default function GoogleDriveSyncSettingsScreen() {
           </View>
 
           <View style={styles.subSection}>
-            <Text style={styles.settingLabel}>Googleドライブ同期フォルダ名</Text>
-            <View style={styles.inputRow}>
-              <TextInput
-                style={styles.textInput}
-                value={folderInput}
-                onChangeText={setFolderInput}
-                placeholder="TreNote_AI_Sync"
-                placeholderTextColor={colors.textMuted}
-              />
-              <TouchableOpacity style={styles.saveSmallBtn} onPress={handleSaveFolderName}>
-                <Text style={styles.saveSmallBtnText}>保存</Text>
-              </TouchableOpacity>
+            <Text style={styles.settingLabel}>Googleドライブ同期フォルダ</Text>
+            <View style={styles.selectedFolderBox}>
+              <Ionicons name="folder-open-outline" size={20} color={colors.primary} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={styles.selectedFolderPath}>
+                  {settings.folderPath || settings.folderName || 'TreNote_AI_Sync'}
+                </Text>
+                <Text style={styles.metaText}>
+                  {settings.folderId
+                    ? 'Googleドライブのフォルダを選択済み'
+                    : '未選択（初回連携時に「TreNote_AI_Sync」を自動作成）'}
+                </Text>
+              </View>
             </View>
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={handleOpenFolderPicker}
+              disabled={isBusy}
+            >
+              <Ionicons name="folder-outline" size={16} color={colors.text} />
+              <Text style={styles.secondaryButtonText}>Googleドライブからフォルダを選択</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -573,6 +672,162 @@ export default function GoogleDriveSyncSettingsScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Google ドライブ フォルダ選択モーダル */}
+      <Modal
+        visible={showFolderModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowFolderModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalCard, { maxHeight: '88%' }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.cardTitle}>Googleドライブからフォルダ選択</Text>
+              <TouchableOpacity
+                onPress={() => setShowFolderModal(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            {/* 現在の階層パス＆戻る */}
+            <View style={styles.breadcrumbBar}>
+              {folderStack.length > 1 && (
+                <TouchableOpacity
+                  style={styles.breadcrumbBackBtn}
+                  onPress={handleNavigateUpFolder}
+                  disabled={folderLoading}
+                >
+                  <Ionicons name="arrow-back" size={16} color={colors.text} />
+                  <Text style={styles.breadcrumbBackText}>上へ</Text>
+                </TouchableOpacity>
+              )}
+              <Text style={styles.breadcrumbText} numberOfLines={2}>
+                {currentBreadcrumbPath}
+              </Text>
+              <TouchableOpacity
+                onPress={() => loadFolderLevel(currentFolderLevel.id)}
+                disabled={folderLoading}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="refresh" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            {/* 絞り込み検索 */}
+            <TextInput
+              style={styles.searchInput}
+              value={folderSearch}
+              onChangeText={setFolderSearch}
+              placeholder="現在の階層内のフォルダを検索"
+              placeholderTextColor={colors.textMuted}
+            />
+
+            {folderPickerError && (
+              <View style={styles.errorBanner}>
+                <Ionicons name="alert-circle-outline" size={16} color="#f87171" />
+                <Text style={styles.errorBannerText}>{folderPickerError}</Text>
+              </View>
+            )}
+
+            {/* フォルダ一覧 */}
+            <ScrollView style={styles.folderListScroll}>
+              {folderLoading ? (
+                <View style={styles.folderLoadingBox}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={styles.metaText}>フォルダを読み込み中...</Text>
+                </View>
+              ) : filteredFolderItems.length === 0 ? (
+                <Text style={styles.emptyFolderText}>
+                  {folderSearch.trim()
+                    ? '一致するフォルダがありません'
+                    : 'この階層にサブフォルダはありません'}
+                </Text>
+              ) : (
+                filteredFolderItems.map((folder) => {
+                  const isCurrentSelected = settings.folderId === folder.id;
+                  return (
+                    <View
+                      key={folder.id}
+                      style={[
+                        styles.folderItemRow,
+                        isCurrentSelected && styles.folderItemRowActive,
+                      ]}
+                    >
+                      <TouchableOpacity
+                        style={styles.folderNameTap}
+                        onPress={() => handleDrillDownFolder(folder)}
+                      >
+                        <Ionicons
+                          name="folder-outline"
+                          size={20}
+                          color={isCurrentSelected ? colors.primary : colors.text}
+                        />
+                        <Text style={styles.folderItemName} numberOfLines={1}>
+                          {folder.name}
+                        </Text>
+                        <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.folderSelectBtn}
+                        onPress={() => handleChooseFolder(folder)}
+                      >
+                        <Text style={styles.folderSelectBtnText}>選択</Text>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })
+              )}
+            </ScrollView>
+
+            {/* 現在の階層に新規フォルダ作成 */}
+            <View style={styles.createFolderBox}>
+              <Text style={styles.metaText}>
+                「{currentFolderLevel.name}」内に新しいフォルダを作成して設定
+              </Text>
+              <View style={styles.inputRow}>
+                <TextInput
+                  style={styles.textInput}
+                  value={newFolderName}
+                  onChangeText={setNewFolderName}
+                  placeholder="例: TreNote_AI_Sync"
+                  placeholderTextColor={colors.textMuted}
+                />
+                <TouchableOpacity
+                  style={styles.saveSmallBtn}
+                  onPress={handleCreateFolder}
+                  disabled={isCreatingFolder}
+                >
+                  {isCreatingFolder ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.saveSmallBtnText}>作成</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {folderStack.length > 1 ? (
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={() =>
+                  handleChooseFolder(currentFolderLevel, currentBreadcrumbPath)
+                }
+              >
+                <Text style={styles.primaryButtonText}>
+                  「{currentFolderLevel.name}」を同期先に設定
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <Text style={styles.metaText}>
+                マイドライブ内のフォルダを選択、または新規作成してください（フォルダ名をタップすると中を開きます）。
+              </Text>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       {/* AI_AGENT_GUIDE プレビューモーダル */}
       <Modal
@@ -994,5 +1249,124 @@ const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
       color: colors.text,
       fontSize: 12,
       lineHeight: 18,
+    },
+    selectedFolderBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: colors.background,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 12,
+    },
+    selectedFolderPath: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    breadcrumbBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: colors.background,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+    },
+    breadcrumbBackBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    breadcrumbBackText: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    breadcrumbText: {
+      flex: 1,
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    searchInput: {
+      minHeight: 40,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.background,
+      color: colors.text,
+      paddingHorizontal: 12,
+      fontSize: 13,
+    },
+    folderListScroll: {
+      maxHeight: 240,
+      backgroundColor: colors.background,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    folderLoadingBox: {
+      padding: 24,
+      alignItems: 'center',
+      gap: 8,
+    },
+    emptyFolderText: {
+      color: colors.textMuted,
+      fontSize: 13,
+      textAlign: 'center',
+      padding: 20,
+    },
+    folderItemRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      paddingHorizontal: 10,
+      minHeight: 48,
+      gap: 8,
+    },
+    folderItemRowActive: {
+      backgroundColor: 'rgba(79, 172, 254, 0.1)',
+    },
+    folderNameTap: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingVertical: 10,
+    },
+    folderItemName: {
+      flex: 1,
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    folderSelectBtn: {
+      minHeight: 32,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    folderSelectBtnText: {
+      color: '#ffffff',
+      fontSize: 12,
+      fontWeight: '700',
+    },
+    createFolderBox: {
+      gap: 6,
+      paddingTop: 4,
     },
   });

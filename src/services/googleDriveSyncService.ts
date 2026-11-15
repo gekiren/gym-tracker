@@ -4,10 +4,13 @@ import { getSettings, saveSetting } from '../db/database';
 import { useGoogleDriveSyncStore } from '../store/googleDriveSyncStore';
 import {
   authorizeGoogleDrive,
+  createDriveFolder,
   downloadTextFileById,
+  DriveFileMetadata,
   ensureDriveFolder,
   findFileInFolder,
   getDriveAccessToken,
+  listDriveFolders,
   upsertTextFileInFolder,
 } from './googleDrive/driveApiClient';
 import {
@@ -198,6 +201,7 @@ export async function connectGoogleDriveAccount(): Promise<{
       enabled: true,
       connectedEmail: auth.email,
       folderId,
+      folderPath: current.folderPath || `マイドライブ / ${current.folderName || 'TreNote_AI_Sync'}`,
       lastError: undefined,
     });
 
@@ -217,6 +221,66 @@ export async function connectGoogleDriveAccount(): Promise<{
   } finally {
     isAuthorizingDriveNow = false;
   }
+}
+
+/**
+ * Googleドライブ内のフォルダ一覧を取得する（ピッカーモーダル用・対話認証付き）
+ */
+export async function browseDriveFolders(
+  parentId: string = 'root'
+): Promise<DriveFileMetadata[]> {
+  return await listDriveFolders(parentId, true);
+}
+
+/**
+ * ピッカーで選んだ既存フォルダを同期先に設定する
+ */
+export async function selectDriveSyncFolder(params: {
+  id: string;
+  name: string;
+  path?: string;
+}): Promise<GoogleDriveSyncSettings> {
+  const displayPath = params.path || `マイドライブ / ${params.name}`;
+  const updated = await saveDriveSyncSettings({
+    folderId: params.id,
+    folderName: params.name,
+    folderPath: displayPath,
+    lastError: undefined,
+  });
+
+  // 既に連携済みなら選択フォルダ内にもガイドと提案テンプレートを準備しておく
+  if (updated.connectedEmail) {
+    try {
+      await ensureGuideAndTemplateInFolder(params.id, true);
+    } catch (err) {
+      console.warn('[GoogleDriveSync] Failed to initialize files in selected folder:', err);
+    }
+  }
+
+  useGoogleDriveSyncStore
+    .getState()
+    .setLastStatusMessage(`同期フォルダを設定しました: ${displayPath}`);
+  return updated;
+}
+
+/**
+ * Googleドライブ上に新規フォルダを作成し、そのまま同期先に設定する
+ */
+export async function createAndSelectDriveFolder(params: {
+  folderName: string;
+  parentId?: string;
+  parentPath?: string;
+}): Promise<{ folder: DriveFileMetadata; settings: GoogleDriveSyncSettings }> {
+  const parentId = params.parentId || 'root';
+  const created = await createDriveFolder(params.folderName, parentId, true);
+  const parentPrefix = params.parentPath || 'マイドライブ';
+  const fullPath = `${parentPrefix} / ${created.name}`;
+  const settings = await selectDriveSyncFolder({
+    id: created.id,
+    name: created.name,
+    path: fullPath,
+  });
+  return { folder: created, settings };
 }
 
 async function ensureGuideAndTemplateInFolder(

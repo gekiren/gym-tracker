@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.47',
+  version: '2.3.48',
   title: {
-    ja: '🔧 Googleドライブ認証の同時実行エラー修正',
-    en: '🔧 Fix Google Drive Auth Concurrency',
+    ja: '📂 Googleドライブ フォルダ直接選択機能を追加',
+    en: '📂 Google Drive Folder Picker Added',
   },
   notes: {
     ja: [
-      'Googleドライブ連携中にバックグラウンド同期のトークン取得が衝突する問題（ASYNC_OP_IN_PROGRESS）を修正しました。',
+      '同期フォルダ名を直接入力する代わりに、Googleドライブ（マイドライブ）から既存フォルダの階層移動・選択および新規作成ができるフォルダピッカーを追加しました。',
+      '外部AIが新規作成した ai_agent_proposals.json も読み込めるよう Google Drive スコープを拡張しました。',
     ],
     en: [
-      'Fixed an ASYNC_OP_IN_PROGRESS collision caused by background Drive sync running concurrently during Google Sign-In authorization.',
+      'Added an interactive Google Drive folder picker modal so you can browse, select, or create folders directly in My Drive instead of typing folder names manually.',
+      'Expanded Google Drive scope support so ai_agent_proposals.json created by external AI agents can also be read and updated.',
     ],
   },
 };

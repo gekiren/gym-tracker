@@ -4,6 +4,7 @@ export interface GoogleDriveSyncSettings {
   enabled: boolean;
   folderName: string;
   folderId?: string;
+  folderPath?: string;
   autoUpload: boolean;
   autoDownload: boolean;
   applyMode: DriveApplyMode;

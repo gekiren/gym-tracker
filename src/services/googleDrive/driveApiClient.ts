@@ -4,7 +4,7 @@ import {
   runGoogleSigninExclusive,
 } from '../accountSyncService';
 
-export const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+export const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
 const DRIVE_AUTH_SCOPES = ['email', 'profile', GOOGLE_DRIVE_SCOPE];
 const DRIVE_FILES_API = 'https://www.googleapis.com/drive/v3/files';
 const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3/files';
@@ -27,7 +27,6 @@ function hasDriveScope(scopes?: string[] | null): boolean {
     (s) =>
       s === GOOGLE_DRIVE_SCOPE ||
       s === 'https://www.googleapis.com/auth/drive' ||
-      s.endsWith('/auth/drive.file') ||
       s.endsWith('/auth/drive')
   );
 }
@@ -282,6 +281,83 @@ async function parseDriveError(res: Response, fallback: string): Promise<string>
   } catch {
     return `HTTP ${res.status}: ${fallback}`;
   }
+}
+
+/**
+ * 指定親フォルダ直下の Google Drive フォルダ一覧を取得する
+ */
+export async function listDriveFolders(
+  parentId: string = 'root',
+  interactive = true
+): Promise<DriveFileMetadata[]> {
+  const safeParentId = escapeDriveQueryValue((parentId || 'root').trim() || 'root');
+  const q = `'${safeParentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+
+  const folders: DriveFileMetadata[] = [];
+  let pageToken: string | undefined;
+
+  for (let page = 0; page < 3; page += 1) {
+    const tokenParam = pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : '';
+    const url = `${DRIVE_FILES_API}?q=${encodeURIComponent(
+      q
+    )}&fields=nextPageToken,files(id,name,mimeType,modifiedTime)&orderBy=name&pageSize=100&includeItemsFromAllDrives=false&supportsAllDrives=false${tokenParam}`;
+
+    const res = await fetchDriveWithRetry(url, { method: 'GET' }, interactive);
+    if (!res.ok) {
+      throw new Error(await parseDriveError(res, 'フォルダ一覧の取得に失敗しました'));
+    }
+
+    const data = await res.json();
+    if (Array.isArray(data?.files)) {
+      folders.push(...data.files);
+    }
+    pageToken = data?.nextPageToken;
+    if (!pageToken) break;
+  }
+
+  return folders;
+}
+
+/**
+ * Google Drive 上に新規フォルダを作成する
+ */
+export async function createDriveFolder(
+  folderName: string,
+  parentId: string = 'root',
+  interactive = true
+): Promise<DriveFileMetadata> {
+  const cleanName = folderName.trim();
+  if (!cleanName) {
+    throw new Error('フォルダ名を入力してください');
+  }
+
+  const body: Record<string, any> = {
+    name: cleanName,
+    mimeType: 'application/vnd.google-apps.folder',
+  };
+  if (parentId && parentId !== 'root') {
+    body.parents = [parentId];
+  }
+
+  const createRes = await fetchDriveWithRetry(
+    `${DRIVE_FILES_API}?fields=id,name,mimeType,modifiedTime`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    },
+    interactive
+  );
+  if (!createRes.ok) {
+    throw new Error(await parseDriveError(createRes, 'フォルダ作成に失敗しました'));
+  }
+  const created = (await createRes.json()) as DriveFileMetadata;
+  if (!created?.id) {
+    throw new Error('作成したフォルダのIDを取得できませんでした');
+  }
+  return created;
 }
 
 /**

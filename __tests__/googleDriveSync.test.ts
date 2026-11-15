@@ -1,8 +1,10 @@
 import * as accountSyncService from '../src/services/accountSyncService';
 import {
   authorizeGoogleDrive,
+  createDriveFolder,
   getDriveAccessToken,
   GOOGLE_DRIVE_SCOPE,
+  listDriveFolders,
 } from '../src/services/googleDrive/driveApiClient';
 import {
   applyAiAgentProposalToApp,
@@ -391,6 +393,112 @@ describe('Google Drive AI双方向同期ロジック', () => {
       expect(res.status).toBe('skipped');
       expect(getTokensMock).not.toHaveBeenCalled();
     } finally {
+      spy.mockRestore();
+    }
+  });
+
+  test('drive.file のみ付与済みのアカウントは addScopes でフル Drive スコープへ昇格する', async () => {
+    let currentUser: any = {
+      user: { email: 'trainer@example.com' },
+      scopes: ['email', 'profile', 'https://www.googleapis.com/auth/drive.file'],
+    };
+
+    const upgradedUser = {
+      user: { email: 'trainer@example.com' },
+      scopes: ['email', 'profile', GOOGLE_DRIVE_SCOPE],
+    };
+
+    const addScopesMock = jest.fn(async () => {
+      currentUser = upgradedUser;
+      return { type: 'success', data: upgradedUser };
+    });
+
+    const spy = jest.spyOn(accountSyncService, 'getGoogleSigninModule').mockReturnValue({
+      GoogleSignin: {
+        configure: jest.fn(),
+        hasPlayServices: jest.fn(async () => true),
+        getCurrentUser: jest.fn(() => currentUser),
+        addScopes: addScopesMock,
+        getTokens: jest.fn(async () => ({ accessToken: 'upgraded_token' })),
+      },
+    });
+
+    try {
+      const res = await authorizeGoogleDrive();
+      expect(res.success).toBe(true);
+      expect(addScopesMock).toHaveBeenCalledWith({
+        scopes: [GOOGLE_DRIVE_SCOPE],
+      });
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  test('listDriveFolders と createDriveFolder は root とサブフォルダを正しくリクエストする', async () => {
+    const spy = jest.spyOn(accountSyncService, 'getGoogleSigninModule').mockReturnValue({
+      GoogleSignin: {
+        configure: jest.fn(),
+        hasPlayServices: jest.fn(async () => true),
+        getCurrentUser: jest.fn(() => ({
+          user: { email: 'trainer@example.com' },
+          scopes: ['email', 'profile', GOOGLE_DRIVE_SCOPE],
+        })),
+        getTokens: jest.fn(async () => ({ accessToken: 'drive_token_ok' })),
+      },
+    });
+
+    const originalFetch = global.fetch;
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          files: [{ id: 'fld_1', name: 'Obsidian', mimeType: 'application/vnd.google-apps.folder' }],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          id: 'fld_new_root',
+          name: 'MyRootSync',
+          mimeType: 'application/vnd.google-apps.folder',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          id: 'fld_new_child',
+          name: 'TreNote',
+          mimeType: 'application/vnd.google-apps.folder',
+        }),
+      });
+    global.fetch = fetchMock as any;
+
+    try {
+      const folders = await listDriveFolders('root', false);
+      expect(folders).toHaveLength(1);
+      expect(folders[0].name).toBe('Obsidian');
+      expect(decodeURIComponent(fetchMock.mock.calls[0][0])).toContain("'root' in parents");
+
+      await createDriveFolder('MyRootSync', 'root', false);
+      const rootCreateBody = JSON.parse(fetchMock.mock.calls[1][1].body);
+      expect(rootCreateBody).toEqual({
+        name: 'MyRootSync',
+        mimeType: 'application/vnd.google-apps.folder',
+      });
+
+      await createDriveFolder('TreNote', 'fld_1', false);
+      const childCreateBody = JSON.parse(fetchMock.mock.calls[2][1].body);
+      expect(childCreateBody).toEqual({
+        name: 'TreNote',
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: ['fld_1'],
+      });
+    } finally {
+      global.fetch = originalFetch;
       spy.mockRestore();
     }
   });
