@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.46',
+  version: '2.3.47',
   title: {
-    ja: '🔧 Googleドライブ連携の認証修正',
-    en: '🔧 Google Drive Auth Fix',
+    ja: '🔧 Googleドライブ認証の同時実行エラー修正',
+    en: '🔧 Fix Google Drive Auth Concurrency',
   },
   notes: {
     ja: [
-      'Googleドライブ連携時のトークン取得エラー（[getTokens] the name must not be empty: null）を修正し、不完全なアカウントキャッシュを自動リカバリするよう改善しました。',
+      'Googleドライブ連携中にバックグラウンド同期のトークン取得が衝突する問題（ASYNC_OP_IN_PROGRESS）を修正しました。',
     ],
     en: [
-      'Fixed the [getTokens] the name must not be empty: null error during Google Drive connection by automatically recovering incomplete cached Google Sign-In sessions.',
+      'Fixed an ASYNC_OP_IN_PROGRESS collision caused by background Drive sync running concurrently during Google Sign-In authorization.',
     ],
   },
 };

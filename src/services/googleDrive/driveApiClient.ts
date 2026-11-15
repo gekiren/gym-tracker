@@ -1,6 +1,7 @@
 import {
   configureGoogleSignIn,
   getGoogleSigninModule,
+  runGoogleSigninExclusive,
 } from '../accountSyncService';
 
 export const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
@@ -36,10 +37,7 @@ function isMissingAccountEmailError(err: any): boolean {
   return msg.includes('name must not be empty');
 }
 
-/**
- * Google Sign-In 経由で Drive 権限を付与する（インタラクティブ）
- */
-export async function authorizeGoogleDrive(): Promise<{
+async function authorizeGoogleDriveUnlocked(): Promise<{
   success: boolean;
   email?: string;
   error?: string;
@@ -143,9 +141,17 @@ export async function authorizeGoogleDrive(): Promise<{
 }
 
 /**
- * 有効な Google OAuth アクセストークンを取得する
+ * Google Sign-In 経由で Drive 権限を付与する（インタラクティブ）
  */
-export async function getDriveAccessToken(options?: {
+export function authorizeGoogleDrive(): Promise<{
+  success: boolean;
+  email?: string;
+  error?: string;
+}> {
+  return runGoogleSigninExclusive(() => authorizeGoogleDriveUnlocked());
+}
+
+async function getDriveAccessTokenUnlocked(options?: {
   interactive?: boolean;
   forceRefresh?: boolean;
 }): Promise<{ accessToken: string | null; email?: string; error?: string }> {
@@ -173,7 +179,7 @@ export async function getDriveAccessToken(options?: {
       (!currentUser || !currentUser.user?.email || !hasDriveScope(currentUser.scopes)) &&
       options?.interactive
     ) {
-      const auth = await authorizeGoogleDrive();
+      const auth = await authorizeGoogleDriveUnlocked();
       if (!auth.success) {
         return { accessToken: null, error: auth.error };
       }
@@ -226,6 +232,16 @@ export async function getDriveAccessToken(options?: {
       error: error?.message || 'トークン取得エラー',
     };
   }
+}
+
+/**
+ * 有効な Google OAuth アクセストークンを取得する
+ */
+export function getDriveAccessToken(options?: {
+  interactive?: boolean;
+  forceRefresh?: boolean;
+}): Promise<{ accessToken: string | null; email?: string; error?: string }> {
+  return runGoogleSigninExclusive(() => getDriveAccessTokenUnlocked(options));
 }
 
 async function fetchDriveWithRetry(

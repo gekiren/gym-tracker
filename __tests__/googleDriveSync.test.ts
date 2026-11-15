@@ -1,3 +1,9 @@
+import * as accountSyncService from '../src/services/accountSyncService';
+import {
+  authorizeGoogleDrive,
+  getDriveAccessToken,
+  GOOGLE_DRIVE_SCOPE,
+} from '../src/services/googleDrive/driveApiClient';
 import {
   applyAiAgentProposalToApp,
   isNewPendingProposal,
@@ -15,8 +21,21 @@ import {
   DEFAULT_GOOGLE_DRIVE_SYNC_SETTINGS,
   GoogleDriveSyncSettings,
 } from '../src/services/googleDrive/types';
+import { checkDriveForProposals } from '../src/services/googleDriveSyncService';
 import { useLifelogStore } from '../src/store/lifelogStore';
 import { useSettingsStore } from '../src/store/settingsStore';
+
+jest.mock('expo-document-picker', () => ({
+  getDocumentAsync: jest.fn(),
+}));
+
+jest.mock('expo-file-system/legacy', () => ({
+  documentDirectory: 'file:///mock-doc/',
+  getInfoAsync: jest.fn(async () => ({ exists: false })),
+  readAsStringAsync: jest.fn(async () => ''),
+  writeAsStringAsync: jest.fn(async () => undefined),
+  deleteAsync: jest.fn(async () => undefined),
+}));
 
 const mockSavedSettings: Record<string, string> = {};
 
@@ -265,5 +284,114 @@ describe('Google Drive AI双方向同期ロジック', () => {
     expect(useSettingsStore.getState().settings.aiCompanionMemory).toBe(
       '既存の記憶\n新規記憶: ベンチ80kg継続'
     );
+  });
+
+  test('authorizeGoogleDrive と getDriveAccessToken の同時呼び出しは直列化され ASYNC_OP_IN_PROGRESS を起こさない', async () => {
+    let activeNativeOp = false;
+    let overlapCount = 0;
+
+    const runSerializedCheck = async <T>(fn: () => Promise<T>): Promise<T> => {
+      if (activeNativeOp) {
+        overlapCount += 1;
+        const err: any = new Error(
+          'Warning: previous promise did not settle and was overwritten. ASYNC_OP_IN_PROGRESS'
+        );
+        err.code = 'ASYNC_OP_IN_PROGRESS';
+        throw err;
+      }
+      activeNativeOp = true;
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 15));
+        return await fn();
+      } finally {
+        activeNativeOp = false;
+      }
+    };
+
+    const mockUser = {
+      user: { email: 'trainer@example.com' },
+      scopes: ['email', 'profile', GOOGLE_DRIVE_SCOPE],
+    };
+    let signedInUser: any = null;
+
+    const fakeGoogleSignin = {
+      configure: jest.fn(),
+      hasPlayServices: jest.fn(async () => true),
+      getCurrentUser: jest.fn(() => signedInUser),
+      signOut: jest.fn(async () => {
+        await runSerializedCheck(async () => {
+          signedInUser = null;
+        });
+      }),
+      signIn: jest.fn(async () =>
+        runSerializedCheck(async () => {
+          signedInUser = mockUser;
+          return { type: 'success', data: mockUser };
+        })
+      ),
+      signInSilently: jest.fn(async () =>
+        runSerializedCheck(async () => ({
+          type: 'success',
+          data: signedInUser ?? mockUser,
+        }))
+      ),
+      addScopes: jest.fn(),
+      getTokens: jest.fn(async () =>
+        runSerializedCheck(async () => ({
+          idToken: 'id_tok_123',
+          accessToken: 'access_tok_123',
+        }))
+      ),
+      clearCachedAccessToken: jest.fn(),
+    };
+
+    const spy = jest
+      .spyOn(accountSyncService, 'getGoogleSigninModule')
+      .mockReturnValue({ GoogleSignin: fakeGoogleSignin });
+
+    try {
+      const [authRes, tokenRes] = await Promise.all([
+        authorizeGoogleDrive(),
+        getDriveAccessToken({ interactive: false }),
+      ]);
+
+      expect(overlapCount).toBe(0);
+      expect(authRes.success).toBe(true);
+      expect(authRes.email).toBe('trainer@example.com');
+      expect(tokenRes.accessToken).toBe('access_tok_123');
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  test('未連携（connectedEmail未設定）の状態で非対話チェックが走っても getTokens を呼ばずスキップする', async () => {
+    mockSavedSettings['google_drive_sync_settings'] = JSON.stringify({
+      ...DEFAULT_GOOGLE_DRIVE_SYNC_SETTINGS,
+      enabled: true,
+      autoDownload: true,
+      connectedEmail: undefined,
+    });
+
+    const getTokensMock = jest.fn();
+    const spy = jest.spyOn(accountSyncService, 'getGoogleSigninModule').mockReturnValue({
+      GoogleSignin: {
+        configure: jest.fn(),
+        getCurrentUser: jest.fn(() => null),
+        signInSilently: jest.fn(),
+        getTokens: getTokensMock,
+      },
+    });
+
+    try {
+      const res = await checkDriveForProposals({
+        interactive: false,
+        force: true,
+        reason: 'app_active',
+      });
+      expect(res.status).toBe('skipped');
+      expect(getTokensMock).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

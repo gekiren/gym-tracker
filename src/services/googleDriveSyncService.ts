@@ -53,6 +53,7 @@ let uploadDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 let hasPendingUploadChanges = false;
 let isUploadingNow = false;
 let isDownloadingNow = false;
+let isAuthorizingDriveNow = false;
 let lastAutoCheckTimestamp = 0;
 
 /**
@@ -178,13 +179,14 @@ export async function connectGoogleDriveAccount(): Promise<{
   email?: string;
   error?: string;
 }> {
-  const auth = await authorizeGoogleDrive();
-  if (!auth.success) {
-    await saveDriveSyncSettings({ lastError: auth.error });
-    return auth;
-  }
-
+  isAuthorizingDriveNow = true;
   try {
+    const auth = await authorizeGoogleDrive();
+    if (!auth.success) {
+      await saveDriveSyncSettings({ lastError: auth.error });
+      return auth;
+    }
+
     const current = await loadDriveSyncSettings();
     const folderId = await ensureDriveFolder(
       current.folderName || 'TreNote_AI_Sync',
@@ -212,6 +214,8 @@ export async function connectGoogleDriveAccount(): Promise<{
     const msg = error?.message || 'Googleドライブの初期設定に失敗しました';
     await saveDriveSyncSettings({ lastError: msg });
     return { success: false, error: msg };
+  } finally {
+    isAuthorizingDriveNow = false;
   }
 }
 
@@ -264,6 +268,12 @@ export async function uploadAppRecordsToDrive(options?: {
   const settings = await loadDriveSyncSettings();
   if (!settings.enabled && !interactive) {
     return { success: false, skippedReason: 'disabled' };
+  }
+  if (!interactive && (isAuthorizingDriveNow || !settings.connectedEmail)) {
+    return {
+      success: false,
+      skippedReason: isAuthorizingDriveNow ? 'auth_in_progress' : 'not_connected',
+    };
   }
 
   if (!options?.bypassRestorePause) {
@@ -387,6 +397,9 @@ export async function checkDriveForProposals(options?: {
 
   const settings = await loadDriveSyncSettings();
   if (!settings.enabled && !interactive) {
+    return { status: 'skipped' };
+  }
+  if (!interactive && (isAuthorizingDriveNow || !settings.connectedEmail)) {
     return { status: 'skipped' };
   }
   if (!force && !settings.autoDownload) {
@@ -630,7 +643,12 @@ export function scheduleDebouncedDriveUpload(
 ): void {
   const settings = useGoogleDriveSyncStore.getState().settings;
   const pause = useGoogleDriveSyncStore.getState().restorePause;
-  if (!settings.enabled || !settings.autoUpload || pause?.paused) {
+  if (
+    !settings.enabled ||
+    !settings.autoUpload ||
+    !settings.connectedEmail ||
+    pause?.paused
+  ) {
     return;
   }
 
@@ -650,7 +668,12 @@ export function scheduleDebouncedDriveUpload(
 export async function flushPendingDriveUploadImpl(reason: string = 'background'): Promise<void> {
   const settings = useGoogleDriveSyncStore.getState().settings;
   const pause = useGoogleDriveSyncStore.getState().restorePause;
-  if (!settings.enabled || !settings.autoUpload || pause?.paused) {
+  if (
+    !settings.enabled ||
+    !settings.autoUpload ||
+    !settings.connectedEmail ||
+    pause?.paused
+  ) {
     return;
   }
   if (!hasPendingUploadChanges) {
