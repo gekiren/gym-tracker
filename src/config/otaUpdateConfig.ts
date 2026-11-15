@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.44',
+  version: '2.3.45',
   title: {
-    ja: '🎨 24時間管理のデザイン統一と操作性改善',
-    en: '🎨 24h Time Management Theme & Layout Update',
+    ja: '☁️ Googleドライブ AI双方向同期機能の追加',
+    en: '☁️ Bidirectional Google Drive AI Sync',
   },
   notes: {
     ja: [
-      '24時間管理画面のテーマカラーを青系に統一し、タイムライン操作ボタンの文字が1行で読みやすく表示されるようレイアウトを改善しました。',
+      'GoogleドライブとのAI双方向同期機能を追加しました（筋トレ・食事・体組成・24時間管理・ルーティン等の記録を随時アップロードし、外部AIエージェントからのアドバイス・メニュー・スケジュール提案を随時読み込み・反映できます）。',
+      'バックアップ復元時にGoogleドライブ上の記録を誤上書きしない保護一時停止ガードを追加しました。',
     ],
     en: [
-      'Unified the 24h Time Management screen theme to blue and improved timeline action button layout to prevent text wrapping.',
+      'Added bidirectional Google Drive AI sync to continuously export logs (workouts, nutrition, body composition, 24h schedules, routines) and import trainer advice, workout menus, daily routines, and schedule proposals from external AI agents.',
+      'Added restore-protection pause guard after .db backup restores to prevent overwriting newer records on Google Drive.',
     ],
   },
 };
