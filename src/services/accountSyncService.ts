@@ -27,7 +27,7 @@ export interface AccountSyncResult {
   requiresNativeUpdate?: boolean;
 }
 
-let isGoogleConfigured = false;
+let configuredScopesKey: string | null = null;
 
 /**
  * ネイティブモジュール (RNGoogleSignin) が現在のバイナリに組み込まれているか安全に判定する
@@ -53,8 +53,9 @@ export function getGoogleSigninModule(): any | null {
 /**
  * Google Sign-In の初期設定を行う
  */
-export function configureGoogleSignIn(): boolean {
-  if (isGoogleConfigured) return true;
+export function configureGoogleSignIn(scopes?: string[]): boolean {
+  const nextKey = scopes && scopes.length > 0 ? scopes.join(',') : '__default__';
+  if (configuredScopesKey === nextKey) return true;
   const pkg = getGoogleSigninModule();
   if (!pkg?.GoogleSignin) return false;
 
@@ -62,8 +63,9 @@ export function configureGoogleSignIn(): boolean {
     pkg.GoogleSignin.configure({
       webClientId: GOOGLE_WEB_CLIENT_ID,
       offlineAccess: false,
+      ...(scopes && scopes.length > 0 ? { scopes } : {}),
     });
-    isGoogleConfigured = true;
+    configuredScopesKey = nextKey;
     return true;
   } catch (err) {
     console.warn('Failed to configure GoogleSignin:', err);

@@ -4,6 +4,7 @@ import {
 } from '../accountSyncService';
 
 export const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_AUTH_SCOPES = ['email', 'profile', GOOGLE_DRIVE_SCOPE];
 const DRIVE_FILES_API = 'https://www.googleapis.com/drive/v3/files';
 const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3/files';
 
@@ -30,6 +31,11 @@ function hasDriveScope(scopes?: string[] | null): boolean {
   );
 }
 
+function isMissingAccountEmailError(err: any): boolean {
+  const msg = String(err?.message || err || '').toLowerCase();
+  return msg.includes('name must not be empty');
+}
+
 /**
  * Google Sign-In 経由で Drive 権限を付与する（インタラクティブ）
  */
@@ -47,11 +53,16 @@ export async function authorizeGoogleDrive(): Promise<{
   }
 
   try {
-    configureGoogleSignIn();
+    configureGoogleSignIn(DRIVE_AUTH_SCOPES);
     await pkg.GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
     let currentUser = pkg.GoogleSignin.getCurrentUser();
-    if (!currentUser) {
+
+    // メールアドレス欠損キャッシュがある場合はサインアウトして再サインインで全項目・全スコープを取り直す
+    if (!currentUser || !currentUser.user?.email) {
+      if (currentUser && typeof pkg.GoogleSignin.signOut === 'function') {
+        await pkg.GoogleSignin.signOut().catch(() => {});
+      }
       const res = await pkg.GoogleSignin.signIn();
       if (res?.type === 'cancelled') {
         return { success: false, error: 'Googleログインがキャンセルされました' };
@@ -73,10 +84,44 @@ export async function authorizeGoogleDrive(): Promise<{
           error: 'Googleドライブのアクセス許可がキャンセルされました',
         };
       }
+      currentUser = pkg.GoogleSignin.getCurrentUser() ?? scopeRes?.data ?? currentUser;
+
+      // Android で addScopes 後に getLastSignedInAccount から email やスコープが抜けるケースへのフォールバック
+      if (!currentUser?.user?.email || !hasDriveScope(currentUser.scopes)) {
+        if (typeof pkg.GoogleSignin.signOut === 'function') {
+          await pkg.GoogleSignin.signOut().catch(() => {});
+        }
+        const reRes = await pkg.GoogleSignin.signIn();
+        if (reRes?.type === 'cancelled') {
+          return {
+            success: false,
+            error: 'Googleドライブのアクセス許可がキャンセルされました',
+          };
+        }
+        currentUser = reRes?.data ?? pkg.GoogleSignin.getCurrentUser();
+      }
     }
 
-    // トークンが取得できることまで検証する
-    const tokens = await pkg.GoogleSignin.getTokens();
+    // トークンが取得できることまで検証する（キャッシュ欠損時は再ログインして1回リカバリ）
+    let tokens: { idToken?: string; accessToken?: string } | null = null;
+    try {
+      tokens = await pkg.GoogleSignin.getTokens();
+    } catch (tokenErr: any) {
+      if (isMissingAccountEmailError(tokenErr)) {
+        if (typeof pkg.GoogleSignin.signOut === 'function') {
+          await pkg.GoogleSignin.signOut().catch(() => {});
+        }
+        const reRes = await pkg.GoogleSignin.signIn();
+        if (reRes?.type === 'cancelled') {
+          return { success: false, error: 'Googleログインがキャンセルされました' };
+        }
+        currentUser = reRes?.data ?? pkg.GoogleSignin.getCurrentUser();
+        tokens = await pkg.GoogleSignin.getTokens();
+      } else {
+        throw tokenErr;
+      }
+    }
+
     if (!tokens?.accessToken) {
       return {
         success: false,
@@ -86,7 +131,7 @@ export async function authorizeGoogleDrive(): Promise<{
 
     return {
       success: true,
-      email: currentUser.user?.email,
+      email: currentUser?.user?.email,
     };
   } catch (error: any) {
     const code = error?.code ? `[${error.code}] ` : '';
@@ -110,10 +155,10 @@ export async function getDriveAccessToken(options?: {
   }
 
   try {
-    configureGoogleSignIn();
+    configureGoogleSignIn(DRIVE_AUTH_SCOPES);
 
     let currentUser = pkg.GoogleSignin.getCurrentUser();
-    if (!currentUser) {
+    if (!currentUser || !currentUser.user?.email) {
       try {
         const silent = await pkg.GoogleSignin.signInSilently();
         if (silent?.type === 'success') {
@@ -124,7 +169,10 @@ export async function getDriveAccessToken(options?: {
       }
     }
 
-    if (!currentUser && options?.interactive) {
+    if (
+      (!currentUser || !currentUser.user?.email || !hasDriveScope(currentUser.scopes)) &&
+      options?.interactive
+    ) {
       const auth = await authorizeGoogleDrive();
       if (!auth.success) {
         return { accessToken: null, error: auth.error };
@@ -139,24 +187,19 @@ export async function getDriveAccessToken(options?: {
       };
     }
 
+    if (!currentUser.user?.email) {
+      return {
+        accessToken: null,
+        error: 'Googleアカウント情報の再同期が必要です（設定画面から再連携してください）',
+      };
+    }
+
     if (!hasDriveScope(currentUser.scopes)) {
-      if (!options?.interactive) {
-        return {
-          accessToken: null,
-          email: currentUser.user?.email,
-          error: 'Googleドライブの権限が未付与です（設定画面から連携してください）',
-        };
-      }
-      const scopeRes = await pkg.GoogleSignin.addScopes({
-        scopes: [GOOGLE_DRIVE_SCOPE],
-      });
-      if (scopeRes?.type === 'cancelled') {
-        return {
-          accessToken: null,
-          email: currentUser.user?.email,
-          error: 'Googleドライブの権限付与がキャンセルされました',
-        };
-      }
+      return {
+        accessToken: null,
+        email: currentUser.user?.email,
+        error: 'Googleドライブの権限が未付与です（設定画面から連携してください）',
+      };
     }
 
     let tokens = await pkg.GoogleSignin.getTokens();
