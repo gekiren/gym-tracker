@@ -473,10 +473,11 @@ export function buildInitialProposalTemplate(): AiAgentProposalsPayload {
   };
 }
 
-export function buildAgentGuideMarkdown(): string {
+export function buildAgentGuideMarkdown(folderPath?: string): string {
+  const folderLine = folderPath ? `\n- **同期フォルダ**: \`${folderPath}\`\n` : '';
   return `# TreNote Google Drive AI連携ガイド (AI_AGENT_GUIDE.md)
 
-このフォルダは **TreNote（フィットネス＆ライフログアプリ）** と外部 AI エージェントが自律的に連携するための共有ワークスペースです。
+このフォルダは **TreNote（フィットネス＆ライフログアプリ）** と外部 AI エージェントが自律的に連携するための共有ワークスペースです。${folderLine}
 
 ## フォルダ内のファイル構成
 
@@ -494,7 +495,7 @@ export function buildAgentGuideMarkdown(): string {
 
 ## AIエージェントへの書き込みルール（重要）
 
-提案を反映させたいときは、必ず **\`ai_agent_proposals.json\` ファイルを上書き更新** してください（別名ファイルを作成しないでください）。
+提案を反映させたいときは、必ず **\`ai_agent_proposals.json\`** ファイルを更新（または同ファイル名で本フォルダ直下へ保存）してください。
 
 ### 必須ルール
 1. **\`proposalId\`**: 提案ごとに必ず一意の新しい文字列にしてください（例: \`"prop_20261115_001"\`）。同じ \`proposalId\` かつ同じ \`updatedAt\` の場合は、重複適用を防ぐためスキップされます。

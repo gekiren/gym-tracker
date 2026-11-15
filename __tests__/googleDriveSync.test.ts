@@ -23,7 +23,11 @@ import {
   DEFAULT_GOOGLE_DRIVE_SYNC_SETTINGS,
   GoogleDriveSyncSettings,
 } from '../src/services/googleDrive/types';
-import { checkDriveForProposals } from '../src/services/googleDriveSyncService';
+import {
+  checkDriveForProposals,
+  saveAgentGuideToDriveFolder,
+  selectDriveSyncFolder,
+} from '../src/services/googleDriveSyncService';
 import { useLifelogStore } from '../src/store/lifelogStore';
 import { useSettingsStore } from '../src/store/settingsStore';
 
@@ -497,6 +501,107 @@ describe('Google Drive AI双方向同期ロジック', () => {
         mimeType: 'application/vnd.google-apps.folder',
         parents: ['fld_1'],
       });
+    } finally {
+      global.fetch = originalFetch;
+      spy.mockRestore();
+    }
+  });
+
+  test('selectDriveSyncFolder と saveAgentGuideToDriveFolder は指定フォルダに AI_AGENT_GUIDE.md を保存し既存提案は上書きしない', async () => {
+    const spy = jest.spyOn(accountSyncService, 'getGoogleSigninModule').mockReturnValue({
+      GoogleSignin: {
+        configure: jest.fn(),
+        hasPlayServices: jest.fn(async () => true),
+        getCurrentUser: jest.fn(() => ({
+          user: { email: 'trainer@example.com' },
+          scopes: ['email', 'profile', GOOGLE_DRIVE_SCOPE],
+        })),
+        getTokens: jest.fn(async () => ({ accessToken: 'drive_token_ok' })),
+      },
+    });
+
+    const originalFetch = global.fetch;
+    const fetchMock = jest
+      .fn()
+      // selectDriveSyncFolder: find GUIDE_MD (ensureGuideAndTemplateInFolder) -> none
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ files: [] }),
+      })
+      // selectDriveSyncFolder: find GUIDE_MD (upsertTextFileInFolder pre-check when !existingFileId) -> none
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ files: [] }),
+      })
+      // selectDriveSyncFolder: create GUIDE_MD (POST)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: 'guide_1', name: 'AI_AGENT_GUIDE.md' }),
+      })
+      // selectDriveSyncFolder: find PROPOSALS_JSON -> already exists
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          files: [{ id: 'prop_existing', name: 'ai_agent_proposals.json' }],
+        }),
+      })
+      // saveAgentGuideToDriveFolder: ensureDriveFolder verifies folderId
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          id: 'fld_custom',
+          name: 'MyAI',
+          trashed: false,
+          mimeType: 'application/vnd.google-apps.folder',
+        }),
+      })
+      // saveAgentGuideToDriveFolder: find GUIDE_MD -> exists (guide_1)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          files: [{ id: 'guide_1', name: 'AI_AGENT_GUIDE.md' }],
+        }),
+      })
+      // saveAgentGuideToDriveFolder: PATCH guide_1
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: 'guide_1', name: 'AI_AGENT_GUIDE.md' }),
+      })
+      // saveAgentGuideToDriveFolder: find PROPOSALS_JSON -> exists
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          files: [{ id: 'prop_existing', name: 'ai_agent_proposals.json' }],
+        }),
+      });
+    global.fetch = fetchMock as any;
+
+    try {
+      const sel = await selectDriveSyncFolder({
+        id: 'fld_custom',
+        name: 'MyAI',
+        path: 'マイドライブ / Obsidian / MyAI',
+      });
+      expect(sel.guideSaved).toBe(true);
+      expect(sel.settings.folderId).toBe('fld_custom');
+      expect(sel.settings.connectedEmail).toBe('trainer@example.com');
+      expect(fetchMock.mock.calls[2][1].method).toBe('POST');
+      expect(fetchMock.mock.calls[2][1].body).toContain('マイドライブ / Obsidian / MyAI');
+
+      const manual = await saveAgentGuideToDriveFolder();
+      expect(manual.success).toBe(true);
+      expect(manual.folderPath).toBe('マイドライブ / Obsidian / MyAI');
+      expect(fetchMock.mock.calls[6][1].method).toBe('PATCH');
+      // ai_agent_proposals.json への書き込み（上書き）は呼ばれていないこと（合計8コール）
+      expect(fetchMock).toHaveBeenCalledTimes(8);
     } finally {
       global.fetch = originalFetch;
       spy.mockRestore();

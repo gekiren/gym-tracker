@@ -30,6 +30,7 @@ import {
   loadRestorePauseState,
   loadSavedAdvices,
   resolveRestorePause,
+  saveAgentGuideToDriveFolder,
   saveDriveSyncSettings,
   selectDriveSyncFolder,
   uploadAppRecordsToDrive,
@@ -228,13 +229,23 @@ export default function GoogleDriveSyncSettingsScreen() {
   const handleChooseFolder = async (folder: { id: string; name: string }, customPath?: string) => {
     const currentPathNames = folderStack.map((item) => item.name);
     const resolvedPath = customPath || [...currentPathNames, folder.name].join(' / ');
-    await selectDriveSyncFolder({
+    const result = await selectDriveSyncFolder({
       id: folder.id,
       name: folder.name,
       path: resolvedPath,
     });
     setShowFolderModal(false);
-    Alert.alert('保存完了', `同期フォルダを「${resolvedPath}」に設定しました。`);
+    if (result.guideSaved) {
+      Alert.alert(
+        '保存完了',
+        `同期フォルダを「${resolvedPath}」に設定し、指示ファイル（${DRIVE_FILES.GUIDE_MD}）を保存しました。`
+      );
+    } else {
+      Alert.alert(
+        'フォルダ設定完了（指示MD未保存）',
+        `同期フォルダは「${resolvedPath}」に設定されましたが、${DRIVE_FILES.GUIDE_MD} の保存に失敗しました: ${result.guideError || ''}`
+      );
+    }
   };
 
   const handleCreateFolder = async () => {
@@ -248,17 +259,25 @@ export default function GoogleDriveSyncSettingsScreen() {
     setIsCreatingFolder(true);
     setFolderPickerError(null);
     try {
-      const { folder, settings: updated } = await createAndSelectDriveFolder({
-        folderName: trimmed,
-        parentId: currentLevel.id,
-        parentPath: currentPath,
-      });
+      const { folder, settings: updated, guideSaved, guideError } =
+        await createAndSelectDriveFolder({
+          folderName: trimmed,
+          parentId: currentLevel.id,
+          parentPath: currentPath,
+        });
       setNewFolderName('');
       setShowFolderModal(false);
-      Alert.alert(
-        'フォルダ作成・設定完了',
-        `「${updated.folderPath || folder.name}」を作成し、同期フォルダに設定しました。`
-      );
+      if (guideSaved) {
+        Alert.alert(
+          'フォルダ作成・保存完了',
+          `「${updated.folderPath || folder.name}」を作成し、指示ファイル（${DRIVE_FILES.GUIDE_MD}）を保存しました。`
+        );
+      } else {
+        Alert.alert(
+          'フォルダ作成完了（指示MD未保存）',
+          `「${updated.folderPath || folder.name}」を作成しましたが、${DRIVE_FILES.GUIDE_MD} の保存に失敗しました: ${guideError || ''}`
+        );
+      }
     } catch (err: any) {
       setFolderPickerError(err?.message || 'フォルダの作成に失敗しました');
     } finally {
@@ -274,9 +293,24 @@ export default function GoogleDriveSyncSettingsScreen() {
     return folderItems.filter((item) => item.name.toLowerCase().includes(q));
   }, [folderItems, folderSearch]);
 
+  const currentFolderDisplayPath =
+    settings.folderPath || settings.folderName || 'TreNote_AI_Sync';
+
   const handleCopyGuide = async () => {
-    await Clipboard.setStringAsync(buildAgentGuideMarkdown());
+    await Clipboard.setStringAsync(buildAgentGuideMarkdown(currentFolderDisplayPath));
     Alert.alert('コピー完了', 'AIエージェント向け接続ガイド（AI_AGENT_GUIDE.md）をコピーしました。');
+  };
+
+  const handleSaveGuideToDrive = async () => {
+    const res = await saveAgentGuideToDriveFolder();
+    if (res.success) {
+      Alert.alert(
+        '指示MD保存完了',
+        `「${res.folderPath || currentFolderDisplayPath}」に ${DRIVE_FILES.GUIDE_MD} を保存しました。`
+      );
+    } else if (res.error) {
+      Alert.alert('保存エラー', res.error);
+    }
   };
 
   const pendingAdvices = pendingProposal
@@ -638,6 +672,15 @@ export default function GoogleDriveSyncSettingsScreen() {
             <Text style={styles.fileSpecItem}>• {DRIVE_FILES.PROPOSALS_JSON}（提案書込用）</Text>
             <Text style={styles.fileSpecItem}>• {DRIVE_FILES.GUIDE_MD}（AI用仕様書）</Text>
           </View>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={handleSaveGuideToDrive}
+            disabled={isBusy}
+          >
+            <Text style={styles.primaryButtonText}>
+              指定フォルダに指示MD（{DRIVE_FILES.GUIDE_MD}）を保存
+            </Text>
+          </TouchableOpacity>
           <View style={styles.rowButtons}>
             <TouchableOpacity
               style={[styles.rowButton, styles.secondaryButton]}
@@ -848,7 +891,9 @@ export default function GoogleDriveSyncSettingsScreen() {
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalScroll}>
-              <Text style={styles.modalGuideText}>{buildAgentGuideMarkdown()}</Text>
+              <Text style={styles.modalGuideText}>
+                {buildAgentGuideMarkdown(currentFolderDisplayPath)}
+              </Text>
             </ScrollView>
             <View style={styles.rowButtons}>
               <TouchableOpacity

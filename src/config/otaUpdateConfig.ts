@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.48',
+  version: '2.3.49',
   title: {
-    ja: '📂 Googleドライブ フォルダ直接選択機能を追加',
-    en: '📂 Google Drive Folder Picker Added',
+    ja: '📝 指定フォルダへのAI指示MD保存に対応',
+    en: '📝 Save AI Guide MD to Selected Folder',
   },
   notes: {
     ja: [
-      '同期フォルダ名を直接入力する代わりに、Googleドライブ（マイドライブ）から既存フォルダの階層移動・選択および新規作成ができるフォルダピッカーを追加しました。',
-      '外部AIが新規作成した ai_agent_proposals.json も読み込めるよう Google Drive スコープを拡張しました。',
+      'Googleドライブの指定フォルダへエージェント連携用指示ファイル（AI_AGENT_GUIDE.md）を直接保存・更新できるようになりました。',
     ],
     en: [
-      'Added an interactive Google Drive folder picker modal so you can browse, select, or create folders directly in My Drive instead of typing folder names manually.',
-      'Expanded Google Drive scope support so ai_agent_proposals.json created by external AI agents can also be read and updated.',
+      'Added automatic and manual saving of AI_AGENT_GUIDE.md directly into your selected Google Drive sync folder.',
     ],
   },
 };

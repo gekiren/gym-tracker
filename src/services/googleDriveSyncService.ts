@@ -197,11 +197,13 @@ export async function connectGoogleDriveAccount(): Promise<{
       true
     );
 
+    const folderDisplayPath =
+      current.folderPath || `マイドライブ / ${current.folderName || 'TreNote_AI_Sync'}`;
     await saveDriveSyncSettings({
       enabled: true,
       connectedEmail: auth.email,
       folderId,
-      folderPath: current.folderPath || `マイドライブ / ${current.folderName || 'TreNote_AI_Sync'}`,
+      folderPath: folderDisplayPath,
       lastError: undefined,
     });
 
@@ -210,7 +212,10 @@ export async function connectGoogleDriveAccount(): Promise<{
     if (!pause?.paused) {
       await uploadAppRecordsToDrive({ interactive: true, reason: 'initial_connect' });
     } else {
-      await ensureGuideAndTemplateInFolder(folderId, true);
+      await ensureGuideAndTemplateInFolder(folderId, true, {
+        folderPath: folderDisplayPath,
+        overwriteGuide: true,
+      });
     }
 
     return { success: true, email: auth.email };
@@ -233,34 +238,58 @@ export async function browseDriveFolders(
 }
 
 /**
- * ピッカーで選んだ既存フォルダを同期先に設定する
+ * ピッカーで選んだ既存フォルダを同期先に設定し、指示用MDファイル (AI_AGENT_GUIDE.md) を保存する
  */
 export async function selectDriveSyncFolder(params: {
   id: string;
   name: string;
   path?: string;
-}): Promise<GoogleDriveSyncSettings> {
+}): Promise<{
+  settings: GoogleDriveSyncSettings;
+  guideSaved: boolean;
+  guideError?: string;
+}> {
   const displayPath = params.path || `マイドライブ / ${params.name}`;
-  const updated = await saveDriveSyncSettings({
+  const tokenInfo = await getDriveAccessToken({ interactive: false }).catch(() => ({
+    accessToken: null,
+    email: undefined,
+  }));
+
+  let updated = await saveDriveSyncSettings({
     folderId: params.id,
     folderName: params.name,
     folderPath: displayPath,
+    ...(tokenInfo.email ? { connectedEmail: tokenInfo.email } : {}),
     lastError: undefined,
   });
 
-  // 既に連携済みなら選択フォルダ内にもガイドと提案テンプレートを準備しておく
-  if (updated.connectedEmail) {
-    try {
-      await ensureGuideAndTemplateInFolder(params.id, true);
-    } catch (err) {
-      console.warn('[GoogleDriveSync] Failed to initialize files in selected folder:', err);
+  try {
+    await ensureGuideAndTemplateInFolder(params.id, true, {
+      folderPath: displayPath,
+      overwriteGuide: true,
+    });
+    if (!updated.connectedEmail) {
+      const postTokenInfo = await getDriveAccessToken({ interactive: false }).catch(() => ({
+        accessToken: null,
+        email: undefined,
+      }));
+      if (postTokenInfo.email) {
+        updated = await saveDriveSyncSettings({ connectedEmail: postTokenInfo.email });
+      }
     }
+    useGoogleDriveSyncStore
+      .getState()
+      .setLastStatusMessage(`同期フォルダを設定し、${DRIVE_FILES.GUIDE_MD} を保存しました: ${displayPath}`);
+    return { settings: updated, guideSaved: true };
+  } catch (err: any) {
+    const guideError = err?.message || `${DRIVE_FILES.GUIDE_MD} の保存に失敗しました`;
+    console.warn('[GoogleDriveSync] Failed to initialize files in selected folder:', err);
+    updated = await saveDriveSyncSettings({ lastError: guideError });
+    useGoogleDriveSyncStore
+      .getState()
+      .setLastStatusMessage(`フォルダ設定済み（指示MD保存エラー: ${guideError}）`);
+    return { settings: updated, guideSaved: false, guideError };
   }
-
-  useGoogleDriveSyncStore
-    .getState()
-    .setLastStatusMessage(`同期フォルダを設定しました: ${displayPath}`);
-  return updated;
 }
 
 /**
@@ -270,30 +299,90 @@ export async function createAndSelectDriveFolder(params: {
   folderName: string;
   parentId?: string;
   parentPath?: string;
-}): Promise<{ folder: DriveFileMetadata; settings: GoogleDriveSyncSettings }> {
+}): Promise<{
+  folder: DriveFileMetadata;
+  settings: GoogleDriveSyncSettings;
+  guideSaved: boolean;
+  guideError?: string;
+}> {
   const parentId = params.parentId || 'root';
   const created = await createDriveFolder(params.folderName, parentId, true);
   const parentPrefix = params.parentPath || 'マイドライブ';
   const fullPath = `${parentPrefix} / ${created.name}`;
-  const settings = await selectDriveSyncFolder({
+  const result = await selectDriveSyncFolder({
     id: created.id,
     name: created.name,
     path: fullPath,
   });
-  return { folder: created, settings };
+  return {
+    folder: created,
+    settings: result.settings,
+    guideSaved: result.guideSaved,
+    guideError: result.guideError,
+  };
+}
+
+/**
+ * 現在指定中の Google ドライブフォルダへ指示用 MD (AI_AGENT_GUIDE.md) を保存・最新化する
+ */
+export async function saveAgentGuideToDriveFolder(): Promise<{
+  success: boolean;
+  folderPath?: string;
+  error?: string;
+}> {
+  const store = useGoogleDriveSyncStore.getState();
+  store.setActivity('uploading');
+  store.setLastStatusMessage(`${DRIVE_FILES.GUIDE_MD} を Google ドライブへ保存中...`);
+
+  try {
+    const current = await loadDriveSyncSettings();
+    const folderName = current.folderName || 'TreNote_AI_Sync';
+    const folderId = await ensureDriveFolder(folderName, current.folderId, true);
+    const resolvedPath = current.folderPath || `マイドライブ / ${folderName}`;
+
+    await ensureGuideAndTemplateInFolder(folderId, true, {
+      folderPath: resolvedPath,
+      overwriteGuide: true,
+    });
+
+    const tokenInfo = await getDriveAccessToken({ interactive: false }).catch(() => ({
+      accessToken: null,
+      email: undefined,
+    }));
+
+    await saveDriveSyncSettings({
+      folderId,
+      folderName,
+      folderPath: resolvedPath,
+      ...(tokenInfo.email ? { connectedEmail: tokenInfo.email } : {}),
+      lastError: undefined,
+    });
+
+    store.setLastStatusMessage(`${resolvedPath} に ${DRIVE_FILES.GUIDE_MD} を保存しました`);
+    return { success: true, folderPath: resolvedPath };
+  } catch (error: any) {
+    const msg = error?.message || `${DRIVE_FILES.GUIDE_MD} の保存に失敗しました`;
+    await saveDriveSyncSettings({ lastError: msg });
+    store.setLastStatusMessage(`指示MD保存エラー: ${msg}`);
+    return { success: false, error: msg };
+  } finally {
+    useGoogleDriveSyncStore.getState().setActivity('idle');
+  }
 }
 
 async function ensureGuideAndTemplateInFolder(
   folderId: string,
-  interactive: boolean
+  interactive: boolean,
+  options?: { folderPath?: string; overwriteGuide?: boolean }
 ): Promise<void> {
   const existingGuide = await findFileInFolder(folderId, DRIVE_FILES.GUIDE_MD, interactive);
-  if (!existingGuide) {
+  if (!existingGuide || options?.overwriteGuide) {
     await upsertTextFileInFolder({
       folderId,
       fileName: DRIVE_FILES.GUIDE_MD,
-      content: buildAgentGuideMarkdown(),
+      content: buildAgentGuideMarkdown(options?.folderPath),
       mimeType: 'text/markdown',
+      existingFileId: existingGuide?.id,
       interactive,
     });
   }
@@ -370,7 +459,10 @@ export async function uploadAppRecordsToDrive(options?: {
       interactive
     );
 
-    await ensureGuideAndTemplateInFolder(folderId, interactive);
+    await ensureGuideAndTemplateInFolder(folderId, interactive, {
+      folderPath: settings.folderPath || `マイドライブ / ${settings.folderName || 'TreNote_AI_Sync'}`,
+      overwriteGuide: options?.reason === 'initial_connect',
+    });
 
     const bundle = await buildDriveExportBundle();
 
@@ -493,7 +585,10 @@ export async function checkDriveForProposals(options?: {
     const nowIso = new Date().toISOString();
 
     if (!fileMeta) {
-      await ensureGuideAndTemplateInFolder(folderId, interactive);
+      await ensureGuideAndTemplateInFolder(folderId, interactive, {
+      folderPath: settings.folderPath || `マイドライブ / ${settings.folderName || 'TreNote_AI_Sync'}`,
+      overwriteGuide: options?.reason === 'initial_connect',
+    });
       await saveDriveSyncSettings({ folderId, lastDownloadAt: nowIso, lastError: undefined });
       return { status: 'no_update' };
     }
