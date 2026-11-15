@@ -116,6 +116,14 @@ export function useProfile() {
         route: '/settings/obsidian',
       },
       {
+        id: 'google-drive-sync',
+        title: 'Googleドライブ AI双方向同期',
+        desc: 'AIエージェントとの記録共有・提案自動反映',
+        icon: 'logo-google',
+        iconColor: '#4285f4',
+        route: '/settings/google-drive-sync',
+      },
+      {
         id: 'calendar-sync',
         title: 'Googleカレンダー連携',
         desc: '24時間管理の予定自動取り込み・実績書き出し',

@@ -11,6 +11,7 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Updates from 'expo-updates';
 import { saveSetting, getDB, closeDB, initDB, getSettings, exportDatabaseBackup, createInstantBackup } from '../src/db/database';
+import { markBackupRestoredForDriveSync } from '../src/services/googleDriveSyncService';
 import { getSyncDiagnosticsLogs } from '../src/services/lifelogSyncService';
 import { showReviewDialog } from '../src/services/reviewService';
 import { saveCrashLog, readCrashLog } from '../src/services/crashReporterService';
@@ -324,6 +325,8 @@ function DeveloperMenuScreenInternal() {
                 from: sourceUri,
                 to: dbUri
               });
+
+              await markBackupRestoredForDriveSync(selectedFile.name);
 
               // 3. Inform user and reload the app
               Alert.alert(

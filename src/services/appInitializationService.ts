@@ -16,6 +16,7 @@ import { syncLifelogToObsidian } from './obsidianService';
 import { syncHealthData } from './healthService';
 import { initCalendarSync } from './calendarService';
 import { initGoogleAuthOnStartup } from './accountSyncService';
+import { initGoogleDriveSync, resolveRestorePause } from './googleDriveSyncService';
 import { Alert, Linking } from 'react-native';
 import { router } from 'expo-router';
 
@@ -299,6 +300,37 @@ export function initBackgroundSyncServices(expired: boolean) {
   initCalendarSync().catch((cErr) => {
     console.warn('Calendar sync init failed on launch:', cErr);
   });
+
+  // Google Drive AI双方向同期の初期化・復元ガード確認
+  initGoogleDriveSync()
+    .then(({ settings, restorePause }) => {
+      if (restorePause?.paused && settings.enabled) {
+        setTimeout(() => {
+          Alert.alert(
+            'Googleドライブ自動アップロード一時停止中',
+            'バックアップ復元後の保護のため、Googleドライブへの自動アップロードを一時停止しています。復元前の新しい記録がドライブ側にある場合は上書きを防ぐため、対応を選択してください。',
+            [
+              { text: 'このまま一時停止', style: 'cancel' },
+              {
+                text: '設定画面で確認',
+                onPress: () => router.push('/settings/google-drive-sync' as any),
+              },
+              {
+                text: '復元データで上書き再開',
+                onPress: () => {
+                  resolveRestorePause('upload_now').catch((err) => {
+                    console.warn('Failed to resume Google Drive upload after restore:', err);
+                  });
+                },
+              },
+            ]
+          );
+        }, 1200);
+      }
+    })
+    .catch((dErr) => {
+      console.warn('Google Drive AI sync init failed on launch:', dErr);
+    });
 
   if (expired) {
     setTimeout(() => {

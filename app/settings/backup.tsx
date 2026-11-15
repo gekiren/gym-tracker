@@ -10,6 +10,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Updates from 'expo-updates';
+import { markBackupRestoredForDriveSync } from '../../src/services/googleDriveSyncService';
 
 export default function BackupSettingsScreen() {
   const { colors } = useAppTheme();
@@ -103,6 +104,8 @@ export default function BackupSettingsScreen() {
                 from: sourceUri,
                 to: dbUri
               });
+
+              await markBackupRestoredForDriveSync(selectedFile.name);
 
               Alert.alert(
                 t('ui.developer_menu.restore_success_title') || '復元完了',

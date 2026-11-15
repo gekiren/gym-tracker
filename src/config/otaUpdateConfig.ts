@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.43',
+  version: '2.3.49',
   title: {
-    ja: '🎨 テーマ動的追従の最終クリーンアップ',
-    en: '🎨 Final Dynamic Theme Cleanup',
+    ja: '📝 指定フォルダへのAI指示MD保存に対応',
+    en: '📝 Save AI Guide MD to Selected Folder',
   },
   notes: {
     ja: [
-      'ワークアウト入力（スワイプ数値入力）・シェアカード・プロフィールメニューのテーマ参照を動的テーマへ統一し、全画面のテーマ移行を完了しました。',
+      'Googleドライブの指定フォルダへエージェント連携用指示ファイル（AI_AGENT_GUIDE.md）を直接保存・更新できるようになりました。',
     ],
     en: [
-      'Completed dynamic theme migration across swipeable workout inputs, share cards, and profile menu items.',
+      'Added automatic and manual saving of AI_AGENT_GUIDE.md directly into your selected Google Drive sync folder.',
     ],
   },
 };

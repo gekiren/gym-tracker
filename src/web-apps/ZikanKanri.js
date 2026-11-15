@@ -125,7 +125,7 @@ export default `<!DOCTYPE html>
     (function() {
       if (window.__BACKGROUND_THEME__ === 'pureBlack') {
         var style = document.createElement('style');
-        style.innerHTML = ':root { --bg-color: #000000 !important; --surface-color: #080808 !important; --text-primary: #ffffff !important; --text-secondary: #888888 !important; --primary-color: #6d28d9 !important; } body { background-color: #000000 !important; } #current-date { color: #888888 !important; } button.btn-primary, #save-log, .btn-primary { background-color: #6d28d9 !important; color: #ffffff !important; }';
+        style.innerHTML = ':root { --bg-color: #000000 !important; --surface-color: #080808 !important; --text-primary: #ffffff !important; --text-secondary: #888888 !important; --primary-color: #2563eb !important; } body { background-color: #000000 !important; } #current-date { color: #888888 !important; } button.btn-primary, #save-log, .btn-primary { background-color: #2563eb !important; color: #ffffff !important; }';
         document.head.appendChild(style);
       }
     })();
@@ -134,8 +134,8 @@ export default `<!DOCTYPE html>
 :root {
   --bg-color: #121212;
   --surface-color: #1E1E1E;
-  --primary-color: #6d28d9;
-  --primary-variant: #3700B3;
+  --primary-color: #2563eb;
+  --primary-variant: #1d4ed8;
   --plan-color: #2563EB;
   --plan-variant: #1D4ED8;
   --secondary-color: #03DAC6;
@@ -302,7 +302,7 @@ textarea:focus {
 .mode-tab.active-actual {
   background-color: var(--primary-color);
   color: #ffffff;
-  box-shadow: 0 2px 6px rgba(109, 40, 217, 0.4);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
 }
 
 .mode-tab.active-plan {
@@ -477,7 +477,7 @@ textarea:focus {
   display: inline-block;
   font-size: 0.85rem;
   font-weight: bold;
-  color: #a78bfa;
+  color: #60a5fa;
   font-family: monospace;
 }
 
@@ -554,7 +554,7 @@ textarea:focus {
 .score-card .val {
   font-size: 1.1rem;
   font-weight: bold;
-  color: #a78bfa;
+  color: #60a5fa;
 }
 
 .score-card .lbl {
@@ -781,8 +781,8 @@ textarea:focus {
 }
 
 .emoji-quick-btn:active {
-  background: rgba(139, 92, 246, 0.3);
-  border-color: #8b5cf6;
+  background: rgba(59, 130, 246, 0.3);
+  border-color: #3b82f6;
   transform: scale(0.92);
 }
 
@@ -888,9 +888,9 @@ header {
 }
 
 .view-mode-btn.active {
-  background: #6d28d9;
+  background: #2563eb;
   color: #FFFFFF;
-  box-shadow: 0 2px 8px rgba(109, 40, 217, 0.4);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
 }
 
 .puzzle-header {
@@ -913,9 +913,9 @@ header {
 }
 
 .puzzle-mode-actual {
-  background: rgba(109, 40, 217, 0.2);
-  color: #c4b5fd;
-  border: 1px solid rgba(109, 40, 217, 0.4);
+  background: rgba(14, 165, 233, 0.2);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.45);
 }
 
 .puzzle-mode-plan {
@@ -1014,14 +1014,14 @@ header {
 }
 
 .piece-picker-trigger-btn:active {
-  background: rgba(139, 92, 246, 0.2);
-  border-color: #8b5cf6;
+  background: rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
 }
 
 .piece-picker-trigger-btn.has-piece {
-  background: rgba(139, 92, 246, 0.18);
-  border-color: #8b5cf6;
-  color: #c4b5fd;
+  background: rgba(59, 130, 246, 0.18);
+  border-color: #3b82f6;
+  color: #93c5fd;
 }
 
 .puzzle-palette-container {
@@ -1075,9 +1075,9 @@ header {
 }
 
 .piece-btn.active-selected {
-  outline: 2px solid #6d28d9;
-  background: rgba(109, 40, 217, 0.25) !important;
-  border-color: #8b5cf6 !important;
+  outline: 2px solid #2563eb;
+  background: rgba(37, 99, 235, 0.25) !important;
+  border-color: #4facfe !important;
 }
 
 .piece-btn.large-piece {
@@ -1258,7 +1258,7 @@ header {
   top: 6px;
   right: 6px;
   align-self: flex-end;
-  background: #6d28d9;
+  background: #2563eb;
   color: white;
   padding: 4px 10px;
   border-radius: 6px;
@@ -1272,7 +1272,7 @@ header {
 
 /* Timeline Selection Highlight */
 .timeline-block.is-selected {
-  box-shadow: 0 0 0 2px #c084fc, 0 4px 16px rgba(168, 85, 247, 0.45) !important;
+  box-shadow: 0 0 0 2px #4facfe, 0 4px 16px rgba(79, 172, 254, 0.45) !important;
   z-index: 45 !important;
 }
 
@@ -1493,10 +1493,10 @@ header {
 }
 
 .bs-tag-chip.active {
-  background: #6d28d9;
+  background: #2563eb;
   color: #ffffff;
-  border-color: #8b5cf6;
-  box-shadow: 0 2px 8px rgba(109, 40, 217, 0.4);
+  border-color: #4facfe;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
 }
 
 /* Default Schedule UI Styles */
@@ -1523,9 +1523,9 @@ header {
   border: 1px solid rgba(59, 130, 246, 0.4);
 }
 .def-sched-badge-any {
-  background: rgba(139, 92, 246, 0.2);
-  color: #c4b5fd;
-  border: 1px solid rgba(139, 92, 246, 0.4);
+  background: rgba(14, 165, 233, 0.2);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.4);
 }
 .day-selector-grid {
   display: grid;
@@ -1634,48 +1634,48 @@ input:checked + .holiday-switch-slider:before {
                     <h3 style="margin-bottom: 0;">24時間ピースタイムライン</h3>
                     <span id="puzzle-current-mode-badge" class="puzzle-mode-badge puzzle-mode-actual">⏱ 実績</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 5px;">
-                    <button type="button" id="puzzle-add-record-btn" class="btn btn-primary" style="width: auto; padding: 4px 8px; font-size: 0.76rem; margin-bottom: 0;" onclick="openTimelineBottomSheetForNew()">
+                <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px;">
+                    <button type="button" id="puzzle-add-record-btn" class="btn btn-primary" style="width: auto; padding: 6px 10px; font-size: 0.78rem; margin-bottom: 0; white-space: nowrap;" onclick="openTimelineBottomSheetForNew()">
                         ＋ 記録
                     </button>
-                    <button type="button" id="puzzle-switch-mode-btn" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.76rem; margin-bottom: 0;">
+                    <button type="button" id="puzzle-switch-mode-btn" class="btn btn-secondary" style="width: auto; padding: 6px 10px; font-size: 0.78rem; margin-bottom: 0; white-space: nowrap;">
                         予定に切替
                     </button>
-                    <button type="button" id="puzzle-toggle-ghost-btn" class="btn btn-secondary puzzle-ghost-toggle-btn active" style="width: auto; padding: 4px 7px; font-size: 0.74rem; margin-bottom: 0;" title="実績タイムライン上に予定ガイドを表示/非表示">
+                    <button type="button" id="puzzle-toggle-ghost-btn" class="btn btn-secondary puzzle-ghost-toggle-btn active" style="width: auto; padding: 6px 10px; font-size: 0.76rem; margin-bottom: 0; white-space: nowrap;" title="実績タイムライン上に予定ガイドを表示/非表示">
                         📅 予定ガイド
                     </button>
-                    <button type="button" id="puzzle-default-schedule-btn" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.76rem; margin-bottom: 0; color: #c4b5fd; border-color: #8b5cf6;" title="デフォルトスケジュール設定">
+                    <button type="button" id="puzzle-default-schedule-btn" class="btn btn-secondary" style="width: auto; padding: 6px 10px; font-size: 0.78rem; margin-bottom: 0; color: #93c5fd; border-color: #3b82f6; white-space: nowrap;" title="デフォルトスケジュール設定">
                         📅 デフォルト
                     </button>
-                    <button type="button" id="puzzle-reset-day-btn" class="btn btn-secondary" style="width: auto; padding: 4px 7px; font-size: 0.76rem; margin-bottom: 0; color: var(--error-color);">
+                    <button type="button" id="puzzle-reset-day-btn" class="btn btn-secondary" style="width: auto; padding: 6px 10px; font-size: 0.78rem; margin-bottom: 0; color: var(--error-color); white-space: nowrap;">
                         クリア
                     </button>
                 </div>
             </div>
 
             <!-- デフォルトスケジュール専用編集モード用ヘッダーバー -->
-            <div id="def-sched-editor-bar" style="display: none; margin-bottom: 12px; padding: 10px 12px; border-radius: 10px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(59, 130, 246, 0.25)); border: 1px solid #8b5cf6; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);">
+            <div id="def-sched-editor-bar" style="display: none; margin-bottom: 12px; padding: 10px 12px; border-radius: 10px; background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(79, 172, 254, 0.2)); border: 1px solid #3b82f6; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; flex: 1; margin-right: 8px;">
                         <span style="font-size: 0.95rem;">🎨</span>
-                        <span id="def-sched-editor-title" style="font-weight: 700; font-size: 0.88rem; color: #f3e8ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">編集中: スケジュール名</span>
-                        <span id="def-sched-editor-badge" style="background: rgba(139, 92, 246, 0.45); color: #e9d5ff; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; flex-shrink: 0;">全日共通</span>
+                        <span id="def-sched-editor-title" style="font-weight: 700; font-size: 0.88rem; color: #eff6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">編集中: スケジュール名</span>
+                        <span id="def-sched-editor-badge" style="background: rgba(37, 99, 235, 0.45); color: #dbeafe; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; flex-shrink: 0;">全日共通</span>
                     </div>
                     <div style="display: flex; gap: 6px; flex-shrink: 0;">
-                        <button type="button" id="def-sched-editor-save-btn" class="btn btn-primary" style="width: auto; padding: 4px 10px; font-size: 0.78rem; margin-bottom: 0; background: #8b5cf6; border-color: #a78bfa;">💾 保存して完了</button>
+                        <button type="button" id="def-sched-editor-save-btn" class="btn btn-primary" style="width: auto; padding: 4px 10px; font-size: 0.78rem; margin-bottom: 0; background: #2563eb; border-color: #60a5fa;">💾 保存して完了</button>
                         <button type="button" id="def-sched-editor-cancel-btn" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.78rem; margin-bottom: 0;">✕ 中止</button>
                     </div>
                 </div>
-                <div style="font-size: 0.72rem; color: #ddd6fe; display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 0.72rem; color: #dbeafe; display: flex; justify-content: space-between; align-items: center;">
                     <span>ピースを選んでタップ、または長押しドラッグで予定を配置してください</span>
                     <span id="def-sched-editor-count" style="font-weight: 600; flex-shrink: 0; margin-left: 6px;">0件の予定</span>
                 </div>
             </div>
 
             <!-- デフォルトスケジュール情報バナー -->
-            <div id="default-sched-banner" style="display: none; margin-bottom: 10px; padding: 6px 12px; border-radius: 8px; background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.3); font-size: 0.76rem; align-items: center; justify-content: space-between;">
-                <span id="default-sched-banner-text" style="color: #c4b5fd;">⚡ デフォルト予定: </span>
-                <button type="button" id="default-sched-banner-apply-btn" class="btn btn-secondary" style="width: auto; padding: 2px 8px; font-size: 0.72rem; margin-bottom: 0; border-color: #8b5cf6; color: #c4b5fd;">再適用</button>
+            <div id="default-sched-banner" style="display: none; margin-bottom: 10px; padding: 6px 12px; border-radius: 8px; background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.76rem; align-items: center; justify-content: space-between;">
+                <span id="default-sched-banner-text" style="color: #93c5fd;">⚡ デフォルト予定: </span>
+                <button type="button" id="default-sched-banner-apply-btn" class="btn btn-secondary" style="width: auto; padding: 2px 8px; font-size: 0.72rem; margin-bottom: 0; border-color: #3b82f6; color: #93c5fd;">再適用</button>
             </div>
 
             <!-- 時間ポートフォリオ（4分割） -->
@@ -1714,7 +1714,7 @@ input:checked + .holiday-switch-slider:before {
                         <button type="button" id="puzzle-clear-piece-btn" class="btn btn-secondary" onclick="clearSelectedPuzzlePiece()" style="display: none; width: auto; padding: 4px 8px; font-size: 0.72rem; margin-bottom: 0; color: var(--error-color); border-color: rgba(207, 102, 121, 0.4);" title="ピース選択を解除">
                             ✕ 解除
                         </button>
-                        <button type="button" id="puzzle-palette-config-btn" class="btn btn-secondary" onclick="openTagEditor()" style="width: auto; padding: 4px 8px; font-size: 0.72rem; margin-bottom: 0; color: #c4b5fd; border-color: rgba(139, 92, 246, 0.4);" title="タグ・ピースの管理">
+                        <button type="button" id="puzzle-palette-config-btn" class="btn btn-secondary" onclick="openTagEditor()" style="width: auto; padding: 4px 8px; font-size: 0.72rem; margin-bottom: 0; color: #93c5fd; border-color: rgba(59, 130, 246, 0.4);" title="タグ・ピースの管理">
                             ⚙️ 設定
                         </button>
                     </div>
@@ -1852,7 +1852,7 @@ input:checked + .holiday-switch-slider:before {
                     <button type="button" id="save-template-btn" class="btn btn-secondary"
                         style="width:auto; font-size: 0.78rem; padding: 4px 8px;">実績を保存</button>
                     <button type="button" id="classic-default-sched-btn" class="btn btn-secondary"
-                        style="width:auto; font-size: 0.78rem; padding: 4px 8px; border-color: #8b5cf6; color: #c4b5fd;">📅 デフォルト設定</button>
+                        style="width:auto; font-size: 0.78rem; padding: 4px 8px; border-color: #3b82f6; color: #93c5fd;">📅 デフォルト設定</button>
                 </div>
             </div>
             <div id="template-list" class="tags" style="margin-top: 10px;">
@@ -1959,7 +1959,7 @@ input:checked + .holiday-switch-slider:before {
             <div style="margin-bottom: 14px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0;">活動内容</label>
-                    <span id="bs-selected-activity-display" style="font-size: 0.82rem; font-weight: 700; color: #c4b5fd;">未選択</span>
+                    <span id="bs-selected-activity-display" style="font-size: 0.82rem; font-weight: 700; color: #93c5fd;">未選択</span>
                 </div>
                 <div id="bs-quick-tags" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; padding: 2px 0;">
                     <!-- JSでタグボタンを描画 -->
@@ -1996,7 +1996,7 @@ input:checked + .holiday-switch-slider:before {
                     <button type="button" class="btn btn-secondary" id="bs-btn-now-start" style="width: auto; flex: 1; padding: 5px 6px; font-size: 0.72rem; margin-bottom: 0;">現在時刻を開始に</button>
                     <button type="button" class="btn btn-secondary" id="bs-btn-now-end" style="width: auto; flex: 1; padding: 5px 6px; font-size: 0.72rem; margin-bottom: 0;">現在時刻を終了に</button>
                 </div>
-                <div id="bs-cross-day-badge" style="display: none; margin-top: 8px; padding: 6px 10px; border-radius: 6px; background: rgba(139, 92, 246, 0.16); border: 1px solid rgba(139, 92, 246, 0.4); font-size: 0.74rem; color: #c4b5fd; text-align: center;">
+                <div id="bs-cross-day-badge" style="display: none; margin-top: 8px; padding: 6px 10px; border-radius: 6px; background: rgba(59, 130, 246, 0.16); border: 1px solid rgba(59, 130, 246, 0.4); font-size: 0.74rem; color: #93c5fd; text-align: center;">
                     🌙 翌朝までまたがる記録
                 </div>
             </div>
@@ -2043,7 +2043,7 @@ input:checked + .holiday-switch-slider:before {
             <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 12px 14px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
                     <span style="font-size: 0.72rem; color: var(--text-secondary);">タップしてピースを選択すると、タイムラインに直接配置できます</span>
-                    <button type="button" class="btn btn-secondary" onclick="closePiecePickerMenu(); openTagEditor();" style="width: auto; padding: 2px 8px; font-size: 0.7rem; margin-bottom: 0; color: #c4b5fd; border-color: rgba(139, 92, 246, 0.4);">
+                    <button type="button" class="btn btn-secondary" onclick="closePiecePickerMenu(); openTagEditor();" style="width: auto; padding: 2px 8px; font-size: 0.7rem; margin-bottom: 0; color: #93c5fd; border-color: rgba(59, 130, 246, 0.4);">
                         ⚙️ ピース管理
                     </button>
                 </div>
@@ -2081,7 +2081,7 @@ input:checked + .holiday-switch-slider:before {
                 <!-- 新規追加 / 編集フォーム -->
                 <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid #333; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span id="modal-form-title" style="font-size: 0.8rem; font-weight: 700; color: #c4b5fd;">➕ 新しいタグ・ピースを追加</span>
+                        <span id="modal-form-title" style="font-size: 0.8rem; font-weight: 700; color: #93c5fd;">➕ 新しいタグ・ピースを追加</span>
                         <button type="button" id="modal-cancel-edit-btn" style="display: none; background: none; border: none; color: var(--text-secondary); font-size: 0.72rem; cursor: pointer; text-decoration: underline;">編集をキャンセル</button>
                     </div>
 
@@ -2130,7 +2130,7 @@ input:checked + .holiday-switch-slider:before {
                             <label style="font-size: 0.7rem; margin-bottom: 2px;">標準所要時間 (分)</label>
                             <input type="number" id="modal-piece-duration-input" value="30" min="1" max="720" style="padding: 6px 10px; margin-bottom: 0;">
                         </div>
-                        <button type="button" id="modal-add-tag-btn" class="btn btn-secondary" style="width: auto; padding: 7px 16px; white-space: nowrap; margin-bottom: 0; border-color: #8b5cf6; color: #c4b5fd;">
+                        <button type="button" id="modal-add-tag-btn" class="btn btn-secondary" style="width: auto; padding: 7px 16px; white-space: nowrap; margin-bottom: 0; border-color: #3b82f6; color: #93c5fd;">
                             ＋ 追加する
                         </button>
                     </div>
@@ -2169,7 +2169,7 @@ input:checked + .holiday-switch-slider:before {
                 <button type="button" id="tmpl-apply-actual-btn" class="btn btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
                     ⏱ 今日の「実績」として読み込む
                 </button>
-                <button type="button" id="tmpl-save-as-default-btn" class="btn btn-secondary" style="border-color: #8b5cf6; color: #c4b5fd; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <button type="button" id="tmpl-save-as-default-btn" class="btn btn-secondary" style="border-color: #3b82f6; color: #93c5fd; display: flex; align-items: center; justify-content: center; gap: 6px;">
                     ⭐ デフォルトスケジュールとして登録
                 </button>
                 <button type="button" id="tmpl-delete-btn" class="btn btn-secondary" style="color: var(--error-color); border-color: var(--error-color); margin-top: 6px;">
@@ -2211,7 +2211,7 @@ input:checked + .holiday-switch-slider:before {
             <div class="modal-body" style="overflow-y: auto; padding-right: 4px;">
                 <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.4;">
                     予定が未登録の日に自動スケジュールされます。<br>
-                    <span style="color: #93c5fd; font-weight: 600;">曜日指定</span>が最優先され、指定のない曜日は<span style="color: #c4b5fd; font-weight: 600;">曜日指定なし</span>が適用されます。
+                    <span style="color: #93c5fd; font-weight: 600;">曜日指定</span>が最優先され、指定のない曜日は<span style="color: #7dd3fc; font-weight: 600;">曜日指定なし</span>が適用されます。
                 </p>
 
                 <!-- 祝日設定トグルカード -->
@@ -2234,7 +2234,7 @@ input:checked + .holiday-switch-slider:before {
                 <!-- 新規作成フォーム（専用タイムラインまたは現在の予定から） -->
                 <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px; margin-bottom: 14px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-size: 0.85rem; font-weight: 700; color: #c4b5fd;">＋ 専用スケジュールを新規作成</span>
+                        <span style="font-size: 0.85rem; font-weight: 700; color: #93c5fd;">＋ 専用スケジュールを新規作成</span>
                         <span id="def-sched-current-plan-count" style="font-size: 0.72rem; color: var(--text-secondary);"></span>
                     </div>
 
@@ -2269,7 +2269,7 @@ input:checked + .holiday-switch-slider:before {
                         </div>
 
                         <div style="display: flex; gap: 8px; margin-top: 6px;">
-                            <button type="button" id="start-def-sched-editor-btn" class="btn btn-primary" style="flex: 1; padding: 9px; font-size: 0.85rem; background: #8b5cf6; border-color: #a78bfa;">
+                            <button type="button" id="start-def-sched-editor-btn" class="btn btn-primary" style="flex: 1; padding: 9px; font-size: 0.85rem; background: #2563eb; border-color: #60a5fa;">
                                 🎨 専用タイムラインで作成開始
                             </button>
                             <button type="button" id="save-def-sched-btn" class="btn btn-secondary" style="width: auto; padding: 9px 10px; font-size: 0.76rem;" title="現在の日付の予定を読み込んで登録">
@@ -3067,8 +3067,8 @@ function renderDefaultScheduleList() {
                 '<button type="button" class="btn btn-secondary" style="width: auto; padding: 3px 8px; font-size: 0.74rem; color: var(--error-color); border-color: rgba(239, 68, 68, 0.4); margin-bottom: 0;" data-del-id="' + sched.id + '">削除</button>' +
             '</div>' +
             '<div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">' +
-                '<button type="button" class="btn btn-primary" style="flex: 1; padding: 6px 10px; font-size: 0.78rem; background: #8b5cf6; border-color: #a78bfa; margin-bottom: 0;" data-edit-timeline-id="' + sched.id + '">✏️ 予定を編集</button>' +
-                '<button type="button" class="btn btn-secondary" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; border-color: #8b5cf6; color: #c4b5fd; margin-bottom: 0;" data-apply-id="' + sched.id + '">⚡ 今日の予定に適用</button>' +
+                '<button type="button" class="btn btn-primary" style="flex: 1; padding: 6px 10px; font-size: 0.78rem; background: #2563eb; border-color: #60a5fa; margin-bottom: 0;" data-edit-timeline-id="' + sched.id + '">✏️ 予定を編集</button>' +
+                '<button type="button" class="btn btn-secondary" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; border-color: #3b82f6; color: #93c5fd; margin-bottom: 0;" data-apply-id="' + sched.id + '">⚡ 今日の予定に適用</button>' +
                 '<button type="button" class="btn btn-secondary" style="width: auto; padding: 6px 10px; font-size: 0.78rem; margin-bottom: 0;" data-edit-days-id="' + sched.id + '">曜日変更</button>' +
             '</div>';
 
@@ -4854,7 +4854,7 @@ function renderSummary() {
             '<div class="lbl">📅 予定総時間</div>' +
         '</div>' +
         '<div class="score-card">' +
-            '<div class="val" style="color: #c4b5fd;">' + Math.round(totalActualMins) + '分</div>' +
+            '<div class="val" style="color: #7dd3fc;">' + Math.round(totalActualMins) + '分</div>' +
             '<div class="lbl">⏱ 実績総時間</div>' +
         '</div>' +
         '<div class="score-card">' +
@@ -4988,7 +4988,7 @@ function renderDualRingSVG(targetPlans, targetLogs) {
         text.setAttribute("y", y);
         text.setAttribute("text-anchor", "middle");
         text.setAttribute("dominant-baseline", "middle");
-        text.setAttribute("fill", (i % 6 === 0) ? "#a78bfa" : "#888888");
+        text.setAttribute("fill", (i % 6 === 0) ? "#60a5fa" : "#888888");
         text.setAttribute("font-size", (i % 6 === 0) ? "11" : "9");
         text.setAttribute("font-weight", (i % 6 === 0) ? "bold" : "normal");
         text.textContent = i;
@@ -5082,7 +5082,7 @@ function renderDualRingSVG(targetPlans, targetLogs) {
     centerText2.setAttribute("y", cy + 8);
     centerText2.setAttribute("text-anchor", "middle");
     centerText2.setAttribute("dominant-baseline", "middle");
-    centerText2.setAttribute("fill", "#c4b5fd");
+    centerText2.setAttribute("fill", "#7dd3fc");
     centerText2.setAttribute("font-size", "8");
     centerText2.textContent = "内:実績";
     svg.appendChild(centerText2);
@@ -5174,6 +5174,38 @@ window.importGooglePlans = function(newPlans) {
         if (typeof renderPlans === 'function') renderPlans();
         if (typeof renderSummary === 'function') renderSummary();
     }
+};
+window.refreshAiTimeManagementData = function(payload) {
+    if (!payload || typeof payload !== 'object') return;
+    var prevSync = window.isInitialSync;
+    window.isInitialSync = true;
+    try {
+        if (Array.isArray(payload.plans)) {
+            plans = payload.plans;
+            storage.setItem('zikankanri_plans', JSON.stringify(plans));
+        }
+        if (Array.isArray(payload.defaultSchedules)) {
+            defaultSchedules = payload.defaultSchedules;
+            storage.setItem('zikankanri_default_schedules', JSON.stringify(defaultSchedules));
+        }
+        if (Array.isArray(payload.templates)) {
+            templates = payload.templates;
+            storage.setItem('zikankanri_templates', JSON.stringify(templates));
+        }
+        if (Array.isArray(payload.pieces)) {
+            activityPieces = payload.pieces;
+            defaultTags = activityPieces.map(function(p) { return p.name; });
+            storage.setItem('zikankanri_pieces', JSON.stringify(activityPieces));
+            storage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
+        }
+    } finally {
+        window.isInitialSync = prevSync;
+    }
+    if (typeof updateDefaultSchedBanner === 'function') updateDefaultSchedBanner();
+    if (typeof renderDefaultScheduleList === 'function') renderDefaultScheduleList();
+    if (typeof renderPuzzle === 'function') renderPuzzle();
+    if (typeof renderPlans === 'function') renderPlans();
+    if (typeof renderSummary === 'function') renderSummary();
 };
 window.renderPlans = renderPlans;
 

@@ -27,7 +27,24 @@ export interface AccountSyncResult {
   requiresNativeUpdate?: boolean;
 }
 
-let isGoogleConfigured = false;
+let configuredScopesKey: string | null = null;
+let googleSigninOpTail: Promise<unknown> = Promise.resolve();
+
+/**
+ * Android RNGoogleSigninModule の単一 PromiseWrapper 競合（ASYNC_OP_IN_PROGRESS）を防ぐため、
+ * すべての GoogleSignin ネイティブ呼び出し（configure / signIn / addScopes / getTokens 等）を直列化する。
+ */
+export function runGoogleSigninExclusive<T>(task: () => Promise<T>): Promise<T> {
+  const run = googleSigninOpTail.then(
+    () => task(),
+    () => task()
+  );
+  googleSigninOpTail = run.then(
+    () => undefined,
+    () => undefined
+  );
+  return run;
+}
 
 /**
  * ネイティブモジュール (RNGoogleSignin) が現在のバイナリに組み込まれているか安全に判定する
@@ -53,8 +70,9 @@ export function getGoogleSigninModule(): any | null {
 /**
  * Google Sign-In の初期設定を行う
  */
-export function configureGoogleSignIn(): boolean {
-  if (isGoogleConfigured) return true;
+export function configureGoogleSignIn(scopes?: string[]): boolean {
+  const nextKey = scopes && scopes.length > 0 ? scopes.join(',') : '__default__';
+  if (configuredScopesKey === nextKey) return true;
   const pkg = getGoogleSigninModule();
   if (!pkg?.GoogleSignin) return false;
 
@@ -62,8 +80,9 @@ export function configureGoogleSignIn(): boolean {
     pkg.GoogleSignin.configure({
       webClientId: GOOGLE_WEB_CLIENT_ID,
       offlineAccess: false,
+      ...(scopes && scopes.length > 0 ? { scopes } : {}),
     });
-    isGoogleConfigured = true;
+    configuredScopesKey = nextKey;
     return true;
   } catch (err) {
     console.warn('Failed to configure GoogleSignin:', err);
@@ -244,26 +263,36 @@ export async function signInWithGoogle(): Promise<AccountSyncResult> {
     };
   }
 
-  configureGoogleSignIn();
   useAuthStore.getState().setIsSyncing(true);
 
   try {
-    await pkg.GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-    const signInResponse = await pkg.GoogleSignin.signIn();
+    const authData = await runGoogleSigninExclusive(async () => {
+      configureGoogleSignIn();
+      await pkg.GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const signInResponse = await pkg.GoogleSignin.signIn();
 
-    // v13+ returns { type: 'success' | 'cancelled', data: { idToken, user } }, older versions return { idToken, user }
-    if (signInResponse?.type === 'cancelled') {
+      // v13+ returns { type: 'success' | 'cancelled', data: { idToken, user } }, older versions return { idToken, user }
+      if (signInResponse?.type === 'cancelled') {
+        return { cancelled: true as const };
+      }
+
+      const userData = signInResponse?.data ?? signInResponse;
+      let idToken: string | null = userData?.idToken ?? null;
+
+      if (!idToken && typeof pkg.GoogleSignin.getTokens === 'function') {
+        const tokens = await pkg.GoogleSignin.getTokens();
+        idToken = tokens?.idToken ?? null;
+      }
+
+      return { cancelled: false as const, userData, idToken };
+    });
+
+    if (authData.cancelled) {
       useAuthStore.getState().setIsSyncing(false);
       return { success: false, error: 'CANCELLED' };
     }
 
-    const userData = signInResponse?.data ?? signInResponse;
-    let idToken: string | null = userData?.idToken ?? null;
-
-    if (!idToken && typeof pkg.GoogleSignin.getTokens === 'function') {
-      const tokens = await pkg.GoogleSignin.getTokens();
-      idToken = tokens?.idToken ?? null;
-    }
+    const { userData, idToken } = authData;
 
     if (!idToken) {
       useAuthStore.getState().setIsSyncing(false);
@@ -324,23 +353,33 @@ export async function syncAccountStatusSilently(): Promise<AccountSyncResult> {
     return { success: false, error: 'Native module not available' };
   }
 
-  configureGoogleSignIn();
   useAuthStore.getState().setIsSyncing(true);
 
   try {
-    const silentRes = await pkg.GoogleSignin.signInSilently();
-    if (silentRes?.type === 'noSavedCredentialFound') {
+    const silentAuth = await runGoogleSigninExclusive(async () => {
+      configureGoogleSignIn();
+      const silentRes = await pkg.GoogleSignin.signInSilently();
+      if (silentRes?.type === 'noSavedCredentialFound') {
+        return { noCredential: true as const, idToken: null };
+      }
+
+      const userData = silentRes?.data ?? silentRes;
+      let idToken: string | null = userData?.idToken ?? null;
+
+      if (!idToken && typeof pkg.GoogleSignin.getTokens === 'function') {
+        const tokens = await pkg.GoogleSignin.getTokens();
+        idToken = tokens?.idToken ?? null;
+      }
+
+      return { noCredential: false as const, idToken };
+    });
+
+    if (silentAuth.noCredential) {
       useAuthStore.getState().setIsSyncing(false);
       return { success: false, error: 'Not signed in' };
     }
 
-    const userData = silentRes?.data ?? silentRes;
-    let idToken: string | null = userData?.idToken ?? null;
-
-    if (!idToken && typeof pkg.GoogleSignin.getTokens === 'function') {
-      const tokens = await pkg.GoogleSignin.getTokens();
-      idToken = tokens?.idToken ?? null;
-    }
+    const { idToken } = silentAuth;
 
     if (!idToken) {
       useAuthStore.getState().setIsSyncing(false);
@@ -409,8 +448,10 @@ export async function signOutGoogle(): Promise<void> {
   const pkg = getGoogleSigninModule();
   if (pkg?.GoogleSignin) {
     try {
-      configureGoogleSignIn();
-      await pkg.GoogleSignin.signOut();
+      await runGoogleSigninExclusive(async () => {
+        configureGoogleSignIn();
+        await pkg.GoogleSignin.signOut();
+      });
     } catch (err) {
       console.warn('GoogleSignin.signOut warning:', err);
     }

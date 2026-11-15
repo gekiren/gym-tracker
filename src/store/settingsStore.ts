@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { saveSetting } from '../db/database';
 import { computeIsPremium } from '../utils/subscriptionUtils';
+import { triggerDebouncedDriveUpload } from '../services/googleDrive/driveSyncTrigger';
 
 export type FeatureId = 'workout' | 'water' | 'nutrition' | 'zikan' | 'routine' | 'habit' | 'body' | 'voice_ai';
 export type ExerciseChartMetric = 'volume' | '1rm' | 'sets' | 'avg_volume_per_set' | 'density';
@@ -332,6 +333,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     set((state) => ({
       settings: { ...state.settings, aiCompanionMemory: memory }
     }));
+    triggerDebouncedDriveUpload('ai_memory_update', 10000);
   },
 
   setLastExerciseChartMetric: (metric: ExerciseChartMetric) => {

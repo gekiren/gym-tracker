@@ -19,10 +19,14 @@ import {
   exportLogsToGoogleCalendar,
   syncHolidaysFromDevice,
 } from '../../src/services/calendarService';
+import { getSettings } from '../../src/db/database';
+import { checkDriveForProposals } from '../../src/services/googleDriveSyncService';
+import { useGoogleDriveSyncStore } from '../../src/store/googleDriveSyncStore';
 
 export default function ZikanScreen() {
   const { colors } = useAppTheme();
   const currentDate = useLifelogStore((state) => state.currentDate);
+  const appliedRevision = useGoogleDriveSyncStore((state) => state.appliedRevision);
   const [showHistory, setShowHistory] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isCalendarSyncing, setIsCalendarSyncing] = useState(false);
@@ -77,6 +81,11 @@ export default function ZikanScreen() {
       } catch (err) {
         console.warn('[ZikanScreen] Auto calendar import failed:', err);
       }
+
+      // Google Drive AI提案のチェック
+      checkDriveForProposals({ interactive: false, reason: 'zikan_focus' }).catch((err) => {
+        console.warn('[ZikanScreen] Drive proposal check failed:', err);
+      });
     };
 
     // 画面マウント・フォーカス直後のわずかな猶予をおいて実行
@@ -86,6 +95,40 @@ export default function ZikanScreen() {
       clearTimeout(timer);
     };
   }, [isFocused, targetDate]);
+
+  // Google Drive AI提案が反映されたら開いている WebView にも即座に再描画注入する
+  useEffect(() => {
+    if (!isFocused || appliedRevision === 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const all = await getSettings();
+        if (cancelled) return;
+        const parseSafe = (raw?: string) => {
+          if (!raw) return undefined;
+          let p = JSON.parse(raw);
+          if (typeof p === 'string') p = JSON.parse(p);
+          return Array.isArray(p) ? p : undefined;
+        };
+        const payload = {
+          plans: parseSafe(all['zikankanri_plans']),
+          defaultSchedules: parseSafe(all['zikankanri_default_schedules']),
+          templates: parseSafe(all['zikankanri_templates']),
+          pieces: parseSafe(all['zikankanri_pieces']),
+        };
+        webViewTabRef.current?.injectJavaScript(
+          `if (typeof window.refreshAiTimeManagementData === 'function') {
+            window.refreshAiTimeManagementData(${JSON.stringify(payload)});
+          }`
+        );
+      } catch (err) {
+        console.warn('[ZikanScreen] Failed to refresh WebView after Drive apply:', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isFocused, appliedRevision]);
 
   // フォーカス離脱時にモーダルフラグをリセット
   useEffect(() => {
