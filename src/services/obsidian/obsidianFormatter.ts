@@ -184,6 +184,37 @@ export const formatWorkoutToObsidianMarkdown = (workoutData: any, dayData?: DayL
 };
 
 /**
+ * ワークアウト詳細ノートの Obsidian ファイル名（または拡張子なしノート名）を生成する
+ */
+export const buildWorkoutObsidianNoteName = (
+  workoutData: { start_time?: string | null; title?: string | null },
+  includeExtension: boolean = false,
+  fallbackDateStr?: string
+): string => {
+  let dateOnly = '';
+  let timePrefix = '';
+
+  if (workoutData.start_time) {
+    const parsed = new Date(workoutData.start_time);
+    if (!isNaN(parsed.getTime())) {
+      dateOnly = format(parsed, 'yyyy-MM-dd');
+      timePrefix = format(parsed, 'HHmm');
+    } else {
+      dateOnly = normalizeToDateISO(workoutData.start_time) || '';
+    }
+  }
+
+  if (!dateOnly && fallbackDateStr) {
+    dateOnly = normalizeToDateISO(fallbackDateStr) || fallbackDateStr;
+  }
+
+  const safeTitle = (workoutData.title || 'workout').replace(/[\/\\?%*:|"<>]/g, '_');
+  const parts = [dateOnly, timePrefix, safeTitle].filter(Boolean);
+  const baseName = parts.join('_');
+  return includeExtension ? `${baseName}.md` : baseName;
+};
+
+/**
  * 統合デイリーノート用の Markdown を生成
  */
 export const formatDailyLogToObsidianMarkdown = (
@@ -193,22 +224,35 @@ export const formatDailyLogToObsidianMarkdown = (
   timeLogs: any[],
   habitLogs: any[],
   routineLogs?: any[],
-  bodyCompositionLog?: any
+  bodyCompositionLog?: any,
+  options?: { useWorkoutEmbeds?: boolean }
 ): string => {
   let md = `## 🏋️ TreNote Log (${dateStr})\n\n`;
+  const useWorkoutEmbeds = options?.useWorkoutEmbeds ?? true;
 
   if (workouts && workouts.length > 0) {
     md += `### 🏋️ 本日のトレーニング (${workouts.length}件)\n`;
-    workouts.forEach((w) => {
-      md += `- **${w.title || 'Workout'}** (${format(new Date(w.start_time), 'HH:mm')})\n`;
-      if (w.exercises && w.exercises.length > 0) {
-        w.exercises.forEach((ex: any) => {
-          const setCount = ex.sets ? ex.sets.length : 0;
-          md += `  - ${translateExercise(ex.exercise_name || ex.name)}: ${setCount} sets\n`;
-        });
-      }
-    });
-    md += `\n`;
+    if (useWorkoutEmbeds) {
+      workouts.forEach((w) => {
+        const noteName = buildWorkoutObsidianNoteName(w, false, dateStr);
+        md += `![[${noteName}]]\n\n`;
+      });
+    } else {
+      workouts.forEach((w) => {
+        const parsedStart = w.start_time ? new Date(w.start_time) : null;
+        const timeStr = parsedStart && !isNaN(parsedStart.getTime())
+          ? ` (${format(parsedStart, 'HH:mm')})`
+          : '';
+        md += `- **${w.title || 'Workout'}**${timeStr}\n`;
+        if (w.exercises && w.exercises.length > 0) {
+          w.exercises.forEach((ex: any) => {
+            const setCount = ex.sets ? ex.sets.length : 0;
+            md += `  - ${translateExercise(ex.exercise_name || ex.name)}: ${setCount} sets\n`;
+          });
+        }
+      });
+      md += `\n`;
+    }
   }
 
   if (waterLogs && waterLogs.length > 0) {

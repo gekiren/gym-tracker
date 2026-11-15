@@ -287,6 +287,7 @@ export {
   ExerciseNoteData,
   formatSecondsToReadable,
   normalizeToDateISO,
+  buildWorkoutObsidianNoteName,
   formatWorkoutToObsidianMarkdown,
   formatDailyLogToObsidianMarkdown,
   fetchDayLifelogData,
@@ -299,6 +300,7 @@ import {
   ExerciseNoteData,
   formatSecondsToReadable,
   normalizeToDateISO,
+  buildWorkoutObsidianNoteName,
   formatWorkoutToObsidianMarkdown,
   formatDailyLogToObsidianMarkdown,
   fetchDayLifelogData,
@@ -433,11 +435,12 @@ export const exportWorkoutToObsidian = async (workoutId: number): Promise<boolea
     const routinesFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderRoutines);
     const dailyFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderDaily);
 
+    const useWorkoutEmbeds = settings.exportWorkouts && settings.exportMode !== 'append';
+
     // 1. 個別筋トレノートのエクスポート (exportWorkouts が true かつ append 以外)
-    if (settings.exportWorkouts && settings.exportMode !== 'append') {
+    if (useWorkoutEmbeds) {
       const workoutMd = formatWorkoutToObsidianMarkdown(workoutData, dayData);
-      const timePrefix = workoutData.start_time ? format(new Date(workoutData.start_time), 'HHmm') : '';
-      const fileName = `${dateOnly}_${timePrefix ? timePrefix + '_' : ''}${(workoutData.title || 'workout').replace(/[\/\\?%*:|"<>]/g, '_')}.md`;
+      const fileName = buildWorkoutObsidianNoteName(workoutData, true, dateOnly);
       success = await writeOrAppendFileToVault(workoutsFolderUri, fileName, workoutMd, false, settings.vaultUri);
     }
 
@@ -460,7 +463,9 @@ export const exportWorkoutToObsidian = async (workoutId: number): Promise<boolea
       dayData.waterLogs,
       dayData.timeLogs,
       dayData.habitLogs,
-      dayData.routineLogs
+      dayData.routineLogs,
+      dayData.bodyCompositionLog,
+      { useWorkoutEmbeds }
     );
 
     if (settings.exportMode === 'append') {
@@ -504,12 +509,24 @@ export const syncLifelogToObsidian = async (force: boolean = false): Promise<boo
     const dayData = await fetchDayLifelogData(todayStr, settings);
 
     const baseUri = await getBaseFolderUri(settings);
+    const workoutsFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderWorkouts);
     const waterFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderWater);
     const timeFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderTime);
     const habitsFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderHabits);
     const dailyFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderDaily);
 
+    const useWorkoutEmbeds = settings.exportWorkouts && settings.exportMode !== 'append';
     let hasAnyData = false;
+
+    // ワークアウト個別詳細ノートの書き出し (埋め込み参照のリンク切れを防止)
+    if (useWorkoutEmbeds && dayData.workouts.length > 0) {
+      hasAnyData = true;
+      for (const workoutData of dayData.workouts) {
+        const workoutMd = formatWorkoutToObsidianMarkdown(workoutData, dayData);
+        const fileName = buildWorkoutObsidianNoteName(workoutData, true, todayStr);
+        await writeOrAppendFileToVault(workoutsFolderUri, fileName, workoutMd, false, settings.vaultUri);
+      }
+    }
 
     // 個別カテゴリフォルダへの保存 (水・時間・習慣)
     if (settings.exportWater && dayData.waterLogs.length > 0) {
@@ -559,7 +576,8 @@ export const syncLifelogToObsidian = async (force: boolean = false): Promise<boo
       dayData.timeLogs,
       dayData.habitLogs,
       dayData.routineLogs,
-      dayData.bodyCompositionLog
+      dayData.bodyCompositionLog,
+      { useWorkoutEmbeds }
     );
     let success = false;
 
@@ -731,11 +749,12 @@ export const exportAllDataToObsidian = async (): Promise<ObsidianExportResult> =
     try {
       const dayData = await fetchDayLifelogData(dateStr, settings);
 
-      if (settings.exportWorkouts && settings.exportMode !== 'append') {
+      const useWorkoutEmbeds = settings.exportWorkouts && settings.exportMode !== 'append';
+
+      if (useWorkoutEmbeds) {
         for (const workoutData of dayData.workouts) {
           const workoutMd = formatWorkoutToObsidianMarkdown(workoutData, dayData);
-          const timePrefix = workoutData.start_time ? format(new Date(workoutData.start_time), 'HHmm') : '';
-          const fileName = `${dateStr}_${timePrefix ? timePrefix + '_' : ''}${(workoutData.title || 'workout').replace(/[\/\\?%*:|"<>]/g, '_')}.md`;
+          const fileName = buildWorkoutObsidianNoteName(workoutData, true, dateStr);
           const ok = await writeOrAppendFileToVault(workoutsFolderUri, fileName, workoutMd, false, settings.vaultUri);
           if (ok) workoutsCount++;
           else failCount++;
@@ -784,7 +803,8 @@ export const exportAllDataToObsidian = async (): Promise<ObsidianExportResult> =
         dayData.timeLogs,
         dayData.habitLogs,
         dayData.routineLogs,
-        dayData.bodyCompositionLog
+        dayData.bodyCompositionLog,
+        { useWorkoutEmbeds }
       );
 
       let success = false;

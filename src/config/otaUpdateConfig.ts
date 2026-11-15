@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.49',
+  version: '2.3.50',
   title: {
-    ja: '📝 指定フォルダへのAI指示MD保存に対応',
-    en: '📝 Save AI Guide MD to Selected Folder',
+    ja: '📝 Obsidian連携：ワークアウト詳細の埋め込み表示に対応',
+    en: '📝 Obsidian Sync: Embed Workout Details in Daily Logs',
   },
   notes: {
     ja: [
-      'Googleドライブの指定フォルダへエージェント連携用指示ファイル（AI_AGENT_GUIDE.md）を直接保存・更新できるようになりました。',
+      'Obsidianの日次ログ（TreNote_YYYY-MM-DD.md）において、トレーニング欄にワークアウト詳細ファイルを直接埋め込み（![[...]]）で参照・展開表示できるようになりました。',
     ],
     en: [
-      'Added automatic and manual saving of AI_AGENT_GUIDE.md directly into your selected Google Drive sync folder.',
+      'Updated Obsidian daily logs (TreNote_YYYY-MM-DD.md) to directly embed detailed workout notes (![[...]]) instead of set count summaries.',
     ],
   },
 };
