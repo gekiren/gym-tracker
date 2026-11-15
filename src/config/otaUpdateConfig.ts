@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.43',
+  version: '2.3.44',
   title: {
-    ja: '🎨 テーマ動的追従の最終クリーンアップ',
-    en: '🎨 Final Dynamic Theme Cleanup',
+    ja: '🎨 24時間管理のデザイン統一と操作性改善',
+    en: '🎨 24h Time Management Theme & Layout Update',
   },
   notes: {
     ja: [
-      'ワークアウト入力（スワイプ数値入力）・シェアカード・プロフィールメニューのテーマ参照を動的テーマへ統一し、全画面のテーマ移行を完了しました。',
+      '24時間管理画面のテーマカラーを青系に統一し、タイムライン操作ボタンの文字が1行で読みやすく表示されるようレイアウトを改善しました。',
     ],
     en: [
-      'Completed dynamic theme migration across swipeable workout inputs, share cards, and profile menu items.',
+      'Unified the 24h Time Management screen theme to blue and improved timeline action button layout to prevent text wrapping.',
     ],
   },
 };
