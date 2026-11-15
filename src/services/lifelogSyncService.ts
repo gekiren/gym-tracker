@@ -1,5 +1,6 @@
 import { getDB, getCaffeineLimit, setCaffeineLimit } from '../db/database';
 import { useLifelogStore } from '../store/lifelogStore';
+import { triggerDebouncedDriveUpload } from './googleDrive/driveSyncTrigger';
 
 // Helper to format date as YYYY/MM/DD in local timezone
 const formatDate = (date: Date): string => {
@@ -278,6 +279,16 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
     }
 
     try {
+      const piecesRow = await db.getFirstAsync<{ value: string }>(
+        "SELECT value FROM settings WHERE key = 'zikankanri_pieces'"
+      );
+      data['zikankanri_pieces'] = piecesRow && piecesRow.value ? JSON.parse(piecesRow.value) : null;
+    } catch (e) {
+      console.warn('[getInitialDataForWebView] Failed to parse zikankanri_pieces:', e);
+      data['zikankanri_pieces'] = null;
+    }
+
+    try {
       const continuousModeRow = await db.getFirstAsync<{ value: string }>(
         "SELECT value FROM settings WHERE key = 'zikankanri_continuous_mode'"
       );
@@ -507,7 +518,14 @@ export const handleWebViewMessage = async (
         "INSERT OR REPLACE INTO settings (key, value) VALUES ('zikankanri_tags', ?)",
         [value]
       );
-    } 
+    }
+
+    else if (key === 'zikankanri_pieces') {
+      await db.runAsync(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES ('zikankanri_pieces', ?)",
+        [value]
+      );
+    }
     
     else if (key === 'zikankanri_continuous_mode') {
       await db.runAsync(
@@ -623,6 +641,7 @@ export const handleWebViewMessage = async (
         visible: row.is_hidden === 1 ? false : true,
       }));
       addSyncDiagnosticLog(`Updated habit-items in SQLite. Total items: ${updatedRows.length}`);
+      triggerDebouncedDriveUpload('webview_habit-items', 10000);
       return JSON.stringify(formattedUpdated);
     } 
     
@@ -706,6 +725,8 @@ export const handleWebViewMessage = async (
       );
       await useLifelogStore.getState().loadRoutineData();
     }
+
+    triggerDebouncedDriveUpload(`webview_${key}`, 10000);
   } catch (e) {
     console.error(`Failed to handle WebView update for key ${key}:`, e);
     addSyncDiagnosticLog(`[Sync Error] key=${key}: ${String(e)}`);

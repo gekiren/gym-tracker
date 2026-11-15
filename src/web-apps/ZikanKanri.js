@@ -5175,6 +5175,38 @@ window.importGooglePlans = function(newPlans) {
         if (typeof renderSummary === 'function') renderSummary();
     }
 };
+window.refreshAiTimeManagementData = function(payload) {
+    if (!payload || typeof payload !== 'object') return;
+    var prevSync = window.isInitialSync;
+    window.isInitialSync = true;
+    try {
+        if (Array.isArray(payload.plans)) {
+            plans = payload.plans;
+            storage.setItem('zikankanri_plans', JSON.stringify(plans));
+        }
+        if (Array.isArray(payload.defaultSchedules)) {
+            defaultSchedules = payload.defaultSchedules;
+            storage.setItem('zikankanri_default_schedules', JSON.stringify(defaultSchedules));
+        }
+        if (Array.isArray(payload.templates)) {
+            templates = payload.templates;
+            storage.setItem('zikankanri_templates', JSON.stringify(templates));
+        }
+        if (Array.isArray(payload.pieces)) {
+            activityPieces = payload.pieces;
+            defaultTags = activityPieces.map(function(p) { return p.name; });
+            storage.setItem('zikankanri_pieces', JSON.stringify(activityPieces));
+            storage.setItem('zikankanri_tags', JSON.stringify(defaultTags));
+        }
+    } finally {
+        window.isInitialSync = prevSync;
+    }
+    if (typeof updateDefaultSchedBanner === 'function') updateDefaultSchedBanner();
+    if (typeof renderDefaultScheduleList === 'function') renderDefaultScheduleList();
+    if (typeof renderPuzzle === 'function') renderPuzzle();
+    if (typeof renderPlans === 'function') renderPlans();
+    if (typeof renderSummary === 'function') renderSummary();
+};
 window.renderPlans = renderPlans;
 
 function getCurrentTimeStr() {

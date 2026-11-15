@@ -2242,6 +2242,19 @@ confirmCancelBtn.onclick = () => {
 document.getElementById('start-routine-btn').onclick = startRoutine;
 loadRoutines();
 
+window.refreshRoutinesFromHost = function(newRoutines) {
+    if (!Array.isArray(newRoutines)) return;
+    var prevSync = window.isInitialSync;
+    window.isInitialSync = true;
+    try {
+        var storage = window.appStorage || { setItem: function() {} };
+        storage.setItem(STORAGE_KEY, JSON.stringify(newRoutines));
+    } finally {
+        window.isInitialSync = prevSync;
+    }
+    loadRoutines();
+};
+
 // Restore active state if any
 (function() {
     try {

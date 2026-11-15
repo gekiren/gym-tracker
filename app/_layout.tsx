@@ -32,6 +32,12 @@ import {
   initBackgroundSyncServices,
 } from '../src/services/appInitializationService';
 import { initFeatureUnlockState } from '../src/services/featureUnlockService';
+import { useGoogleDriveSyncStore } from '../src/store/googleDriveSyncStore';
+import {
+  approvePendingProposal,
+  checkDriveForProposals,
+  flushPendingDriveUpload,
+} from '../src/services/googleDriveSyncService';
 
 // アプリの起動時にグローバルエラーハンドラを登録
 registerGlobalErrorHandler();
@@ -60,10 +66,50 @@ export default function RootLayout() {
   const [dbError, setDbError] = useState<string | null>(null);
   const pathname = usePathname();
   const pathnameRef = useRef(pathname);
+  const pendingProposal = useGoogleDriveSyncStore((s) => s.pendingProposal);
+  const promptedProposalKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     pathnameRef.current = pathname;
   }, [pathname]);
+
+  useEffect(() => {
+    if (!pendingProposal) {
+      promptedProposalKeyRef.current = null;
+      return;
+    }
+    if (pathname === '/settings/google-drive-sync') {
+      return;
+    }
+    const key = `${pendingProposal.payload.proposalId}::${pendingProposal.payload.updatedAt}`;
+    if (promptedProposalKeyRef.current === key) {
+      return;
+    }
+    promptedProposalKeyRef.current = key;
+
+    Alert.alert(
+      'AIトレーナーからの提案があります',
+      `${pendingProposal.previewSummary}\n\nGoogleドライブ同期設定画面で内容を確認して反映できます。`,
+      [
+        { text: 'あとで確認', style: 'cancel' },
+        {
+          text: '詳細を見る',
+          onPress: () => router.push('/settings/google-drive-sync' as any),
+        },
+        {
+          text: '今すぐ反映',
+          onPress: async () => {
+            const res = await approvePendingProposal();
+            if (!res.success && res.error) {
+              Alert.alert('反映エラー', res.error);
+            } else if (res.success) {
+              Alert.alert('AI提案を反映しました', res.summary || '反映が完了しました。');
+            }
+          },
+        },
+      ]
+    );
+  }, [pendingProposal, pathname]);
 
   const setupDB = async () => {
     setDbReady(false);
@@ -282,15 +328,32 @@ export default function RootLayout() {
       syncHealthData({ reason: 'periodic' }).catch(console.error);
     }, 15 * 60 * 1000);
 
+    // Google Drive AI提案の定時チェックタイマー (アクティブ時5分ごと)
+    const driveSyncInterval = setInterval(() => {
+      if (AppState.currentState === 'active') {
+        checkDriveForProposals({ interactive: false, reason: 'periodic' }).catch((err: unknown) => {
+          console.warn('Periodic Google Drive proposal check failed:', err);
+        });
+      }
+    }, 5 * 60 * 1000);
+
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
       if (nextAppState === 'background') {
         // バックグラウンド移行時の自動バックアップ（未退避変更の回収 ＆ 5分スロットル）
         triggerBackgroundBackup().catch((err) => {
           console.warn('Failed to run background backup on app background:', err);
         });
+        // Google Drive AI同期の未アップロード変更を即時フラッシュ
+        flushPendingDriveUpload('background').catch((err: unknown) => {
+          console.warn('Failed to flush Google Drive upload on background:', err);
+        });
       } else if (nextAppState === 'active') {
         // アプリフォアグラウンド復帰時にヘルスコネクトに自動アクセス
         syncHealthData({ reason: 'launch' }).catch(console.error);
+        // Google Drive AI提案の自動チェック
+        checkDriveForProposals({ interactive: false, reason: 'app_active' }).catch((err: unknown) => {
+          console.warn('Google Drive proposal check on active failed:', err);
+        });
 
         const settings = useSettingsStore.getState().settings;
         const premiumUntil = settings.premiumUntil;
@@ -330,6 +393,7 @@ export default function RootLayout() {
       subscription.remove();
       cleanupNotificationListener();
       clearInterval(healthSyncInterval);
+      clearInterval(driveSyncInterval);
     };
   }, []);
 

@@ -1,5 +1,6 @@
 import { getDB, getDBPromise, withDBQueue } from '../connection';
 import { triggerDebouncedDataBackup } from '../dbBackupService';
+import { triggerDebouncedDriveUpload } from '../../services/googleDrive/driveSyncTrigger';
 import { translateExercise } from '../../i18n';
 import { WorkoutExercise, WorkoutRow, WorkoutExerciseRow, WorkoutSetRow, WorkoutSet, WorkoutWithStats, FullWorkoutData } from '../types';
 import { isTreadmillExercise } from '../../utils/exerciseUtils';
@@ -81,6 +82,7 @@ export const saveWorkout = async (
 
   // ワークアウト保存完了後の非同期バックアップ（3秒デバウンスで退避）
   triggerDebouncedDataBackup('workout_save', 3000);
+  triggerDebouncedDriveUpload('workout_save', 10000);
 
   return workoutId;
 };
@@ -214,6 +216,7 @@ export const getPersonalRecords = async (exerciseId: number) => {
 export const deleteWorkout = async (id: number) => {
   const conn = getDB();
   await conn.runAsync('DELETE FROM workouts WHERE id = ?', [id]);
+  triggerDebouncedDriveUpload('workout_delete', 10000);
 };
 
 export const loadFullWorkoutData = async (workoutId: number): Promise<FullWorkoutData | null> => {
@@ -322,26 +325,31 @@ export const updateWorkoutSet = async (
 
   values.push(setId);
   await conn.runAsync(`UPDATE workout_sets SET ${fields.join(', ')} WHERE id = ?`, values);
+  triggerDebouncedDriveUpload('workout_set_update', 10000);
 };
 
 export const deleteWorkoutSet = async (setId: number) => {
   const conn = getDB();
   await conn.runAsync('DELETE FROM workout_sets WHERE id = ?', [setId]);
+  triggerDebouncedDriveUpload('workout_set_delete', 10000);
 };
 
 export const updateWorkoutTitle = async (workoutId: number, title: string) => {
   const conn = getDB();
   await conn.runAsync('UPDATE workouts SET title = ? WHERE id = ?', [title, workoutId]);
+  triggerDebouncedDriveUpload('workout_title_update', 10000);
 };
 
 export const updateWorkoutOverallNotes = async (workoutId: number, notes: string | null) => {
   const conn = getDB();
   await conn.runAsync('UPDATE workouts SET notes = ? WHERE id = ?', [notes, workoutId]);
+  triggerDebouncedDriveUpload('workout_notes_update', 10000);
 };
 
 export const updateWorkoutExerciseNotes = async (weId: number, notes: string | null) => {
   const conn = getDB();
   await conn.runAsync('UPDATE workout_exercises SET notes = ? WHERE id = ?', [notes, weId]);
+  triggerDebouncedDriveUpload('workout_exercise_notes_update', 10000);
 };
 
 export const getRecentWorkoutSummaryForAI = async (limit: number = 3): Promise<string> => {

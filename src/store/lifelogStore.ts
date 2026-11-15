@@ -26,6 +26,7 @@ import {
   getSettingValue,
 } from '../db/database';
 import { recordFeatureAction } from '../services/featureUnlockService';
+import { triggerDebouncedDriveUpload } from '../services/googleDrive/driveSyncTrigger';
 
 export interface HabitSummaryItem {
   id: number;
@@ -368,6 +369,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
       await addWaterLog(amount, Date.now(), date, caffeine);
       await get().loadWaterData(date);
       recordFeatureAction('water', date);
+      triggerDebouncedDriveUpload('water_add', 10000);
     } catch (e) {
       console.warn('Failed to add water log:', e);
     }
@@ -377,6 +379,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
     try {
       await deleteWaterLog(id);
       await get().loadWaterData(date);
+      triggerDebouncedDriveUpload('water_delete', 10000);
     } catch (e) {
       console.warn('Failed to delete water log:', e);
     }
@@ -429,6 +432,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
       await addTimeLog(activityName, startTime, endTime, date, durationMinutes);
       await get().loadTimeData(date);
       recordFeatureAction('zikan', date);
+      triggerDebouncedDriveUpload('time_add', 10000);
     } catch (e) {
       console.warn('Failed to add time log:', e);
     }
@@ -438,6 +442,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
     try {
       await deleteTimeLog(id);
       await get().loadTimeData(date);
+      triggerDebouncedDriveUpload('time_delete', 10000);
     } catch (e) {
       console.warn('Failed to delete time log:', e);
     }
@@ -454,6 +459,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
     try {
       await updateTimeLog(id, activityName, startTime, endTime, date, durationMinutes);
       await get().loadTimeData(date);
+      triggerDebouncedDriveUpload('time_update', 10000);
     } catch (e) {
       console.warn('Failed to update time log:', e);
     }
@@ -490,6 +496,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
     try {
       await addHabitItem(name, color, targetCount || 0);
       await get().loadHabitItems();
+      triggerDebouncedDriveUpload('habit_item_add', 10000);
     } catch (e) {
       console.warn('Failed to add habit item:', e);
     }
@@ -499,6 +506,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
     try {
       await updateHabitItem(id, name, color, targetCount || 0);
       await get().loadHabitItems();
+      triggerDebouncedDriveUpload('habit_item_update', 10000);
     } catch (e) {
       console.warn('Failed to update habit item:', e);
     }
@@ -508,6 +516,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
     try {
       await deleteHabitItem(id);
       await get().loadHabitItems();
+      triggerDebouncedDriveUpload('habit_item_delete', 10000);
     } catch (e) {
       console.warn('Failed to delete habit item:', e);
     }
@@ -518,6 +527,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
       await addHabitLog(habitItemId, Date.now(), date);
       await get().loadHabits(date);
       recordFeatureAction('habit', date);
+      triggerDebouncedDriveUpload('habit_log_add', 10000);
     } catch (e) {
       console.warn('Failed to add habit log:', e);
     }
@@ -527,6 +537,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
     try {
       await deleteHabitLog(id);
       await get().loadHabits(date);
+      triggerDebouncedDriveUpload('habit_log_delete', 10000);
     } catch (e) {
       console.warn('Failed to delete habit log:', e);
     }
@@ -536,6 +547,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
     try {
       await deleteLastHabitLog(habitItemId, date);
       await get().loadHabits(date);
+      triggerDebouncedDriveUpload('habit_log_delete_last', 10000);
     } catch (e) {
       console.warn('Failed to delete last habit log:', e);
     }

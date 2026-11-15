@@ -1,5 +1,6 @@
 import { withDBQueue } from '../connection';
 import { BodyCompositionLog } from '../../types/bodyComposition';
+import { triggerDebouncedDriveUpload } from '../../services/googleDrive/driveSyncTrigger';
 
 /**
  * 指定された日付（YYYY-MM-DD）の体組成ログを取得
@@ -96,7 +97,7 @@ export async function getAllBodyLogs(limit: number = 100): Promise<BodyCompositi
  * 体組成ログを新規登録
  */
 export async function insertBodyLog(log: Omit<BodyCompositionLog, 'id'>): Promise<number> {
-  return withDBQueue(async (db) => {
+  const insertedId = await withDBQueue(async (db) => {
     const now = log.created_at || Date.now();
     const res = await db.runAsync(
       `INSERT INTO body_composition_logs (
@@ -123,6 +124,8 @@ export async function insertBodyLog(log: Omit<BodyCompositionLog, 'id'>): Promis
     );
     return res.lastInsertRowId;
   });
+  triggerDebouncedDriveUpload('body_insert', 10000);
+  return insertedId;
 }
 
 /**
@@ -165,6 +168,7 @@ export async function updateBodyLog(log: BodyCompositionLog): Promise<void> {
       ]
     );
   });
+  triggerDebouncedDriveUpload('body_update', 10000);
 }
 
 /**
@@ -226,7 +230,8 @@ export async function upsertBodyLog(
  * 体組成ログを削除
  */
 export async function deleteBodyLog(id: number): Promise<void> {
-  return withDBQueue(async (db) => {
+  await withDBQueue(async (db) => {
     await db.runAsync('DELETE FROM body_composition_logs WHERE id = ?', [id]);
   });
+  triggerDebouncedDriveUpload('body_delete', 10000);
 }

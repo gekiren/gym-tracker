@@ -1,5 +1,6 @@
 import { getDB } from '../connection';
 import { RoutineExercise } from '../types';
+import { triggerDebouncedDriveUpload } from '../../services/googleDrive/driveSyncTrigger';
 
 export const getRoutines = async () => {
   const conn = getDB();
@@ -122,6 +123,7 @@ export const addRoutine = async (title: string, description: string, exercises: 
       }
     }
   });
+  triggerDebouncedDriveUpload('routine_add', 10000);
 };
 
 export const updateRoutine = async (id: number, title: string, description: string, exercises: RoutineExercise[]) => {
@@ -147,11 +149,13 @@ export const updateRoutine = async (id: number, title: string, description: stri
       }
     }
   });
+  triggerDebouncedDriveUpload('routine_update', 10000);
 };
 
 export const deleteRoutine = async (id: number) => {
   const conn = getDB();
   await conn.runAsync('DELETE FROM routines WHERE id = ?', [id]);
+  triggerDebouncedDriveUpload('routine_delete', 10000);
 };
 
 export const updateRoutineOrders = async (orders: { id: number, sort_order: number }[]) => {
@@ -161,4 +165,5 @@ export const updateRoutineOrders = async (orders: { id: number, sort_order: numb
       await conn.runAsync('UPDATE routines SET sort_order = ? WHERE id = ?', [item.sort_order, item.id]);
     }
   });
+  triggerDebouncedDriveUpload('routine_reorder', 10000);
 };

@@ -9,6 +9,8 @@ import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { translateExercise } from '../src/i18n';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { checkDriveForProposals } from '../src/services/googleDriveSyncService';
+import { useGoogleDriveSyncStore } from '../src/store/googleDriveSyncStore';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -23,6 +25,7 @@ export default function RoutinesScreen() {
   const isPremium = useSettingsStore(state => state.settings.isPremium);
   const isEarly = useSettingsStore(state => state.settings.isEarlyAdopter);
   const isBasic = !isPremium && !isEarly;
+  const appliedRevision = useGoogleDriveSyncStore(state => state.appliedRevision);
 
   const handleMoveUp = async (index: number) => {
     if (index === 0) return;
@@ -61,7 +64,14 @@ export default function RoutinesScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchRoutines();
-    }, [])
+      checkDriveForProposals({ interactive: false, reason: 'routines_focus' })
+        .then((res) => {
+          if (res.status === 'applied') {
+            fetchRoutines();
+          }
+        })
+        .catch(() => {});
+    }, [appliedRevision])
   );
 
   const fetchRoutines = async () => {

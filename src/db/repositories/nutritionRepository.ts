@@ -1,4 +1,5 @@
 import { getDB, initDB, withDBQueue, triggerDebouncedDataBackup } from '../database';
+import { triggerDebouncedDriveUpload } from '../../services/googleDrive/driveSyncTrigger';
 import {
   MealLog,
   MealFavorite,
@@ -83,6 +84,7 @@ export const addMealLog = async (
   });
   // 食事追加後の非同期バックアップ（20秒デバウンス）
   triggerDebouncedDataBackup('meal_save', 20000);
+  triggerDebouncedDriveUpload('meal_add', 10000);
   return rowId;
 };
 
@@ -120,6 +122,7 @@ export const updateMealLog = async (
   });
   // 食事更新後の非同期バックアップ（20秒デバウンス）
   triggerDebouncedDataBackup('meal_save', 20000);
+  triggerDebouncedDriveUpload('meal_update', 10000);
 };
 
 export const deleteMealLog = async (id: number): Promise<void> => {
@@ -129,6 +132,7 @@ export const deleteMealLog = async (id: number): Promise<void> => {
   });
   // 食事削除後の非同期バックアップ（20秒デバウンス）
   triggerDebouncedDataBackup('meal_save', 20000);
+  triggerDebouncedDriveUpload('meal_delete', 10000);
 };
 
 export const deleteMealLogsByGroupId = async (groupId: string): Promise<void> => {
@@ -138,6 +142,7 @@ export const deleteMealLogsByGroupId = async (groupId: string): Promise<void> =>
   });
   // 食事削除後の非同期バックアップ（20秒デバウンス）
   triggerDebouncedDataBackup('meal_save', 20000);
+  triggerDebouncedDriveUpload('meal_delete', 10000);
 };
 
 // ─── お気に入り (meal_favorites) ───────────────────────
@@ -586,6 +591,7 @@ export const applyMealPresetToDate = async (
   });
 
   triggerDebouncedDataBackup('meal_save', 20000);
+  triggerDebouncedDriveUpload('meal_preset_apply', 10000);
   return groupId;
 };
 

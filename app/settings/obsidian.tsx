@@ -49,6 +49,26 @@ export default function ObsidianSettingsScreen() {
           <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
         </TouchableOpacity>
 
+        {/* ── Googleドライブ AI双方向同期カード ── */}
+        <TouchableOpacity
+          style={styles.exportCard}
+          onPress={() => router.push('/settings/google-drive-sync' as any)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.exportCardLeft}>
+            <View style={[styles.exportIconBox, { backgroundColor: 'rgba(66, 133, 244, 0.14)' }]}>
+              <Ionicons name="logo-google" size={24} color="#4285f4" />
+            </View>
+            <View style={styles.exportTextBox}>
+              <Text style={styles.exportCardTitle}>Googleドライブ AI双方向同期</Text>
+              <Text style={styles.exportCardDesc}>
+                記録の随時アップロード・AIエージェント提案の随時読み込み
+              </Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
+
         {/* ── Obsidian連携セクション ── */}
         <ObsidianSection t={t} />
 

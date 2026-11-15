@@ -13,6 +13,9 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useFeatureSwipe } from '../../src/hooks/useFeatureSwipe';
+import { getSettings } from '../../src/db/database';
+import { checkDriveForProposals } from '../../src/services/googleDriveSyncService';
+import { useGoogleDriveSyncStore } from '../../src/store/googleDriveSyncStore';
 
 function KeepAwakeController() {
   useKeepAwake();
@@ -23,6 +26,7 @@ export default function RoutineScreen() {
   const { colors } = useAppTheme();
   const currentDate = useLifelogStore((state) => state.currentDate);
   const isExecuting = useLifelogStore((state) => state.activeRoutineState?.isExecuting || false);
+  const appliedRevision = useGoogleDriveSyncStore((state) => state.appliedRevision);
   const [showHistory, setShowHistory] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const webViewTabRef = useRef<WebViewTabRef>(null);
@@ -30,12 +34,47 @@ export default function RoutineScreen() {
   const isFocused = useIsFocused();
   const { panHandlerProps } = useFeatureSwipe('/lifelog/routine');
 
-  // フォーカス離脱時にモーダルフラグをリセット
+  // フォーカス離脱時にモーダルフラグをリセット・フォーカス時にDrive提案チェック
   React.useEffect(() => {
     if (!isFocused) {
       setIsModalVisible(false);
+      return;
     }
+    const timer = setTimeout(() => {
+      checkDriveForProposals({ interactive: false, reason: 'routine_focus' }).catch((err) => {
+        console.warn('[RoutineScreen] Drive proposal check failed:', err);
+      });
+    }, 600);
+    return () => clearTimeout(timer);
   }, [isFocused]);
+
+  // AI提案反映時にWebView側を即時更新
+  React.useEffect(() => {
+    if (!isFocused || appliedRevision === 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const all = await getSettings();
+        if (cancelled) return;
+        const raw = all['routine_tracker_data'];
+        if (!raw) return;
+        let parsed = JSON.parse(raw);
+        if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+        if (Array.isArray(parsed)) {
+          webViewTabRef.current?.injectJavaScript(
+            `if (typeof window.refreshRoutinesFromHost === 'function') {
+              window.refreshRoutinesFromHost(${JSON.stringify(parsed)});
+            }`
+          );
+        }
+      } catch (err) {
+        console.warn('[RoutineScreen] Failed to refresh WebView routines:', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isFocused, appliedRevision]);
 
   const handleOpenManageView = () => {
     webViewTabRef.current?.injectJavaScript(
