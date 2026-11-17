@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.50',
+  version: '2.3.51',
   title: {
-    ja: '📝 Obsidian連携：ワークアウト詳細の埋め込み表示に対応',
-    en: '📝 Obsidian Sync: Embed Workout Details in Daily Logs',
+    ja: '📋 履歴表示：セット行のレイアウトを見やすく整理',
+    en: '📋 Workout History: Cleaner Set Row Layout',
   },
   notes: {
     ja: [
-      'Obsidianの日次ログ（TreNote_YYYY-MM-DD.md）において、トレーニング欄にワークアウト詳細ファイルを直接埋め込み（![[...]]）で参照・展開表示できるようになりました。',
+      '種目別のワークアウト履歴で、RPEやスタンス・タイマーを記録した際も最大2行にすっきり収まるようレイアウトを改善しました。',
     ],
     en: [
-      'Updated Obsidian daily logs (TreNote_YYYY-MM-DD.md) to directly embed detailed workout notes (![[...]]) instead of set count summaries.',
+      'Improved the set row layout in exercise workout history so RPE, stance, and timer details stay cleanly aligned within two lines.',
     ],
   },
 };
