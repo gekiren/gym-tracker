@@ -110,4 +110,59 @@ describe('obsidianFormatter - formatDailyLogToObsidianMarkdown', () => {
     expect(md).toContain('  - デッドリフト: 3 sets');
     expect(md).not.toContain('![[2026-11-15_1115_フリーワークアウト]]');
   });
+
+  it('includes meal nutrition logs, body composition metrics, and health note embed when provided', () => {
+    const md = formatDailyLogToObsidianMarkdown(
+      '2026-11-19',
+      [],
+      [],
+      [],
+      [],
+      undefined,
+      {
+        weight: 72.0,
+        body_fat_rate: 15.2,
+        lbm: 61.1,
+        muscle_mass: 35.0,
+        memo: '体調良好',
+      },
+      {
+        mealLogs: [
+          {
+            meal_time: '08:00',
+            meal_type: '朝食',
+            name: 'プロテインとオートミール',
+            calories: 420,
+            protein: 32.5,
+            fat: 6.2,
+            carbs: 55.0,
+            fiber: 5.5,
+            sodium: 0.4,
+          },
+          {
+            meal_time: '12:30',
+            meal_type: '昼食',
+            name: '鶏胸肉定食',
+            calories: 650,
+            protein: 45.0,
+            fat: 12.0,
+            carbs: 80.0,
+            fiber: 4.0,
+            sodium: 2.1,
+          },
+        ],
+        includeHealthEmbed: true,
+      }
+    );
+
+    expect(md).toContain('### 🍽️ 食事・栄養価 (2件)');
+    expect(md).toContain('**合計**: 1070 kcal (P: 77.5g / F: 18.2g / C: 135.0g / 食物繊維: 9.5g / 塩分: 2.5g)');
+    expect(md).toContain('08:00 [朝食] **プロテインとオートミール**: 420 kcal');
+    expect(md).toContain('### ⚖️ 体組成');
+    expect(md).toContain('- **体重**: 72.0 kg');
+    expect(md).toContain('- **体脂肪率**: 15.2 %');
+    expect(md).toContain('### 📊 ヘルスデータ');
+    expect(md).toContain('![[2026-11-19_health]]');
+    expect(md).toContain('### 📝 雑記・体調メモ\n\n体調良好');
+  });
 });

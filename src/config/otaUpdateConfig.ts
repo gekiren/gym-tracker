@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.51',
+  version: '2.3.52',
   title: {
-    ja: '📋 履歴表示：セット行のレイアウトを見やすく整理',
-    en: '📋 Workout History: Cleaner Set Row Layout',
+    ja: '📝 Obsidian連携：栄養価・体組成・ヘルスデータを日次ログに統合',
+    en: '📝 Obsidian Sync: Nutrition, Body Metrics & Health Data in Daily Log',
   },
   notes: {
     ja: [
-      '種目別のワークアウト履歴で、RPEやスタンス・タイマーを記録した際も最大2行にすっきり収まるようレイアウトを改善しました。',
+      'Obsidian の TreNote 日次ログ (TreNote_YYYY-MM-DD.md) に、食事・栄養価（カロリー・PFC）、体組成の数値、およびヘルスデータ（歩数・睡眠など）の埋め込みが自動で含まれるようになりました。',
     ],
     en: [
-      'Improved the set row layout in exercise workout history so RPE, stance, and timer details stay cleanly aligned within two lines.',
+      'TreNote daily Obsidian logs (TreNote_YYYY-MM-DD.md) now automatically include meal nutrition (calories & macros), body composition metrics, and embedded health data.',
     ],
   },
 };

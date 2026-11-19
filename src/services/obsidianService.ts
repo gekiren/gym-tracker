@@ -21,6 +21,7 @@ export interface ObsidianSettings {
   exportHabits: boolean;
   exportRoutines: boolean;
   exportHealth: boolean;
+  exportNutrition: boolean;
   folderWorkouts: string;
   folderExercises: string;
   folderWater: string;
@@ -29,6 +30,7 @@ export interface ObsidianSettings {
   folderRoutines: string;
   folderDaily: string;
   folderHealth: string;
+  folderNutrition: string;
   lastSyncTimestamp: number;
   lastSyncStatus: 'idle' | 'success' | 'error';
   lastSyncError: string | null;
@@ -48,6 +50,7 @@ const DEFAULT_SETTINGS: ObsidianSettings = {
   exportHabits: true,
   exportRoutines: true,
   exportHealth: true,
+  exportNutrition: true,
   folderWorkouts: 'Workouts',
   folderExercises: 'Exercises',
   folderWater: 'Water',
@@ -56,6 +59,7 @@ const DEFAULT_SETTINGS: ObsidianSettings = {
   folderRoutines: 'Routines',
   folderDaily: 'Daily',
   folderHealth: 'Health',
+  folderNutrition: 'Nutrition',
   lastSyncTimestamp: 0,
   lastSyncStatus: 'idle',
   lastSyncError: null,
@@ -81,6 +85,7 @@ export const getObsidianSettings = async (): Promise<ObsidianSettings> => {
       exportHabits: dbSettings['obsidian_export_habits'] !== '0',
       exportRoutines: dbSettings['obsidian_export_routines'] !== '0',
       exportHealth: dbSettings['obsidian_export_health'] !== '0',
+      exportNutrition: dbSettings['obsidian_export_nutrition'] !== '0',
       folderWorkouts: dbSettings['obsidian_folder_workouts'] ?? 'Workouts',
       folderExercises: dbSettings['obsidian_folder_exercises'] ?? 'Exercises',
       folderWater: dbSettings['obsidian_folder_water'] ?? 'Water',
@@ -89,6 +94,7 @@ export const getObsidianSettings = async (): Promise<ObsidianSettings> => {
       folderRoutines: dbSettings['obsidian_folder_routines'] ?? 'Routines',
       folderDaily: dbSettings['obsidian_folder_daily'] ?? 'Daily',
       folderHealth: dbSettings['obsidian_folder_health'] ?? 'Health',
+      folderNutrition: dbSettings['obsidian_folder_nutrition'] ?? 'Nutrition',
       lastSyncTimestamp: parseInt(dbSettings['obsidian_last_sync_timestamp'] || '0', 10),
       lastSyncStatus: (dbSettings['obsidian_last_sync_status'] as 'idle' | 'success' | 'error') || 'idle',
       lastSyncError: dbSettings['obsidian_last_sync_error'] || null,
@@ -117,6 +123,7 @@ export const saveObsidianSettings = async (settings: Partial<ObsidianSettings>):
     if (settings.exportHabits !== undefined) await saveSetting('obsidian_export_habits', settings.exportHabits ? '1' : '0');
     if (settings.exportRoutines !== undefined) await saveSetting('obsidian_export_routines', settings.exportRoutines ? '1' : '0');
     if (settings.exportHealth !== undefined) await saveSetting('obsidian_export_health', settings.exportHealth ? '1' : '0');
+    if (settings.exportNutrition !== undefined) await saveSetting('obsidian_export_nutrition', settings.exportNutrition ? '1' : '0');
     if (settings.folderWorkouts !== undefined) await saveSetting('obsidian_folder_workouts', settings.folderWorkouts);
     if (settings.folderExercises !== undefined) await saveSetting('obsidian_folder_exercises', settings.folderExercises);
     if (settings.folderWater !== undefined) await saveSetting('obsidian_folder_water', settings.folderWater);
@@ -125,6 +132,7 @@ export const saveObsidianSettings = async (settings: Partial<ObsidianSettings>):
     if (settings.folderRoutines !== undefined) await saveSetting('obsidian_folder_routines', settings.folderRoutines);
     if (settings.folderDaily !== undefined) await saveSetting('obsidian_folder_daily', settings.folderDaily);
     if (settings.folderHealth !== undefined) await saveSetting('obsidian_folder_health', settings.folderHealth);
+    if (settings.folderNutrition !== undefined) await saveSetting('obsidian_folder_nutrition', settings.folderNutrition);
     if (settings.lastSyncTimestamp !== undefined) await saveSetting('obsidian_last_sync_timestamp', settings.lastSyncTimestamp.toString());
     if (settings.lastSyncStatus !== undefined) await saveSetting('obsidian_last_sync_status', settings.lastSyncStatus);
     if (settings.lastSyncError !== undefined) await saveSetting('obsidian_last_sync_error', settings.lastSyncError || '');
@@ -411,6 +419,66 @@ export const exportAllRoutinesToVault = async (routineFolderUri: string, vaultUr
 };
 
 /**
+ * Health フォルダに存在する日付セット (YYYY-MM-DD) を取得するヘルパー
+ */
+const getExistingHealthDates = async (healthFolderUri: string): Promise<Set<string>> => {
+  const dates = new Set<string>();
+  if (!healthFolderUri) return dates;
+  try {
+    const files = await FileSystem.StorageAccessFramework.readDirectoryAsync(healthFolderUri);
+    for (const fUri of files) {
+      const base = getBasenameFromUri(fUri);
+      const match = base.match(/^(\d{4}-\d{2}-\d{2})_health\.md$/i);
+      if (match) {
+        dates.add(match[1]);
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to read health folder for embed check:', e);
+  }
+  return dates;
+};
+
+/**
+ * 食事・栄養価ログの個別ノート Markdown を生成するヘルパー
+ */
+const formatNutritionLogMarkdown = (dateStr: string, mealLogs: any[]): string => {
+  const totals = mealLogs.reduce(
+    (acc, m) => ({
+      calories: acc.calories + (Number(m.calories) || 0),
+      protein: acc.protein + (Number(m.protein) || 0),
+      fat: acc.fat + (Number(m.fat) || 0),
+      carbs: acc.carbs + (Number(m.carbs) || 0),
+      fiber: acc.fiber + (Number(m.fiber) || 0),
+      sodium: acc.sodium + (Number(m.sodium) || 0),
+    }),
+    { calories: 0, protein: 0, fat: 0, carbs: 0, fiber: 0, sodium: 0 }
+  );
+
+  let md = `# 🍽️ 食事・栄養価ログ (${dateStr})\n\n`;
+  md += `- **合計摂取カロリー**: ${Math.round(totals.calories)} kcal\n`;
+  md += `- **タンパク質 (P)**: ${totals.protein.toFixed(1)} g\n`;
+  md += `- **脂質 (F)**: ${totals.fat.toFixed(1)} g\n`;
+  md += `- **炭水化物 (C)**: ${totals.carbs.toFixed(1)} g\n`;
+  if (totals.fiber > 0) md += `- **食物繊維**: ${totals.fiber.toFixed(1)} g\n`;
+  if (totals.sodium > 0) md += `- **塩分**: ${totals.sodium.toFixed(1)} g\n`;
+  md += `\n| Time | Type | Menu | Calories | P | F | C |\n|---|---|---|---|---|---|---|\n`;
+
+  mealLogs.forEach((m) => {
+    const time = m.meal_time || '-';
+    const type = m.meal_type || '-';
+    const name = (m.name || '食事').replace(/\|/g, '\\|');
+    const cal = Math.round(Number(m.calories) || 0);
+    const p = (Number(m.protein) || 0).toFixed(1);
+    const f = (Number(m.fat) || 0).toFixed(1);
+    const c = (Number(m.carbs) || 0).toFixed(1);
+    md += `| ${time} | ${type} | ${name} | ${cal} kcal | ${p}g | ${f}g | ${c}g |\n`;
+  });
+
+  return md;
+};
+
+/**
  * 筋トレ完了時に即時エクスポート
  */
 export const exportWorkoutToObsidian = async (workoutId: number): Promise<boolean> => {
@@ -434,6 +502,8 @@ export const exportWorkoutToObsidian = async (workoutId: number): Promise<boolea
     const exercisesFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderExercises);
     const routinesFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderRoutines);
     const dailyFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderDaily);
+    const healthFolderUri = settings.exportHealth ? await getOrCreateSubfolderUri(baseUri, settings.folderHealth) : '';
+    const existingHealthDates = settings.exportHealth ? await getExistingHealthDates(healthFolderUri) : new Set<string>();
 
     const useWorkoutEmbeds = settings.exportWorkouts && settings.exportMode !== 'append';
 
@@ -456,7 +526,7 @@ export const exportWorkoutToObsidian = async (workoutId: number): Promise<boolea
       await exportAllRoutinesToVault(routinesFolderUri, settings.vaultUri);
     }
 
-    // 4. 統合デイリーノートのエクスポート (筋トレ＋水分＋時間＋習慣)
+    // 4. 統合デイリーノートのエクスポート (筋トレ＋水分＋時間＋習慣＋栄養＋ヘルス)
     const dailyMd = formatDailyLogToObsidianMarkdown(
       dateOnly,
       dayData.workouts.length > 0 ? dayData.workouts : [workoutData],
@@ -465,7 +535,11 @@ export const exportWorkoutToObsidian = async (workoutId: number): Promise<boolea
       dayData.habitLogs,
       dayData.routineLogs,
       dayData.bodyCompositionLog,
-      { useWorkoutEmbeds }
+      {
+        useWorkoutEmbeds,
+        mealLogs: dayData.mealLogs,
+        includeHealthEmbed: settings.exportHealth && existingHealthDates.has(dateOnly),
+      }
     );
 
     if (settings.exportMode === 'append') {
@@ -513,7 +587,11 @@ export const syncLifelogToObsidian = async (force: boolean = false): Promise<boo
     const waterFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderWater);
     const timeFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderTime);
     const habitsFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderHabits);
+    const nutritionFolderUri = settings.exportNutrition ? await getOrCreateSubfolderUri(baseUri, settings.folderNutrition) : '';
+    const healthFolderUri = settings.exportHealth ? await getOrCreateSubfolderUri(baseUri, settings.folderHealth) : '';
     const dailyFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderDaily);
+    const existingHealthDates = settings.exportHealth ? await getExistingHealthDates(healthFolderUri) : new Set<string>();
+    const hasHealthFile = settings.exportHealth && existingHealthDates.has(todayStr);
 
     const useWorkoutEmbeds = settings.exportWorkouts && settings.exportMode !== 'append';
     let hasAnyData = false;
@@ -561,7 +639,13 @@ export const syncLifelogToObsidian = async (force: boolean = false): Promise<boo
       await writeOrAppendFileToVault(habitsFolderUri, `${todayStr}_habits.md`, habitMd, false, settings.vaultUri);
     }
 
-    if (dayData.workouts.length > 0 || (dayData.routineLogs && dayData.routineLogs.length > 0) || dayData.bodyCompositionLog) {
+    if (settings.exportNutrition && dayData.mealLogs && dayData.mealLogs.length > 0) {
+      hasAnyData = true;
+      const nutritionMd = formatNutritionLogMarkdown(todayStr, dayData.mealLogs);
+      await writeOrAppendFileToVault(nutritionFolderUri, `${todayStr}_nutrition.md`, nutritionMd, false, settings.vaultUri);
+    }
+
+    if (dayData.workouts.length > 0 || (dayData.routineLogs && dayData.routineLogs.length > 0) || dayData.bodyCompositionLog || hasHealthFile) {
       hasAnyData = true;
     }
 
@@ -577,7 +661,11 @@ export const syncLifelogToObsidian = async (force: boolean = false): Promise<boo
       dayData.habitLogs,
       dayData.routineLogs,
       dayData.bodyCompositionLog,
-      { useWorkoutEmbeds }
+      {
+        useWorkoutEmbeds,
+        mealLogs: dayData.mealLogs,
+        includeHealthEmbed: hasHealthFile,
+      }
     );
     let success = false;
 
@@ -644,7 +732,10 @@ export const exportAllDataToObsidian = async (): Promise<ObsidianExportResult> =
   const timeFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderTime);
   const habitsFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderHabits);
   const routinesFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderRoutines);
+  const nutritionFolderUri = settings.exportNutrition ? await getOrCreateSubfolderUri(baseUri, settings.folderNutrition) : '';
+  const healthFolderUri = settings.exportHealth ? await getOrCreateSubfolderUri(baseUri, settings.folderHealth) : '';
   const dailyFolderUri = await getOrCreateSubfolderUri(baseUri, settings.folderDaily);
+  const existingHealthDates = settings.exportHealth ? await getExistingHealthDates(healthFolderUri) : new Set<string>();
 
   if (settings.exportWorkouts) {
     const rows = await conn.getAllAsync<{ start_time: string }>('SELECT start_time FROM workouts WHERE start_time IS NOT NULL');
@@ -700,6 +791,24 @@ export const exportAllDataToObsidian = async (): Promise<ObsidianExportResult> =
       }
     }
   }
+
+  if (settings.exportNutrition) {
+    const rows = await conn.getAllAsync<{ date: string; created_at: number }>('SELECT date, created_at FROM meal_logs');
+    rows.forEach((r) => {
+      const dISO = normalizeToDateISO(r.date) || normalizeToDateISO(r.created_at);
+      if (dISO) datesSet.add(dISO);
+    });
+  }
+
+  {
+    const bodyRows = await conn.getAllAsync<{ date: string }>('SELECT date FROM body_composition_logs');
+    bodyRows.forEach((r) => {
+      const dISO = normalizeToDateISO(r.date);
+      if (dISO) datesSet.add(dISO);
+    });
+  }
+
+  existingHealthDates.forEach((dISO) => datesSet.add(dISO));
 
   let dailyCount = 0;
   let workoutsCount = 0;
@@ -796,6 +905,11 @@ export const exportAllDataToObsidian = async (): Promise<ObsidianExportResult> =
         else failCount++;
       }
 
+      if (settings.exportNutrition && dayData.mealLogs && dayData.mealLogs.length > 0) {
+        const nutritionMd = formatNutritionLogMarkdown(dateStr, dayData.mealLogs);
+        await writeOrAppendFileToVault(nutritionFolderUri, `${dateStr}_nutrition.md`, nutritionMd, false, settings.vaultUri);
+      }
+
       const dailyMd = formatDailyLogToObsidianMarkdown(
         dateStr,
         dayData.workouts,
@@ -804,7 +918,11 @@ export const exportAllDataToObsidian = async (): Promise<ObsidianExportResult> =
         dayData.habitLogs,
         dayData.routineLogs,
         dayData.bodyCompositionLog,
-        { useWorkoutEmbeds }
+        {
+          useWorkoutEmbeds,
+          mealLogs: dayData.mealLogs,
+          includeHealthEmbed: settings.exportHealth && existingHealthDates.has(dateStr),
+        }
       );
 
       let success = false;
