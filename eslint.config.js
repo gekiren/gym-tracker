@@ -5,6 +5,6 @@ const expoConfig = require('eslint-config-expo/flat');
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ['dist/*', 'worker_plan_b.js', 'docs/*'],
+    ignores: ['dist/*', 'worker_plan_b.js', 'docs/*', 'scripts/cloudflare-worker/*'],
   },
 ]);
