@@ -4,5 +4,5 @@
 
 ## 📝 使い方
 1. Web版のGeminiに「共有用プロンプト」を入力し、出力されたMarkdownテキストをコピーします。
-2. このフォルダ内に `docs/future_plans/plan_v1.md` などのファイルを作成して貼り付けます。
-3. ローカルのAntigravityに「`docs/future_plans/plan_v1.md` を読み込んで開発を進めて」と指示します。
+2. このフォルダ内に `internal-docs/future_plans/plan_v1.md` などのファイルを作成して貼り付けます。
+3. ローカルのAntigravityに「`internal-docs/future_plans/plan_v1.md` を読み込んで開発を進めて」と指示します。
