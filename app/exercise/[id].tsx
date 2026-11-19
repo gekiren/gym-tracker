@@ -364,20 +364,22 @@ export default function ExerciseDetailScreen() {
                       ? calculateRM(parsedWeight, parsedReps)
                       : null;
                     const show1RM = settings.displayFields?.show1RM !== false;
+                    const stanceText = s.stance || s.variation;
+                    const hasMetaRow = Boolean(stanceText || timeStr);
                     return (
-                      <View key={idx} style={{ paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                        <View style={[styles.setRow, { paddingVertical: 0 }]}>
+                      <View key={idx} style={styles.setItemContainer}>
+                        <View style={styles.setRow}>
                           <Text style={styles.tdSet}>{s.set_number}</Text>
-                          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <View style={styles.setMainContent}>
                             {isTreadmill ? (
-                              <Text style={styles.tdValText}>
+                              <Text style={styles.tdValText} numberOfLines={1}>
                                 {s.speed != null ? `${s.speed} km/h` : '-'}
                                 {s.incline != null ? ` (傾斜 ${s.incline}%)` : ''}
                               </Text>
                             ) : (
                               <>
-                                <Text style={styles.tdValText}>
-                                  {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'}  ×  {s.reps ? `${s.reps}${t('ui.common.reps_unit')}` : '-'}
+                                <Text style={styles.tdValText} numberOfLines={1}>
+                                  {s.weight ? `${s.weight} ${settings.weightUnit}` : '-'} × {s.reps ? `${s.reps}${t('ui.common.reps_unit')}` : '-'}
                                 </Text>
                                 {show1RM && oneRm != null && (
                                   <View style={styles.oneRmBadge}>
@@ -386,13 +388,25 @@ export default function ExerciseDetailScreen() {
                                 )}
                               </>
                             )}
-                            {(s.stance || s.variation) && <View style={styles.historyVariationBadge}><Text style={styles.historyVariationText}>{translateStance(s.stance || s.variation)}</Text></View>}
                           </View>
-                          {!isTreadmill && s.rpe && <Text style={styles.tdRpe}>@RPE {s.rpe}</Text>}
+                          {!isTreadmill && s.rpe ? <Text style={styles.tdRpe}>@RPE {s.rpe}</Text> : null}
                         </View>
-                        {timeStr ? (
-                          <Text style={{ textAlign: 'right', fontSize: 12, color: colors.textMuted, marginTop: 4, marginRight: 8 }}>{timeStr}</Text>
-                        ) : null}
+                        {hasMetaRow && (
+                          <View style={styles.setMetaRow}>
+                            {stanceText ? (
+                              <View style={styles.historyVariationBadge}>
+                                <Text style={styles.historyVariationText} numberOfLines={1} ellipsizeMode="tail">
+                                  {translateStance(stanceText)}
+                                </Text>
+                              </View>
+                            ) : (
+                              <View />
+                            )}
+                            {timeStr ? (
+                              <Text style={styles.setTimeText}>{timeStr}</Text>
+                            ) : null}
+                          </View>
+                        )}
                       </View>
                     );
                   })}
@@ -466,30 +480,35 @@ const createStyles = (
   historyCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 8, marginBottom: 8 },
   historyDate: { color: colors.text, fontSize: 15, fontWeight: 'bold' },
   tableHeader: { flexDirection: 'row', marginBottom: 4 },
-  thSet: { width: 50, color: colors.textMuted, fontSize: 13, fontWeight: '600' },
-  thVal: { flex: 1, color: colors.textMuted, fontSize: 13, fontWeight: '600' },
-  setRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
-  tdSet: { width: 50, color: colors.text, fontSize: 16, fontWeight: '500' },
-  tdVal: { flex: 1, color: colors.text, fontSize: 16 },
-  tdValText: { color: colors.text, fontSize: 16 },
+  thSet: { width: 40, color: colors.textMuted, fontSize: 12, fontWeight: '600' },
+  thVal: { flex: 1, color: colors.textMuted, fontSize: 12, fontWeight: '600' },
+  setItemContainer: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border },
+  setRow: { flexDirection: 'row', alignItems: 'center' },
+  tdSet: { width: 40, color: colors.text, fontSize: 15, fontWeight: '600' },
+  setMainContent: { flex: 1, flexDirection: 'row', alignItems: 'center', minWidth: 0 },
+  tdVal: { flex: 1, color: colors.text, fontSize: 15 },
+  tdValText: { color: colors.text, fontSize: 15, fontWeight: '500', flexShrink: 1 },
   oneRmBadge: {
     backgroundColor: 'rgba(245, 166, 35, 0.12)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
-    marginLeft: 8,
+    marginLeft: 6,
     borderWidth: 1,
     borderColor: 'rgba(245, 166, 35, 0.25)',
+    flexShrink: 0,
   },
   oneRmText: {
     color: '#f5a623',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
   },
-  tdRpe: { color: colors.textMuted, fontSize: 13, fontStyle: 'italic' },
+  tdRpe: { color: colors.textMuted, fontSize: 12, fontStyle: 'italic', marginLeft: 8, flexShrink: 0 },
+  setMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginLeft: 40, marginTop: 4, gap: 8 },
+  setTimeText: { fontSize: 12, color: colors.textMuted, flexShrink: 0 },
   exportBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(79, 172, 254, 0.1)', paddingHorizontal: 10, paddingVertical: 6, minHeight: 36, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.25)' },
   exportBtnText: { color: colors.primary, fontSize: 12, fontWeight: 'bold' },
-  historyVariationBadge: { backgroundColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginLeft: 8 },
+  historyVariationBadge: { backgroundColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, flexShrink: 1 },
   historyVariationText: { color: colors.text, fontSize: 12, fontWeight: 'bold' },
   loadMoreContainer: { marginHorizontal: spacing.md, marginVertical: spacing.md, alignItems: 'center', gap: 10 },
   loadMoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(79, 172, 254, 0.12)', borderWidth: 1, borderColor: 'rgba(79, 172, 254, 0.3)', borderRadius: 12, minHeight: 48, paddingVertical: 12, paddingHorizontal: 20, width: '100%' },

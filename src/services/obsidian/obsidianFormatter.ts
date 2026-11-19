@@ -10,6 +10,7 @@ export interface DayLifelogData {
   habitLogs: any[];
   routineLogs?: any[];
   bodyCompositionLog?: any;
+  mealLogs?: any[];
 }
 
 export interface ExerciseHistoryItem {
@@ -184,6 +185,37 @@ export const formatWorkoutToObsidianMarkdown = (workoutData: any, dayData?: DayL
 };
 
 /**
+ * ワークアウト詳細ノートの Obsidian ファイル名（または拡張子なしノート名）を生成する
+ */
+export const buildWorkoutObsidianNoteName = (
+  workoutData: { start_time?: string | null; title?: string | null },
+  includeExtension: boolean = false,
+  fallbackDateStr?: string
+): string => {
+  let dateOnly = '';
+  let timePrefix = '';
+
+  if (workoutData.start_time) {
+    const parsed = new Date(workoutData.start_time);
+    if (!isNaN(parsed.getTime())) {
+      dateOnly = format(parsed, 'yyyy-MM-dd');
+      timePrefix = format(parsed, 'HHmm');
+    } else {
+      dateOnly = normalizeToDateISO(workoutData.start_time) || '';
+    }
+  }
+
+  if (!dateOnly && fallbackDateStr) {
+    dateOnly = normalizeToDateISO(fallbackDateStr) || fallbackDateStr;
+  }
+
+  const safeTitle = (workoutData.title || 'workout').replace(/[\/\\?%*:|"<>]/g, '_');
+  const parts = [dateOnly, timePrefix, safeTitle].filter(Boolean);
+  const baseName = parts.join('_');
+  return includeExtension ? `${baseName}.md` : baseName;
+};
+
+/**
  * 統合デイリーノート用の Markdown を生成
  */
 export const formatDailyLogToObsidianMarkdown = (
@@ -193,22 +225,39 @@ export const formatDailyLogToObsidianMarkdown = (
   timeLogs: any[],
   habitLogs: any[],
   routineLogs?: any[],
-  bodyCompositionLog?: any
+  bodyCompositionLog?: any,
+  options?: {
+    useWorkoutEmbeds?: boolean;
+    mealLogs?: any[];
+    includeHealthEmbed?: boolean;
+  }
 ): string => {
   let md = `## 🏋️ TreNote Log (${dateStr})\n\n`;
+  const useWorkoutEmbeds = options?.useWorkoutEmbeds ?? true;
 
   if (workouts && workouts.length > 0) {
     md += `### 🏋️ 本日のトレーニング (${workouts.length}件)\n`;
-    workouts.forEach((w) => {
-      md += `- **${w.title || 'Workout'}** (${format(new Date(w.start_time), 'HH:mm')})\n`;
-      if (w.exercises && w.exercises.length > 0) {
-        w.exercises.forEach((ex: any) => {
-          const setCount = ex.sets ? ex.sets.length : 0;
-          md += `  - ${translateExercise(ex.exercise_name || ex.name)}: ${setCount} sets\n`;
-        });
-      }
-    });
-    md += `\n`;
+    if (useWorkoutEmbeds) {
+      workouts.forEach((w) => {
+        const noteName = buildWorkoutObsidianNoteName(w, false, dateStr);
+        md += `![[${noteName}]]\n\n`;
+      });
+    } else {
+      workouts.forEach((w) => {
+        const parsedStart = w.start_time ? new Date(w.start_time) : null;
+        const timeStr = parsedStart && !isNaN(parsedStart.getTime())
+          ? ` (${format(parsedStart, 'HH:mm')})`
+          : '';
+        md += `- **${w.title || 'Workout'}**${timeStr}\n`;
+        if (w.exercises && w.exercises.length > 0) {
+          w.exercises.forEach((ex: any) => {
+            const setCount = ex.sets ? ex.sets.length : 0;
+            md += `  - ${translateExercise(ex.exercise_name || ex.name)}: ${setCount} sets\n`;
+          });
+        }
+      });
+      md += `\n`;
+    }
   }
 
   if (waterLogs && waterLogs.length > 0) {
@@ -261,6 +310,56 @@ export const formatDailyLogToObsidianMarkdown = (
       }
     });
     md += `\n`;
+  }
+
+  const mealLogs = options?.mealLogs;
+  if (mealLogs && mealLogs.length > 0) {
+    const totals = mealLogs.reduce(
+      (acc, m) => ({
+        calories: acc.calories + (Number(m.calories) || 0),
+        protein: acc.protein + (Number(m.protein) || 0),
+        fat: acc.fat + (Number(m.fat) || 0),
+        carbs: acc.carbs + (Number(m.carbs) || 0),
+        fiber: acc.fiber + (Number(m.fiber) || 0),
+        sodium: acc.sodium + (Number(m.sodium) || 0),
+      }),
+      { calories: 0, protein: 0, fat: 0, carbs: 0, fiber: 0, sodium: 0 }
+    );
+    md += `### 🍽️ 食事・栄養価 (${mealLogs.length}件)\n`;
+    md += `- **合計**: ${Math.round(totals.calories)} kcal (P: ${totals.protein.toFixed(1)}g / F: ${totals.fat.toFixed(1)}g / C: ${totals.carbs.toFixed(1)}g`;
+    if (totals.fiber > 0) md += ` / 食物繊維: ${totals.fiber.toFixed(1)}g`;
+    if (totals.sodium > 0) md += ` / 塩分: ${totals.sodium.toFixed(1)}g`;
+    md += `)\n`;
+    mealLogs.forEach((m) => {
+      const timePrefix = m.meal_time ? `${m.meal_time} ` : '';
+      const typePrefix = m.meal_type ? `[${m.meal_type}] ` : '';
+      const cal = Math.round(Number(m.calories) || 0);
+      const p = (Number(m.protein) || 0).toFixed(1);
+      const f = (Number(m.fat) || 0).toFixed(1);
+      const c = (Number(m.carbs) || 0).toFixed(1);
+      md += `  - ${timePrefix}${typePrefix}**${m.name || '食事'}**: ${cal} kcal (P: ${p}g / F: ${f}g / C: ${c}g)\n`;
+    });
+    md += `\n`;
+  }
+
+  if (
+    bodyCompositionLog &&
+    (bodyCompositionLog.weight != null ||
+      bodyCompositionLog.body_fat_rate != null ||
+      bodyCompositionLog.lbm != null ||
+      bodyCompositionLog.muscle_mass != null)
+  ) {
+    md += `### ⚖️ 体組成\n`;
+    if (bodyCompositionLog.weight != null) md += `- **体重**: ${Number(bodyCompositionLog.weight).toFixed(1)} kg\n`;
+    if (bodyCompositionLog.body_fat_rate != null) md += `- **体脂肪率**: ${Number(bodyCompositionLog.body_fat_rate).toFixed(1)} %\n`;
+    if (bodyCompositionLog.lbm != null) md += `- **除脂肪体重 (LBM)**: ${Number(bodyCompositionLog.lbm).toFixed(1)} kg\n`;
+    if (bodyCompositionLog.muscle_mass != null) md += `- **骨格筋量**: ${Number(bodyCompositionLog.muscle_mass).toFixed(1)} kg\n`;
+    md += `\n`;
+  }
+
+  if (options?.includeHealthEmbed) {
+    md += `### 📊 ヘルスデータ\n`;
+    md += `![[${dateStr}_health]]\n\n`;
   }
 
   if (bodyCompositionLog && bodyCompositionLog.memo) {
@@ -377,7 +476,16 @@ export const fetchDayLifelogData = async (
     bodyCompositionLog = matchedBodyLog;
   }
 
-  return { workouts, waterLogs, timeLogs, habitLogs, routineLogs, bodyCompositionLog };
+  let mealLogs: any[] = [];
+  if (settings.exportNutrition !== false) {
+    const allMeals = await conn.getAllAsync<any>('SELECT * FROM meal_logs ORDER BY created_at ASC');
+    mealLogs = allMeals.filter((item) => {
+      const itemDateISO = normalizeToDateISO(item.date) || normalizeToDateISO(item.created_at);
+      return itemDateISO === targetDateISO;
+    });
+  }
+
+  return { workouts, waterLogs, timeLogs, habitLogs, routineLogs, bodyCompositionLog, mealLogs };
 };
 
 /**
