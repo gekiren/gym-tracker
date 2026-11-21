@@ -325,7 +325,10 @@
       "current_pr": "Personal Record",
       "improvement_value": "Total Improvement",
       "load_more_history": "Load more history ({{count}} remaining)",
-      "show_all_history": "Show all history ({{count}} total)"
+      "show_all_history": "Show all history ({{count}} total)",
+      "stance_none": "No Stance",
+      "stance_all": "All",
+      "no_stance_chart_data": "No records for selected stance"
     },
     "active_routine": {
       "alert_pause_title": "Pause Routine",

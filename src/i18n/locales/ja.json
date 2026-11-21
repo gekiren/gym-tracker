@@ -322,7 +322,10 @@
       "current_pr": "自己ベスト",
       "improvement_value": "総向上値",
       "load_more_history": "過去の履歴をさらに表示 (残り{{count}}件)",
-      "show_all_history": "すべての履歴を表示 ({{count}}件)"
+      "show_all_history": "すべての履歴を表示 ({{count}}件)",
+      "stance_none": "スタンスなし",
+      "stance_all": "すべて",
+      "no_stance_chart_data": "選択したスタンスの記録がありません"
     },
     "active_routine": {
       "alert_pause_title": "ルーティンの中断",

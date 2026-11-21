@@ -192,12 +192,12 @@ export const getPreviousWorkoutSets = async (exerciseId: number) => {
 export const getPersonalRecords = async (exerciseId: number) => {
   const conn = getDB();
   const rows = await conn.getAllAsync<{ reps: number; max_weight: number; variation: string | null }>(`
-    SELECT ws.reps, MAX(ws.weight) as max_weight, ws.variation
+    SELECT ws.reps, MAX(ws.weight) as max_weight, COALESCE(NULLIF(ws.stance, ''), NULLIF(ws.variation, '')) as variation
     FROM workout_sets ws
     JOIN workout_exercises we ON ws.workout_exercise_id = we.id
     WHERE we.exercise_id = ? AND ws.is_completed = 1 AND ws.reps IS NOT NULL AND ws.weight IS NOT NULL
-    GROUP BY ws.variation, ws.reps
-    ORDER BY ws.variation ASC, ws.reps ASC
+    GROUP BY COALESCE(NULLIF(ws.stance, ''), NULLIF(ws.variation, '')), ws.reps
+    ORDER BY variation ASC, ws.reps ASC
   `, [exerciseId]);
   
   const prMap: Record<string, Record<number, number>> = {};

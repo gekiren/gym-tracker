@@ -7,6 +7,7 @@ import { format, startOfWeek, startOfMonth } from 'date-fns';
 import { useAppTheme } from '../../src/theme';
 import { calculateRM } from '../../src/utils/workoutStats';
 import { useSettingsStore } from '../../src/store/settingsStore';
+import { translateStance } from '../../src/i18n';
 
 export type ExerciseChartMetric = 'volume' | '1rm' | 'sets' | 'avg_volume_per_set' | 'density';
 
@@ -40,6 +41,11 @@ function createLinearPath(points: { x: number; y: number }[]): string {
     path += ` L ${points[i].x} ${points[i].y}`;
   }
   return path;
+}
+
+function getSetStanceKey(s: any): string {
+  const raw = (s?.stance && String(s.stance).trim()) || (s?.variation && String(s.variation).trim());
+  return raw || 'default';
 }
 
 export const METRIC_OPTIONS: {
@@ -84,17 +90,42 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
   }, [savedMetric]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isMetricModalVisible, setMetricModalVisible] = useState(false);
+  const [selectedStance, setSelectedStance] = useState<string>('all');
 
-  // chartScaleやchartMetricが変更されたら選択位置をリセット
+  const availableStances = useMemo<string[]>(() => {
+    if (!history || history.length === 0) return [];
+    const stanceSet = new Set<string>();
+    history.forEach(item => {
+      (item.sets || []).forEach((s: any) => {
+        stanceSet.add(getSetStanceKey(s));
+      });
+    });
+    return Array.from(stanceSet).sort((a, b) => {
+      if (a === 'default') return -1;
+      if (b === 'default') return 1;
+      return translateStance(a).localeCompare(translateStance(b));
+    });
+  }, [history]);
+
+  useEffect(() => {
+    if (selectedStance !== 'all' && !availableStances.includes(selectedStance)) {
+      setSelectedStance('all');
+    }
+  }, [availableStances, selectedStance]);
+
+  // chartScale、chartMetric、selectedStanceが変更されたら選択位置をリセット
   useEffect(() => {
     setSelectedIndex(null);
-  }, [chartScale, chartMetric]);
+  }, [chartScale, chartMetric, selectedStance]);
 
   const chartPoints = useMemo<ChartPoint[]>(() => {
     if (!history || history.length === 0) return [];
 
     const processedHistory = history.map(item => {
-      const sets = item.sets || [];
+      const rawSets = item.sets || [];
+      const sets = selectedStance === 'all'
+        ? rawSets
+        : rawSets.filter((s: any) => getSetStanceKey(s) === selectedStance);
       const setsCount = sets.length;
       const volume = sets.reduce((sum: number, s: any) => sum + (parseFloat(s.weight) || 0) * (parseInt(s.reps, 10) || 0), 0);
       const max1Rm = sets.reduce((max: number, s: any) => {
@@ -244,7 +275,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
     }
 
     return [];
-  }, [history, chartScale, chartMetric]);
+  }, [history, chartScale, chartMetric, selectedStance]);
 
   const getPRTimeline = useCallback((reps: number, variation: string) => {
     const sortedHistory = [...history].reverse();
@@ -252,7 +283,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
 
     sortedHistory.forEach(workout => {
       const matchingSets = workout.sets.filter((s: any) => {
-        const setVariation = s.stance || s.variation || 'default';
+        const setVariation = getSetStanceKey(s);
         return s.reps === reps && setVariation === variation;
       });
 
@@ -362,9 +393,12 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
     }
   }, [settings.weightUnit]);
 
+  const shouldShowChartContainer = history && history.length > 0 && (chartPoints.length > 0 || selectedStance !== 'all');
+  const showStanceSelector = availableStances.length > 1 || (availableStances.length === 1 && availableStances[0] !== 'default');
+
   return (
     <>
-      {chartPoints.length > 0 && (
+      {shouldShowChartContainer && (
         <View style={styles.chartContainer}>
           {/* Header Row */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
@@ -381,7 +415,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
           </View>
           
           {/* Selectors Row */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: showStanceSelector ? spacing.sm : spacing.md }}>
             <TouchableOpacity
               style={styles.metricSelectButton}
               onPress={() => setMetricModalVisible(true)}
@@ -409,6 +443,45 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
             </View>
           </View>
 
+          {/* Stance Filter Chips */}
+          {showStanceSelector && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.stanceChipsScroll}
+              contentContainerStyle={styles.stanceChipsContainer}
+            >
+              <TouchableOpacity
+                style={[styles.stanceChip, selectedStance === 'all' && styles.stanceChipActive]}
+                onPress={() => setSelectedStance('all')}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.stanceChipText, selectedStance === 'all' && styles.stanceChipTextActive]}>
+                  {t('ui.exercise_detail.stance_all')}
+                </Text>
+              </TouchableOpacity>
+
+              {availableStances.map(stance => {
+                const isSelected = selectedStance === stance;
+                const label = stance === 'default'
+                  ? t('ui.exercise_detail.stance_none')
+                  : translateStance(stance);
+                return (
+                  <TouchableOpacity
+                    key={stance}
+                    style={[styles.stanceChip, isSelected && styles.stanceChipActive]}
+                    onPress={() => setSelectedStance(stance)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.stanceChipText, isSelected && styles.stanceChipTextActive]}>
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
+
           {/* Selected Point Summary Card */}
           {activePoint && (
             <View style={styles.summaryCard}>
@@ -422,8 +495,16 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
 
           {/* SVG Line & Area Chart */}
           <View style={styles.chartWrapper}>
+            {chartPoints.length === 0 ? (
+              <View style={styles.emptyStanceBox}>
+                <Ionicons name="analytics-outline" size={28} color={colors.textMuted} style={{ marginBottom: 8 }} />
+                <Text style={styles.emptyStanceText}>
+                  {t('ui.exercise_detail.no_stance_chart_data')}
+                </Text>
+              </View>
+            ) : (
             <ScrollView
-              key={`${chartMetric}_${chartScale}`}
+              key={`${chartMetric}_${chartScale}_${selectedStance}`}
               ref={chartScrollRef}
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -540,6 +621,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
                 </View>
               </View>
             </ScrollView>
+            )}
           </View>
         </View>
       )}
@@ -621,9 +703,20 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
         <Pressable style={styles.modalOverlay} onPress={() => setShowChartModal(false)}>
           <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {selectedChartReps ? t('ui.exercise_detail.progression_chart_title', { reps: selectedChartReps }) : ''}
-              </Text>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <Text style={styles.modalTitle}>
+                  {selectedChartReps ? t('ui.exercise_detail.progression_chart_title', { reps: selectedChartReps }) : ''}
+                </Text>
+                {selectedChartVariation !== null && (
+                  <View style={styles.modalStanceBadge}>
+                    <Text style={styles.modalStanceBadgeText}>
+                      {selectedChartVariation === 'default'
+                        ? t('ui.exercise_detail.stance_none')
+                        : `${t('ui.active_workout.stance_label')}: ${translateStance(selectedChartVariation)}`}
+                    </Text>
+                  </View>
+                )}
+              </View>
               <TouchableOpacity
                 onPress={() => setShowChartModal(false)}
                 style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
@@ -757,6 +850,51 @@ const createStyles = (
     borderWidth: 1,
     borderColor: colors.border,
   },
+  stanceChipsScroll: {
+    marginBottom: spacing.md,
+  },
+  stanceChipsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 2,
+  },
+  stanceChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minHeight: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  stanceChipActive: {
+    backgroundColor: 'rgba(79, 172, 254, 0.14)',
+    borderColor: colors.primary,
+  },
+  stanceChipText: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  stanceChipTextActive: {
+    color: colors.primary,
+    fontWeight: 'bold',
+  },
+  emptyStanceBox: {
+    minHeight: 140,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  emptyStanceText: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
   summaryCard: {
     backgroundColor: colors.card,
     borderRadius: 16,
@@ -793,8 +931,23 @@ const createStyles = (
   },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { width: '90%', backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, maxHeight: '95%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: colors.text },
+  modalStanceBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: 'rgba(79, 172, 254, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(79, 172, 254, 0.25)',
+  },
+  modalStanceBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary,
+  },
   analysisRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 16 },
   analysisCard: { flex: 1, backgroundColor: colors.background, borderRadius: 12, padding: 10, marginHorizontal: 4, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
   analysisLabel: { fontSize: 12, color: colors.textMuted, marginBottom: 4 },

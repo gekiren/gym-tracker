@@ -30,8 +30,24 @@ export function PersonalRecordsList({
   const { t } = useTranslation();
   const { colors } = useAppTheme();
   const [isExpanded, setIsExpanded] = useState(true);
-  
-  if (Object.keys(personalRecords).length === 0) return null;
+  const [collapsedStances, setCollapsedStances] = useState<Record<string, boolean>>({});
+
+  const sortedEntries = Object.entries(personalRecords)
+    .filter(([, prMap]) => prMap && Object.keys(prMap).length > 0)
+    .sort(([a], [b]) => {
+      if (a === 'default') return -1;
+      if (b === 'default') return 1;
+      return translateStance(a).localeCompare(translateStance(b));
+    });
+
+  if (sortedEntries.length === 0) return null;
+
+  const toggleStanceAccordion = (variation: string) => {
+    setCollapsedStances(prev => ({
+      ...prev,
+      [variation]: !prev[variation],
+    }));
+  };
 
   return (
     <View style={[styles.prSection, { borderBottomColor: colors.border }]}>
@@ -47,71 +63,96 @@ export function PersonalRecordsList({
       </TouchableOpacity>
 
       {isExpanded && (
-        <View style={{ marginTop: 8 }}>
-          {Object.entries(personalRecords).map(([variation, prMap]) => {
+        <View style={{ marginTop: 8, gap: 10 }}>
+          {sortedEntries.map(([variation, prMap]) => {
             const sortedReps = Object.keys(prMap).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
             const rows = chunkArray(sortedReps, NUM_COLUMNS);
+            const isStanceCollapsed = !!collapsedStances[variation];
+            const stanceLabel = variation === 'default'
+              ? t('ui.exercise_detail.stance_none')
+              : `${t('ui.active_workout.stance_label')}: ${translateStance(variation)}`;
 
             return (
-              <View key={variation} style={{ marginBottom: 12 }}>
-                {variation !== 'default' && (
-                  <Text style={[styles.prVariationTitle, { color: colors.textMuted }]}>
-                    {t('ui.active_workout.stance_label')}: {translateStance(variation)}
-                  </Text>
-                )}
-                <View style={styles.prList}>
-                  {rows.map((row, rowIdx) => (
-                    <View key={rowIdx} style={styles.prRow}>
-                      {row.map(reps => {
-                        const repNum = parseInt(reps, 10);
-                        const weight = prMap[repNum];
-                        const oneRm = repNum === 1 ? weight : Math.round(weight * (1 + (repNum / 30)));
-                        return (
-                          <TouchableOpacity 
-                            key={reps} 
-                            style={[styles.prItem, { backgroundColor: colors.card, borderColor: colors.border }]}
-                            activeOpacity={0.7}
-                            onPress={() => onPrPress(repNum, variation)}
-                          >
-                            <Text 
-                              style={[styles.prReps, { color: colors.textMuted }]} 
-                              numberOfLines={1}
-                              adjustsFontSizeToFit
-                              minimumFontScale={0.8}
+              <View key={variation} style={styles.stanceGroup}>
+                <TouchableOpacity
+                  onPress={() => toggleStanceAccordion(variation)}
+                  style={[styles.stanceHeaderToggle, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: !isStanceCollapsed }}
+                >
+                  <View style={styles.stanceHeaderLeft}>
+                    <Text style={[styles.prVariationTitle, { color: colors.text }]} numberOfLines={1}>
+                      {stanceLabel}
+                    </Text>
+                    <View style={styles.stanceCountBadge}>
+                      <Text style={[styles.stanceCountText, { color: colors.primary }]}>
+                        {sortedReps.length}
+                      </Text>
+                    </View>
+                  </View>
+                  <Ionicons
+                    name={isStanceCollapsed ? 'chevron-down' : 'chevron-up'}
+                    size={16}
+                    color={colors.textMuted}
+                  />
+                </TouchableOpacity>
+
+                {!isStanceCollapsed && (
+                  <View style={[styles.prList, { marginTop: 8 }]}>
+                    {rows.map((row, rowIdx) => (
+                      <View key={rowIdx} style={styles.prRow}>
+                        {row.map(reps => {
+                          const repNum = parseInt(reps, 10);
+                          const weight = prMap[repNum];
+                          const oneRm = repNum === 1 ? weight : Math.round(weight * (1 + (repNum / 30)));
+                          return (
+                            <TouchableOpacity 
+                              key={reps} 
+                              style={[styles.prItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+                              activeOpacity={0.7}
+                              onPress={() => onPrPress(repNum, variation)}
                             >
-                              {reps}{t('ui.common.reps_unit')}
-                            </Text>
-                            <Text 
-                              style={[styles.prWeight, { color: colors.primary }]} 
-                              numberOfLines={1} 
-                              adjustsFontSizeToFit 
-                              minimumFontScale={0.7}
-                            >
-                              {weight} {weightUnit}
-                            </Text>
-                            {repNum > 1 ? (
                               <Text 
-                                style={styles.prOneRm} 
+                                style={[styles.prReps, { color: colors.textMuted }]} 
+                                numberOfLines={1}
+                                adjustsFontSizeToFit
+                                minimumFontScale={0.8}
+                              >
+                                {reps}{t('ui.common.reps_unit')}
+                              </Text>
+                              <Text 
+                                style={[styles.prWeight, { color: colors.primary }]} 
                                 numberOfLines={1} 
                                 adjustsFontSizeToFit 
                                 minimumFontScale={0.7}
                               >
-                                1RM: {oneRm}{weightUnit}
+                                {weight} {weightUnit}
                               </Text>
-                            ) : (
-                              <Text style={[styles.prOneRm, { opacity: 0 }]} numberOfLines={1}>
-                                1RM
-                              </Text>
-                            )}
-                          </TouchableOpacity>
-                        );
-                      })}
-                      {Array.from({ length: NUM_COLUMNS - row.length }).map((_, dummyIdx) => (
-                        <View key={`dummy-${dummyIdx}`} style={styles.prItemDummy} />
-                      ))}
-                    </View>
-                  ))}
-                </View>
+                              {repNum > 1 ? (
+                                <Text 
+                                  style={styles.prOneRm} 
+                                  numberOfLines={1} 
+                                  adjustsFontSizeToFit 
+                                  minimumFontScale={0.7}
+                                >
+                                  1RM: {oneRm}{weightUnit}
+                                </Text>
+                              ) : (
+                                <Text style={[styles.prOneRm, { opacity: 0 }]} numberOfLines={1}>
+                                  1RM
+                                </Text>
+                              )}
+                            </TouchableOpacity>
+                          );
+                        })}
+                        {Array.from({ length: NUM_COLUMNS - row.length }).map((_, dummyIdx) => (
+                          <View key={`dummy-${dummyIdx}`} style={styles.prItemDummy} />
+                        ))}
+                      </View>
+                    ))}
+                  </View>
+                )}
               </View>
             );
           })}
@@ -138,11 +179,41 @@ const styles = StyleSheet.create({
     fontSize: 18, 
     fontWeight: 'bold', 
   },
+  stanceGroup: {
+    marginBottom: 4,
+  },
+  stanceHeaderToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minHeight: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  stanceHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+    gap: 8,
+  },
   prVariationTitle: { 
     fontSize: 13, 
-    fontWeight: 'bold', 
-    paddingHorizontal: 16, 
-    marginBottom: 6 
+    fontWeight: '700',
+    flexShrink: 1,
+  },
+  stanceCountBadge: {
+    backgroundColor: 'rgba(79, 172, 254, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  stanceCountText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   prList: { 
     paddingHorizontal: 16, 
