@@ -132,6 +132,14 @@ export function useProfile() {
         route: '/settings/calendar-sync',
       },
       {
+        id: 'health-connect',
+        title: 'Health Connect（Google Health連携）',
+        desc: '歩数・睡眠・筋トレ・食事・体組成・水分の双方向同期',
+        icon: 'heart-circle-outline',
+        iconColor: '#30d158',
+        route: '/settings/health-connect',
+      },
+      {
         id: 'widget-launcher',
         title: 'ウィジェット設定',
         desc: 'クイックランチャーの項目をカスタマイズ',

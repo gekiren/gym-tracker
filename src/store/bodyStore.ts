@@ -8,6 +8,7 @@ import {
   getLatestBodyLog,
 } from '../db/repositories/bodyRepository';
 import { fetchTodayHealthData } from '../services/healthService';
+import { writeBodyLogToHealthConnect } from '../services/health/healthWriter';
 import { getSettings, saveSetting } from '../db/database';
 import { recordFeatureAction } from '../services/featureUnlockService';
 
@@ -153,6 +154,13 @@ export const useBodyStore = create<BodyState>((set, get) => ({
             );
           })
           .catch(() => {});
+
+        // Health Connect 自動書き込み（Health Connect 由来の取り込み時はスキップ）
+        if (updatedCurrent.source !== 'health_connect') {
+          writeBodyLogToHealthConnect(updatedCurrent).catch((hcErr) =>
+            console.warn('[HealthConnect] Auto body write failed:', hcErr)
+          );
+        }
       }
 
       recordFeatureAction('body', log.date);
@@ -278,12 +286,17 @@ export const useBodyStore = create<BodyState>((set, get) => ({
         return false;
       }
 
-      // 体重・体脂肪率・骨格筋量・身長の抽出
+      // 体重・体脂肪率・骨格筋量・除脂肪体重・身長の抽出
       const weight = data.weight > 0 ? data.weight : undefined;
       const bodyFatRate = data.bodyFatRate > 0 ? data.bodyFatRate : undefined;
       const muscleMass = data.muscleMass > 0 ? data.muscleMass : undefined;
       const heightCm = data.heightMeters > 0 ? Math.round(data.heightMeters * 100) : undefined;
-      const lbm = weight && bodyFatRate ? Number((weight * (1 - bodyFatRate / 100)).toFixed(1)) : undefined;
+      const lbm =
+        data.leanBodyMassKg && data.leanBodyMassKg > 0
+          ? data.leanBodyMassKg
+          : weight && bodyFatRate
+            ? Number((weight * (1 - bodyFatRate / 100)).toFixed(1))
+            : undefined;
 
       await get().saveBodyLog({
         date,

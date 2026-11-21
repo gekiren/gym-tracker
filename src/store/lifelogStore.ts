@@ -27,6 +27,11 @@ import {
 } from '../db/database';
 import { recordFeatureAction } from '../services/featureUnlockService';
 import { triggerDebouncedDriveUpload } from '../services/googleDrive/driveSyncTrigger';
+import { getWaterClientId } from '../services/health/healthMappers';
+import {
+  deleteHealthConnectRecordsByClientIds,
+  writeWaterLogToHealthConnect,
+} from '../services/health/healthWriter';
 
 export interface HabitSummaryItem {
   id: number;
@@ -366,10 +371,14 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
 
   addWater: async (amount: number, date: string, caffeine?: number) => {
     try {
-      await addWaterLog(amount, Date.now(), date, caffeine);
+      const nowTs = Date.now();
+      await addWaterLog(amount, nowTs, date, caffeine);
       await get().loadWaterData(date);
       recordFeatureAction('water', date);
       triggerDebouncedDriveUpload('water_add', 10000);
+      writeWaterLogToHealthConnect({ amount, timestamp: nowTs, date }).catch((err) =>
+        console.warn('[HealthConnect] Auto water write failed:', err)
+      );
     } catch (e) {
       console.warn('Failed to add water log:', e);
     }
@@ -377,9 +386,15 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
 
   deleteWater: async (id: number, date: string) => {
     try {
+      const target = get().waterLogs.find((w) => w.id === id);
       await deleteWaterLog(id);
       await get().loadWaterData(date);
       triggerDebouncedDriveUpload('water_delete', 10000);
+      if (target) {
+        deleteHealthConnectRecordsByClientIds('Hydration', [getWaterClientId(target.timestamp)]).catch(
+          (err) => console.warn('[HealthConnect] Auto water delete sync failed:', err)
+        );
+      }
     } catch (e) {
       console.warn('Failed to delete water log:', e);
     }
