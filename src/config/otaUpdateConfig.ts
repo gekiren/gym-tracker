@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.52',
+  version: '2.3.54',
   title: {
-    ja: '📝 Obsidian連携：栄養価・体組成・ヘルスデータを日次ログに統合',
-    en: '📝 Obsidian Sync: Nutrition, Body Metrics & Health Data in Daily Log',
+    ja: '📊 種目詳細のスタンス別PR・グラフ表示に対応',
+    en: '📊 Stance-Based PR Accordions & Charts',
   },
   notes: {
     ja: [
-      'Obsidian の TreNote 日次ログ (TreNote_YYYY-MM-DD.md) に、食事・栄養価（カロリー・PFC）、体組成の数値、およびヘルスデータ（歩数・睡眠など）の埋め込みが自動で含まれるようになりました。',
+      '種目詳細の自己ベスト（PR）を「スタンスなし」および各スタンスごとにアコーディオンで開閉できるようになりました。',
+      '種目詳細の推移グラフおよびPR推移モーダルで、スタンスごとのデータ表示に対応しました。',
     ],
     en: [
-      'TreNote daily Obsidian logs (TreNote_YYYY-MM-DD.md) now automatically include meal nutrition (calories & macros), body composition metrics, and embedded health data.',
+      'Added per-stance accordions (including "No Stance") to toggle PR visibility on Exercise Details.',
+      'Added stance filtering to Exercise Detail charts and stance labels to the PR progression modal.',
     ],
   },
 };

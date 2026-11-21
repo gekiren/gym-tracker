@@ -32,6 +32,12 @@ import {
 } from '../db/database';
 import { useSettingsStore } from './settingsStore';
 import { recordFeatureAction } from '../services/featureUnlockService';
+import { getMealClientId } from '../services/health/healthMappers';
+import {
+  deleteHealthConnectRecordsByClientIds,
+  writeMealLogToHealthConnect,
+  writeMealLogsBatchToHealthConnect,
+} from '../services/health/healthWriter';
 
 // ─── 型定義 ────────────────────────────────────────────
 
@@ -155,7 +161,7 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
 
   addMeal: async (log: Omit<MealLog, 'id'>) => {
     try {
-      await addMealLog(log);
+      const rowId = await addMealLog(log);
       // リロードは現在の selectedDate のログのみ
       const date = get().selectedDate;
       if (date) {
@@ -163,6 +169,9 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
         set({ mealLogs: logs });
       }
       recordFeatureAction('nutrition', log.date);
+      writeMealLogToHealthConnect({ ...log, id: rowId }).catch((err) =>
+        console.warn('[HealthConnect] Auto meal write failed:', err)
+      );
     } catch (e) {
       console.warn('useNutritionStore: addMeal failed', e);
     }
@@ -178,6 +187,12 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
       }
       const allLogs = await getAllMealLogs();
       set({ allHistoryLogs: allLogs });
+      const updatedMeal = allLogs.find((m) => m.id === id);
+      if (updatedMeal) {
+        writeMealLogToHealthConnect(updatedMeal).catch((err) =>
+          console.warn('[HealthConnect] Auto meal update write failed:', err)
+        );
+      }
     } catch (e) {
       console.warn('useNutritionStore: updateMeal failed', e);
     }
@@ -206,6 +221,9 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
         const logs = await getMealLogsByDate(date);
         set({ mealLogs: logs });
       }
+      deleteHealthConnectRecordsByClientIds('Nutrition', [getMealClientId(id)]).catch((err) =>
+        console.warn('[HealthConnect] Auto meal delete sync failed:', err)
+      );
     } catch (e) {
       console.warn('useNutritionStore: deleteMeal failed', e);
     }
@@ -213,11 +231,23 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
 
   deleteMealGroupByGroupId: async (groupId: string) => {
     try {
+      const targetIds = Array.from(
+        new Set([
+          ...get().mealLogs.filter((m) => m.preset_log_group_id === groupId).map((m) => m.id),
+          ...get().allHistoryLogs.filter((m) => m.preset_log_group_id === groupId).map((m) => m.id),
+        ])
+      );
       await deleteMealLogsByGroupId(groupId);
       const date = get().selectedDate;
       if (date) {
         const logs = await getMealLogsByDate(date);
         set({ mealLogs: logs });
+      }
+      if (targetIds.length > 0) {
+        deleteHealthConnectRecordsByClientIds(
+          'Nutrition',
+          targetIds.map((mealId) => getMealClientId(mealId))
+        ).catch((err) => console.warn('[HealthConnect] Auto meal group delete sync failed:', err));
       }
     } catch (e) {
       console.warn('useNutritionStore: deleteMealGroupByGroupId failed', e);
@@ -376,10 +406,16 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
     options?: { multiplier?: number; meal_time?: string; meal_type?: string; selectedItemIds?: number[] }
   ) => {
     try {
-      await applyMealPresetToDate(presetId, date, options);
+      const groupId = await applyMealPresetToDate(presetId, date, options);
       const logs = await getMealLogsByDate(date);
       set({ mealLogs: logs });
       recordFeatureAction('nutrition', date);
+      const appliedMeals = logs.filter((l) => l.preset_log_group_id === groupId);
+      if (appliedMeals.length > 0) {
+        writeMealLogsBatchToHealthConnect(appliedMeals).catch((err) =>
+          console.warn('[HealthConnect] Auto preset meal write failed:', err)
+        );
+      }
     } catch (e) {
       console.warn('useNutritionStore: applyPreset failed', e);
     }

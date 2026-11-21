@@ -7,6 +7,8 @@ import { useSettingsStore } from '../store/settingsStore';
 import { saveWorkout, saveSetting, prefetchWorkoutCompletionData } from '../db/database';
 import { translateExercise, translateStance } from '../i18n';
 import { computeCalories, computeAchievements, computeStreaks, computeWeeklyWorkoutCount } from '../utils/workoutStats';
+import { writeWorkoutToHealthConnect } from '../services/health/healthWriter';
+import { isTreadmillExercise } from '../utils/exerciseUtils';
 
 export interface StanceModalTarget {
   type: 'set';
@@ -324,6 +326,25 @@ export function useActiveWorkout() {
       }
 
       const workoutId = await saveWorkout(savedTitle, savedStartTime, et, workoutNotes, completedExercises, roundedCalories);
+
+      // Health Connect 自動書き込み（非同期・非ブロッキング）
+      const exerciseNames = completedExercises.map((ex) => ex.name).filter(Boolean);
+      const totalSets = completedExercises.reduce((sum, ex) => sum + ex.sets.length, 0);
+      const isTreadmillOnly =
+        exerciseNames.length > 0 && exerciseNames.every((name) => isTreadmillExercise(name));
+      writeWorkoutToHealthConnect({
+        id: workoutId,
+        title: savedTitle,
+        startTime: savedStartTime,
+        endTime: et,
+        notes: workoutNotes || null,
+        calories: roundedCalories,
+        exerciseNames,
+        totalSets,
+        isTreadmillOnly,
+      }).catch((hcErr) => {
+        console.warn('[HealthConnect] Auto workout write failed:', hcErr);
+      });
 
       // Set store state for completed screen
       useWorkoutStore.getState().setLastWorkoutCompletion({

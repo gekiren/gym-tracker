@@ -26,6 +26,17 @@
         "APP_ENV": "staging"
       }
     },
+    "staging-apk": {
+      "distribution": "internal",
+      "channel": "staging",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "APP_ENV": "staging"
+      }
+    },
     "production": {
       "channel": "production",
       "android": {

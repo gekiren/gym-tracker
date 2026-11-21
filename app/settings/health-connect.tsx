@@ -14,34 +14,56 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAppTheme } from '../../src/theme';
 import {
-  isHealthDataAvailable,
-  hasHealthPermissions,
-  requestHealthPermissions,
+  DEFAULT_HEALTH_SYNC_SETTINGS,
   fetchTodayHealthData,
-  DailyHealthData,
+  getHealthPermissionSummary,
   getHealthSyncSettings,
+  isHealthDataAvailable,
+  openSystemHealthConnectSettings,
+  pushRecentDataToHealthConnect,
+  READ_PERMISSIONS,
+  requestHealthPermissions,
   saveHealthSyncSettings,
   syncHealthData,
-  HealthSyncSettings,
+  WRITE_PERMISSIONS,
+  type DailyHealthData,
+  type HealthPermissionSummary,
+  type HealthSyncSettings,
+  type HealthWriteSummary,
 } from '../../src/services/healthService';
 import { exportHealthDataToObsidian, getObsidianSettings } from '../../src/services/obsidianService';
+
+const INTERVAL_OPTIONS = [
+  { label: '1時間', value: 60 },
+  { label: '3時間', value: 180 },
+  { label: '6時間', value: 360 },
+  { label: '12時間', value: 720 },
+  { label: '24時間', value: 1440 },
+];
 
 export default function HealthConnectSettingsScreen() {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
-  const [hasPermissions, setHasPermissions] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isFetching, setIsFetching] = useState<boolean>(false);
-  const [healthData, setHealthData] = useState<DailyHealthData | null>(null);
-  const [obsidianConfigured, setObsidianConfigured] = useState<boolean>(false);
-  const [syncSettings, setSyncSettings] = useState<HealthSyncSettings>({
-    autoSyncOnLaunch: true,
-    autoSyncPeriodic: true,
-    periodicIntervalMinutes: 60,
-    lastSyncTimestamp: 0,
+  const [permSummary, setPermSummary] = useState<HealthPermissionSummary>({
+    readGranted: 0,
+    readTotal: READ_PERMISSIONS.length,
+    writeGranted: 0,
+    writeTotal: WRITE_PERMISSIONS.length,
+    grantedSet: new Set<string>(),
+    hasAnyRead: false,
+    hasAnyWrite: false,
   });
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [healthData, setHealthData] = useState<DailyHealthData | null>(null);
+  const [lastWriteSummary, setLastWriteSummary] = useState<HealthWriteSummary | null>(null);
+  const [obsidianConfigured, setObsidianConfigured] = useState<boolean>(false);
+  const [isGuideExpanded, setIsGuideExpanded] = useState<boolean>(false);
+  const [syncSettings, setSyncSettings] = useState<HealthSyncSettings>(
+    DEFAULT_HEALTH_SYNC_SETTINGS
+  );
 
   useEffect(() => {
     checkStatus();
@@ -54,7 +76,6 @@ export default function HealthConnectSettingsScreen() {
 
     if (Platform.OS !== 'android') {
       setIsAvailable(false);
-      setHasPermissions(false);
       setIsLoading(false);
       return;
     }
@@ -63,10 +84,8 @@ export default function HealthConnectSettingsScreen() {
     setIsAvailable(available);
 
     if (available) {
-      const permitted = await hasHealthPermissions();
-      setHasPermissions(permitted);
-    } else {
-      setHasPermissions(false);
+      const summary = await getHealthPermissionSummary();
+      setPermSummary(summary);
     }
 
     const obsSettings = await getObsidianSettings();
@@ -74,59 +93,123 @@ export default function HealthConnectSettingsScreen() {
     setIsLoading(false);
   };
 
-  const handleToggleLaunchSync = async (value: boolean) => {
-    const updated = { ...syncSettings, autoSyncOnLaunch: value };
-    setSyncSettings(updated);
-    await saveHealthSyncSettings({ autoSyncOnLaunch: value });
-  };
-
-  const handleTogglePeriodicSync = async (value: boolean) => {
-    const updated = { ...syncSettings, autoSyncPeriodic: value };
-    setSyncSettings(updated);
-    await saveHealthSyncSettings({ autoSyncPeriodic: value });
+  const updateBooleanSetting = async (
+    key: keyof Pick<
+      HealthSyncSettings,
+      | 'autoSyncOnLaunch'
+      | 'autoSyncPeriodic'
+      | 'autoWriteEnabled'
+      | 'writeWorkouts'
+      | 'writeBody'
+      | 'writeNutrition'
+      | 'writeHydration'
+      | 'importBodyOnSync'
+      | 'importHydrationOnSync'
+    >,
+    value: boolean
+  ) => {
+    setSyncSettings((prev) => ({ ...prev, [key]: value }));
+    await saveHealthSyncSettings({ [key]: value });
   };
 
   const handleSelectInterval = async (intervalMins: number) => {
-    const updated = { ...syncSettings, periodicIntervalMinutes: intervalMins };
-    setSyncSettings(updated);
+    setSyncSettings((prev) => ({ ...prev, periodicIntervalMinutes: intervalMins }));
     await saveHealthSyncSettings({ periodicIntervalMinutes: intervalMins });
-  };
-
-  const handleManualSyncNow = async () => {
-    setIsFetching(true);
-    const result = await syncHealthData({ force: true, reason: 'manual' });
-    setIsFetching(false);
-    if (result.success && result.data) {
-      setHealthData(result.data);
-      const syncSt = await getHealthSyncSettings();
-      setSyncSettings(syncSt);
-      Alert.alert('アクセス成功', 'ヘルスコネクトへアクセスし最新データに更新しました。');
-    } else {
-      Alert.alert('アクセスエラー', result.message || '同期に失敗しました。');
-    }
   };
 
   const handleRequestPermissions = async () => {
     setIsLoading(true);
-    const granted = await requestHealthPermissions();
-    setHasPermissions(granted);
+    const granted = await requestHealthPermissions('all');
+    const summary = await getHealthPermissionSummary();
+    setPermSummary(summary);
     setIsLoading(false);
 
-    if (granted) {
-      Alert.alert('成功', 'Health Connect の権限が正常に許可されました。');
+    if (granted || summary.hasAnyRead || summary.hasAnyWrite) {
+      Alert.alert(
+        '権限を更新しました',
+        `読取: ${summary.readGranted}/${summary.readTotal} 件\n書込: ${summary.writeGranted}/${summary.writeTotal} 件`
+      );
     } else {
-      Alert.alert('通知', '一部またはすべての権限が許可されませんでした。設定画面等から許可してください。');
+      Alert.alert(
+        '権限が許可されませんでした',
+        'AndroidのHealth Connect設定画面から権限を確認・許可してください。'
+      );
+    }
+  };
+
+  const handleBidirectionalSync = async () => {
+    setIsSyncing(true);
+    try {
+      const readRes = await syncHealthData({ force: true, reason: 'manual' });
+      if (readRes.data) {
+        setHealthData(readRes.data);
+      }
+
+      const writeRes = await pushRecentDataToHealthConnect(7);
+      setLastWriteSummary(writeRes);
+
+      const syncSt = await getHealthSyncSettings();
+      setSyncSettings(syncSt);
+
+      const readMsg = readRes.success
+        ? `歩数 ${readRes.data?.steps ?? 0}歩 / 水分取り込み ${readRes.importedHydrationCount ?? 0}件`
+        : `読込スキップ: ${readRes.message || '未許可'}`;
+
+      const writeMsg = `筋トレ ${writeRes.workouts}件 / 体組成 ${writeRes.body}件 / 食事 ${writeRes.nutrition}件 / 水分 ${writeRes.hydration}件`;
+
+      Alert.alert('双方向同期完了', `【読み込み】\n${readMsg}\n\n【書き込み（直近7日）】\n${writeMsg}`);
+    } catch (e: any) {
+      Alert.alert('同期エラー', e?.message || '双方向同期中にエラーが発生しました。');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleManualReadOnly = async () => {
+    setIsSyncing(true);
+    try {
+      const result = await syncHealthData({ force: true, reason: 'manual' });
+      if (result.success && result.data) {
+        setHealthData(result.data);
+        const syncSt = await getHealthSyncSettings();
+        setSyncSettings(syncSt);
+        Alert.alert(
+          '読み込み完了',
+          `歩数: ${result.data.steps}歩\n水分取り込み: ${result.importedHydrationCount ?? 0}件`
+        );
+      } else {
+        Alert.alert('読み込みエラー', result.message || '同期に失敗しました。');
+      }
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleManualWriteOnly = async () => {
+    setIsSyncing(true);
+    try {
+      const writeRes = await pushRecentDataToHealthConnect(7);
+      setLastWriteSummary(writeRes);
+      if (writeRes.errors.length > 0 && writeRes.workouts + writeRes.body + writeRes.nutrition + writeRes.hydration === 0) {
+        Alert.alert('書き込みエラー', writeRes.errors.join('\n'));
+      } else {
+        Alert.alert(
+          '書き込み完了（直近7日分）',
+          `筋トレ: ${writeRes.workouts}件\n体組成: ${writeRes.body}件\n食事: ${writeRes.nutrition}件\n水分: ${writeRes.hydration}件`
+        );
+      }
+    } finally {
+      setIsSyncing(false);
     }
   };
 
   const handleFetchAndExport = async (isMock: boolean = false) => {
-    setIsFetching(true);
+    setIsSyncing(true);
     try {
       const { data, error } = await fetchTodayHealthData(isMock);
 
       if (error || !data) {
         Alert.alert('取得エラー', error || 'ヘルスケアデータの取得に失敗しました。');
-        setIsFetching(false);
         return;
       }
 
@@ -138,7 +221,6 @@ export default function HealthConnectSettingsScreen() {
           'ヘルスデータ取得成功',
           `歩数: ${data.steps}歩, 心拍: ${data.averageHeartRate}bpm を取得しました。\n※ Obsidian連携が無効またはVault未設定のためファイル出力はスキップされました。`
         );
-        setIsFetching(false);
         return;
       }
 
@@ -146,7 +228,7 @@ export default function HealthConnectSettingsScreen() {
       if (success) {
         Alert.alert(
           '連携完了',
-          `Obsidian Vault のデイリーノート (${data.date}) へヘルスデータレポートを正常に書き込みました！`
+          `Obsidian Vault のデイリーノート (${data.date}) へヘルスデータレポートを正常に書き込みました。`
         );
       } else {
         Alert.alert('エラー', 'Obsidian への書き込みに失敗しました。Vaultのアクセス権限を確認してください。');
@@ -154,9 +236,32 @@ export default function HealthConnectSettingsScreen() {
     } catch (e: any) {
       Alert.alert('エラー', `処理中にエラーが発生しました: ${e.message}`);
     } finally {
-      setIsFetching(false);
+      setIsSyncing(false);
     }
   };
+
+  const renderSwitchRow = (
+    title: string,
+    subtext: string,
+    value: boolean,
+    onValueChange: (val: boolean) => void,
+    withTopDivider: boolean = true
+  ) => (
+    <View style={[styles.settingRow, withTopDivider && styles.rowDivider]}>
+      <View style={styles.settingTextCol}>
+        <Text style={styles.settingTitle}>{title}</Text>
+        <Text style={styles.settingSubtext}>{subtext}</Text>
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{ false: colors.border, true: colors.primary }}
+        thumbColor="#ffffff"
+      />
+    </View>
+  );
+
+  const isAndroid = Platform.OS === 'android';
 
   return (
     <View style={styles.container}>
@@ -170,24 +275,26 @@ export default function HealthConnectSettingsScreen() {
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Health Connect 連携</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Status Card */}
+        {/* カード1: 接続ステータス ＆ 権限管理 */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="heart-circle" size={24} color={colors.primary} />
-            <Text style={styles.cardTitle}>ステータス確認</Text>
+            <Ionicons name="heart-circle" size={22} color="#30d158" />
+            <Text style={styles.cardTitle}>接続ステータス ＆ 権限管理</Text>
           </View>
 
           {isLoading ? (
-            <ActivityIndicator style={{ marginVertical: 12 }} color={colors.primary} />
+            <ActivityIndicator style={{ marginVertical: 16 }} color={colors.primary} />
           ) : (
             <View style={styles.statusContainer}>
               <View style={styles.statusRow}>
                 <Text style={styles.statusLabel}>プラットフォーム</Text>
-                <Text style={styles.statusValue}>{Platform.OS === 'android' ? 'Android (対応)' : 'iOS (非対応)'}</Text>
+                <Text style={styles.statusValue}>
+                  {isAndroid ? 'Android (対応)' : 'iOS / Web (非対応)'}
+                </Text>
               </View>
 
               <View style={styles.statusRow}>
@@ -196,229 +303,391 @@ export default function HealthConnectSettingsScreen() {
                   <Ionicons
                     name={isAvailable ? 'checkmark-circle' : 'close-circle'}
                     size={16}
-                    color={isAvailable ? '#4cd964' : '#ff3b30'}
+                    color={isAvailable ? colors.success : colors.danger}
                   />
-                  <Text style={[styles.badgeText, { color: isAvailable ? '#4cd964' : '#ff3b30' }]}>
+                  <Text
+                    style={[
+                      styles.badgeText,
+                      { color: isAvailable ? colors.success : colors.danger },
+                    ]}
+                  >
                     {isAvailable ? '利用可能' : '利用不可 / 未インストール'}
                   </Text>
                 </View>
               </View>
 
               <View style={styles.statusRow}>
-                <Text style={styles.statusLabel}>アクセス権限</Text>
-                <View style={styles.badgeContainer}>
-                  <Ionicons
-                    name={hasPermissions ? 'checkmark-circle' : 'alert-circle'}
-                    size={16}
-                    color={hasPermissions ? '#4cd964' : '#ff9500'}
-                  />
-                  <Text style={[styles.badgeText, { color: hasPermissions ? '#4cd964' : '#ff9500' }]}>
-                    {hasPermissions ? '全権限許可済み' : '要許可'}
-                  </Text>
-                </View>
+                <Text style={styles.statusLabel}>読取権限</Text>
+                <Text
+                  style={[
+                    styles.statusValue,
+                    { color: permSummary.hasAnyRead ? colors.success : '#ff9500' },
+                  ]}
+                >
+                  {permSummary.readGranted} / {permSummary.readTotal} 許可
+                </Text>
               </View>
 
               <View style={styles.statusRow}>
-                <Text style={styles.statusLabel}>Obsidian Vault 設定</Text>
-                <View style={styles.badgeContainer}>
-                  <Ionicons
-                    name={obsidianConfigured ? 'checkmark-circle' : 'help-circle'}
-                    size={16}
-                    color={obsidianConfigured ? '#4cd964' : '#ff9500'}
-                  />
-                  <Text style={[styles.badgeText, { color: obsidianConfigured ? '#4cd964' : '#ff9500' }]}>
-                    {obsidianConfigured ? '設定済み' : '未設定'}
-                  </Text>
-                </View>
+                <Text style={styles.statusLabel}>書込権限</Text>
+                <Text
+                  style={[
+                    styles.statusValue,
+                    { color: permSummary.hasAnyWrite ? colors.success : '#ff9500' },
+                  ]}
+                >
+                  {permSummary.writeGranted} / {permSummary.writeTotal} 許可
+                </Text>
+              </View>
+
+              <View style={styles.statusRow}>
+                <Text style={styles.statusLabel}>Obsidian Vault</Text>
+                <Text
+                  style={[
+                    styles.statusValue,
+                    { color: obsidianConfigured ? colors.success : colors.textMuted },
+                  ]}
+                >
+                  {obsidianConfigured ? '設定済み' : '未設定'}
+                </Text>
               </View>
             </View>
           )}
 
-          {Platform.OS === 'android' && (
-            <TouchableOpacity
-              style={[styles.primaryButton, hasPermissions && styles.secondaryButton]}
-              onPress={handleRequestPermissions}
-            >
-              <Ionicons name="key-outline" size={18} color="#ffffff" style={{ marginRight: 8 }} />
-              <Text style={styles.primaryButtonText}>
-                {hasPermissions ? '権限を再取得・更新' : 'Health Connect 権限を許可'}
-              </Text>
-            </TouchableOpacity>
+          {isAndroid && (
+            <View style={styles.buttonGroup}>
+              <TouchableOpacity
+                style={styles.secondaryActionButton}
+                onPress={handleRequestPermissions}
+              >
+                <Ionicons name="key-outline" size={18} color={colors.primary} style={{ marginRight: 8 }} />
+                <Text style={styles.secondaryActionText}>権限を許可・更新</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.secondaryActionButton, { marginTop: 8 }]}
+                onPress={openSystemHealthConnectSettings}
+              >
+                <Ionicons name="settings-outline" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
+                <Text style={[styles.secondaryActionText, { color: colors.text }]}>
+                  AndroidのHealth Connect設定を開く
+                </Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
 
-        {/* Auto Sync Settings Card */}
+        {/* カード2: 双方向同期設定 */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="time-outline" size={24} color={colors.primary} />
-            <Text style={styles.cardTitle}>自動アクセスの設定</Text>
-          </View>
-          <Text style={styles.description}>
-            アプリ起動時や定時に自動でヘルスコネクトへアクセスし、ヘルスデータを最新状態に更新・同期します。
-          </Text>
-
-          <View style={styles.settingRow}>
-            <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={styles.settingTitle}>アプリ起動時にアクセス</Text>
-              <Text style={styles.settingSubtext}>アプリ起動時および画面復帰時に最新データを自動取得</Text>
-            </View>
-            <Switch
-              value={syncSettings.autoSyncOnLaunch}
-              onValueChange={handleToggleLaunchSync}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor="#ffffff"
-            />
+            <Ionicons name="swap-horizontal" size={22} color={colors.primary} />
+            <Text style={styles.cardTitle}>双方向同期設定</Text>
           </View>
 
-          <View style={[styles.settingRow, { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)', paddingTop: 12 }]}>
-            <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={styles.settingTitle}>定時にアクセス</Text>
-              <Text style={styles.settingSubtext}>指定された間隔ごとに定時アクセス・自動更新</Text>
-            </View>
-            <Switch
-              value={syncSettings.autoSyncPeriodic}
-              onValueChange={handleTogglePeriodicSync}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor="#ffffff"
-            />
-          </View>
+          <Text style={styles.sectionLabel}>読み込み（Google Health → TreNote）</Text>
+          {renderSwitchRow(
+            'アプリ起動時に自動取得',
+            '起動時および復帰時に最新データを自動取得',
+            syncSettings.autoSyncOnLaunch,
+            (v) => updateBooleanSetting('autoSyncOnLaunch', v),
+            false
+          )}
+          {renderSwitchRow(
+            '定時にアクセス',
+            '指定した間隔で自動同期を実行',
+            syncSettings.autoSyncPeriodic,
+            (v) => updateBooleanSetting('autoSyncPeriodic', v)
+          )}
 
           {syncSettings.autoSyncPeriodic && (
-            <View style={{ marginTop: 12 }}>
+            <View style={styles.intervalContainer}>
               <Text style={styles.settingSubtext}>定時アクセス間隔:</Text>
               <View style={styles.intervalButtonRow}>
-                {[
-                  { label: '1時間', value: 60 },
-                  { label: '3時間', value: 180 },
-                  { label: '6時間', value: 360 },
-                  { label: '12時間', value: 720 },
-                  { label: '24時間', value: 1440 },
-                ].map((item) => (
-                  <TouchableOpacity
-                    key={item.value}
-                    style={[
-                      styles.intervalChip,
-                      syncSettings.periodicIntervalMinutes === item.value && styles.intervalChipActive,
-                    ]}
-                    onPress={() => handleSelectInterval(item.value)}
-                  >
-                    <Text
-                      style={[
-                        styles.intervalChipText,
-                        syncSettings.periodicIntervalMinutes === item.value && styles.intervalChipTextActive,
-                      ]}
+                {INTERVAL_OPTIONS.map((item) => {
+                  const active = syncSettings.periodicIntervalMinutes === item.value;
+                  return (
+                    <TouchableOpacity
+                      key={item.value}
+                      style={[styles.intervalChip, active && styles.intervalChipActive]}
+                      onPress={() => handleSelectInterval(item.value)}
                     >
-                      {item.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <Text style={[styles.intervalChipText, active && styles.intervalChipTextActive]}>
+                        {item.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
+            </View>
+          )}
+
+          {renderSwitchRow(
+            '同期時に体組成を取り込む',
+            '他アプリ由来の体重・体脂肪率・LBMを自動反映',
+            syncSettings.importBodyOnSync,
+            (v) => updateBooleanSetting('importBodyOnSync', v)
+          )}
+          {renderSwitchRow(
+            '同期時に水分を取り込む',
+            '他アプリ由来の水分記録を重複排除して取り込み',
+            syncSettings.importHydrationOnSync,
+            (v) => updateBooleanSetting('importHydrationOnSync', v)
+          )}
+
+          <Text style={[styles.sectionLabel, { marginTop: 20 }]}>
+            書き込み（TreNote → Google Health）
+          </Text>
+          {renderSwitchRow(
+            '記録時の自動書き込み',
+            'ONにすると各記録の保存時に自動でHealth Connectへ送信',
+            syncSettings.autoWriteEnabled,
+            (v) => updateBooleanSetting('autoWriteEnabled', v),
+            false
+          )}
+
+          {syncSettings.autoWriteEnabled && (
+            <View style={styles.subToggleGroup}>
+              {renderSwitchRow(
+                'ワークアウト（筋トレ・有酸素）',
+                '終了時にExerciseSessionと消費カロリーを送信',
+                syncSettings.writeWorkouts,
+                (v) => updateBooleanSetting('writeWorkouts', v),
+                false
+              )}
+              {renderSwitchRow(
+                '体組成（体重・体脂肪率・LBM）',
+                '体組成ログ保存時に送信',
+                syncSettings.writeBody,
+                (v) => updateBooleanSetting('writeBody', v)
+              )}
+              {renderSwitchRow(
+                '食事・栄養（カロリー・PFC・塩分）',
+                '食事記録の追加・更新・削除を同期',
+                syncSettings.writeNutrition,
+                (v) => updateBooleanSetting('writeNutrition', v)
+              )}
+              {renderSwitchRow(
+                '水分摂取量',
+                '水分ログの追加・削除を同期',
+                syncSettings.writeHydration,
+                (v) => updateBooleanSetting('writeHydration', v)
+              )}
             </View>
           )}
 
           <View style={styles.lastSyncContainer}>
-            <Text style={styles.lastSyncLabel}>最終アクセス日時:</Text>
+            <Text style={styles.lastSyncLabel}>最終同期日時:</Text>
             <Text style={styles.lastSyncValue}>
               {syncSettings.lastSyncTimestamp > 0
                 ? new Date(syncSettings.lastSyncTimestamp).toLocaleString()
                 : '未実施'}
             </Text>
           </View>
-
-          <TouchableOpacity
-            style={[styles.syncNowButton, isFetching && styles.disabledButton]}
-            onPress={handleManualSyncNow}
-            disabled={isFetching || Platform.OS !== 'android'}
-          >
-            {isFetching ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <>
-                <Ionicons name="refresh-outline" size={18} color="#ffffff" style={{ marginRight: 6 }} />
-                <Text style={styles.syncNowButtonText}>今すぐヘルスコネクトへアクセス</Text>
-              </>
-            )}
-          </TouchableOpacity>
         </View>
 
-        {/* Sync Action Card */}
+        {/* カード3: 手動同期アクション ＆ Obsidian出力 */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="sync-circle" size={24} color={colors.primary} />
-            <Text style={styles.cardTitle}>Obsidian デイリーノートへ書き込み</Text>
+            <Ionicons name="sync-circle" size={22} color={colors.primary} />
+            <Text style={styles.cardTitle}>手動同期アクション</Text>
           </View>
           <Text style={styles.description}>
-            Health Connect から今日の歩数・睡眠・心拍数・体組成データを取得し、Obsidian のデイリーノート (`YYYY-MM-DD.md`) に `## 📊 ヘルスデータレポート` セクションとして書き込みます。
+            いつでも双方向同期（読込＋直近7日分の一括書込）または片方向の手動同期を実行できます。
           </Text>
 
           <TouchableOpacity
-            style={[styles.syncButton, isFetching && styles.disabledButton]}
-            onPress={() => handleFetchAndExport(false)}
-            disabled={isFetching || Platform.OS !== 'android'}
+            style={[styles.primaryCtaButton, (isSyncing || !isAndroid) && styles.disabledButton]}
+            onPress={handleBidirectionalSync}
+            disabled={isSyncing || !isAndroid}
           >
-            {isFetching ? (
+            {isSyncing ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
               <>
-                <Ionicons name="cloud-upload-outline" size={18} color="#ffffff" style={{ marginRight: 8 }} />
-                <Text style={styles.syncButtonText}>実データを取得して Obsidian 送信</Text>
+                <Ionicons name="sync-outline" size={18} color="#ffffff" style={{ marginRight: 8 }} />
+                <Text style={styles.primaryCtaText}>今すぐ双方向同期（読込＋直近7日分書込）</Text>
               </>
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.mockButton, isFetching && styles.disabledButton]}
-            onPress={() => handleFetchAndExport(true)}
-            disabled={isFetching}
-          >
-            <Ionicons name="flask-outline" size={18} color={colors.primary} style={{ marginRight: 8 }} />
-            <Text style={styles.mockButtonText}>モックデータで動作テスト送信</Text>
-          </TouchableOpacity>
+          <View style={styles.dualActionRow}>
+            <TouchableOpacity
+              style={[styles.halfOutlineButton, (isSyncing || !isAndroid) && styles.disabledButton]}
+              onPress={handleManualReadOnly}
+              disabled={isSyncing || !isAndroid}
+            >
+              <Ionicons name="download-outline" size={16} color={colors.primary} style={{ marginRight: 6 }} />
+              <Text style={styles.halfOutlineText}>読み込みのみ</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.halfOutlineButton, (isSyncing || !isAndroid) && styles.disabledButton]}
+              onPress={handleManualWriteOnly}
+              disabled={isSyncing || !isAndroid}
+            >
+              <Ionicons name="share-outline" size={16} color={colors.primary} style={{ marginRight: 6 }} />
+              <Text style={styles.halfOutlineText}>直近7日分を書込</Text>
+            </TouchableOpacity>
+          </View>
+
+          {lastWriteSummary && (
+            <View style={styles.summaryBox}>
+              <Text style={styles.summaryTitle}>直近の書き込み結果</Text>
+              <Text style={styles.summaryBody}>
+                筋トレ: {lastWriteSummary.workouts}件 / 体組成: {lastWriteSummary.body}件 / 食事:{' '}
+                {lastWriteSummary.nutrition}件 / 水分: {lastWriteSummary.hydration}件
+              </Text>
+              {lastWriteSummary.errors.length > 0 && (
+                <Text style={styles.summaryError}>{lastWriteSummary.errors.join('\n')}</Text>
+              )}
+            </View>
+          )}
+
+          <View style={styles.obsidianSection}>
+            <Text style={styles.sectionLabel}>Obsidian レポート連携</Text>
+            <View style={styles.dualActionRow}>
+              <TouchableOpacity
+                style={[styles.halfOutlineButton, (isSyncing || !isAndroid) && styles.disabledButton]}
+                onPress={() => handleFetchAndExport(false)}
+                disabled={isSyncing || !isAndroid}
+              >
+                <Ionicons name="document-text-outline" size={16} color={colors.text} style={{ marginRight: 6 }} />
+                <Text style={[styles.halfOutlineText, { color: colors.text }]}>Obsidian送信</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.halfOutlineButton, isSyncing && styles.disabledButton]}
+                onPress={() => handleFetchAndExport(true)}
+                disabled={isSyncing}
+              >
+                <Ionicons name="flask-outline" size={16} color={colors.textMuted} style={{ marginRight: 6 }} />
+                <Text style={[styles.halfOutlineText, { color: colors.textMuted }]}>モックテスト</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
 
-        {/* Data Preview Card */}
+        {/* カード4: 取得データプレビュー */}
         {healthData && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Ionicons name="analytics" size={24} color={colors.primary} />
+              <Ionicons name="analytics" size={22} color={colors.primary} />
               <Text style={styles.cardTitle}>取得データプレビュー ({healthData.date})</Text>
             </View>
 
             <View style={styles.grid}>
               <View style={styles.gridItem}>
-                <Text style={styles.gridValue}>{healthData.steps}</Text>
-                <Text style={styles.gridLabel}>🚶 歩数 (歩)</Text>
-              </View>
-
-              <View style={styles.gridItem}>
-                <Text style={styles.gridValue}>{healthData.averageHeartRate}</Text>
-                <Text style={styles.gridLabel}>💓 平均心拍 (bpm)</Text>
+                <Text style={styles.gridValue}>{healthData.steps.toLocaleString()}</Text>
+                <Text style={styles.gridLabel}>歩数 (歩)</Text>
               </View>
 
               <View style={styles.gridItem}>
                 <Text style={styles.gridValue}>
-                  {Math.floor(healthData.sleepDurationMinutes / 60)}h {healthData.sleepDurationMinutes % 60}m
+                  {healthData.averageHeartRate} / {healthData.restingHeartRate || '-'}
                 </Text>
-                <Text style={styles.gridLabel}>😴 睡眠時間</Text>
+                <Text style={styles.gridLabel}>平均 / 安静時心拍 (bpm)</Text>
               </View>
 
               <View style={styles.gridItem}>
-                <Text style={styles.gridValue}>{healthData.weight} kg</Text>
-                <Text style={styles.gridLabel}>⚖️ 体重</Text>
+                <Text style={styles.gridValue}>{healthData.hrvRmssd || '-'} ms</Text>
+                <Text style={styles.gridLabel}>心拍変動 (HRV)</Text>
               </View>
 
               <View style={styles.gridItem}>
-                <Text style={styles.gridValue}>{healthData.activeCaloriesBurned} kcal</Text>
-                <Text style={styles.gridLabel}>🔥 消費カロリー</Text>
+                <Text style={styles.gridValue}>
+                  {Math.floor(healthData.sleepDurationMinutes / 60)}h{' '}
+                  {healthData.sleepDurationMinutes % 60}m
+                </Text>
+                <Text style={styles.gridLabel}>
+                  睡眠 (深{healthData.deepSleepMinutes}/浅{healthData.lightSleepMinutes}/REM
+                  {healthData.remSleepMinutes}/覚{healthData.awakeMinutes}分)
+                </Text>
               </View>
 
               <View style={styles.gridItem}>
-                <Text style={styles.gridValue}>{healthData.bloodOxygenAverage}%</Text>
-                <Text style={styles.gridLabel}>🩸 血中酸素</Text>
+                <Text style={styles.gridValue}>
+                  {healthData.weight}kg / {healthData.bodyFatRate}%
+                </Text>
+                <Text style={styles.gridLabel}>
+                  体重 / 体脂肪 (LBM {healthData.leanBodyMassKg || '-'}kg)
+                </Text>
+              </View>
+
+              <View style={styles.gridItem}>
+                <Text style={styles.gridValue}>
+                  {healthData.activeCaloriesBurned} / {healthData.totalCaloriesBurned}
+                </Text>
+                <Text style={styles.gridLabel}>消費kcal (運動 / 合計)</Text>
+              </View>
+
+              <View style={styles.gridItem}>
+                <Text style={styles.gridValue}>
+                  {Math.round(healthData.hydrationLiters * 1000)} ml
+                </Text>
+                <Text style={styles.gridLabel}>水分摂取量</Text>
+              </View>
+
+              <View style={styles.gridItem}>
+                <Text style={styles.gridValue}>
+                  {healthData.bloodOxygenAverage}% / {healthData.vo2Max || '-'}
+                </Text>
+                <Text style={styles.gridLabel}>血中酸素 / VO2 Max</Text>
               </View>
             </View>
+
+            {healthData.recentExercises && healthData.recentExercises.length > 0 && (
+              <View style={styles.exerciseListContainer}>
+                <Text style={styles.sectionLabel}>最近の運動セッション</Text>
+                {healthData.recentExercises.slice(0, 5).map((ex, idx) => (
+                  <View key={`${ex.startTime}_${idx}`} style={styles.exerciseRow}>
+                    <Text style={styles.exerciseTitle} numberOfLines={1}>
+                      {ex.title || `Exercise (#${ex.exerciseType})`}
+                    </Text>
+                    <Text style={styles.exerciseMeta}>
+                      {new Date(ex.startTime).toLocaleDateString()} • {ex.durationMinutes}分
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         )}
+
+        {/* カード5: Google Health アプリ連携ガイド（折りたたみ） */}
+        <View style={styles.card}>
+          <TouchableOpacity
+            style={styles.guideHeader}
+            onPress={() => setIsGuideExpanded((prev) => !prev)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.guideTitleRow}>
+              <Ionicons name="help-circle-outline" size={22} color={colors.primary} />
+              <Text style={styles.cardTitle}>Google Health アプリ連携ガイド</Text>
+            </View>
+            <Ionicons
+              name={isGuideExpanded ? 'chevron-up' : 'chevron-down'}
+              size={20}
+              color={colors.textMuted}
+            />
+          </TouchableOpacity>
+
+          {isGuideExpanded && (
+            <View style={styles.guideBody}>
+              <Text style={styles.guideStep}>
+                1. Android端末の「設定」→「セキュリティとプライバシー」→「プライバシー管理」→「ヘルスコネクト」を開きます（上の「AndroidのHealth Connect設定を開く」ボタンからも移動できます）。
+              </Text>
+              <Text style={styles.guideStep}>
+                2. 「アプリの権限」から「Google Health」（または Fitbit）を選択し、歩数・睡眠・心拍数・エクササイズ・体重・栄養・水分の「読み取り」と「書き込み」をオンにします。
+              </Text>
+              <Text style={styles.guideStep}>
+                3. 同様に「TreNote」の権限ですべての項目が許可されていることを確認してください。
+              </Text>
+              <Text style={styles.guideNote}>
+                ※ 端末内のヘルスコネクトを経由するため、Google Healthアプリ側で取り込まれたデータは数分後に反映されます。
+              </Text>
+            </View>
+          )}
+        </View>
       </ScrollView>
     </View>
   );
@@ -437,13 +706,18 @@ const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
-    backButton: { padding: 4 },
+    backButton: {
+      minWidth: 40,
+      minHeight: 40,
+      justifyContent: 'center',
+      alignItems: 'flex-start',
+    },
     headerTitle: { fontSize: 18, fontWeight: 'bold', color: colors.text },
     content: { padding: 16, paddingBottom: 60 },
     card: {
       backgroundColor: colors.card,
       borderRadius: 16,
-      padding: 24,
+      padding: 20,
       marginBottom: 16,
       borderWidth: 1,
       borderColor: colors.border,
@@ -459,10 +733,16 @@ const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
       color: colors.text,
       marginLeft: 8,
     },
+    sectionLabel: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.primary,
+      marginBottom: 8,
+    },
     description: {
       fontSize: 13,
       color: colors.textMuted,
-      lineHeight: 18,
+      lineHeight: 20,
       marginBottom: 16,
     },
     statusContainer: {
@@ -481,62 +761,37 @@ const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
     statusValue: { fontSize: 13, fontWeight: '600', color: colors.text },
     badgeContainer: { flexDirection: 'row', alignItems: 'center' },
     badgeText: { fontSize: 13, fontWeight: '600', marginLeft: 4 },
-    primaryButton: {
-      backgroundColor: colors.primary,
-      borderRadius: 12,
-      minHeight: 48,
-      paddingVertical: 12,
-      alignItems: 'center',
-      flexDirection: 'row',
-      justifyContent: 'center',
-    },
-    secondaryButton: {
-      backgroundColor: colors.border,
-    },
-    primaryButtonText: { color: '#ffffff', fontSize: 14, fontWeight: 'bold' },
-    syncButton: {
-      backgroundColor: '#30d158',
-      borderRadius: 12,
-      minHeight: 48,
-      paddingVertical: 14,
-      alignItems: 'center',
-      flexDirection: 'row',
-      justifyContent: 'center',
-      marginBottom: 8,
-    },
-    syncButtonText: { color: '#ffffff', fontSize: 14, fontWeight: 'bold' },
-    mockButton: {
+    buttonGroup: { marginTop: 4 },
+    secondaryActionButton: {
       backgroundColor: colors.background,
-      borderColor: colors.primary,
+      borderRadius: 10,
+      minHeight: 48,
+      paddingHorizontal: 16,
       borderWidth: 1,
-      borderRadius: 12,
-      minHeight: 48,
-      paddingVertical: 12,
-      alignItems: 'center',
+      borderColor: colors.border,
       flexDirection: 'row',
+      alignItems: 'center',
       justifyContent: 'center',
     },
-    mockButtonText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
-    disabledButton: { opacity: 0.5 },
-    grid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
+    secondaryActionText: {
+      color: colors.primary,
+      fontSize: 14,
+      fontWeight: '600',
     },
-    gridItem: {
-      width: '48%',
-      backgroundColor: colors.background,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 10,
-    },
-    gridValue: { fontSize: 18, fontWeight: 'bold', color: colors.primary, marginBottom: 2 },
-    gridLabel: { fontSize: 12, color: colors.textMuted },
     settingRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingVertical: 10,
+      paddingVertical: 12,
+      minHeight: 56,
+    },
+    rowDivider: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    settingTextCol: {
+      flex: 1,
+      paddingRight: 12,
     },
     settingTitle: {
       fontSize: 14,
@@ -547,6 +802,16 @@ const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
       fontSize: 12,
       color: colors.textMuted,
       marginTop: 2,
+      lineHeight: 16,
+    },
+    subToggleGroup: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      marginTop: 4,
+    },
+    intervalContainer: {
+      paddingBottom: 12,
     },
     intervalButtonRow: {
       flexDirection: 'row',
@@ -558,7 +823,7 @@ const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
       backgroundColor: colors.background,
       borderRadius: 16,
       paddingHorizontal: 12,
-      paddingVertical: 6,
+      paddingVertical: 8,
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -583,30 +848,135 @@ const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
       borderRadius: 10,
       paddingHorizontal: 12,
       paddingVertical: 10,
-      marginTop: 14,
-      marginBottom: 12,
+      marginTop: 12,
     },
-    lastSyncLabel: {
-      fontSize: 12,
-      color: colors.textMuted,
-    },
-    lastSyncValue: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: colors.primary,
-    },
-    syncNowButton: {
+    lastSyncLabel: { fontSize: 12, color: colors.textMuted },
+    lastSyncValue: { fontSize: 12, fontWeight: '600', color: colors.primary },
+    primaryCtaButton: {
       backgroundColor: colors.primary,
-      borderRadius: 12,
+      borderRadius: 10,
       minHeight: 48,
       paddingVertical: 12,
+      paddingHorizontal: 16,
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginBottom: 10,
+    },
+    primaryCtaText: { color: '#ffffff', fontSize: 14, fontWeight: 'bold' },
+    dualActionRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    halfOutlineButton: {
+      flex: 1,
+      backgroundColor: colors.background,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 10,
+      minHeight: 48,
+      paddingHorizontal: 10,
       alignItems: 'center',
       flexDirection: 'row',
       justifyContent: 'center',
     },
-    syncNowButtonText: {
-      color: '#ffffff',
-      fontSize: 14,
-      fontWeight: 'bold',
+    halfOutlineText: {
+      color: colors.primary,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    disabledButton: { opacity: 0.5 },
+    summaryBox: {
+      backgroundColor: colors.background,
+      borderRadius: 10,
+      padding: 12,
+      marginTop: 12,
+    },
+    summaryTitle: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.success,
+      marginBottom: 4,
+    },
+    summaryBody: {
+      fontSize: 12,
+      color: colors.text,
+      lineHeight: 18,
+    },
+    summaryError: {
+      fontSize: 12,
+      color: colors.danger,
+      marginTop: 4,
+    },
+    obsidianSection: {
+      marginTop: 16,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    grid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+    gridItem: {
+      width: '48%',
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 10,
+    },
+    gridValue: { fontSize: 16, fontWeight: 'bold', color: colors.primary, marginBottom: 4 },
+    gridLabel: { fontSize: 11, color: colors.textMuted, lineHeight: 15 },
+    exerciseListContainer: {
+      marginTop: 8,
+      paddingTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    exerciseRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 8,
+    },
+    exerciseTitle: {
+      flex: 1,
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.text,
+      marginRight: 8,
+    },
+    exerciseMeta: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    guideHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      minHeight: 40,
+    },
+    guideTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    guideBody: {
+      marginTop: 12,
+      paddingTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      gap: 8,
+    },
+    guideStep: {
+      fontSize: 13,
+      color: colors.text,
+      lineHeight: 20,
+    },
+    guideNote: {
+      fontSize: 12,
+      color: colors.textMuted,
+      lineHeight: 18,
+      marginTop: 4,
     },
   });
