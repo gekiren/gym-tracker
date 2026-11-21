@@ -264,6 +264,11 @@
 - **スワイプ強制キャンセルの防止**: 1つのネイティブハンドラーがアクティブになると、同一ポインタを扱う競合ハンドラー（`PanGesture` 等）に強制的に `cancel()` が送られ、指を動かす前（わずか 0.01 秒）にジェスチャーが強制終了（`state=3 (CANCELLED)`）されます。
 - **実装の鉄則（非編集時のアンマウント）**: スワイプ操作とテキスト入力を併用するコンポーネント（例: `CompactSwipeableInput.tsx`）では、`pointerEvents="none"` や CSS 非表示だけに頼らず、**非編集時（`!isEditing`）は `<TextInput>` をツリーにマウントせず純粋な `<Text>` のみを描画し、タップやフォーカス移動による編集開始時（`isEditing === true`）に初めて `<TextInput autoFocus>` をマウントする設計を徹底**してください。
 
+### ⑪ Android Health Connect（react-native-health-connect）実装時の固有制約ルール
+- **`insertRecords()` の単一 `recordType` 制約**: `react-native-health-connect` の `insertRecords(records)` は 1 回の呼び出しに複数の `recordType` を混在させると `All records must have the same type` エラーで失敗します。ワークアウト（`ExerciseSession` + `ActiveCaloriesBurned`）や体組成（`Weight` / `BodyFat` / `Height` / `LeanBodyMass`）などを書き込む際は、必ず `groupRecordsByType()` 等で `recordType` ごとに分割して呼び出してください。
+- **ライブラリ実装上の注意点と定数厳守**: `ExerciseSessionRecord` 書き込み時はネイティブ側（`ReactExerciseSessionRecord.kt`）のキー参照バグ回避のため `laps` / `segments` を渡さないでください。`SleepSession.stages` の集計は必ず `SleepStageType` 定数（`AWAKE=1, SLEEPING=2, OUT_OF_BED=3, LIGHT=4, DEEP=5, REM=6`）を使用してください。
+- **重複防止・エコーバック防止**: 書き込み時は決定論的 `clientRecordId`・`recordingMethod`・`device` (`TYPE_PHONE`) を付与し、読み込み取り込み時は `dataOrigin === 'com.gekirennomad.trenote'` を除外してください。
+
 ---
 
 ## 5. AIパーソナルトレーナー（AI Trainer）および Gemini API の仕様
