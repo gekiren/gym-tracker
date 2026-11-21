@@ -1,7 +1,7 @@
 {
   "name": "gym-tracker",
   "main": "expo-router/entry",
-  "version": "2.3.24",
+  "version": "2.3.52",
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
