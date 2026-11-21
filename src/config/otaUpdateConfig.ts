@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.53',
+  version: '2.3.54',
   title: {
-    ja: '🩺 Health Connect 書き込み処理の安定化',
-    en: '🩺 Health Connect Write Stability Fix',
+    ja: '📊 種目詳細のスタンス別PR・グラフ表示に対応',
+    en: '📊 Stance-Based PR Accordions & Charts',
   },
   notes: {
     ja: [
-      'ワークアウトおよび体組成データを Health Connect へ書き込む際に、データ種別ごとに安全に分割送信するよう修正しました。',
+      '種目詳細の自己ベスト（PR）を「スタンスなし」および各スタンスごとにアコーディオンで開閉できるようになりました。',
+      '種目詳細の推移グラフおよびPR推移モーダルで、スタンスごとのデータ表示に対応しました。',
     ],
     en: [
-      'Fixed Health Connect write operations for workouts and body composition by grouping records by type before insertion.',
+      'Added per-stance accordions (including "No Stance") to toggle PR visibility on Exercise Details.',
+      'Added stance filtering to Exercise Detail charts and stance labels to the PR progression modal.',
     ],
   },
 };
