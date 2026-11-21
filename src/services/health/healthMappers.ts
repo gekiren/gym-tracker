@@ -532,3 +532,20 @@ export function buildHydrationRecord(
     metadata: buildMetadata(getWaterClientId(safeTs), HC_RECORDING_METHOD_MANUAL_ENTRY, version),
   };
 }
+
+/**
+ * Health Connect の insertRecords 制約（同一呼び出し内は単一 recordType のみ）に合わせ、
+ * レコード配列を recordType ごとの配列へ分割する
+ */
+export function groupRecordsByType(records: HealthConnectRecord[]): HealthConnectRecord[][] {
+  const grouped = new Map<string, HealthConnectRecord[]>();
+  for (const record of records) {
+    const bucket = grouped.get(record.recordType);
+    if (bucket) {
+      bucket.push(record);
+    } else {
+      grouped.set(record.recordType, [record]);
+    }
+  }
+  return Array.from(grouped.values());
+}

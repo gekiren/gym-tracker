@@ -31,6 +31,7 @@ import {
   buildWorkoutRecords,
   formatLocalDateISO,
   formatLocalDateSlash,
+  groupRecordsByType,
   normalizeDateToISO,
   type HydrationWriteInput,
   type WorkoutWriteInput,
@@ -222,10 +223,12 @@ async function insertAllowedRecords(
   if (allowed.length === 0) return 0;
 
   let insertedCount = 0;
-  for (let i = 0; i < allowed.length; i += chunkSize) {
-    const chunk = allowed.slice(i, i + chunkSize);
-    await insertRecords(chunk);
-    insertedCount += chunk.length;
+  for (const typeGroup of groupRecordsByType(allowed)) {
+    for (let i = 0; i < typeGroup.length; i += chunkSize) {
+      const chunk = typeGroup.slice(i, i + chunkSize);
+      await insertRecords(chunk);
+      insertedCount += chunk.length;
+    }
   }
   return insertedCount;
 }
@@ -412,6 +415,7 @@ export const pushRecentDataToHealthConnect = async (
       });
 
       const workoutRecords: HealthConnectRecord[] = [];
+      let pendingWorkoutCount = 0;
       for (const w of recentWorkouts) {
         const full = await loadFullWorkoutData(w.id);
         if (!full) continue;
@@ -437,7 +441,7 @@ export const pushRecentDataToHealthConnect = async (
         const allowedForWorkout = built.filter((r) => ctx.grantedSet.has(`${r.recordType}:write`));
         if (allowedForWorkout.length > 0) {
           workoutRecords.push(...allowedForWorkout);
-          summary.workouts += 1;
+          pendingWorkoutCount += 1;
         } else {
           summary.skipped += 1;
         }
@@ -445,6 +449,7 @@ export const pushRecentDataToHealthConnect = async (
 
       if (workoutRecords.length > 0) {
         await insertAllowedRecords(workoutRecords, ctx.grantedSet);
+        summary.workouts = pendingWorkoutCount;
       }
     }
   } catch (err: any) {
@@ -466,13 +471,14 @@ export const pushRecentDataToHealthConnect = async (
       );
 
       const bodyRecords: HealthConnectRecord[] = [];
+      let pendingBodyCount = 0;
       for (const log of recentBody) {
         const built = buildBodyCompositionRecords(log, version).filter((r) =>
           ctx.grantedSet.has(`${r.recordType}:write`)
         );
         if (built.length > 0) {
           bodyRecords.push(...built);
-          summary.body += 1;
+          pendingBodyCount += 1;
         } else {
           summary.skipped += 1;
         }
@@ -480,6 +486,7 @@ export const pushRecentDataToHealthConnect = async (
 
       if (bodyRecords.length > 0) {
         await insertAllowedRecords(bodyRecords, ctx.grantedSet);
+        summary.body = pendingBodyCount;
       }
     }
   } catch (err: any) {

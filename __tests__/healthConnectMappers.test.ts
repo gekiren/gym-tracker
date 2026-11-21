@@ -21,6 +21,7 @@ import {
   convertSaltToSodiumGrams,
   ensureValidInterval,
   formatLocalDateISO,
+  groupRecordsByType,
   isOwnHealthConnectRecord,
   normalizeDateToISO,
 } from '../src/services/health/healthMappers';
@@ -220,5 +221,47 @@ describe('healthMappers - record builders', () => {
     expect(rec.volume).toEqual({ value: 350, unit: 'milliliters' });
     expect(rec.metadata.clientRecordId).toBe(`trenote_water_${ts}`);
     expect(buildHydrationRecord({ amount: 0, timestamp: ts })).toBeNull();
+  });
+
+  it('groups mixed HealthConnect records strictly by recordType for insertRecords', () => {
+    expect(groupRecordsByType([])).toEqual([]);
+
+    const workoutMixed = buildWorkoutRecords({
+      id: 99,
+      title: '全身',
+      startTime: '2026-11-21T08:00:00.000Z',
+      endTime: '2026-11-21T09:00:00.000Z',
+      calories: 250,
+    });
+    const workoutGroups = groupRecordsByType(workoutMixed);
+    expect(workoutGroups).toHaveLength(2);
+    workoutGroups.forEach((group) => {
+      const types = new Set(group.map((r) => r.recordType));
+      expect(types.size).toBe(1);
+    });
+
+    const bodyDay1 = buildBodyCompositionRecords({
+      date: '2026-11-20',
+      weight: 70,
+      body_fat_rate: 15,
+      height: 175,
+      lbm: 59.5,
+      source: 'manual',
+    });
+    const bodyDay2 = buildBodyCompositionRecords({
+      date: '2026-11-21',
+      weight: 69.8,
+      body_fat_rate: 14.9,
+      height: 175,
+      lbm: 59.4,
+      source: 'manual',
+    });
+    const bodyGroups = groupRecordsByType([...bodyDay1, ...bodyDay2]);
+    expect(bodyGroups).toHaveLength(4);
+    bodyGroups.forEach((group) => {
+      expect(group).toHaveLength(2);
+      const types = new Set(group.map((r) => r.recordType));
+      expect(types.size).toBe(1);
+    });
   });
 });

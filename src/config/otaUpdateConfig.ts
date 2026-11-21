@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.52',
+  version: '2.3.53',
   title: {
-    ja: '📝 Obsidian連携：栄養価・体組成・ヘルスデータを日次ログに統合',
-    en: '📝 Obsidian Sync: Nutrition, Body Metrics & Health Data in Daily Log',
+    ja: '🩺 Health Connect 書き込み処理の安定化',
+    en: '🩺 Health Connect Write Stability Fix',
   },
   notes: {
     ja: [
-      'Obsidian の TreNote 日次ログ (TreNote_YYYY-MM-DD.md) に、食事・栄養価（カロリー・PFC）、体組成の数値、およびヘルスデータ（歩数・睡眠など）の埋め込みが自動で含まれるようになりました。',
+      'ワークアウトおよび体組成データを Health Connect へ書き込む際に、データ種別ごとに安全に分割送信するよう修正しました。',
     ],
     en: [
-      'TreNote daily Obsidian logs (TreNote_YYYY-MM-DD.md) now automatically include meal nutrition (calories & macros), body composition metrics, and embedded health data.',
+      'Fixed Health Connect write operations for workouts and body composition by grouping records by type before insertion.',
     ],
   },
 };
