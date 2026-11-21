@@ -30,7 +30,7 @@
     },
     "android": {
       "package": "com.gekirennomad.trenote",
-      "versionCode": 49,
+      "versionCode": 50,
       "permissions": [
         "com.android.vending.BILLING",
         "android.permission.SCHEDULE_EXACT_ALARM",
