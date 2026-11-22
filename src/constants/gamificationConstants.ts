@@ -123,16 +123,34 @@ export const OVERALL_CLASSES: OverallClassDef[] = [
   { id: 'legend', tier: 'legend', division: null, rankIndex: 20, nameJa: 'レジェンド', nameEn: 'Legend', minXp: 65000, promotionBonusPoints: 50 },
 ];
 
-export const FEATURE_CLASSES: FeatureClassDef[] = [
+export const LIFELOG_FEATURE_CLASSES: FeatureClassDef[] = [
   { id: 'iron', tier: 'iron', rankIndex: 0, nameJa: 'アイアン', nameEn: 'Iron', minXp: 0, promotionBonusPoints: 0 },
-  { id: 'bronze', tier: 'bronze', rankIndex: 1, nameJa: 'ブロンズ', nameEn: 'Bronze', minXp: 80, promotionBonusPoints: 2 },
-  { id: 'silver', tier: 'silver', rankIndex: 2, nameJa: 'シルバー', nameEn: 'Silver', minXp: 250, promotionBonusPoints: 3 },
-  { id: 'gold', tier: 'gold', rankIndex: 3, nameJa: 'ゴールド', nameEn: 'Gold', minXp: 700, promotionBonusPoints: 5 },
-  { id: 'platinum', tier: 'platinum', rankIndex: 4, nameJa: 'プラチナ', nameEn: 'Platinum', minXp: 1600, promotionBonusPoints: 8 },
-  { id: 'diamond', tier: 'diamond', rankIndex: 5, nameJa: 'ダイヤ', nameEn: 'Diamond', minXp: 3200, promotionBonusPoints: 10 },
-  { id: 'master', tier: 'master', rankIndex: 6, nameJa: 'マスター', nameEn: 'Master', minXp: 6000, promotionBonusPoints: 15 },
-  { id: 'legend', tier: 'legend', rankIndex: 7, nameJa: 'レジェンド', nameEn: 'Legend', minXp: 10000, promotionBonusPoints: 25 },
+  { id: 'bronze', tier: 'bronze', rankIndex: 1, nameJa: 'ブロンズ', nameEn: 'Bronze', minXp: 90, promotionBonusPoints: 2 },
+  { id: 'silver', tier: 'silver', rankIndex: 2, nameJa: 'シルバー', nameEn: 'Silver', minXp: 130, promotionBonusPoints: 3 },
+  { id: 'gold', tier: 'gold', rankIndex: 3, nameJa: 'ゴールド', nameEn: 'Gold', minXp: 420, promotionBonusPoints: 5 },
+  { id: 'platinum', tier: 'platinum', rankIndex: 4, nameJa: 'プラチナ', nameEn: 'Platinum', minXp: 1250, promotionBonusPoints: 8 },
+  { id: 'diamond', tier: 'diamond', rankIndex: 5, nameJa: 'ダイヤ', nameEn: 'Diamond', minXp: 2650, promotionBonusPoints: 10 },
+  { id: 'master', tier: 'master', rankIndex: 6, nameJa: 'マスター', nameEn: 'Master', minXp: 4700, promotionBonusPoints: 15 },
+  { id: 'legend', tier: 'legend', rankIndex: 7, nameJa: 'レジェンド', nameEn: 'Legend', minXp: 8900, promotionBonusPoints: 25 },
 ];
+
+export const WORKOUT_FEATURE_CLASSES: FeatureClassDef[] = [
+  { id: 'iron', tier: 'iron', rankIndex: 0, nameJa: 'アイアン', nameEn: 'Iron', minXp: 0, promotionBonusPoints: 0 },
+  { id: 'bronze', tier: 'bronze', rankIndex: 1, nameJa: 'ブロンズ', nameEn: 'Bronze', minXp: 230, promotionBonusPoints: 2 },
+  { id: 'silver', tier: 'silver', rankIndex: 2, nameJa: 'シルバー', nameEn: 'Silver', minXp: 380, promotionBonusPoints: 3 },
+  { id: 'gold', tier: 'gold', rankIndex: 3, nameJa: 'ゴールド', nameEn: 'Gold', minXp: 1200, promotionBonusPoints: 5 },
+  { id: 'platinum', tier: 'platinum', rankIndex: 4, nameJa: 'プラチナ', nameEn: 'Platinum', minXp: 3900, promotionBonusPoints: 8 },
+  { id: 'diamond', tier: 'diamond', rankIndex: 5, nameJa: 'ダイヤ', nameEn: 'Diamond', minXp: 7500, promotionBonusPoints: 10 },
+  { id: 'master', tier: 'master', rankIndex: 6, nameJa: 'マスター', nameEn: 'Master', minXp: 14000, promotionBonusPoints: 15 },
+  { id: 'legend', tier: 'legend', rankIndex: 7, nameJa: 'レジェンド', nameEn: 'Legend', minXp: 26000, promotionBonusPoints: 25 },
+];
+
+// 後方互換エクスポート（ライフログ系デフォルト基準）
+export const FEATURE_CLASSES: FeatureClassDef[] = LIFELOG_FEATURE_CLASSES;
+
+export function getFeatureClassesForFeature(featureId?: GamificationFeatureId): FeatureClassDef[] {
+  return featureId === 'workout' ? WORKOUT_FEATURE_CLASSES : LIFELOG_FEATURE_CLASSES;
+}
 
 export const XP_REWARDS = {
   WORKOUT_COMPLETE: 50,
@@ -962,10 +980,14 @@ export function getOverallClassProgress(xp: number) {
   };
 }
 
-export function getFeatureClassForXp(xp: number): FeatureClassDef {
+export function getFeatureClassForXp(
+  xp: number,
+  featureId?: GamificationFeatureId
+): FeatureClassDef {
   const safeXp = Math.max(0, Number.isFinite(xp) ? Math.floor(xp) : 0);
-  let matched = FEATURE_CLASSES[0];
-  for (const cls of FEATURE_CLASSES) {
+  const classes = getFeatureClassesForFeature(featureId);
+  let matched = classes[0];
+  for (const cls of classes) {
     if (safeXp >= cls.minXp) {
       matched = cls;
     } else {
@@ -975,10 +997,11 @@ export function getFeatureClassForXp(xp: number): FeatureClassDef {
   return matched;
 }
 
-export function getFeatureClassProgress(xp: number) {
+export function getFeatureClassProgress(xp: number, featureId?: GamificationFeatureId) {
   const safeXp = Math.max(0, Number.isFinite(xp) ? Math.floor(xp) : 0);
-  const current = getFeatureClassForXp(safeXp);
-  const next = FEATURE_CLASSES[current.rankIndex + 1] || null;
+  const classes = getFeatureClassesForFeature(featureId);
+  const current = getFeatureClassForXp(safeXp, featureId);
+  const next = classes[current.rankIndex + 1] || null;
   if (!next) {
     return {
       current,
@@ -1017,10 +1040,14 @@ export function getPromotionBonusBetweenOverall(fromRankIndex: number, toRankInd
   return bonus;
 }
 
-export function getPromotionBonusBetweenFeature(fromRankIndex: number, toRankIndex: number): number {
+export function getPromotionBonusBetweenFeature(
+  fromRankIndex: number,
+  toRankIndex: number,
+  featureId?: GamificationFeatureId
+): number {
   if (toRankIndex <= fromRankIndex) return 0;
   let bonus = 0;
-  for (const cls of FEATURE_CLASSES) {
+  for (const cls of getFeatureClassesForFeature(featureId)) {
     if (cls.rankIndex > fromRankIndex && cls.rankIndex <= toRankIndex) {
       bonus += cls.promotionBonusPoints;
     }

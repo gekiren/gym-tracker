@@ -18,9 +18,9 @@ import { useSettingsStore } from '../src/store/settingsStore';
 import { refreshGamificationMetrics } from '../src/services/gamificationService';
 import {
   ACHIEVEMENT_MEDALS,
-  FEATURE_CLASSES,
   FEATURE_DISPLAY_META,
   GAMIFICATION_FEATURE_IDS,
+  getFeatureClassesForFeature,
   getFeatureClassProgress,
   getOverallClassProgress,
   isGamificationFeatureId,
@@ -347,7 +347,7 @@ export default function GamificationScreen() {
             {orderedFeatures.map((fid) => {
               const fMeta = FEATURE_DISPLAY_META[fid];
               const xp = featureXp[fid] || 0;
-              const prog = getFeatureClassProgress(xp);
+              const prog = getFeatureClassProgress(xp, fid);
               const tMeta = TIER_VISUAL_META[prog.current.tier];
               const fMedals = ACHIEVEMENT_MEDALS.filter((m) => m.featureId === fid);
               const fUnlocked = fMedals.filter((m) => unlockedMedals[m.id] !== undefined).length;
@@ -636,8 +636,9 @@ export default function GamificationScreen() {
         {selectedFeatureId && (() => {
           const fMeta = FEATURE_DISPLAY_META[selectedFeatureId];
           const xp = featureXp[selectedFeatureId] || 0;
-          const prog = getFeatureClassProgress(xp);
+          const prog = getFeatureClassProgress(xp, selectedFeatureId);
           const tMeta = TIER_VISUAL_META[prog.current.tier];
+          const featureClassRoadmap = getFeatureClassesForFeature(selectedFeatureId);
           const featureMedals = ACHIEVEMENT_MEDALS.filter((m) => m.featureId === selectedFeatureId);
 
           return (
@@ -677,7 +678,7 @@ export default function GamificationScreen() {
                     <Text style={[styles.modalSubSectionTitle, { color: colors.text }]}>
                       {isEn ? 'Class Roadmap (8 Tiers)' : '機能クラス段階（全8ティア）'}
                     </Text>
-                    {FEATURE_CLASSES.map((cls) => {
+                    {featureClassRoadmap.map((cls) => {
                       const clsTier = TIER_VISUAL_META[cls.tier];
                       const isReached = xp >= cls.minXp;
                       const isCurrent = cls.rankIndex === prog.current.rankIndex;

@@ -5,15 +5,18 @@ import {
   evaluateUnlockableMedals,
   FEATURE_CLASSES,
   GAMIFICATION_FEATURE_IDS,
+  getFeatureClassesForFeature,
   getFeatureClassForXp,
   getFeatureClassProgress,
   getOverallClassForXp,
   getOverallClassProgress,
   getPromotionBonusBetweenFeature,
   getPromotionBonusBetweenOverall,
+  LIFELOG_FEATURE_CLASSES,
   MEDAL_RARITY_REWARDS,
   normalizeDateKey,
   OVERALL_CLASSES,
+  WORKOUT_FEATURE_CLASSES,
   XP_REWARDS,
 } from '../src/constants/gamificationConstants';
 import {
@@ -82,23 +85,50 @@ describe('2-Tier Gamification System (Classes, XP & Medals)', () => {
     expect(maxProg.progressRatio).toBe(1);
   });
 
-  test('Feature classes include 8 tiers from Iron (0 XP) to Legend (10,000 XP)', () => {
+  test('Feature classes include 8 tiers tailored for lifelog and workout 4-days/week pacing', () => {
     expect(FEATURE_CLASSES.length).toBe(8);
-    expect(getFeatureClassForXp(0).tier).toBe('iron');
-    expect(getFeatureClassForXp(79).tier).toBe('iron');
-    expect(getFeatureClassForXp(80).tier).toBe('bronze');
-    expect(getFeatureClassForXp(250).tier).toBe('silver');
-    expect(getFeatureClassForXp(700).tier).toBe('gold');
-    expect(getFeatureClassForXp(1600).tier).toBe('platinum');
-    expect(getFeatureClassForXp(3200).tier).toBe('diamond');
-    expect(getFeatureClassForXp(6000).tier).toBe('master');
-    expect(getFeatureClassForXp(10000).tier).toBe('legend');
+    expect(LIFELOG_FEATURE_CLASSES.length).toBe(8);
+    expect(WORKOUT_FEATURE_CLASSES.length).toBe(8);
+    expect(getFeatureClassesForFeature('water')).toBe(LIFELOG_FEATURE_CLASSES);
+    expect(getFeatureClassesForFeature('workout')).toBe(WORKOUT_FEATURE_CLASSES);
 
-    const prog = getFeatureClassProgress(40);
+    // Lifelog thresholds (water)
+    expect(getFeatureClassForXp(0, 'water').tier).toBe('iron');
+    expect(getFeatureClassForXp(89, 'water').tier).toBe('iron');
+    expect(getFeatureClassForXp(90, 'water').tier).toBe('bronze');
+    expect(getFeatureClassForXp(130, 'water').tier).toBe('silver');
+    expect(getFeatureClassForXp(420, 'water').tier).toBe('gold');
+    expect(getFeatureClassForXp(1250, 'water').tier).toBe('platinum');
+    expect(getFeatureClassForXp(2650, 'water').tier).toBe('diamond');
+    expect(getFeatureClassForXp(4700, 'water').tier).toBe('master');
+    expect(getFeatureClassForXp(8900, 'water').tier).toBe('legend');
+
+    // Workout thresholds
+    expect(getFeatureClassForXp(0, 'workout').tier).toBe('iron');
+    expect(getFeatureClassForXp(229, 'workout').tier).toBe('iron');
+    expect(getFeatureClassForXp(230, 'workout').tier).toBe('bronze');
+    expect(getFeatureClassForXp(380, 'workout').tier).toBe('silver');
+    expect(getFeatureClassForXp(1200, 'workout').tier).toBe('gold');
+    expect(getFeatureClassForXp(3900, 'workout').tier).toBe('platinum');
+    expect(getFeatureClassForXp(7500, 'workout').tier).toBe('diamond');
+    expect(getFeatureClassForXp(14000, 'workout').tier).toBe('master');
+    expect(getFeatureClassForXp(26000, 'workout').tier).toBe('legend');
+
+    const prog = getFeatureClassProgress(45, 'water');
     expect(prog.current.tier).toBe('iron');
     expect(prog.next?.tier).toBe('bronze');
-    expect(prog.remainingXp).toBe(40);
+    expect(prog.remainingXp).toBe(45);
     expect(prog.progressRatio).toBeCloseTo(0.5);
+
+    // 4 days/week milestone checks (3d, 1w, 1m, 3m, 6m, 12m, 24m)
+    const lifelogXp = (days: number, medalsXp: number) => 30 + days * 20 + medalsXp;
+    expect(getFeatureClassForXp(lifelogXp(3, 0), 'nutrition').tier).toBe('bronze'); // 90 XP
+    expect(getFeatureClassForXp(lifelogXp(5, 0), 'nutrition').tier).toBe('silver'); // 130 XP
+    expect(getFeatureClassForXp(lifelogXp(17, 50), 'nutrition').tier).toBe('gold'); // 420 XP
+    expect(getFeatureClassForXp(lifelogXp(51, 200), 'nutrition').tier).toBe('platinum'); // 1250 XP
+    expect(getFeatureClassForXp(lifelogXp(104, 550), 'nutrition').tier).toBe('diamond'); // 2660 XP
+    expect(getFeatureClassForXp(lifelogXp(206, 550), 'nutrition').tier).toBe('master'); // 4700 XP
+    expect(getFeatureClassForXp(lifelogXp(416, 550), 'nutrition').tier).toBe('legend'); // 8900 XP
   });
 
   test('Multi-rank promotion bonus sums all skipped divisions accurately', () => {
@@ -176,7 +206,7 @@ describe('2-Tier Gamification System (Classes, XP & Medals)', () => {
 
     const summary1 = await recordWorkoutCompletionGamification(101, true);
     expect(summary1).not.toBeNull();
-    // 50 (workout) + 30 (first record) + 30 (PR) + 50 (workout_count_1 medal) + 50 (pr_1 medal) = 210
+    // 50 (workout) + 30 (first record) + 30 (PR) = 110; + 50 (workout_count_1) + 50 (pr_1) = 210
     expect(summary1?.xpEarned).toBe(110);
     expect(summary1?.newlyUnlockedMedals.map((m) => m.id)).toEqual(
       expect.arrayContaining(['workout_count_1', 'pr_1'])
@@ -185,15 +215,28 @@ describe('2-Tier Gamification System (Classes, XP & Medals)', () => {
     const afterFirst = useGamificationStore.getState();
     expect(afterFirst.featureXp.workout).toBe(210);
     expect(afterFirst.totalXp).toBe(210);
-    // Iron I -> Iron II (+2P), Iron II -> Iron III? (210 < 250), Workout Iron -> Bronze (+2P)
-    // Plus two bronze medals (2P + 2P = 4P). Total added to initial 5P = 13P
-    expect(useFeatureUnlockStore.getState().pointsBalance).toBe(5 + 2 + 2 + 4);
     expect(afterFirst.pendingClassUp?.overall?.to.id).toBe('iron_2');
-    expect(afterFirst.pendingClassUp?.features[0]?.to.tier).toBe('bronze');
+    // Workout stays Iron (< 230 XP) after 1st workout
+    expect(summary1?.workoutClassAfter.tier).toBe('iron');
+    // Iron I -> Iron II (+2P) + two bronze medals (2P + 2P = 4P). Total = 5 + 6 = 11P
+    expect(useFeatureUnlockStore.getState().pointsBalance).toBe(11);
 
     // Duplicate call for same workoutId should do nothing
     await recordWorkoutCompletionGamification(101, true);
     expect(useGamificationStore.getState().totalXp).toBe(210);
+
+    // 2nd workout (+50 XP -> 260 XP) promotes Workout to Bronze (>=230) and Overall to Iron III (>=250)
+    jest.spyOn(metricsService, 'collectGamificationMetrics').mockResolvedValue({
+      ...createEmptyMetrics(),
+      workoutCount: 2,
+      prUpdateCount: 1,
+      totalActiveDays: 2,
+      usedFeatureCount: 1,
+    });
+    const summary2 = await recordWorkoutCompletionGamification(102, false);
+    expect(summary2?.workoutClassAfter.tier).toBe('bronze');
+    expect(useGamificationStore.getState().pendingClassUp?.overall?.to.id).toBe('iron_3');
+    expect(useGamificationStore.getState().pendingClassUp?.features[0]?.to.tier).toBe('bronze');
   });
 
   test('Simultaneous overall & feature class-up aggregates into a single ClassUpEvent', () => {

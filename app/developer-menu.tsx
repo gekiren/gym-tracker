@@ -23,7 +23,7 @@ import { useGamificationStore } from '../src/store/gamificationStore';
 import { ALL_FEATURE_IDS, FEATURE_UNLOCK_METAS, POINT_REWARDS, getUnlockCost } from '../src/constants/featureUnlockConstants';
 import {
   ACHIEVEMENT_MEDALS,
-  FEATURE_CLASSES,
+  getFeatureClassesForFeature,
   getFeatureClassForXp,
   getOverallClassForXp,
   OVERALL_CLASSES,
@@ -1146,7 +1146,7 @@ function DeveloperMenuScreenInternal() {
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>筋トレクラス</Text>
               <Text style={styles.infoValue}>
-                {getFeatureClassForXp(gamificationWorkoutXp).nameJa} ({gamificationWorkoutXp.toLocaleString()} XP)
+                {getFeatureClassForXp(gamificationWorkoutXp, 'workout').nameJa} ({gamificationWorkoutXp.toLocaleString()} XP)
               </Text>
             </View>
             <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
@@ -1190,12 +1190,13 @@ function DeveloperMenuScreenInternal() {
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
             <TouchableOpacity
               style={[styles.btnOutline, { flex: 1, borderColor: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.08)' }]}
-              onPress={() =>
+              onPress={() => {
+                const workoutClasses = getFeatureClassesForFeature('workout');
                 showPreviewClassUp({
                   overall: { from: OVERALL_CLASSES[2], to: OVERALL_CLASSES[3], bonusPoints: 3 },
-                  features: [{ featureId: 'workout', from: FEATURE_CLASSES[1], to: FEATURE_CLASSES[2], bonusPoints: 3 }],
-                })
-              }
+                  features: [{ featureId: 'workout', from: workoutClasses[1], to: workoutClasses[2], bonusPoints: 3 }],
+                });
+              }}
             >
               <Text style={[styles.btnOutlineText, { color: '#a855f7', fontSize: 12 }]}>
                 昇格モーダル表示

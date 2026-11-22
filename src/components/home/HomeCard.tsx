@@ -40,7 +40,8 @@ export const HomeCard: React.FC<HomeCardProps> = ({
     gamificationFeatureId ? (state.featureXp[gamificationFeatureId] ?? 0) : -1
   );
 
-  const featureClass = featureXp >= 0 ? getFeatureClassForXp(featureXp) : null;
+  const featureClass =
+    featureXp >= 0 ? getFeatureClassForXp(featureXp, gamificationFeatureId) : null;
   const tierMeta = featureClass ? TIER_VISUAL_META[featureClass.tier] : null;
 
   const cardDynamicStyle = {

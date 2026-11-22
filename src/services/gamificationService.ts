@@ -202,12 +202,13 @@ export function resolveMedalsAndClassUps(
 
   const featurePromotions: ClassUpEvent['features'] = [];
   for (const fid of GAMIFICATION_FEATURE_IDS) {
-    const prevFeatureCls = getFeatureClassForXp(prevState.featureXp[fid] || 0);
-    const nextFeatureCls = getFeatureClassForXp(working.featureXp[fid] || 0);
+    const prevFeatureCls = getFeatureClassForXp(prevState.featureXp[fid] || 0, fid);
+    const nextFeatureCls = getFeatureClassForXp(working.featureXp[fid] || 0, fid);
     if (nextFeatureCls.rankIndex > prevFeatureCls.rankIndex) {
       const pts = getPromotionBonusBetweenFeature(
         prevFeatureCls.rankIndex,
-        nextFeatureCls.rankIndex
+        nextFeatureCls.rankIndex,
+        fid
       );
       classUpBonusPoints += pts;
       featurePromotions.push({
@@ -344,7 +345,7 @@ export async function initGamificationState(storedSettings: Record<string, strin
       (fid) => resolved.finalState.featureXp[fid] > 0
     ).map((fid) => ({
       featureId: fid,
-      classDef: getFeatureClassForXp(resolved.finalState.featureXp[fid]),
+      classDef: getFeatureClassForXp(resolved.finalState.featureXp[fid], fid),
     }));
 
     summaryNotice = {
@@ -582,7 +583,7 @@ export async function recordWorkoutCompletionGamification(
     prBonusXp,
     newlyUnlockedMedals: resolved.unlockedMedals,
     overallClassAfter: getOverallClassForXp(resolved.finalState.totalXp),
-    workoutClassAfter: getFeatureClassForXp(resolved.finalState.featureXp.workout),
+    workoutClassAfter: getFeatureClassForXp(resolved.finalState.featureXp.workout, 'workout'),
   };
 
   useGamificationStore.getState().applyPersistedUpdate(resolved.finalState, {
