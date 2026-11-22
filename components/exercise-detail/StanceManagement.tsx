@@ -39,11 +39,11 @@ export const StanceManagement: React.FC<StanceManagementProps> = ({
         <Text style={[styles.stanceToggleText, { color: colors.primary }]}>
           {t('ui.exercise_detail.section_stance')}
         </Text>
-        <Ionicons name={isStanceExpanded ? "chevron-up" : "chevron-down"} size={18} color={colors.primary} />
+        <Ionicons name={isStanceExpanded ? "chevron-up" : "chevron-down"} size={16} color={colors.primary} />
       </TouchableOpacity>
 
       {isStanceExpanded && (
-        <View>
+        <View style={styles.stanceContent}>
           <View style={styles.stanceList}>
             <TouchableOpacity
               style={[
@@ -175,10 +175,11 @@ export const StanceManagement: React.FC<StanceManagementProps> = ({
 };
 
 const styles = StyleSheet.create({
-  stanceSection: { padding: 20, borderBottomWidth: 1 },
-  stanceHeaderToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
-  stanceToggleText: { fontSize: 18, fontWeight: 'bold' },
-  stanceList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  stanceSection: { paddingHorizontal: 16, borderBottomWidth: 1 },
+  stanceHeaderToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44, paddingVertical: 8 },
+  stanceToggleText: { fontSize: 15, fontWeight: 'bold', flexShrink: 1, marginRight: 8 },
+  stanceContent: { paddingTop: 4, paddingBottom: 16 },
+  stanceList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
   choiceChip: { paddingHorizontal: 12, paddingVertical: 8, minHeight: 38, justifyContent: 'center', borderRadius: 16, borderWidth: 1 },
   choiceChipActive: { backgroundColor: 'rgba(79, 172, 254, 0.2)' },
   choiceChipText: { fontSize: 13, fontWeight: '500' },

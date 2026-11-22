@@ -12,6 +12,12 @@ import { initDB, getSettings, saveSetting, triggerBackgroundBackup } from '../sr
 import { useAppTheme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore, FeatureId } from '../src/store/settingsStore';
+import {
+  parseExerciseChartMetric,
+  parseExerciseChartScale,
+  parseExerciseChartPreferences,
+  parseExercisePrCollapsedStances,
+} from '../src/utils/exerciseDetailPrefs';
 import { useNutritionStore } from '../src/store/nutritionStore';
 import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import '../src/i18n';
@@ -215,7 +221,10 @@ export default function RootLayout() {
 
       const timerNotification = storedSettings['timer_notification'] !== '0';
       const aiCompanionMemory = storedSettings['ai_companion_memory'] || '';
-      const lastExerciseChartMetric = storedSettings['last_exercise_chart_metric'] as any;
+      const lastExerciseChartMetric = parseExerciseChartMetric(storedSettings['last_exercise_chart_metric']);
+      const lastExerciseChartScale = parseExerciseChartScale(storedSettings['last_exercise_chart_scale']);
+      const exerciseChartPreferences = parseExerciseChartPreferences(storedSettings['exercise_chart_preferences']);
+      const exercisePrCollapsedStances = parseExercisePrCollapsedStances(storedSettings['exercise_pr_collapsed_stances']);
       const lastHistoryChartMetric = storedSettings['last_history_chart_metric'] as any;
 
       // 5. ストアへの設定ロード
@@ -243,6 +252,9 @@ export default function RootLayout() {
         featureVisibility,
         aiCompanionMemory,
         lastExerciseChartMetric,
+        lastExerciseChartScale,
+        exerciseChartPreferences,
+        exercisePrCollapsedStances,
         lastHistoryChartMetric,
       });
       if (expired) {

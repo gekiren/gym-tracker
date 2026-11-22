@@ -14,8 +14,13 @@ import {
   getExerciseDetailCache,
   patchExerciseDetailCache,
 } from '../../src/db/database';
+import {
+  ExerciseChartMetric,
+  ExerciseChartScale,
+  resolveEffectiveChartStance,
+} from '../../src/utils/exerciseDetailPrefs';
 
-export type ExerciseChartMetric = 'volume' | '1rm' | 'sets' | 'avg_volume_per_set' | 'density';
+export type { ExerciseChartMetric };
 
 interface ExerciseChartsProps {
   exerciseId: number;
@@ -23,8 +28,8 @@ interface ExerciseChartsProps {
   availableStances: string[];
   isLoadingChart?: boolean;
   settings: any;
-  chartScale: 'day' | 'week' | 'month';
-  setChartScale: (scale: 'day' | 'week' | 'month') => void;
+  chartScale: ExerciseChartScale;
+  setChartScale: (scale: ExerciseChartScale) => void;
   setCalendarVisible: (visible: boolean) => void;
   selectedChartReps: number | null;
   setSelectedChartReps: (reps: number | null) => void;
@@ -86,18 +91,17 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
   const { colors, spacing } = useAppTheme();
   const styles = useMemo(() => createStyles(colors, spacing), [colors, spacing]);
   const chartScrollRef = useRef<ScrollView>(null);
-  const savedMetric = useSettingsStore(state => state.settings.lastExerciseChartMetric);
-  const setLastExerciseChartMetric = useSettingsStore(state => state.setLastExerciseChartMetric);
-  const [chartMetric, setChartMetric] = useState<ExerciseChartMetric>(savedMetric || 'volume');
-
-  useEffect(() => {
-    if (savedMetric && savedMetric !== chartMetric) {
-      setChartMetric(savedMetric);
-    }
-  }, [savedMetric]);
+  const exercisePref = useSettingsStore(
+    useCallback(
+      (state) => state.settings.exerciseChartPreferences[String(exerciseId)],
+      [exerciseId]
+    )
+  );
+  const globalMetric = useSettingsStore(state => state.settings.lastExerciseChartMetric);
+  const setExerciseChartPreference = useSettingsStore(state => state.setExerciseChartPreference);
+  const chartMetric: ExerciseChartMetric = exercisePref?.metric ?? globalMetric ?? 'volume';
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isMetricModalVisible, setMetricModalVisible] = useState(false);
-  const [selectedStance, setSelectedStance] = useState<string>('all');
   const [stanceSummaryMap, setStanceSummaryMap] = useState<Record<string, ExerciseChartSummaryRow[]>>({});
   const [isLoadingStance, setIsLoadingStance] = useState(false);
   const [prTimeline, setPrTimeline] = useState<{ date: string; weight: number }[] | null>(null);
@@ -112,30 +116,39 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
     });
   }, [rawAvailableStances]);
 
-  useEffect(() => {
-    setStanceSummaryMap({});
-    setSelectedStance('all');
-  }, [exerciseId]);
+  const showStanceSelector =
+    availableStances.length > 1 || (availableStances.length === 1 && availableStances[0] !== 'default');
+  const savedStance = exercisePref?.stance ?? 'all';
+  const selectedStance = resolveEffectiveChartStance(
+    savedStance,
+    availableStances,
+    isLoadingChart,
+    showStanceSelector
+  );
 
   useEffect(() => {
-    if (selectedStance !== 'all' && availableStances.length > 0 && !availableStances.includes(selectedStance)) {
-      setSelectedStance('all');
-    }
-  }, [availableStances, selectedStance]);
+    setStanceSummaryMap({});
+  }, [exerciseId]);
+
+  const cachedStanceRows =
+    selectedStance !== 'all'
+      ? getExerciseDetailCache(exerciseId)?.chartSummaryByStance?.[selectedStance]
+      : undefined;
+  const resolvedStanceRows =
+    selectedStance !== 'all' ? (stanceSummaryMap[selectedStance] ?? cachedStanceRows) : undefined;
 
   // スタンス別の軽量グラフ集計をオンデマンド取得（キャッシュ優先）
   useEffect(() => {
-    if (selectedStance === 'all') {
+    if (isLoadingChart || selectedStance === 'all') {
       setIsLoadingStance(false);
       return;
     }
-    if (stanceSummaryMap[selectedStance]) {
+    if (stanceSummaryMap[selectedStance] !== undefined) {
       setIsLoadingStance(false);
       return;
     }
 
-    const cachedStanceRows = getExerciseDetailCache(exerciseId)?.chartSummaryByStance?.[selectedStance];
-    if (cachedStanceRows) {
+    if (cachedStanceRows !== undefined) {
       setStanceSummaryMap(prev => ({ ...prev, [selectedStance]: cachedStanceRows }));
       setIsLoadingStance(false);
       return;
@@ -153,6 +166,9 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
       })
       .catch(err => {
         console.warn('Failed to fetch stance chart summary:', err);
+        if (isActive) {
+          setStanceSummaryMap(prev => ({ ...prev, [selectedStance]: [] }));
+        }
       })
       .finally(() => {
         if (isActive) {
@@ -163,7 +179,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
     return () => {
       isActive = false;
     };
-  }, [exerciseId, selectedStance, stanceSummaryMap]);
+  }, [exerciseId, isLoadingChart, selectedStance, stanceSummaryMap, cachedStanceRows]);
 
   // PR推移モーダル表示時にオンデマンド取得
   useEffect(() => {
@@ -204,8 +220,8 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
 
   const activeSummary = useMemo(() => {
     if (selectedStance === 'all') return chartSummary || [];
-    return stanceSummaryMap[selectedStance] || [];
-  }, [selectedStance, chartSummary, stanceSummaryMap]);
+    return resolvedStanceRows || [];
+  }, [selectedStance, chartSummary, resolvedStanceRows]);
 
   const chartPoints = useMemo<ChartPoint[]>(() => {
     if (!activeSummary || activeSummary.length === 0) return [];
@@ -449,7 +465,6 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
   }, [settings.weightUnit]);
 
   const shouldShowChartContainer = !isLoadingChart && chartSummary && chartSummary.length > 0 && (chartPoints.length > 0 || selectedStance !== 'all');
-  const showStanceSelector = availableStances.length > 1 || (availableStances.length === 1 && availableStances[0] !== 'default');
 
   return (
     <>
@@ -515,7 +530,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
             >
               <TouchableOpacity
                 style={[styles.stanceChip, selectedStance === 'all' && styles.stanceChipActive]}
-                onPress={() => setSelectedStance('all')}
+                onPress={() => setExerciseChartPreference(exerciseId, { stance: 'all' })}
                 activeOpacity={0.7}
               >
                 <Text style={[styles.stanceChipText, selectedStance === 'all' && styles.stanceChipTextActive]}>
@@ -532,7 +547,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
                   <TouchableOpacity
                     key={stance}
                     style={[styles.stanceChip, isSelected && styles.stanceChipActive]}
-                    onPress={() => setSelectedStance(stance)}
+                    onPress={() => setExerciseChartPreference(exerciseId, { stance })}
                     activeOpacity={0.7}
                   >
                     <Text style={[styles.stanceChipText, isSelected && styles.stanceChipTextActive]}>
@@ -557,7 +572,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
 
           {/* SVG Line & Area Chart */}
           <View style={styles.chartWrapper}>
-            {isLoadingStance ? (
+            {isLoadingStance || (selectedStance !== 'all' && resolvedStanceRows === undefined) ? (
               <View style={styles.emptyStanceBox}>
                 <ActivityIndicator size="small" color={colors.primary} />
               </View>
@@ -721,8 +736,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
                   key={option.id}
                   style={[styles.metricOptionItem, isSelected && styles.metricOptionItemActive]}
                   onPress={() => {
-                    setChartMetric(option.id);
-                    setLastExerciseChartMetric(option.id);
+                    setExerciseChartPreference(exerciseId, { metric: option.id });
                     setMetricModalVisible(false);
                   }}
                   activeOpacity={0.7}

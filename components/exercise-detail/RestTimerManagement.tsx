@@ -52,7 +52,7 @@ export const RestTimerManagement: React.FC<RestTimerManagementProps> = ({
         activeOpacity={0.7}
       >
         <View style={styles.headerLeft}>
-          <Ionicons name="timer-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+          <Ionicons name="timer-outline" size={18} color={colors.primary} style={{ marginRight: 8 }} />
           <Text style={[styles.toggleText, { color: colors.primary }]}>
             {t('ui.exercise_detail.section_rest_timer')}
           </Text>
@@ -65,7 +65,7 @@ export const RestTimerManagement: React.FC<RestTimerManagementProps> = ({
           ]}>
             {currentRest != null ? formatTime(currentRest) : t('ui.exercise_detail.rest_timer_not_set')}
           </Text>
-          <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primary} />
+          <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={16} color={colors.primary} />
         </View>
       </TouchableOpacity>
 
@@ -137,7 +137,7 @@ export const RestTimerManagement: React.FC<RestTimerManagementProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    padding: 20,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
   },
   headerToggle: {
@@ -145,10 +145,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: 44,
+    paddingVertical: 8,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
+    marginRight: 8,
   },
   headerRight: {
     flexDirection: 'row',
@@ -156,19 +160,21 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   toggleText: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: 'bold',
+    flexShrink: 1,
   },
   currentValueBadge: {
-    fontSize: 13,
+    fontSize: 12,
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 2,
     borderRadius: 8,
     borderWidth: 1,
     overflow: 'hidden',
   },
   content: {
-    marginTop: 12,
+    paddingTop: 4,
+    paddingBottom: 16,
   },
   sectionDesc: {
     fontSize: 13,

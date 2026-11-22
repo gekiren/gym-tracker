@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../src/theme';
 import { translateStance } from '../../src/i18n';
 import { useTranslation } from 'react-i18next';
+import { useSettingsStore } from '../../src/store/settingsStore';
 
 interface PersonalRecordsListProps {
+  exerciseId?: number;
   personalRecords: Record<string, Record<number, number>>;
   weightUnit: string;
   onPrPress: (reps: number, variation: string) => void;
@@ -13,6 +15,7 @@ interface PersonalRecordsListProps {
 
 const GAP = 6;
 const NUM_COLUMNS = 4;
+const EMPTY_COLLAPSED_STANCES: Record<string, boolean> = {};
 
 const chunkArray = <T,>(arr: T[], size: number): T[][] => {
   const result: T[][] = [];
@@ -23,6 +26,7 @@ const chunkArray = <T,>(arr: T[], size: number): T[][] => {
 };
 
 export function PersonalRecordsList({
+  exerciseId,
   personalRecords,
   weightUnit,
   onPrPress
@@ -30,7 +34,16 @@ export function PersonalRecordsList({
   const { t } = useTranslation();
   const { colors } = useAppTheme();
   const [isExpanded, setIsExpanded] = useState(true);
-  const [collapsedStances, setCollapsedStances] = useState<Record<string, boolean>>({});
+  const validExerciseId = exerciseId !== undefined && !Number.isNaN(exerciseId) ? exerciseId : undefined;
+  const persistedCollapsed = useSettingsStore(
+    useCallback(
+      (state) => (validExerciseId !== undefined ? state.settings.exercisePrCollapsedStances[String(validExerciseId)] : undefined),
+      [validExerciseId]
+    )
+  );
+  const setExercisePrStanceCollapsed = useSettingsStore((state) => state.setExercisePrStanceCollapsed);
+  const [localCollapsedStances, setLocalCollapsedStances] = useState<Record<string, boolean>>({});
+  const collapsedStances = validExerciseId !== undefined ? (persistedCollapsed ?? EMPTY_COLLAPSED_STANCES) : localCollapsedStances;
 
   const sortedEntries = Object.entries(personalRecords)
     .filter(([, prMap]) => prMap && Object.keys(prMap).length > 0)
@@ -43,10 +56,15 @@ export function PersonalRecordsList({
   if (sortedEntries.length === 0) return null;
 
   const toggleStanceAccordion = (variation: string) => {
-    setCollapsedStances(prev => ({
-      ...prev,
-      [variation]: !prev[variation],
-    }));
+    const nextCollapsed = !collapsedStances[variation];
+    if (validExerciseId !== undefined) {
+      setExercisePrStanceCollapsed(validExerciseId, variation, nextCollapsed);
+    } else {
+      setLocalCollapsedStances(prev => ({
+        ...prev,
+        [variation]: nextCollapsed,
+      }));
+    }
   };
 
   return (
