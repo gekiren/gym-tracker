@@ -1,4 +1,5 @@
 import { getDB, getDBPromise, withDBQueue } from '../connection';
+import { invalidateExerciseDetailCache } from '../exerciseDetailCache';
 import { triggerDebouncedDataBackup } from '../dbBackupService';
 import { triggerDebouncedDriveUpload } from '../../services/googleDrive/driveSyncTrigger';
 import { translateExercise } from '../../i18n';
@@ -79,6 +80,10 @@ export const saveWorkout = async (
       }
     }
   });
+
+  for (const ex of exercises) {
+    invalidateExerciseDetailCache(ex.exercise_id);
+  }
 
   // ワークアウト保存完了後の非同期バックアップ（3秒デバウンスで退避）
   triggerDebouncedDataBackup('workout_save', 3000);
@@ -216,6 +221,7 @@ export const getPersonalRecords = async (exerciseId: number) => {
 export const deleteWorkout = async (id: number) => {
   const conn = getDB();
   await conn.runAsync('DELETE FROM workouts WHERE id = ?', [id]);
+  invalidateExerciseDetailCache();
   triggerDebouncedDriveUpload('workout_delete', 10000);
 };
 
@@ -325,12 +331,14 @@ export const updateWorkoutSet = async (
 
   values.push(setId);
   await conn.runAsync(`UPDATE workout_sets SET ${fields.join(', ')} WHERE id = ?`, values);
+  invalidateExerciseDetailCache();
   triggerDebouncedDriveUpload('workout_set_update', 10000);
 };
 
 export const deleteWorkoutSet = async (setId: number) => {
   const conn = getDB();
   await conn.runAsync('DELETE FROM workout_sets WHERE id = ?', [setId]);
+  invalidateExerciseDetailCache();
   triggerDebouncedDriveUpload('workout_set_delete', 10000);
 };
 

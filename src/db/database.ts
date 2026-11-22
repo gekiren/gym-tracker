@@ -1,6 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 import { PRESET_EXERCISES, PRESET_ROUTINES } from './constants';
 import { setDB, setDBPromise, getDBPromise, getDB, closeDB } from './connection';
+import { invalidateExerciseDetailCache } from './exerciseDetailCache';
 import { runMigrations } from './migrations';
 import { generateUUID } from '../utils/uuid';
 
@@ -8,6 +9,7 @@ import { generateUUID } from '../utils/uuid';
 export * from './types';
 export * from './constants';
 export * from './connection';
+export * from './exerciseDetailCache';
 
 // Export repositories for 100% backwards compatibility
 export * from './repositories/exerciseRepository';
@@ -464,6 +466,8 @@ export const resetDatabase = async () => {
     await conn.runAsync('DELETE FROM autophagy_config');
     await conn.runAsync('DELETE FROM body_composition_logs');
   });
+
+  invalidateExerciseDetailCache();
 
   // setDB(null) の前に再初期化 Promise をセットしておく。
   // これにより withDBQueue が db===null の間も dbPromise を参照して待機できる。
