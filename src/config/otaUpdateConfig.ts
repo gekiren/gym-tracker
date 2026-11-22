@@ -11,19 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.55',
+  version: '2.3.56',
   title: {
-    ja: '⚡ 種目詳細画面の読み込みを高速化',
-    en: '⚡ Faster Exercise Details Loading',
+    ja: '✨ 種目詳細画面のレイアウトと表示状態の記憶を改善',
+    en: '✨ Improved Exercise Details Layout & State Memory',
   },
   notes: {
     ja: [
-      '履歴データが多い種目でも種目詳細画面を素早く開けるよう、ページネーション読み込み・段階的表示・メモリキャッシュを導入しました。',
-      'グラフや履歴カレンダーの集計処理を最適化し、操作時の負荷を軽減しました。',
+      '初期スタンス・個別インターバル・重量増減ステップ設定の折りたたみ時の高さをコンパクトにしました。',
+      '自己ベスト（PR）のスタンス別アコーディオンの開閉状態を記憶し、次回も維持されるようにしました。',
+      '種目詳細グラフの種類・期間（日/週/月）・スタンスの最後の選択を保持し、次回も同じ表示で開けるようにしました。',
     ],
     en: [
-      'Added paginated loading, staged rendering, and in-memory caching so Exercise Details opens quickly even with extensive history.',
-      'Optimized chart and calendar aggregations to reduce overhead during navigation.',
+      'Reduced the collapsed height of Default Stance, Individual Rest Timer, and Weight Step settings for a more compact layout.',
+      'Personal Record (PR) stance accordions now remember their expanded/collapsed state across visits.',
+      'Exercise charts now remember your last selected metric, period (Day/Week/Month), and stance filter.',
     ],
   },
 };

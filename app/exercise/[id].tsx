@@ -27,7 +27,7 @@ import {
   ExerciseHistoryEntry,
 } from '../../src/db/database';
 import { useAppTheme } from '../../src/theme';
-import { useSettingsStore } from '../../src/store/settingsStore';
+import { useSettingsStore, ExerciseChartScale } from '../../src/store/settingsStore';
 import { useTranslation } from 'react-i18next';
 import { translateExercise, translateMuscleGroup, translateEquipment, translateStance } from '../../src/i18n';
 import { openYouTubeSearch } from '../../src/utils/youtubeUtils';
@@ -200,7 +200,21 @@ export default function ExerciseDetailScreen() {
   const { colors, spacing } = useAppTheme();
   const styles = useMemo(() => createStyles(colors, spacing), [colors, spacing]);
 
-  const [chartScale, setChartScale] = useState<'day' | 'week' | 'month'>('day');
+  const exerciseChartPref = useSettingsStore(
+    useCallback(
+      (state) => (!isNaN(parsedId) ? state.settings.exerciseChartPreferences[String(parsedId)] : undefined),
+      [parsedId]
+    )
+  );
+  const lastExerciseChartScale = useSettingsStore(state => state.settings.lastExerciseChartScale);
+  const setExerciseChartPreference = useSettingsStore(state => state.setExerciseChartPreference);
+
+  const chartScale: ExerciseChartScale = exerciseChartPref?.scale ?? lastExerciseChartScale ?? 'day';
+  const handleSetChartScale = useCallback((scale: ExerciseChartScale) => {
+    if (!isNaN(parsedId)) {
+      setExerciseChartPreference(parsedId, { scale });
+    }
+  }, [parsedId, setExerciseChartPreference]);
   const [selectedChartReps, setSelectedChartReps] = useState<number | null>(null);
   const [selectedChartVariation, setSelectedChartVariation] = useState<string | null>(null);
   const [showChartModal, setShowChartModal] = useState(false);
@@ -251,18 +265,28 @@ export default function ExerciseDetailScreen() {
       setIsChartLoading(true);
       interactionHandle = InteractionManager.runAfterInteractions(async () => {
         try {
-          const [summaryRows, stances] = await Promise.all([
+          const savedStance =
+            useSettingsStore.getState().settings.exerciseChartPreferences[String(parsedId)]?.stance ?? 'all';
+          const [summaryRows, stances, savedStanceRows] = await Promise.all([
             getExerciseChartSummary(parsedId, 'all'),
             getExerciseAvailableStances(parsedId),
+            savedStance !== 'all' ? getExerciseChartSummary(parsedId, savedStance) : Promise.resolve(null),
           ]);
           if (!isMounted) return;
-          setChartSummary(summaryRows || []);
-          setAvailableStances(stances || []);
-          setIsChartLoading(false);
+          const validStances = stances || [];
+          const chartSummaryByStance: Record<string, ExerciseChartSummaryRow[]> = {
+            all: summaryRows || [],
+          };
+          if (savedStance !== 'all' && savedStanceRows && validStances.includes(savedStance)) {
+            chartSummaryByStance[savedStance] = savedStanceRows;
+          }
           patchExerciseDetailCache(parsedId, {
-            availableStances: stances || [],
-            chartSummaryByStance: { all: summaryRows || [] },
+            availableStances: validStances,
+            chartSummaryByStance,
           });
+          setChartSummary(summaryRows || []);
+          setAvailableStances(validStances);
+          setIsChartLoading(false);
         } catch (e) {
           console.error('Failed to fetch chart summary:', e);
           if (isMounted) setIsChartLoading(false);
@@ -310,18 +334,28 @@ export default function ExerciseDetailScreen() {
 
         interactionHandle = InteractionManager.runAfterInteractions(async () => {
           try {
-            const [summaryRows, stances] = await Promise.all([
+            const savedStance =
+              useSettingsStore.getState().settings.exerciseChartPreferences[String(parsedId)]?.stance ?? 'all';
+            const [summaryRows, stances, savedStanceRows] = await Promise.all([
               getExerciseChartSummary(parsedId, 'all'),
               getExerciseAvailableStances(parsedId),
+              savedStance !== 'all' ? getExerciseChartSummary(parsedId, savedStance) : Promise.resolve(null),
             ]);
             if (!isMounted) return;
-            setChartSummary(summaryRows || []);
-            setAvailableStances(stances || []);
-            setIsChartLoading(false);
+            const validStances = stances || [];
+            const chartSummaryByStance: Record<string, ExerciseChartSummaryRow[]> = {
+              all: summaryRows || [],
+            };
+            if (savedStance !== 'all' && savedStanceRows && validStances.includes(savedStance)) {
+              chartSummaryByStance[savedStance] = savedStanceRows;
+            }
             patchExerciseDetailCache(parsedId, {
-              availableStances: stances || [],
-              chartSummaryByStance: { all: summaryRows || [] },
+              availableStances: validStances,
+              chartSummaryByStance,
             });
+            setChartSummary(summaryRows || []);
+            setAvailableStances(validStances);
+            setIsChartLoading(false);
           } catch (chartErr) {
             console.error('Failed to fetch chart summary:', chartErr);
             if (isMounted) setIsChartLoading(false);
@@ -597,6 +631,7 @@ export default function ExerciseDetailScreen() {
 
         {/* PR Section */}
         <PersonalRecordsList
+          exerciseId={parsedId}
           personalRecords={personalRecords}
           weightUnit={settings.weightUnit}
           onPrPress={(reps, variation) => {
@@ -614,7 +649,7 @@ export default function ExerciseDetailScreen() {
           isLoadingChart={isChartLoading}
           settings={settings}
           chartScale={chartScale}
-          setChartScale={setChartScale}
+          setChartScale={handleSetChartScale}
           setCalendarVisible={setCalendarVisible}
           selectedChartReps={selectedChartReps}
           setSelectedChartReps={setSelectedChartReps}

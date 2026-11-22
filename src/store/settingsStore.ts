@@ -2,9 +2,22 @@ import { create } from 'zustand';
 import { saveSetting } from '../db/database';
 import { computeIsPremium } from '../utils/subscriptionUtils';
 import { triggerDebouncedDriveUpload } from '../services/googleDrive/driveSyncTrigger';
+import {
+  ExerciseChartMetric,
+  ExerciseChartScale,
+  ExerciseChartPreference,
+  ExerciseChartPreferencesMap,
+  ExercisePrCollapsedStancesMap,
+} from '../utils/exerciseDetailPrefs';
 
 export type FeatureId = 'workout' | 'water' | 'nutrition' | 'zikan' | 'routine' | 'habit' | 'body' | 'voice_ai';
-export type ExerciseChartMetric = 'volume' | '1rm' | 'sets' | 'avg_volume_per_set' | 'density';
+export type {
+  ExerciseChartMetric,
+  ExerciseChartScale,
+  ExerciseChartPreference,
+  ExerciseChartPreferencesMap,
+  ExercisePrCollapsedStancesMap,
+};
 export type WorkoutHistoryChartMetric = 'volume' | 'calories' | 'sets' | 'avg_volume_per_set' | 'density';
 
 export interface ApplicationSettings {
@@ -39,6 +52,9 @@ export interface ApplicationSettings {
   featureVisibility: Record<FeatureId, boolean>;
   aiCompanionMemory: string;
   lastExerciseChartMetric: ExerciseChartMetric;
+  lastExerciseChartScale: ExerciseChartScale;
+  exerciseChartPreferences: ExerciseChartPreferencesMap;
+  exercisePrCollapsedStances: ExercisePrCollapsedStancesMap;
   lastHistoryChartMetric: WorkoutHistoryChartMetric;
 }
 
@@ -66,6 +82,9 @@ export interface LoadSettingsPayload {
   featureVisibility?: Record<FeatureId, boolean>;
   aiCompanionMemory?: string;
   lastExerciseChartMetric?: ExerciseChartMetric;
+  lastExerciseChartScale?: ExerciseChartScale;
+  exerciseChartPreferences?: ExerciseChartPreferencesMap;
+  exercisePrCollapsedStances?: ExercisePrCollapsedStancesMap;
   lastHistoryChartMetric?: WorkoutHistoryChartMetric;
 }
 
@@ -93,6 +112,9 @@ export interface SettingsState {
   setCrashConsent: (consent: 'agreed' | 'declined' | 'unset') => void;
   setAiCompanionMemory: (memory: string) => Promise<void>;
   setLastExerciseChartMetric: (metric: ExerciseChartMetric) => void;
+  setLastExerciseChartScale: (scale: ExerciseChartScale) => void;
+  setExerciseChartPreference: (exerciseId: number, patch: Partial<ExerciseChartPreference>) => void;
+  setExercisePrStanceCollapsed: (exerciseId: number, variation: string, isCollapsed: boolean) => void;
   setLastHistoryChartMetric: (metric: WorkoutHistoryChartMetric) => void;
   resetSettings: () => void;
 }
@@ -138,6 +160,9 @@ export const initialSettings: ApplicationSettings = {
   },
   aiCompanionMemory: '',
   lastExerciseChartMetric: 'volume',
+  lastExerciseChartScale: 'day',
+  exerciseChartPreferences: {},
+  exercisePrCollapsedStances: {},
   lastHistoryChartMetric: 'volume',
 };
 
@@ -169,6 +194,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       featureVisibility,
       aiCompanionMemory,
       lastExerciseChartMetric,
+      lastExerciseChartScale,
+      exerciseChartPreferences,
+      exercisePrCollapsedStances,
       lastHistoryChartMetric,
     } = payload;
     const finalIndividualRestEnabled = individualRestEnabled !== undefined ? individualRestEnabled : state.settings.individualRestEnabled;
@@ -190,6 +218,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const finalFeatureVisibility = featureVisibility !== undefined ? featureVisibility : state.settings.featureVisibility;
     const finalAiCompanionMemory = aiCompanionMemory !== undefined ? aiCompanionMemory : state.settings.aiCompanionMemory;
     const finalLastExerciseChartMetric = lastExerciseChartMetric !== undefined ? lastExerciseChartMetric : state.settings.lastExerciseChartMetric;
+    const finalLastExerciseChartScale = lastExerciseChartScale !== undefined ? lastExerciseChartScale : state.settings.lastExerciseChartScale;
+    const finalExerciseChartPreferences = exerciseChartPreferences !== undefined ? exerciseChartPreferences : state.settings.exerciseChartPreferences;
+    const finalExercisePrCollapsedStances = exercisePrCollapsedStances !== undefined ? exercisePrCollapsedStances : state.settings.exercisePrCollapsedStances;
     const finalLastHistoryChartMetric = lastHistoryChartMetric !== undefined ? lastHistoryChartMetric : state.settings.lastHistoryChartMetric;
 
     const isPremium = computeIsPremium(finalPremiumUntil, finalIsEarlyAdopter);
@@ -219,6 +250,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         featureVisibility: finalFeatureVisibility,
         aiCompanionMemory: finalAiCompanionMemory,
         lastExerciseChartMetric: finalLastExerciseChartMetric,
+        lastExerciseChartScale: finalLastExerciseChartScale,
+        exerciseChartPreferences: finalExerciseChartPreferences,
+        exercisePrCollapsedStances: finalExercisePrCollapsedStances,
         lastHistoryChartMetric: finalLastHistoryChartMetric,
       }
     };
@@ -341,6 +375,79 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     set((state) => ({
       settings: { ...state.settings, lastExerciseChartMetric: metric }
     }));
+  },
+
+  setLastExerciseChartScale: (scale: ExerciseChartScale) => {
+    saveSetting('last_exercise_chart_scale', scale).catch(e => console.warn('Failed to save last_exercise_chart_scale', e));
+    set((state) => ({
+      settings: { ...state.settings, lastExerciseChartScale: scale }
+    }));
+  },
+
+  setExerciseChartPreference: (exerciseId: number, patch: Partial<ExerciseChartPreference>) => {
+    set((state) => {
+      const exKey = String(exerciseId);
+      const currentForEx = state.settings.exerciseChartPreferences[exKey] || {};
+      const nextForEx: ExerciseChartPreference = { ...currentForEx, ...patch };
+      const nextPrefs: ExerciseChartPreferencesMap = {
+        ...state.settings.exerciseChartPreferences,
+        [exKey]: nextForEx,
+      };
+      saveSetting('exercise_chart_preferences', JSON.stringify(nextPrefs)).catch(e =>
+        console.warn('Failed to save exercise_chart_preferences', e)
+      );
+
+      let nextMetric = state.settings.lastExerciseChartMetric;
+      if (patch.metric !== undefined) {
+        nextMetric = patch.metric;
+        saveSetting('last_exercise_chart_metric', patch.metric).catch(e =>
+          console.warn('Failed to save last_exercise_chart_metric', e)
+        );
+      }
+
+      let nextScale = state.settings.lastExerciseChartScale;
+      if (patch.scale !== undefined) {
+        nextScale = patch.scale;
+        saveSetting('last_exercise_chart_scale', patch.scale).catch(e =>
+          console.warn('Failed to save last_exercise_chart_scale', e)
+        );
+      }
+
+      return {
+        settings: {
+          ...state.settings,
+          exerciseChartPreferences: nextPrefs,
+          lastExerciseChartMetric: nextMetric,
+          lastExerciseChartScale: nextScale,
+        }
+      };
+    });
+  },
+
+  setExercisePrStanceCollapsed: (exerciseId: number, variation: string, isCollapsed: boolean) => {
+    set((state) => {
+      const exKey = String(exerciseId);
+      const currentForEx = state.settings.exercisePrCollapsedStances[exKey] || {};
+      if (currentForEx[variation] === isCollapsed) {
+        return state;
+      }
+      const nextMap: ExercisePrCollapsedStancesMap = {
+        ...state.settings.exercisePrCollapsedStances,
+        [exKey]: {
+          ...currentForEx,
+          [variation]: isCollapsed,
+        },
+      };
+      saveSetting('exercise_pr_collapsed_stances', JSON.stringify(nextMap)).catch(e =>
+        console.warn('Failed to save exercise_pr_collapsed_stances', e)
+      );
+      return {
+        settings: {
+          ...state.settings,
+          exercisePrCollapsedStances: nextMap,
+        }
+      };
+    });
   },
 
   setLastHistoryChartMetric: (metric: WorkoutHistoryChartMetric) => {
