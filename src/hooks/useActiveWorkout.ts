@@ -28,7 +28,7 @@ export function useActiveWorkout() {
   const endWorkout = useWorkoutStore(state => state.endWorkout);
   const updateWorkoutNotes = useWorkoutStore(state => state.updateWorkoutNotes);
   const updateExerciseNotes = useWorkoutStore(state => state.updateExerciseNotes);
-  const addSet = useWorkoutStore(state => state.addSet);
+  const _addSet = useWorkoutStore(state => state.addSet);
   const removeSet = useWorkoutStore(state => state.removeSet);
   const removeExercise = useWorkoutStore(state => state.removeExercise);
   const _toggleSetComplete = useWorkoutStore(state => state.toggleSetComplete);
@@ -54,6 +54,10 @@ export function useActiveWorkout() {
   const toggleSetComplete = useCallback((exerciseId: string, setId: string) => {
     _toggleSetComplete(exerciseId, setId, settings);
   }, [_toggleSetComplete, settings]);
+
+  const addSet = useCallback((exerciseId: string) => {
+    _addSet(exerciseId, settings.addSetStanceMode);
+  }, [_addSet, settings.addSetStanceMode]);
 
   const _startRestTimer = useWorkoutStore(state => state.startRestTimer);
   const _adjustRestTimer = useWorkoutStore(state => state.adjustRestTimer);

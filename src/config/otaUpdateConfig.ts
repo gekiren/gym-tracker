@@ -11,21 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.59',
+  version: '2.3.60',
   title: {
-    ja: '🧹 機能の整理・画面構成の最適化',
-    en: '🧹 Feature Cleanup & Layout Simplification',
+    ja: '⚙️ セット追加時のスタンス設定を追加',
+    en: '⚙️ Added Set Stance Inheritance Setting',
   },
   notes: {
     ja: [
-      'AIトレーナーおよび音声AIアシスタント機能を無効化し、メニュー・タブ・機能一覧をシンプルに整理しました。',
-      'ウィジェットのクイックランチャー初期構成を7つの主要機能に合わせて最適化しました。',
-      '食事・栄養のAI解析機能および外部サービス連携は引き続きご利用いただけます。',
+      'ワークアウト設定に、セット追加時のスタンスを「デフォルトスタンス固定」または「一つ前のセットと同じ」から選べる設定を追加しました。',
+      '種目追加時に前のワークアウトのスタンスを引き継がず、種目のデフォルトスタンスが適用されるように改善しました。',
     ],
     en: [
-      'Disabled the AI Coach and Voice AI Assistant features to streamline tabs, menus, and feature management.',
-      'Optimized the default Quick Launcher widget layout for the 7 core features.',
-      'Nutrition AI analysis and external sync integrations remain available.',
+      'Added a workout setting to choose whether newly added sets use the exercise\'s fixed default stance or match the previous set\'s stance.',
+      'Updated exercise initialization so stances from previous workouts are no longer carried over; the exercise\'s default stance is applied instead.',
     ],
   },
 };

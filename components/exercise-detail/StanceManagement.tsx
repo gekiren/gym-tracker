@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../src/theme';
 import { translateStance } from '../../src/i18n';
 import { updateExerciseDefaultStance, updateExerciseDefaultVariation, saveSetting } from '../../src/db/database';
+import { useWorkoutStore } from '../../src/store/workoutStore';
 import { ConfirmModal } from '../ui/ConfirmModal';
 
 interface StanceManagementProps {
@@ -55,6 +56,7 @@ export const StanceManagement: React.FC<StanceManagementProps> = ({
                 await updateExerciseDefaultStance(exercise.id, null);
                 await updateExerciseDefaultVariation(exercise.id, null);
                 setExercise({ ...exercise, default_stance: null, default_variation: null });
+                useWorkoutStore.getState().updateExerciseDefaultStance(exercise.id, null);
               }}
             >
               <Text style={[
@@ -80,6 +82,7 @@ export const StanceManagement: React.FC<StanceManagementProps> = ({
                     await updateExerciseDefaultStance(exercise.id, s);
                     await updateExerciseDefaultVariation(exercise.id, s);
                     setExercise({ ...exercise, default_stance: s, default_variation: s });
+                    useWorkoutStore.getState().updateExerciseDefaultStance(exercise.id, s);
                   }}
                   onLongPress={() => {
                     setDeletingStanceTarget(s);
@@ -134,6 +137,7 @@ export const StanceManagement: React.FC<StanceManagementProps> = ({
                       await updateExerciseDefaultStance(exercise.id, val);
                       await updateExerciseDefaultVariation(exercise.id, val);
                       setExercise({ ...exercise, default_stance: val, default_variation: val });
+                      useWorkoutStore.getState().updateExerciseDefaultStance(exercise.id, val);
                     }
                     setNewStance('');
                     setIsAddingStance(false);
@@ -164,6 +168,7 @@ export const StanceManagement: React.FC<StanceManagementProps> = ({
               await updateExerciseDefaultStance(exercise.id, null);
               await updateExerciseDefaultVariation(exercise.id, null);
               setExercise({ ...exercise, default_stance: null, default_variation: null });
+              useWorkoutStore.getState().updateExerciseDefaultStance(exercise.id, null);
             }
             setDeletingStanceTarget(null);
           }

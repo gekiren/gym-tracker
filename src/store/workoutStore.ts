@@ -5,6 +5,13 @@ import { buildInitialSetsForExercise } from '../utils/workoutSetBuilder';
 import { generateUUID } from '../utils/uuid';
 import { isTreadmillExercise } from '../utils/exerciseUtils';
 import { WorkoutSet } from '../db/types';
+import type { AddSetStanceMode } from './settingsStore';
+
+const normalizeStance = (val?: string | null): string | null => {
+  if (!val) return null;
+  const trimmed = val.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
 
 export type SetRecord = {
   id: string; // temp id for UI
@@ -80,10 +87,11 @@ interface WorkoutState {
   updateExerciseNotes: (exerciseId: string, notes: string) => void;
   updateExerciseWeightStep: (exerciseId: string | number, weightStep: number) => void;
   updateExerciseRestSeconds: (exerciseId: string | number, restSeconds: number | null) => void;
+  updateExerciseDefaultStance: (exerciseId: string | number, stance: string | null) => void;
   endWorkout: () => void;
   addExercise: (exercise: { id: number; name: string; previousSets?: Omit<WorkoutSet, 'id' | 'is_completed'>[]; personalRecords?: Record<string, Record<number, number>>; is_unilateral?: number; default_variation?: string | null; default_stance?: string | null; equipment?: string; muscle_group?: string; routineSets?: Omit<WorkoutSet, 'id' | 'is_completed'>[]; weight_step?: number; rest_seconds?: number | null; }, alwaysOneSet?: boolean) => void;
   removeExercise: (exerciseId: string) => void;
-  addSet: (exerciseId: string) => void;
+  addSet: (exerciseId: string, stanceMode?: AddSetStanceMode) => void;
   removeSet: (exerciseId: string, setId: string) => void;
   updateSet: (exerciseId: string, setId: string, changes: Partial<SetRecord>) => void;
   toggleSetComplete: (exerciseId: string, setId: string, settings?: { autoRest: boolean, defaultRest: number, timerNotification: boolean, timerVibrate: boolean, individualRestEnabled?: boolean }) => void;
@@ -168,6 +176,17 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     )
   })),
 
+  updateExerciseDefaultStance: (exerciseId, stance) => set((state) => {
+    const normalized = normalizeStance(stance);
+    return {
+      exercises: state.exercises.map(ex =>
+        (ex.id === exerciseId || ex.exercise_id === exerciseId)
+          ? { ...ex, default_stance: normalized, default_variation: normalized }
+          : ex
+      )
+    };
+  }),
+
   endWorkout: () => {
     cancelRestTimer();
     set({
@@ -183,6 +202,9 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
   addExercise: (exercise, alwaysOneSet = false) => set((state) => {
     const initialSets = buildInitialSetsForExercise(exercise, alwaysOneSet);
+    const normalizedDefault =
+      normalizeStance(exercise.default_stance) ??
+      normalizeStance(exercise.default_variation);
 
     return {
       exercises: [
@@ -197,8 +219,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           sets: initialSets,
           notes: '',
           personalRecords: exercise.personalRecords || {},
-          default_variation: exercise.default_variation || null,
-          default_stance: exercise.default_stance || null,
+          default_variation: normalizedDefault,
+          default_stance: normalizedDefault,
           weight_step: exercise.weight_step ?? 2.5,
           rest_seconds: exercise.rest_seconds ?? null
         }
@@ -210,17 +232,26 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     exercises: state.exercises.filter(ex => ex.id !== exerciseId)
   })),
 
-  addSet: (exerciseId) => set((state) => ({
+  addSet: (exerciseId, stanceMode = 'default') => set((state) => ({
     exercises: state.exercises.map(ex => {
       if (ex.id === exerciseId) {
         const lastSet = ex.sets[ex.sets.length - 1];
         const newSetNum = lastSet ? lastSet.set_number + 1 : 1;
-        const inheritedVariation = ex.default_variation || (lastSet ? lastSet.variation : null);
-        const inheritedStance = ex.default_stance || (lastSet ? lastSet.stance : null);
+        const defaultStance =
+          normalizeStance(ex.default_stance) ??
+          normalizeStance(ex.default_variation);
+        const getSetStance = (s: SetRecord): string | null =>
+          normalizeStance(s.stance) ?? normalizeStance(s.variation);
         
         if (ex.is_unilateral) {
           const lastL = [...ex.sets].reverse().find(s => s.side === 'L');
           const lastR = [...ex.sets].reverse().find(s => s.side === 'R');
+          const stanceL = stanceMode === 'previous'
+            ? (lastL ? getSetStance(lastL) : (lastSet ? getSetStance(lastSet) : defaultStance))
+            : defaultStance;
+          const stanceR = stanceMode === 'previous'
+            ? (lastR ? getSetStance(lastR) : (lastSet ? getSetStance(lastSet) : defaultStance))
+            : defaultStance;
           return {
             ...ex,
             sets: [
@@ -242,8 +273,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
                 rest_seconds: null,
                 work_seconds: null,
                 side: 'L',
-                variation: inheritedVariation,
-                stance: inheritedStance
+                variation: stanceL,
+                stance: stanceL
               },
               {
                 id: generateUUID(),
@@ -262,12 +293,15 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
                 rest_seconds: null,
                 work_seconds: null,
                 side: 'R',
-                variation: inheritedVariation,
-                stance: inheritedStance
+                variation: stanceR,
+                stance: stanceR
               }
             ]
           };
         } else {
+          const nextStance = stanceMode === 'previous'
+            ? (lastSet ? getSetStance(lastSet) : defaultStance)
+            : defaultStance;
           return {
             ...ex,
             sets: [...ex.sets, {
@@ -286,8 +320,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
               is_completed: false,
               rest_seconds: null,
               work_seconds: null,
-              variation: inheritedVariation,
-              stance: inheritedStance
+              variation: nextStance,
+              stance: nextStance
             }]
           };
         }

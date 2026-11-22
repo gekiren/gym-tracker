@@ -418,6 +418,7 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       has_shown_review_prompt: '0',
       keep_awake: '1',
       always_one_set: '0',
+      add_set_stance_mode: 'default',
       preferred_ai_model: 'gemini',
       ai_chat_mode: 'quick',
       background_theme: 'dark',

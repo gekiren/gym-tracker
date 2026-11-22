@@ -19,6 +19,7 @@ export type {
   ExercisePrCollapsedStancesMap,
 };
 export type WorkoutHistoryChartMetric = 'volume' | 'calories' | 'sets' | 'avg_volume_per_set' | 'density';
+export type AddSetStanceMode = 'default' | 'previous';
 
 export interface ApplicationSettings {
   defaultRest: number;
@@ -44,6 +45,7 @@ export interface ApplicationSettings {
   crashConsent: 'agreed' | 'declined' | 'unset';
   keepAwake: boolean;
   alwaysOneSet: boolean;
+  addSetStanceMode: AddSetStanceMode;
   preferredAiModel: 'gemini' | 'gemma-31b' | 'gemma-26b' | 'deepseek';
   aiChatMode: 'quick' | 'thinking';
   enableAiDebugContext: boolean;
@@ -74,6 +76,7 @@ export interface LoadSettingsPayload {
   isEarlyAdopter?: boolean;
   keepAwake?: boolean;
   alwaysOneSet?: boolean;
+  addSetStanceMode?: AddSetStanceMode;
   preferredAiModel?: 'gemini' | 'gemma-31b' | 'gemma-26b' | 'deepseek';
   aiChatMode?: 'quick' | 'thinking';
   enableAiDebugContext?: boolean;
@@ -95,6 +98,7 @@ export interface SettingsState {
   setTimerNotification: (timerNotification: boolean) => void;
   setKeepAwake: (keepAwake: boolean) => void;
   setAlwaysOneSet: (alwaysOneSet: boolean) => void;
+  setAddSetStanceMode: (mode: AddSetStanceMode) => void;
   setBackgroundTheme: (theme: 'dark' | 'pureBlack') => void;
   setPreferredAiModel: (model: 'gemini' | 'gemma-31b' | 'gemma-26b' | 'deepseek') => void;
   setAiChatMode: (mode: 'quick' | 'thinking') => void;
@@ -143,6 +147,7 @@ export const initialSettings: ApplicationSettings = {
   crashConsent: 'unset',
   keepAwake: true,
   alwaysOneSet: false,
+  addSetStanceMode: 'default',
   preferredAiModel: 'gemini',
   aiChatMode: 'quick',
   enableAiDebugContext: true,
@@ -185,6 +190,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       isEarlyAdopter,
       keepAwake,
       alwaysOneSet,
+      addSetStanceMode,
       preferredAiModel,
       aiChatMode,
       enableAiDebugContext,
@@ -209,6 +215,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const finalIsEarlyAdopter = isEarlyAdopter !== undefined ? isEarlyAdopter : state.settings.isEarlyAdopter;
     const finalKeepAwake = keepAwake !== undefined ? keepAwake : state.settings.keepAwake;
     const finalAlwaysOneSet = alwaysOneSet !== undefined ? alwaysOneSet : state.settings.alwaysOneSet;
+    const finalAddSetStanceMode = addSetStanceMode !== undefined ? addSetStanceMode : state.settings.addSetStanceMode;
     const finalPreferredAiModel = preferredAiModel !== undefined ? preferredAiModel : state.settings.preferredAiModel;
     const finalAiChatMode = aiChatMode !== undefined ? aiChatMode : state.settings.aiChatMode;
     const finalEnableAiDebugContext = enableAiDebugContext !== undefined ? enableAiDebugContext : state.settings.enableAiDebugContext;
@@ -242,6 +249,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         isPremium,
         keepAwake: finalKeepAwake,
         alwaysOneSet: finalAlwaysOneSet,
+        addSetStanceMode: finalAddSetStanceMode,
         preferredAiModel: finalPreferredAiModel,
         aiChatMode: finalAiChatMode,
         backgroundTheme: finalBackgroundTheme,
@@ -359,6 +367,10 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 
   setAlwaysOneSet: (alwaysOneSet) => set((state) => ({
     settings: { ...state.settings, alwaysOneSet }
+  })),
+
+  setAddSetStanceMode: (addSetStanceMode) => set((state) => ({
+    settings: { ...state.settings, addSetStanceMode }
   })),
 
   setAiCompanionMemory: async (memory: string) => {
