@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.54',
+  version: '2.3.55',
   title: {
-    ja: '📊 種目詳細のスタンス別PR・グラフ表示に対応',
-    en: '📊 Stance-Based PR Accordions & Charts',
+    ja: '⚡ 種目詳細画面の読み込みを高速化',
+    en: '⚡ Faster Exercise Details Loading',
   },
   notes: {
     ja: [
-      '種目詳細の自己ベスト（PR）を「スタンスなし」および各スタンスごとにアコーディオンで開閉できるようになりました。',
-      '種目詳細の推移グラフおよびPR推移モーダルで、スタンスごとのデータ表示に対応しました。',
+      '履歴データが多い種目でも種目詳細画面を素早く開けるよう、ページネーション読み込み・段階的表示・メモリキャッシュを導入しました。',
+      'グラフや履歴カレンダーの集計処理を最適化し、操作時の負荷を軽減しました。',
     ],
     en: [
-      'Added per-stance accordions (including "No Stance") to toggle PR visibility on Exercise Details.',
-      'Added stance filtering to Exercise Detail charts and stance labels to the PR progression modal.',
+      'Added paginated loading, staged rendering, and in-memory caching so Exercise Details opens quickly even with extensive history.',
+      'Optimized chart and calendar aggregations to reduce overhead during navigation.',
     ],
   },
 };
