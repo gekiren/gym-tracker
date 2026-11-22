@@ -10,7 +10,7 @@ import {
   ExercisePrCollapsedStancesMap,
 } from '../utils/exerciseDetailPrefs';
 
-export type FeatureId = 'workout' | 'water' | 'nutrition' | 'zikan' | 'routine' | 'habit' | 'body' | 'voice_ai';
+export type FeatureId = 'workout' | 'water' | 'nutrition' | 'zikan' | 'routine' | 'habit' | 'body';
 export type {
   ExerciseChartMetric,
   ExerciseChartScale,
@@ -147,7 +147,7 @@ export const initialSettings: ApplicationSettings = {
   aiChatMode: 'quick',
   enableAiDebugContext: true,
   backgroundTheme: 'dark',
-  featureOrder: ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'habit', 'voice_ai'],
+  featureOrder: ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'habit'],
   featureVisibility: {
     workout: true,
     body: true,
@@ -156,7 +156,6 @@ export const initialSettings: ApplicationSettings = {
     zikan: true,
     routine: true,
     habit: true,
-    voice_ai: true,
   },
   aiCompanionMemory: '',
   lastExerciseChartMetric: 'volume',

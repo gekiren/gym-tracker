@@ -20,7 +20,6 @@ export const ALL_FEATURE_IDS: FeatureId[] = [
   'routine',
   'habit',
   'zikan',
-  'voice_ai',
 ];
 
 export const FEATURE_UNLOCK_METAS: Record<FeatureId, FeatureUnlockMeta> = {
@@ -94,31 +93,20 @@ export const FEATURE_UNLOCK_METAS: Record<FeatureId, FeatureUnlockMeta> = {
     badgeColor: 'rgba(255, 152, 0, 0.15)',
     route: '/lifelog/zikan',
   },
-  voice_ai: {
-    id: 'voice_ai',
-    title: '音声AIアシスタント',
-    shortDesc: 'アクアボイス ＆ Gemini による音声入力・自動記録',
-    fullDesc: '話しかけるだけでトレーニングや食事、水分を自動記録。アクアボイスの高精度文字起こしとGeminiの構造化解析で手軽に入力できます。',
-    icon: 'mic',
-    iconColor: '#64b4ff',
-    badgeColor: 'rgba(100, 180, 255, 0.15)',
-    route: '/lifelog/voice-assistant',
-  },
 };
 
 // 機能アンロックに必要なポイント設定（アンロック済み機能数に応じたコスト）
-// 2つ解放済み(次3つ目): 10P, 4つ目: 15P, 5つ目: 20P, 6つ目: 25P, 7つ目: 30P, 8つ目: 35P
+// 2つ解放済み(次3つ目): 10P, 4つ目: 15P, 5つ目: 20P, 6つ目: 25P, 7つ目: 30P
 export const UNLOCK_COSTS: Record<number, number> = {
   2: 10,
   3: 15,
   4: 20,
   5: 25,
   6: 30,
-  7: 35,
 };
 
 export const getUnlockCost = (currentUnlockedCount: number): number => {
-  return UNLOCK_COSTS[currentUnlockedCount] || 35;
+  return UNLOCK_COSTS[currentUnlockedCount] || 30;
 };
 
 // ポイント獲得設定
@@ -127,10 +115,4 @@ export const POINT_REWARDS = {
   FIRST_RECORD_BONUS: 5,   // 各機能の初回記録
   DAILY_RECORD_BONUS: 1,   // 各機能の1日1回記録
   WORKOUT_COMPLETE: 2,     // ワークアウト完了
-};
-
-// ポイント消費設定
-export const POINT_COSTS = {
-  AI_VOICE_PER_USE: 1,     // 音声AIアシスタント1回利用
-  AI_COACH_PER_USE: 1,     // AI Coach 1回利用
 };

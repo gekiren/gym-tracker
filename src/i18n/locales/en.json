@@ -5,7 +5,6 @@
       "workout": "Workout",
       "history": "History",
       "exercises": "Exercises",
-      "coach": "Coach",
       "profile": "Profile"
     },
     "home": {
@@ -62,8 +61,6 @@
       "card_routines": "Routine Management",
       "completed_routines": "Completed Routines:",
       "none": "None",
-      "card_voice_ai": "Voice AI Assistant",
-      "voice_ai_desc": "Log workouts, meals, and water just by speaking. High-accuracy input powered by Aqua Voice & Gemini.",
       "p_points_balance": "P Points Balance:",
       "manage_features": "Add/Manage Features",
       "manage_features_short": "Features",
@@ -71,7 +68,7 @@
       "select_features_hint": "Please select features to display from App Settings ➔ 'Feature Management'.",
       "unlock_new_features": "Unlock New Features",
       "card_settings": "App Settings",
-      "settings_desc": "Manage Gemini AI integration, data export/sharing, backups, feature management, and more.",
+      "settings_desc": "Manage data export/sharing, backups, feature management, external syncs, and more.",
       "unit_items": " items"
     },
     "active_workout": {
@@ -161,8 +158,8 @@
       "start_training_btn": "▶ Start Training Timer"
     },
     "ads": {
-      "promo_ai_title": "Unlock AI Personal Coach",
-      "promo_ai_desc": "Get personalized training advice and customized programs!",
+      "promo_ai_title": "Ad-Free & All Features",
+      "promo_ai_desc": "Enjoy an ad-free experience with all 7 features unlocked!",
       "promo_backup_title": "Cloud Backup & Restore",
       "promo_backup_desc": "Securely back up your workout history and sync across devices.",
       "promo_limit_title": "Create Unlimited Routines",
@@ -456,11 +453,6 @@
       "restore_tab_routines": "Default Routines",
       "restore_select_all": "Select All",
       "restore_deselect_all": "Deselect All",
-      "section_ai_coach": "AI Coach Settings",
-      "ai_tokens_balance": "Monthly Token Balance",
-      "ai_tokens_desc": "Receive secure and advanced training guidance powered by Cloudflare Worker & Gemini API.",
-      "quota_exhausted_alert": "No quota remaining for this month.",
-      "ai_tokens_reset_desc": "Your token quota will automatically reset to 20 sets on the 1st of every month.",
       "account_type_label": "Account Type",
       "account_basic": "Basic Plan",
       "account_premium": "Premium Plan",
@@ -520,9 +512,9 @@
         "title": "👑 TreNote Premium",
         "subtitle": "Upgrade to Premium to unlock all features!",
         "features": {
-          "ai_limit": {
-            "title": "Expanded AI Trainer Usage",
-            "desc": "Increase your AI Trainer monthly limit from 5 requests in the Basic plan to 20 requests."
+          "ad_free_all_features": {
+            "title": "Ad-Free & Full Feature Unlock",
+            "desc": "Remove all in-app ads and unlock all 7 workout & lifelog features immediately without spending P-Points."
           },
           "import_routine": {
             "title": "Unlock Routine Import",
@@ -634,44 +626,6 @@
       "update_check_error_title": "Check Failed",
       "update_check_error_msg": "Failed to check for updates. This might not work in local debug environments."
     },
-    "coach": {
-      "ai_coach": "AI Coach",
-      "analyzing": "AI Coach is analyzing...",
-      "welcome_msg": "Hello! I am your TreNote AI Coach. I can help analyze your workout logs, suggest weight adjustments for your next set, or answer any training theory questions!",
-      "chip_analysis": "Analyze Logs",
-      "chip_proposal": "Weight Adjustment",
-      "chip_rpe": "How to use RPE",
-      "chip_stance": "Stance Variations",
-      "chip_analysis_prompt": "Please analyze my recent workout logs and share insights on my progress and changes.",
-      "chip_proposal_prompt": "Based on my recent logs, suggest concrete weight and rep adjustments for my next training session.",
-      "chip_rpe_prompt": "How can I effectively use RPE (Rate of Perceived Exertion) to adjust my sets in weight training?",
-      "chip_stance_prompt": "How do variations in grip or stance (e.g., narrow/wide grip or high/low bar squat) change the muscles targeted?",
-      "input_placeholder": "Ask your coach...",
-      "limit_reached_msg": "No quota remaining for this month.",
-      "network_error": "Network error occurred. Please check your connection.",
-      "timeout_error": "Connection timed out. Please try again in a location with good network signal.",
-      "busy_error": "The AI service is currently very busy. Please wait a moment and try again.",
-      "busy_title": "Busy",
-      "linked_context": "Linked: {{title}}",
-      "context_loaded_msg": "📌 [Linked Context: {{title}}] has been loaded successfully. You can ask questions based on this content!",
-      "context_cleared_msg": "🧹 The linked context has been cleared, and returned to normal chat mode.",
-      "basic_quota_exhausted": "Your monthly quota (5 requests) for the Basic Plan has expired. Upgrade to Premium",
-      "prefill_history_workout": "Please analyze the workout \"{{title}}\" from {{date}}, and provide feedback or advice.",
-      "prefill_active_workout": "Please analyze my ongoing workout and give me some advice.",
-      "prefill_active_set": "Please analyze these sets for {{name}} and advise me on weight/reps for the next set.",
-      "prefill_exercise_history": "Please analyze the weight and volume progression history for {{name}}, and suggest ways to improve further.",
-      "maintenance_title": "AI Coach Maintenance",
-      "maintenance_body": "The AI Coach is currently undergoing maintenance to improve performance and quality.",
-      "maintenance_footer": "We will be back shortly, thank you for your patience!",
-      "default_context_title": "Context",
-      "default_workout_title": "Workout Details",
-      "analyzing_quick": "⚡ AI Coach is generating response...",
-      "analyzing_thinking": "🧠 AI Coach is thinking and analyzing...",
-      "system_error": "A system error occurred. Please try again later.",
-      "mode_label": "Mode:",
-      "mode_quick": "Quick",
-      "mode_thinking": "Thinking"
-    },
     "crash_report": {
       "title": "Help Improve the App",
       "message_detected": "The app terminated unexpectedly during the last session. Would you like to send an anonymous crash report to help improve quality?",
@@ -693,7 +647,6 @@
       "volume_updated": "Volume Updated!",
       "new_record": "New Personal Record!",
       "no_achievements": "Excellent workout! Let's keep it up next time!",
-      "ask_ai_coach": "Ask AI Coach ({{balance}}/{{max}})",
       "done_btn": "Done",
       "workout_details": "Workout History Details",
       "reward_title": "Reward Earned!",
@@ -724,7 +677,6 @@
       "rm_calculator": "Open RM Calculator",
       "plate_calculator": "Open Plate Calculator",
       "timer_setting": "Open Timer Settings",
-      "ai_coach_history": "Send this history to AI Coach",
       "share_sns": "Share on SNS",
       "delete_workout": "Delete workout history"
     },

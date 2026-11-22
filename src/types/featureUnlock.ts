@@ -5,8 +5,6 @@ export type PointActionType =
   | 'daily_record'      // 各機能のデイリー初回記録 (+1P)
   | 'workout_complete'  // ワークアウト完了 (+2P)
   | 'unlock_feature'    // 機能アンロック (消費)
-  | 'ai_voice_use'      // 音声AIアシスタント利用 (消費: 1P)
-  | 'ai_coach_use'      // AIコーチ相談・解析 (消費: 1P)
   | 'initial_bonus'     // 初期ボーナス (+5P)
   | 'manual_adjustment';// デバッグ・手動調整
 

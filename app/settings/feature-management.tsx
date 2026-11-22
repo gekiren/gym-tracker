@@ -9,7 +9,7 @@ import { ALL_FEATURE_IDS, FEATURE_UNLOCK_METAS, getUnlockCost } from '../../src/
 import { PointBadge } from '../../components/PointBadge';
 import { FeatureUnlockModal } from '../../components/FeatureUnlockModal';
 
-const DEFAULT_ORDER: FeatureId[] = ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'habit', 'voice_ai'];
+const DEFAULT_ORDER: FeatureId[] = ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'habit'];
 const DEFAULT_VISIBILITY: Record<FeatureId, boolean> = {
   workout: true,
   body: true,
@@ -18,7 +18,6 @@ const DEFAULT_VISIBILITY: Record<FeatureId, boolean> = {
   zikan: true,
   routine: true,
   habit: true,
-  voice_ai: true,
 };
 
 export default function FeatureManagementScreen() {
@@ -47,7 +46,7 @@ export default function FeatureManagementScreen() {
 
   useEffect(() => {
     if (currentOrder && currentOrder.length > 0) {
-      const mergedOrder = [...currentOrder];
+      const mergedOrder = currentOrder.filter(id => ALL_FEATURE_IDS.includes(id));
       DEFAULT_ORDER.forEach(id => {
         if (!mergedOrder.includes(id)) {
           mergedOrder.push(id);
@@ -56,7 +55,13 @@ export default function FeatureManagementScreen() {
       setOrder(mergedOrder);
     }
     if (currentVisibility) {
-      setVisibility({ ...DEFAULT_VISIBILITY, ...currentVisibility });
+      const sanitizedVisibility: Record<FeatureId, boolean> = { ...DEFAULT_VISIBILITY };
+      DEFAULT_ORDER.forEach(id => {
+        if (typeof currentVisibility[id] === 'boolean') {
+          sanitizedVisibility[id] = currentVisibility[id];
+        }
+      });
+      setVisibility(sanitizedVisibility);
     }
   }, [currentOrder, currentVisibility]);
 

@@ -24,20 +24,16 @@ export default function WorkoutCompletionScreen() {
     t,
     completionData,
     settings,
-    maxTokens,
     rewardModalVisible,
     setRewardModalVisible,
     rewardResult,
     showAdPreview,
-    aiComment,
-    loadingAI,
     sharePattern,
     isSharing,
     patternModalVisible,
     setPatternModalVisible,
     viewShotAvailable,
     viewShotRef,
-    handleAskAICoach,
     handleDone,
     handleShareButtonPress,
     handleShare,
@@ -69,10 +65,6 @@ export default function WorkoutCompletionScreen() {
           workoutId={workout.id}
           achievements={achievements}
           settings={settings}
-          maxTokens={maxTokens}
-          aiComment={aiComment}
-          loadingAI={loadingAI}
-          onAskAICoach={handleAskAICoach}
           t={t}
         />
 

@@ -13,7 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { NutritionAIResult, analyzeMealText } from '../../src/services/aiCoachService';
+import { NutritionAIResult, analyzeMealText } from '../../src/services/nutritionAiService';
 import { copyAIDebugLogsToClipboard } from '../../src/utils/debugLogStore';
 import { MealLog } from '../../src/db/types';
 import { useAppTheme } from '../../src/theme';

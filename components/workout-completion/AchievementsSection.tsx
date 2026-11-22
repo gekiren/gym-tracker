@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../src/theme';
@@ -23,12 +23,7 @@ interface AchievementsSectionProps {
   };
   settings: {
     weightUnit: string;
-    aiTokensBalance: number;
   };
-  maxTokens: number;
-  aiComment: string | null;
-  loadingAI: boolean;
-  onAskAICoach: () => void;
   t: (key: string, options?: any) => string;
 }
 
@@ -36,10 +31,6 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
   workoutId,
   achievements,
   settings,
-  maxTokens,
-  aiComment,
-  loadingAI,
-  onAskAICoach,
   t,
 }) => {
   const { colors } = useAppTheme();
@@ -213,23 +204,9 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
         <View style={[styles.encouragingCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.encouragingHeader}>
             <Ionicons name="sparkles-outline" size={22} color={colors.primary} />
-            {!aiComment && !loadingAI && (
-              <TouchableOpacity
-                style={styles.aiAskButton}
-                onPress={onAskAICoach}
-                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-              >
-                <Text style={[styles.aiAskButtonText, { color: colors.primary }]}>
-                  {t('ui.workout_completion.ask_ai_coach', { balance: settings.aiTokensBalance, max: maxTokens })}
-                </Text>
-              </TouchableOpacity>
-            )}
-            {loadingAI && (
-              <ActivityIndicator size="small" color={colors.primary} style={{ marginLeft: 8 }} />
-            )}
           </View>
           <Text style={[styles.encouragingText, { color: colors.textMuted }]}>
-            {aiComment ?? t('ui.workout_completion.no_achievements')}
+            {t('ui.workout_completion.no_achievements')}
           </Text>
         </View>
       )}
@@ -308,19 +285,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-  },
-  aiAskButton: {
-    backgroundColor: 'rgba(79, 172, 254, 0.15)',
-    borderRadius: 12,
-    minHeight: 36,
-    justifyContent: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    marginLeft: 8,
-  },
-  aiAskButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
   },
   encouragingText: {
     fontSize: 14,

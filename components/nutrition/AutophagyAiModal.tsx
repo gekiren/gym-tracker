@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../src/theme';
-import { AutophagyAIProposal } from '../../src/services/aiCoachService';
+import { AutophagyAIProposal } from '../../src/services/nutritionAiService';
 
 interface Props {
   visible: boolean;

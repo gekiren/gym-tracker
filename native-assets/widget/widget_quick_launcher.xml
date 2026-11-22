@@ -112,7 +112,7 @@
             android:id="@+id/ql_icon_5"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/ic_ql_body"
+            android:src="@drawable/ic_ql_habit"
             android:tint="#4facfe" />
     </LinearLayout>
 
@@ -130,7 +130,7 @@
             android:id="@+id/ql_icon_6"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/ic_ql_voice_ai"
+            android:src="@drawable/ic_ql_body"
             android:tint="#4facfe" />
     </LinearLayout>
 

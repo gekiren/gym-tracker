@@ -16,6 +16,7 @@
   ],
   "exclude": [
     "node_modules",
-    "ai-companion-web"
+    "ai-companion-web",
+    "internal-docs"
   ]
 }

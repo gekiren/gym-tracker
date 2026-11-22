@@ -193,7 +193,7 @@ export default function RootLayout() {
       const { finalPremiumUntil, finalTokensBalance, expired, isEarlyAdopter } = await initSubscriptionAndTokens(storedSettings);
 
       // 4.5 機能管理設定（表示順・表示ON/OFF）
-      const ALL_FEATURES: FeatureId[] = ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'habit', 'voice_ai'];
+      const ALL_FEATURES: FeatureId[] = ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'habit'];
       let featureOrder: FeatureId[] = ALL_FEATURES;
       if (storedSettings['feature_order']) {
         try {
@@ -210,12 +210,16 @@ export default function RootLayout() {
         }
       }
 
-      let featureVisibility: Record<FeatureId, boolean> = { workout: true, body: true, water: true, nutrition: true, zikan: true, routine: true, habit: true, voice_ai: true };
+      let featureVisibility: Record<FeatureId, boolean> = { workout: true, body: true, water: true, nutrition: true, zikan: true, routine: true, habit: true };
       if (storedSettings['feature_visibility']) {
         try {
           const parsed = JSON.parse(storedSettings['feature_visibility']);
           if (parsed && typeof parsed === 'object') {
-            featureVisibility = { ...featureVisibility, ...parsed };
+            ALL_FEATURES.forEach((id) => {
+              if (typeof parsed[id] === 'boolean') {
+                featureVisibility[id] = parsed[id];
+              }
+            });
           }
         } catch (e) {
           console.warn('Failed to parse feature_visibility', e);

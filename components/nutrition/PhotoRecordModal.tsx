@@ -59,7 +59,7 @@ const safeGetImageManipulator = () => {
   }
 };
 
-import { analyzeMealImage, NutritionAIResult } from '../../src/services/aiCoachService';
+import { analyzeMealImage, NutritionAIResult } from '../../src/services/nutritionAiService';
 import { copyAIDebugLogsToClipboard } from '../../src/utils/debugLogStore';
 import { MealLog } from '../../src/db/types';
 import { saveSetting } from '../../src/db/database';

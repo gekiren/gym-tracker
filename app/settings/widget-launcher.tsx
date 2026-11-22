@@ -22,7 +22,6 @@ const FEATURE_OPTIONS: SlotConfig[] = [
   { id: 'zikan', label: '時間', icon: 'time', description: '24H時間記録' },
   { id: 'routine', label: 'ルーティン', icon: 'repeat', description: 'ルーティン達成記録' },
   { id: 'habit', label: '習慣', icon: 'checkmark-circle', description: '習慣カウンター' },
-  { id: 'voice_ai', label: 'AI音声アシスタント', icon: 'mic', description: 'AIトレーナー音声対話' },
   { id: 'empty', label: '(空欄)', icon: 'close-circle-outline', description: 'この枠を非表示' }
 ];
 
@@ -37,7 +36,7 @@ export default function WidgetLauncherSettingsScreen() {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const [slots, setSlots] = useState<(FeatureId | 'empty')[]>(['workout', 'water', 'nutrition', 'zikan', 'routine', 'body', 'voice_ai']);
+  const [slots, setSlots] = useState<(FeatureId | 'empty')[]>(['workout', 'water', 'nutrition', 'zikan', 'routine', 'habit', 'body']);
   const [loading, setLoading] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
   const [selectingSlotIndex, setSelectingSlotIndex] = useState<number | null>(null);
@@ -50,8 +49,11 @@ export default function WidgetLauncherSettingsScreen() {
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            // Fill up to 7
-            const loadedSlots = [...parsed];
+            const validIds = new Set(FEATURE_OPTIONS.map((f) => f.id));
+            // Fill up to 7 & sanitize obsolete feature ids (e.g. 'voice_ai')
+            const loadedSlots = parsed.map((id: any) =>
+              validIds.has(id) ? id : 'empty'
+            ) as (FeatureId | 'empty')[];
             while (loadedSlots.length < 7) loadedSlots.push('empty');
             setSlots(loadedSlots.slice(0, 7));
           }

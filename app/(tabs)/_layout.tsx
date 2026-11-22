@@ -6,7 +6,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../src/theme';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '../../src/store/settingsStore';
-import { AI_CONFIG } from '../../src/config/aiConfig';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -14,11 +13,9 @@ export default function TabLayout() {
   const { colors } = useAppTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const aiTokensBalance = useSettingsStore(state => state.settings.aiTokensBalance);
   const isPremium = useSettingsStore(state => state.settings.isPremium);
   const isEarly = useSettingsStore(state => state.settings.isEarlyAdopter);
   const isPremiumOrEarly = isPremium || isEarly;
-  const maxTokens = isPremiumOrEarly ? 20 : 5;
 
   // Calculate tab padding and height dynamically based on safe area insets.
   // If Premium/Early, the tab bar is at the bottom of the screen.
@@ -85,15 +82,6 @@ export default function TabLayout() {
           headerTitle: t('ui.tabs.history'),
           title: t('ui.tabs.history'),
           tabBarIcon: ({ color }) => <Ionicons name="time" size={26} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="coach"
-        options={{
-          href: AI_CONFIG.status === 'disabled' ? null : undefined,
-          headerTitle: `${t('ui.tabs.coach') || 'AIトレーナー'} (${aiTokensBalance}/${maxTokens})`,
-          title: t('ui.tabs.coach') || 'AIトレーナー',
-          tabBarIcon: ({ color }) => <Ionicons name="sparkles" size={26} color={color} />,
         }}
       />
       <Tabs.Screen

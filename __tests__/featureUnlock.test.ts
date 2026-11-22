@@ -1,9 +1,22 @@
 import { useFeatureUnlockStore, isFeatureUnlockedHelper } from '../src/store/featureUnlockStore';
 import { getUnlockCost, POINT_REWARDS } from '../src/constants/featureUnlockConstants';
+import { initFeatureUnlockState } from '../src/services/featureUnlockService';
+import { saveSetting } from '../src/db/database';
 
-// Mock saveSetting to prevent database calls in tests
+// Mock database/services to prevent real SQLite calls in tests
 jest.mock('../src/db/database', () => ({
   saveSetting: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock('../src/db/connection', () => ({
+  getDB: jest.fn(() => ({
+    getFirstAsync: jest.fn().mockResolvedValue({ count: 0 }),
+  })),
+}));
+jest.mock('../src/services/gamificationService', () => ({
+  recordGamificationFeatureActivity: jest.fn(),
+}));
+jest.mock('../src/services/gamificationMetricsService', () => ({
+  extractRoutineDateSet: jest.fn(() => new Set()),
 }));
 
 describe('Feature Unlock & P-Point Economy System', () => {
@@ -122,9 +135,32 @@ describe('Feature Unlock & P-Point Economy System', () => {
 
     // Premium user: all unlocked
     expect(isFeatureUnlockedHelper('nutrition', unlockedList, forceUnlock, true, false)).toBe(true);
-    expect(isFeatureUnlockedHelper('voice_ai', unlockedList, forceUnlock, true, false)).toBe(true);
+    expect(isFeatureUnlockedHelper('body', unlockedList, forceUnlock, true, false)).toBe(true);
 
     // Early Adopter: all unlocked
     expect(isFeatureUnlockedHelper('nutrition', unlockedList, forceUnlock, false, true)).toBe(true);
+  });
+
+  test('initFeatureUnlockState sanitizes removed voice_ai feature and keeps at least 2 features', async () => {
+    (saveSetting as jest.Mock).mockClear();
+
+    const result = await initFeatureUnlockState({
+      p_points_balance: '10',
+      unlocked_features: JSON.stringify(['nutrition', 'voice_ai']),
+      first_recorded_features: JSON.stringify(['nutrition', 'voice_ai']),
+      daily_record_map: JSON.stringify({ '2026/11/22': ['nutrition', 'voice_ai'] }),
+      has_completed_initial_feature_selection: 'true',
+      p_points_retroactive_migrated: '1',
+    });
+
+    expect(result.unlockedFeatures).toEqual(['nutrition', 'workout']);
+    expect(useFeatureUnlockStore.getState().firstRecordedFeatures).toEqual(['nutrition']);
+    expect(useFeatureUnlockStore.getState().dailyRecordMap['2026/11/22']).toEqual(['nutrition']);
+    expect(saveSetting).toHaveBeenCalledWith('unlocked_features', JSON.stringify(['nutrition', 'workout']));
+    expect(saveSetting).toHaveBeenCalledWith('first_recorded_features', JSON.stringify(['nutrition']));
+    expect(saveSetting).toHaveBeenCalledWith(
+      'daily_record_map',
+      JSON.stringify({ '2026/11/22': ['nutrition'] })
+    );
   });
 });

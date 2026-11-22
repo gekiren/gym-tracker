@@ -6,7 +6,6 @@ import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 import { useAppTheme } from '../../src/theme';
-import { AI_CONFIG } from '../../src/config/aiConfig';
 import { translateExercise } from '../../src/i18n';
 import { SetInputRow } from './SetInputRow';
 import { StanceModalTarget } from '../../src/hooks/useActiveWorkout';
@@ -21,7 +20,6 @@ interface ActiveExerciseCardProps {
   onToggleNotes: (exId: string) => void;
   onUpdateNotes: (exId: string, notes: string) => void;
   onDeleteExercise: (ex: any) => void;
-  onAICoachExercise: (ex: any) => void;
   onOpenStanceModal: (target: StanceModalTarget) => void;
   onAddSet: (exId: string) => void;
   onUpdateSet: (exId: string, setId: string, updates: any) => void;
@@ -70,7 +68,6 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
   onToggleNotes,
   onUpdateNotes,
   onDeleteExercise,
-  onAICoachExercise,
   onOpenStanceModal,
   onAddSet,
   onUpdateSet,
@@ -128,15 +125,6 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
               </GHTouchableOpacity>
             </View>
             <View style={styles.headerIcons}>
-              {AI_CONFIG.status === 'active' && (
-                <GHTouchableOpacity
-                  onPress={() => onAICoachExercise(ex)}
-                  style={styles.headerIconBtn}
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                >
-                  <Ionicons name="sparkles" size={20} color={colors.primary} />
-                </GHTouchableOpacity>
-              )}
               <GHTouchableOpacity
                 onPress={() => onToggleNotes(ex.id)}
                 style={styles.headerIconBtn}

@@ -86,41 +86,6 @@ export default function HistoryScreen() {
     }
   };
 
-  const handleAICoachHistory = async (workoutId: number, title: string) => {
-    const data = await loadFullWorkoutData(workoutId);
-    if (!data) return;
-
-    let contextStr = `【過去のワークアウト履歴データ】\n`;
-    const dateStr = data.start_time.split('T')[0];
-    contextStr += `■ 日付: ${dateStr} | タイトル: ${data.title}\n`;
-    if (data.notes) contextStr += `全体メモ: "${data.notes}"\n`;
-    
-    for (const ex of data.exercises) {
-      const translatedExName = translateExercise(ex.exercise_name);
-      contextStr += `- ${translatedExName}`;
-      if (ex.notes) contextStr += ` (種目メモ: "${ex.notes}")`;
-      contextStr += `: `;
-      
-      const setDescs = ex.sets.map((s) => {
-        let sd = `${s.weight ?? 0}${settings.weightUnit} x ${s.reps ?? 0}回`;
-        if (s.side) sd = `[${s.side === 'L' ? '左' : '右'}] ` + sd;
-        if (s.variation) sd += ` (${s.variation})`;
-        if (s.rpe) sd += ` (RPE: ${s.rpe})`;
-        return sd;
-      });
-      contextStr += setDescs.join(', ') + '\n';
-    }
-
-    router.push({
-      pathname: '/(tabs)/coach',
-      params: {
-        contextPrompt: contextStr,
-        prefillMessage: t('ui.coach.prefill_history_workout', { date: dateStr, title: data.title }),
-        title: data.title
-      }
-    });
-  };
-
   const handleToggleFavorite = async (ex: Exercise) => {
     const isFav = favoriteIds.has(ex.id);
     await toggleFavorite(ex.id, isFav);
@@ -212,7 +177,6 @@ export default function HistoryScreen() {
           settings={settings}
           onDeleteWorkout={handleDeleteWorkout}
           onSNSShare={handleSNSSharePress}
-          onAICoachHistory={handleAICoachHistory}
           t={t}
           i18n={i18n}
         />

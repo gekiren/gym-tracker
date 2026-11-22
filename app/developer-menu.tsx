@@ -40,8 +40,6 @@ function DeveloperMenuScreenInternal() {
   const styles = useMemo(() => createStyles(colors, spacing, borderRadius), [colors, spacing, borderRadius]);
 
   const { t } = useTranslation();
-  const enableAiDebugContext = useSettingsStore(state => state.settings.enableAiDebugContext);
-  const setEnableAiDebugContext = useSettingsStore(state => state.setEnableAiDebugContext);
   const preferredAiModel = useSettingsStore(state => state.settings.preferredAiModel || 'gemini');
   const setPreferredAiModel = useSettingsStore(state => state.setPreferredAiModel);
 
@@ -465,7 +463,7 @@ function DeveloperMenuScreenInternal() {
         useSettingsStore.getState().setIsEarlyAdopter(false);
         useSettingsStore.getState().setPremiumUntil('');
         useSettingsStore.getState().setAITokensBalance(5);
-        Alert.alert('プラン変更', 'ベーシックプランに変更しました。（AI Coachトークンを5に設定しました）');
+        Alert.alert('プラン変更', 'ベーシックプランに変更しました。');
       } else if (tier === 'early') {
         await saveSetting('is_early_adopter', 'true');
         await saveSetting('premium_until', '');
@@ -473,7 +471,7 @@ function DeveloperMenuScreenInternal() {
         useSettingsStore.getState().setIsEarlyAdopter(true);
         useSettingsStore.getState().setPremiumUntil('');
         useSettingsStore.getState().setAITokensBalance(20);
-        Alert.alert('プラン変更', 'アーリーアダプターに変更しました。（AI Coachトークンを20に設定しました）');
+        Alert.alert('プラン変更', 'アーリーアダプターに変更しました。');
       } else if (tier === 'premium') {
         await saveSetting('is_early_adopter', 'false');
         await saveSetting('premium_until', 'perpetual');
@@ -481,7 +479,7 @@ function DeveloperMenuScreenInternal() {
         useSettingsStore.getState().setIsEarlyAdopter(false);
         useSettingsStore.getState().setPremiumUntil('perpetual');
         useSettingsStore.getState().setAITokensBalance(20);
-        Alert.alert('プラン変更', 'プレミアムプランに変更しました。（AI Coachトークンを20に設定しました）');
+        Alert.alert('プラン変更', 'プレミアムプランに変更しました。');
       } else if (tier === 'expired_limited') {
         const pastDate = new Date(Date.now() - 3600000).toISOString(); // 1 hour ago
         await saveSetting('is_early_adopter', 'false');
@@ -1476,7 +1474,7 @@ function DeveloperMenuScreenInternal() {
             <Text style={styles.cardTitle}>使用AIモデルの選択 (AI Model Selection)</Text>
           </View>
           <Text style={styles.cardDesc}>
-            AI Coach 解析およびアドバイス生成時に優先して呼び出す AI モデルを選択できます。
+            AI栄養解析（食事テキスト・写真・オートファジー提案）時に優先して呼び出す AI モデルを選択できます。
           </Text>
 
           <View style={{ gap: 10, marginBottom: 12 }}>
@@ -1634,26 +1632,6 @@ function DeveloperMenuScreenInternal() {
             <Text style={{ fontSize: 12, color: colors.textMuted, flex: 1, lineHeight: 16 }}>
               障害・混雑時には自動でもう一方のモデルに相互フォールバックし、中断なく応答を提供します。
             </Text>
-          </View>
-        </View>
-
-        {/* AI Coach Debug Section */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="bug-outline" size={24} color={colors.primary} style={{ marginRight: 8 }} />
-            <Text style={styles.cardTitle}>AIコーチ 送信コンテキストデバッグ</Text>
-          </View>
-          <Text style={styles.cardDesc}>
-            AI Coach 画面上に、実際にAIへ送信されたプロンプト（リアルタイム記録・過去履歴）のプレビュー表示エリアを出力します。
-          </Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>デバッグ可視化UIを表示</Text>
-            <Switch
-              value={enableAiDebugContext}
-              onValueChange={(val) => setEnableAiDebugContext(val)}
-              trackColor={{ false: '#333', true: colors.primary }}
-              thumbColor="#fff"
-            />
           </View>
         </View>
 

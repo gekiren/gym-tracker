@@ -45,11 +45,11 @@ export function PaywallModal({
           {/* Feature 1 */}
           <View style={styles.paywallFeature}>
             <View style={styles.paywallFeatureIcon}>
-              <Ionicons name="sparkles" size={24} color={colors.primary} />
+              <Ionicons name="star" size={24} color={colors.primary} />
             </View>
             <View style={styles.paywallFeatureInfo}>
-              <Text style={[styles.paywallFeatureTitle, { color: colors.text }]}>{t('ui.profile.paywall.features.ai_limit.title')}</Text>
-              <Text style={[styles.paywallFeatureDesc, { color: colors.textMuted }]}>{t('ui.profile.paywall.features.ai_limit.desc')}</Text>
+              <Text style={[styles.paywallFeatureTitle, { color: colors.text }]}>{t('ui.profile.paywall.features.ad_free_all_features.title')}</Text>
+              <Text style={[styles.paywallFeatureDesc, { color: colors.textMuted }]}>{t('ui.profile.paywall.features.ad_free_all_features.desc')}</Text>
             </View>
           </View>
 

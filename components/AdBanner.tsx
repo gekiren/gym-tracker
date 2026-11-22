@@ -21,9 +21,9 @@ function AdBannerInternal() {
   // Define self-promotions for Premium subscription
   const promos = [
     {
-      title: t('ui.ads.promo_ai_title') || 'AIパーソナルトレーナー解放',
-      desc: t('ui.ads.promo_ai_desc') || 'あなた専用のメニュー作成や指導を受けましょう！',
-      icon: 'sparkles'
+      title: t('ui.ads.promo_ai_title') || '広告非表示 ＆ 全機能フル解放',
+      desc: t('ui.ads.promo_ai_desc') || '広告なしで全7機能を快適に利用できます！',
+      icon: 'star'
     },
     {
       title: t('ui.ads.promo_backup_title') || 'クラウドバックアップ機能',

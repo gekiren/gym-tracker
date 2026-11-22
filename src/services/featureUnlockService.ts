@@ -23,12 +23,36 @@ export async function initFeatureUnlockState(storedSettings: Record<string, stri
   let pointsBalance = pointsBalanceStr ? parseInt(pointsBalanceStr, 10) : POINT_REWARDS.INITIAL_BONUS;
   if (isNaN(pointsBalance) || pointsBalance < 0) pointsBalance = POINT_REWARDS.INITIAL_BONUS;
 
+  const validFeatureSet = new Set<string>(ALL_FEATURE_IDS);
+
   let unlockedFeatures: FeatureId[] = ['workout', 'water'];
   let hasCompletedInitialSelection = hasCompletedSelectionStr === 'true';
 
   if (unlockedFeaturesStr) {
     try {
-      unlockedFeatures = JSON.parse(unlockedFeaturesStr);
+      const parsed = JSON.parse(unlockedFeaturesStr);
+      if (Array.isArray(parsed)) {
+        const sanitized = Array.from(
+          new Set(
+            parsed.filter(
+              (id: unknown): id is FeatureId => typeof id === 'string' && validFeatureSet.has(id)
+            )
+          )
+        );
+        const hadInvalid = sanitized.length !== parsed.length;
+        if (hasCompletedInitialSelection && sanitized.length < 2) {
+          for (const fallbackId of ['workout', 'water'] as FeatureId[]) {
+            if (!sanitized.includes(fallbackId)) {
+              sanitized.push(fallbackId);
+            }
+            if (sanitized.length >= 2) break;
+          }
+        }
+        unlockedFeatures = sanitized.length > 0 ? sanitized : ['workout', 'water'];
+        if (hadInvalid) {
+          await saveSetting('unlocked_features', JSON.stringify(unlockedFeatures));
+        }
+      }
     } catch (e) {
       console.warn('Failed to parse unlocked_features', e);
     }
@@ -39,7 +63,19 @@ export async function initFeatureUnlockState(storedSettings: Record<string, stri
   let firstRecordedFeatures: FeatureId[] = [];
   if (firstRecordedStr) {
     try {
-      firstRecordedFeatures = JSON.parse(firstRecordedStr);
+      const parsed = JSON.parse(firstRecordedStr);
+      if (Array.isArray(parsed)) {
+        firstRecordedFeatures = Array.from(
+          new Set(
+            parsed.filter(
+              (id: unknown): id is FeatureId => typeof id === 'string' && validFeatureSet.has(id)
+            )
+          )
+        );
+        if (firstRecordedFeatures.length !== parsed.length) {
+          await saveSetting('first_recorded_features', JSON.stringify(firstRecordedFeatures));
+        }
+      }
     } catch (e) {
       console.warn('Failed to parse first_recorded_features', e);
     }
@@ -48,7 +84,26 @@ export async function initFeatureUnlockState(storedSettings: Record<string, stri
   let dailyRecordMap: Record<string, FeatureId[]> = {};
   if (dailyRecordMapStr) {
     try {
-      dailyRecordMap = JSON.parse(dailyRecordMapStr);
+      const parsed = JSON.parse(dailyRecordMapStr);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        let mapChanged = false;
+        const sanitizedMap: Record<string, FeatureId[]> = {};
+        for (const [dateKey, list] of Object.entries(parsed)) {
+          if (Array.isArray(list)) {
+            const filtered = list.filter(
+              (id: unknown): id is FeatureId => typeof id === 'string' && validFeatureSet.has(id)
+            );
+            if (filtered.length !== list.length) {
+              mapChanged = true;
+            }
+            sanitizedMap[dateKey] = filtered;
+          }
+        }
+        dailyRecordMap = sanitizedMap;
+        if (mapChanged) {
+          await saveSetting('daily_record_map', JSON.stringify(dailyRecordMap));
+        }
+      }
     } catch (e) {
       console.warn('Failed to parse daily_record_map', e);
     }
