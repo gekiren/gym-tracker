@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { invalidateExerciseDetailCache } from './exerciseDetailCache';
 
 let db: SQLite.SQLiteDatabase | null = null;
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
@@ -51,6 +52,7 @@ export const withDBQueue = <T>(action: (database: SQLite.SQLiteDatabase) => Prom
 };
 
 export const closeDB = async (): Promise<void> => {
+  invalidateExerciseDetailCache();
   if (db) {
     await db.closeAsync();
     db = null;

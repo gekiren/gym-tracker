@@ -1,4 +1,5 @@
 import { getDB } from '../connection';
+import { invalidateExerciseDetailCache } from '../exerciseDetailCache';
 import { PRESET_EXERCISES, PRESET_EXERCISE_NAMES, PRESET_ROUTINES } from '../constants';
 
 export const getCustomExercisesCount = async (): Promise<number> => {
@@ -56,26 +57,31 @@ export const toggleFavorite = async (exerciseId: number, isFav: boolean): Promis
 export const deleteExercise = async (id: number) => {
   const conn = getDB();
   await conn.runAsync('DELETE FROM exercises WHERE id = ?', [id]);
+  invalidateExerciseDetailCache(id);
 };
 
 export const updateExerciseDefaultVariation = async (exerciseId: number, variation: string | null) => {
   const conn = getDB();
   await conn.runAsync('UPDATE exercises SET default_variation = ? WHERE id = ?', [variation, exerciseId]);
+  invalidateExerciseDetailCache(exerciseId);
 };
 
 export const updateExerciseDefaultStance = async (exerciseId: number, stance: string | null) => {
   const conn = getDB();
   await conn.runAsync('UPDATE exercises SET default_stance = ? WHERE id = ?', [stance, exerciseId]);
+  invalidateExerciseDetailCache(exerciseId);
 };
 
 export const updateExerciseWeightStep = async (exerciseId: number, weightStep: number) => {
   const conn = getDB();
   await conn.runAsync('UPDATE exercises SET weight_step = ? WHERE id = ?', [weightStep, exerciseId]);
+  invalidateExerciseDetailCache(exerciseId);
 };
 
 export const updateExerciseRestSeconds = async (exerciseId: number, restSeconds: number | null) => {
   const conn = getDB();
   await conn.runAsync('UPDATE exercises SET rest_seconds = ? WHERE id = ?', [restSeconds, exerciseId]);
+  invalidateExerciseDetailCache(exerciseId);
 };
 
 export const getMissingPresets = async () => {

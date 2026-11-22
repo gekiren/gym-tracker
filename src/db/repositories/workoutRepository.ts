@@ -1,4 +1,10 @@
+import { format } from 'date-fns';
 import { getDB, getDBPromise, withDBQueue } from '../connection';
+import {
+  invalidateExerciseDetailCache,
+  ExerciseChartSummaryRow,
+  ExerciseHistoryEntry,
+} from '../exerciseDetailCache';
 import { triggerDebouncedDataBackup } from '../dbBackupService';
 import { triggerDebouncedDriveUpload } from '../../services/googleDrive/driveSyncTrigger';
 import { translateExercise } from '../../i18n';
@@ -80,6 +86,10 @@ export const saveWorkout = async (
     }
   });
 
+  for (const ex of exercises) {
+    invalidateExerciseDetailCache(ex.exercise_id);
+  }
+
   // ワークアウト保存完了後の非同期バックアップ（3秒デバウンスで退避）
   triggerDebouncedDataBackup('workout_save', 3000);
   triggerDebouncedDriveUpload('workout_save', 10000);
@@ -113,33 +123,38 @@ export const prefetchWorkoutCompletionData = async (exerciseIds: number[]) => {
   };
 };
 
-export const getExerciseHistory = async (exerciseId: number) => {
-  const conn = getDB();
-  const rows = await conn.getAllAsync<{
-    workout_id: number;
-    start_time: string;
-    set_number: number;
-    reps: number | null;
-    weight: number | null;
-    rpe: number | null;
-    rest_seconds: number | null;
-    work_seconds: number | null;
-    speed: number | null;
-    incline: number | null;
-    side: string | null;
-    variation: string | null;
-    stance: string | null;
-  }>(`
-    SELECT w.id as workout_id, w.start_time, ws.set_number, ws.reps, ws.weight, ws.rpe, ws.rest_seconds, ws.work_seconds, ws.speed, ws.incline, ws.side, ws.variation, ws.stance
-    FROM workout_sets ws
-    JOIN workout_exercises we ON ws.workout_exercise_id = we.id
-    JOIN workouts w ON we.workout_id = w.id
-    WHERE we.exercise_id = ? AND ws.is_completed = 1
-    ORDER BY w.start_time DESC, ws.set_number ASC
-  `, [exerciseId]);
+interface RawExerciseHistoryRow {
+  workout_id: number;
+  start_time: string;
+  set_number: number;
+  reps: number | null;
+  weight: number | null;
+  rpe: number | null;
+  rest_seconds: number | null;
+  work_seconds: number | null;
+  speed: number | null;
+  incline: number | null;
+  side: string | null;
+  variation: string | null;
+  stance: string | null;
+}
 
-  const historyMap = new Map<number, { workout_id: number; start_time: string; sets: Omit<WorkoutSet, 'id' | 'is_completed'>[] }>();
-  
+const groupExerciseHistoryRows = (
+  rows: RawExerciseHistoryRow[],
+  orderedWorkouts?: { workout_id: number; start_time: string }[]
+): ExerciseHistoryEntry[] => {
+  const historyMap = new Map<number, ExerciseHistoryEntry>();
+
+  if (orderedWorkouts) {
+    for (const w of orderedWorkouts) {
+      historyMap.set(w.workout_id, {
+        workout_id: w.workout_id,
+        start_time: w.start_time,
+        sets: []
+      });
+    }
+  }
+
   for (const row of rows) {
     if (!historyMap.has(row.workout_id)) {
       historyMap.set(row.workout_id, {
@@ -164,6 +179,215 @@ export const getExerciseHistory = async (exerciseId: number) => {
   }
 
   return Array.from(historyMap.values());
+};
+
+export const getExerciseHistory = async (exerciseId: number): Promise<ExerciseHistoryEntry[]> => {
+  const conn = getDB();
+  const rows = await conn.getAllAsync<RawExerciseHistoryRow>(`
+    SELECT w.id as workout_id, w.start_time, ws.set_number, ws.reps, ws.weight, ws.rpe, ws.rest_seconds, ws.work_seconds, ws.speed, ws.incline, ws.side, ws.variation, ws.stance
+    FROM workout_sets ws
+    JOIN workout_exercises we ON ws.workout_exercise_id = we.id
+    JOIN workouts w ON we.workout_id = w.id
+    WHERE we.exercise_id = ? AND ws.is_completed = 1
+    ORDER BY w.start_time DESC, ws.set_number ASC
+  `, [exerciseId]);
+
+  return groupExerciseHistoryRows(rows);
+};
+
+export const getExerciseHistoryCount = async (exerciseId: number): Promise<number> => {
+  const conn = getDB();
+  const row = await conn.getFirstAsync<{ count: number }>(`
+    SELECT COUNT(DISTINCT we.workout_id) as count
+    FROM workout_exercises we
+    JOIN workout_sets ws ON ws.workout_exercise_id = we.id
+    WHERE we.exercise_id = ? AND ws.is_completed = 1
+  `, [exerciseId]);
+
+  return row?.count ?? 0;
+};
+
+export const getExerciseHistoryPaginated = async (
+  exerciseId: number,
+  limit: number = 10,
+  offset: number = 0
+): Promise<ExerciseHistoryEntry[]> => {
+  const conn = getDB();
+  const targetWorkouts = await conn.getAllAsync<{ workout_id: number; start_time: string }>(`
+    SELECT w.id as workout_id, w.start_time
+    FROM workout_exercises we
+    JOIN workouts w ON we.workout_id = w.id
+    JOIN workout_sets ws ON ws.workout_exercise_id = we.id
+    WHERE we.exercise_id = ? AND ws.is_completed = 1
+    GROUP BY w.id
+    ORDER BY w.start_time DESC
+    LIMIT ? OFFSET ?
+  `, [exerciseId, limit, offset]);
+
+  if (targetWorkouts.length === 0) return [];
+
+  const workoutIds = targetWorkouts.map(w => w.workout_id);
+  const placeholders = workoutIds.map(() => '?').join(',');
+
+  const rows = await conn.getAllAsync<RawExerciseHistoryRow>(`
+    SELECT w.id as workout_id, w.start_time, ws.set_number, ws.reps, ws.weight, ws.rpe, ws.rest_seconds, ws.work_seconds, ws.speed, ws.incline, ws.side, ws.variation, ws.stance
+    FROM workout_sets ws
+    JOIN workout_exercises we ON ws.workout_exercise_id = we.id
+    JOIN workouts w ON we.workout_id = w.id
+    WHERE we.exercise_id = ? AND we.workout_id IN (${placeholders}) AND ws.is_completed = 1
+    ORDER BY w.start_time DESC, ws.set_number ASC
+  `, [exerciseId, ...workoutIds]);
+
+  return groupExerciseHistoryRows(rows, targetWorkouts);
+};
+
+export const getExerciseChartSummary = async (
+  exerciseId: number,
+  stance: string = 'all'
+): Promise<ExerciseChartSummaryRow[]> => {
+  const conn = getDB();
+  const hasStanceFilter = stance !== 'all';
+  const params: (number | string)[] = hasStanceFilter ? [exerciseId, stance] : [exerciseId];
+  const stanceCondition = hasStanceFilter
+    ? "AND COALESCE(NULLIF(TRIM(ws.stance), ''), NULLIF(TRIM(ws.variation), ''), 'default') = ?"
+    : '';
+
+  return await conn.getAllAsync<ExerciseChartSummaryRow>(`
+    SELECT
+      w.id as workout_id,
+      w.start_time,
+      SUM(COALESCE(ws.weight, 0) * COALESCE(ws.reps, 0)) as volume,
+      COUNT(ws.id) as sets_count,
+      MAX(
+        CASE
+          WHEN ws.weight IS NOT NULL AND ws.weight > 0 AND ws.reps = 1 THEN ws.weight
+          WHEN ws.weight IS NOT NULL AND ws.weight > 0 AND ws.reps > 1 THEN ROUND(ws.weight * (1.0 + (ws.reps / 30.0)))
+          ELSE 0
+        END
+      ) as max_1rm,
+      SUM(COALESCE(ws.work_seconds, 0) + COALESCE(ws.rest_seconds, 0)) as total_secs
+    FROM workout_sets ws
+    JOIN workout_exercises we ON ws.workout_exercise_id = we.id
+    JOIN workouts w ON we.workout_id = w.id
+    WHERE we.exercise_id = ? AND ws.is_completed = 1
+      ${stanceCondition}
+    GROUP BY w.id
+    ORDER BY w.start_time DESC
+  `, params);
+};
+
+export const getExerciseAvailableStances = async (exerciseId: number): Promise<string[]> => {
+  const conn = getDB();
+  const rows = await conn.getAllAsync<{ stance: string }>(`
+    SELECT DISTINCT COALESCE(NULLIF(TRIM(ws.stance), ''), NULLIF(TRIM(ws.variation), ''), 'default') as stance
+    FROM workout_sets ws
+    JOIN workout_exercises we ON ws.workout_exercise_id = we.id
+    WHERE we.exercise_id = ? AND ws.is_completed = 1
+  `, [exerciseId]);
+
+  return rows.map(r => r.stance);
+};
+
+export const getExercisePRTimeline = async (
+  exerciseId: number,
+  reps: number,
+  variation: string,
+  limit: number = 10
+): Promise<{ date: string; weight: number }[]> => {
+  const conn = getDB();
+  const rows = await conn.getAllAsync<{ start_time: string; max_weight: number }>(`
+    SELECT w.start_time, MAX(ws.weight) as max_weight
+    FROM workout_sets ws
+    JOIN workout_exercises we ON ws.workout_exercise_id = we.id
+    JOIN workouts w ON we.workout_id = w.id
+    WHERE we.exercise_id = ?
+      AND ws.is_completed = 1
+      AND ws.reps = ?
+      AND ws.weight IS NOT NULL AND ws.weight > 0
+      AND COALESCE(NULLIF(TRIM(ws.stance), ''), NULLIF(TRIM(ws.variation), ''), 'default') = ?
+    GROUP BY w.id
+    ORDER BY w.start_time DESC
+    LIMIT ?
+  `, [exerciseId, reps, variation, limit]);
+
+  return rows.reverse().map(row => {
+    const d = new Date(row.start_time);
+    const dateStr = isNaN(d.getTime()) ? '' : `${d.getMonth() + 1}/${d.getDate()}`;
+    return {
+      date: dateStr,
+      weight: row.max_weight
+    };
+  });
+};
+
+export const getExerciseCalendarDates = async (exerciseId: number): Promise<string[]> => {
+  const conn = getDB();
+  const rows = await conn.getAllAsync<{ start_time: string }>(`
+    SELECT DISTINCT w.start_time
+    FROM workout_exercises we
+    JOIN workouts w ON we.workout_id = w.id
+    JOIN workout_sets ws ON ws.workout_exercise_id = we.id
+    WHERE we.exercise_id = ? AND ws.is_completed = 1
+    ORDER BY w.start_time DESC
+  `, [exerciseId]);
+
+  const dateSet = new Set<string>();
+  for (const row of rows) {
+    const d = new Date(row.start_time);
+    if (!isNaN(d.getTime())) {
+      dateSet.add(format(d, 'yyyy-MM-dd'));
+    }
+  }
+  return Array.from(dateSet);
+};
+
+export const getExerciseMonthSummary = async (
+  exerciseId: number,
+  startIso: string,
+  endIso: string
+): Promise<{ count: number; volume: number; set_count: number }> => {
+  const conn = getDB();
+  const startDate = new Date(startIso);
+  const endDate = new Date(endIso);
+
+  // タイムゾーン境界による文字列比較ズレを防ぐため、SQLでは前後2日の余裕を持たせて絞り、JS側で厳密判定する
+  const marginMs = 48 * 60 * 60 * 1000;
+  const queryStart = new Date(startDate.getTime() - marginMs).toISOString().slice(0, 10);
+  const queryEnd = new Date(endDate.getTime() + marginMs).toISOString().slice(0, 10) + '\uffff';
+
+  const rows = await conn.getAllAsync<{
+    start_time: string;
+    volume: number;
+    set_count: number;
+  }>(`
+    SELECT
+      w.start_time,
+      SUM(COALESCE(ws.weight, 0) * COALESCE(ws.reps, 0)) as volume,
+      COUNT(ws.id) as set_count
+    FROM workout_sets ws
+    JOIN workout_exercises we ON ws.workout_exercise_id = we.id
+    JOIN workouts w ON we.workout_id = w.id
+    WHERE we.exercise_id = ?
+      AND ws.is_completed = 1
+      AND w.start_time >= ?
+      AND w.start_time <= ?
+    GROUP BY w.id
+  `, [exerciseId, queryStart, queryEnd]);
+
+  let count = 0;
+  let volume = 0;
+  let set_count = 0;
+
+  for (const row of rows) {
+    const d = new Date(row.start_time);
+    if (!isNaN(d.getTime()) && d >= startDate && d <= endDate) {
+      count++;
+      volume += row.volume || 0;
+      set_count += row.set_count || 0;
+    }
+  }
+
+  return { count, volume, set_count };
 };
 
 export const getPreviousWorkoutSets = async (exerciseId: number) => {
@@ -216,6 +440,7 @@ export const getPersonalRecords = async (exerciseId: number) => {
 export const deleteWorkout = async (id: number) => {
   const conn = getDB();
   await conn.runAsync('DELETE FROM workouts WHERE id = ?', [id]);
+  invalidateExerciseDetailCache();
   triggerDebouncedDriveUpload('workout_delete', 10000);
 };
 
@@ -325,12 +550,14 @@ export const updateWorkoutSet = async (
 
   values.push(setId);
   await conn.runAsync(`UPDATE workout_sets SET ${fields.join(', ')} WHERE id = ?`, values);
+  invalidateExerciseDetailCache();
   triggerDebouncedDriveUpload('workout_set_update', 10000);
 };
 
 export const deleteWorkoutSet = async (setId: number) => {
   const conn = getDB();
   await conn.runAsync('DELETE FROM workout_sets WHERE id = ?', [setId]);
+  invalidateExerciseDetailCache();
   triggerDebouncedDriveUpload('workout_set_delete', 10000);
 };
 

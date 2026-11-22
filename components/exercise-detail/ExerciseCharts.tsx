@@ -1,18 +1,27 @@
 import React, { useMemo, useRef, useCallback, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Dimensions, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Dimensions, Pressable, ActivityIndicator } from 'react-native';
 import Svg, { Path, Circle, Line, Defs, LinearGradient, Stop, Text as SvgText, G } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart } from 'react-native-chart-kit';
 import { format, startOfWeek, startOfMonth } from 'date-fns';
 import { useAppTheme } from '../../src/theme';
-import { calculateRM } from '../../src/utils/workoutStats';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { translateStance } from '../../src/i18n';
+import {
+  ExerciseChartSummaryRow,
+  getExerciseChartSummary,
+  getExercisePRTimeline,
+  getExerciseDetailCache,
+  patchExerciseDetailCache,
+} from '../../src/db/database';
 
 export type ExerciseChartMetric = 'volume' | '1rm' | 'sets' | 'avg_volume_per_set' | 'density';
 
 interface ExerciseChartsProps {
-  history: any[];
+  exerciseId: number;
+  chartSummary: ExerciseChartSummaryRow[];
+  availableStances: string[];
+  isLoadingChart?: boolean;
   settings: any;
   chartScale: 'day' | 'week' | 'month';
   setChartScale: (scale: 'day' | 'week' | 'month') => void;
@@ -43,11 +52,6 @@ function createLinearPath(points: { x: number; y: number }[]): string {
   return path;
 }
 
-function getSetStanceKey(s: any): string {
-  const raw = (s?.stance && String(s.stance).trim()) || (s?.variation && String(s.variation).trim());
-  return raw || 'default';
-}
-
 export const METRIC_OPTIONS: {
   id: ExerciseChartMetric;
   titleKey: string;
@@ -63,7 +67,10 @@ export const METRIC_OPTIONS: {
 ];
 
 export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
-  history,
+  exerciseId,
+  chartSummary,
+  availableStances: rawAvailableStances,
+  isLoadingChart = false,
   settings,
   chartScale,
   setChartScale,
@@ -91,55 +98,128 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isMetricModalVisible, setMetricModalVisible] = useState(false);
   const [selectedStance, setSelectedStance] = useState<string>('all');
+  const [stanceSummaryMap, setStanceSummaryMap] = useState<Record<string, ExerciseChartSummaryRow[]>>({});
+  const [isLoadingStance, setIsLoadingStance] = useState(false);
+  const [prTimeline, setPrTimeline] = useState<{ date: string; weight: number }[] | null>(null);
+  const [isLoadingPrTimeline, setIsLoadingPrTimeline] = useState(false);
 
   const availableStances = useMemo<string[]>(() => {
-    if (!history || history.length === 0) return [];
-    const stanceSet = new Set<string>();
-    history.forEach(item => {
-      (item.sets || []).forEach((s: any) => {
-        stanceSet.add(getSetStanceKey(s));
-      });
-    });
-    return Array.from(stanceSet).sort((a, b) => {
+    if (!rawAvailableStances || rawAvailableStances.length === 0) return [];
+    return [...rawAvailableStances].sort((a, b) => {
       if (a === 'default') return -1;
       if (b === 'default') return 1;
       return translateStance(a).localeCompare(translateStance(b));
     });
-  }, [history]);
+  }, [rawAvailableStances]);
 
   useEffect(() => {
-    if (selectedStance !== 'all' && !availableStances.includes(selectedStance)) {
+    setStanceSummaryMap({});
+    setSelectedStance('all');
+  }, [exerciseId]);
+
+  useEffect(() => {
+    if (selectedStance !== 'all' && availableStances.length > 0 && !availableStances.includes(selectedStance)) {
       setSelectedStance('all');
     }
   }, [availableStances, selectedStance]);
+
+  // スタンス別の軽量グラフ集計をオンデマンド取得（キャッシュ優先）
+  useEffect(() => {
+    if (selectedStance === 'all') {
+      setIsLoadingStance(false);
+      return;
+    }
+    if (stanceSummaryMap[selectedStance]) {
+      setIsLoadingStance(false);
+      return;
+    }
+
+    const cachedStanceRows = getExerciseDetailCache(exerciseId)?.chartSummaryByStance?.[selectedStance];
+    if (cachedStanceRows) {
+      setStanceSummaryMap(prev => ({ ...prev, [selectedStance]: cachedStanceRows }));
+      setIsLoadingStance(false);
+      return;
+    }
+
+    let isActive = true;
+    setIsLoadingStance(true);
+    getExerciseChartSummary(exerciseId, selectedStance)
+      .then(rows => {
+        if (!isActive) return;
+        setStanceSummaryMap(prev => ({ ...prev, [selectedStance]: rows }));
+        patchExerciseDetailCache(exerciseId, {
+          chartSummaryByStance: { [selectedStance]: rows },
+        });
+      })
+      .catch(err => {
+        console.warn('Failed to fetch stance chart summary:', err);
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsLoadingStance(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [exerciseId, selectedStance, stanceSummaryMap]);
+
+  // PR推移モーダル表示時にオンデマンド取得
+  useEffect(() => {
+    if (!showChartModal || selectedChartReps === null || selectedChartVariation === null) {
+      setPrTimeline(null);
+      return;
+    }
+
+    let isActive = true;
+    setIsLoadingPrTimeline(true);
+    getExercisePRTimeline(exerciseId, selectedChartReps, selectedChartVariation, 10)
+      .then(timeline => {
+        if (isActive) {
+          setPrTimeline(timeline);
+        }
+      })
+      .catch(err => {
+        console.warn('Failed to fetch PR timeline:', err);
+        if (isActive) {
+          setPrTimeline([]);
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsLoadingPrTimeline(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [exerciseId, showChartModal, selectedChartReps, selectedChartVariation]);
 
   // chartScale、chartMetric、selectedStanceが変更されたら選択位置をリセット
   useEffect(() => {
     setSelectedIndex(null);
   }, [chartScale, chartMetric, selectedStance]);
 
-  const chartPoints = useMemo<ChartPoint[]>(() => {
-    if (!history || history.length === 0) return [];
+  const activeSummary = useMemo(() => {
+    if (selectedStance === 'all') return chartSummary || [];
+    return stanceSummaryMap[selectedStance] || [];
+  }, [selectedStance, chartSummary, stanceSummaryMap]);
 
-    const processedHistory = history.map(item => {
-      const rawSets = item.sets || [];
-      const sets = selectedStance === 'all'
-        ? rawSets
-        : rawSets.filter((s: any) => getSetStanceKey(s) === selectedStance);
-      const setsCount = sets.length;
-      const volume = sets.reduce((sum: number, s: any) => sum + (parseFloat(s.weight) || 0) * (parseInt(s.reps, 10) || 0), 0);
-      const max1Rm = sets.reduce((max: number, s: any) => {
-        const rm = calculateRM(parseFloat(s.weight), parseInt(s.reps, 10)) || 0;
-        return Math.max(max, rm);
-      }, 0);
-      let totalSecs = sets.reduce((sum: number, s: any) => sum + (parseFloat(s.work_seconds) || 0) + (parseFloat(s.rest_seconds) || 0), 0);
-      let durationMin = totalSecs > 0 ? totalSecs / 60 : (setsCount > 0 ? setsCount * 2 : 0);
+  const chartPoints = useMemo<ChartPoint[]>(() => {
+    if (!activeSummary || activeSummary.length === 0) return [];
+
+    const processedHistory = activeSummary.map(row => {
+      const setsCount = row.sets_count || 0;
+      const totalSecs = row.total_secs || 0;
+      const durationMin = totalSecs > 0 ? totalSecs / 60 : (setsCount > 0 ? setsCount * 2 : 0);
 
       return {
-        start_time: item.start_time,
-        volume,
+        start_time: row.start_time,
+        volume: row.volume || 0,
         setsCount,
-        max1Rm,
+        max1Rm: row.max_1rm || 0,
         durationMin,
       };
     });
@@ -275,56 +355,31 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
     }
 
     return [];
-  }, [history, chartScale, chartMetric, selectedStance]);
-
-  const getPRTimeline = useCallback((reps: number, variation: string) => {
-    const sortedHistory = [...history].reverse();
-    const timeline: { date: string; weight: number }[] = [];
-
-    sortedHistory.forEach(workout => {
-      const matchingSets = workout.sets.filter((s: any) => {
-        const setVariation = getSetStanceKey(s);
-        return s.reps === reps && setVariation === variation;
-      });
-
-      if (matchingSets.length > 0) {
-        const maxWeight = Math.max(...matchingSets.map((s: any) => parseFloat(s.weight) || 0));
-        if (maxWeight > 0) {
-          const d = new Date(workout.start_time);
-          const dateStr = `${d.getMonth() + 1}/${d.getDate()}`;
-          timeline.push({ date: dateStr, weight: maxWeight });
-        }
-      }
-    });
-
-    return timeline;
-  }, [history]);
+  }, [activeSummary, chartScale, chartMetric]);
 
   const repChartData = useMemo(() => {
-    if (selectedChartReps === null || selectedChartVariation === null) return null;
-    const timeline = getPRTimeline(selectedChartReps, selectedChartVariation);
-    if (timeline.length === 0) return null;
+    if (!prTimeline || prTimeline.length === 0) return null;
 
-    const displayTimeline = timeline.slice(-10);
-    
+    const displayTimeline = prTimeline.slice(-10);
+
     return {
       timeline: displayTimeline,
       chartData: {
-        labels: displayTimeline.map((t, idx) => {
-          if (displayTimeline.length <= 6) return t.date;
+        labels: displayTimeline.map((item, idx) => {
+          if (displayTimeline.length <= 6) return item.date;
           if (idx === 0 || idx === displayTimeline.length - 1 || idx === Math.floor(displayTimeline.length / 2)) {
-            return t.date;
+            return item.date;
           }
           return '';
         }),
         datasets: [
           {
-            data: displayTimeline.map(t => t.weight)
+            data: displayTimeline.map(item => item.weight)
           }
         ]
       }
     };
-  }, [selectedChartReps, selectedChartVariation, getPRTimeline]);
+  }, [prTimeline]);
 
   // アクティブに選択されたインデックス（デフォルトは最新データ）
   const activeIndex = selectedIndex !== null && selectedIndex < chartPoints.length 
@@ -393,11 +448,18 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
     }
   }, [settings.weightUnit]);
 
-  const shouldShowChartContainer = history && history.length > 0 && (chartPoints.length > 0 || selectedStance !== 'all');
+  const shouldShowChartContainer = !isLoadingChart && chartSummary && chartSummary.length > 0 && (chartPoints.length > 0 || selectedStance !== 'all');
   const showStanceSelector = availableStances.length > 1 || (availableStances.length === 1 && availableStances[0] !== 'default');
 
   return (
     <>
+      {isLoadingChart && (
+        <View style={styles.chartContainer}>
+          <View style={styles.chartPlaceholder}>
+            <ActivityIndicator size="small" color={colors.primary} />
+          </View>
+        </View>
+      )}
       {shouldShowChartContainer && (
         <View style={styles.chartContainer}>
           {/* Header Row */}
@@ -495,7 +557,11 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
 
           {/* SVG Line & Area Chart */}
           <View style={styles.chartWrapper}>
-            {chartPoints.length === 0 ? (
+            {isLoadingStance ? (
+              <View style={styles.emptyStanceBox}>
+                <ActivityIndicator size="small" color={colors.primary} />
+              </View>
+            ) : chartPoints.length === 0 ? (
               <View style={styles.emptyStanceBox}>
                 <Ionicons name="analytics-outline" size={28} color={colors.textMuted} style={{ marginBottom: 8 }} />
                 <Text style={styles.emptyStanceText}>
@@ -726,6 +792,13 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
             </View>
 
             {(() => {
+              if (isLoadingPrTimeline) {
+                return (
+                  <View style={{ padding: 36, alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  </View>
+                );
+              }
               const res = repChartData;
               if (!res) {
                 return (
@@ -795,6 +868,15 @@ const createStyles = (
   spacing: ReturnType<typeof useAppTheme>['spacing']
 ) => StyleSheet.create({
   chartContainer: { paddingHorizontal: spacing.lg, marginVertical: spacing.md },
+  chartPlaceholder: {
+    minHeight: 260,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   chartTitle: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
   metricSelectButton: {
     flexDirection: 'row',

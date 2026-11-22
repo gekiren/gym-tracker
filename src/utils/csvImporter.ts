@@ -1,6 +1,6 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
-import { getDB, addCustomExercise } from '../db/database';
+import { getDB, addCustomExercise, invalidateExerciseDetailCache } from '../db/database';
 
 export interface ImportResult {
   success: boolean;
@@ -322,6 +322,8 @@ export const pickAndImportCSV = async (): Promise<ImportResult> => {
         workoutsImported++;
       }
     });
+
+    invalidateExerciseDetailCache();
 
     return {
       success: true,

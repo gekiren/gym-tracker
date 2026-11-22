@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system/legacy';
-import { getDB, saveSetting, getSettingValue } from '../db/database';
+import { getDB, saveSetting, getSettingValue, invalidateExerciseDetailCache } from '../db/database';
 import { Alert } from 'react-native';
 
 export interface RescueResult {
@@ -367,6 +367,9 @@ export const rescueSeptember13Data = async (): Promise<RescueResult> => {
         insertedMeals += 1;
       }
     });
+    if (insertedWorkouts > 0) {
+      invalidateExerciseDetailCache();
+    }
   }
 
   // 6. daily_record_map の更新
