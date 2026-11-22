@@ -18,6 +18,7 @@ export const TimeCard = () => {
       iconName="time"
       iconColor="#ff9800"
       iconBgColor="rgba(255, 152, 0, 0.15)"
+      gamificationFeatureId="zikan"
       onPress={() => router.push('/lifelog/zikan')}
     >
       <View style={styles.statRow}>

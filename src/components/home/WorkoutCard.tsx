@@ -49,6 +49,7 @@ export const WorkoutCard = () => {
       iconName="barbell"
       iconColor={colors.primary}
       iconBgColor="rgba(79, 172, 254, 0.15)"
+      gamificationFeatureId="workout"
       onPress={() => router.push('/(tabs)')}
     >
       {isActive ? (

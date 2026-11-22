@@ -26,6 +26,8 @@ import { registerGlobalErrorHandler } from '../src/services/crashReporterService
 import { ReviewPromptModal } from '../components/ReviewPromptModal';
 import { OTAUpdateModal } from '../components/OTAUpdateModal';
 import { PointAwardToast } from '../components/PointAwardToast';
+import { MedalUnlockToast } from '../components/MedalUnlockToast';
+import { ClassUpModal } from '../components/ClassUpModal';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { syncHealthData } from '../src/services/healthService';
 import { initNotificationCategories, setupNotificationResponseListener } from '../src/services/notificationService';
@@ -38,6 +40,7 @@ import {
   initBackgroundSyncServices,
 } from '../src/services/appInitializationService';
 import { initFeatureUnlockState } from '../src/services/featureUnlockService';
+import { initGamificationState } from '../src/services/gamificationService';
 import { useGoogleDriveSyncStore } from '../src/store/googleDriveSyncStore';
 import {
   approvePendingProposal,
@@ -276,6 +279,9 @@ export default function RootLayout() {
       // 6.5 機能開放＆Pポイントの初期化とレトロアクティブ計算
       await initFeatureUnlockState(storedSettings);
 
+      // 6.55 2階層クラス・XP・実績メダルの初期化とレトロアクティブ計算
+      await initGamificationState(storedSettings);
+
       const currentSettings = useSettingsStore.getState().settings;
       if (!currentSettings.isPremium && !currentSettings.isEarlyAdopter) {
         mobileAds()
@@ -454,11 +460,14 @@ export default function RootLayout() {
             <Stack.Screen name="rm-calculator" options={{ presentation: 'card' }} />
             <Stack.Screen name="privacy-policy" options={{ presentation: 'card' }} />
             <Stack.Screen name="developer-menu" options={{ presentation: 'card' }} />
+            <Stack.Screen name="gamification" options={{ headerShown: false }} />
             <Stack.Screen name="lifelog/nutrition" options={{ presentation: 'card' }} />
           </Stack>
           <ReviewPromptModal />
           <OTAUpdateModal />
           <PointAwardToast />
+          <MedalUnlockToast />
+          <ClassUpModal />
           <StatusBar style="light" />
         </ThemeProvider>
       </KeyboardProvider>

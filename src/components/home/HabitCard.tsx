@@ -34,6 +34,7 @@ export const HabitCard = () => {
       iconName="checkmark-circle"
       iconColor="#e91e63"
       iconBgColor="rgba(233, 30, 99, 0.15)"
+      gamificationFeatureId="habit"
       onHeaderPress={() => router.push('/lifelog/habit')}
     >
       {daySummary?.habits && daySummary.habits.length > 0 ? (

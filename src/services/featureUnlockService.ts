@@ -3,6 +3,8 @@ import { FeatureId } from '../store/settingsStore';
 import { useFeatureUnlockStore } from '../store/featureUnlockStore';
 import { ALL_FEATURE_IDS, POINT_REWARDS } from '../constants/featureUnlockConstants';
 import { saveSetting } from '../db/database';
+import { recordGamificationFeatureActivity } from './gamificationService';
+import { extractRoutineDateSet } from './gamificationMetricsService';
 
 /**
  * アプリ起動時の機能開放・Pポイント初期化とレトロアクティブ計算
@@ -101,17 +103,15 @@ export async function initFeatureUnlockState(storedSettings: Record<string, stri
         detectedFeatures.push('habit');
       }
 
-      // 過去ルーティン完了件数
-      const routineCountRow = await conn.getFirstAsync<{ count: number }>(
-        'SELECT COUNT(*) as count FROM routine_completion_logs'
-      );
-      if ((routineCountRow?.count ?? 0) > 0) {
+      // 過去ルーティン完了履歴（routine_tracker_data）
+      const routineDates = extractRoutineDateSet(storedSettings['routine_tracker_data']);
+      if (routineDates.size > 0) {
         detectedFeatures.push('routine');
       }
 
       // 過去24時間ログ件数
       const zikanCountRow = await conn.getFirstAsync<{ count: number }>(
-        'SELECT COUNT(*) as count FROM zikan_logs'
+        'SELECT COUNT(*) as count FROM time_logs'
       );
       if ((zikanCountRow?.count ?? 0) > 0) {
         detectedFeatures.push('zikan');
@@ -154,11 +154,21 @@ export async function initFeatureUnlockState(storedSettings: Record<string, stri
 }
 
 /**
- * ログ記録時のPポイント付与ヘルパー
+ * ログ記録時のPポイント＆XP付与ヘルパー
  */
-export function recordFeatureAction(featureId: FeatureId, dateStr?: string) {
+export function recordFeatureAction(
+  featureId: FeatureId,
+  dateStr?: string,
+  options?: { forceMedalRefresh?: boolean }
+) {
   const targetDate = dateStr || getTodayDateStr();
-  return useFeatureUnlockStore.getState().markFeatureRecorded(featureId, targetDate);
+  const pointResult = useFeatureUnlockStore.getState().markFeatureRecorded(featureId, targetDate);
+  try {
+    recordGamificationFeatureActivity(featureId, targetDate, options);
+  } catch (e) {
+    console.warn('[FeatureUnlockService] Gamification activity update failed:', e);
+  }
+  return pointResult;
 }
 
 /**

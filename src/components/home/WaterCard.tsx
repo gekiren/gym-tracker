@@ -35,6 +35,7 @@ export const WaterCard = () => {
       iconName="water"
       iconColor="#00d2ff"
       iconBgColor="rgba(0, 210, 255, 0.15)"
+      gamificationFeatureId="water"
       onHeaderPress={() => router.push('/lifelog/water')}
     >
       <View style={styles.statRow}>

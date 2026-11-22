@@ -19,7 +19,16 @@ import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore, FeatureId } from '../src/store/settingsStore';
 import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import { useFeatureUnlockStore } from '../src/store/featureUnlockStore';
+import { useGamificationStore } from '../src/store/gamificationStore';
 import { ALL_FEATURE_IDS, FEATURE_UNLOCK_METAS, POINT_REWARDS, getUnlockCost } from '../src/constants/featureUnlockConstants';
+import {
+  ACHIEVEMENT_MEDALS,
+  FEATURE_CLASSES,
+  getFeatureClassForXp,
+  getOverallClassForXp,
+  OVERALL_CLASSES,
+} from '../src/constants/gamificationConstants';
+import { applyDebugXp, resetAndRecalculateGamification } from '../src/services/gamificationService';
 import { FeatureUnlockModal } from '../components/FeatureUnlockModal';
 import * as Clipboard from 'expo-clipboard';
 import { getAIDebugLogs, clearAIDebugLogs, copyAIDebugLogsToClipboard } from '../src/utils/debugLogStore';
@@ -43,6 +52,13 @@ function DeveloperMenuScreenInternal() {
   const hasCompletedInitialSelection = useFeatureUnlockStore(state => state.hasCompletedInitialSelection);
   const setForceUnlockAll = useFeatureUnlockStore(state => state.setForceUnlockAll);
   const showPointNotice = useFeatureUnlockStore(state => state.showPointNotice);
+
+  // Gamification Store hooks & states
+  const gamificationTotalXp = useGamificationStore(state => state.totalXp);
+  const gamificationWorkoutXp = useGamificationStore(state => state.featureXp.workout);
+  const gamificationUnlockedMedals = useGamificationStore(state => Object.keys(state.unlockedMedals).length);
+  const showPreviewClassUp = useGamificationStore(state => state.showPreviewClassUp);
+  const showPreviewMedalNotice = useGamificationStore(state => state.showPreviewMedalNotice);
 
   const [previewUnlockFeature, setPreviewUnlockFeature] = useState<FeatureId | null>(null);
   const [showCustomPointsModal, setShowCustomPointsModal] = useState(false);
@@ -1108,6 +1124,112 @@ function DeveloperMenuScreenInternal() {
               </Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* Gamification Testing Section */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="trophy-outline" size={24} color="#ffd700" style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>🏆 クラス・XP・実績メダル テスト</Text>
+          </View>
+          <Text style={styles.cardDesc}>
+            2階層クラス（総合・機能別）、XP加算、クラスアップ演出および過去データ再集計の検証を行えます。
+          </Text>
+
+          <View style={{ backgroundColor: 'rgba(255, 215, 0, 0.05)', borderRadius: 8, padding: 12, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.2)', marginBottom: 16 }}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>総合クラス / 累計XP</Text>
+              <Text style={[styles.infoValue, { color: '#ffd700' }]}>
+                {getOverallClassForXp(gamificationTotalXp).nameJa} ({gamificationTotalXp.toLocaleString()} XP)
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>筋トレクラス</Text>
+              <Text style={styles.infoValue}>
+                {getFeatureClassForXp(gamificationWorkoutXp).nameJa} ({gamificationWorkoutXp.toLocaleString()} XP)
+              </Text>
+            </View>
+            <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+              <Text style={styles.infoLabel}>獲得メダル数</Text>
+              <Text style={styles.infoValue}>
+                {gamificationUnlockedMedals} / {ACHIEVEMENT_MEDALS.length} 個
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+            <TouchableOpacity
+              style={[styles.btnOutline, { flex: 1, paddingVertical: 10, borderColor: '#4facfe', backgroundColor: 'rgba(79, 172, 254, 0.08)' }]}
+              onPress={() => applyDebugXp(100, 'overall')}
+            >
+              <Text style={[styles.btnOutlineText, { fontSize: 12 }]}>総合 +100 XP</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.btnOutline, { flex: 1, paddingVertical: 10, borderColor: '#4facfe', backgroundColor: 'rgba(79, 172, 254, 0.08)' }]}
+              onPress={() => applyDebugXp(500, 'overall')}
+            >
+              <Text style={[styles.btnOutlineText, { fontSize: 12 }]}>総合 +500 XP</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+            <TouchableOpacity
+              style={[styles.btnOutline, { flex: 1, paddingVertical: 10, borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.08)' }]}
+              onPress={() => applyDebugXp(200, 'workout')}
+            >
+              <Text style={[styles.btnOutlineText, { color: '#38bdf8', fontSize: 12 }]}>筋トレ +200 XP</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.btnOutline, { flex: 1, paddingVertical: 10, borderColor: '#00d2ff', backgroundColor: 'rgba(0, 210, 255, 0.08)' }]}
+              onPress={() => applyDebugXp(200, 'water')}
+            >
+              <Text style={[styles.btnOutlineText, { color: '#00d2ff', fontSize: 12 }]}>水分 +200 XP</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+            <TouchableOpacity
+              style={[styles.btnOutline, { flex: 1, borderColor: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.08)' }]}
+              onPress={() =>
+                showPreviewClassUp({
+                  overall: { from: OVERALL_CLASSES[2], to: OVERALL_CLASSES[3], bonusPoints: 3 },
+                  features: [{ featureId: 'workout', from: FEATURE_CLASSES[1], to: FEATURE_CLASSES[2], bonusPoints: 3 }],
+                })
+              }
+            >
+              <Text style={[styles.btnOutlineText, { color: '#a855f7', fontSize: 12 }]}>
+                昇格モーダル表示
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.btnOutline, { flex: 1, borderColor: '#ffd700', backgroundColor: 'rgba(255, 215, 0, 0.08)' }]}
+              onPress={() =>
+                showPreviewMedalNotice({
+                  medals: [ACHIEVEMENT_MEDALS[0]],
+                  totalBonusXp: 50,
+                  totalBonusPoints: 2,
+                })
+              }
+            >
+              <Text style={[styles.btnOutlineText, { color: '#ffd700', fontSize: 12 }]}>
+                メダル通知表示
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.btnOutline, { borderColor: '#ff9800', backgroundColor: 'rgba(255, 152, 0, 0.08)' }]}
+            onPress={async () => {
+              await resetAndRecalculateGamification();
+              Alert.alert('再集計完了', 'ゲーミフィケーション状態をリセットし、過去データから再計算しました。');
+            }}
+          >
+            <Ionicons name="refresh-outline" size={18} color="#ff9800" style={{ marginRight: 6 }} />
+            <Text style={[styles.btnOutlineText, { color: '#ff9800', fontSize: 13 }]}>
+              ゲーミフィケーション初期化＆過去データ再集計
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Ads Testing Section */}

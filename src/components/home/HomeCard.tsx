@@ -1,13 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../theme';
+import { useGamificationStore } from '../../store/gamificationStore';
+import { getFeatureClassForXp, TIER_VISUAL_META } from '../../constants/gamificationConstants';
+import { GamificationFeatureId } from '../../types/gamification';
 
 export interface HomeCardProps {
   title: string;
   iconName: React.ComponentProps<typeof Ionicons>['name'];
   iconColor: string;
   iconBgColor: string;
+  gamificationFeatureId?: GamificationFeatureId;
   onPress?: () => void;
   onHeaderPress?: () => void;
   children: React.ReactNode;
@@ -22,11 +27,21 @@ export const HomeCard: React.FC<HomeCardProps> = ({
   iconName,
   iconColor,
   iconBgColor,
+  gamificationFeatureId,
   onPress,
   onHeaderPress,
   children,
 }) => {
   const { colors } = useAppTheme();
+  const { i18n } = useTranslation();
+  const isEn = i18n.language?.startsWith('en');
+
+  const featureXp = useGamificationStore((state) =>
+    gamificationFeatureId ? (state.featureXp[gamificationFeatureId] ?? 0) : -1
+  );
+
+  const featureClass = featureXp >= 0 ? getFeatureClassForXp(featureXp) : null;
+  const tierMeta = featureClass ? TIER_VISUAL_META[featureClass.tier] : null;
 
   const cardDynamicStyle = {
     backgroundColor: colors.card,
@@ -41,6 +56,24 @@ export const HomeCard: React.FC<HomeCardProps> = ({
       <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
         {title}
       </Text>
+      {featureClass && tierMeta && (
+        <View
+          style={[
+            styles.classPill,
+            { backgroundColor: tierMeta.bgColor, borderColor: tierMeta.borderColor },
+          ]}
+        >
+          <Ionicons
+            name={tierMeta.icon as keyof typeof Ionicons.glyphMap}
+            size={11}
+            color={tierMeta.color}
+            style={{ marginRight: 3 }}
+          />
+          <Text style={[styles.classPillText, { color: tierMeta.color }]} numberOfLines={1}>
+            {isEn ? featureClass.nameEn : featureClass.nameJa}
+          </Text>
+        </View>
+      )}
       {(onPress || onHeaderPress) && (
         <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
       )}
@@ -107,6 +140,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     flex: 1,
     marginRight: 8,
+  },
+  classPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginRight: 6,
+  },
+  classPillText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   cardBody: {
     width: '100%',
