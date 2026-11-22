@@ -1,14 +1,15 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, Modal, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { format, startOfWeek, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { useAppTheme } from '../../src/theme';
 import { useTranslation } from 'react-i18next';
+import { getExerciseCalendarDates, getExerciseMonthSummary } from '../../src/db/database';
 
 interface HistoryCalendarModalProps {
   visible: boolean;
+  exerciseId: number;
   currentMonth: Date;
-  history: any[];
   weightUnit: string;
   onClose: () => void;
   onNavigateMonth: (offset: number) => void;
@@ -17,8 +18,8 @@ interface HistoryCalendarModalProps {
 
 export function HistoryCalendarModal({
   visible,
+  exerciseId,
   currentMonth,
-  history,
   weightUnit,
   onClose,
   onNavigateMonth,
@@ -27,6 +28,13 @@ export function HistoryCalendarModal({
   const { t, i18n } = useTranslation();
   const { colors } = useAppTheme();
   const isJa = i18n.language === 'ja';
+
+  const [workoutsMap, setWorkoutsMap] = useState<Record<string, boolean>>({});
+  const [monthSummary, setMonthSummary] = useState<{ count: number; volume: number; set_count: number }>({
+    count: 0,
+    volume: 0,
+    set_count: 0,
+  });
 
   const monthYearText = isJa
     ? format(currentMonth, 'yyyy年 M月')
@@ -44,33 +52,51 @@ export function HistoryCalendarModal({
     return eachDayOfInterval({ start: startDate, end: endDate });
   }, [currentMonth]);
 
-  const { count, volume, set_count } = useMemo(() => {
+  useEffect(() => {
+    if (!visible || !exerciseId) return;
+    let isActive = true;
+
+    getExerciseCalendarDates(exerciseId)
+      .then(dates => {
+        if (!isActive) return;
+        const map: Record<string, boolean> = {};
+        for (const d of dates) {
+          map[d] = true;
+        }
+        setWorkoutsMap(map);
+      })
+      .catch(err => {
+        console.warn('Failed to fetch calendar dates:', err);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [visible, exerciseId]);
+
+  useEffect(() => {
+    if (!visible || !exerciseId) return;
+    let isActive = true;
+
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(monthStart);
-    let count = 0;
-    let volume = 0;
-    let set_count = 0;
 
-    history.forEach(item => {
-      const date = new Date(item.start_time);
-      if (date >= monthStart && date <= monthEnd) {
-        count++;
-        set_count += item.sets.length;
-        volume += item.sets.reduce((sum: number, s: any) => sum + (parseFloat(s.weight) || 0) * (parseInt(s.reps, 10) || 0), 0);
-      }
-    });
+    getExerciseMonthSummary(exerciseId, monthStart.toISOString(), monthEnd.toISOString())
+      .then(summary => {
+        if (isActive) {
+          setMonthSummary(summary);
+        }
+      })
+      .catch(err => {
+        console.warn('Failed to fetch month summary:', err);
+      });
 
-    return { count, volume, set_count };
-  }, [currentMonth, history]);
+    return () => {
+      isActive = false;
+    };
+  }, [visible, exerciseId, currentMonth]);
 
-  const workoutsMap = useMemo(() => {
-    const map: { [key: string]: boolean } = {};
-    history.forEach(item => {
-      const dStr = format(new Date(item.start_time), 'yyyy-MM-dd');
-      map[dStr] = true;
-    });
-    return map;
-  }, [history]);
+  const { count, volume, set_count } = monthSummary;
 
   return (
     <Modal
