@@ -1,6 +1,7 @@
 import { getDB, getCaffeineLimit, setCaffeineLimit } from '../db/database';
 import { useLifelogStore } from '../store/lifelogStore';
 import { triggerDebouncedDriveUpload } from './googleDrive/driveSyncTrigger';
+import { recordFeatureAction } from './featureUnlockService';
 import { getWaterClientId } from './health/healthMappers';
 import {
   deleteHealthConnectRecordsByClientIds,
@@ -425,6 +426,15 @@ export const handleWebViewMessage = async (
       await useLifelogStore.getState().loadWaterData(currentDate);
       console.log('[SyncService] Water data reloaded in lifelogStore');
 
+      if (logs.length > existingCount) {
+        const addedLog =
+          logs.find((l) => !prevWaterMap.has(Number(l.id || l.timestamp))) || logs[logs.length - 1];
+        const addedDate = addedLog
+          ? addedLog.date || formatDate(parseTimestampToDate(addedLog.id || addedLog.timestamp))
+          : currentDate;
+        recordFeatureAction('water', addedDate || currentDate);
+      }
+
       // Health Connect へ差分を非同期反映
       const nextWaterMap = new Map<number, { amount: number; date: string }>();
       for (const log of logs) {
@@ -517,6 +527,8 @@ export const handleWebViewMessage = async (
         return null;
       }
 
+      let insertedTimeCount = 0;
+      let latestTimeDate = '';
       await db.withTransactionAsync(async () => {
         await db.runAsync('DELETE FROM time_logs');
         for (const log of logs) {
@@ -531,11 +543,16 @@ export const handleWebViewMessage = async (
               'INSERT INTO time_logs (activity_name, start_time, end_time, date, duration_minutes) VALUES (?, ?, ?, ?, ?)',
               [item.name, log.start, log.end, log.date, duration]
             );
+            insertedTimeCount++;
+            if (log.date) latestTimeDate = log.date;
           }
         }
       });
 
       await useLifelogStore.getState().loadTimeData(currentDate);
+      if (insertedTimeCount > existingCount) {
+        recordFeatureAction('zikan', latestTimeDate || currentDate);
+      }
     } 
     
     else if (key === 'zikankanri_plans') {
@@ -762,14 +779,58 @@ export const handleWebViewMessage = async (
 
       await useLifelogStore.getState().loadHabits(currentDate);
       addSyncDiagnosticLog(`Resolved habit-logs into SQLite. Saved: ${resolvedLogs.length}/${logs.length}`);
+      if (resolvedLogs.length > existingCount) {
+        const latestHabitLog = resolvedLogs[resolvedLogs.length - 1];
+        const latestHabitDate = latestHabitLog
+          ? formatDate(parseTimestampToDate(latestHabitLog.timestamp))
+          : currentDate;
+        recordFeatureAction('habit', latestHabitDate || currentDate, { forceMedalRefresh: true });
+      }
     } 
     
     else if (key === 'routine_tracker_data') {
+      const countRoutineCompletions = (rawVal: string | null | undefined): { count: number; latestTs: number } => {
+        if (!rawVal) return { count: 0, latestTs: 0 };
+        try {
+          let parsed: any = JSON.parse(rawVal);
+          if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+          if (!Array.isArray(parsed)) return { count: 0, latestTs: 0 };
+          let count = 0;
+          let latestTs = 0;
+          for (const r of parsed) {
+            if (r && Array.isArray(r.history)) {
+              count += r.history.length;
+              for (const h of r.history) {
+                const ts = Number(h?.timestamp || 0);
+                if (ts > latestTs) latestTs = ts;
+              }
+            }
+          }
+          return { count, latestTs };
+        } catch {
+          return { count: 0, latestTs: 0 };
+        }
+      };
+
+      const prevRoutineRow = await db.getFirstAsync<{ value: string }>(
+        "SELECT value FROM settings WHERE key = 'routine_tracker_data'"
+      );
+      const prevRoutineStats = countRoutineCompletions(prevRoutineRow?.value);
+      const nextRoutineStats = countRoutineCompletions(value);
+
       await db.runAsync(
         "INSERT OR REPLACE INTO settings (key, value) VALUES ('routine_tracker_data', ?)",
         [value]
       );
       await useLifelogStore.getState().loadRoutineData();
+
+      if (nextRoutineStats.count > prevRoutineStats.count) {
+        const latestDate =
+          nextRoutineStats.latestTs > 0
+            ? formatDate(parseTimestampToDate(nextRoutineStats.latestTs))
+            : currentDate;
+        recordFeatureAction('routine', latestDate || currentDate);
+      }
     }
 
     triggerDebouncedDriveUpload(`webview_${key}`, 10000);

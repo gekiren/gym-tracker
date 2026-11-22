@@ -11,21 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.56',
+  version: '2.3.58',
   title: {
-    ja: '✨ 種目詳細画面のレイアウトと表示状態の記憶を改善',
-    en: '✨ Improved Exercise Details Layout & State Memory',
+    ja: '🏆 クラス昇格・経験値（XP）・実績メダル機能を追加 ＆ クラス基準調整',
+    en: '🏆 Classes, XP & Medals + Balanced Progression',
   },
   notes: {
     ja: [
-      '初期スタンス・個別インターバル・重量増減ステップ設定の折りたたみ時の高さをコンパクトにしました。',
-      '自己ベスト（PR）のスタンス別アコーディオンの開閉状態を記憶し、次回も維持されるようにしました。',
-      '種目詳細グラフの種類・期間（日/週/月）・スタンスの最後の選択を保持し、次回も同じ表示で開けるようにしました。',
+      'アイアン〜レジェンドまでの2階層クラス（総合21階級・機能別8段階）と累計経験値（XP）システムを追加しました。',
+      '筋トレや全ライフログ横断で獲得できる40種類の実績メダルと、クラス＆実績一覧画面を追加しました。',
+      '機能別クラスの到達ペースを週4日継続基準（約3日ブロンズ〜24ヶ月レジェンド）に調整しました。',
     ],
     en: [
-      'Reduced the collapsed height of Default Stance, Individual Rest Timer, and Weight Step settings for a more compact layout.',
-      'Personal Record (PR) stance accordions now remember their expanded/collapsed state across visits.',
-      'Exercise charts now remember your last selected metric, period (Day/Week/Month), and stance filter.',
+      'Added a 2-tier class system (21 Overall ranks and 8 per-feature tiers from Iron to Legend) with cumulative XP.',
+      'Added 40 cross-feature achievement medals across workouts and lifelogs, plus a dedicated Classes & Medals screen.',
+      'Tuned per-feature class XP thresholds for a 4-days/week habit pace (Bronze at ~3 days up to Legend at ~24 months).',
     ],
   },
 };

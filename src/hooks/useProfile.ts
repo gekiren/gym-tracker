@@ -108,6 +108,14 @@ export function useProfile() {
         route: '/settings/feature-management',
       },
       {
+        id: 'gamification',
+        title: 'クラス＆実績メダル',
+        desc: '総合・機能別クラス、累計XP、獲得メダル一覧',
+        icon: 'trophy-outline',
+        iconColor: '#ffd700',
+        route: '/gamification',
+      },
+      {
         id: 'obsidian',
         title: 'データ出力 & Obsidian連携',
         desc: 'Markdown出力・共有・Obsidian自動同期',

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useAppTheme } from '../src/theme';
 import { useFeatureUnlockStore } from '../src/store/featureUnlockStore';
 import { POINT_REWARDS, POINT_COSTS } from '../src/constants/featureUnlockConstants';
@@ -72,6 +73,12 @@ export const PointBadge: React.FC<PointBadgeProps> = ({ style }) => {
                 </Text>
                 <Text style={styles.rowValue}>+{POINT_REWARDS.WORKOUT_COMPLETE} P</Text>
               </View>
+              <View style={styles.row}>
+                <Text style={[styles.rowLabel, { color: colors.text }]}>
+                  ・実績メダル解除・クラス昇格
+                </Text>
+                <Text style={styles.rowValue}>+2〜50 P</Text>
+              </View>
             </View>
 
             {/* How to Spend */}
@@ -102,6 +109,20 @@ export const PointBadge: React.FC<PointBadgeProps> = ({ style }) => {
                 </Text>
               </View>
             </View>
+
+            <TouchableOpacity
+              style={[styles.secondaryBtn, { borderColor: colors.border }]}
+              onPress={() => {
+                setModalVisible(false);
+                router.push('/gamification' as any);
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="trophy-outline" size={16} color="#ffd700" style={{ marginRight: 6 }} />
+              <Text style={[styles.secondaryBtnText, { color: colors.text }]}>
+                クラス＆実績メダルを見る
+              </Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.closeBtn, { backgroundColor: colors.primary }]}
@@ -200,6 +221,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     color: '#ffd700',
+  },
+  secondaryBtn: {
+    minHeight: 44,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 215, 0, 0.08)',
+    marginBottom: 8,
+  },
+  secondaryBtnText: {
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   closeBtn: {
     minHeight: 44,

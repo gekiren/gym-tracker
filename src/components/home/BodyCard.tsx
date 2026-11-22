@@ -36,6 +36,7 @@ export const BodyCard = () => {
       iconName="body"
       iconColor="#38bdf8"
       iconBgColor="rgba(56, 189, 248, 0.15)"
+      gamificationFeatureId="body"
       onPress={() => router.push('/lifelog/body')}
     >
       {!weight && !bodyFatRate ? (

@@ -541,7 +541,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
     try {
       await addHabitLog(habitItemId, Date.now(), date);
       await get().loadHabits(date);
-      recordFeatureAction('habit', date);
+      recordFeatureAction('habit', date, { forceMedalRefresh: true });
       triggerDebouncedDriveUpload('habit_log_add', 10000);
     } catch (e) {
       console.warn('Failed to add habit log:', e);

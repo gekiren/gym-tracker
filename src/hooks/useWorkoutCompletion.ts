@@ -14,6 +14,7 @@ import * as Sharing from 'expo-sharing';
 import { generateShareText, copyShareTextToClipboard } from '../services/shareService';
 import { exportWorkoutToObsidian } from '../services/obsidianService';
 import { awardWorkoutCompletionPoints, recordFeatureAction } from '../services/featureUnlockService';
+import { recordWorkoutCompletionGamification } from '../services/gamificationService';
 
 export function useWorkoutCompletion() {
   const { t, i18n } = useTranslation();
@@ -87,6 +88,13 @@ export function useWorkoutCompletion() {
       if (isFirstToday) {
         awardWorkoutCompletionPoints();
       }
+      // 経験値(XP)・メダル・クラス昇格判定
+      const hasPRUpdate = Boolean(
+        completionData.achievements?.is1RMUpdated || completionData.achievements?.isVolumeUpdated
+      );
+      recordWorkoutCompletionGamification(completionData.workout.id, hasPRUpdate).catch((err) => {
+        console.warn('Gamification workout completion update failed:', err);
+      });
     }
   }, [completionData]);
 

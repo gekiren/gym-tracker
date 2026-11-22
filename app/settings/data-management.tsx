@@ -11,6 +11,7 @@ import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { useRoutineDraftStore } from '../../src/store/routineDraftStore';
 import { useLifelogStore } from '../../src/store/lifelogStore';
+import { useGamificationStore } from '../../src/store/gamificationStore';
 import * as Updates from 'expo-updates';
 
 export default function DataManagementSettingsScreen() {
@@ -38,6 +39,7 @@ export default function DataManagementSettingsScreen() {
       useSettingsStore.getState().resetSettings();
       useRoutineDraftStore.getState().clearDraft();
       useLifelogStore.getState().resetAll();
+      useGamificationStore.getState().resetAll();
 
       const activeLang = i18n.language || 'ja';
       await saveSetting('language', activeLang);

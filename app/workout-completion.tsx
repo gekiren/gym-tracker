@@ -66,6 +66,7 @@ export default function WorkoutCompletionScreen() {
 
         {/* Achievements Section */}
         <AchievementsSection
+          workoutId={workout.id}
           achievements={achievements}
           settings={settings}
           maxTokens={maxTokens}

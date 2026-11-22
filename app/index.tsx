@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +10,7 @@ import { ALL_FEATURE_IDS, getUnlockCost } from '../src/constants/featureUnlockCo
 import { InitialFeatureSelectModal } from '../components/InitialFeatureSelectModal';
 import { FeatureUnlockModal } from '../components/FeatureUnlockModal';
 import { OnboardingModals } from '../components/OnboardingModals';
-import { PointBadge } from '../components/PointBadge';
+import { ClassStatusBar } from '../components/ClassStatusBar';
 import { useLifelogStore } from '../src/store/lifelogStore';
 import { useNutritionStore } from '../src/store/nutritionStore';
 import { useBodyStore } from '../src/store/bodyStore';
@@ -110,28 +110,8 @@ export default function DashboardScreen() {
       {/* Date Switcher Header */}
       <LifelogDateHeader style={{ paddingTop: insets.top + 16, paddingBottom: 16 }} type="workout" />
 
-      {/* P-Points & Status Bar */}
-      <View style={[styles.pointStatusBar, { borderBottomColor: colors.border }]}>
-        <View style={styles.pointStatusLeft}>
-          <Text style={[styles.pointStatusLabel, { color: colors.textMuted }]}>
-            {t('ui.home.p_points_balance') || 'Pポイント残高:'}
-          </Text>
-          <PointBadge />
-          {isLoadingLifelog && (
-            <ActivityIndicator size="small" color={colors.primary} style={styles.loadingSpinner} />
-          )}
-        </View>
-        <TouchableOpacity
-          style={styles.manageFeaturesLink}
-          onPress={() => router.push('/settings/feature-management')}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.manageFeaturesLinkText, { color: colors.primary }]}>
-            {t('ui.home.manage_features') || '機能の追加・管理'}
-          </Text>
-          <Ionicons name="chevron-forward" size={16} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
+      {/* Overall Class, XP & P-Points Status Bar */}
+      <ClassStatusBar isLoading={isLoadingLifelog} />
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Dynamic Feature Cards List */}

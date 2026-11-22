@@ -29,6 +29,7 @@ export const NutritionCard = () => {
       iconName="restaurant"
       iconColor="#10b981"
       iconBgColor="rgba(16, 185, 129, 0.15)"
+      gamificationFeatureId="nutrition"
       onPress={() => router.push('/lifelog/nutrition')}
     >
       <View style={styles.statRow}>

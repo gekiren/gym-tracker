@@ -4,6 +4,8 @@ import { getExercises, addCustomExercise } from '../db/repositories/exerciseRepo
 import { saveWorkout } from '../db/repositories/workoutRepository';
 import { getBodyLogByDate, insertBodyLog, updateBodyLog } from '../db/repositories/bodyRepository';
 import { useSettingsStore } from '../store/settingsStore';
+import { recordFeatureAction } from './featureUnlockService';
+import { recordWorkoutCompletionGamification } from './gamificationService';
 import { Alert } from 'react-native';
 
 export interface SyncResult {
@@ -20,6 +22,7 @@ export async function processAndSaveCompanionData(payload: any): Promise<SyncRes
   let mealCount = 0;
   let workoutCount = 0;
   let noteCount = 0;
+  let savedWorkoutId: number | null = null;
 
   // 1. 水分ログ保存
   for (const w of payload?.waters || []) {
@@ -112,7 +115,7 @@ export async function processAndSaveCompanionData(payload: any): Promise<SyncRes
       const endTs = Date.now();
       const startTime = new Date(firstTs).toISOString();
       const endTime = new Date(endTs).toISOString();
-      await saveWorkout('AI記録ワークアウト', startTime, endTime, null, newExercises);
+      savedWorkoutId = await saveWorkout('AI記録ワークアウト', startTime, endTime, null, newExercises);
       workoutCount++;
     }
   }
@@ -190,6 +193,22 @@ export async function processAndSaveCompanionData(payload: any): Promise<SyncRes
   }
 
   const total = waterCount + mealCount + workoutCount + noteCount + memoryCount;
+
+  if (waterCount > 0) recordFeatureAction('water');
+  if (mealCount > 0) recordFeatureAction('nutrition');
+  if (noteCount > 0) recordFeatureAction('body');
+  if (workoutCount > 0) {
+    recordFeatureAction('workout');
+    if (savedWorkoutId) {
+      recordWorkoutCompletionGamification(savedWorkoutId, false).catch((e) =>
+        console.warn('[AICompanionSync] Gamification workout update failed:', e)
+      );
+    }
+  }
+  if (total > 0) {
+    recordFeatureAction('voice_ai');
+  }
+
   return {
     waterCount,
     mealCount,

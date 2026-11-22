@@ -19,6 +19,7 @@ export const RoutineCard = () => {
       iconName="repeat"
       iconColor="#4caf50"
       iconBgColor="rgba(76, 175, 80, 0.15)"
+      gamificationFeatureId="routine"
       onPress={() => router.push('/lifelog/routine')}
     >
       <View style={styles.routineSummaryRow}>
