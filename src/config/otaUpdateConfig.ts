@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.70',
+  version: '2.3.72',
   title: {
-    ja: '📅 24時間管理：前週同曜日コピー追加 ＆ ピース編集・ドラッグ操作を修正',
-    en: '📅 24h Management: Copy Previous Week Schedule & Fix Piece Drag/Tap',
+    ja: '📊 24時間管理：サークル・集計のデザイン統一＆2タブ化',
+    en: '📊 24h Management: Unified Circle Summary Design & 2-Tab Layout',
   },
   notes: {
     ja: [
-      '前週の同じ曜日の予定や実績をワンタップ（一括／個別選択）で今日の予定に追加できる「前週コピー」機能を追加しました。',
-      'タイムラインに配置したピースをタップした際の編集画面表示と、ドラッグでの移動操作がキャンセルされずスムーズに動作するよう修正しました。',
+      '画面上部を「🧩 タイムライン」と「📊 サークル・集計」の2タブにシンプル化し、タイムラインから未反映の予定を一括反映できるようにしました。',
+      '24時間サークルおよび予実比較リストの配色・アイコン・ポートフォリオ表示をタイムラインのデザインと統一しました。',
     ],
     en: [
-      "Added a Previous Week Copy feature to quickly add last week's same-day plans or actual logs into today's schedule (all at once or item by item).",
-      'Fixed timeline pieces so tapping reliably opens the edit sheet and dragging moves pieces smoothly without losing selection.',
+      'Simplified the top navigation into two tabs (Timeline and Circle Summary) and added a batch plan-to-actual reflection button on the timeline.',
+      'Unified the 24-hour dual-ring circle chart and comparison cards with the timeline\'s category colors, piece icons, and portfolio layout.',
     ],
   },
 };

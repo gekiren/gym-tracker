@@ -510,74 +510,181 @@ textarea:focus {
   opacity: 0.8;
 }
 
-/* Summary & Habit Score Cards */
+/* Summary & Habit Score Cards (Unified with Timeline Design) */
 .summary-nav-tabs {
   display: flex;
-  gap: 8px;
+  background-color: #181818;
+  border: 1px solid #2d2d2d;
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
   margin-bottom: 14px;
-  border-bottom: 1px solid #333;
-  padding-bottom: 8px;
 }
 
 .summary-nav-btn {
-  background: none;
+  flex: 1;
+  background: transparent;
   border: none;
   color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 8px 10px;
+  border-radius: 7px;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
 .summary-nav-btn.active {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.12);
+  background: #2563eb;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
 }
 
 .score-summary-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .score-card {
-  background: #262626;
-  border-radius: 8px;
-  padding: 10px 6px;
+  background: #181818;
+  border-radius: 10px;
+  padding: 10px 8px;
   text-align: center;
-  border: 1px solid #383838;
+  border: 1px solid #2d2d2d;
 }
 
 .score-card .val {
-  font-size: 1.1rem;
-  font-weight: bold;
+  font-size: 1.08rem;
+  font-weight: 700;
+  font-family: monospace;
   color: #60a5fa;
+}
+
+.score-card .sub-val {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  font-family: monospace;
+  margin-top: 1px;
 }
 
 .score-card .lbl {
   font-size: 0.72rem;
   color: var(--text-secondary);
-  margin-top: 2px;
+  margin-top: 3px;
+  font-weight: 600;
+}
+
+.summary-circle-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px 12px;
+  margin: -4px 0 14px 0;
+  padding: 8px 12px;
+  background: #181818;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.summary-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+
+.summary-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
 }
 
 /* Plan vs Actual Comparison Table */
 .diff-badge {
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  border-radius: 4px;
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 6px;
   font-weight: 600;
   display: inline-block;
   white-space: nowrap;
 }
 
-.diff-badge.match { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
-.diff-badge.short { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
-.diff-badge.over { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; }
-.diff-badge.unplanned { background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid #ec4899; }
-.diff-badge.pending { background: rgba(107, 114, 128, 0.2); color: #9ca3af; border: 1px solid #6b7280; }
+.diff-badge.match { background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.45); }
+.diff-badge.short { background: rgba(59, 130, 246, 0.18); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.45); }
+.diff-badge.over { background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); }
+.diff-badge.unplanned { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.5); }
+.diff-badge.pending { background: rgba(107, 114, 128, 0.18); color: #9ca3af; border: 1px solid rgba(107, 114, 128, 0.4); }
+
+.summary-item-card {
+  background: #181818;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.summary-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.summary-item-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.summary-item-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.summary-item-name {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.summary-item-bar-track {
+  width: 100%;
+  height: 6px;
+  background: #262626;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.summary-item-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.25s ease;
+}
 
 .compare-row {
   display: flex;
@@ -604,9 +711,9 @@ textarea:focus {
 }
 
 .compare-meta {
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   color: var(--text-secondary);
-  margin-top: 2px;
+  font-family: monospace;
 }
 
 .compare-right {
@@ -620,8 +727,10 @@ textarea:focus {
 /* Pie Chart Container */
 .pie-chart-container {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  margin: 16px 0;
+  margin: 12px 0 8px 0;
 }
 
 .pie-chart {
@@ -1617,16 +1726,13 @@ input:checked + .holiday-switch-slider:before {
     </header>
 
     <div class="container">
-        <!-- Main View Mode Toggle -->
+        <!-- Main View Mode Toggle (2 Tabs: Timeline & Circle Summary) -->
         <div class="view-mode-toggle-group">
             <button type="button" id="view-mode-puzzle-btn" class="view-mode-btn active" onclick="switchMainViewMode('puzzle')">
                 🧩 タイムライン
             </button>
             <button type="button" id="view-mode-summary-btn" class="view-mode-btn" onclick="switchMainViewMode('summary')">
                 📊 サークル・集計
-            </button>
-            <button type="button" id="view-mode-classic-btn" class="view-mode-btn" onclick="switchMainViewMode('classic')">
-                📋 詳細リスト
             </button>
         </div>
 
@@ -1647,6 +1753,9 @@ input:checked + .holiday-switch-slider:before {
                     <button type="button" id="puzzle-toggle-ghost-btn" class="btn btn-secondary puzzle-ghost-toggle-btn active" style="width: auto; padding: 6px 10px; font-size: 0.76rem; margin-bottom: 0; white-space: nowrap;" title="実績タイムライン上に予定ガイドを表示/非表示">
                         📅 予定ガイド
                     </button>
+                    <button type="button" id="puzzle-apply-all-plans-btn" class="btn btn-secondary" style="display: none; width: auto; padding: 6px 10px; font-size: 0.76rem; margin-bottom: 0; color: #7dd3fc; border-color: rgba(56, 189, 248, 0.5); white-space: nowrap;" onclick="applyAllUnloggedPlansToActual()" title="未反映の予定を一括で実績に反映">
+                        ⚡ 予定を一括反映
+                    </button>
                     <button type="button" id="puzzle-prev-week-btn" class="btn btn-secondary" style="width: auto; padding: 6px 10px; font-size: 0.78rem; margin-bottom: 0; color: #93c5fd; border-color: #3b82f6; white-space: nowrap;" onclick="openPrevWeekCopyModal()" title="前週の同じ曜日の予定・実績から予定に追加">
                         📅 前週コピー
                     </button>
@@ -1664,7 +1773,8 @@ input:checked + .holiday-switch-slider:before {
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; flex: 1; margin-right: 8px;">
                         <span style="font-size: 0.95rem;">🎨</span>
-                        <span id="def-sched-editor-title" style="font-weight: 700; font-size: 0.88rem; color: #eff6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">編集中: スケジュール名</span>
+                        <span id="def-sched-editor-title" style="font-weight: 700; font-size: 0.88rem; color: #eff6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;" title="タップしてスケジュール名を変更">編集中: スケジュール名</span>
+                        <button type="button" id="def-sched-editor-rename-btn" class="btn btn-secondary" style="width: auto; padding: 1px 6px; font-size: 0.7rem; margin-bottom: 0; border-color: rgba(147, 197, 253, 0.5); color: #dbeafe; flex-shrink: 0;" title="スケジュール名を変更">✏️ 名称変更</button>
                         <span id="def-sched-editor-badge" style="background: rgba(37, 99, 235, 0.45); color: #dbeafe; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; flex-shrink: 0;">全日共通</span>
                     </div>
                     <div style="display: flex; gap: 6px; flex-shrink: 0;">
@@ -1885,16 +1995,65 @@ input:checked + .holiday-switch-slider:before {
         </section>
         </div><!-- End of classic-view-container -->
 
-        <!-- Summary & Plan vs Actual Comparison -->
+        <!-- Summary & Plan vs Actual Comparison (Unified with Timeline Design) -->
         <section class="card" id="summary-section">
-            <div class="flex-row justify-between" style="align-items: center;">
-                <h3>今日の集計 ＆ 予実比較</h3>
-                <button type="button" id="export-md-btn" class="btn btn-secondary"
-                    style="width: auto; font-size: 0.8rem; padding: 4px 12px;">MD出力</button>
+            <div class="puzzle-header" style="margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <h3 style="margin-bottom: 0;">24時間サークル・集計</h3>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <button type="button" id="export-md-btn" class="btn btn-secondary"
+                        style="width: auto; font-size: 0.78rem; padding: 6px 10px; margin-bottom: 0; color: #93c5fd; border-color: #3b82f6; white-space: nowrap;">📄 MD出力</button>
+                    <button type="button" id="summary-reset-day-btn" class="btn btn-secondary"
+                        style="width: auto; font-size: 0.78rem; padding: 6px 10px; margin-bottom: 0; color: var(--error-color); white-space: nowrap;">クリア</button>
+                </div>
+            </div>
+
+            <!-- 時間ポートフォリオ（タイムラインと共通の4分割実績カード） -->
+            <div class="portfolio-grid" id="summary-portfolio-grid" style="margin-bottom: 10px;">
+                <div class="portfolio-card invest">
+                    <span class="title">🟢 投資・活動</span>
+                    <span id="summary-portfolio-invest-val" class="val">0.0h</span>
+                    <span id="summary-portfolio-invest-sub" class="desc">予定 0.0h</span>
+                </div>
+                <div class="portfolio-card maintain">
+                    <span class="title">🔵 維持・ケア</span>
+                    <span id="summary-portfolio-maintain-val" class="val">0.0h</span>
+                    <span id="summary-portfolio-maintain-sub" class="desc">予定 0.0h</span>
+                </div>
+                <div class="portfolio-card drift">
+                    <span class="title">🟣 漂流・オフ</span>
+                    <span id="summary-portfolio-drift-val" class="val">0.0h</span>
+                    <span id="summary-portfolio-drift-sub" class="desc">予定 0.0h</span>
+                </div>
+                <div class="portfolio-card free">
+                    <span class="title">⚪ 未記録（余白）</span>
+                    <span id="summary-portfolio-free-val" class="val">24.0h</span>
+                    <span id="summary-portfolio-free-sub" class="desc">自由時間・バッファ</span>
+                </div>
+            </div>
+
+            <!-- Score Summary Cards -->
+            <div id="score-summary-container" class="score-summary-grid">
+                <!-- Javascript will populate -->
+            </div>
+
+            <!-- 24h Dual Ring Timeline Chart -->
+            <div class="pie-chart-container">
+                <div id="summary-pie-chart" class="pie-chart"></div>
+            </div>
+
+            <!-- Circle Legend -->
+            <div class="summary-circle-legend">
+                <span class="summary-legend-item"><span class="summary-legend-dot" style="background: #f59e0b;"></span>投資・活動</span>
+                <span class="summary-legend-item"><span class="summary-legend-dot" style="background: #3b82f6;"></span>維持(睡眠/食/浴)</span>
+                <span class="summary-legend-item"><span class="summary-legend-dot" style="background: #10b981;"></span>維持(日常/移動)</span>
+                <span class="summary-legend-item"><span class="summary-legend-dot" style="background: #a855f7;"></span>漂流・オフ</span>
+                <span style="opacity: 0.7; font-size: 0.7rem;">｜ 外周:📅予定 / 内円:⏱実績</span>
             </div>
 
             <!-- Summary Navigation Tabs -->
-            <div class="summary-nav-tabs" style="margin-top: 12px;">
+            <div class="summary-nav-tabs">
                 <button type="button" id="tab-summary-compare" class="summary-nav-btn active" onclick="switchSummaryTab('compare')">
                     ⚖ 予実比較（予定 vs 実績）
                 </button>
@@ -1903,21 +2062,8 @@ input:checked + .holiday-switch-slider:before {
                 </button>
             </div>
 
-            <!-- 24h Dual Ring Timeline Chart -->
-            <div class="pie-chart-container">
-                <div id="summary-pie-chart" class="pie-chart"></div>
-            </div>
-
-            <!-- Score Summary Cards -->
-            <div id="score-summary-container" class="score-summary-grid">
-                <!-- Javascript will populate -->
-            </div>
-
             <!-- Compare Tab Content -->
             <div id="summary-compare-view">
-                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">
-                    活動別の予定・実績差異
-                </div>
                 <div id="summary-compare-list">
                     <!-- Javascript will populate -->
                 </div>
@@ -1925,17 +2071,14 @@ input:checked + .holiday-switch-slider:before {
 
             <!-- Actual Breakdown Tab Content -->
             <div id="summary-actual-view" class="hidden">
-                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">
-                    実績の活動別内訳
-                </div>
                 <div id="summary-list">
                     <!-- Javascript will populate -->
                 </div>
             </div>
         </section>
 
-        <!-- Export/Clear -->
-        <section id="clear-day-section" style="margin-top: 20px; text-align: center;">
+        <!-- Export/Clear (hidden legacy trigger kept for JS compatibility) -->
+        <section id="clear-day-section" style="display: none; margin-top: 20px; text-align: center;">
             <button type="button" id="clear-day-btn"
                 style="background:none; border:none; color: var(--error-color); text-decoration: underline; cursor: pointer; font-size: 0.95rem;">
                 今日のデータをリセット...
@@ -2085,7 +2228,7 @@ input:checked + .holiday-switch-slider:before {
                     <span style="font-size: 1.2rem;">🏷️</span>
                     <div>
                         <h3 style="margin-bottom: 0; font-size: 1.05rem;">タグ・ピース設定 (活動マスター)</h3>
-                        <span style="font-size: 0.7rem; color: var(--text-secondary);">タイムラインと詳細リストで共通利用</span>
+                        <span style="font-size: 0.7rem; color: var(--text-secondary);">タイムラインとサークル集計で共通利用</span>
                     </div>
                 </div>
                 <span id="close-modal-btn" style="cursor: pointer; font-size: 1.5rem; font-weight: bold; color: var(--text-secondary);">&times;</span>
@@ -2428,6 +2571,7 @@ const defSchedTodayHolidayBadge = document.getElementById('def-sched-today-holid
 const startDefSchedEditorBtn = document.getElementById('start-def-sched-editor-btn');
 const defSchedEditorBar = document.getElementById('def-sched-editor-bar');
 const defSchedEditorTitle = document.getElementById('def-sched-editor-title');
+const defSchedEditorRenameBtn = document.getElementById('def-sched-editor-rename-btn');
 const defSchedEditorBadge = document.getElementById('def-sched-editor-badge');
 const defSchedEditorCount = document.getElementById('def-sched-editor-count');
 const defSchedEditorSaveBtn = document.getElementById('def-sched-editor-save-btn');
@@ -2512,7 +2656,8 @@ var selectedTimelineBlockId = null;
 var lastBottomSheetOpenedAt = 0;
 var currentMainViewMode = (function() {
     try {
-        return storage.getItem('zikankanri_main_view_mode') || 'puzzle';
+        var saved = storage.getItem('zikankanri_main_view_mode');
+        return (saved === 'summary') ? 'summary' : 'puzzle';
     } catch (e) {
         return 'puzzle';
     }
@@ -3132,21 +3277,37 @@ function renderDefaultScheduleList() {
         const count = sched.data ? sched.data.length : 0;
 
         card.innerHTML =
-            '<div style="display: flex; justify-content: space-between; align-items: flex-start;">' +
-                '<div>' +
-                    '<div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 4px;">' + sched.name + '</div>' +
+            '<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">' +
+                '<div style="flex: 1; min-width: 0;">' +
+                    '<div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap;">' +
+                        '<span class="def-sched-name-label" style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary); word-break: break-word;"></span>' +
+                        '<button type="button" class="btn btn-secondary" style="width: auto; padding: 2px 7px; font-size: 0.7rem; color: #93c5fd; border-color: rgba(59, 130, 246, 0.45); margin-bottom: 0;" data-rename-id="' + sched.id + '" title="スケジュール名を変更">✏️ 名称変更</button>' +
+                    '</div>' +
                     '<div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">' +
                         daysBadgeHtml +
                         '<span style="font-size: 0.72rem; color: var(--text-secondary);">' + count + '件の予定</span>' +
                     '</div>' +
                 '</div>' +
-                '<button type="button" class="btn btn-secondary" style="width: auto; padding: 3px 8px; font-size: 0.74rem; color: var(--error-color); border-color: rgba(239, 68, 68, 0.4); margin-bottom: 0;" data-del-id="' + sched.id + '">削除</button>' +
+                '<button type="button" class="btn btn-secondary" style="width: auto; padding: 3px 8px; font-size: 0.74rem; color: var(--error-color); border-color: rgba(239, 68, 68, 0.4); margin-bottom: 0; flex-shrink: 0;" data-del-id="' + sched.id + '">削除</button>' +
             '</div>' +
             '<div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">' +
                 '<button type="button" class="btn btn-primary" style="flex: 1; padding: 6px 10px; font-size: 0.78rem; background: #2563eb; border-color: #60a5fa; margin-bottom: 0;" data-edit-timeline-id="' + sched.id + '">✏️ 予定を編集</button>' +
                 '<button type="button" class="btn btn-secondary" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; border-color: #3b82f6; color: #93c5fd; margin-bottom: 0;" data-apply-id="' + sched.id + '">⚡ 今日の予定に適用</button>' +
                 '<button type="button" class="btn btn-secondary" style="width: auto; padding: 6px 10px; font-size: 0.78rem; margin-bottom: 0;" data-edit-days-id="' + sched.id + '">曜日変更</button>' +
             '</div>';
+
+        const nameLabel = card.querySelector('.def-sched-name-label');
+        if (nameLabel) {
+            nameLabel.textContent = sched.name;
+        }
+
+        // 名称変更ボタン
+        const renameBtn = card.querySelector('[data-rename-id]');
+        if (renameBtn) {
+            renameBtn.onclick = function() {
+                promptRenameSchedule(sched.id);
+            };
+        }
 
         // タイムライン編集ボタン
         const editTimelineBtn = card.querySelector('[data-edit-timeline-id]');
@@ -3218,6 +3379,63 @@ function applySpecificSchedule(schedId) {
     updateDefaultSchedBanner();
     closeDefaultScheduleModal();
     alert('「' + sched.name + '」を適用しました。');
+}
+
+function promptRenameSchedule(schedId) {
+    const sched = defaultSchedules.find(function(s) { return s.id === schedId; });
+    if (!sched) return;
+
+    const input = prompt('デフォルトスケジュールの新しい名称を入力してください:', sched.name || '');
+    if (input === null) return;
+
+    const newName = input.trim();
+    if (!newName) {
+        alert('スケジュール名を入力してください。');
+        return;
+    }
+
+    if (newName === sched.name) return;
+
+    sched.name = newName;
+    sched.updatedAt = Date.now();
+    saveDefaultSchedules();
+    renderDefaultScheduleList();
+    updateDefaultSchedBanner();
+
+    if (isEditingDefaultSchedule && currentEditingDefaultSchedule && currentEditingDefaultSchedule.id === schedId) {
+        currentEditingDefaultSchedule.name = newName;
+        if (defSchedEditorTitle) {
+            defSchedEditorTitle.textContent = '編集中: ' + newName;
+        }
+    }
+}
+
+function promptRenameCurrentEditingSchedule() {
+    if (!isEditingDefaultSchedule || !currentEditingDefaultSchedule) return;
+
+    const input = prompt('デフォルトスケジュールの新しい名称を入力してください:', currentEditingDefaultSchedule.name || '');
+    if (input === null) return;
+
+    const newName = input.trim();
+    if (!newName) {
+        alert('スケジュール名を入力してください。');
+        return;
+    }
+
+    currentEditingDefaultSchedule.name = newName;
+    if (defSchedEditorTitle) {
+        defSchedEditorTitle.textContent = '編集中: ' + newName;
+    }
+
+    if (currentEditingDefaultSchedule.id) {
+        const target = defaultSchedules.find(function(s) { return s.id === currentEditingDefaultSchedule.id; });
+        if (target) {
+            target.name = newName;
+            target.updatedAt = Date.now();
+            saveDefaultSchedules();
+            updateDefaultSchedBanner();
+        }
+    }
 }
 
 function promptEditScheduleDays(schedId) {
@@ -3356,6 +3574,12 @@ function initDefaultScheduleUI() {
     }
     if (defSchedEditorCancelBtn) {
         defSchedEditorCancelBtn.onclick = cancelDefaultScheduleEditor;
+    }
+    if (defSchedEditorRenameBtn) {
+        defSchedEditorRenameBtn.onclick = promptRenameCurrentEditingSchedule;
+    }
+    if (defSchedEditorTitle) {
+        defSchedEditorTitle.onclick = promptRenameCurrentEditingSchedule;
     }
     if (tmplSaveAsDefaultBtn) {
         tmplSaveAsDefaultBtn.addEventListener('click', function() {
@@ -3771,6 +3995,8 @@ function syncAllActivityViews() {
     if (typeof renderPuzzlePalette === 'function') renderPuzzlePalette();
     if (typeof renderBottomSheetTags === 'function') renderBottomSheetTags();
     if (typeof renderBottomSheetSimultaneousList === 'function') renderBottomSheetSimultaneousList();
+    if (typeof renderPuzzle === 'function') renderPuzzle();
+    if (typeof renderSummary === 'function') renderSummary();
 }
 
 function openTagEditor() {
@@ -4872,6 +5098,77 @@ function renderLogs() {
     if (typeof renderPuzzle === 'function') renderPuzzle();
 }
 
+function getPieceMetaByName(name) {
+    const cleanName = (name || '').trim();
+    const found = (activityPieces || []).find(function(p) { return p.name === cleanName; });
+    const category = found && found.category ? found.category : getCategoryByActivityName(cleanName);
+    const icon = found && found.icon ? found.icon : (category === 'invest' ? '⚡' : (category === 'drift' ? '🟣' : '🔵'));
+    const theme = getColorThemeByActivityName(cleanName, category);
+
+    // Simple hash for subtle shade variation within the same category
+    let hash = 0;
+    for (let i = 0; i < cleanName.length; i++) {
+        hash = (hash * 31 + cleanName.charCodeAt(i)) % 3;
+    }
+
+    let fill = '#3b82f6';
+    let bgSoft = 'rgba(59, 130, 246, 0.2)';
+    let border = 'rgba(59, 130, 246, 0.5)';
+    let textCol = '#dbeafe';
+    let catLabel = '維持・ケア';
+
+    if (category === 'invest') {
+        const shades = ['#f59e0b', '#fbbf24', '#d97706'];
+        fill = shades[hash];
+        bgSoft = 'rgba(245, 158, 11, 0.22)';
+        border = 'rgba(245, 158, 11, 0.5)';
+        textCol = '#fef3c7';
+        catLabel = '投資・活動';
+    } else if (category === 'drift') {
+        const shades = ['#a855f7', '#c084fc', '#9333ea'];
+        fill = shades[hash];
+        bgSoft = 'rgba(168, 85, 247, 0.24)';
+        border = 'rgba(168, 85, 247, 0.55)';
+        textCol = '#f3e8ff';
+        catLabel = '漂流・オフ';
+    } else if (theme === 'theme-emerald') {
+        const shades = ['#10b981', '#34d399', '#059669'];
+        fill = shades[hash];
+        bgSoft = 'rgba(16, 185, 129, 0.22)';
+        border = 'rgba(16, 185, 129, 0.5)';
+        textCol = '#d1fae5';
+        catLabel = '維持・ケア';
+    } else {
+        const shades = ['#3b82f6', '#60a5fa', '#2563eb'];
+        fill = shades[hash];
+        bgSoft = 'rgba(59, 130, 246, 0.22)';
+        border = 'rgba(59, 130, 246, 0.5)';
+        textCol = '#dbeafe';
+        catLabel = '維持・ケア';
+    }
+
+    return {
+        icon: icon,
+        category: category,
+        catLabel: catLabel,
+        theme: theme,
+        fill: fill,
+        bgSoft: bgSoft,
+        border: border,
+        textCol: textCol
+    };
+}
+
+function formatMinsToHoursAndMins(mins) {
+    const m = Math.round(mins || 0);
+    if (m <= 0) return '0m';
+    const h = Math.floor(m / 60);
+    const rem = m % 60;
+    if (h > 0 && rem > 0) return h + 'h ' + rem + 'm';
+    if (h > 0) return h + 'h';
+    return rem + 'm';
+}
+
 function renderSummary() {
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
     const targetLogs = logs.filter(function(l) { return l.date === selectedDate; });
@@ -4890,6 +5187,10 @@ function renderSummary() {
 
     const actualTotals = {};
     let totalActualMins = 0;
+    let actualInvestMins = 0;
+    let actualMaintainMins = 0;
+    let actualDriftMins = 0;
+
     targetLogs.forEach(function(log) {
         const duration = calculateDuration(log.start, log.end);
         log.items.forEach(function(item) {
@@ -4898,11 +5199,20 @@ function renderSummary() {
             if (!actualTotals[item.name]) actualTotals[item.name] = 0;
             actualTotals[item.name] += minutes;
             totalActualMins += minutes;
+
+            const cat = getPieceMetaByName(item.name).category;
+            if (cat === 'invest') actualInvestMins += minutes;
+            else if (cat === 'drift') actualDriftMins += minutes;
+            else actualMaintainMins += minutes;
         });
     });
 
     const planTotals = {};
     let totalPlanMins = 0;
+    let planInvestMins = 0;
+    let planMaintainMins = 0;
+    let planDriftMins = 0;
+
     targetPlans.forEach(function(plan) {
         const duration = calculateDuration(plan.start, plan.end);
         plan.items.forEach(function(item) {
@@ -4911,8 +5221,35 @@ function renderSummary() {
             if (!planTotals[item.name]) planTotals[item.name] = 0;
             planTotals[item.name] += minutes;
             totalPlanMins += minutes;
+
+            const cat = getPieceMetaByName(item.name).category;
+            if (cat === 'invest') planInvestMins += minutes;
+            else if (cat === 'drift') planDriftMins += minutes;
+            else planMaintainMins += minutes;
         });
     });
+
+    // Update 4-part Portfolio Cards in Summary View
+    const sInvVal = document.getElementById('summary-portfolio-invest-val');
+    const sInvSub = document.getElementById('summary-portfolio-invest-sub');
+    const sMainVal = document.getElementById('summary-portfolio-maintain-val');
+    const sMainSub = document.getElementById('summary-portfolio-maintain-sub');
+    const sDriftVal = document.getElementById('summary-portfolio-drift-val');
+    const sDriftSub = document.getElementById('summary-portfolio-drift-sub');
+    const sFreeVal = document.getElementById('summary-portfolio-free-val');
+    const sFreeSub = document.getElementById('summary-portfolio-free-sub');
+
+    const actualFreeMins = Math.max(0, 1440 - (actualInvestMins + actualMaintainMins + actualDriftMins));
+    const planFreeMins = Math.max(0, 1440 - (planInvestMins + planMaintainMins + planDriftMins));
+
+    if (sInvVal) sInvVal.textContent = (actualInvestMins / 60).toFixed(1) + 'h';
+    if (sInvSub) sInvSub.textContent = '予定 ' + (planInvestMins / 60).toFixed(1) + 'h';
+    if (sMainVal) sMainVal.textContent = (actualMaintainMins / 60).toFixed(1) + 'h';
+    if (sMainSub) sMainSub.textContent = '予定 ' + (planMaintainMins / 60).toFixed(1) + 'h';
+    if (sDriftVal) sDriftVal.textContent = (actualDriftMins / 60).toFixed(1) + 'h';
+    if (sDriftSub) sDriftSub.textContent = '予定 ' + (planDriftMins / 60).toFixed(1) + 'h';
+    if (sFreeVal) sFreeVal.textContent = (actualFreeMins / 60).toFixed(1) + 'h';
+    if (sFreeSub) sFreeSub.textContent = '予定余白 ' + (planFreeMins / 60).toFixed(1) + 'h';
 
     let matchMins = 0;
     const allCategories = Array.from(new Set([...Object.keys(actualTotals), ...Object.keys(planTotals)]));
@@ -4926,74 +5263,110 @@ function renderSummary() {
 
     scoreContainer.innerHTML =
         '<div class="score-card">' +
-            '<div class="val" style="color: #93c5fd;">' + Math.round(totalPlanMins) + '分</div>' +
+            '<div class="val" style="color: #93c5fd;">' + (totalPlanMins / 60).toFixed(1) + 'h</div>' +
+            '<div class="sub-val">(' + Math.round(totalPlanMins) + '分)</div>' +
             '<div class="lbl">📅 予定総時間</div>' +
         '</div>' +
         '<div class="score-card">' +
-            '<div class="val" style="color: #7dd3fc;">' + Math.round(totalActualMins) + '分</div>' +
+            '<div class="val" style="color: #7dd3fc;">' + (totalActualMins / 60).toFixed(1) + 'h</div>' +
+            '<div class="sub-val">(' + Math.round(totalActualMins) + '分)</div>' +
             '<div class="lbl">⏱ 実績総時間</div>' +
         '</div>' +
         '<div class="score-card">' +
             '<div class="val" style="color: ' + (adherenceRate >= 80 ? '#34d399' : (adherenceRate >= 50 ? '#fbbf24' : '#f87171')) + ';">' + adherenceRate + '%</div>' +
+            '<div class="sub-val">一致 ' + Math.round(matchMins) + '分</div>' +
             '<div class="lbl">🎯 予定遵守率</div>' +
         '</div>';
 
     if (allCategories.length === 0) {
-        compareList.innerHTML = '<div style="text-align:center; color: var(--text-secondary); padding: 10px;">データなし</div>';
+        compareList.innerHTML = '<div style="text-align:center; color: var(--text-secondary); padding: 18px; background: #181818; border-radius: 10px; border: 1px dashed #333; font-size: 0.82rem;">まだ予定・実績データがありません。<br>「🧩 タイムライン」からピースを配置して記録しましょう。</div>';
     } else {
         const sortedCats = allCategories.sort(function(a, b) {
-            return ((planTotals[b] || 0) + (actualTotals[b] || 0)) - ((planTotals[a] || 0) + (actualTotals[a] || 0));
+            return Math.max(planTotals[b] || 0, actualTotals[b] || 0) - Math.max(planTotals[a] || 0, actualTotals[a] || 0);
         });
+        const maxCatMins = Math.max(60, ...sortedCats.map(function(n) { return Math.max(planTotals[n] || 0, actualTotals[n] || 0); }));
 
         sortedCats.forEach(function(name) {
             const pMins = Math.round(planTotals[name] || 0);
             const aMins = Math.round(actualTotals[name] || 0);
             const diff = aMins - pMins;
+            const meta = getPieceMetaByName(name);
 
             let badgeHtml = '';
             if (pMins > 0 && aMins === 0) {
                 badgeHtml = '<span class="diff-badge pending">⚪ 未実施</span>';
             } else if (pMins === 0 && aMins > 0) {
-                badgeHtml = '<span class="diff-badge unplanned">🟣 予定外 (+' + aMins + '分)</span>';
+                badgeHtml = '<span class="diff-badge unplanned">🟣 予定外 (+' + formatMinsToHoursAndMins(aMins) + ')</span>';
             } else if (Math.abs(diff) <= 5) {
                 badgeHtml = '<span class="diff-badge match">🟢 予定通り</span>';
             } else if (diff > 5) {
-                badgeHtml = '<span class="diff-badge over">🟠 +' + diff + '分 超過</span>';
+                badgeHtml = '<span class="diff-badge over">🟠 +' + formatMinsToHoursAndMins(diff) + ' 超過</span>';
             } else {
-                badgeHtml = '<span class="diff-badge short">🔵 ' + diff + '分 短縮</span>';
+                badgeHtml = '<span class="diff-badge short">🔵 -' + formatMinsToHoursAndMins(Math.abs(diff)) + ' 短縮</span>';
             }
 
-            const row = document.createElement('div');
-            row.className = 'compare-row';
-            const displayName = name.trim() ? name : '<span style="color: var(--text-secondary); font-style: italic;">(未設定)</span>';
+            const card = document.createElement('div');
+            card.className = 'summary-item-card';
+            const displayName = name.trim() ? escapeHtml(name.trim()) : '<span style="color: var(--text-secondary); font-style: italic;">(未設定)</span>';
+            const actualBarPct = Math.min(100, Math.round((aMins / maxCatMins) * 100));
+            const planBarPct = Math.min(100, Math.round((pMins / maxCatMins) * 100));
 
-            row.innerHTML =
-                '<div class="compare-left">' +
-                    '<div class="compare-title">' + displayName + '</div>' +
-                    '<div class="compare-meta">予定: ' + pMins + '分 | 実績: ' + aMins + '分</div>' +
+            card.innerHTML =
+                '<div class="summary-item-header">' +
+                    '<div class="summary-item-title-group">' +
+                        '<span class="summary-item-icon" style="background: ' + meta.bgSoft + '; border: 1px solid ' + meta.border + ';">' + meta.icon + '</span>' +
+                        '<div style="min-width: 0; flex: 1;">' +
+                            '<div style="display: flex; align-items: center; gap: 6px;">' +
+                                '<span class="summary-item-name">' + displayName + '</span>' +
+                                '<span class="piece-badge ' + meta.category + '">' + meta.catLabel + '</span>' +
+                            '</div>' +
+                            '<div class="compare-meta" style="margin-top: 2px;">📅 予定 ' + formatMinsToHoursAndMins(pMins) + ' (' + pMins + 'm) ｜ ⏱ 実績 <strong style="color: ' + meta.textCol + ';">' + formatMinsToHoursAndMins(aMins) + ' (' + aMins + 'm)</strong></div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="compare-right">' +
+                        badgeHtml +
+                    '</div>' +
                 '</div>' +
-                '<div class="compare-right">' +
-                    badgeHtml +
+                '<div class="summary-item-bar-track">' +
+                    (pMins > 0 ? '<div style="position: absolute; top: 0; left: 0; height: 100%; width: ' + planBarPct + '%; background: rgba(255,255,255,0.14); border-right: 1.5px dashed rgba(255,255,255,0.5);"></div>' : '') +
+                    '<div class="summary-item-bar-fill" style="width: ' + actualBarPct + '%; background: ' + meta.fill + ';"></div>' +
                 '</div>';
-            compareList.appendChild(row);
+            compareList.appendChild(card);
         });
     }
 
     const sortedActual = Object.entries(actualTotals).sort(function(a, b) { return b[1] - a[1]; });
     if (sortedActual.length === 0) {
-        summaryList.innerHTML = '<div style="text-align:center; color: var(--text-secondary); padding: 10px;">実績データなし</div>';
+        summaryList.innerHTML = '<div style="text-align:center; color: var(--text-secondary); padding: 18px; background: #181818; border-radius: 10px; border: 1px dashed #333; font-size: 0.82rem;">実績データがまだありません</div>';
     } else {
         sortedActual.forEach(function(entry) {
             const name = entry[0];
-            const mins = entry[1];
-            const row = document.createElement('div');
-            row.className = 'flex-row justify-between';
-            row.style.padding = '8px 0';
-            row.style.borderBottom = '1px solid #333';
-            const displayName = name.trim() ? name : '<span style="color: var(--text-secondary); font-style: italic;">(未設定)</span>';
+            const mins = Math.round(entry[1]);
+            const meta = getPieceMetaByName(name);
+            const card = document.createElement('div');
+            card.className = 'summary-item-card';
+            const displayName = name.trim() ? escapeHtml(name.trim()) : '<span style="color: var(--text-secondary); font-style: italic;">(未設定)</span>';
             const pct = totalActualMins > 0 ? Math.round((mins / totalActualMins) * 100) : 0;
-            row.innerHTML = '<span style="display:flex; align-items:center; gap:8px;">' + displayName + ' <span style="font-size:0.8rem; color:var(--text-secondary);">(' + pct + '%)</span></span><span>' + Math.round(mins) + '分</span>';
-            summaryList.appendChild(row);
+            const dayPct = Math.min(100, Math.round((mins / 1440) * 100));
+
+            card.innerHTML =
+                '<div class="summary-item-header">' +
+                    '<div class="summary-item-title-group">' +
+                        '<span class="summary-item-icon" style="background: ' + meta.bgSoft + '; border: 1px solid ' + meta.border + ';">' + meta.icon + '</span>' +
+                        '<div style="display: flex; align-items: center; gap: 6px; min-width: 0;">' +
+                            '<span class="summary-item-name">' + displayName + '</span>' +
+                            '<span class="piece-badge ' + meta.category + '">' + meta.catLabel + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div style="text-align: right; font-family: monospace;">' +
+                        '<span style="font-weight: 700; font-size: 0.92rem; color: ' + meta.textCol + ';">' + formatMinsToHoursAndMins(mins) + '</span> ' +
+                        '<span style="font-size: 0.75rem; color: var(--text-secondary);">(' + mins + 'm / ' + pct + '%)</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="summary-item-bar-track">' +
+                    '<div class="summary-item-bar-fill" style="width: ' + Math.max(pct, dayPct) + '%; background: ' + meta.fill + ';"></div>' +
+                '</div>';
+            summaryList.appendChild(card);
         });
     }
 
@@ -5007,16 +5380,13 @@ function renderDualRingSVG(targetPlans, targetLogs) {
     pieChartContainer.innerHTML = '';
     pieChartContainer.style.background = 'none';
 
-    if (targetPlans.length === 0 && targetLogs.length === 0) {
-        return;
-    }
-
     const size = 320;
     const cx = size / 2;
     const cy = size / 2;
-    const outerRingOuterR = 120;
+    const outerRingOuterR = 122;
     const outerRingInnerR = 100;
-    const innerCircleR = 92;
+    const innerCircleR = 94;
+    const innerHoleR = 32;
 
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("width", "100%");
@@ -5026,36 +5396,53 @@ function renderDualRingSVG(targetPlans, targetLogs) {
     svg.style.display = "block";
     svg.style.margin = "0 auto";
 
+    // Outer Plan Track Background
     const bgOuter = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     bgOuter.setAttribute("cx", cx);
     bgOuter.setAttribute("cy", cy);
     bgOuter.setAttribute("r", outerRingOuterR);
-    bgOuter.setAttribute("fill", "#1E1E1E");
+    bgOuter.setAttribute("fill", "#161616");
+    bgOuter.setAttribute("stroke", "#2a2a2a");
+    bgOuter.setAttribute("stroke-width", "1");
     svg.appendChild(bgOuter);
 
+    // Gap Ring between Plan and Actual
+    const gapRing = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    gapRing.setAttribute("cx", cx);
+    gapRing.setAttribute("cy", cy);
+    gapRing.setAttribute("r", outerRingInnerR);
+    gapRing.setAttribute("fill", "#101010");
+    svg.appendChild(gapRing);
+
+    // Inner Actual Track Background
     const bgInner = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     bgInner.setAttribute("cx", cx);
     bgInner.setAttribute("cy", cy);
     bgInner.setAttribute("r", innerCircleR);
-    bgInner.setAttribute("fill", "#2C2C2C");
+    bgInner.setAttribute("fill", "#1c1c1c");
+    bgInner.setAttribute("stroke", "#2d2d2d");
+    bgInner.setAttribute("stroke-width", "1");
     svg.appendChild(bgInner);
 
-    const colors = ['#FFCDD2', '#F8BBD0', '#E1BEE7', '#D1C4E9', '#C5CAE9', '#BBDEFB', '#B3E5FC', '#B2EBF2', '#B2DFDB', '#C8E6C9', '#DCEDC8', '#F0F4C3', '#FFF9C4', '#FFECB3', '#FFE0B2', '#FFCCBC'];
-    const activityColorMap = {};
-    let colorIdx = 0;
-
-    const getColor = function(name) {
-        if (!activityColorMap[name]) {
-            activityColorMap[name] = colors[colorIdx % colors.length];
-            colorIdx++;
-        }
-        return activityColorMap[name];
-    };
-
+    // 24h Dial Numbers & Tick Marks
     for (let i = 0; i < 24; i++) {
         const angle = (i * 15) - 90;
         const rad = angle * (Math.PI / 180);
-        const textR = outerRingOuterR + 18;
+        const isMajor = (i % 6 === 0);
+
+        // Subtle hour guide line inside the dial
+        const tickR1 = outerRingOuterR;
+        const tickR2 = outerRingOuterR + (isMajor ? 5 : 3);
+        const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        tick.setAttribute("x1", cx + tickR1 * Math.cos(rad));
+        tick.setAttribute("y1", cy + tickR1 * Math.sin(rad));
+        tick.setAttribute("x2", cx + tickR2 * Math.cos(rad));
+        tick.setAttribute("y2", cy + tickR2 * Math.sin(rad));
+        tick.setAttribute("stroke", isMajor ? "#60a5fa" : "#444444");
+        tick.setAttribute("stroke-width", isMajor ? "1.5" : "1");
+        svg.appendChild(tick);
+
+        const textR = outerRingOuterR + 17;
         const x = cx + textR * Math.cos(rad);
         const y = cy + textR * Math.sin(rad);
 
@@ -5064,16 +5451,22 @@ function renderDualRingSVG(targetPlans, targetLogs) {
         text.setAttribute("y", y);
         text.setAttribute("text-anchor", "middle");
         text.setAttribute("dominant-baseline", "middle");
-        text.setAttribute("fill", (i % 6 === 0) ? "#60a5fa" : "#888888");
-        text.setAttribute("font-size", (i % 6 === 0) ? "11" : "9");
-        text.setAttribute("font-weight", (i % 6 === 0) ? "bold" : "normal");
+        text.setAttribute("fill", isMajor ? "#93c5fd" : "#777777");
+        text.setAttribute("font-size", isMajor ? "11" : "9");
+        text.setAttribute("font-family", "monospace");
+        text.setAttribute("font-weight", isMajor ? "bold" : "normal");
         text.textContent = i;
         svg.appendChild(text);
     }
 
     function createDonutArc(cx, cy, rOut, rIn, startAngle, endAngle) {
+        let diffAngle = endAngle - startAngle;
+        if (diffAngle >= 360) diffAngle = 359.9;
+        if (diffAngle <= 0.3) diffAngle = 0.5;
+        const adjEnd = startAngle + diffAngle;
+
         const sRad = startAngle * Math.PI / 180;
-        const eRad = endAngle * Math.PI / 180;
+        const eRad = adjEnd * Math.PI / 180;
         const x1 = cx + rOut * Math.cos(sRad);
         const y1 = cy + rOut * Math.sin(sRad);
         const x2 = cx + rOut * Math.cos(eRad);
@@ -5083,13 +5476,14 @@ function renderDualRingSVG(targetPlans, targetLogs) {
         const x4 = cx + rIn * Math.cos(sRad);
         const y4 = cy + rIn * Math.sin(sRad);
 
-        const largeArc = (endAngle - startAngle) > 180 ? 1 : 0;
+        const largeArc = diffAngle > 180 ? 1 : 0;
         return 'M ' + x1 + ' ' + y1 + ' A ' + rOut + ' ' + rOut + ' 0 ' + largeArc + ' 1 ' + x2 + ' ' + y2 + ' L ' + x3 + ' ' + y3 + ' A ' + rIn + ' ' + rIn + ' 0 ' + largeArc + ' 0 ' + x4 + ' ' + y4 + ' Z';
     }
 
+    // Render Outer Ring (Plans)
     targetPlans.forEach(function(plan) {
-        const primName = plan.items[0].name;
-        const color = getColor(primName);
+        const primName = (plan.items && plan.items.length > 0) ? plan.items[0].name : (plan.activity_name || '活動');
+        const meta = getPieceMetaByName(primName);
         const [sh, sm] = plan.start.split(':').map(Number);
         const [eh, em] = plan.end.split(':').map(Number);
         let sMins = sh * 60 + sm;
@@ -5101,16 +5495,17 @@ function renderDualRingSVG(targetPlans, targetLogs) {
 
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         path.setAttribute("d", createDonutArc(cx, cy, outerRingOuterR, outerRingInnerR, sAngle, eAngle));
-        path.setAttribute("fill", color);
-        path.setAttribute("fill-opacity", "0.85");
+        path.setAttribute("fill", meta.fill);
+        path.setAttribute("fill-opacity", "0.72");
         path.setAttribute("stroke", "#121212");
-        path.setAttribute("stroke-width", "1");
+        path.setAttribute("stroke-width", "1.2");
         svg.appendChild(path);
     });
 
+    // Render Inner Ring (Actual Logs)
     targetLogs.forEach(function(log) {
-        const primName = log.items[0].name;
-        const color = getColor(primName);
+        const primName = (log.items && log.items.length > 0) ? log.items[0].name : (log.activity_name || '活動');
+        const meta = getPieceMetaByName(primName);
         const [sh, sm] = log.start.split(':').map(Number);
         const [eh, em] = log.end.split(':').map(Number);
         let sMins = sh * 60 + sm;
@@ -5120,89 +5515,97 @@ function renderDualRingSVG(targetPlans, targetLogs) {
         const sAngle = (sMins / 1440) * 360 - 90;
         const eAngle = (eMins / 1440) * 360 - 90;
 
-        const x1 = cx + innerCircleR * Math.cos(sAngle * Math.PI / 180);
-        const y1 = cy + innerCircleR * Math.sin(sAngle * Math.PI / 180);
-        const x2 = cx + innerCircleR * Math.cos(eAngle * Math.PI / 180);
-        const y2 = cy + innerCircleR * Math.sin(eAngle * Math.PI / 180);
-        const largeArc = (eAngle - sAngle) > 180 ? 1 : 0;
-
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", 'M ' + cx + ' ' + cy + ' L ' + x1 + ' ' + y1 + ' A ' + innerCircleR + ' ' + innerCircleR + ' 0 ' + largeArc + ' 1 ' + x2 + ' ' + y2 + ' Z');
-        path.setAttribute("fill", color);
+        path.setAttribute("d", createDonutArc(cx, cy, innerCircleR, innerHoleR, sAngle, eAngle));
+        path.setAttribute("fill", meta.fill);
+        path.setAttribute("fill-opacity", "0.95");
         path.setAttribute("stroke", "#121212");
-        path.setAttribute("stroke-width", "1");
+        path.setAttribute("stroke-width", "1.2");
         svg.appendChild(path);
     });
 
+    // Center Hub Circle
     const centerCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     centerCircle.setAttribute("cx", cx);
     centerCircle.setAttribute("cy", cy);
-    centerCircle.setAttribute("r", "28");
-    centerCircle.setAttribute("fill", "#181818");
-    centerCircle.setAttribute("stroke", "#333");
-    centerCircle.setAttribute("stroke-width", "1");
+    centerCircle.setAttribute("r", innerHoleR);
+    centerCircle.setAttribute("fill", "#141414");
+    centerCircle.setAttribute("stroke", "#333333");
+    centerCircle.setAttribute("stroke-width", "1.5");
     svg.appendChild(centerCircle);
 
     const centerText = document.createElementNS("http://www.w3.org/2000/svg", "text");
     centerText.setAttribute("x", cx);
-    centerText.setAttribute("y", cy - 4);
+    centerText.setAttribute("y", cy - 5);
     centerText.setAttribute("text-anchor", "middle");
     centerText.setAttribute("dominant-baseline", "middle");
     centerText.setAttribute("fill", "#93c5fd");
-    centerText.setAttribute("font-size", "8");
-    centerText.textContent = "外:予定";
+    centerText.setAttribute("font-size", "8.5");
+    centerText.setAttribute("font-weight", "600");
+    centerText.textContent = "外:📅予定";
     svg.appendChild(centerText);
 
     const centerText2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
     centerText2.setAttribute("x", cx);
-    centerText2.setAttribute("y", cy + 8);
+    centerText2.setAttribute("y", cy + 7);
     centerText2.setAttribute("text-anchor", "middle");
     centerText2.setAttribute("dominant-baseline", "middle");
     centerText2.setAttribute("fill", "#7dd3fc");
-    centerText2.setAttribute("font-size", "8");
-    centerText2.textContent = "内:実績";
+    centerText2.setAttribute("font-size", "8.5");
+    centerText2.setAttribute("font-weight", "600");
+    centerText2.textContent = "内:⏱実績";
     svg.appendChild(centerText2);
 
-    targetLogs.forEach(function(log) {
-        const [sh, sm] = log.start.split(':').map(Number);
-        const [eh, em] = log.end.split(':').map(Number);
+    // Labels on Inner Ring (Actual Logs) or Outer Ring (Plans if no logs)
+    const labelTargetList = targetLogs.length > 0 ? targetLogs : targetPlans;
+    const isPlanFallbackLabel = (targetLogs.length === 0 && targetPlans.length > 0);
+
+    labelTargetList.forEach(function(entry) {
+        const [sh, sm] = entry.start.split(':').map(Number);
+        const [eh, em] = entry.end.split(':').map(Number);
         let sMins = sh * 60 + sm;
         let eMins = eh * 60 + em;
         if (eMins < sMins) eMins += 1440;
+        const dur = eMins - sMins;
+
+        if (dur < 20) return;
 
         const sAngle = (sMins / 1440) * 360 - 90;
         const eAngle = (eMins / 1440) * 360 - 90;
         const midAngle = (sAngle + eAngle) / 2;
         const midRad = midAngle * (Math.PI / 180);
 
-        let labelR = innerCircleR * 0.65;
-        let lx = cx + labelR * Math.cos(midRad);
-        let ly = cy + labelR * Math.sin(midRad);
+        const labelR = isPlanFallbackLabel ? ((outerRingOuterR + outerRingInnerR) / 2) : ((innerCircleR + innerHoleR) / 2 + 3);
+        const lx = cx + labelR * Math.cos(midRad);
+        const ly = cy + labelR * Math.sin(midRad);
 
-        const isVisible = (eMins - sMins) >= 15;
+        const primName = (entry.items && entry.items.length > 0) ? entry.items[0].name.trim() : (entry.activity_name || '');
+        if (!primName) return;
+        const meta = getPieceMetaByName(primName);
+
         let textContent = '';
-        if (isVisible) {
-            textContent = log.items.map(function(i) { return i.name.trim(); }).filter(function(n) { return n !== ''; }).join('/');
-            if (textContent.length > 5) textContent = textContent.substring(0, 4) + '..';
+        if (dur < 45 || isPlanFallbackLabel) {
+            textContent = meta.icon;
+        } else {
+            const shortName = primName.length > 4 ? primName.substring(0, 4) + '..' : primName;
+            textContent = meta.icon + shortName;
         }
 
-        if (isVisible && textContent) {
-            const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            label.setAttribute("x", lx);
-            label.setAttribute("y", ly);
-            label.setAttribute("text-anchor", "middle");
-            label.setAttribute("dominant-baseline", "middle");
-            label.setAttribute("fill", "#222");
-            label.setAttribute("stroke", "#ffffff");
-            label.setAttribute("stroke-width", "2");
-            label.setAttribute("paint-order", "stroke fill");
-            label.setAttribute("font-size", "10");
-            label.setAttribute("font-weight", "bold");
-            label.setAttribute("pointer-events", "none");
-            label.textContent = textContent;
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", lx);
+        label.setAttribute("y", ly);
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("dominant-baseline", "middle");
+        label.setAttribute("fill", "#ffffff");
+        label.setAttribute("stroke", "#121212");
+        label.setAttribute("stroke-width", "2.5");
+        label.setAttribute("paint-order", "stroke fill");
+        label.setAttribute("font-size", dur < 45 ? "10" : "9.5");
+        label.setAttribute("font-weight", "bold");
+        label.setAttribute("pointer-events", "none");
+        label.textContent = textContent;
 
-            svg.appendChild(label);
-        }
+        svg.appendChild(label);
     });
 
     pieChartContainer.appendChild(svg);
@@ -5341,8 +5744,9 @@ function updateDefaultStartTime() {
 
 
 window.switchMainViewMode = function(mode) {
-    currentMainViewMode = mode;
-    storage.setItem('zikankanri_main_view_mode', mode);
+    const safeMode = (mode === 'summary') ? 'summary' : 'puzzle';
+    currentMainViewMode = safeMode;
+    storage.setItem('zikankanri_main_view_mode', safeMode);
     const puzzleBtn = document.getElementById('view-mode-puzzle-btn');
     const summaryBtn = document.getElementById('view-mode-summary-btn');
     const classicBtn = document.getElementById('view-mode-classic-btn');
@@ -5351,15 +5755,16 @@ window.switchMainViewMode = function(mode) {
     const classicSec = document.getElementById('classic-view-container');
     const clearSec = document.getElementById('clear-day-section');
 
-    if (puzzleBtn) puzzleBtn.classList.toggle('active', mode === 'puzzle');
-    if (summaryBtn) summaryBtn.classList.toggle('active', mode === 'summary');
-    if (classicBtn) classicBtn.classList.toggle('active', mode === 'classic');
+    if (puzzleBtn) puzzleBtn.classList.toggle('active', safeMode === 'puzzle');
+    if (summaryBtn) summaryBtn.classList.toggle('active', safeMode === 'summary');
+    if (classicBtn) classicBtn.classList.remove('active');
 
-    if (mode === 'puzzle') {
+    if (classicSec) classicSec.style.display = 'none';
+    if (clearSec) clearSec.style.display = 'none';
+
+    if (safeMode === 'puzzle') {
         if (puzzleSec) puzzleSec.style.display = 'block';
         if (summarySec) summarySec.style.display = 'none';
-        if (classicSec) classicSec.style.display = 'none';
-        if (clearSec) clearSec.style.display = 'none';
         renderPuzzle();
         setTimeout(function() {
             const scrollArea = document.getElementById('puzzle-timeline-scroll');
@@ -5367,19 +5772,9 @@ window.switchMainViewMode = function(mode) {
                 scrollArea.scrollTop = 380; // 朝6時半〜7時付近へ
             }
         }, 80);
-    } else if (mode === 'summary') {
-        if (puzzleSec) puzzleSec.style.display = 'none';
-        if (summarySec) summarySec.style.display = 'block';
-        if (classicSec) classicSec.style.display = 'none';
-        if (clearSec) clearSec.style.display = 'block';
-        renderSummary();
     } else {
         if (puzzleSec) puzzleSec.style.display = 'none';
         if (summarySec) summarySec.style.display = 'block';
-        if (classicSec) classicSec.style.display = 'block';
-        if (clearSec) clearSec.style.display = 'block';
-        renderLogs();
-        renderPlans();
         renderSummary();
     }
 };
@@ -5801,6 +6196,105 @@ function applyPlanToActual(plan) {
 }
 window.applyPlanToActual = applyPlanToActual;
 
+function isPlanAlreadyLoggedInDay(plan, dayLogs) {
+    const pStartMins = timeToMins(plan.start);
+    let pEndMins = timeToMins(plan.end);
+    if (pEndMins < pStartMins) pEndMins += 1440;
+    const pDuration = Math.max(1, pEndMins - pStartMins);
+    const primaryName = (plan.items && plan.items.length > 0) ? plan.items[0].name : (plan.activity_name || "活動");
+
+    return dayLogs.some(function(log) {
+        const lStartMins = timeToMins(log.start);
+        let lEndMins = timeToMins(log.end);
+        if (lEndMins < lStartMins) lEndMins += 1440;
+        const logName = (log.items && log.items.length > 0) ? log.items[0].name : (log.activity_name || "活動");
+
+        const overlapStart = Math.max(pStartMins, lStartMins);
+        const overlapEnd = Math.min(pEndMins, lEndMins);
+        const overlap = Math.max(0, overlapEnd - overlapStart);
+        return (logName === primaryName) && (overlap >= pDuration * 0.5);
+    });
+}
+
+function applyAllUnloggedPlansToActual() {
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const dayPlans = plans.filter(function(p) { return p.date === selectedDate; });
+    const dayLogs = logs.filter(function(l) { return l.date === selectedDate; });
+
+    const unloggedPlans = dayPlans.filter(function(plan) {
+        return !isPlanAlreadyLoggedInDay(plan, dayLogs);
+    });
+
+    if (unloggedPlans.length === 0) {
+        showGhostActionToast('✓ すべての予定はすでに実績に反映されています');
+        return;
+    }
+
+    if (!confirm('未反映の予定（' + unloggedPlans.length + '件）を一括で実績に反映しますか？')) {
+        return;
+    }
+
+    const handledGids = {};
+    let addedCount = 0;
+
+    unloggedPlans.forEach(function(plan) {
+        const gid = plan.crossDayGroupId;
+        const planName = (plan.items && plan.items.length > 0) ? plan.items[0].name : (plan.activity_name || "活動");
+        if (gid) {
+            if (handledGids[gid]) return;
+            handledGids[gid] = true;
+            const pair = plans.find(function(p) { return p.crossDayGroupId === gid && p.id !== plan.id; });
+            const newGid = 'cross_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+            const headPlan = (plan.crossRole === 'head') ? plan : (pair || plan);
+            const tailPlan = (plan.crossRole === 'tail') ? plan : (pair || plan);
+
+            const newHead = {
+                id: Date.now() + Math.floor(Math.random() * 1000) + addedCount,
+                date: headPlan.date || selectedDate,
+                start: headPlan.start,
+                end: '24:00',
+                items: JSON.parse(JSON.stringify(headPlan.items || [{ name: planName, percent: 100 }])),
+                memo: headPlan.memo || '',
+                crossDayGroupId: newGid,
+                crossRole: 'head',
+                crossFullSpan: headPlan.crossFullSpan
+            };
+            const nextDate = getNextDateString(newHead.date);
+            const newTail = {
+                id: Date.now() + 2000 + Math.floor(Math.random() * 1000) + addedCount,
+                date: nextDate,
+                start: '00:00',
+                end: tailPlan.end,
+                items: JSON.parse(JSON.stringify(tailPlan.items || [{ name: planName, percent: 100 }])),
+                memo: tailPlan.memo || '',
+                crossDayGroupId: newGid,
+                crossRole: 'tail',
+                crossFullSpan: headPlan.crossFullSpan
+            };
+            logs.push(newHead, newTail);
+            addedCount++;
+        } else {
+            logs.push({
+                id: Date.now() + Math.floor(Math.random() * 10000) + addedCount,
+                date: selectedDate,
+                start: plan.start,
+                end: plan.end,
+                items: JSON.parse(JSON.stringify(plan.items || [{ name: planName, percent: 100 }])),
+                memo: plan.memo || ''
+            });
+            addedCount++;
+        }
+    });
+
+    saveLogs();
+    renderLogs();
+    renderSummary();
+    renderPuzzle();
+
+    showGhostActionToast('⚡ 未反映の予定 ' + addedCount + '件を一括で実績に反映しました');
+}
+window.applyAllUnloggedPlansToActual = applyAllUnloggedPlansToActual;
+
 function openTimelineBottomSheetForPlanToActual(plan, element) {
     lastBottomSheetOpenedAt = Date.now();
     currentEditingTimelineItem = null;
@@ -6136,14 +6630,15 @@ function renderPuzzle() {
         const duration = Math.max(1, endMins - startMins);
 
         const primaryName = (item.items && item.items.length > 0) ? item.items[0].name : (item.activity_name || "活動");
-        const category = getCategoryByActivityName(primaryName);
+        const pieceMeta = getPieceMetaByName(primaryName);
+        const category = pieceMeta.category;
 
         if (category === 'invest') investMinutes += duration;
         else if (category === 'drift') driftMinutes += duration;
         else maintainMinutes += duration;
 
         const blockEl = document.createElement('div');
-        const themeClass = getColorThemeByActivityName(primaryName, category);
+        const themeClass = pieceMeta.theme;
         const isBlockSelected = selectedTimelineBlockId !== null && String(item.id) === String(selectedTimelineBlockId);
         blockEl.className = 'timeline-block ' + themeClass + (isBlockSelected ? ' is-selected' : '');
         blockEl.style.top = startMins + 'px';
@@ -6169,7 +6664,7 @@ function renderPuzzle() {
         blockEl.innerHTML =
             '<div style="display: flex; justify-content: space-between; align-items: center; pointer-events: none; width: 100%;">' +
                 '<span style="font-weight: 700; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%;">' +
-                    primaryName +
+                    pieceMeta.icon + ' ' + primaryName +
                 '</span>' +
                 '<div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">' +
                     '<span style="font-family: monospace; font-size: 0.68rem; opacity: 0.85;">' +
@@ -6225,7 +6720,8 @@ function renderPuzzle() {
             const pDuration = Math.max(1, pEndMins - pStartMins);
 
             const primaryName = (plan.items && plan.items.length > 0) ? plan.items[0].name : (plan.activity_name || "活動");
-            const category = getCategoryByActivityName(primaryName);
+            const pieceMeta = getPieceMetaByName(primaryName);
+            const category = pieceMeta.category;
 
             // すでに同一活動＆時間帯の重複（50%以上）がある実績が存在するか判定（反映済み判定）
             const isAlreadyLogged = dayLogs.some(function(log) {
@@ -6244,7 +6740,7 @@ function renderPuzzle() {
             if (isAlreadyLogged) return;
 
             const ghostEl = document.createElement('div');
-            const themeClass = getColorThemeByActivityName(primaryName, category);
+            const themeClass = pieceMeta.theme;
             const isGhostSelected = selectedTimelineBlockId !== null && String(plan.id) === String(selectedTimelineBlockId);
             ghostEl.className = 'timeline-block timeline-block-ghost ' + themeClass + (isGhostSelected ? ' is-selected' : '');
             ghostEl.style.top = pStartMins + 'px';
@@ -6272,7 +6768,7 @@ function renderPuzzle() {
                     '<div style="display: flex; align-items: center; gap: 4px; overflow: hidden; max-width: 58%;">' +
                         '<span class="ghost-plan-badge">📅予定</span>' +
                         '<span style="font-weight: 700; font-size: 0.74rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' +
-                            primaryName +
+                            pieceMeta.icon + ' ' + primaryName +
                         '</span>' +
                     '</div>' +
                     '<div style="display: flex; align-items: center; gap: 5px; pointer-events: auto;">' +
@@ -6300,6 +6796,23 @@ function renderPuzzle() {
             attachPuzzleDragAndResizeForGhost(ghostEl, plan, pieceType, currentList);
             blocksLayer.appendChild(ghostEl);
         });
+    }
+
+    const applyAllBtn = document.getElementById('puzzle-apply-all-plans-btn');
+    if (applyAllBtn) {
+        if (!isEditingDefaultSchedule) {
+            const dPlans = plans.filter(function(p) { return p.date === selectedDate; });
+            const dLogs = logs.filter(function(l) { return l.date === selectedDate; });
+            const unloggedCount = dPlans.filter(function(p) { return !isPlanAlreadyLoggedInDay(p, dLogs); }).length;
+            if (unloggedCount > 0) {
+                applyAllBtn.style.display = 'inline-block';
+                applyAllBtn.textContent = '⚡ 予定を一括反映 (' + unloggedCount + ')';
+            } else {
+                applyAllBtn.style.display = 'none';
+            }
+        } else {
+            applyAllBtn.style.display = 'none';
+        }
     }
 
     const totalRecorded = investMinutes + maintainMinutes + driftMinutes;
@@ -7488,6 +8001,13 @@ function initPuzzle() {
 
     const resetDayBtn = document.getElementById('puzzle-reset-day-btn');
     if (resetDayBtn) resetDayBtn.addEventListener('click', handlePuzzleResetDay);
+
+    const summaryResetDayBtn = document.getElementById('summary-reset-day-btn');
+    if (summaryResetDayBtn) {
+        summaryResetDayBtn.addEventListener('click', function() {
+            if (clearDayBtn) clearDayBtn.click();
+        });
+    }
 
     const switchModeBtn = document.getElementById('puzzle-switch-mode-btn');
     if (switchModeBtn) {
