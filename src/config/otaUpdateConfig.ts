@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.69',
+  version: '2.3.70',
   title: {
-    ja: '⚙️ 24時間管理の設定メニューからGoogleカレンダー連携設定を開けるように改善',
-    en: '⚙️ Added Google Calendar Sync shortcut to 24h Management settings menu',
+    ja: '📅 24時間管理：前週同曜日コピー追加 ＆ ピース編集・ドラッグ操作を修正',
+    en: '📅 24h Management: Copy Previous Week Schedule & Fix Piece Drag/Tap',
   },
   notes: {
     ja: [
-      '24時間管理画面右上の歯車ボタンから「Googleカレンダー連携設定」と「タグ・ピース編集」を選択して開けるようにしました。',
+      '前週の同じ曜日の予定や実績をワンタップ（一括／個別選択）で今日の予定に追加できる「前週コピー」機能を追加しました。',
+      'タイムラインに配置したピースをタップした際の編集画面表示と、ドラッグでの移動操作がキャンセルされずスムーズに動作するよう修正しました。',
     ],
     en: [
-      'Added a menu to the 24h Management gear button so you can open either Google Calendar Sync settings or Tag & Piece Editor.',
+      "Added a Previous Week Copy feature to quickly add last week's same-day plans or actual logs into today's schedule (all at once or item by item).",
+      'Fixed timeline pieces so tapping reliably opens the edit sheet and dragging moves pieces smoothly without losing selection.',
     ],
   },
 };
