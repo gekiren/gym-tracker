@@ -1664,7 +1664,8 @@ input:checked + .holiday-switch-slider:before {
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; flex: 1; margin-right: 8px;">
                         <span style="font-size: 0.95rem;">🎨</span>
-                        <span id="def-sched-editor-title" style="font-weight: 700; font-size: 0.88rem; color: #eff6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">編集中: スケジュール名</span>
+                        <span id="def-sched-editor-title" style="font-weight: 700; font-size: 0.88rem; color: #eff6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;" title="タップしてスケジュール名を変更">編集中: スケジュール名</span>
+                        <button type="button" id="def-sched-editor-rename-btn" class="btn btn-secondary" style="width: auto; padding: 1px 6px; font-size: 0.7rem; margin-bottom: 0; border-color: rgba(147, 197, 253, 0.5); color: #dbeafe; flex-shrink: 0;" title="スケジュール名を変更">✏️ 名称変更</button>
                         <span id="def-sched-editor-badge" style="background: rgba(37, 99, 235, 0.45); color: #dbeafe; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; flex-shrink: 0;">全日共通</span>
                     </div>
                     <div style="display: flex; gap: 6px; flex-shrink: 0;">
@@ -2428,6 +2429,7 @@ const defSchedTodayHolidayBadge = document.getElementById('def-sched-today-holid
 const startDefSchedEditorBtn = document.getElementById('start-def-sched-editor-btn');
 const defSchedEditorBar = document.getElementById('def-sched-editor-bar');
 const defSchedEditorTitle = document.getElementById('def-sched-editor-title');
+const defSchedEditorRenameBtn = document.getElementById('def-sched-editor-rename-btn');
 const defSchedEditorBadge = document.getElementById('def-sched-editor-badge');
 const defSchedEditorCount = document.getElementById('def-sched-editor-count');
 const defSchedEditorSaveBtn = document.getElementById('def-sched-editor-save-btn');
@@ -3132,21 +3134,37 @@ function renderDefaultScheduleList() {
         const count = sched.data ? sched.data.length : 0;
 
         card.innerHTML =
-            '<div style="display: flex; justify-content: space-between; align-items: flex-start;">' +
-                '<div>' +
-                    '<div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 4px;">' + sched.name + '</div>' +
+            '<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">' +
+                '<div style="flex: 1; min-width: 0;">' +
+                    '<div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap;">' +
+                        '<span class="def-sched-name-label" style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary); word-break: break-word;"></span>' +
+                        '<button type="button" class="btn btn-secondary" style="width: auto; padding: 2px 7px; font-size: 0.7rem; color: #93c5fd; border-color: rgba(59, 130, 246, 0.45); margin-bottom: 0;" data-rename-id="' + sched.id + '" title="スケジュール名を変更">✏️ 名称変更</button>' +
+                    '</div>' +
                     '<div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">' +
                         daysBadgeHtml +
                         '<span style="font-size: 0.72rem; color: var(--text-secondary);">' + count + '件の予定</span>' +
                     '</div>' +
                 '</div>' +
-                '<button type="button" class="btn btn-secondary" style="width: auto; padding: 3px 8px; font-size: 0.74rem; color: var(--error-color); border-color: rgba(239, 68, 68, 0.4); margin-bottom: 0;" data-del-id="' + sched.id + '">削除</button>' +
+                '<button type="button" class="btn btn-secondary" style="width: auto; padding: 3px 8px; font-size: 0.74rem; color: var(--error-color); border-color: rgba(239, 68, 68, 0.4); margin-bottom: 0; flex-shrink: 0;" data-del-id="' + sched.id + '">削除</button>' +
             '</div>' +
             '<div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">' +
                 '<button type="button" class="btn btn-primary" style="flex: 1; padding: 6px 10px; font-size: 0.78rem; background: #2563eb; border-color: #60a5fa; margin-bottom: 0;" data-edit-timeline-id="' + sched.id + '">✏️ 予定を編集</button>' +
                 '<button type="button" class="btn btn-secondary" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; border-color: #3b82f6; color: #93c5fd; margin-bottom: 0;" data-apply-id="' + sched.id + '">⚡ 今日の予定に適用</button>' +
                 '<button type="button" class="btn btn-secondary" style="width: auto; padding: 6px 10px; font-size: 0.78rem; margin-bottom: 0;" data-edit-days-id="' + sched.id + '">曜日変更</button>' +
             '</div>';
+
+        const nameLabel = card.querySelector('.def-sched-name-label');
+        if (nameLabel) {
+            nameLabel.textContent = sched.name;
+        }
+
+        // 名称変更ボタン
+        const renameBtn = card.querySelector('[data-rename-id]');
+        if (renameBtn) {
+            renameBtn.onclick = function() {
+                promptRenameSchedule(sched.id);
+            };
+        }
 
         // タイムライン編集ボタン
         const editTimelineBtn = card.querySelector('[data-edit-timeline-id]');
@@ -3218,6 +3236,63 @@ function applySpecificSchedule(schedId) {
     updateDefaultSchedBanner();
     closeDefaultScheduleModal();
     alert('「' + sched.name + '」を適用しました。');
+}
+
+function promptRenameSchedule(schedId) {
+    const sched = defaultSchedules.find(function(s) { return s.id === schedId; });
+    if (!sched) return;
+
+    const input = prompt('デフォルトスケジュールの新しい名称を入力してください:', sched.name || '');
+    if (input === null) return;
+
+    const newName = input.trim();
+    if (!newName) {
+        alert('スケジュール名を入力してください。');
+        return;
+    }
+
+    if (newName === sched.name) return;
+
+    sched.name = newName;
+    sched.updatedAt = Date.now();
+    saveDefaultSchedules();
+    renderDefaultScheduleList();
+    updateDefaultSchedBanner();
+
+    if (isEditingDefaultSchedule && currentEditingDefaultSchedule && currentEditingDefaultSchedule.id === schedId) {
+        currentEditingDefaultSchedule.name = newName;
+        if (defSchedEditorTitle) {
+            defSchedEditorTitle.textContent = '編集中: ' + newName;
+        }
+    }
+}
+
+function promptRenameCurrentEditingSchedule() {
+    if (!isEditingDefaultSchedule || !currentEditingDefaultSchedule) return;
+
+    const input = prompt('デフォルトスケジュールの新しい名称を入力してください:', currentEditingDefaultSchedule.name || '');
+    if (input === null) return;
+
+    const newName = input.trim();
+    if (!newName) {
+        alert('スケジュール名を入力してください。');
+        return;
+    }
+
+    currentEditingDefaultSchedule.name = newName;
+    if (defSchedEditorTitle) {
+        defSchedEditorTitle.textContent = '編集中: ' + newName;
+    }
+
+    if (currentEditingDefaultSchedule.id) {
+        const target = defaultSchedules.find(function(s) { return s.id === currentEditingDefaultSchedule.id; });
+        if (target) {
+            target.name = newName;
+            target.updatedAt = Date.now();
+            saveDefaultSchedules();
+            updateDefaultSchedBanner();
+        }
+    }
 }
 
 function promptEditScheduleDays(schedId) {
@@ -3356,6 +3431,12 @@ function initDefaultScheduleUI() {
     }
     if (defSchedEditorCancelBtn) {
         defSchedEditorCancelBtn.onclick = cancelDefaultScheduleEditor;
+    }
+    if (defSchedEditorRenameBtn) {
+        defSchedEditorRenameBtn.onclick = promptRenameCurrentEditingSchedule;
+    }
+    if (defSchedEditorTitle) {
+        defSchedEditorTitle.onclick = promptRenameCurrentEditingSchedule;
     }
     if (tmplSaveAsDefaultBtn) {
         tmplSaveAsDefaultBtn.addEventListener('click', function() {
