@@ -30,6 +30,7 @@ import BodyMeasurementModal from '../../components/body/BodyMeasurementModal';
 import BodyGuideModal from '../../components/body/BodyGuideModal';
 import BodyMarkdownImportModal from '../../components/body/BodyMarkdownImportModal';
 import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
+import { FeatureClassBar } from '../../components/FeatureClassBar';
 
 export default function BodyCompositionScreen() {
   const { colors } = useAppTheme();
@@ -220,32 +221,35 @@ export default function BodyCompositionScreen() {
 
       {/* Date Header Switcher (メイン画面表示時のみ) */}
       {!showHistoryTab && (
-        <View style={styles.dateBar}>
-          <TouchableOpacity
-            style={styles.dateArrowBtn}
-            onPress={() => changeDateOffset(-1)}
-            activeOpacity={0.6}
-          >
-            <Ionicons name="chevron-back" size={20} color={colors.text} />
-          </TouchableOpacity>
+        <>
+          <View style={styles.dateBar}>
+            <TouchableOpacity
+              style={styles.dateArrowBtn}
+              onPress={() => changeDateOffset(-1)}
+              activeOpacity={0.6}
+            >
+              <Ionicons name="chevron-back" size={20} color={colors.text} />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.dateCenterBtn}
-            onPress={() => setSelectedDate(getTodayStr())}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.dateMainText}>{selectedDate}</Text>
-            {selectedDate === getTodayStr() && <Text style={styles.todayBadge}>今日</Text>}
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.dateCenterBtn}
+              onPress={() => setSelectedDate(getTodayStr())}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.dateMainText}>{selectedDate}</Text>
+              {selectedDate === getTodayStr() && <Text style={styles.todayBadge}>今日</Text>}
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.dateArrowBtn}
-            onPress={() => changeDateOffset(1)}
-            activeOpacity={0.6}
-          >
-            <Ionicons name="chevron-forward" size={20} color={colors.text} />
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={styles.dateArrowBtn}
+              onPress={() => changeDateOffset(1)}
+              activeOpacity={0.6}
+            >
+              <Ionicons name="chevron-forward" size={20} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+          <FeatureClassBar featureId="body" />
+        </>
       )}
 
       {/* Content View */}

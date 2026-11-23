@@ -777,7 +777,9 @@
       "retro_desc": "Your experience, classes, and achievement medals have been calculated from your existing history.",
       "unlocked_medals": "Unlocked Medals",
       "bonus_points": "Bonus P Points",
-      "close": "Close"
+      "close": "Close",
+      "next_rank_short": "Next: {{name}}",
+      "max_rank_short": "MAX Rank"
     }
   },
   "exercises": {

@@ -9,6 +9,7 @@ import RoutineTrackerHTML from '../../src/web-apps/RoutineTracker';
 import { useLifelogStore } from '../../src/store/lifelogStore';
 import { LifelogDateHeader } from '../../components/LifelogDateHeader';
 import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
+import { FeatureClassBar } from '../../components/FeatureClassBar';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { PanGestureHandler } from 'react-native-gesture-handler';
@@ -173,6 +174,7 @@ export default function RoutineScreen() {
         ) : isFocused ? (
           <>
             {!isModalVisible && <LifelogDateHeader type="routine" />}
+            {!isModalVisible && !isExecuting && <FeatureClassBar featureId="routine" />}
             <WebViewTab 
               ref={webViewTabRef}
               html={RoutineTrackerHTML} 

@@ -774,7 +774,9 @@
       "retro_desc": "過去のトレーニングやライフログ実績から経験値・クラス・実績メダルを自動集計しました。",
       "unlocked_medals": "獲得メダル",
       "bonus_points": "ボーナスPポイント",
-      "close": "閉じる"
+      "close": "閉じる",
+      "next_rank_short": "次: {{name}}",
+      "max_rank_short": "最高ランク"
     }
   },
   "exercises": {

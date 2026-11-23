@@ -8,6 +8,7 @@ import HabitCounterHTML from '../../src/web-apps/HabitCounter';
 import { useLifelogStore } from '../../src/store/lifelogStore';
 import { LifelogDateHeader } from '../../components/LifelogDateHeader';
 import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
+import { FeatureClassBar } from '../../components/FeatureClassBar';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { PanGestureHandler } from 'react-native-gesture-handler';
@@ -77,7 +78,12 @@ export default function HabitScreen() {
           <LifelogHistoryTab type="habit" t={t} />
         ) : isFocused ? (
           <>
-            {!isModalVisible && <LifelogDateHeader type="habit" />}
+            {!isModalVisible && (
+              <>
+                <LifelogDateHeader type="habit" />
+                <FeatureClassBar featureId="habit" />
+              </>
+            )}
             <WebViewTab
               ref={webViewTabRef}
               html={HabitCounterHTML}
