@@ -1,4 +1,4 @@
-import { getDB, getCaffeineLimit, setCaffeineLimit } from '../db/database';
+import { getDB, withDBQueue, getCaffeineLimit, setCaffeineLimit } from '../db/database';
 import { useLifelogStore } from '../store/lifelogStore';
 import { triggerDebouncedDriveUpload } from './googleDrive/driveSyncTrigger';
 import { recordFeatureAction } from './featureUnlockService';
@@ -7,6 +7,8 @@ import {
   deleteHealthConnectRecordsByClientIds,
   writeWaterLogToHealthConnect,
 } from './health/healthWriter';
+
+const DATA_RETENTION_DAYS = 365;
 
 // Helper to format date as YYYY/MM/DD in local timezone
 const formatDate = (date: Date): string => {
@@ -134,7 +136,6 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
   const data: Record<string, any> = {};
 
   // メモリ圧迫防止: 直近365日分のみ取得（週ナビ・日ナビの全操作範囲をカバー）
-  const DATA_RETENTION_DAYS = 365;
   const cutoffDate = formatDate(
     new Date(Date.now() - DATA_RETENTION_DAYS * 24 * 60 * 60 * 1000)
   );
@@ -369,6 +370,65 @@ export const getInitialDataForWebView = async (): Promise<Record<string, any>> =
 };
 
 /**
+ * WebView からの水分追加（1件増分）を SQLite・ストア・Health Connect へ安全に反映する
+ */
+export const handleWaterLogAdd = async (
+  entry: { id?: number; timestamp?: number; amount: number; date?: string; caffeine?: number },
+  currentDate: string,
+  options?: { reloadStore?: boolean }
+): Promise<void> => {
+  const amount = Number(entry?.amount);
+  if (!Number.isFinite(amount) || amount <= 0) return;
+
+  const tsRaw = Number(entry.timestamp ?? entry.id);
+  const timestamp = Number.isFinite(tsRaw) && tsRaw > 0 ? tsRaw : Date.now();
+  const dateStr = entry.date || currentDate || formatDate(parseTimestampToDate(timestamp));
+  const caffeine = Number(entry.caffeine) || 0;
+
+  await withDBQueue(async (queuedDb) => {
+    await queuedDb.runAsync(
+      'INSERT INTO water_logs (amount, timestamp, date, caffeine) VALUES (?, ?, ?, ?)',
+      [amount, timestamp, dateStr, caffeine]
+    );
+  });
+
+  if (options?.reloadStore !== false && currentDate) {
+    await useLifelogStore.getState().loadWaterData(currentDate);
+  }
+
+  recordFeatureAction('water', dateStr);
+  writeWaterLogToHealthConnect({ amount, timestamp, date: dateStr }).catch((err) =>
+    console.warn('[HealthConnect] WebView water write failed:', err)
+  );
+  triggerDebouncedDriveUpload('webview_water_add', 10000);
+};
+
+/**
+ * WebView からの水分削除（1件指定）を SQLite・ストア・Health Connect へ安全に反映する
+ */
+export const handleWaterLogDelete = async (
+  timestampInput: number,
+  currentDate: string,
+  options?: { reloadStore?: boolean }
+): Promise<void> => {
+  const timestamp = Number(timestampInput);
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return;
+
+  await withDBQueue(async (queuedDb) => {
+    await queuedDb.runAsync('DELETE FROM water_logs WHERE timestamp = ?', [timestamp]);
+  });
+
+  if (options?.reloadStore !== false && currentDate) {
+    await useLifelogStore.getState().loadWaterData(currentDate);
+  }
+
+  deleteHealthConnectRecordsByClientIds('Hydration', [getWaterClientId(timestamp)]).catch((err) =>
+    console.warn('[HealthConnect] WebView water delete failed:', err)
+  );
+  triggerDebouncedDriveUpload('webview_water_delete', 10000);
+};
+
+/**
  * Handles localStorage set notifications from WebViews and updates SQLite database & Zustand store.
  * Returns updated data string if key changes require injecting mapped values back (e.g., auto-incremented item IDs).
  */
@@ -393,76 +453,140 @@ export const handleWebViewMessage = async (
       }
       console.log(`[SyncService] Parsed logs count: ${logs.length}. Logs:`, JSON.stringify(logs));
 
-      // トランザクション開始前に既存 water_logs をプリフェッチ（SQLiteデッドロック防止）
-      const prevRows = await db.getAllAsync<{ timestamp: number; amount: number }>(
-        'SELECT timestamp, amount FROM water_logs'
+      const cutoffDate = formatDate(
+        new Date(Date.now() - DATA_RETENTION_DAYS * 24 * 60 * 60 * 1000)
       );
-      const existingCount = prevRows.length;
-      if (existingCount > 0 && (!logs || logs.length === 0)) {
-        addSyncDiagnosticLog('[Safety Guard] Skipped empty water_logs wipe due to existing DB records');
-        return null;
-      }
 
-      const prevWaterMap = new Map<number, number>();
-      for (const row of prevRows) {
-        prevWaterMap.set(Number(row.timestamp), Number(row.amount));
-      }
-
-      await db.withTransactionAsync(async () => {
-        console.log('[SyncService] Starting transaction to delete and insert water logs');
-        await db.runAsync('DELETE FROM water_logs');
-        for (const log of logs) {
-          const dateStr = log.date || formatDate(parseTimestampToDate(log.timestamp));
-          console.log(`[SyncService] Inserting log: amount=${log.amount}, timestamp=${log.id}, date=${dateStr}`);
-          await db.runAsync(
-            'INSERT INTO water_logs (amount, timestamp, date, caffeine) VALUES (?, ?, ?, ?)',
-            [log.amount, log.id, dateStr, log.caffeine || 0]
-          );
-        }
-        console.log('[SyncService] Transaction queries completed successfully');
-      });
-
-      console.log(`[SyncService] Transaction committed. Reloading water data for date: ${currentDate}`);
-      await useLifelogStore.getState().loadWaterData(currentDate);
-      console.log('[SyncService] Water data reloaded in lifelogStore');
-
-      if (logs.length > existingCount) {
-        const addedLog =
-          logs.find((l) => !prevWaterMap.has(Number(l.id || l.timestamp))) || logs[logs.length - 1];
-        const addedDate = addedLog
-          ? addedLog.date || formatDate(parseTimestampToDate(addedLog.id || addedLog.timestamp))
-          : currentDate;
-        recordFeatureAction('water', addedDate || currentDate);
-      }
-
-      // Health Connect へ差分を非同期反映
-      const nextWaterMap = new Map<number, { amount: number; date: string }>();
+      const nextWaterMap = new Map<number, { amount: number; caffeine: number; date: string }>();
       for (const log of logs) {
         const ts = Number(log.id || log.timestamp);
         if (!Number.isFinite(ts) || ts <= 0) continue;
         const amt = Number(log.amount) || 0;
+        const caf = Number(log.caffeine) || 0;
         const dateStr = log.date || formatDate(parseTimestampToDate(ts));
-        nextWaterMap.set(ts, { amount: amt, date: dateStr });
+        nextWaterMap.set(ts, { amount: amt, caffeine: caf, date: dateStr });
       }
 
-      for (const [ts, info] of nextWaterMap.entries()) {
-        const prevAmt = prevWaterMap.get(ts);
-        if (prevAmt === undefined || prevAmt !== info.amount) {
-          writeWaterLogToHealthConnect({
-            amount: info.amount,
-            timestamp: ts,
-            date: info.date,
-          }).catch((err) => console.warn('[HealthConnect] WebView water write failed:', err));
+      const syncOutcome = await withDBQueue(async (queuedDb) => {
+        // トランザクション開始前に直近365日分の既存 water_logs をプリフェッチ（SQLiteデッドロック防止）
+        const prevRows = await queuedDb.getAllAsync<{
+          timestamp: number;
+          amount: number;
+          caffeine: number | null;
+          date: string;
+        }>(
+          'SELECT timestamp, amount, caffeine, date FROM water_logs WHERE date >= ?',
+          [cutoffDate]
+        );
+        const existingCount = prevRows.length;
+        if (existingCount > 0 && (!logs || logs.length === 0)) {
+          addSyncDiagnosticLog('[Safety Guard] Skipped empty water_logs wipe due to existing DB records');
+          return {
+            aborted: true as const,
+            toDeleteTimestamps: [] as number[],
+            toInsert: [] as Array<{ timestamp: number; amount: number; caffeine: number; date: string }>,
+            toUpdate: [] as Array<{ timestamp: number; amount: number; caffeine: number; date: string }>,
+          };
         }
+
+        const prevCurrentDateCount = currentDate
+          ? prevRows.filter((r) => r.date === currentDate).length
+          : 0;
+        const nextCurrentDateCount = currentDate
+          ? Array.from(nextWaterMap.values()).filter((v) => v.date === currentDate).length
+          : 0;
+        const skipCurrentDateDeletes =
+          Boolean(currentDate) && prevCurrentDateCount >= 2 && nextCurrentDateCount === 0;
+
+        if (skipCurrentDateDeletes) {
+          addSyncDiagnosticLog(
+            `[Safety Guard] Skipped wiping currentDate (${currentDate}) water_logs (${prevCurrentDateCount} existing -> 0 incoming)`
+          );
+        }
+
+        const prevWaterMap = new Map<number, { amount: number; caffeine: number; date: string }>();
+        for (const row of prevRows) {
+          prevWaterMap.set(Number(row.timestamp), {
+            amount: Number(row.amount),
+            caffeine: Number(row.caffeine) || 0,
+            date: row.date,
+          });
+        }
+
+        const toDeleteTimestamps: number[] = [];
+        for (const [prevTs, prevInfo] of prevWaterMap.entries()) {
+          if (!nextWaterMap.has(prevTs)) {
+            if (skipCurrentDateDeletes && prevInfo.date === currentDate) {
+              continue;
+            }
+            toDeleteTimestamps.push(prevTs);
+          }
+        }
+
+        const toInsert: Array<{ timestamp: number; amount: number; caffeine: number; date: string }> = [];
+        const toUpdate: Array<{ timestamp: number; amount: number; caffeine: number; date: string }> = [];
+        for (const [ts, info] of nextWaterMap.entries()) {
+          const prev = prevWaterMap.get(ts);
+          if (!prev) {
+            toInsert.push({ timestamp: ts, ...info });
+          } else if (prev.amount !== info.amount || prev.caffeine !== info.caffeine) {
+            toUpdate.push({ timestamp: ts, ...info });
+          }
+        }
+
+        await queuedDb.withTransactionAsync(async () => {
+          for (const ts of toDeleteTimestamps) {
+            await queuedDb.runAsync('DELETE FROM water_logs WHERE timestamp = ?', [ts]);
+          }
+          for (const item of toInsert) {
+            await queuedDb.runAsync(
+              'INSERT INTO water_logs (amount, timestamp, date, caffeine) VALUES (?, ?, ?, ?)',
+              [item.amount, item.timestamp, item.date, item.caffeine]
+            );
+          }
+          for (const item of toUpdate) {
+            await queuedDb.runAsync(
+              'UPDATE water_logs SET amount = ?, caffeine = ? WHERE timestamp = ?',
+              [item.amount, item.caffeine, item.timestamp]
+            );
+          }
+        });
+
+        return {
+          aborted: false as const,
+          toDeleteTimestamps,
+          toInsert,
+          toUpdate,
+        };
+      });
+
+      if (syncOutcome.aborted) {
+        return null;
       }
 
-      const deletedWaterClientIds: string[] = [];
-      for (const prevTs of prevWaterMap.keys()) {
-        if (!nextWaterMap.has(prevTs)) {
-          deletedWaterClientIds.push(getWaterClientId(prevTs));
-        }
+      console.log(`[SyncService] Incremental water sync committed. Reloading water data for date: ${currentDate}`);
+      if (currentDate) {
+        await useLifelogStore.getState().loadWaterData(currentDate);
       }
-      if (deletedWaterClientIds.length > 0) {
+
+      if (syncOutcome.toInsert.length > 0) {
+        const latestInserted = syncOutcome.toInsert[syncOutcome.toInsert.length - 1];
+        recordFeatureAction('water', latestInserted.date || currentDate);
+      }
+
+      // Health Connect へ実差分を非同期反映
+      for (const item of [...syncOutcome.toInsert, ...syncOutcome.toUpdate]) {
+        writeWaterLogToHealthConnect({
+          amount: item.amount,
+          timestamp: item.timestamp,
+          date: item.date,
+        }).catch((err) => console.warn('[HealthConnect] WebView water write failed:', err));
+      }
+
+      if (syncOutcome.toDeleteTimestamps.length > 0) {
+        const deletedWaterClientIds = syncOutcome.toDeleteTimestamps.map((ts) =>
+          getWaterClientId(ts)
+        );
         deleteHealthConnectRecordsByClientIds('Hydration', deletedWaterClientIds).catch((err) =>
           console.warn('[HealthConnect] WebView water delete failed:', err)
         );

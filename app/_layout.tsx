@@ -19,6 +19,7 @@ import {
   parseExercisePrCollapsedStances,
 } from '../src/utils/exerciseDetailPrefs';
 import { useNutritionStore } from '../src/store/nutritionStore';
+import { useLifelogStore } from '../src/store/lifelogStore';
 import { useOTAUpdateStore } from '../src/store/otaUpdateStore';
 import '../src/i18n';
 import i18n from '../src/i18n';
@@ -373,6 +374,10 @@ export default function RootLayout() {
           console.warn('Failed to flush Google Drive upload on background:', err);
         });
       } else if (nextAppState === 'active') {
+        // 日付またぎ時にローカルの当日へ自動追従
+        useLifelogStore.getState().syncTodayIfDateRolledOver().catch((err: unknown) => {
+          console.warn('Lifelog date rollover sync on active failed:', err);
+        });
         // アプリフォアグラウンド復帰時にヘルスコネクトに自動アクセス
         syncHealthData({ reason: 'launch' }).catch(console.error);
         // Google Drive AI提案の自動チェック

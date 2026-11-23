@@ -2,7 +2,14 @@ import React, { useRef, useState, useEffect, useMemo, useImperativeHandle, forwa
 import { StyleSheet, View, ActivityIndicator, Text, AppState, AppStateStatus, Vibration } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getInitialDataForWebView, handleWebViewMessage, syncWidgetPunches, addSyncDiagnosticLog } from '../src/services/lifelogSyncService';
+import {
+  getInitialDataForWebView,
+  handleWebViewMessage,
+  handleWaterLogAdd,
+  handleWaterLogDelete,
+  syncWidgetPunches,
+  addSyncDiagnosticLog,
+} from '../src/services/lifelogSyncService';
 import { debouncedExportLogsToGoogleCalendar } from '../src/services/calendarService';
 import { useLifelogStore } from '../src/store/lifelogStore';
 import { useAppTheme } from '../src/theme';
@@ -22,7 +29,10 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
   const webViewRef = useRef<WebView>(null);
   const [initialData, setInitialData] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [webViewLoaded, setWebViewLoaded] = useState(false);
+  const pendingWaterOpsRef = useRef(0);
   const waterLogs = useLifelogStore((state) => state.waterLogs);
+  const waterLogsDate = useLifelogStore((state) => state.waterLogsDate);
   const timeLogs = useLifelogStore((state) => state.timeLogs);
   const habitItems = useLifelogStore((state) => state.habitItems);
   const habitLogs = useLifelogStore((state) => state.habitLogs);
@@ -139,6 +149,32 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
         return;
       }
 
+      if (message.type === 'WATER_LOG_ADD') {
+        pendingWaterOpsRef.current += 1;
+        try {
+          await handleWaterLogAdd(message.entry, currentDate, { reloadStore: false });
+        } finally {
+          pendingWaterOpsRef.current = Math.max(0, pendingWaterOpsRef.current - 1);
+          if (pendingWaterOpsRef.current === 0 && currentDate) {
+            await useLifelogStore.getState().loadWaterData(currentDate);
+          }
+        }
+        return;
+      }
+
+      if (message.type === 'WATER_LOG_DELETE') {
+        pendingWaterOpsRef.current += 1;
+        try {
+          await handleWaterLogDelete(message.timestamp ?? message.id, currentDate, { reloadStore: false });
+        } finally {
+          pendingWaterOpsRef.current = Math.max(0, pendingWaterOpsRef.current - 1);
+          if (pendingWaterOpsRef.current === 0 && currentDate) {
+            await useLifelogStore.getState().loadWaterData(currentDate);
+          }
+        }
+        return;
+      }
+
       if (message.type === 'LOCAL_STORAGE_SET') {
         const { key, value } = message;
         console.log(`[WebViewTab] LOCAL_STORAGE_SET key=${key}, value length=${value ? value.length : 0}`);
@@ -229,49 +265,52 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
 
   // Sync database updates from React Native to WebView when waterLogs change
   useEffect(() => {
-    if (webViewRef.current && !loading) {
-      const formattedLogs = waterLogs.map((log) => ({
-        id: log.timestamp,
-        timestamp: log.timestamp,
-        amount: log.amount,
-        caffeine: log.caffeine || 0,
-        date: log.date,
-      }));
-      const injectScript = `
-        (function() {
-          var storage = window.appStorage || (typeof localStorage !== 'undefined' ? localStorage : null);
-          if (storage && typeof storage.setItem === 'function') {
-            window.isInitialSync = true;
-            var existing = [];
-            try {
-              var saved = storage.getItem('hydration_data_v1');
-              if (saved) {
-                existing = JSON.parse(saved) || [];
-              }
-            } catch (e) {
-              console.warn('Failed to parse existing hydration data in sync:', e);
+    if (!webViewRef.current || loading || !webViewLoaded) return;
+    if (waterLogsDate !== currentDate) return;
+    if (pendingWaterOpsRef.current > 0) return;
+
+    const formattedLogs = waterLogs.map((log) => ({
+      id: log.timestamp,
+      timestamp: log.timestamp,
+      amount: log.amount,
+      caffeine: log.caffeine || 0,
+      date: log.date,
+    }));
+    const injectScript = `
+      (function() {
+        if (typeof state === 'undefined' || !state || !Array.isArray(state.intakeHistory)) return;
+        var storage = window.appStorage || (typeof localStorage !== 'undefined' ? localStorage : null);
+        if (storage && typeof storage.setItem === 'function') {
+          window.isInitialSync = true;
+          var existing = [];
+          try {
+            var saved = storage.getItem('hydration_data_v1');
+            if (saved) {
+              existing = JSON.parse(saved) || [];
             }
-            
-            var targetDate = "${currentDate}";
-            var filtered = existing.filter(function(item) {
-              return item.date !== targetDate;
-            });
-            
-            var newLogs = ${JSON.stringify(formattedLogs)};
-            var merged = filtered.concat(newLogs);
-            
-            storage.setItem('hydration_data_v1', JSON.stringify(merged));
-            if (typeof loadData === 'function' && typeof updateUI === 'function') {
-              loadData();
-              updateUI();
-            }
-            window.isInitialSync = false;
+          } catch (e) {
+            console.warn('Failed to parse existing hydration data in sync:', e);
           }
-        })();
-      `;
-      webViewRef.current.injectJavaScript(injectScript);
-    }
-  }, [waterLogs, loading, currentDate]);
+          
+          var targetDate = "${currentDate}";
+          var filtered = existing.filter(function(item) {
+            return item.date !== targetDate;
+          });
+          
+          var newLogs = ${JSON.stringify(formattedLogs)};
+          var merged = filtered.concat(newLogs);
+          
+          storage.setItem('hydration_data_v1', JSON.stringify(merged));
+          if (typeof loadData === 'function' && typeof updateUI === 'function') {
+            loadData();
+            updateUI();
+          }
+          window.isInitialSync = false;
+        }
+      })();
+    `;
+    webViewRef.current.injectJavaScript(injectScript);
+  }, [waterLogs, waterLogsDate, loading, webViewLoaded, currentDate]);
 
   // Sync database updates from React Native to WebView when timeLogs change
   useEffect(() => {
@@ -377,10 +416,12 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active') {
         console.log('[WebViewTab] App came to foreground, syncing widget punches...');
-        await syncWidgetPunches(currentDate);
-        if (currentDate) {
-          await useLifelogStore.getState().loadTimeData(currentDate);
-          await useLifelogStore.getState().loadWaterData(currentDate);
+        const { date: activeDate } = await useLifelogStore.getState().syncTodayIfDateRolledOver();
+        const targetSyncDate = activeDate || currentDate;
+        await syncWidgetPunches(targetSyncDate);
+        if (targetSyncDate) {
+          await useLifelogStore.getState().loadTimeData(targetSyncDate);
+          await useLifelogStore.getState().loadWaterData(targetSyncDate);
         }
       }
     };
@@ -406,6 +447,8 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
           javaScriptEnabled={true}
           domStorageEnabled={true}
           allowFileAccess={true}
+          onLoadStart={() => setWebViewLoaded(false)}
+          onLoadEnd={() => setWebViewLoaded(true)}
           onMessage={onMessage}
           style={[styles.webview, { backgroundColor: colors.background }]}
         />

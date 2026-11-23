@@ -1061,6 +1061,17 @@ function saveData() {
     storage.setItem(STORAGE_KEY, JSON.stringify(state.intakeHistory));
 }
 
+function saveDataLocalOnly() {
+    const storage = window.appStorage || { getItem: () => null, setItem: () => {} };
+    const prevSync = window.isInitialSync;
+    window.isInitialSync = true;
+    try {
+        storage.setItem(STORAGE_KEY, JSON.stringify(state.intakeHistory));
+    } finally {
+        window.isInitialSync = prevSync;
+    }
+}
+
 function saveSettings() {
     const storage = window.appStorage || { getItem: () => null, setItem: () => {} };
     storage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -1092,6 +1103,10 @@ function addIntake(amount, dateOverride = null, caffeine = 0) {
         dateStr = state.currentDate;
     }
 
+    while (state.intakeHistory.some(function(item) { return item.id === timestamp || item.timestamp === timestamp; })) {
+        timestamp += 1;
+    }
+
     const entry = {
         id: timestamp,
         timestamp: timestamp,
@@ -1101,7 +1116,19 @@ function addIntake(amount, dateOverride = null, caffeine = 0) {
     };
 
     state.intakeHistory.push(entry);
-    saveData();
+    if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+        saveDataLocalOnly();
+        try {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'WATER_LOG_ADD',
+                entry: entry
+            }));
+        } catch (e) {
+            console.error('Failed to post WATER_LOG_ADD message', e);
+        }
+    } else {
+        saveData();
+    }
     updateUI();
 
     // If we added to a specific past date, re-render that detail view
@@ -1111,8 +1138,23 @@ function addIntake(amount, dateOverride = null, caffeine = 0) {
 }
 
 function deleteIntake(id) {
-    state.intakeHistory = state.intakeHistory.filter(item => item.id !== id);
-    saveData();
+    const target = state.intakeHistory.find(function(item) { return item.id === id; });
+    state.intakeHistory = state.intakeHistory.filter(function(item) { return item.id !== id; });
+    if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+        saveDataLocalOnly();
+        try {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'WATER_LOG_DELETE',
+                id: id,
+                timestamp: target ? target.timestamp : id,
+                date: target ? target.date : state.currentDate
+            }));
+        } catch (e) {
+            console.error('Failed to post WATER_LOG_DELETE message', e);
+        }
+    } else {
+        saveData();
+    }
     updateUI();
 }
 

@@ -3,6 +3,7 @@
  * Obsidianデイリーノート、InBody測定履歴テーブル、箇条書きメモなどから
  * 体重・体脂肪率・骨格筋量・除脂肪体重などを柔軟に抽出します。
  */
+import { getLocalTodayISO } from './dateUtils';
 
 export interface ParsedBodyRecord {
   date: string; // YYYY-MM-DD
@@ -391,7 +392,7 @@ const extractFromKeyValueText = (text: string, defaultDate: string): ParsedBodyR
  */
 export const parseBodyCompositionMarkdown = (
   mdText: string,
-  defaultDate: string = new Date().toISOString().split('T')[0]
+  defaultDate: string = getLocalTodayISO()
 ): ParsedBodyRecord[] => {
   if (!mdText || !mdText.trim()) {
     return [];

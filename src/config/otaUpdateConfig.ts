@@ -11,19 +11,21 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.61',
+  version: '2.3.62',
   title: {
-    ja: '🏅 各機能のトップページにランク表示を追加',
-    en: '🏅 Added Feature Rank Bar to Each Feature Page',
+    ja: '💧 水分補給の日付ズレ・記録消失の不具合を修正',
+    en: '💧 Fixed Hydration Date Shift & Sync Reset Issues',
   },
   notes: {
     ja: [
-      '筋トレ・体組成・水分・栄養・24時間管理・ルーティン・習慣カウンターの各トップページ上部に、現在の機能別ランクと次のランクまでのXP進捗バーを表示するようにしました。',
-      'ランクバーをタップすると、その機能のランク一覧と関連メダル詳細を直接確認できるようになりました。',
+      '早朝（0:00〜8:59）に記録した水分補給が前日扱いになってしまう日付取得の不具合を修正しました。',
+      'アプリを立ち上げたまま日付をまたいだ際、自動で当日の日付へ切り替わるように改善しました。',
+      'ウィジェットからの起動や連続タップ時に本日の水分記録が消えてしまう同期不具合を修正し、1件ずつの安全な保存方式へ刷新しました。',
     ],
     en: [
-      'Added a compact rank and XP progress bar to the top page of every feature (Workout, Body, Water, Nutrition, 24h Time, Routine, and Habit Counter).',
-      'Tapping the rank bar now opens that feature\'s class roadmap and related achievement medals directly.',
+      'Fixed a UTC date bug where early-morning hydration logs (00:00–08:59 local time) were saved under the previous day.',
+      'Automatically advances the active date to today when resuming the app after midnight.',
+      'Replaced full-table hydration rewrites with safe incremental add/delete syncing to prevent today\'s logs from being overwritten or lost.',
     ],
   },
 };
