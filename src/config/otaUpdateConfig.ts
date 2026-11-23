@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.65',
+  version: '2.3.67',
   title: {
-    ja: '🛡️ 起動時のデータベースロック対策',
-    en: '🛡️ Database lock handling at startup',
+    ja: '🏷️ 体組成グラフの指標表示名を修正',
+    en: '🏷️ Fixed body composition metric labels',
   },
   notes: {
     ja: [
-      'アップデート直後などにデータベースが一時的にロックされていても、最大10秒待機し、自動で再試行して起動するようにしました。',
-      'データベースエラー画面から「端末内バックアップから復元」へ進めるようにしました。',
+      '体組成グラフの指標選択画面およびグラフタイトルで「筋肉・脂肪比 (MF比)」「マッチョスコア (MS)」が正しく表示されるように修正しました。',
     ],
     en: [
-      'The app now waits up to 10 seconds and retries automatically when the database is temporarily locked (e.g. right after an update).',
-      'Added a "Restore from on-device backup" button to the database error screen.',
+      'Fixed the metric selector and chart titles in Body Composition History to display "Muscle-Fat Ratio (MF)" and "Macho Score (MS)" properly.',
     ],
   },
 };
