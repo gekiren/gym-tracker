@@ -18,7 +18,7 @@ const formatSize = (bytes: number): string => `${(bytes / 1024).toFixed(0)} KB`;
 
 const shortDate = (s: string | null): string => (s ? s.slice(0, 10) : '-');
 
-export default function InternalBackupsScreen() {
+export default function InternalBackupsScreen({ onBack }: { onBack?: () => void } = {}) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [items, setItems] = useState<InternalBackupInfo[]>([]);
@@ -83,7 +83,7 @@ export default function InternalBackupsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={() => (onBack ? onBack() : router.back())} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>端末内の自動バックアップ</Text>

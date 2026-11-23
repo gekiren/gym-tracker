@@ -26,6 +26,7 @@ import i18n from '../src/i18n';
 import { registerGlobalErrorHandler } from '../src/services/crashReporterService';
 import { ReviewPromptModal } from '../components/ReviewPromptModal';
 import { OTAUpdateModal } from '../components/OTAUpdateModal';
+import InternalBackupsScreen from './settings/internal-backups';
 import { PointAwardToast } from '../components/PointAwardToast';
 import { MedalUnlockToast } from '../components/MedalUnlockToast';
 import { ClassUpModal } from '../components/ClassUpModal';
@@ -74,6 +75,7 @@ export default function RootLayout() {
   );
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
+  const [showBackupRestore, setShowBackupRestore] = useState(false);
   const pathname = usePathname();
   const pathnameRef = useRef(pathname);
   const pendingProposal = useGoogleDriveSyncStore((s) => s.pendingProposal);
@@ -427,6 +429,10 @@ export default function RootLayout() {
     };
   }, []);
 
+  if (dbError && showBackupRestore) {
+    return <InternalBackupsScreen onBack={() => setShowBackupRestore(false)} />;
+  }
+
   if (dbError) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background, padding: 32 }]}>
@@ -435,6 +441,12 @@ export default function RootLayout() {
         <Text style={[styles.errorText, { color: colors.danger, fontSize: 12 }]}>{dbError}</Text>
         <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.primary }]} onPress={setupDB}>
           <Text style={styles.retryBtnText}>{i18n.t('ui.profile.retry')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.retryBtn, { backgroundColor: colors.card, marginTop: 12 }]}
+          onPress={() => setShowBackupRestore(true)}
+        >
+          <Text style={[styles.retryBtnText, { color: colors.text }]}>端末内バックアップから復元</Text>
         </TouchableOpacity>
       </View>
     );

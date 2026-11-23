@@ -11,21 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.64',
+  version: '2.3.65',
   title: {
-    ja: '🛡️ データ保護の強化と端末内バックアップ復元',
-    en: '🛡️ Stronger data protection and on-device backup restore',
+    ja: '🛡️ 起動時のデータベースロック対策',
+    en: '🛡️ Database lock handling at startup',
   },
   notes: {
     ja: [
-      'アップデート直後にデータが初期化される問題への対策として、DBへの一時的なアクセスエラー時にデータを削除・初期化しないように修正しました。',
-      '設定 ＞ バックアップに「端末内の自動バックアップ」を追加しました。保存日時・記録件数を確認して、ワンタップで復元できます。',
-      '記録が空の状態で、既存の自動バックアップを上書きしないようにしました。',
+      'アップデート直後などにデータベースが一時的にロックされていても、最大10秒待機し、自動で再試行して起動するようにしました。',
+      'データベースエラー画面から「端末内バックアップから復元」へ進めるようにしました。',
     ],
     en: [
-      'Fixed a case where the database could be wiped after an update: transient database access errors no longer delete or reinitialize your data.',
-      'Added "On-device automatic backups" under Settings > Backup. Review each backup\'s date and record counts and restore with one tap.',
-      'Existing automatic backups are no longer overwritten while the database has no records.',
+      'The app now waits up to 10 seconds and retries automatically when the database is temporarily locked (e.g. right after an update).',
+      'Added a "Restore from on-device backup" button to the database error screen.',
     ],
   },
 };
