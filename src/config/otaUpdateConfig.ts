@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.68',
+  version: '2.3.69',
   title: {
-    ja: '📅 Googleカレンダー連携の2重表示防止オプションを追加',
-    en: '📅 Added Duplicate Prevention Option for Google Calendar Sync',
+    ja: '⚙️ 24時間管理の設定メニューからGoogleカレンダー連携設定を開けるように改善',
+    en: '⚙️ Added Google Calendar Sync shortcut to 24h Management settings menu',
   },
   notes: {
     ja: [
-      'Googleカレンダーから取り込んだ予定と同じ内容・時間帯の実績を書き出さないようにする設定（2重表示防止）を、Googleカレンダー連携設定に追加しました。',
+      '24時間管理画面右上の歯車ボタンから「Googleカレンダー連携設定」と「タグ・ピース編集」を選択して開けるようにしました。',
     ],
     en: [
-      'Added an option in Google Calendar Sync settings to skip exporting activity logs that duplicate existing Google Calendar plans.',
+      'Added a menu to the 24h Management gear button so you can open either Google Calendar Sync settings or Tag & Piece Editor.',
     ],
   },
 };
