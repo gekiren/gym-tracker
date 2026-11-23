@@ -149,6 +149,23 @@ export interface ProposedTimeManagement {
   pieces?: ProposedActivityPiece[];
 }
 
+export interface ProposedBodyCompositionLog {
+  date: string; // YYYY-MM-DD (or YYYY/MM/DD normalized to YYYY-MM-DD)
+  action?: 'upsert' | 'replace';
+  weight?: number | null;
+  body_fat_rate?: number | null;
+  muscle_mass?: number | null;
+  lbm?: number | null;
+  height?: number | null;
+  neck?: number | null;
+  waist?: number | null;
+  hip?: number | null;
+  wrist?: number | null;
+  ankle?: number | null;
+  gender?: 'male' | 'female';
+  memo?: string | null;
+}
+
 export interface AiAgentProposalsPayload {
   schemaVersion?: number;
   proposalId: string;
@@ -176,6 +193,7 @@ export interface AiAgentProposalsPayload {
   workoutMenus?: ProposedWorkoutMenu[];
   dailyRoutines?: ProposedDailyRoutine[];
   timeManagement?: ProposedTimeManagement;
+  bodyComposition?: ProposedBodyCompositionLog[];
   memoryUpdates?: string[];
 }
 
@@ -187,6 +205,7 @@ export interface ProposalSummaryCounts {
   defaultSchedulesCount: number;
   templatesCount: number;
   piecesCount: number;
+  bodyCompositionCount: number;
   memoryUpdatesCount: number;
 }
 

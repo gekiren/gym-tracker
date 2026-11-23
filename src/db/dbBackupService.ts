@@ -1,13 +1,44 @@
 import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import { getDB } from './connection';
+import { getDB, closeDB, withDBQueue } from './connection';
 import { getLocalTodayISO } from '../utils/dateUtils';
 
 const DB_NAME = 'gymtracker.db';
 const BACKUP_DIR = `${FileSystem.documentDirectory}backups/`;
 const DB_PATH = `${FileSystem.documentDirectory}SQLite/${DB_NAME}`;
 const LATEST_BACKUP_PATH = `${BACKUP_DIR}gymtracker_backup_latest.db`;
+
+/**
+ * 現在のDBが実質空（記録系テーブルがすべて0件）かを判定する。
+ * 初期化直後の空DBで既存の健全なバックアップを上書きしないためのガードに使用する。
+ */
+const isCurrentDbEffectivelyEmpty = async (): Promise<boolean> => {
+  try {
+    const conn = getDB();
+    if (!conn) return false;
+    const tables = ['workouts', 'meal_logs', 'water_logs', 'body_composition_logs', 'habit_logs', 'time_logs'];
+    for (const t of tables) {
+      const row = await conn.getFirstAsync<{ c: number }>(`SELECT COUNT(*) AS c FROM ${t};`);
+      if ((row?.c ?? 0) > 0) return false;
+    }
+    return true;
+  } catch {
+    // 判定できない場合は安全側（空ではない扱い）にするが、別途 quick_check で保護される
+    return false;
+  }
+};
+
+/** 空DBで既存バックアップを上書きすべきでない場合 true */
+const shouldSkipBackupBecauseEmpty = async (): Promise<boolean> => {
+  const latestInfo = await FileSystem.getInfoAsync(LATEST_BACKUP_PATH);
+  if (!latestInfo.exists) return false;
+  const empty = await isCurrentDbEffectivelyEmpty();
+  if (empty) {
+    console.warn('[DB_BACKUP] Current DB has no records but backups exist. Skipping backup to preserve existing backups.');
+  }
+  return empty;
+};
 
 /**
  * バックアップ用ディレクトリを確保する
@@ -85,6 +116,10 @@ export const createDailyBackup = async (): Promise<boolean> => {
     }
 
     await ensureBackupDir();
+
+    if (await shouldSkipBackupBecauseEmpty()) {
+      return false;
+    }
 
     const latestInfo = await FileSystem.getInfoAsync(LATEST_BACKUP_PATH);
     const now = Date.now();
@@ -177,7 +212,10 @@ export const createInstantBackup = async (reason: string = 'instant'): Promise<b
       return false;
     }
 
-    // 3. 最新バックアップファイルへの上書きコピー
+    // 3. 最新バックアップファイルへの上書きコピー（空DBでの上書きガード付き）
+    if (await shouldSkipBackupBecauseEmpty()) {
+      return false;
+    }
     await FileSystem.copyAsync({ from: DB_PATH, to: LATEST_BACKUP_PATH });
 
     // 4. 追跡・世代管理用バックアップの作成
@@ -439,3 +477,170 @@ export const exportDatabaseBackup = async (options?: {
   }
 };
 
+
+/**
+ * Updates.reloadAsync() 直前に呼び出す。実行中のクエリキューの完了を待ち、
+ * WAL を DB 本体へフラッシュしてから再読み込みできる状態にする（失敗しても例外は投げない）。
+ */
+export const prepareDbForReload = async (): Promise<void> => {
+  try {
+    await withDBQueue(async (database) => {
+      await database.execAsync('PRAGMA wal_checkpoint(TRUNCATE);');
+    });
+  } catch (e) {
+    console.warn('[DB_BACKUP] prepareDbForReload checkpoint failed (continuing):', e);
+  }
+};
+
+export interface InternalBackupInfo {
+  fileName: string;
+  path: string;
+  size: number;
+  modifiedAt: number; // epoch ms
+  isQuarantine: boolean;
+  healthy: boolean;
+  workouts: number;
+  meals: number;
+  waterLogs: number;
+  bodyLogs: number;
+  latestWorkoutDate: string | null;
+  latestMealDate: string | null;
+  latestWaterDate: string | null;
+}
+
+const safeCount = async (db: SQLite.SQLiteDatabase, table: string): Promise<number> => {
+  try {
+    const row = await db.getFirstAsync<{ c: number }>(`SELECT COUNT(*) AS c FROM ${table};`);
+    return row?.c ?? 0;
+  } catch {
+    return 0;
+  }
+};
+
+const safeMax = async (db: SQLite.SQLiteDatabase, table: string, col: string): Promise<string | null> => {
+  try {
+    const row = await db.getFirstAsync<{ m: string | null }>(`SELECT MAX(${col}) AS m FROM ${table};`);
+    return row?.m ? String(row.m) : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * 端末内 backups/ フォルダの .db ファイルを一覧し、中身（件数・最新日付）をプレビューする。
+ * 並び順は更新日時の新しい順。
+ */
+export const listInternalBackups = async (): Promise<InternalBackupInfo[]> => {
+  await ensureBackupDir();
+  const sqliteDir = `${FileSystem.documentDirectory}SQLite/`;
+  const files = (await FileSystem.readDirectoryAsync(BACKUP_DIR)).filter((f) => f.endsWith('.db'));
+  const results: InternalBackupInfo[] = [];
+
+  for (const fileName of files) {
+    const path = `${BACKUP_DIR}${fileName}`;
+    const info: any = await FileSystem.getInfoAsync(path);
+    if (!info.exists) continue;
+
+    const entry: InternalBackupInfo = {
+      fileName,
+      path,
+      size: info.size ?? 0,
+      modifiedAt: Math.round((info.modificationTime ?? 0) * 1000),
+      isQuarantine: fileName.includes('quarantine'),
+      healthy: false,
+      workouts: 0,
+      meals: 0,
+      waterLogs: 0,
+      bodyLogs: 0,
+      latestWorkoutDate: null,
+      latestMealDate: null,
+      latestWaterDate: null,
+    };
+
+    if (entry.size > 0) {
+      const tempName = `_temp_prev_${Date.now()}_${results.length}.db`;
+      const tempPath = `${sqliteDir}${tempName}`;
+      let tempDb: SQLite.SQLiteDatabase | null = null;
+      try {
+        await FileSystem.copyAsync({ from: path, to: tempPath });
+        if ((await FileSystem.getInfoAsync(`${path}-wal`)).exists) {
+          await FileSystem.copyAsync({ from: `${path}-wal`, to: `${tempPath}-wal` }).catch(() => {});
+        }
+        tempDb = await SQLite.openDatabaseAsync(tempName);
+        entry.workouts = await safeCount(tempDb, 'workouts');
+        entry.meals = await safeCount(tempDb, 'meal_logs');
+        entry.waterLogs = await safeCount(tempDb, 'water_logs');
+        entry.bodyLogs = await safeCount(tempDb, 'body_composition_logs');
+        entry.latestWorkoutDate = await safeMax(tempDb, 'workouts', 'start_time');
+        entry.latestMealDate = await safeMax(tempDb, 'meal_logs', 'date');
+        entry.latestWaterDate = await safeMax(tempDb, 'water_logs', 'date');
+        entry.healthy = true;
+      } catch (e) {
+        console.warn(`[DB_BACKUP] Failed to preview backup ${fileName}:`, e);
+      } finally {
+        if (tempDb) {
+          await tempDb.closeAsync().catch(() => {});
+        }
+        await FileSystem.deleteAsync(tempPath, { idempotent: true }).catch(() => {});
+        await FileSystem.deleteAsync(`${tempPath}-wal`, { idempotent: true }).catch(() => {});
+        await FileSystem.deleteAsync(`${tempPath}-shm`, { idempotent: true }).catch(() => {});
+      }
+    }
+    results.push(entry);
+  }
+
+  return results.sort((a, b) => b.modifiedAt - a.modifiedAt);
+};
+
+/**
+ * 指定した内部バックアップから復元する。
+ * 復元前に現在のDBを gymtracker_backup_pre_restore_*.db として退避する（最大3世代）。
+ * 呼び出し側は成功後に Updates.reloadAsync() でアプリを再起動すること。
+ */
+export const restoreFromInternalBackup = async (
+  fileName: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    if (fileName.includes('/') || fileName.includes('..') || !fileName.endsWith('.db')) {
+      return { success: false, error: 'Invalid backup file name.' };
+    }
+    const sourcePath = `${BACKUP_DIR}${fileName}`;
+    const srcInfo = await FileSystem.getInfoAsync(sourcePath);
+    if (!srcInfo.exists || (srcInfo as any).size === 0) {
+      return { success: false, error: 'Backup file not found.' };
+    }
+    if (!(await verifyDBFileIntegrity(sourcePath))) {
+      return { success: false, error: 'Backup file failed integrity check.' };
+    }
+
+    // 現在のDBを退避（接続を閉じる前に WAL を反映）
+    try {
+      const conn = getDB();
+      if (conn) await conn.execAsync('PRAGMA wal_checkpoint(TRUNCATE);');
+    } catch (e) {
+      console.warn('[DB_BACKUP] WAL checkpoint before restore failed (continuing):', e);
+    }
+    await closeDB();
+
+    const curInfo = await FileSystem.getInfoAsync(DB_PATH);
+    if (curInfo.exists) {
+      await FileSystem.copyAsync({
+        from: DB_PATH,
+        to: `${BACKUP_DIR}gymtracker_backup_pre_restore_${Date.now()}.db`,
+      });
+      const files = await FileSystem.readDirectoryAsync(BACKUP_DIR);
+      const old = files.filter((f) => f.startsWith('gymtracker_backup_pre_restore_') && f.endsWith('.db')).sort();
+      for (const f of old.slice(0, Math.max(0, old.length - 3))) {
+        await FileSystem.deleteAsync(`${BACKUP_DIR}${f}`, { idempotent: true }).catch(() => {});
+      }
+    }
+
+    await FileSystem.copyAsync({ from: sourcePath, to: DB_PATH });
+    await FileSystem.deleteAsync(`${DB_PATH}-wal`, { idempotent: true }).catch(() => {});
+    await FileSystem.deleteAsync(`${DB_PATH}-shm`, { idempotent: true }).catch(() => {});
+    return { success: true };
+  } catch (e: any) {
+    console.error('[DB_BACKUP] restoreFromInternalBackup failed:', e);
+    return { success: false, error: e?.message || String(e) };
+  }
+};

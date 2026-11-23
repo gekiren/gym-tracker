@@ -25,6 +25,28 @@ export * from './dbBackupService';
 import { checkAndRepairDB } from './dbIntegrityService';
 import { createDailyBackup } from './dbBackupService';
 
+const isLockError = (e: unknown): boolean => {
+  const msg = e instanceof Error ? e.message : String(e);
+  return /locked|busy/i.test(msg);
+};
+
+const INIT_LOCK_RETRY_MAX = 3;
+
+const _initDBWithLockRetry = async (): Promise<SQLite.SQLiteDatabase> => {
+  let lastErr: unknown = null;
+  for (let attempt = 0; attempt < INIT_LOCK_RETRY_MAX; attempt++) {
+    try {
+      return await _initDBInternal();
+    } catch (e) {
+      lastErr = e;
+      if (!isLockError(e)) throw e;
+      console.warn(`[DB_INIT] Database locked during init (attempt ${attempt + 1}/${INIT_LOCK_RETRY_MAX}):`, e);
+      await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)));
+    }
+  }
+  throw lastErr;
+};
+
 export const initDB = async (): Promise<SQLite.SQLiteDatabase> => {
   try {
     return getDB();
@@ -37,7 +59,7 @@ export const initDB = async (): Promise<SQLite.SQLiteDatabase> => {
 
   const promise = (async () => {
     try {
-      const dbInstance = await _initDBInternal();
+      const dbInstance = await _initDBWithLockRetry();
       // 起動完了後にバックグラウンドで日次自動バックアップを作成
       createDailyBackup().catch((err) => console.warn('[DB_BACKUP] Background backup failed:', err));
       return dbInstance;
@@ -53,12 +75,15 @@ export const initDB = async (): Promise<SQLite.SQLiteDatabase> => {
 
 const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
   let _db = await SQLite.openDatabaseAsync('gymtracker.db');
+  // 他の処理がロック中でも即失敗せず、最大10秒待機する
+  await _db.execAsync('PRAGMA busy_timeout = 10000;').catch(() => {});
 
   // DBの整合性チェック・修復
   const checkResult = await checkAndRepairDB(_db);
   if (checkResult !== 'ok' && checkResult !== 'repaired') {
     // 救出・復元・新規作成等で再接続が必要な場合、確実に再度接続を開く
     _db = await SQLite.openDatabaseAsync('gymtracker.db');
+    await _db.execAsync('PRAGMA busy_timeout = 10000;').catch(() => {});
   }
 
   // Create tables if they don't exist

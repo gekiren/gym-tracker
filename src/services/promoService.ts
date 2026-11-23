@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
-import { saveSetting, createInstantBackup } from '../db/database';
+import { saveSetting, createInstantBackup, prepareDbForReload } from '../db/database';
 
 export interface PromoCampaignConfig {
   minNativeVersion: string;   // Required minimum native version (e.g. "1.0.0")
@@ -82,6 +82,7 @@ export const checkAndApplyOTAUpdate = async (): Promise<OTACheckResult> => {
         console.warn('Pre-OTA backup warning:', backupErr);
       }
       await saveSetting('ota_reload_in_progress', '1');
+      await prepareDbForReload();
       await Updates.reloadAsync();
       return { isUpdateTriggered: true };
     }

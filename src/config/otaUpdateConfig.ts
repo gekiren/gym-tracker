@@ -11,21 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.62',
+  version: '2.3.65',
   title: {
-    ja: '💧 水分補給の日付ズレ・記録消失の不具合を修正',
-    en: '💧 Fixed Hydration Date Shift & Sync Reset Issues',
+    ja: '🛡️ 起動時のデータベースロック対策',
+    en: '🛡️ Database lock handling at startup',
   },
   notes: {
     ja: [
-      '早朝（0:00〜8:59）に記録した水分補給が前日扱いになってしまう日付取得の不具合を修正しました。',
-      'アプリを立ち上げたまま日付をまたいだ際、自動で当日の日付へ切り替わるように改善しました。',
-      'ウィジェットからの起動や連続タップ時に本日の水分記録が消えてしまう同期不具合を修正し、1件ずつの安全な保存方式へ刷新しました。',
+      'アップデート直後などにデータベースが一時的にロックされていても、最大10秒待機し、自動で再試行して起動するようにしました。',
+      'データベースエラー画面から「端末内バックアップから復元」へ進めるようにしました。',
     ],
     en: [
-      'Fixed a UTC date bug where early-morning hydration logs (00:00–08:59 local time) were saved under the previous day.',
-      'Automatically advances the active date to today when resuming the app after midnight.',
-      'Replaced full-table hydration rewrites with safe incremental add/delete syncing to prevent today\'s logs from being overwritten or lost.',
+      'The app now waits up to 10 seconds and retries automatically when the database is temporarily locked (e.g. right after an update).',
+      'Added a "Restore from on-device backup" button to the database error screen.',
     ],
   },
 };

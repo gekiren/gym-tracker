@@ -10,7 +10,7 @@ import { importWorkoutFromSelectedFile, importWorkoutFromMarkdownText } from '..
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Updates from 'expo-updates';
-import { saveSetting, getDB, closeDB, initDB, getSettings, exportDatabaseBackup, createInstantBackup } from '../src/db/database';
+import { saveSetting, getDB, closeDB, initDB, getSettings, exportDatabaseBackup, createInstantBackup, prepareDbForReload } from '../src/db/database';
 import { markBackupRestoredForDriveSync } from '../src/services/googleDriveSyncService';
 import { getSyncDiagnosticsLogs } from '../src/services/lifelogSyncService';
 import { showReviewDialog } from '../src/services/reviewService';
@@ -192,6 +192,7 @@ function DeveloperMenuScreenInternal() {
                     console.warn('Pre-OTA dev backup warning:', backupErr);
                   }
                   // 7. Reload
+                  await prepareDbForReload();
                   await Updates.reloadAsync();
                 } catch (reloadErr: any) {
                   console.warn('Reload failed, asking user to manual restart:', reloadErr);
@@ -418,6 +419,7 @@ function DeveloperMenuScreenInternal() {
                     } catch (backupErr) {
                       console.warn('Pre-OTA dev backup warning:', backupErr);
                     }
+                    await prepareDbForReload();
                     await Updates.reloadAsync();
                   } catch (reloadErr) {
                     console.warn('Reload failed, asking user to manual restart:', reloadErr);

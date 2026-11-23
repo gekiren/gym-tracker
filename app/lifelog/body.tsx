@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../src/theme';
 import { useBodyStore } from '../../src/store/bodyStore';
 import { useLifelogStore } from '../../src/store/lifelogStore';
+import { useGoogleDriveSyncStore } from '../../src/store/googleDriveSyncStore';
 import { BodyCompositionLog } from '../../src/types/bodyComposition';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useFeatureSwipe } from '../../src/hooks/useFeatureSwipe';
@@ -57,6 +58,7 @@ export default function BodyCompositionScreen() {
 
   // LifelogStore (currentDate sync)
   const lifelogDate = useLifelogStore((state) => state.currentDate);
+  const appliedRevision = useGoogleDriveSyncStore((state) => state.appliedRevision);
 
   // Date State (YYYY-MM-DD)
   const getTodayStr = () => {
@@ -93,11 +95,11 @@ export default function BodyCompositionScreen() {
     setSelectedDate(`${y}-${m}-${d}`);
   };
 
-  // 画面フォーカス時および日付変更時のデータ読み込み
+  // 画面フォーカス時・日付変更時・GoogleドライブAI提案反映時のデータ読み込み
   useEffect(() => {
     if (!isFocused) return;
     loadBodyData(selectedDate);
-  }, [isFocused, selectedDate, loadBodyData]);
+  }, [isFocused, selectedDate, appliedRevision, loadBodyData]);
 
   // 手動リフレッシュ
   const onRefresh = useCallback(async () => {

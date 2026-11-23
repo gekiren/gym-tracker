@@ -206,6 +206,25 @@ export default function BackupSettingsScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        <View style={[styles.card, { marginTop: 16 }]}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="time-outline" size={28} color={colors.primary} style={{ marginRight: 10 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>端末内の自動バックアップ</Text>
+              <Text style={styles.cardDesc}>
+                アプリが自動で保存した端末内のバックアップを一覧し、件数を確認して復元できます。データが消えた場合はこちらを確認してください。
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.exportBtn]}
+            onPress={() => router.push('/settings/internal-backups')}
+          >
+            <Ionicons name="list-outline" size={20} color="#000" style={{ marginRight: 8 }} />
+            <Text style={styles.exportBtnText}>自動バックアップを確認</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
