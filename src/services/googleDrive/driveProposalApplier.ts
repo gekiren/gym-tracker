@@ -1,11 +1,13 @@
 import {
   addCustomExercise,
   addRoutine,
+  getBodyLogByDate,
   getExercises,
   getRoutines,
   getSettings,
   saveSetting,
   updateRoutine,
+  upsertBodyLog,
 } from '../../db/database';
 import { Exercise, RoutineExercise, RoutineSet } from '../../db/types';
 import { useLifelogStore } from '../../store/lifelogStore';
@@ -17,6 +19,7 @@ import {
   AppliedProposalHistoryEntry,
   GoogleDriveSyncSettings,
   ProposalSummaryCounts,
+  ProposedBodyCompositionLog,
   TrainerAdviceEntry,
 } from './types';
 
@@ -60,6 +63,20 @@ function generateCompactId(prefix = 'ai'): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
+function parseOptionalBodyMetric(
+  val: unknown,
+  min: number,
+  max: number
+): number | null | undefined {
+  if (val === undefined) return undefined;
+  if (val === null) return null;
+  if (typeof val !== 'number' && typeof val !== 'string') return undefined;
+  if (typeof val === 'string' && val.trim() === '') return undefined;
+  const num = typeof val === 'number' ? val : Number(val);
+  if (!Number.isFinite(num) || num < min || num > max) return undefined;
+  return Number(num.toFixed(2));
+}
+
 /**
  * 文字列（Markdownコードブロック混入含む）から AiAgentProposalsPayload を安全にパース・正規化する
  */
@@ -86,6 +103,13 @@ export function parseProposalsJson(rawText: string): AiAgentProposalsPayload | n
       ? parsed.updatedAt.trim()
       : new Date().toISOString();
 
+  let bodyComposition: ProposedBodyCompositionLog[] | undefined;
+  if (Array.isArray(parsed.bodyComposition)) {
+    bodyComposition = parsed.bodyComposition;
+  } else if (parsed.bodyComposition && typeof parsed.bodyComposition === 'object') {
+    bodyComposition = [parsed.bodyComposition as ProposedBodyCompositionLog];
+  }
+
   return {
     schemaVersion: typeof parsed.schemaVersion === 'number' ? parsed.schemaVersion : 1,
     proposalId,
@@ -100,6 +124,7 @@ export function parseProposalsJson(rawText: string): AiAgentProposalsPayload | n
       parsed.timeManagement && typeof parsed.timeManagement === 'object'
         ? parsed.timeManagement
         : undefined,
+    bodyComposition,
     memoryUpdates: Array.isArray(parsed.memoryUpdates) ? parsed.memoryUpdates : undefined,
   };
 }
@@ -159,6 +184,7 @@ export function summarizeProposal(payload: AiAgentProposalsPayload): {
   const defaultSchedulesCount = payload.timeManagement?.defaultSchedules?.length ?? 0;
   const templatesCount = payload.timeManagement?.templates?.length ?? 0;
   const piecesCount = payload.timeManagement?.pieces?.length ?? 0;
+  const bodyCompositionCount = payload.bodyComposition?.length ?? 0;
   const memoryUpdatesCount = payload.memoryUpdates?.length ?? 0;
 
   const counts: ProposalSummaryCounts = {
@@ -169,6 +195,7 @@ export function summarizeProposal(payload: AiAgentProposalsPayload): {
     defaultSchedulesCount,
     templatesCount,
     piecesCount,
+    bodyCompositionCount,
     memoryUpdatesCount,
   };
 
@@ -184,6 +211,7 @@ export function summarizeProposal(payload: AiAgentProposalsPayload): {
   if (timeTotal > 0) {
     parts.push(`24時間管理提案 ${timeTotal}件`);
   }
+  if (counts.bodyCompositionCount > 0) parts.push(`体組成記録 ${counts.bodyCompositionCount}件`);
   if (counts.memoryUpdatesCount > 0) parts.push(`AI記憶更新 ${counts.memoryUpdatesCount}件`);
 
   return {
@@ -212,6 +240,7 @@ export function isNewPendingProposal(
       counts.defaultSchedulesCount +
       counts.templatesCount +
       counts.piecesCount +
+      counts.bodyCompositionCount +
       counts.memoryUpdatesCount >
     0;
   if (!hasAnyContent) return false;
@@ -250,6 +279,7 @@ export async function applyAiAgentProposalToApp(
   workoutMenuTouched: boolean;
   dailyRoutineTouched: boolean;
   timeManagementTouched: boolean;
+  bodyCompositionTouched: boolean;
 }> {
   const { counts, previewSummary } = summarizeProposal(payload);
 
@@ -258,6 +288,7 @@ export async function applyAiAgentProposalToApp(
     let workoutMenuTouched = false;
     let dailyRoutineTouched = false;
     let timeManagementTouched = false;
+    let bodyCompositionTouched = false;
 
     // 1. トレーナーアドバイスの保存
     const newAdvices = normalizeAdviceEntries(payload);
@@ -659,6 +690,161 @@ export async function applyAiAgentProposalToApp(
       }
     }
 
+    // 4.5 体組成ログ (body_composition_logs) の追加・更新
+    if (payload.bodyComposition && payload.bodyComposition.length > 0) {
+      let cachedMeasurements: Record<string, any> = {};
+      if (allSettings['body_last_measurements']) {
+        try {
+          const parsedMeas = JSON.parse(allSettings['body_last_measurements']);
+          if (parsedMeas && typeof parsedMeas === 'object') {
+            cachedMeasurements = parsedMeas;
+          }
+        } catch {
+          // ignore
+        }
+      }
+      let measurementsUpdated = false;
+      let latestTouchedBodyDate: string | undefined;
+
+      for (const entry of payload.bodyComposition) {
+        if (!entry || typeof entry !== 'object' || !entry.date) continue;
+        const dateISO = normalizeToDateISO(String(entry.date));
+        if (!dateISO || !/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) continue;
+
+        const weight = parseOptionalBodyMetric(entry.weight, 1, 500);
+        const bodyFatRate = parseOptionalBodyMetric(entry.body_fat_rate, 0, 100);
+        const muscleMass = parseOptionalBodyMetric(entry.muscle_mass, 0, 300);
+        let lbm = parseOptionalBodyMetric(entry.lbm, 0, 300);
+        const height = parseOptionalBodyMetric(entry.height, 50, 300);
+        const neck = parseOptionalBodyMetric(entry.neck, 1, 300);
+        const waist = parseOptionalBodyMetric(entry.waist, 1, 300);
+        const hip = parseOptionalBodyMetric(entry.hip, 1, 300);
+        const wrist = parseOptionalBodyMetric(entry.wrist, 1, 300);
+        const ankle = parseOptionalBodyMetric(entry.ankle, 1, 300);
+        const gender =
+          entry.gender === 'male' || entry.gender === 'female' ? entry.gender : undefined;
+        const memo =
+          entry.memo === undefined
+            ? undefined
+            : entry.memo === null
+              ? null
+              : typeof entry.memo === 'string'
+                ? entry.memo.trim() || null
+                : undefined;
+
+        const hasAnyField =
+          weight !== undefined ||
+          bodyFatRate !== undefined ||
+          muscleMass !== undefined ||
+          lbm !== undefined ||
+          height !== undefined ||
+          neck !== undefined ||
+          waist !== undefined ||
+          hip !== undefined ||
+          wrist !== undefined ||
+          ankle !== undefined ||
+          gender !== undefined ||
+          memo !== undefined;
+
+        if (!hasAnyField) continue;
+
+        const isReplace = entry.action === 'replace';
+        const existing = await getBodyLogByDate(dateISO);
+
+        const effWeight =
+          weight !== undefined ? weight : isReplace ? null : (existing?.weight ?? null);
+        const effFat =
+          bodyFatRate !== undefined
+            ? bodyFatRate
+            : isReplace
+              ? null
+              : (existing?.body_fat_rate ?? null);
+
+        if (
+          lbm === undefined &&
+          (weight !== undefined || bodyFatRate !== undefined) &&
+          effWeight !== null &&
+          effWeight > 0 &&
+          effFat !== null &&
+          effFat >= 0 &&
+          effFat <= 100
+        ) {
+          lbm = Number((effWeight * (1 - effFat / 100)).toFixed(1));
+        }
+
+        const pickField = <T,>(val: T | null | undefined): T | null | undefined => {
+          if (val !== undefined) return val;
+          return isReplace ? null : undefined;
+        };
+
+        await upsertBodyLog({
+          date: dateISO,
+          weight: pickField(weight),
+          body_fat_rate: pickField(bodyFatRate),
+          muscle_mass: pickField(muscleMass),
+          lbm: pickField(lbm),
+          height: pickField(height),
+          neck: pickField(neck),
+          waist: pickField(waist),
+          hip: pickField(hip),
+          wrist: pickField(wrist),
+          ankle: pickField(ankle),
+          gender: gender ?? (isReplace ? existing?.gender || 'male' : undefined),
+          memo: pickField(memo),
+          source: 'ai_agent',
+        });
+
+        if (typeof height === 'number') {
+          cachedMeasurements.height = height;
+          measurementsUpdated = true;
+        }
+        if (typeof neck === 'number') {
+          cachedMeasurements.neck = neck;
+          measurementsUpdated = true;
+        }
+        if (typeof waist === 'number') {
+          cachedMeasurements.waist = waist;
+          measurementsUpdated = true;
+        }
+        if (typeof hip === 'number') {
+          cachedMeasurements.hip = hip;
+          measurementsUpdated = true;
+        }
+        if (typeof wrist === 'number') {
+          cachedMeasurements.wrist = wrist;
+          measurementsUpdated = true;
+        }
+        if (typeof ankle === 'number') {
+          cachedMeasurements.ankle = ankle;
+          measurementsUpdated = true;
+        }
+
+        bodyCompositionTouched = true;
+        if (!latestTouchedBodyDate || dateISO > latestTouchedBodyDate) {
+          latestTouchedBodyDate = dateISO;
+        }
+      }
+
+      if (measurementsUpdated) {
+        await saveSetting('body_last_measurements', JSON.stringify(cachedMeasurements));
+      }
+
+      if (bodyCompositionTouched) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const { useBodyStore } = require('../../store/bodyStore');
+          const refreshDate = useBodyStore.getState().currentLog?.date || latestTouchedBodyDate;
+          if (refreshDate) {
+            await useBodyStore.getState().loadBodyData(refreshDate);
+          } else {
+            await useBodyStore.getState().loadAllHistory(50);
+          }
+        } catch (err) {
+          console.warn('[GoogleDriveSync] Failed to refresh bodyStore after proposal apply:', err);
+        }
+      }
+    }
+
     // 5. AIコーチ記憶メモリ更新
     if (payload.memoryUpdates && payload.memoryUpdates.length > 0) {
       const currentMem = useSettingsStore.getState().settings.aiCompanionMemory || '';
@@ -707,6 +893,7 @@ export async function applyAiAgentProposalToApp(
       workoutMenuTouched,
       dailyRoutineTouched,
       timeManagementTouched,
+      bodyCompositionTouched,
     };
   });
 }

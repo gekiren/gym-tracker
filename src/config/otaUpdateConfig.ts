@@ -11,21 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.62',
+  version: '2.3.63',
   title: {
-    ja: '💧 水分補給の日付ズレ・記録消失の不具合を修正',
-    en: '💧 Fixed Hydration Date Shift & Sync Reset Issues',
+    ja: '⚖️ GoogleドライブAI連携からの体組成書き込みに対応',
+    en: '⚖️ Added AI Body Composition Writing via Google Drive Sync',
   },
   notes: {
     ja: [
-      '早朝（0:00〜8:59）に記録した水分補給が前日扱いになってしまう日付取得の不具合を修正しました。',
-      'アプリを立ち上げたまま日付をまたいだ際、自動で当日の日付へ切り替わるように改善しました。',
-      'ウィジェットからの起動や連続タップ時に本日の水分記録が消えてしまう同期不具合を修正し、1件ずつの安全な保存方式へ刷新しました。',
+      'Googleドライブ AI双方向同期（ai_agent_proposals.json）を通じて、AIエージェントから体重・体脂肪率・筋肉量・身体サイズ等の体組成記録を書き込めるようになりました。',
+      '体重・体脂肪率の更新時にLBM（除脂肪体重）が未指定の場合は自動計算し、AI連携ガイド（AI_AGENT_GUIDE.md）にも体組成の書き込み仕様を追加しました。',
     ],
     en: [
-      'Fixed a UTC date bug where early-morning hydration logs (00:00–08:59 local time) were saved under the previous day.',
-      'Automatically advances the active date to today when resuming the app after midnight.',
-      'Replaced full-table hydration rewrites with safe incremental add/delete syncing to prevent today\'s logs from being overwritten or lost.',
+      'External AI agents can now write body composition logs (weight, body fat, muscle mass, LBM, and body measurements) through Google Drive two-way sync (ai_agent_proposals.json).',
+      'Automatically recalculates LBM when omitted alongside weight/body fat updates, and updated AI_AGENT_GUIDE.md with the bodyComposition schema.',
     ],
   },
 };

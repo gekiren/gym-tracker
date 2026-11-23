@@ -1,6 +1,6 @@
 export type Gender = 'male' | 'female';
 
-export type BodyDataSource = 'manual' | 'health_connect' | 'navy_calc';
+export type BodyDataSource = 'manual' | 'health_connect' | 'navy_calc' | 'ai_agent';
 
 export interface BodyCompositionLog {
   id?: number;

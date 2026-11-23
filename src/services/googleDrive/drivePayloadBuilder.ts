@@ -458,7 +458,7 @@ export function buildInitialProposalTemplate(): AiAgentProposalsPayload {
       date: toLocalDateISO(new Date()),
       summary: 'AIエージェントが新しくアドバイスやメニューを提案する際は、新しい proposalId と status: "pending" を設定して上書き保存してください。',
       message:
-        'このファイルは TreNote と外部 AI エージェントの連携用提案ファイルです。AI_AGENT_GUIDE.md を参照し、trainerAdvice / workoutMenus / dailyRoutines / timeManagement / memoryUpdates を記述して status を "pending" に変更すると、アプリが自動で読み込みます。',
+        'このファイルは TreNote と外部 AI エージェントの連携用提案ファイルです。AI_AGENT_GUIDE.md を参照し、trainerAdvice / workoutMenus / dailyRoutines / timeManagement / bodyComposition / memoryUpdates を記述して status を "pending" に変更すると、アプリが自動で読み込みます。',
       focusAreas: ['初期化'],
     },
     workoutMenus: [],
@@ -469,6 +469,7 @@ export function buildInitialProposalTemplate(): AiAgentProposalsPayload {
       templates: [],
       pieces: [],
     },
+    bodyComposition: [],
     memoryUpdates: [],
   };
 }
@@ -489,7 +490,7 @@ export function buildAgentGuideMarkdown(folderPath?: string): string {
    - 上記データの機械可読な完全 JSON です。種目名、既存ルーティンID、24時間管理の活動ピース名などを正確に参照したい場合に使ってください。
 
 3. **\`ai_agent_proposals.json\`**（AIエージェントが編集 → アプリが自動読み込み）
-   - トレーナーとしてのアドバイス、新しい筋トレメニュー、新しいデイリールーティン、24時間管理の予定/基本スケジュール/テンプレート/活動ピース、AI記憶メモリへの追記を書き込むファイルです。
+   - トレーナーとしてのアドバイス、新しい筋トレメニュー、新しいデイリールーティン、24時間管理の予定/基本スケジュール/テンプレート/活動ピース、体組成記録（体重・体脂肪率・筋肉量・LBM・身体サイズ等）、AI記憶メモリへの追記を書き込むファイルです。
 
 ---
 
@@ -597,6 +598,18 @@ export function buildAgentGuideMarkdown(folderPath?: string): string {
       { "name": "リカバリー", "icon": "🧘", "type": "small", "category": "maintain", "duration": 15, "snap": 5, "color": "blue" }
     ]
   },
+  "bodyComposition": [
+    {
+      "date": "2026-11-16",
+      "action": "upsert",
+      "weight": 70.4,
+      "body_fat_rate": 14.8,
+      "muscle_mass": 33.6,
+      "height": 175.0,
+      "waist": 78.5,
+      "memo": "朝測定（AI記録）"
+    }
+  ],
   "memoryUpdates": [
     "2026-11-15: 胸の日ボリューム調整フェーズ開始（インクライン重視）"
   ]
@@ -608,5 +621,6 @@ export function buildAgentGuideMarkdown(folderPath?: string): string {
 - \`dailyRoutines[].action\`: \`"upsert"\`（同名ルーティンがあればタスクを更新しつつ過去の実施履歴は保持）。
 - \`timeManagement.replaceDates\`: 指定した日付（\`YYYY-MM-DD\`）の既存AI提案予定を置き換えます（通常の予定も \`replaceDatePlans: true\` 時はその日の予定を整理）。\`category\` は \`"invest"\`（自己投資・アンバー）、\`"maintain"\`（維持・ブルー）、\`"drift"\`（オフ・パープル）が使えます。
 - \`timeManagement.defaultSchedules[].days\`: \`0=日曜, 1=月曜, ..., 6=土曜\`。
+- \`bodyComposition[]\`: 指定日（\`date\`: \`YYYY-MM-DD\`）の体組成ログを書き込みます。\`action\` は \`"upsert"\`（省略時のデフォルト：指定した項目だけ既存記録へマージ更新）または \`"replace"\`（未指定項目をクリアして上書き）。利用可能項目は \`weight\`(kg), \`body_fat_rate\`(%), \`muscle_mass\`(kg), \`lbm\`(kg), \`height\`(cm), \`neck\`(cm), \`waist\`(cm), \`hip\`(cm), \`wrist\`(cm), \`ankle\`(cm), \`gender\`(\`"male"\` / \`"female"\`), \`memo\` です。\`lbm\` を省略しても \`weight\` と \`body_fat_rate\` が揃っていれば自動算出されます。
 `;
 }

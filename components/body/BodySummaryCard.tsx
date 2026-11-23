@@ -74,6 +74,8 @@ export default function BodySummaryCard({
                 ? 'Health Connect から同期済み'
                 : currentLog?.source === 'navy_calc'
                 ? '米海軍式より算出'
+                : currentLog?.source === 'ai_agent'
+                ? 'AI同期（Googleドライブ）'
                 : currentLog
                 ? '手動記録'
                 : '未記録'}

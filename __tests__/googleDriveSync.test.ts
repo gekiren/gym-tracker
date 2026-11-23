@@ -7,6 +7,10 @@ import {
   listDriveFolders,
 } from '../src/services/googleDrive/driveApiClient';
 import {
+  buildAgentGuideMarkdown,
+  buildInitialProposalTemplate,
+} from '../src/services/googleDrive/drivePayloadBuilder';
+import {
   applyAiAgentProposalToApp,
   isNewPendingProposal,
   normalizeAdviceEntries,
@@ -44,6 +48,7 @@ jest.mock('expo-file-system/legacy', () => ({
 }));
 
 const mockSavedSettings: Record<string, string> = {};
+const mockBodyLogs: Record<string, any> = {};
 
 jest.mock('../src/db/database', () => ({
   getSettings: jest.fn(async () => ({ ...mockSavedSettings })),
@@ -59,6 +64,61 @@ jest.mock('../src/db/database', () => ({
   ]),
   addRoutine: jest.fn(async () => undefined),
   updateRoutine: jest.fn(async () => undefined),
+  getBodyLogByDate: jest.fn(async (date: string) => mockBodyLogs[date] || null),
+  upsertBodyLog: jest.fn(async (log: any) => {
+    const existing = mockBodyLogs[log.date];
+    if (existing) {
+      mockBodyLogs[log.date] = {
+        ...existing,
+        weight: log.weight !== undefined ? log.weight : existing.weight,
+        body_fat_rate: log.body_fat_rate !== undefined ? log.body_fat_rate : existing.body_fat_rate,
+        muscle_mass: log.muscle_mass !== undefined ? log.muscle_mass : existing.muscle_mass,
+        lbm: log.lbm !== undefined ? log.lbm : existing.lbm,
+        height: log.height !== undefined ? log.height : existing.height,
+        neck: log.neck !== undefined ? log.neck : existing.neck,
+        waist: log.waist !== undefined ? log.waist : existing.waist,
+        hip: log.hip !== undefined ? log.hip : existing.hip,
+        wrist: log.wrist !== undefined ? log.wrist : existing.wrist,
+        ankle: log.ankle !== undefined ? log.ankle : existing.ankle,
+        gender: log.gender || existing.gender || 'male',
+        source: log.source || existing.source || 'manual',
+        memo: log.memo !== undefined ? log.memo : existing.memo,
+      };
+      return existing.id;
+    }
+    const created = {
+      id: Object.keys(mockBodyLogs).length + 1,
+      date: log.date,
+      weight: log.weight ?? null,
+      body_fat_rate: log.body_fat_rate ?? null,
+      muscle_mass: log.muscle_mass ?? null,
+      lbm: log.lbm ?? null,
+      height: log.height ?? null,
+      neck: log.neck ?? null,
+      waist: log.waist ?? null,
+      hip: log.hip ?? null,
+      wrist: log.wrist ?? null,
+      ankle: log.ankle ?? null,
+      gender: log.gender || 'male',
+      source: log.source || 'manual',
+      memo: log.memo ?? null,
+      created_at: Date.now(),
+    };
+    mockBodyLogs[log.date] = created;
+    return created.id;
+  }),
+}));
+
+const mockLoadBodyData = jest.fn().mockResolvedValue(undefined);
+const mockLoadAllHistory = jest.fn().mockResolvedValue(undefined);
+jest.mock('../src/store/bodyStore', () => ({
+  useBodyStore: {
+    getState: () => ({
+      currentLog: null,
+      loadBodyData: mockLoadBodyData,
+      loadAllHistory: mockLoadAllHistory,
+    }),
+  },
 }));
 
 jest.mock('../src/store/lifelogStore', () => {
@@ -94,6 +154,9 @@ describe('Google Drive AI双方向同期ロジック', () => {
   beforeEach(() => {
     for (const k of Object.keys(mockSavedSettings)) {
       delete mockSavedSettings[k];
+    }
+    for (const d of Object.keys(mockBodyLogs)) {
+      delete mockBodyLogs[d];
     }
     jest.clearAllMocks();
   });
@@ -606,5 +669,143 @@ describe('Google Drive AI双方向同期ロジック', () => {
       global.fetch = originalFetch;
       spy.mockRestore();
     }
+  });
+
+  test('bodyComposition を含む AI 提案を正しくパース・要約・新着判定し、ガイドにも仕様が含まれる', () => {
+    const rawSingle = JSON.stringify({
+      proposalId: 'prop_body_001',
+      updatedAt: '2026-11-23T08:00:00+09:00',
+      status: 'pending',
+      bodyComposition: {
+        date: '2026/11/23',
+        weight: 70.2,
+        body_fat_rate: 14.5,
+      },
+    });
+
+    const parsed = parseProposalsJson(rawSingle);
+    expect(parsed).not.toBeNull();
+    expect(Array.isArray(parsed?.bodyComposition)).toBe(true);
+    expect(parsed?.bodyComposition).toHaveLength(1);
+
+    const { counts, previewSummary } = summarizeProposal(parsed!);
+    expect(counts.bodyCompositionCount).toBe(1);
+    expect(previewSummary).toContain('体組成記録 1件');
+    expect(isNewPendingProposal(parsed!, DEFAULT_GOOGLE_DRIVE_SYNC_SETTINGS)).toBe(true);
+
+    const template = buildInitialProposalTemplate();
+    expect(Array.isArray(template.bodyComposition)).toBe(true);
+    expect(buildAgentGuideMarkdown()).toContain('"bodyComposition"');
+  });
+
+  test('applyAiAgentProposalToApp は bodyComposition の upsert・LBM自動算出・replace・不正値除外を正しく行う', async () => {
+    mockBodyLogs['2026-11-22'] = {
+      id: 10,
+      date: '2026-11-22',
+      weight: 71.0,
+      body_fat_rate: 15.0,
+      muscle_mass: 33.0,
+      lbm: 60.4,
+      height: 175,
+      wrist: 17.2,
+      ankle: 22.0,
+      gender: 'male',
+      source: 'manual',
+      memo: '既存メモ',
+      created_at: 1700000000000,
+    };
+
+    mockBodyLogs['2026-11-21'] = {
+      id: 9,
+      date: '2026-11-21',
+      weight: 72.0,
+      body_fat_rate: 16.0,
+      muscle_mass: 33.1,
+      lbm: 60.5,
+      height: 175,
+      neck: 38.0,
+      waist: 80.0,
+      gender: 'male',
+      source: 'manual',
+      memo: '消えるメモ',
+      created_at: 1699900000000,
+    };
+
+    const payload: AiAgentProposalsPayload = {
+      proposalId: 'prop_body_apply_001',
+      updatedAt: '2026-11-23T09:00:00+09:00',
+      status: 'pending',
+      bodyComposition: [
+        // 1. upsert: 既存 height/wrist/ankle/memo を保持しつつ、weight更新に伴い lbm を自動再計算
+        {
+          date: '2026/11/22',
+          weight: 70.0,
+          waist: 78.5,
+        },
+        // 2. replace: 未指定項目を null にクリア
+        {
+          date: '2026-11-21',
+          action: 'replace',
+          weight: 71.5,
+          body_fat_rate: 15.5,
+        },
+        // 3. 新規日のフルデータ
+        {
+          date: '2026-11-23',
+          weight: 69.8,
+          body_fat_rate: 14.4,
+          muscle_mass: 33.5,
+          height: 175,
+          memo: 'AI計測同期',
+        },
+        // 4. 異常値・不正日付はスキップ
+        {
+          date: 'invalid-date',
+          weight: 70,
+        },
+        {
+          date: '2026-11-20',
+          weight: -50,
+        },
+      ],
+    };
+
+    const res = await applyAiAgentProposalToApp(payload);
+    expect(res.bodyCompositionTouched).toBe(true);
+
+    // 11/22 upsert 確認
+    expect(mockBodyLogs['2026-11-22'].weight).toBe(70);
+    expect(mockBodyLogs['2026-11-22'].body_fat_rate).toBe(15);
+    expect(mockBodyLogs['2026-11-22'].lbm).toBe(59.5);
+    expect(mockBodyLogs['2026-11-22'].height).toBe(175);
+    expect(mockBodyLogs['2026-11-22'].wrist).toBe(17.2);
+    expect(mockBodyLogs['2026-11-22'].waist).toBe(78.5);
+    expect(mockBodyLogs['2026-11-22'].memo).toBe('既存メモ');
+    expect(mockBodyLogs['2026-11-22'].source).toBe('ai_agent');
+
+    // 11/21 replace 確認
+    expect(mockBodyLogs['2026-11-21'].weight).toBe(71.5);
+    expect(mockBodyLogs['2026-11-21'].body_fat_rate).toBe(15.5);
+    expect(mockBodyLogs['2026-11-21'].lbm).toBe(60.4);
+    expect(mockBodyLogs['2026-11-21'].muscle_mass).toBeNull();
+    expect(mockBodyLogs['2026-11-21'].waist).toBeNull();
+    expect(mockBodyLogs['2026-11-21'].memo).toBeNull();
+    expect(mockBodyLogs['2026-11-21'].source).toBe('ai_agent');
+
+    // 11/23 新規日確認
+    expect(mockBodyLogs['2026-11-23'].weight).toBe(69.8);
+    expect(mockBodyLogs['2026-11-23'].body_fat_rate).toBe(14.4);
+    expect(mockBodyLogs['2026-11-23'].lbm).toBe(59.7);
+    expect(mockBodyLogs['2026-11-23'].memo).toBe('AI計測同期');
+    expect(mockBodyLogs['2026-11-23'].source).toBe('ai_agent');
+
+    // 不正データは保存されていないこと
+    expect(mockBodyLogs['2026-11-20']).toBeUndefined();
+
+    // body_last_measurements と bodyStore リフレッシュ確認
+    const savedMeas = JSON.parse(mockSavedSettings['body_last_measurements']);
+    expect(savedMeas.waist).toBe(78.5);
+    expect(savedMeas.height).toBe(175);
+    expect(mockLoadBodyData).toHaveBeenCalledWith('2026-11-23');
   });
 });
