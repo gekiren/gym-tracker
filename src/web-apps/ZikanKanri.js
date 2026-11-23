@@ -1347,13 +1347,14 @@ header {
   position: absolute;
   bottom: 0;
   left: 0;
-  right: 0;
+  right: 28px;
   height: 12px;
   cursor: ns-resize;
   display: flex;
   justify-content: center;
   align-items: center;
   touch-action: none;
+  z-index: 2;
 }
 
 .timeline-resize-handle::after {
@@ -1363,6 +1364,32 @@ header {
   background: currentColor;
   opacity: 0.4;
   border-radius: 2px;
+}
+
+.puzzle-del-btn {
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.75;
+  cursor: pointer;
+  font-size: 0.78rem;
+  min-width: 22px;
+  min-height: 18px;
+  padding: 0 2px;
+  margin-right: -3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.puzzle-del-btn:active {
+  opacity: 1;
+  transform: scale(1.1);
 }
 
 .drag-feedback-tooltip {
@@ -1770,21 +1797,23 @@ input:checked + .holiday-switch-slider:before {
 
             <!-- デフォルトスケジュール専用編集モード用ヘッダーバー -->
             <div id="def-sched-editor-bar" style="display: none; margin-bottom: 12px; padding: 10px 12px; border-radius: 10px; background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(79, 172, 254, 0.2)); border: 1px solid #3b82f6; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; flex: 1; margin-right: 8px;">
-                        <span style="font-size: 0.95rem;">🎨</span>
-                        <span id="def-sched-editor-title" style="font-weight: 700; font-size: 0.88rem; color: #eff6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;" title="タップしてスケジュール名を変更">編集中: スケジュール名</span>
-                        <button type="button" id="def-sched-editor-rename-btn" class="btn btn-secondary" style="width: auto; padding: 1px 6px; font-size: 0.7rem; margin-bottom: 0; border-color: rgba(147, 197, 253, 0.5); color: #dbeafe; flex-shrink: 0;" title="スケジュール名を変更">✏️ 名称変更</button>
-                        <span id="def-sched-editor-badge" style="background: rgba(37, 99, 235, 0.45); color: #dbeafe; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; flex-shrink: 0;">全日共通</span>
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1;">
+                        <span style="font-size: 1rem; flex-shrink: 0;">🎨</span>
+                        <span id="def-sched-editor-title" style="font-weight: 700; font-size: 0.92rem; color: #eff6ff; word-break: break-word; cursor: pointer;" title="タップしてスケジュール名を変更">編集中: スケジュール名</span>
+                        <span id="def-sched-editor-badge" style="background: rgba(37, 99, 235, 0.55); color: #dbeafe; padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; font-weight: 600; flex-shrink: 0; border: 1px solid rgba(147, 197, 253, 0.35);">全日共通</span>
                     </div>
-                    <div style="display: flex; gap: 6px; flex-shrink: 0;">
-                        <button type="button" id="def-sched-editor-save-btn" class="btn btn-primary" style="width: auto; padding: 4px 10px; font-size: 0.78rem; margin-bottom: 0; background: #2563eb; border-color: #60a5fa;">💾 保存して完了</button>
-                        <button type="button" id="def-sched-editor-cancel-btn" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.78rem; margin-bottom: 0;">✕ 中止</button>
+                    <span id="def-sched-editor-count" style="font-weight: 700; font-size: 0.75rem; color: #93c5fd; background: rgba(0, 0, 0, 0.3); padding: 2px 8px; border-radius: 12px; flex-shrink: 0;">0件の予定</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; padding-top: 6px; border-top: 1px solid rgba(147, 197, 253, 0.2);">
+                    <button type="button" id="def-sched-editor-rename-btn" class="btn btn-secondary" style="width: auto; padding: 5px 10px; font-size: 0.75rem; margin-bottom: 0; border-color: rgba(147, 197, 253, 0.5); color: #dbeafe; flex-shrink: 0; white-space: nowrap;" title="スケジュール名を変更">✏️ 名称変更</button>
+                    <div style="display: flex; gap: 6px; flex-shrink: 0; margin-left: auto;">
+                        <button type="button" id="def-sched-editor-save-btn" class="btn btn-primary" style="width: auto; padding: 5px 12px; font-size: 0.78rem; margin-bottom: 0; background: #2563eb; border-color: #60a5fa; white-space: nowrap;">💾 保存して完了</button>
+                        <button type="button" id="def-sched-editor-cancel-btn" class="btn btn-secondary" style="width: auto; padding: 5px 10px; font-size: 0.78rem; margin-bottom: 0; white-space: nowrap;">✕ 中止</button>
                     </div>
                 </div>
-                <div style="font-size: 0.72rem; color: #dbeafe; display: flex; justify-content: space-between; align-items: center;">
-                    <span>ピースを選んでタップ、またはドラッグで予定を配置・移動してください</span>
-                    <span id="def-sched-editor-count" style="font-weight: 600; flex-shrink: 0; margin-left: 6px;">0件の予定</span>
+                <div style="font-size: 0.7rem; color: #bfdbfe; margin-top: 6px; opacity: 0.9;">
+                    ピースを選んでタップ、またはドラッグで予定を配置・移動してください
                 </div>
             </div>
 
@@ -4700,35 +4729,15 @@ if (exportMdBtn) {
             return;
         }
 
-        const actualTotals = {};
-        let totalActualMins = 0;
-        targetLogs.forEach(function(log) {
-            const duration = calculateDuration(log.start, log.end);
-            log.items.forEach(function(item) {
-                const percent = (item.percent !== undefined && !isNaN(item.percent)) ? item.percent : (item.weight ? item.weight * 100 : 100);
-                const minutes = duration * (percent / 100);
-                if (!actualTotals[item.name]) actualTotals[item.name] = 0;
-                actualTotals[item.name] += minutes;
-                totalActualMins += minutes;
-            });
-        });
-
-        const planTotals = {};
-        let totalPlanMins = 0;
-        targetPlans.forEach(function(plan) {
-            const duration = calculateDuration(plan.start, plan.end);
-            plan.items.forEach(function(item) {
-                const percent = (item.percent !== undefined && !isNaN(item.percent)) ? item.percent : (item.weight ? item.weight * 100 : 100);
-                const minutes = duration * (percent / 100);
-                if (!planTotals[item.name]) planTotals[item.name] = 0;
-                planTotals[item.name] += minutes;
-                totalPlanMins += minutes;
-            });
-        });
-
-        const allNames = Array.from(new Set([...Object.keys(actualTotals), ...Object.keys(planTotals)]));
-
         let md = '# ' + selectedDate + ' 24時間活動・予実記録\\\\n\\\\n';
+
+        const actualAgg = computeTimeAggregationWithOverlaps(targetLogs);
+        const planAgg = computeTimeAggregationWithOverlaps(targetPlans);
+        const actualTotals = actualAgg.totals;
+        const totalActualMins = actualAgg.totalMins;
+        const planTotals = planAgg.totals;
+        const totalPlanMins = planAgg.totalMins;
+        const allNames = Array.from(new Set([...Object.keys(actualTotals), ...Object.keys(planTotals)]));
 
         md += '## 予実サマリー\\\\n';
         md += '- **予定総時間**: ' + Math.round(totalPlanMins) + '分 (' + (totalPlanMins / 60).toFixed(1) + 'h)\\\\n';
@@ -5169,6 +5178,208 @@ function formatMinsToHoursAndMins(mins) {
     return rem + 'm';
 }
 
+function getEntrySubItemsWithNormalizedWeights(entry) {
+    const rawItems = (entry && Array.isArray(entry.items) && entry.items.length > 0)
+        ? entry.items
+        : [{ name: (entry && entry.activity_name) || '活動', percent: 100 }];
+
+    if (rawItems.length === 1) {
+        return [{ name: rawItems[0].name || '活動', share: 1.0, displayPercent: 100 }];
+    }
+
+    let sumPct = 0;
+    const parsed = rawItems.map(function(it) {
+        const p = (it.percent !== undefined && !isNaN(it.percent)) ? Number(it.percent) : (it.weight ? Number(it.weight) * 100 : 50);
+        const validP = Math.max(1, p);
+        sumPct += validP;
+        return { name: it.name || '活動', rawPct: validP };
+    });
+
+    return parsed.map(function(it) {
+        const share = sumPct > 0 ? (it.rawPct / sumPct) : (1 / parsed.length);
+        return {
+            name: it.name,
+            share: share,
+            displayPercent: Math.round(share * 100)
+        };
+    });
+}
+
+function computeTimeAggregationWithOverlaps(entries) {
+    const totals = {};
+    let investMins = 0;
+    let maintainMins = 0;
+    let driftMins = 0;
+    let totalMins = 0;
+    let coveredMins = 0;
+    const entryEffectiveRatio = {}; // entry.id -> { overlapMins, totalMins, effectivePct, isOverlapped }
+
+    if (!Array.isArray(entries) || entries.length === 0) {
+        return {
+            totals: totals,
+            totalMins: 0,
+            investMins: 0,
+            maintainMins: 0,
+            driftMins: 0,
+            freeMins: 1440,
+            entryEffectiveRatio: entryEffectiveRatio
+        };
+    }
+
+    const prepared = entries.map(function(entry) {
+        const s = Math.max(0, Math.min(1440, timeToMins(entry.start)));
+        let e = timeToMins(entry.end);
+        if (e < s) e += 1440;
+        e = Math.max(s, Math.min(1440, e));
+        const dur = Math.max(0, e - s);
+        const subItems = getEntrySubItemsWithNormalizedWeights(entry);
+        entryEffectiveRatio[entry.id] = {
+            rawMins: dur,
+            effectiveMins: 0,
+            overlappedMins: 0,
+            maxConcurrency: 1,
+            effectivePct: 100,
+            isOverlapped: false
+        };
+        return {
+            entry: entry,
+            id: entry.id,
+            start: s,
+            end: e,
+            subItems: subItems
+        };
+    }).filter(function(p) { return p.end > p.start; });
+
+    for (let m = 0; m < 1440; m++) {
+        const active = [];
+        for (let i = 0; i < prepared.length; i++) {
+            const p = prepared[i];
+            if (p.start <= m && m < p.end) {
+                active.push(p);
+            }
+        }
+        const k = active.length;
+        if (k === 0) continue;
+
+        coveredMins += 1;
+        const pieceShare = 1 / k; // 1 piece = 100% (1.0), 2 overlapping pieces = 50% (0.5) each, 3 = 33.3% each
+
+        for (let j = 0; j < k; j++) {
+            const p = active[j];
+            const stat = entryEffectiveRatio[p.id];
+            if (stat) {
+                stat.effectiveMins += pieceShare;
+                if (k > 1) {
+                    stat.overlappedMins += 1;
+                    if (k > stat.maxConcurrency) stat.maxConcurrency = k;
+                }
+            }
+
+            for (let sIdx = 0; sIdx < p.subItems.length; sIdx++) {
+                const sub = p.subItems[sIdx];
+                const addMins = pieceShare * sub.share;
+                if (!totals[sub.name]) totals[sub.name] = 0;
+                totals[sub.name] += addMins;
+                totalMins += addMins;
+
+                const cat = getPieceMetaByName(sub.name).category;
+                if (cat === 'invest') investMins += addMins;
+                else if (cat === 'drift') driftMins += addMins;
+                else maintainMins += addMins;
+            }
+        }
+    }
+
+    Object.keys(entryEffectiveRatio).forEach(function(id) {
+        const st = entryEffectiveRatio[id];
+        if (st.rawMins > 0) {
+            st.effectivePct = Math.round((st.effectiveMins / st.rawMins) * 100);
+            st.isOverlapped = st.overlappedMins > 0;
+        }
+    });
+
+    const freeMins = Math.max(0, 1440 - coveredMins);
+
+    return {
+        totals: totals,
+        totalMins: totalMins,
+        investMins: investMins,
+        maintainMins: maintainMins,
+        driftMins: driftMins,
+        freeMins: freeMins,
+        entryEffectiveRatio: entryEffectiveRatio
+    };
+}
+
+function computeTimelineOverlapLayout(entries) {
+    const layoutMap = {}; // entry.id -> { colIndex, colCount }
+    if (!Array.isArray(entries) || entries.length === 0) return layoutMap;
+
+    const items = entries.map(function(entry) {
+        const s = timeToMins(entry.start);
+        let e = timeToMins(entry.end);
+        if (e < s) e += 1440;
+        return {
+            id: entry.id,
+            start: s,
+            end: Math.max(s + 1, e)
+        };
+    }).sort(function(a, b) {
+        if (a.start !== b.start) return a.start - b.start;
+        return (b.end - b.start) - (a.end - a.start);
+    });
+
+    // Group into connected overlap clusters
+    let cluster = [];
+    let clusterMaxEnd = -1;
+
+    function assignClusterColumns(clust) {
+        if (clust.length === 0) return;
+        const colEnds = [];
+        clust.forEach(function(it) {
+            let placedCol = -1;
+            for (let c = 0; c < colEnds.length; c++) {
+                if (colEnds[c] <= it.start) {
+                    placedCol = c;
+                    colEnds[c] = it.end;
+                    break;
+                }
+            }
+            if (placedCol === -1) {
+                placedCol = colEnds.length;
+                colEnds.push(it.end);
+            }
+            it.colIndex = placedCol;
+        });
+        const totalCols = colEnds.length;
+        clust.forEach(function(it) {
+            layoutMap[it.id] = {
+                colIndex: it.colIndex,
+                colCount: totalCols
+            };
+        });
+    }
+
+    items.forEach(function(it) {
+        if (cluster.length === 0) {
+            cluster.push(it);
+            clusterMaxEnd = it.end;
+        } else if (it.start < clusterMaxEnd) {
+            cluster.push(it);
+            if (it.end > clusterMaxEnd) clusterMaxEnd = it.end;
+        } else {
+            assignClusterColumns(cluster);
+            cluster = [it];
+            clusterMaxEnd = it.end;
+        }
+    });
+    if (cluster.length > 0) {
+        assignClusterColumns(cluster);
+    }
+
+    return layoutMap;
+}
+
 function renderSummary() {
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
     const targetLogs = logs.filter(function(l) { return l.date === selectedDate; });
@@ -5185,49 +5396,22 @@ function renderSummary() {
     compareList.innerHTML = '';
     scoreContainer.innerHTML = '';
 
-    const actualTotals = {};
-    let totalActualMins = 0;
-    let actualInvestMins = 0;
-    let actualMaintainMins = 0;
-    let actualDriftMins = 0;
+    const actualAgg = computeTimeAggregationWithOverlaps(targetLogs);
+    const planAgg = computeTimeAggregationWithOverlaps(targetPlans);
 
-    targetLogs.forEach(function(log) {
-        const duration = calculateDuration(log.start, log.end);
-        log.items.forEach(function(item) {
-            const percent = (item.percent !== undefined && !isNaN(item.percent)) ? item.percent : (item.weight ? item.weight * 100 : 100);
-            const minutes = duration * (percent / 100);
-            if (!actualTotals[item.name]) actualTotals[item.name] = 0;
-            actualTotals[item.name] += minutes;
-            totalActualMins += minutes;
+    const actualTotals = actualAgg.totals;
+    const totalActualMins = actualAgg.totalMins;
+    const actualInvestMins = actualAgg.investMins;
+    const actualMaintainMins = actualAgg.maintainMins;
+    const actualDriftMins = actualAgg.driftMins;
+    const actualFreeMins = actualAgg.freeMins;
 
-            const cat = getPieceMetaByName(item.name).category;
-            if (cat === 'invest') actualInvestMins += minutes;
-            else if (cat === 'drift') actualDriftMins += minutes;
-            else actualMaintainMins += minutes;
-        });
-    });
-
-    const planTotals = {};
-    let totalPlanMins = 0;
-    let planInvestMins = 0;
-    let planMaintainMins = 0;
-    let planDriftMins = 0;
-
-    targetPlans.forEach(function(plan) {
-        const duration = calculateDuration(plan.start, plan.end);
-        plan.items.forEach(function(item) {
-            const percent = (item.percent !== undefined && !isNaN(item.percent)) ? item.percent : (item.weight ? item.weight * 100 : 100);
-            const minutes = duration * (percent / 100);
-            if (!planTotals[item.name]) planTotals[item.name] = 0;
-            planTotals[item.name] += minutes;
-            totalPlanMins += minutes;
-
-            const cat = getPieceMetaByName(item.name).category;
-            if (cat === 'invest') planInvestMins += minutes;
-            else if (cat === 'drift') planDriftMins += minutes;
-            else planMaintainMins += minutes;
-        });
-    });
+    const planTotals = planAgg.totals;
+    const totalPlanMins = planAgg.totalMins;
+    const planInvestMins = planAgg.investMins;
+    const planMaintainMins = planAgg.maintainMins;
+    const planDriftMins = planAgg.driftMins;
+    const planFreeMins = planAgg.freeMins;
 
     // Update 4-part Portfolio Cards in Summary View
     const sInvVal = document.getElementById('summary-portfolio-invest-val');
@@ -5238,9 +5422,6 @@ function renderSummary() {
     const sDriftSub = document.getElementById('summary-portfolio-drift-sub');
     const sFreeVal = document.getElementById('summary-portfolio-free-val');
     const sFreeSub = document.getElementById('summary-portfolio-free-sub');
-
-    const actualFreeMins = Math.max(0, 1440 - (actualInvestMins + actualMaintainMins + actualDriftMins));
-    const planFreeMins = Math.max(0, 1440 - (planInvestMins + planMaintainMins + planDriftMins));
 
     if (sInvVal) sInvVal.textContent = (actualInvestMins / 60).toFixed(1) + 'h';
     if (sInvSub) sInvSub.textContent = '予定 ' + (planInvestMins / 60).toFixed(1) + 'h';
@@ -5480,7 +5661,8 @@ function renderDualRingSVG(targetPlans, targetLogs) {
         return 'M ' + x1 + ' ' + y1 + ' A ' + rOut + ' ' + rOut + ' 0 ' + largeArc + ' 1 ' + x2 + ' ' + y2 + ' L ' + x3 + ' ' + y3 + ' A ' + rIn + ' ' + rIn + ' 0 ' + largeArc + ' 0 ' + x4 + ' ' + y4 + ' Z';
     }
 
-    // Render Outer Ring (Plans)
+    // Render Outer Ring (Plans) with radial split when pieces overlap
+    const planLayoutMap = computeTimelineOverlapLayout(targetPlans);
     targetPlans.forEach(function(plan) {
         const primName = (plan.items && plan.items.length > 0) ? plan.items[0].name : (plan.activity_name || '活動');
         const meta = getPieceMetaByName(primName);
@@ -5493,16 +5675,26 @@ function renderDualRingSVG(targetPlans, targetLogs) {
         const sAngle = (sMins / 1440) * 360 - 90;
         const eAngle = (eMins / 1440) * 360 - 90;
 
+        let rOut = outerRingOuterR;
+        let rIn = outerRingInnerR;
+        const lay = planLayoutMap[plan.id];
+        if (lay && lay.colCount > 1) {
+            const band = (outerRingOuterR - outerRingInnerR) / lay.colCount;
+            rOut = outerRingOuterR - (lay.colIndex * band);
+            rIn = rOut - band;
+        }
+
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", createDonutArc(cx, cy, outerRingOuterR, outerRingInnerR, sAngle, eAngle));
+        path.setAttribute("d", createDonutArc(cx, cy, rOut, rIn, sAngle, eAngle));
         path.setAttribute("fill", meta.fill);
-        path.setAttribute("fill-opacity", "0.72");
+        path.setAttribute("fill-opacity", "0.75");
         path.setAttribute("stroke", "#121212");
-        path.setAttribute("stroke-width", "1.2");
+        path.setAttribute("stroke-width", "1");
         svg.appendChild(path);
     });
 
-    // Render Inner Ring (Actual Logs)
+    // Render Inner Ring (Actual Logs) with radial split when pieces overlap
+    const logLayoutMap = computeTimelineOverlapLayout(targetLogs);
     targetLogs.forEach(function(log) {
         const primName = (log.items && log.items.length > 0) ? log.items[0].name : (log.activity_name || '活動');
         const meta = getPieceMetaByName(primName);
@@ -5515,12 +5707,21 @@ function renderDualRingSVG(targetPlans, targetLogs) {
         const sAngle = (sMins / 1440) * 360 - 90;
         const eAngle = (eMins / 1440) * 360 - 90;
 
+        let rOut = innerCircleR;
+        let rIn = innerHoleR;
+        const lay = logLayoutMap[log.id];
+        if (lay && lay.colCount > 1) {
+            const band = (innerCircleR - innerHoleR) / lay.colCount;
+            rOut = innerCircleR - (lay.colIndex * band);
+            rIn = rOut - band;
+        }
+
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", createDonutArc(cx, cy, innerCircleR, innerHoleR, sAngle, eAngle));
+        path.setAttribute("d", createDonutArc(cx, cy, rOut, rIn, sAngle, eAngle));
         path.setAttribute("fill", meta.fill);
         path.setAttribute("fill-opacity", "0.95");
         path.setAttribute("stroke", "#121212");
-        path.setAttribute("stroke-width", "1.2");
+        path.setAttribute("stroke-width", "1");
         svg.appendChild(path);
     });
 
@@ -5559,6 +5760,7 @@ function renderDualRingSVG(targetPlans, targetLogs) {
     // Labels on Inner Ring (Actual Logs) or Outer Ring (Plans if no logs)
     const labelTargetList = targetLogs.length > 0 ? targetLogs : targetPlans;
     const isPlanFallbackLabel = (targetLogs.length === 0 && targetPlans.length > 0);
+    const labelLayoutMap = isPlanFallbackLabel ? planLayoutMap : logLayoutMap;
 
     labelTargetList.forEach(function(entry) {
         const [sh, sm] = entry.start.split(':').map(Number);
@@ -5575,7 +5777,14 @@ function renderDualRingSVG(targetPlans, targetLogs) {
         const midAngle = (sAngle + eAngle) / 2;
         const midRad = midAngle * (Math.PI / 180);
 
-        const labelR = isPlanFallbackLabel ? ((outerRingOuterR + outerRingInnerR) / 2) : ((innerCircleR + innerHoleR) / 2 + 3);
+        let labelR = isPlanFallbackLabel ? ((outerRingOuterR + outerRingInnerR) / 2) : ((innerCircleR + innerHoleR) / 2 + 3);
+        const lay = labelLayoutMap[entry.id];
+        if (lay && lay.colCount > 1 && !isPlanFallbackLabel) {
+            const band = (innerCircleR - innerHoleR) / lay.colCount;
+            const rOut = innerCircleR - (lay.colIndex * band);
+            const rIn = rOut - band;
+            labelR = (rOut + rIn) / 2;
+        }
         const lx = cx + labelR * Math.cos(midRad);
         const ly = cy + labelR * Math.sin(midRad);
 
@@ -6140,6 +6349,17 @@ function showGhostActionToast(msg) {
     }, 2200);
 }
 
+function clonePlanItemsNormalizedForActual(planItems, fallbackName) {
+    const raw = (Array.isArray(planItems) && planItems.length > 0)
+        ? JSON.parse(JSON.stringify(planItems))
+        : [{ name: fallbackName || '活動', percent: 100 }];
+    if (raw.length === 1) {
+        raw[0].percent = 100;
+        delete raw[0].weight;
+    }
+    return raw;
+}
+
 function applyPlanToActual(plan) {
     const selectedDate = currentDateInput.value.replace(/-/g, '/');
     const gid = plan.crossDayGroupId;
@@ -6156,7 +6376,7 @@ function applyPlanToActual(plan) {
             date: headPlan.date || selectedDate,
             start: headPlan.start,
             end: '24:00',
-            items: JSON.parse(JSON.stringify(headPlan.items || [{ name: planName, percent: 100 }])),
+            items: clonePlanItemsNormalizedForActual(headPlan.items, planName),
             memo: headPlan.memo || '',
             crossDayGroupId: newGid,
             crossRole: 'head',
@@ -6168,7 +6388,7 @@ function applyPlanToActual(plan) {
             date: nextDate,
             start: '00:00',
             end: tailPlan.end,
-            items: JSON.parse(JSON.stringify(tailPlan.items || [{ name: planName, percent: 100 }])),
+            items: clonePlanItemsNormalizedForActual(tailPlan.items, planName),
             memo: tailPlan.memo || '',
             crossDayGroupId: newGid,
             crossRole: 'tail',
@@ -6181,7 +6401,7 @@ function applyPlanToActual(plan) {
             date: selectedDate,
             start: plan.start,
             end: plan.end,
-            items: JSON.parse(JSON.stringify(plan.items || [{ name: planName, percent: 100 }])),
+            items: clonePlanItemsNormalizedForActual(plan.items, planName),
             memo: plan.memo || ''
         };
         logs.push(newEntry);
@@ -6253,7 +6473,7 @@ function applyAllUnloggedPlansToActual() {
                 date: headPlan.date || selectedDate,
                 start: headPlan.start,
                 end: '24:00',
-                items: JSON.parse(JSON.stringify(headPlan.items || [{ name: planName, percent: 100 }])),
+                items: clonePlanItemsNormalizedForActual(headPlan.items, planName),
                 memo: headPlan.memo || '',
                 crossDayGroupId: newGid,
                 crossRole: 'head',
@@ -6265,7 +6485,7 @@ function applyAllUnloggedPlansToActual() {
                 date: nextDate,
                 start: '00:00',
                 end: tailPlan.end,
-                items: JSON.parse(JSON.stringify(tailPlan.items || [{ name: planName, percent: 100 }])),
+                items: clonePlanItemsNormalizedForActual(tailPlan.items, planName),
                 memo: tailPlan.memo || '',
                 crossDayGroupId: newGid,
                 crossRole: 'tail',
@@ -6279,7 +6499,7 @@ function applyAllUnloggedPlansToActual() {
                 date: selectedDate,
                 start: plan.start,
                 end: plan.end,
-                items: JSON.parse(JSON.stringify(plan.items || [{ name: planName, percent: 100 }])),
+                items: clonePlanItemsNormalizedForActual(plan.items, planName),
                 memo: plan.memo || ''
             });
             addedCount++;
@@ -6463,7 +6683,7 @@ function attachPuzzleDragAndResizeForGhost(element, plan, pieceType, currentList
                 date: selectedDate,
                 start: finalStartStr,
                 end: finalEndStr,
-                items: JSON.parse(JSON.stringify(plan.items || [{ name: planName, percent: 100 }])),
+                items: clonePlanItemsNormalizedForActual(plan.items, planName),
                 memo: plan.memo || ''
             };
 
@@ -6565,7 +6785,7 @@ function attachPuzzleDragAndResizeForGhost(element, plan, pieceType, currentList
                     date: selectedDate,
                     start: plan.start,
                     end: finalEndStr,
-                    items: JSON.parse(JSON.stringify(plan.items || [{ name: planName, percent: 100 }])),
+                    items: clonePlanItemsNormalizedForActual(plan.items, planName),
                     memo: plan.memo || ''
                 };
 
@@ -6619,9 +6839,12 @@ function renderPuzzle() {
             : logs.filter(function(l) { return l.date === selectedDate; });
     }
 
-    let investMinutes = 0;
-    let maintainMinutes = 0;
-    let driftMinutes = 0;
+    const currentAgg = computeTimeAggregationWithOverlaps(currentList);
+    const investMinutes = currentAgg.investMins;
+    const maintainMinutes = currentAgg.maintainMins;
+    const driftMinutes = currentAgg.driftMins;
+    const freeMinutes = currentAgg.freeMins;
+    const currentLayoutMap = computeTimelineOverlapLayout(currentList);
 
     currentList.forEach(function(item) {
         const startMins = timeToMins(item.start);
@@ -6631,11 +6854,6 @@ function renderPuzzle() {
 
         const primaryName = (item.items && item.items.length > 0) ? item.items[0].name : (item.activity_name || "活動");
         const pieceMeta = getPieceMetaByName(primaryName);
-        const category = pieceMeta.category;
-
-        if (category === 'invest') investMinutes += duration;
-        else if (category === 'drift') driftMinutes += duration;
-        else maintainMinutes += duration;
 
         const blockEl = document.createElement('div');
         const themeClass = pieceMeta.theme;
@@ -6643,6 +6861,24 @@ function renderPuzzle() {
         blockEl.className = 'timeline-block ' + themeClass + (isBlockSelected ? ' is-selected' : '');
         blockEl.style.top = startMins + 'px';
         blockEl.style.height = Math.max(duration, 20) + 'px';
+        if (duration <= 22) {
+            blockEl.style.padding = '1px 6px';
+        }
+
+        const layout = currentLayoutMap[item.id];
+        const isMultiColumn = !!(layout && layout.colCount > 1);
+        if (isMultiColumn) {
+            const colWidthPct = 100 / layout.colCount;
+            const leftPct = layout.colIndex * colWidthPct;
+            blockEl.style.left = 'calc(' + leftPct.toFixed(2) + '% + 2px)';
+            blockEl.style.width = 'calc(' + colWidthPct.toFixed(2) + '% - 4px)';
+            blockEl.style.right = 'auto';
+            if (duration <= 22) {
+                blockEl.style.padding = '1px 5px';
+            } else {
+                blockEl.style.padding = '3px 6px';
+            }
+        }
 
         let pieceType = 'medium';
         if (duration >= 90) pieceType = 'large';
@@ -6661,16 +6897,36 @@ function renderPuzzle() {
             timeLabel = '🌅 ' + prevPart + '-' + item.end + ' (' + durationStr + ')';
         }
 
+        const effStat = currentAgg.entryEffectiveRatio[item.id];
+        let displayTitleText = pieceMeta.icon + ' ' + escapeHtml(primaryName);
+        let simBadgeHtml = '';
+        if (item.items && item.items.length > 1) {
+            const extraNames = item.items.slice(1).map(function(x) { return x.name; }).join('/');
+            if (isMultiColumn) {
+                displayTitleText += ' +' + escapeHtml(extraNames);
+            } else {
+                simBadgeHtml = '<span style="font-size: 0.64rem; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.22); padding: 0 4px; border-radius: 4px; margin-left: 4px; color: #fde68a; flex-shrink: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">⚡+' + escapeHtml(extraNames) + '</span>';
+            }
+        } else if (effStat && effStat.isOverlapped && !isMultiColumn) {
+            const shareLabel = effStat.maxConcurrency === 2 ? '50%' : Math.round(100 / effStat.maxConcurrency) + '%';
+            simBadgeHtml = '<span style="font-size: 0.64rem; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.22); padding: 0 4px; border-radius: 4px; margin-left: 4px; color: #fde68a; flex-shrink: 0;" title="時間が重なっているため同時進行（標準50%）として計上">⚡同時' + shareLabel + '</span>';
+        }
+
+        const timeLabelHtml = isMultiColumn
+            ? ''
+            : '<span style="font-family: monospace; font-size: 0.66rem; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1;">' + timeLabel + '</span>';
+
         blockEl.innerHTML =
-            '<div style="display: flex; justify-content: space-between; align-items: center; pointer-events: none; width: 100%;">' +
-                '<span style="font-weight: 700; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%;">' +
-                    pieceMeta.icon + ' ' + primaryName +
-                '</span>' +
-                '<div style="display: flex; align-items: center; gap: 4px; pointer-events: none;">' +
-                    '<span style="font-family: monospace; font-size: 0.68rem; opacity: 0.85;">' +
-                        timeLabel +
+            '<div style="display: flex; justify-content: space-between; align-items: center; pointer-events: none; width: 100%; gap: 3px; position: relative; z-index: 3;">' +
+                '<div style="display: flex; align-items: center; min-width: 0; flex: 1; overflow: hidden;">' +
+                    '<span style="font-weight: 700; font-size: ' + (isMultiColumn ? '0.72rem' : '0.75rem') + '; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' +
+                        displayTitleText +
                     '</span>' +
-                    '<button type="button" class="puzzle-del-btn" style="pointer-events: auto; background: none; border: none; color: inherit; opacity: 0.6; cursor: pointer; font-size: 0.72rem; padding: 0 4px; line-height: 1;" title="削除">✕</button>' +
+                    simBadgeHtml +
+                '</div>' +
+                '<div style="display: flex; align-items: center; gap: 2px; pointer-events: none; flex-shrink: 0;">' +
+                    timeLabelHtml +
+                    '<button type="button" class="puzzle-del-btn" title="削除">✕</button>' +
                 '</div>' +
             '</div>' +
             '<div class="timeline-resize-handle" title="上下にドラッグして長さを調整"></div>';
@@ -6712,6 +6968,7 @@ function renderPuzzle() {
     if (!isEditingDefaultSchedule && !isPlan && showPlanGhostsInActual) {
         const dayPlans = plans.filter(function(p) { return p.date === selectedDate; });
         const dayLogs = logs.filter(function(l) { return l.date === selectedDate; });
+        const ghostLayoutMap = computeTimelineOverlapLayout(dayPlans);
 
         dayPlans.forEach(function(plan) {
             const pStartMins = timeToMins(plan.start);
@@ -6721,7 +6978,6 @@ function renderPuzzle() {
 
             const primaryName = (plan.items && plan.items.length > 0) ? plan.items[0].name : (plan.activity_name || "活動");
             const pieceMeta = getPieceMetaByName(primaryName);
-            const category = pieceMeta.category;
 
             // すでに同一活動＆時間帯の重複（50%以上）がある実績が存在するか判定（反映済み判定）
             const isAlreadyLogged = dayLogs.some(function(log) {
@@ -6745,6 +7001,24 @@ function renderPuzzle() {
             ghostEl.className = 'timeline-block timeline-block-ghost ' + themeClass + (isGhostSelected ? ' is-selected' : '');
             ghostEl.style.top = pStartMins + 'px';
             ghostEl.style.height = Math.max(pDuration, 24) + 'px';
+            if (pDuration <= 24) {
+                ghostEl.style.padding = '2px 6px';
+            }
+
+            const gLayout = ghostLayoutMap[plan.id];
+            const isGhostMultiColumn = !!(gLayout && gLayout.colCount > 1);
+            if (isGhostMultiColumn) {
+                const colWidthPct = 100 / gLayout.colCount;
+                const leftPct = gLayout.colIndex * colWidthPct;
+                ghostEl.style.left = 'calc(' + leftPct.toFixed(2) + '% + 2px)';
+                ghostEl.style.width = 'calc(' + colWidthPct.toFixed(2) + '% - 4px)';
+                ghostEl.style.right = 'auto';
+                if (pDuration <= 24) {
+                    ghostEl.style.padding = '1px 5px';
+                } else {
+                    ghostEl.style.padding = '3px 6px';
+                }
+            }
 
             let pieceType = 'medium';
             if (pDuration >= 90) pieceType = 'large';
@@ -6763,20 +7037,29 @@ function renderPuzzle() {
                 timeLabel = '🌅 ' + prevPart + '-' + plan.end + ' (' + pDurationStr + ')';
             }
 
+            let ghostDisplayTitle = pieceMeta.icon + ' ' + escapeHtml(primaryName);
+            if (plan.items && plan.items.length > 1) {
+                const extraNames = plan.items.slice(1).map(function(x) { return x.name; }).join('/');
+                ghostDisplayTitle += ' +' + escapeHtml(extraNames);
+            }
+
+            const ghostPlanBadgeHtml = isGhostMultiColumn ? '' : '<span class="ghost-plan-badge">📅予定</span>';
+            const ghostTimeLabelHtml = isGhostMultiColumn
+                ? ''
+                : '<span style="font-family: monospace; font-size: 0.65rem; opacity: 0.85; pointer-events: none; white-space: nowrap;">' + timeLabel + '</span>';
+
             ghostEl.innerHTML =
-                '<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; pointer-events: none;">' +
-                    '<div style="display: flex; align-items: center; gap: 4px; overflow: hidden; max-width: 58%;">' +
-                        '<span class="ghost-plan-badge">📅予定</span>' +
-                        '<span style="font-weight: 700; font-size: 0.74rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' +
-                            pieceMeta.icon + ' ' + primaryName +
+                '<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 3px; pointer-events: none; position: relative; z-index: 3;">' +
+                    '<div style="display: flex; align-items: center; gap: 3px; min-width: 0; flex: 1; overflow: hidden;">' +
+                        ghostPlanBadgeHtml +
+                        '<span style="font-weight: 700; font-size: ' + (isGhostMultiColumn ? '0.72rem' : '0.74rem') + '; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' +
+                            ghostDisplayTitle +
                         '</span>' +
                     '</div>' +
-                    '<div style="display: flex; align-items: center; gap: 5px; pointer-events: auto;">' +
-                        '<span style="font-family: monospace; font-size: 0.65rem; opacity: 0.85; pointer-events: none;">' +
-                            timeLabel +
-                        '</span>' +
-                        '<button type="button" class="timeline-ghost-apply-btn" title="予定通りワンタップで実績に反映">' +
-                            '⚡ 反映' +
+                    '<div style="display: flex; align-items: center; gap: 4px; pointer-events: auto; flex-shrink: 0;">' +
+                        ghostTimeLabelHtml +
+                        '<button type="button" class="timeline-ghost-apply-btn" style="position: relative; z-index: 10; flex-shrink: 0;" title="予定通りワンタップで実績に反映">' +
+                            (isGhostMultiColumn ? '⚡' : '⚡ 反映') +
                         '</button>' +
                     '</div>' +
                 '</div>' +
@@ -6814,9 +7097,6 @@ function renderPuzzle() {
             applyAllBtn.style.display = 'none';
         }
     }
-
-    const totalRecorded = investMinutes + maintainMinutes + driftMinutes;
-    const freeMinutes = Math.max(0, 1440 - totalRecorded);
 
     const invEl = document.getElementById('portfolio-invest-val');
     const mainEl = document.getElementById('portfolio-maintain-val');
