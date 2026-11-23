@@ -99,7 +99,7 @@ export interface ProposedTimePlanItem {
 
 export interface ProposedTimePlan {
   id?: string;
-  date: string; // YYYY-MM-DD
+  date: string; // YYYY-MM-DD or YYYY/MM/DD
   start: string; // HH:mm
   end: string; // HH:mm
   category?: 'invest' | 'maintain' | 'drift' | string;
@@ -107,6 +107,17 @@ export interface ProposedTimePlan {
   items?: ProposedTimePlanItem[];
   memo?: string;
   replaceDatePlans?: boolean;
+}
+
+export interface ProposedTimeActualLog {
+  id?: number | string;
+  date: string; // YYYY-MM-DD or YYYY/MM/DD
+  start: string; // HH:mm
+  end: string; // HH:mm
+  activity_name?: string;
+  items?: ProposedTimePlanItem[];
+  duration_minutes?: number;
+  replaceDateLogs?: boolean;
 }
 
 export interface ProposedDefaultScheduleSlot {
@@ -143,10 +154,37 @@ export interface ProposedActivityPiece {
 
 export interface ProposedTimeManagement {
   replaceDates?: string[];
+  replaceActualDates?: string[];
   plans?: ProposedTimePlan[];
+  actualLogs?: ProposedTimeActualLog[];
   defaultSchedules?: ProposedDefaultSchedule[];
   templates?: ProposedTimeTemplate[];
   pieces?: ProposedActivityPiece[];
+}
+
+export interface ProposedHabitItem {
+  id?: number;
+  action?: 'upsert' | 'create' | 'delete';
+  name: string;
+  color?: 'red' | 'blue' | 'green' | 'yellow' | 'purple' | string;
+  target_count?: number;
+  hidden?: boolean;
+  sort_order?: number;
+}
+
+export interface ProposedHabitLogEntry {
+  date: string; // YYYY-MM-DD or YYYY/MM/DD
+  habit_item_id?: number;
+  habit_name?: string;
+  count?: number;
+  mode?: 'set' | 'increment' | 'clear';
+  color?: 'red' | 'blue' | 'green' | 'yellow' | 'purple' | string;
+  target_count?: number;
+}
+
+export interface ProposedHabitManagement {
+  items?: ProposedHabitItem[];
+  logs?: ProposedHabitLogEntry[];
 }
 
 export interface ProposedBodyCompositionLog {
@@ -193,6 +231,7 @@ export interface AiAgentProposalsPayload {
   workoutMenus?: ProposedWorkoutMenu[];
   dailyRoutines?: ProposedDailyRoutine[];
   timeManagement?: ProposedTimeManagement;
+  habits?: ProposedHabitManagement;
   bodyComposition?: ProposedBodyCompositionLog[];
   memoryUpdates?: string[];
 }
@@ -202,9 +241,12 @@ export interface ProposalSummaryCounts {
   workoutMenusCount: number;
   dailyRoutinesCount: number;
   timePlansCount: number;
+  timeActualLogsCount: number;
   defaultSchedulesCount: number;
   templatesCount: number;
   piecesCount: number;
+  habitItemsCount: number;
+  habitLogsCount: number;
   bodyCompositionCount: number;
   memoryUpdatesCount: number;
 }

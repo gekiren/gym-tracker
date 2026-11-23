@@ -370,7 +370,7 @@ export async function saveAgentGuideToDriveFolder(): Promise<{
   }
 }
 
-const AGENT_GUIDE_VERSION = '2.3.63-bodycomp';
+const AGENT_GUIDE_VERSION = '2.3.64-zikan-habit';
 const AGENT_GUIDE_VERSION_KEY = 'google_drive_agent_guide_version';
 
 async function ensureGuideAndTemplateInFolder(

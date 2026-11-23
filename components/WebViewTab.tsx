@@ -397,6 +397,9 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
           if (typeof renderLogs === 'function') {
             renderLogs();
           }
+          if (typeof renderPuzzle === 'function') {
+            renderPuzzle();
+          }
           if (typeof renderSummary === 'function') {
             renderSummary();
           }

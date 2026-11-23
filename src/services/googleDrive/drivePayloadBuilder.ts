@@ -223,6 +223,39 @@ export async function buildDriveExportBundle(): Promise<BuiltDriveExportBundle> 
     habitNameMap.set(hi.id, hi.name);
   }
 
+  const dailyHabitCountsMap: Record<string, Record<number, number>> = {};
+  for (const l of recentHabitLogs) {
+    const d = safeDateISO(l.date);
+    if (!d) continue;
+    if (!dailyHabitCountsMap[d]) {
+      dailyHabitCountsMap[d] = {};
+    }
+    dailyHabitCountsMap[d][l.habit_item_id] = (dailyHabitCountsMap[d][l.habit_item_id] || 0) + 1;
+  }
+
+  const dailyHabitCountsLast7Days: Record<
+    string,
+    Array<{ habit_item_id: number; habitName: string; count: number; target_count: number }>
+  > = {};
+  for (const d of Object.keys(dailyHabitCountsMap).sort().reverse()) {
+    dailyHabitCountsLast7Days[d] = habitItems.map((hi) => ({
+      habit_item_id: hi.id,
+      habitName: hi.name,
+      count: dailyHabitCountsMap[d][hi.id] || 0,
+      target_count: hi.target_count ?? 0,
+    }));
+  }
+
+  const normalizedZikanPlans = relevantZikanPlans.map((p) => ({
+    ...p,
+    date: safeDateISO(p?.date) || p?.date,
+  }));
+
+  const normalizedTimeLogs = recentTimeLogs.map((t) => ({
+    ...t,
+    date: safeDateISO(t.date) || t.date,
+  }));
+
   const jsonPayload = {
     schemaVersion: 1,
     exportedAt,
@@ -260,11 +293,11 @@ export async function buildDriveExportBundle(): Promise<BuiltDriveExportBundle> 
         }))
       : [],
     timeManagement24h: {
-      plansRecentAndUpcoming: relevantZikanPlans,
+      plansRecentAndUpcoming: normalizedZikanPlans,
       defaultSchedules: zikanDefaultSchedules,
       templates: zikanTemplates,
       activityPieces: zikanPieces,
-      actualTimeLogsLast7Days: recentTimeLogs,
+      actualTimeLogsLast7Days: normalizedTimeLogs,
     },
     nutritionLast7Days: {
       dailySummary: dailyNutritionMap,
@@ -274,8 +307,17 @@ export async function buildDriveExportBundle(): Promise<BuiltDriveExportBundle> 
       dailySummary: dailyWaterMap,
     },
     habits: {
-      items: habitItems,
+      items: habitItems.map((hi) => ({
+        id: hi.id,
+        name: hi.name,
+        color: hi.color,
+        target_count: hi.target_count ?? 0,
+        is_hidden: hi.is_hidden === 1,
+        sort_order: hi.sort_order ?? 0,
+      })),
+      dailyCountsLast7Days: dailyHabitCountsLast7Days,
       logsLast7Days: recentHabitLogs.map((h) => ({
+        habit_item_id: h.habit_item_id,
         date: normalizeToDateISO(h.date),
         habitName: habitNameMap.get(h.habit_item_id) || `#${h.habit_item_id}`,
         timestamp: h.timestamp,
@@ -390,7 +432,7 @@ export async function buildDriveExportBundle(): Promise<BuiltDriveExportBundle> 
   }
   lines.push('');
 
-  lines.push('## 7. 24時間管理（基本スケジュール・直近実績）');
+  lines.push('## 7. 24時間管理（予定・基本スケジュール・直近実績）');
   if (Array.isArray(zikanDefaultSchedules) && zikanDefaultSchedules.length > 0) {
     lines.push('### デフォルトスケジュール');
     for (const ds of zikanDefaultSchedules) {
@@ -407,6 +449,28 @@ export async function buildDriveExportBundle(): Promise<BuiltDriveExportBundle> 
         : '';
       lines.push(`- **${ds.name}** (${daysText}): ${slotsText}`);
     }
+  }
+  if (normalizedZikanPlans.length > 0) {
+    const groupedPlans: Record<string, string[]> = {};
+    for (const p of normalizedZikanPlans) {
+      const d = safeDateISO(p?.date);
+      if (!d) continue;
+      if (!groupedPlans[d]) groupedPlans[d] = [];
+      const title = p.items?.[0]?.name || p.activity_name || '予定';
+      groupedPlans[d].push(`${p.start}-${p.end} ${title}`);
+    }
+    const planDates = Object.keys(groupedPlans).sort().reverse().slice(0, 7);
+    if (planDates.length > 0) {
+      lines.push('### 直近〜今後の予定 (Plans)');
+      for (const d of planDates) {
+        lines.push(`- ${d}: ${groupedPlans[d].slice(0, 15).join(' / ')}`);
+      }
+    }
+  }
+  if (Array.isArray(zikanPieces) && zikanPieces.length > 0) {
+    lines.push(
+      `### 登録済み活動ピース (${zikanPieces.length}件): ${zikanPieces.map((p: any) => p.name).filter(Boolean).join(', ')}`
+    );
   }
   lines.push(`### 直近7日間の実績タイムログ (${recentTimeLogs.length}件)`);
   const groupedTime: Record<string, string[]> = {};
@@ -430,9 +494,22 @@ export async function buildDriveExportBundle(): Promise<BuiltDriveExportBundle> 
       countByHabit[l.habit_item_id] = (countByHabit[l.habit_item_id] || 0) + 1;
     }
     for (const hi of habitItems) {
+      const hiddenTag = hi.is_hidden === 1 ? ' [非表示]' : '';
       lines.push(
-        `- ${hi.name} (目標: ${hi.target_count ?? 0}回/日): 直近7日間で ${countByHabit[hi.id] || 0} 回達成`
+        `- [ID:${hi.id}] ${hi.name}${hiddenTag} (目標: ${hi.target_count ?? 0}回/日): 直近7日間で ${countByHabit[hi.id] || 0} 回達成`
       );
+    }
+    const habitDates = Object.keys(dailyHabitCountsLast7Days);
+    if (habitDates.length > 0) {
+      lines.push('### 直近7日間の日別達成回数');
+      for (const d of habitDates) {
+        const dayEntries = dailyHabitCountsLast7Days[d]
+          .filter((e) => e.count > 0 || e.target_count > 0)
+          .map((e) => `${e.habitName} ${e.count}${e.target_count > 0 ? `/${e.target_count}` : ''}回`);
+        if (dayEntries.length > 0) {
+          lines.push(`- ${d}: ${dayEntries.join(' / ')}`);
+        }
+      }
     }
   }
 
@@ -465,9 +542,14 @@ export function buildInitialProposalTemplate(): AiAgentProposalsPayload {
     dailyRoutines: [],
     timeManagement: {
       plans: [],
+      actualLogs: [],
       defaultSchedules: [],
       templates: [],
       pieces: [],
+    },
+    habits: {
+      items: [],
+      logs: [],
     },
     bodyComposition: [],
     memoryUpdates: [],
@@ -490,7 +572,7 @@ export function buildAgentGuideMarkdown(folderPath?: string): string {
    - 上記データの機械可読な完全 JSON です。種目名、既存ルーティンID、24時間管理の活動ピース名などを正確に参照したい場合に使ってください。
 
 3. **\`ai_agent_proposals.json\`**（AIエージェントが編集 → アプリが自動読み込み）
-   - トレーナーとしてのアドバイス、新しい筋トレメニュー、新しいデイリールーティン、24時間管理の予定/基本スケジュール/テンプレート/活動ピース、体組成記録（体重・体脂肪率・筋肉量・LBM・身体サイズ等）、AI記憶メモリへの追記を書き込むファイルです。
+   - トレーナーとしてのアドバイス、新しい筋トレメニュー、新しいデイリールーティン、24時間管理（予定・実績タイムログ・基本スケジュール・テンプレート・活動ピース）、習慣カウンター（習慣項目の作成/更新/削除・日別達成回数の記録）、体組成記録（体重・体脂肪率・筋肉量・LBM・身体サイズ等）、AI記憶メモリへの追記を書き込むファイルです。
 
 ---
 
@@ -566,6 +648,7 @@ export function buildAgentGuideMarkdown(folderPath?: string): string {
   ],
   "timeManagement": {
     "replaceDates": ["2026-11-16"],
+    "replaceActualDates": [],
     "plans": [
       {
         "date": "2026-11-16",
@@ -584,6 +667,23 @@ export function buildAgentGuideMarkdown(folderPath?: string): string {
         "memo": "AI提案: 胸・三頭 停滞打破DAY"
       }
     ],
+    "actualLogs": [
+      {
+        "date": "2026-11-15",
+        "start": "07:30",
+        "end": "08:00",
+        "activity_name": "食事"
+      },
+      {
+        "date": "2026-11-15",
+        "start": "20:00",
+        "end": "21:00",
+        "items": [
+          { "name": "学習", "percent": 70 },
+          { "name": "休憩", "percent": 30 }
+        ]
+      }
+    ],
     "defaultSchedules": [
       {
         "name": "AI提案: 平日トレあり基本枠",
@@ -596,6 +696,16 @@ export function buildAgentGuideMarkdown(folderPath?: string): string {
     ],
     "pieces": [
       { "name": "リカバリー", "icon": "🧘", "type": "small", "category": "maintain", "duration": 15, "snap": 5, "color": "blue" }
+    ]
+  },
+  "habits": {
+    "items": [
+      { "action": "upsert", "name": "クレアチン摂取", "color": "blue", "target_count": 1, "hidden": false },
+      { "action": "upsert", "name": "ストレッチ", "color": "green", "target_count": 2 }
+    ],
+    "logs": [
+      { "date": "2026-11-15", "habit_name": "クレアチン摂取", "count": 1, "mode": "set" },
+      { "date": "2026-11-15", "habit_name": "ストレッチ", "count": 1, "mode": "increment" }
     ]
   },
   "bodyComposition": [
@@ -620,7 +730,10 @@ export function buildAgentGuideMarkdown(folderPath?: string): string {
 - \`workoutMenus[].action\`: \`"upsert"\`（同名タイトルがあれば更新、無ければ新規作成） / \`"create"\`（常に新規作成）。種目が未登録の場合は自動でカスタム種目として登録されます。
 - \`dailyRoutines[].action\`: \`"upsert"\`（同名ルーティンがあればタスクを更新しつつ過去の実施履歴は保持）。
 - \`timeManagement.replaceDates\`: 指定した日付（\`YYYY-MM-DD\`）の既存AI提案予定を置き換えます（通常の予定も \`replaceDatePlans: true\` 時はその日の予定を整理）。\`category\` は \`"invest"\`（自己投資・アンバー）、\`"maintain"\`（維持・ブルー）、\`"drift"\`（オフ・パープル）が使えます。
+- \`timeManagement.actualLogs[]\` / \`replaceActualDates\`: 24時間管理の「実績タイムログ」を書き込みます。\`replaceActualDates\` に指定した日付は既存実績を置き換え、未指定日は同一時間帯（\`start\`-\`end\`）を冪等に上書きします。単一活動は \`activity_name\`、複数同時進行は \`items: [{ name, percent }]\` で指定します。
 - \`timeManagement.defaultSchedules[].days\`: \`0=日曜, 1=月曜, ..., 6=土曜\`。
+- \`habits.items[]\`: 習慣カウンターの項目を管理します。\`action\` は \`"upsert"\`（省略時のデフォルト：同名があれば更新・無ければ新規作成）、\`"create"\`、\`"delete"\`。\`color\` は \`"red" | "blue" | "green" | "yellow" | "purple"\` または CSS グラデーション文字列、\`target_count\` は1日の目標回数、\`hidden\` は非表示フラグです。
+- \`habits.logs[]\`: 指定日（\`date\`）の習慣達成回数を記録します。\`habit_name\`（または \`habit_item_id\`）を指定し、\`mode\` で \`"set"\`（省略時のデフォルト：その日の合計回数を \`count\` 回に調整）、\`"increment"\`（\`count\` 回加算）、\`"clear"\`（当日の記録を0回にリセット）を選べます。未登録の \`habit_name\` は自動作成されます。
 - \`bodyComposition[]\`: 指定日（\`date\`: \`YYYY-MM-DD\`）の体組成ログを書き込みます。\`action\` は \`"upsert"\`（省略時のデフォルト：指定した項目だけ既存記録へマージ更新）または \`"replace"\`（未指定項目をクリアして上書き）。利用可能項目は \`weight\`(kg), \`body_fat_rate\`(%), \`muscle_mass\`(kg), \`lbm\`(kg), \`height\`(cm), \`neck\`(cm), \`waist\`(cm), \`hip\`(cm), \`wrist\`(cm), \`ankle\`(cm), \`gender\`(\`"male"\` / \`"female"\`), \`memo\` です。\`lbm\` を省略しても \`weight\` と \`body_fat_rate\` が揃っていれば自動算出されます。
 `;
 }
