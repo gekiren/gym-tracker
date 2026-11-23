@@ -738,6 +738,8 @@
       "export_on_save_desc": "Instantly export logs whenever a new activity is saved",
       "export_bg_daily": "Daily Night Background Export",
       "export_bg_daily_desc": "Export all logs of the day in background around 23:00",
+      "skip_duplicate_google_plans": "Skip Duplicate Google Plans",
+      "skip_duplicate_google_plans_desc": "Skip exporting activity logs that match existing Google Calendar plans in title and time to prevent duplicate events",
       "export_target_cal": "Export Destination",
       "export_default_cal": "TreNote Dedicated Calendar (Recommended)",
       "sync_now": "Sync All Now",

@@ -21,6 +21,7 @@ export interface CalendarSyncSettings {
   exportOnSave: boolean;            // 実績保存時にリアルタイム書き出し
   exportBgDaily: boolean;           // 毎晩定時バックグラウンド自動書き出し
   exportBgTime: string;             // 定時書き出し時刻 (例: "23:00")
+  skipDuplicateGooglePlans?: boolean; // Google予定と重複する実績の書き出しをスキップ (デフォルト: true)
   lastSyncTimestamp?: number;       // 最終同期日時
 }
 
@@ -39,6 +40,7 @@ export const DEFAULT_CALENDAR_SYNC_SETTINGS: CalendarSyncSettings = {
   exportOnSave: true,
   exportBgDaily: false,
   exportBgTime: '23:00',
+  skipDuplicateGooglePlans: true,
   lastSyncTimestamp: undefined,
 };
 
@@ -66,6 +68,58 @@ function formatTimeToHHMM(date: Date): string {
   const h = String(date.getHours()).padStart(2, '0');
   const m = String(date.getMinutes()).padStart(2, '0');
   return `${h}:${m}`;
+}
+
+// 補助関数: HH:MM 文字列を分（0〜1440）へ変換
+function timeStrToMinutes(hhmm: string): number {
+  if (!hhmm) return 0;
+  const [h, m] = hhmm.split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) return 0;
+  return h * 60 + m;
+}
+
+// 補助関数: 終日イベント（または00:00〜00:00の24時間イベント）判定
+function isAllDayEquivalentEvent(ev: Calendar.Event): boolean {
+  if (ev.allDay) return true;
+  const s = new Date(ev.startDate);
+  const e = new Date(ev.endDate);
+  return s.getHours() === 0 && s.getMinutes() === 0 && e.getHours() === 0 && e.getMinutes() === 0;
+}
+
+// 補助関数: Googleカレンダーイベントのタイトル正規化（1行目抽出・40文字丸め）
+function normalizeGoogleEventTitle(rawTitleInput?: string): {
+  cleanTitle: string;
+  fullFirstLine: string;
+  extraMemo: string;
+} {
+  const rawTitle = (rawTitleInput || '予定').trim();
+  let cleanTitle = rawTitle;
+  let extraMemo = '';
+
+  if (rawTitle.includes('\n')) {
+    const lines = rawTitle.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length > 0) {
+      cleanTitle = lines[0];
+      extraMemo = lines.slice(1).join('\n');
+    }
+  }
+
+  const fullFirstLine = cleanTitle;
+
+  if (cleanTitle.length > 40) {
+    if (!extraMemo) {
+      extraMemo = cleanTitle;
+    } else {
+      extraMemo = cleanTitle + '\n' + extraMemo;
+    }
+    cleanTitle = cleanTitle.slice(0, 37) + '...';
+  }
+
+  return {
+    cleanTitle: cleanTitle || '予定',
+    fullFirstLine: fullFirstLine || '予定',
+    extraMemo,
+  };
 }
 
 /**
@@ -287,14 +341,8 @@ export async function importGoogleCalendarPlans(
 
     // 終日イベント除外フィルタ
     const filteredEvents = events.filter((ev) => {
-      if (settings.excludeAllDay) {
-        if (ev.allDay) return false;
-        // 00:00〜00:00 や 00:00〜23:59 の24時間丸ごとイベントも除外
-        const s = new Date(ev.startDate);
-        const e = new Date(ev.endDate);
-        if (s.getHours() === 0 && s.getMinutes() === 0 && e.getHours() === 0 && e.getMinutes() === 0) {
-          return false;
-        }
+      if (settings.excludeAllDay && isAllDayEquivalentEvent(ev)) {
+        return false;
       }
       return true;
     });
@@ -328,31 +376,8 @@ export async function importGoogleCalendarPlans(
       const planId = stringToHash(`google_${ev.id}_${dateStr}_${idx}`);
 
       // イベントタイトルと詳細メモのスマート正規化
-      const rawTitle = (ev.title || '予定').trim();
       const rawNotes = (ev.notes || '').trim();
-
-      let cleanTitle = rawTitle;
-      let extraMemo = '';
-
-      // 改行が含まれる場合、最初の非空行を件名（タイトル）とし、残りの行をメモへ退避
-      if (rawTitle.includes('\n')) {
-        const lines = rawTitle.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-        if (lines.length > 0) {
-          cleanTitle = lines[0];
-          extraMemo = lines.slice(1).join('\n');
-        }
-      }
-
-      // 改行がなくてもタイトルが長すぎる場合（例: 会議テンプレートが1行に繋がっている等）
-      // 40文字を超える場合は適切な長さに丸め、元の全文をメモへ保持
-      if (cleanTitle.length > 40) {
-        if (!extraMemo) {
-          extraMemo = cleanTitle;
-        } else {
-          extraMemo = cleanTitle + '\n' + extraMemo;
-        }
-        cleanTitle = cleanTitle.slice(0, 37) + '...';
-      }
+      const { cleanTitle, extraMemo } = normalizeGoogleEventTitle(ev.title);
 
       // 詳細メモの統合（重要情報は1文字も欠落させずに保持）
       let combinedMemo = rawNotes;
@@ -492,6 +517,51 @@ export async function exportLogsToGoogleCalendar(
       dayEnd
     );
 
+    // Google予定との重複スキップが有効な場合、取り込み元カレンダーから当日の予定を取得
+    let sourcePlanEvents: Array<{
+      cleanTitle: string;
+      fullFirstLine: string;
+      startMins: number;
+      endMins: number;
+    }> = [];
+    if (settings.skipDuplicateGooglePlans !== false) {
+      let sourceCalendarIds =
+        settings.selectedCalendarIds && settings.selectedCalendarIds.length > 0
+          ? [...settings.selectedCalendarIds]
+          : calendars.map((c) => c.id);
+
+      // TreNote専用カレンダーと書き出し先カレンダー自身を除外（自己消滅ループ防止）
+      sourceCalendarIds = sourceCalendarIds.filter((id) => {
+        if (id === exportCalId) return false;
+        const cal = calendars.find((c) => c.id === id);
+        return cal?.title !== 'TreNote' && cal?.name !== 'TreNote';
+      });
+
+      if (sourceCalendarIds.length > 0) {
+        const rawSourceEvents = await Calendar.getEventsAsync(
+          sourceCalendarIds,
+          dayStart,
+          dayEnd
+        );
+        sourcePlanEvents = rawSourceEvents
+          .filter((ev) => !isAllDayEquivalentEvent(ev))
+          .map((ev) => {
+            const sDate = new Date(ev.startDate);
+            const eDate = new Date(ev.endDate);
+            const startMins = sDate < dayStart ? 0 : sDate.getHours() * 60 + sDate.getMinutes();
+            const endMins = eDate > dayEnd ? 1440 : eDate.getHours() * 60 + eDate.getMinutes();
+            const { cleanTitle, fullFirstLine } = normalizeGoogleEventTitle(ev.title);
+            return {
+              cleanTitle,
+              fullFirstLine,
+              startMins,
+              endMins,
+            };
+          })
+          .filter((ev) => ev.endMins > ev.startMins);
+      }
+    }
+
     // 処理・維持された（最新データと紐付いた）イベントIDの記録用
     const matchedEventIds = new Set<string>();
     let exportCount = 0;
@@ -508,6 +578,27 @@ export async function exportLogsToGoogleCalendar(
       }
 
       const title = group.items.join(' / ') || '活動記録';
+
+      // Googleカレンダーの既存予定とタイトル・時間帯が重複する場合は書き出しをスキップ（2重表示防止）
+      if (sourcePlanEvents.length > 0 && group.items.length > 0) {
+        const gStartMins = timeStrToMinutes(group.start);
+        let gEndMins = timeStrToMinutes(group.end);
+        if (gEndMins < gStartMins) gEndMins = 1440; // 日跨ぎ時は当日末までにクリップして比較
+
+        const isDuplicate = sourcePlanEvents.some((ev) => {
+          const hasTimeOverlap = Math.max(gStartMins, ev.startMins) < Math.min(gEndMins, ev.endMins);
+          if (!hasTimeOverlap) return false;
+          return group.items.some((itemName) => {
+            const trimmed = itemName.trim();
+            return trimmed === ev.cleanTitle || trimmed === ev.fullFirstLine;
+          });
+        });
+
+        if (isDuplicate) {
+          continue;
+        }
+      }
+
       const markerNote = `[TreNote Log: ${dateStr} ${group.start}-${group.end}]`;
 
       // 既存イベントの中に同じ時間帯・マーカーがあるか確認

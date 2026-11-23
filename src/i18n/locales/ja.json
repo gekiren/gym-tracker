@@ -735,6 +735,8 @@
       "export_on_save_desc": "活動記録を追加・保存した瞬間に即座にカレンダーへ書き出します",
       "export_bg_daily": "毎晩の定時バックグラウンド書き出し",
       "export_bg_daily_desc": "夜（23:00頃）にその日の活動実績を裏でまとめて書き出します",
+      "skip_duplicate_google_plans": "Google予定との重複を書き出さない",
+      "skip_duplicate_google_plans_desc": "Googleカレンダーから取り込んだ予定と同じ時間帯・内容の実績は、2重表示を防ぐため書き出しをスキップします",
       "export_target_cal": "書き出し先カレンダー",
       "export_default_cal": "TreNote 専用カレンダー（推奨・自動生成）",
       "sync_now": "今すぐ全同期を実行",

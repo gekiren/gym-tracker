@@ -343,6 +343,26 @@ export default function CalendarSyncScreen() {
                   </View>
 
                   <View style={styles.divider} />
+                  <View style={styles.settingRow}>
+                    <View style={{ flex: 1, paddingRight: 8 }}>
+                      <Text style={styles.settingLabel}>
+                        {t('ui.calendar_sync.skip_duplicate_google_plans', 'Google予定との重複を書き出さない')}
+                      </Text>
+                      <Text style={styles.settingSubtext}>
+                        {t(
+                          'ui.calendar_sync.skip_duplicate_google_plans_desc',
+                          'Googleカレンダーから取り込んだ予定と同じ時間帯・内容の実績は、2重表示を防ぐため書き出しをスキップします'
+                        )}
+                      </Text>
+                    </View>
+                    <Switch
+                      value={settings.skipDuplicateGooglePlans ?? true}
+                      onValueChange={(v) => updateSetting('skipDuplicateGooglePlans', v)}
+                      trackColor={{ false: colors.border, true: colors.primary }}
+                    />
+                  </View>
+
+                  <View style={styles.divider} />
                   <View style={{ paddingVertical: 8 }}>
                     <Text style={styles.settingLabel}>{t('ui.calendar_sync.export_target_cal', '書き出し先カレンダー')}</Text>
                     <Text style={styles.settingSubtext}>
