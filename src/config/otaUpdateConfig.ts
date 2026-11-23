@@ -11,19 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.66',
+  version: '2.3.67',
   title: {
-    ja: '🔄 AI連携ガイドの自動更新',
-    en: '🔄 Automatic AI agent guide refresh',
+    ja: '🏷️ 体組成グラフの指標表示名を修正',
+    en: '🏷️ Fixed body composition metric labels',
   },
   notes: {
     ja: [
-      'Googleドライブ上の AI_AGENT_GUIDE.md が古い場合、次回のアップロード時に最新版（体組成の書き込み仕様を含む）へ自動で更新されるようになりました。',
-      'ai_agent_proposals.json は、未処理の提案を保護するため上書きしません。',
+      '体組成グラフの指標選択画面およびグラフタイトルで「筋肉・脂肪比 (MF比)」「マッチョスコア (MS)」が正しく表示されるように修正しました。',
     ],
     en: [
-      'AI_AGENT_GUIDE.md on Google Drive is now refreshed automatically on the next upload when outdated (including the body composition write schema).',
-      'ai_agent_proposals.json is never overwritten, to protect pending proposals.',
+      'Fixed the metric selector and chart titles in Body Composition History to display "Muscle-Fat Ratio (MF)" and "Macho Score (MS)" properly.',
     ],
   },
 };
