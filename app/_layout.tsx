@@ -158,6 +158,8 @@ export default function RootLayout() {
       const keepAwake = storedSettings['keep_awake'] ? storedSettings['keep_awake'] === '1' : true;
       const bodyWeight = storedSettings['body_weight'] ? parseFloat(storedSettings['body_weight']) : null;
       const alwaysOneSet = storedSettings['always_one_set'] === '1';
+      const addSetStanceMode: 'default' | 'previous' =
+        storedSettings['add_set_stance_mode'] === 'previous' ? 'previous' : 'default';
       let preferredAiModel: 'gemini' | 'gemma-31b' | 'gemma-26b' | 'deepseek' = 'gemini';
       const storedModel = storedSettings['preferred_ai_model'];
       if (storedModel === 'gemma-31b' || storedModel === 'gemma-26b' || storedModel === 'deepseek' || storedModel === 'gemini') {
@@ -193,7 +195,7 @@ export default function RootLayout() {
       const { finalPremiumUntil, finalTokensBalance, expired, isEarlyAdopter } = await initSubscriptionAndTokens(storedSettings);
 
       // 4.5 機能管理設定（表示順・表示ON/OFF）
-      const ALL_FEATURES: FeatureId[] = ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'habit', 'voice_ai'];
+      const ALL_FEATURES: FeatureId[] = ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'habit'];
       let featureOrder: FeatureId[] = ALL_FEATURES;
       if (storedSettings['feature_order']) {
         try {
@@ -210,12 +212,16 @@ export default function RootLayout() {
         }
       }
 
-      let featureVisibility: Record<FeatureId, boolean> = { workout: true, body: true, water: true, nutrition: true, zikan: true, routine: true, habit: true, voice_ai: true };
+      let featureVisibility: Record<FeatureId, boolean> = { workout: true, body: true, water: true, nutrition: true, zikan: true, routine: true, habit: true };
       if (storedSettings['feature_visibility']) {
         try {
           const parsed = JSON.parse(storedSettings['feature_visibility']);
           if (parsed && typeof parsed === 'object') {
-            featureVisibility = { ...featureVisibility, ...parsed };
+            ALL_FEATURES.forEach((id) => {
+              if (typeof parsed[id] === 'boolean') {
+                featureVisibility[id] = parsed[id];
+              }
+            });
           }
         } catch (e) {
           console.warn('Failed to parse feature_visibility', e);
@@ -247,6 +253,7 @@ export default function RootLayout() {
         isEarlyAdopter,
         keepAwake,
         alwaysOneSet,
+        addSetStanceMode,
         preferredAiModel,
         aiChatMode,
         enableAiDebugContext,

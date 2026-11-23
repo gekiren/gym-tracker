@@ -14,6 +14,12 @@ export interface AddExercisePayload {
   weight_step?: number;
 }
 
+const normalizeStance = (val?: string | null): string | null => {
+  if (!val) return null;
+  const trimmed = val.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
 /**
  * 種目追加時の初期セット配列（SetRecord[]）を構築する純粋関数
  */
@@ -22,6 +28,9 @@ export const buildInitialSetsForExercise = (
   alwaysOneSet: boolean = false
 ): SetRecord[] => {
   const generateTempId = () => Math.random().toString(36).substring(7);
+  const defaultStance =
+    normalizeStance(exercise.default_stance) ??
+    normalizeStance(exercise.default_variation);
 
   // 1. ルーティンからの追加時
   if (exercise.routineSets && exercise.routineSets.length > 0) {
@@ -36,6 +45,7 @@ export const buildInitialSetsForExercise = (
           prev = exercise.previousSets[idx] || exercise.previousSets[0];
         }
       }
+      const routineStance = normalizeStance(rs.stance) ?? normalizeStance(rs.variation);
       return {
         id: generateTempId(),
         set_number: rs.set_number || (idx + 1),
@@ -51,8 +61,8 @@ export const buildInitialSetsForExercise = (
         prev_work_seconds: prev ? (prev.work_seconds ?? null) : null,
         is_completed: false,
         side: rs.side || null,
-        variation: rs.variation || null,
-        stance: rs.stance || null,
+        variation: routineStance,
+        stance: routineStance,
       };
     });
   }
@@ -79,8 +89,8 @@ export const buildInitialSetsForExercise = (
             rpe: prevL ? prevL.rpe : null,
             is_completed: false,
             side: 'L',
-            variation: prevL ? (prevL.variation || null) : (exercise.default_variation || null),
-            stance: prevL ? (prevL.stance || null) : (exercise.default_stance || null),
+            variation: defaultStance,
+            stance: defaultStance,
           },
           {
             id: generateTempId(),
@@ -97,8 +107,8 @@ export const buildInitialSetsForExercise = (
             rpe: prevR ? prevR.rpe : null,
             is_completed: false,
             side: 'R',
-            variation: prevR ? (prevR.variation || null) : (exercise.default_variation || null),
-            stance: prevR ? (prevR.stance || null) : (exercise.default_stance || null),
+            variation: defaultStance,
+            stance: defaultStance,
           },
         ];
       } else {
@@ -117,8 +127,8 @@ export const buildInitialSetsForExercise = (
           prev_work_seconds: prev.work_seconds ?? null,
           rpe: prev.rpe,
           is_completed: false,
-          variation: prev.variation || exercise.default_variation || null,
-          stance: prev.stance || exercise.default_stance || null,
+          variation: defaultStance,
+          stance: defaultStance,
         }];
       }
     } else {
@@ -137,8 +147,8 @@ export const buildInitialSetsForExercise = (
         rpe: prev.rpe,
         is_completed: false,
         side: prev.side || null,
-        variation: prev.variation || null,
-        stance: prev.stance || null,
+        variation: defaultStance,
+        stance: defaultStance,
       }));
     }
   }
@@ -146,8 +156,8 @@ export const buildInitialSetsForExercise = (
   // 3. 完全新規種目の場合
   if (exercise.is_unilateral) {
     return [
-      { id: generateTempId(), set_number: 1, weight: null, reps: null, rpe: null, speed: null, incline: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'L', variation: exercise.default_variation || null, stance: exercise.default_stance || null },
-      { id: generateTempId(), set_number: 1, weight: null, reps: null, rpe: null, speed: null, incline: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'R', variation: exercise.default_variation || null, stance: exercise.default_stance || null },
+      { id: generateTempId(), set_number: 1, weight: null, reps: null, rpe: null, speed: null, incline: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'L', variation: defaultStance, stance: defaultStance },
+      { id: generateTempId(), set_number: 1, weight: null, reps: null, rpe: null, speed: null, incline: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'R', variation: defaultStance, stance: defaultStance },
     ];
   }
 
@@ -162,7 +172,7 @@ export const buildInitialSetsForExercise = (
     is_completed: false,
     rest_seconds: null,
     work_seconds: null,
-    variation: exercise.default_variation || null,
-    stance: exercise.default_stance || null,
+    variation: defaultStance,
+    stance: defaultStance,
   }];
 };

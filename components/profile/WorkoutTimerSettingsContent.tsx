@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useSettingsStore } from '../../src/store/settingsStore';
+import { useSettingsStore, AddSetStanceMode } from '../../src/store/settingsStore';
 import { useNutritionStore } from '../../src/store/nutritionStore';
 import { saveSetting } from '../../src/db/database';
 import { changeLanguage, getCurrentLanguage } from '../../src/i18n';
@@ -29,6 +29,7 @@ export function WorkoutTimerSettingsContent() {
   const [crashConsent, setCrashConsent] = useState(settings.crashConsent);
   const [keepAwake, setKeepAwake] = useState(settings.keepAwake);
   const [alwaysOneSet, setAlwaysOneSet] = useState(settings.alwaysOneSet);
+  const [addSetStanceMode, setAddSetStanceMode] = useState<AddSetStanceMode>(settings.addSetStanceMode);
 
   useEffect(() => {
     setDefaultRest(settings.defaultRest);
@@ -45,6 +46,7 @@ export function WorkoutTimerSettingsContent() {
     setCrashConsent(settings.crashConsent);
     setKeepAwake(settings.keepAwake);
     setAlwaysOneSet(settings.alwaysOneSet);
+    setAddSetStanceMode(settings.addSetStanceMode);
   }, [settings]);
 
   const handleUpdateRest = async (secs: number) => {
@@ -95,6 +97,12 @@ export function WorkoutTimerSettingsContent() {
     await saveSetting('always_one_set', val ? '1' : '0');
   };
 
+  const handleUpdateAddSetStanceMode = async (mode: AddSetStanceMode) => {
+    setAddSetStanceMode(mode);
+    useSettingsStore.getState().setAddSetStanceMode(mode);
+    await saveSetting('add_set_stance_mode', mode);
+  };
+
   const handleUpdateBodyWeight = async (val: string) => {
     setLocalBodyWeight(val);
     if (val === '') {
@@ -141,8 +149,10 @@ export function WorkoutTimerSettingsContent() {
         showVolume={showVolume}
         showStance={showStance}
         alwaysOneSet={alwaysOneSet}
+        addSetStanceMode={addSetStanceMode}
         onToggleDisplayField={handleToggleDisplayField}
         onUpdateAlwaysOneSet={handleUpdateAlwaysOneSet}
+        onUpdateAddSetStanceMode={handleUpdateAddSetStanceMode}
         t={t}
       />
 

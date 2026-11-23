@@ -47,6 +47,7 @@ import ImagePreviewModal from '../../components/nutrition/ImagePreviewModal';
 import PhotoGalleryModal from '../../components/nutrition/PhotoGalleryModal';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
+import { FeatureClassBar } from '../../components/FeatureClassBar';
 import { MealPresetWithItems, MealPresetItem } from '../../src/db/types';
 
 export default function NutritionScreen() {
@@ -329,6 +330,8 @@ export default function NutritionScreen() {
               <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
+
+          <FeatureClassBar featureId="nutrition" />
 
           <ScrollView
             style={styles.scrollBody}

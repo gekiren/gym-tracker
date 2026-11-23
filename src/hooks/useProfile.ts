@@ -156,14 +156,6 @@ export function useProfile() {
         route: '/settings/widget-launcher',
       },
       {
-        id: 'ai-memory',
-        title: 'AIアシスタント',
-        desc: `AI残高: ${settings.aiTokensBalance} 回 • 音声対話・記憶の確認・編集`,
-        icon: 'sparkles-outline',
-        iconColor: '#38bdf8',
-        route: '/settings/ai-memory',
-      },
-      {
         id: 'backup',
         title: 'バックアップ・復元',
         desc: 'SQLiteデータベースの保存と復元',
@@ -180,7 +172,7 @@ export function useProfile() {
         route: '/settings/data-management',
       },
     ],
-    [accountType, settings.aiTokensBalance, colors.danger]
+    [colors.danger]
   );
 
   return {

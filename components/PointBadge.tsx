@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAppTheme } from '../src/theme';
 import { useFeatureUnlockStore } from '../src/store/featureUnlockStore';
-import { POINT_REWARDS, POINT_COSTS } from '../src/constants/featureUnlockConstants';
+import { POINT_REWARDS } from '../src/constants/featureUnlockConstants';
 
 interface PointBadgeProps {
   style?: any;
@@ -46,7 +46,7 @@ export const PointBadge: React.FC<PointBadgeProps> = ({ style }) => {
                 所持 Pポイント: {points} P
               </Text>
               <Text style={[styles.modalDesc, { color: colors.textMuted }]}>
-                日々のトレーニングやログを記録するとPポイントが貯まり、新機能の開放やAI機能に利用できます。
+                日々のトレーニングやログを記録するとPポイントが貯まり、新機能の開放に利用できます。
               </Text>
             </View>
 
@@ -91,22 +91,6 @@ export const PointBadge: React.FC<PointBadgeProps> = ({ style }) => {
                   ・新機能のアンロック
                 </Text>
                 <Text style={[styles.rowValue, { color: colors.primary }]}>10 P〜</Text>
-              </View>
-              <View style={styles.row}>
-                <Text style={[styles.rowLabel, { color: colors.text }]}>
-                  ・音声AIアシスタント利用
-                </Text>
-                <Text style={[styles.rowValue, { color: colors.primary }]}>
-                  {POINT_COSTS.AI_VOICE_PER_USE} P / 回
-                </Text>
-              </View>
-              <View style={styles.row}>
-                <Text style={[styles.rowLabel, { color: colors.text }]}>
-                  ・AI Coach 相談・解析
-                </Text>
-                <Text style={[styles.rowValue, { color: colors.primary }]}>
-                  {POINT_COSTS.AI_COACH_PER_USE} P / 回
-                </Text>
               </View>
             </View>
 

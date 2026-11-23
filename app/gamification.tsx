@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -53,10 +53,20 @@ export default function GamificationScreen() {
   const recentXpHistory = useGamificationStore((s) => s.recentXpHistory);
   const featureOrder = useSettingsStore((s) => s.settings.featureOrder);
 
+  const params = useLocalSearchParams<{ featureId?: string | string[] }>();
+  const rawFeatureId = Array.isArray(params.featureId) ? params.featureId[0] : params.featureId;
+
   const [activeTab, setActiveTab] = useState<ActiveTab>('features');
   const [medalFilter, setMedalFilter] = useState<MedalFilter>('all');
   const [selectedFeatureId, setSelectedFeatureId] = useState<GamificationFeatureId | null>(null);
   const [selectedMedal, setSelectedMedal] = useState<AchievementMedalDef | null>(null);
+
+  useEffect(() => {
+    if (rawFeatureId && isGamificationFeatureId(rawFeatureId)) {
+      setActiveTab('features');
+      setSelectedFeatureId(rawFeatureId);
+    }
+  }, [rawFeatureId]);
 
   useEffect(() => {
     if (isFocused) {

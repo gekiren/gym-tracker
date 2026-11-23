@@ -8,6 +8,7 @@ import ZikanKanriHTML from '../../src/web-apps/ZikanKanri';
 import { useLifelogStore } from '../../src/store/lifelogStore';
 import { LifelogDateHeader } from '../../components/LifelogDateHeader';
 import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
+import { FeatureClassBar } from '../../components/FeatureClassBar';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { PanGestureHandler } from 'react-native-gesture-handler';
@@ -250,7 +251,12 @@ export default function ZikanScreen() {
           <LifelogHistoryTab type="time" t={t} />
         ) : isFocused ? (
           <>
-            {!isModalVisible && <LifelogDateHeader type="zikan" />}
+            {!isModalVisible && (
+              <>
+                <LifelogDateHeader type="zikan" />
+                <FeatureClassBar featureId="zikan" />
+              </>
+            )}
             <WebViewTab
               ref={webViewTabRef}
               html={ZikanKanriHTML}

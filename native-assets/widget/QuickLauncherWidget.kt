@@ -47,7 +47,7 @@ class QuickLauncherWidget : AppWidgetProvider() {
         thread {
             val db = getDatabase(context, writable = false)
             // Default slots (7 slots)
-            var slots = listOf("workout", "water", "nutrition", "zikan", "routine", "body", "voice_ai")
+            var slots = listOf("workout", "water", "nutrition", "zikan", "routine", "habit", "body")
 
             if (db != null) {
                 try {
@@ -100,8 +100,7 @@ class QuickLauncherWidget : AppWidgetProvider() {
                 "zikan" to Pair(R.drawable.ic_ql_zikan, "gymtracker://lifelog/zikan"),
                 "routine" to Pair(R.drawable.ic_ql_routine, "gymtracker://lifelog/routine"),
                 "habit" to Pair(R.drawable.ic_ql_habit, "gymtracker://lifelog/habit"),
-                "body" to Pair(R.drawable.ic_ql_body, "gymtracker://lifelog/body"),
-                "voice_ai" to Pair(R.drawable.ic_ql_voice_ai, "gymtracker://lifelog/voice-assistant")
+                "body" to Pair(R.drawable.ic_ql_body, "gymtracker://lifelog/body")
             )
 
             for (i in 0 until 7) {

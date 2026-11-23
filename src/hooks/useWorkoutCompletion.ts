@@ -7,8 +7,7 @@ import { useSettingsStore } from '../store/settingsStore';
 import { checkAndTriggerReviewFlow } from '../services/reviewService';
 import { useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
 import { AD_CONFIG } from '../config/adConfig';
-import { getSettings, saveSetting, consumeAIToken, getAITokensBalance, refundAIToken } from '../db/database';
-import { sendMessageToAICoach } from '../services/aiCoachService';
+import { getSettings, saveSetting } from '../db/database';
 import type ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { generateShareText, copyShareTextToClipboard } from '../services/shareService';
@@ -17,10 +16,9 @@ import { awardWorkoutCompletionPoints, recordFeatureAction } from '../services/f
 import { recordWorkoutCompletionGamification } from '../services/gamificationService';
 
 export function useWorkoutCompletion() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const completionData = useWorkoutStore(state => state.lastWorkoutCompletion);
   const settings = useSettingsStore(state => state.settings);
-  const setAITokensBalance = useSettingsStore(state => state.setAITokensBalance);
 
   // AdMob Hooks
   const adUnitId = AD_CONFIG.getRewardedInterstitialAdUnitId();
@@ -36,8 +34,6 @@ export function useWorkoutCompletion() {
   const [shouldLoadAd, setShouldLoadAd] = useState(false);
   const [showAdPreview, setShowAdPreview] = useState(false);
   const hasCheckedAd = useRef(false);
-  const [aiComment, setAiComment] = useState<string | null>(null);
-  const [loadingAI, setLoadingAI] = useState(false);
 
   // Sharing States
   const [sharePattern, setSharePattern] = useState<'A' | 'B' | 'C'>('A');
@@ -45,19 +41,6 @@ export function useWorkoutCompletion() {
   const [patternModalVisible, setPatternModalVisible] = useState(false);
   const [viewShotAvailable, setViewShotAvailable] = useState(false);
   const viewShotRef = useRef<ViewShot>(null);
-
-  // Sync token balance
-  useEffect(() => {
-    const syncTokenBalance = async () => {
-      try {
-        const balance = await getAITokensBalance();
-        setAITokensBalance(balance);
-      } catch (e) {
-        console.warn('Failed to sync token balance', e);
-      }
-    };
-    syncTokenBalance();
-  }, [setAITokensBalance]);
 
   // ViewShot Availability Check
   useEffect(() => {
@@ -196,110 +179,6 @@ export function useWorkoutCompletion() {
     }
   }, [isClosed, isEarnedReward]);
 
-  const maxTokens = settings.isPremium || settings.isEarlyAdopter ? 20 : 5;
-
-  // Ask AI Coach Handler
-  const handleAskAICoach = useCallback(async () => {
-    if (loadingAI || !completionData) return;
-    const { workout, achievements } = completionData;
-
-    let consumed = false;
-    try {
-      consumed = await consumeAIToken();
-    } catch (e) {
-      console.warn('Failed to consume token', e);
-    }
-
-    if (!consumed) {
-      Alert.alert(
-        t('ui.coach.limit_reached_title') || '利用枠エラー',
-        t('ui.coach.limit_reached_msg') || '今月の利用枠が残っていません。'
-      );
-      return;
-    }
-
-    try {
-      const updatedBalance = await getAITokensBalance();
-      setAITokensBalance(updatedBalance);
-    } catch (e) {
-      console.warn('Failed to update balance UI', e);
-    }
-
-    setLoadingAI(true);
-
-    try {
-      const durationMin =
-        workout.end_time && workout.start_time
-          ? Math.max(1, Math.round((new Date(workout.end_time).getTime() - new Date(workout.start_time).getTime()) / 60000))
-          : null;
-
-      let workoutDetailsStr = `今日のワークアウト: ${workout.title || 'フリーワークアウト'}\n`;
-      if (durationMin !== null) {
-        workoutDetailsStr += `実施時間: ${durationMin}分\n`;
-      }
-      if (workout.calories !== null && workout.calories > 0) {
-        workoutDetailsStr += `消費カロリー: ${workout.calories} kcal\n`;
-      }
-      workoutDetailsStr += `実施種目とセット内容:\n`;
-
-      workout.exercises.forEach(ex => {
-        const completedSets = ex.sets.filter(s => !!s.is_completed);
-        if (completedSets.length > 0) {
-          workoutDetailsStr += `- ${ex.name}:\n`;
-          completedSets.forEach(set => {
-            const weightStr = set.weight !== null ? `${set.weight}${settings.weightUnit}` : '自重';
-            const repsStr = set.reps !== null ? `${set.reps}回` : '';
-            const rpeStr = set.rpe !== null ? ` (RPE: ${set.rpe})` : '';
-            workoutDetailsStr += `  セット${set.set_number}: ${weightStr} x ${repsStr}${rpeStr}\n`;
-          });
-        }
-      });
-
-      if (achievements.weeklyWorkoutCount > 0) {
-        workoutDetailsStr += `1週間の実施回数: 週${achievements.weeklyWorkoutCount}回達成\n`;
-      }
-      if (achievements.streakWeeks > 1) {
-        workoutDetailsStr += `継続週数: ${achievements.streakWeeks}週間継続中\n`;
-      }
-
-      const isEn = i18n.language?.startsWith('en');
-      const message = isEn
-        ? 'Please analyze the workout records above and generate a highly motivating, positive, and specific praise/encouragement comment in English (1-2 sentences, within 100 characters). Output only the body of the praise, omitting greetings or self-introductions.'
-        : '上記の今日のワークアウト実績を分析し、ユーザーを具体的かつポジティブに褒める、前向きでモチベーションが高まるオリジナルの応援コメントを日本語で1〜2文（合計100文字以内）で作成してください。挨拶や自己紹介（AIコーチ等）は省き、褒め言葉の本文のみを出力してください。';
-
-      const response = await sendMessageToAICoach(message, workoutDetailsStr, settings.bodyWeight, settings.weightUnit);
-
-      if (response.success) {
-        setAiComment(response.reply);
-      } else {
-        try {
-          await refundAIToken();
-          const updatedBalance = await getAITokensBalance();
-          setAITokensBalance(updatedBalance);
-        } catch (e) {
-          console.warn('Failed to refund token', e);
-        }
-
-        const alertTitle = response.errorType === 'busy' ? t('ui.coach.busy_title') || '混雑中' : t('ui.common.error') || 'エラー';
-
-        Alert.alert(alertTitle, response.reply || '評価の取得に失敗しました。');
-      }
-    } catch (err) {
-      console.error('Failed to get AI assessment', err);
-      try {
-        await refundAIToken();
-        const updatedBalance = await getAITokensBalance();
-        setAITokensBalance(updatedBalance);
-      } catch (e) {
-        console.warn('Failed to refund token', e);
-      }
-
-      Alert.alert(t('ui.common.error') || 'エラー', '通信エラーが発生しました。');
-    } finally {
-      setLoadingAI(false);
-    }
-  }, [loadingAI, completionData, setAITokensBalance, settings.weightUnit, settings.bodyWeight, i18n.language, t]);
-
   // Done Handler
   const handleDone = useCallback(() => {
     router.replace('/(tabs)/history');
@@ -365,20 +244,16 @@ export function useWorkoutCompletion() {
     t,
     completionData,
     settings,
-    maxTokens,
     rewardModalVisible,
     setRewardModalVisible,
     rewardResult,
     showAdPreview,
-    aiComment,
-    loadingAI,
     sharePattern,
     isSharing,
     patternModalVisible,
     setPatternModalVisible,
     viewShotAvailable,
     viewShotRef,
-    handleAskAICoach,
     handleDone,
     handleShareButtonPress,
     handleShare,

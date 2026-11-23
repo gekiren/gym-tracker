@@ -8,6 +8,7 @@ import WaterHTML from '../../src/web-apps/Water';
 import { useLifelogStore } from '../../src/store/lifelogStore';
 import { LifelogDateHeader } from '../../components/LifelogDateHeader';
 import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
+import { FeatureClassBar } from '../../components/FeatureClassBar';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { PanGestureHandler } from 'react-native-gesture-handler';
@@ -103,7 +104,12 @@ export default function WaterScreen() {
           <LifelogHistoryTab type="water" t={t} />
         ) : (
           <>
-            {!isModalVisible && <LifelogDateHeader type="water" />}
+            {!isModalVisible && (
+              <>
+                <LifelogDateHeader type="water" />
+                <FeatureClassBar featureId="water" />
+              </>
+            )}
             <WebViewTab
               ref={webViewTabRef}
               html={WaterHTML}

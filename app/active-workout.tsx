@@ -7,7 +7,6 @@ import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../src/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AI_CONFIG } from '../src/config/aiConfig';
 import { useKeepAwake } from 'expo-keep-awake';
 import { FloatingRestTimer } from '../components/active-workout/FloatingRestTimer';
 import { ResumeWorkoutButton } from '../components/active-workout/ResumeWorkoutButton';
@@ -65,8 +64,6 @@ export default function ActiveWorkoutScreen() {
     beginWorkoutTimer,
     handleBack,
     handleDeleteExercise,
-    handleAICoachWorkout,
-    handleAICoachExercise,
     handleManualTimer,
     handleFinish,
     handleAddExercise,
@@ -114,7 +111,7 @@ export default function ActiveWorkoutScreen() {
       />
 
       <KeyboardAvoidingWrapper>
-        {/* Workout Notes & AI Trainer Section (Fixed at Top) */}
+        {/* Workout Notes Section (Fixed at Top) */}
         <View style={[styles.fixedHeader, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
           <View style={styles.workoutNotesRow}>
             <TouchableOpacity
@@ -128,16 +125,6 @@ export default function ActiveWorkoutScreen() {
                 <Ionicons name="checkmark-circle" size={14} color={colors.success} style={{ marginLeft: 4 }} />
               ) : null}
             </TouchableOpacity>
-            {AI_CONFIG.status === 'active' && (
-              <TouchableOpacity
-                onPress={handleAICoachWorkout}
-                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                style={[styles.aiCoachBadge, { borderColor: colors.border, backgroundColor: colors.card }]}
-              >
-                <Ionicons name="sparkles" size={16} color={colors.primary} />
-                <Text style={[styles.aiCoachText, { color: colors.primary }]}>{t('ui.coach.ai_coach') || 'AIトレーナー'}</Text>
-              </TouchableOpacity>
-            )}
           </View>
 
           {(showWorkoutNotes || workoutNotes) && (
@@ -182,7 +169,6 @@ export default function ActiveWorkoutScreen() {
               onToggleNotes={toggleExpandedExerciseNote}
               onUpdateNotes={updateExerciseNotes}
               onDeleteExercise={handleDeleteExercise}
-              onAICoachExercise={handleAICoachExercise}
               onOpenStanceModal={handleOpenStanceModal}
               onAddSet={addSet}
               onUpdateSet={updateSet}
@@ -291,20 +277,6 @@ const styles = StyleSheet.create({
   workoutNotesBtnText: {
     fontSize: 14,
     fontWeight: '600',
-  },
-  aiCoachBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    minHeight: 44,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  aiCoachText: {
-    fontSize: 12,
-    fontWeight: 'bold',
   },
   workoutNotesInput: {
     borderRadius: 8,

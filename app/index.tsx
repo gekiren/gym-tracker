@@ -26,7 +26,6 @@ import { NutritionCard } from '../src/components/home/NutritionCard';
 import { TimeCard } from '../src/components/home/TimeCard';
 import { HabitCard } from '../src/components/home/HabitCard';
 import { RoutineCard } from '../src/components/home/RoutineCard';
-import { VoiceAiCard } from '../src/components/home/VoiceAiCard';
 
 export default function DashboardScreen() {
   const { t } = useTranslation();
@@ -100,7 +99,6 @@ export default function DashboardScreen() {
       case 'zikan': return <TimeCard key="zikan" />;
       case 'habit': return <HabitCard key="habit" />;
       case 'routine': return <RoutineCard key="routine" />;
-      case 'voice_ai': return <VoiceAiCard key="voice_ai" />;
       default: return null;
     }
   };
@@ -118,7 +116,7 @@ export default function DashboardScreen() {
         {(() => {
           const activeOrder: FeatureId[] = featureOrder && featureOrder.length > 0
             ? featureOrder
-            : ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'habit', 'voice_ai'];
+            : ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'habit'];
 
           // 解放されている機能のみフィルタリング
           const unlockedList = activeOrder.filter((id: FeatureId) =>
@@ -196,7 +194,7 @@ export default function DashboardScreen() {
         >
           <Text style={[styles.settingsDesc, { color: colors.textMuted }]}>
             {t('ui.home.settings_desc') ||
-              'Gemini AI連携、データ出力・共有、バックアップ、機能管理などを操作できます。'}
+              'データ出力・共有、バックアップ、機能管理、外部サービス連携などを操作できます。'}
           </Text>
         </HomeCard>
       </ScrollView>
@@ -215,7 +213,6 @@ export default function DashboardScreen() {
             routine: selected.includes('routine'),
             habit: selected.includes('habit'),
             zikan: selected.includes('zikan'),
-            voice_ai: selected.includes('voice_ai'),
           };
           useSettingsStore.getState().setFeatureConfig(
             [...selected, ...ALL_FEATURE_IDS.filter(id => !selected.includes(id))],

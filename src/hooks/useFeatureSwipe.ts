@@ -9,14 +9,13 @@ const featureToPath: Record<string, string | string[]> = {
   nutrition: '/lifelog/nutrition',
   zikan: '/lifelog/zikan',
   routine: ['/lifelog/habit', '/lifelog/routine'],
-  voice_ai: '/lifelog/voice-assistant',
 };
 
 export function useFeatureSwipe(currentPath: string) {
   const settings = useSettingsStore((state) => state.settings);
-  const featureOrder = settings.featureOrder || ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'voice_ai'];
+  const featureOrder = settings.featureOrder || ['workout', 'body', 'water', 'nutrition', 'zikan', 'routine', 'habit'];
   const featureVisibility = settings.featureVisibility || {
-    workout: true, body: true, water: true, nutrition: true, zikan: true, routine: true, voice_ai: true
+    workout: true, body: true, water: true, nutrition: true, zikan: true, routine: true, habit: true
   };
 
   const sequence = featureOrder.flatMap((id) => {

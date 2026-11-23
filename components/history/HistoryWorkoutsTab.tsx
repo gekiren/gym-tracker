@@ -4,7 +4,6 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Pressable } 
 import { Ionicons } from '@expo/vector-icons';
 import { format, startOfWeek, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { useAppTheme } from '../../src/theme';
-import { AI_CONFIG } from '../../src/config/aiConfig';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { HistoryChart, ChartMetric } from './HistoryChart';
 
@@ -15,7 +14,6 @@ interface HistoryWorkoutsTabProps {
   settings: any;
   onDeleteWorkout: (id: number, title: string) => void;
   onSNSShare: (id: number) => void;
-  onAICoachHistory: (id: number, title: string) => void;
   t: (key: string, options?: any) => string;
   i18n: any;
 }
@@ -27,7 +25,6 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
   settings,
   onDeleteWorkout,
   onSNSShare,
-  onAICoachHistory,
   t,
   i18n,
 }) => {
@@ -254,16 +251,6 @@ export const HistoryWorkoutsTab: React.FC<HistoryWorkoutsTabProps> = ({
               <View style={styles.cardHeader}>
                 <Text style={styles.cardTitle}>{w.title}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  {AI_CONFIG.status === 'active' && (
-                    <TouchableOpacity 
-                      onPress={() => onAICoachHistory(w.id, w.title)} 
-                      style={[styles.exportIcon, { marginRight: 8 }]}
-                      hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                      accessibilityLabel={t('ui.accessibility.ai_coach_history')}
-                    >
-                      <Ionicons name="sparkles" size={18} color={colors.primary} />
-                    </TouchableOpacity>
-                  )}
                   <TouchableOpacity 
                     onPress={() => onSNSShare(w.id)} 
                     style={[styles.exportIcon, { marginRight: 8 }]}

@@ -21,3 +21,5 @@ yarn-error.*
 *.key
 *.mobileprovision
 .metro-health-check*
+internal-docs/
+ai-companion-web/

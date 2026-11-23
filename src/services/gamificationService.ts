@@ -412,7 +412,7 @@ function scheduleMetricsEvaluation() {
 }
 
 /**
- * ライフログ／音声AIの記録時にXPを付与し、メダル・クラスを評価する
+ * ライフログの記録時にXPを付与し、メダル・クラスを評価する
  * （ワークアウトは recordWorkoutCompletionGamification で専用処理するためここでは加算しない）
  */
 export function recordGamificationFeatureActivity(
@@ -462,11 +462,11 @@ export function recordGamificationFeatureActivity(
 
     const featureTitle = gamFeatureId
       ? FEATURE_DISPLAY_META[gamFeatureId].titleJa
-      : '音声AIアシスタント';
+      : 'その他';
 
     nextHistory = appendHistory(nextHistory, {
       amount: earnedXp,
-      featureId: gamFeatureId ?? 'voice_ai',
+      featureId: gamFeatureId,
       source: isFirstEver ? 'first_record' : 'daily_record',
       label: isFirstEver ? `${featureTitle} 初記録XP` : `${featureTitle} デイリー記録XP`,
     });

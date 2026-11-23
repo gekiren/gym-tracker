@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../src/theme';
 import { AutophagyConfig, MealLog } from '../../src/db/types';
 import { getMealLogsLast24Hours } from '../../src/db/database';
-import { analyzeAutophagyRecommendation, AutophagyAIProposal } from '../../src/services/aiCoachService';
+import { analyzeAutophagyRecommendation, AutophagyAIProposal } from '../../src/services/nutritionAiService';
 import { getMealDateTime } from '../../src/utils/nutritionUtils';
 import AutophagyAiModal from './AutophagyAiModal';
 

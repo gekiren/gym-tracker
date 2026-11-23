@@ -31,7 +31,6 @@ import { useSettingsStore, ExerciseChartScale } from '../../src/store/settingsSt
 import { useTranslation } from 'react-i18next';
 import { translateExercise, translateMuscleGroup, translateEquipment, translateStance } from '../../src/i18n';
 import { openYouTubeSearch } from '../../src/utils/youtubeUtils';
-import { AI_CONFIG } from '../../src/config/aiConfig';
 import { format } from 'date-fns';
 import { PersonalRecordsList } from '../../components/active-workout/PersonalRecordsList';
 import { HistoryCalendarModal } from '../../components/active-workout/HistoryCalendarModal';
@@ -426,44 +425,6 @@ export default function ExerciseDetailScreen() {
     }
   }, [parsedId, isLoadingMore, history.length, totalHistoryCount]);
 
-  const handleAICoachExerciseDetail = async () => {
-    if (!exercise || (history.length === 0 && totalHistoryCount === 0)) {
-      Alert.alert(t('ui.common.info') || '情報', '履歴データがまだありません。まずはこの種目のトレーニングを記録してください。');
-      return;
-    }
-
-    const fullHistory = await ensureFullHistory();
-    if (fullHistory.length === 0) {
-      Alert.alert(t('ui.common.info') || '情報', '履歴データがまだありません。まずはこの種目のトレーニングを記録してください。');
-      return;
-    }
-
-    let contextStr = `【種目名: ${exercise.name} の過去の全トレーニング履歴】\n`;
-    contextStr += `分類: ${translateMuscleGroup(exercise.muscle_group)} / 器具: ${translateEquipment(exercise.equipment)}\n`;
-
-    fullHistory.forEach(workout => {
-      const dateStr = formatDate(workout.start_time);
-      contextStr += `- ${dateStr}: `;
-      const setDescs = workout.sets.map((s: any) => {
-        let sd = `${s.weight ?? 0}${settings.weightUnit} x ${s.reps ?? 0}回`;
-        if (s.side) sd = `[${s.side === 'L' ? '左' : '右'}] ` + sd;
-        if (s.stance || s.variation) sd += ` (${translateStance(s.stance || s.variation)})`;
-        if (s.rpe) sd += ` (RPE: ${s.rpe})`;
-        return sd;
-      });
-      contextStr += setDescs.join(', ') + '\n';
-    });
-
-    router.push({
-      pathname: '/(tabs)/coach',
-      params: {
-        contextPrompt: contextStr,
-        prefillMessage: t('ui.coach.prefill_exercise_history', { name: translateExercise(exercise.name) }),
-        title: translateExercise(exercise.name)
-      }
-    });
-  };
-
   const handleExportMarkdown = async () => {
     if (!exercise || (history.length === 0 && totalHistoryCount === 0)) return;
 
@@ -573,11 +534,6 @@ export default function ExerciseDetailScreen() {
           title: t('ui.exercise_detail.title'),
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.primary,
-          headerRight: () => AI_CONFIG.status === 'active' ? (
-            <TouchableOpacity onPress={handleAICoachExerciseDetail} style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center', marginRight: 8 }}>
-              <Ionicons name="sparkles" size={22} color={colors.primary} />
-            </TouchableOpacity>
-          ) : null
         }}
       />
       <ScrollView ref={scrollViewRef} contentContainerStyle={{ paddingBottom: 40 }}>

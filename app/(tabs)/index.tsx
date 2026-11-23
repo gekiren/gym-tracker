@@ -11,6 +11,7 @@ import { translateExercise } from '../../src/i18n';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useFeatureSwipe } from '../../src/hooks/useFeatureSwipe';
 import { OnboardingModals } from '../../components/OnboardingModals';
+import { FeatureClassBar } from '../../components/FeatureClassBar';
 
 export default function WorkoutHomeScreen() {
   const { colors } = useAppTheme();
@@ -150,6 +151,7 @@ export default function WorkoutHomeScreen() {
   return (
     <PanGestureHandler {...panHandlerProps}>
       <View style={[styles.screen, { backgroundColor: colors.background }]}>
+        <FeatureClassBar featureId="workout" />
         <ScrollView
           style={[styles.container, { backgroundColor: colors.background }]}
           contentContainerStyle={styles.content}
