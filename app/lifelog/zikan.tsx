@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, TouchableOpacity, ActivityIndicator, Alert, Modal, Text, Pressable } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { useAppTheme } from '../../src/theme';
@@ -30,6 +30,7 @@ export default function ZikanScreen() {
   const appliedRevision = useGoogleDriveSyncStore((state) => state.appliedRevision);
   const [showHistory, setShowHistory] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [isCalendarSyncing, setIsCalendarSyncing] = useState(false);
   const webViewTabRef = useRef<WebViewTabRef>(null);
   const { t } = useTranslation();
@@ -135,6 +136,7 @@ export default function ZikanScreen() {
   useEffect(() => {
     if (!isFocused) {
       setIsModalVisible(false);
+      setShowSettingsMenu(false);
     }
   }, [isFocused]);
 
@@ -204,9 +206,15 @@ export default function ZikanScreen() {
   }, [targetDate]);
 
   const handleOpenTagEditor = () => {
+    setShowSettingsMenu(false);
     webViewTabRef.current?.injectJavaScript(
       "if (typeof openTagEditor === 'function') openTagEditor();"
     );
+  };
+
+  const handleOpenCalendarSyncSettings = () => {
+    setShowSettingsMenu(false);
+    router.push('/settings/calendar-sync');
   };
 
   return (
@@ -238,7 +246,7 @@ export default function ZikanScreen() {
                   <Ionicons name={showHistory ? "list-outline" : "stats-chart-outline"} size={22} color={colors.primary} />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={handleOpenTagEditor}
+                  onPress={() => setShowSettingsMenu(true)}
                   style={{ minWidth: 40, minHeight: 40, padding: 8, alignItems: 'center', justifyContent: 'center' }}
                 >
                   <Ionicons name="settings-outline" size={22} color={colors.primary} />
@@ -265,6 +273,112 @@ export default function ZikanScreen() {
             />
           </>
         ) : null}
+
+        <Modal
+          visible={showSettingsMenu}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowSettingsMenu(false)}
+        >
+          <Pressable
+            style={{
+              flex: 1,
+              backgroundColor: 'rgba(0, 0, 0, 0.55)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 24,
+            }}
+            onPress={() => setShowSettingsMenu(false)}
+          >
+            <Pressable
+              style={{
+                width: '100%',
+                maxWidth: 340,
+                backgroundColor: colors.card,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: colors.border,
+                overflow: 'hidden',
+              }}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  borderBottomWidth: 1,
+                  borderBottomColor: colors.border,
+                }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>
+                  24時間管理の設定
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={handleOpenCalendarSyncSettings}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  minHeight: 52,
+                  borderBottomWidth: 1,
+                  borderBottomColor: colors.border,
+                }}
+              >
+                <Ionicons name="calendar-outline" size={20} color={colors.primary} style={{ marginRight: 12 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>
+                    Googleカレンダー連携設定
+                  </Text>
+                  <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
+                    予定取り込み・実績書き出し・2重表示防止
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleOpenTagEditor}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  minHeight: 52,
+                  borderBottomWidth: 1,
+                  borderBottomColor: colors.border,
+                }}
+              >
+                <Ionicons name="pricetags-outline" size={20} color={colors.primary} style={{ marginRight: 12 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>
+                    タグ・ピース編集
+                  </Text>
+                  <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
+                    活動タグ・タイムラインピースの追加と編集
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setShowSettingsMenu(false)}
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: 13,
+                  minHeight: 48,
+                }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textMuted }}>
+                  キャンセル
+                </Text>
+              </TouchableOpacity>
+            </Pressable>
+          </Pressable>
+        </Modal>
       </View>
     </PanGestureHandler>
   );
