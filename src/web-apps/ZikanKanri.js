@@ -1347,13 +1347,14 @@ header {
   position: absolute;
   bottom: 0;
   left: 0;
-  right: 0;
+  right: 28px;
   height: 12px;
   cursor: ns-resize;
   display: flex;
   justify-content: center;
   align-items: center;
   touch-action: none;
+  z-index: 2;
 }
 
 .timeline-resize-handle::after {
@@ -1363,6 +1364,32 @@ header {
   background: currentColor;
   opacity: 0.4;
   border-radius: 2px;
+}
+
+.puzzle-del-btn {
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.75;
+  cursor: pointer;
+  font-size: 0.78rem;
+  min-width: 22px;
+  min-height: 18px;
+  padding: 0 2px;
+  margin-right: -3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.puzzle-del-btn:active {
+  opacity: 1;
+  transform: scale(1.1);
 }
 
 .drag-feedback-tooltip {
@@ -6834,14 +6861,23 @@ function renderPuzzle() {
         blockEl.className = 'timeline-block ' + themeClass + (isBlockSelected ? ' is-selected' : '');
         blockEl.style.top = startMins + 'px';
         blockEl.style.height = Math.max(duration, 20) + 'px';
+        if (duration <= 22) {
+            blockEl.style.padding = '1px 6px';
+        }
 
         const layout = currentLayoutMap[item.id];
-        if (layout && layout.colCount > 1) {
+        const isMultiColumn = !!(layout && layout.colCount > 1);
+        if (isMultiColumn) {
             const colWidthPct = 100 / layout.colCount;
             const leftPct = layout.colIndex * colWidthPct;
             blockEl.style.left = 'calc(' + leftPct.toFixed(2) + '% + 2px)';
             blockEl.style.width = 'calc(' + colWidthPct.toFixed(2) + '% - 4px)';
             blockEl.style.right = 'auto';
+            if (duration <= 22) {
+                blockEl.style.padding = '1px 5px';
+            } else {
+                blockEl.style.padding = '3px 6px';
+            }
         }
 
         let pieceType = 'medium';
@@ -6862,28 +6898,35 @@ function renderPuzzle() {
         }
 
         const effStat = currentAgg.entryEffectiveRatio[item.id];
+        let displayTitleText = pieceMeta.icon + ' ' + escapeHtml(primaryName);
         let simBadgeHtml = '';
         if (item.items && item.items.length > 1) {
             const extraNames = item.items.slice(1).map(function(x) { return x.name; }).join('/');
-            simBadgeHtml = '<span style="font-size: 0.64rem; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.22); padding: 0 4px; border-radius: 4px; margin-left: 4px; color: #fde68a; flex-shrink: 0;">⚡+' + escapeHtml(extraNames) + '</span>';
-        } else if (effStat && effStat.isOverlapped) {
+            if (isMultiColumn) {
+                displayTitleText += ' +' + escapeHtml(extraNames);
+            } else {
+                simBadgeHtml = '<span style="font-size: 0.64rem; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.22); padding: 0 4px; border-radius: 4px; margin-left: 4px; color: #fde68a; flex-shrink: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">⚡+' + escapeHtml(extraNames) + '</span>';
+            }
+        } else if (effStat && effStat.isOverlapped && !isMultiColumn) {
             const shareLabel = effStat.maxConcurrency === 2 ? '50%' : Math.round(100 / effStat.maxConcurrency) + '%';
             simBadgeHtml = '<span style="font-size: 0.64rem; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.22); padding: 0 4px; border-radius: 4px; margin-left: 4px; color: #fde68a; flex-shrink: 0;" title="時間が重なっているため同時進行（標準50%）として計上">⚡同時' + shareLabel + '</span>';
         }
 
+        const timeLabelHtml = isMultiColumn
+            ? ''
+            : '<span style="font-family: monospace; font-size: 0.66rem; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1;">' + timeLabel + '</span>';
+
         blockEl.innerHTML =
-            '<div style="display: flex; justify-content: space-between; align-items: center; pointer-events: none; width: 100%; gap: 4px;">' +
+            '<div style="display: flex; justify-content: space-between; align-items: center; pointer-events: none; width: 100%; gap: 3px; position: relative; z-index: 3;">' +
                 '<div style="display: flex; align-items: center; min-width: 0; flex: 1; overflow: hidden;">' +
-                    '<span style="font-weight: 700; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' +
-                        pieceMeta.icon + ' ' + primaryName +
+                    '<span style="font-weight: 700; font-size: ' + (isMultiColumn ? '0.72rem' : '0.75rem') + '; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' +
+                        displayTitleText +
                     '</span>' +
                     simBadgeHtml +
                 '</div>' +
-                '<div style="display: flex; align-items: center; gap: 3px; pointer-events: none; flex-shrink: 0;">' +
-                    '<span style="font-family: monospace; font-size: 0.66rem; opacity: 0.85;">' +
-                        timeLabel +
-                    '</span>' +
-                    '<button type="button" class="puzzle-del-btn" style="pointer-events: auto; background: none; border: none; color: inherit; opacity: 0.6; cursor: pointer; font-size: 0.72rem; padding: 0 3px; line-height: 1;" title="削除">✕</button>' +
+                '<div style="display: flex; align-items: center; gap: 2px; pointer-events: none; flex-shrink: 0;">' +
+                    timeLabelHtml +
+                    '<button type="button" class="puzzle-del-btn" title="削除">✕</button>' +
                 '</div>' +
             '</div>' +
             '<div class="timeline-resize-handle" title="上下にドラッグして長さを調整"></div>';
@@ -6958,14 +7001,23 @@ function renderPuzzle() {
             ghostEl.className = 'timeline-block timeline-block-ghost ' + themeClass + (isGhostSelected ? ' is-selected' : '');
             ghostEl.style.top = pStartMins + 'px';
             ghostEl.style.height = Math.max(pDuration, 24) + 'px';
+            if (pDuration <= 24) {
+                ghostEl.style.padding = '2px 6px';
+            }
 
             const gLayout = ghostLayoutMap[plan.id];
-            if (gLayout && gLayout.colCount > 1) {
+            const isGhostMultiColumn = !!(gLayout && gLayout.colCount > 1);
+            if (isGhostMultiColumn) {
                 const colWidthPct = 100 / gLayout.colCount;
                 const leftPct = gLayout.colIndex * colWidthPct;
                 ghostEl.style.left = 'calc(' + leftPct.toFixed(2) + '% + 2px)';
                 ghostEl.style.width = 'calc(' + colWidthPct.toFixed(2) + '% - 4px)';
                 ghostEl.style.right = 'auto';
+                if (pDuration <= 24) {
+                    ghostEl.style.padding = '1px 5px';
+                } else {
+                    ghostEl.style.padding = '3px 6px';
+                }
             }
 
             let pieceType = 'medium';
@@ -6985,20 +7037,29 @@ function renderPuzzle() {
                 timeLabel = '🌅 ' + prevPart + '-' + plan.end + ' (' + pDurationStr + ')';
             }
 
+            let ghostDisplayTitle = pieceMeta.icon + ' ' + escapeHtml(primaryName);
+            if (plan.items && plan.items.length > 1) {
+                const extraNames = plan.items.slice(1).map(function(x) { return x.name; }).join('/');
+                ghostDisplayTitle += ' +' + escapeHtml(extraNames);
+            }
+
+            const ghostPlanBadgeHtml = isGhostMultiColumn ? '' : '<span class="ghost-plan-badge">📅予定</span>';
+            const ghostTimeLabelHtml = isGhostMultiColumn
+                ? ''
+                : '<span style="font-family: monospace; font-size: 0.65rem; opacity: 0.85; pointer-events: none; white-space: nowrap;">' + timeLabel + '</span>';
+
             ghostEl.innerHTML =
-                '<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; pointer-events: none;">' +
-                    '<div style="display: flex; align-items: center; gap: 4px; overflow: hidden; max-width: 58%;">' +
-                        '<span class="ghost-plan-badge">📅予定</span>' +
-                        '<span style="font-weight: 700; font-size: 0.74rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' +
-                            pieceMeta.icon + ' ' + primaryName +
+                '<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 3px; pointer-events: none; position: relative; z-index: 3;">' +
+                    '<div style="display: flex; align-items: center; gap: 3px; min-width: 0; flex: 1; overflow: hidden;">' +
+                        ghostPlanBadgeHtml +
+                        '<span style="font-weight: 700; font-size: ' + (isGhostMultiColumn ? '0.72rem' : '0.74rem') + '; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' +
+                            ghostDisplayTitle +
                         '</span>' +
                     '</div>' +
-                    '<div style="display: flex; align-items: center; gap: 5px; pointer-events: auto;">' +
-                        '<span style="font-family: monospace; font-size: 0.65rem; opacity: 0.85; pointer-events: none;">' +
-                            timeLabel +
-                        '</span>' +
-                        '<button type="button" class="timeline-ghost-apply-btn" title="予定通りワンタップで実績に反映">' +
-                            '⚡ 反映' +
+                    '<div style="display: flex; align-items: center; gap: 4px; pointer-events: auto; flex-shrink: 0;">' +
+                        ghostTimeLabelHtml +
+                        '<button type="button" class="timeline-ghost-apply-btn" style="position: relative; z-index: 10; flex-shrink: 0;" title="予定通りワンタップで実績に反映">' +
+                            (isGhostMultiColumn ? '⚡' : '⚡ 反映') +
                         '</button>' +
                     '</div>' +
                 '</div>' +
