@@ -1,6 +1,6 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
-import { getSettings, saveSetting } from '../db/database';
+import { getSettings, saveSetting, getSettingValue } from '../db/database';
 import { useGoogleDriveSyncStore } from '../store/googleDriveSyncStore';
 import {
   authorizeGoogleDrive,
@@ -370,13 +370,23 @@ export async function saveAgentGuideToDriveFolder(): Promise<{
   }
 }
 
+const AGENT_GUIDE_VERSION = '2.3.63-bodycomp';
+const AGENT_GUIDE_VERSION_KEY = 'google_drive_agent_guide_version';
+
 async function ensureGuideAndTemplateInFolder(
   folderId: string,
   interactive: boolean,
   options?: { folderPath?: string; overwriteGuide?: boolean }
 ): Promise<void> {
   const existingGuide = await findFileInFolder(folderId, DRIVE_FILES.GUIDE_MD, interactive);
-  if (!existingGuide || options?.overwriteGuide) {
+  // ガイドの版が変わった場合は自動で上書きする（提案ファイルは未処理提案保護のため上書きしない）
+  let guideOutdated = false;
+  try {
+    guideOutdated = (await getSettingValue(AGENT_GUIDE_VERSION_KEY)) !== AGENT_GUIDE_VERSION;
+  } catch {
+    guideOutdated = false;
+  }
+  if (!existingGuide || options?.overwriteGuide || guideOutdated) {
     await upsertTextFileInFolder({
       folderId,
       fileName: DRIVE_FILES.GUIDE_MD,
@@ -385,6 +395,7 @@ async function ensureGuideAndTemplateInFolder(
       existingFileId: existingGuide?.id,
       interactive,
     });
+    await saveSetting(AGENT_GUIDE_VERSION_KEY, AGENT_GUIDE_VERSION).catch(() => {});
   }
 
   const existingProposals = await findFileInFolder(
