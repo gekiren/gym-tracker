@@ -29,6 +29,12 @@ export const attemptTableRescue = async (): Promise<boolean> => {
 
     // 破損原本を作業用ファイルへコピーして開く（原本の直接破損・ロックを防ぐ）
     await FileSystem.copyAsync({ from: DB_PATH, to: corruptedDbPath });
+    for (const suffix of ['-wal', '-shm']) {
+      const sideInfo = await FileSystem.getInfoAsync(`${DB_PATH}${suffix}`);
+      if (sideInfo.exists) {
+        await FileSystem.copyAsync({ from: `${DB_PATH}${suffix}`, to: `${corruptedDbPath}${suffix}` }).catch(() => {});
+      }
+    }
     oldDb = await SQLite.openDatabaseAsync(corruptedDbName);
 
     // 新規救出DBを開く
@@ -133,12 +139,47 @@ export const attemptTableRescue = async (): Promise<boolean> => {
  * アプリ起動時に DB の整合性を検証し、多段階で自己修復・救出・復元を実行する。
  * 【最重要】データ欠損ゼロを最優先とし、REINDEX -> テーブル救出 -> バックアップ復元 -> 新規初期化の順で試行。
  */
+const CORRUPTION_ERROR_PATTERN = /malformed|not a database|corrupt|disk image|file is encrypted/i;
+
+/** 真の DB 破損を示すエラーか（ロック・ハンドル切断等の一時的エラーと区別する） */
+export const isCorruptionError = (e: unknown): boolean => {
+  const msg = e instanceof Error ? e.message : String(e);
+  return CORRUPTION_ERROR_PATTERN.test(msg);
+};
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * quick_check を実行する。一時的エラー（ロック等）は最大3回リトライし、
+ * それでも一時的エラーが続く場合は例外を投げる（DBを削除・初期化させないため）。
+ */
+const runQuickCheckWithRetry = async (
+  db: SQLite.SQLiteDatabase
+): Promise<{ quick_check?: string; integrity_check?: string } | null> => {
+  let lastErr: unknown = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await db.getFirstAsync<{ quick_check?: string; integrity_check?: string }>('PRAGMA quick_check');
+    } catch (e) {
+      if (isCorruptionError(e)) {
+        throw e;
+      }
+      lastErr = e;
+      console.warn(`[DB_INTEGRITY] Transient error during quick_check (attempt ${attempt + 1}/3):`, e);
+      await sleep(500 * (attempt + 1));
+    }
+  }
+  throw new Error(
+    `DB_TRANSIENT_ERROR: データベースに一時的にアクセスできません。データ保護のため初期化は行いません。アプリを再起動してください。(${
+      lastErr instanceof Error ? lastErr.message : String(lastErr)
+    })`
+  );
+};
+
 export const checkAndRepairDB = async (db: SQLite.SQLiteDatabase): Promise<DBCheckResult> => {
   try {
     // 0. 超高速インテグリティーチェック (quick_check)
-    const checkResult = await db.getFirstAsync<{ quick_check?: string; integrity_check?: string }>(
-      'PRAGMA quick_check'
-    );
+    const checkResult = await runQuickCheckWithRetry(db);
 
     const statusStr = checkResult?.quick_check || checkResult?.integrity_check || '';
     if (statusStr.toLowerCase() === 'ok') {
@@ -176,6 +217,10 @@ export const checkAndRepairDB = async (db: SQLite.SQLiteDatabase): Promise<DBChe
       console.warn('[DB_INTEGRITY] WAL checkpoint error:', walErr);
     }
   } catch (e) {
+    if (!isCorruptionError(e)) {
+      // 一時的エラーでは絶対に DB を削除・初期化しない
+      throw e;
+    }
     console.warn('[DB_INTEGRITY] Error during initial DB integrity check:', e);
   }
 
@@ -204,10 +249,35 @@ export const checkAndRepairDB = async (db: SQLite.SQLiteDatabase): Promise<DBChe
 
   // 4. 【段階4】フェイルセーフ（最終防衛：破損DBをquarantine退避し、新規安全初期化）
   console.error('[DB_INTEGRITY] [Stage 4] All recovery methods exhausted. Quarantining corrupted DB for safety...');
+  const ts = Date.now();
+  const quarantinePath = `${BACKUP_DIR}gymtracker_quarantine_failsafe_${ts}.db`;
+  let quarantineVerified = false;
   try {
-    const quarantinePath = `${BACKUP_DIR}gymtracker_quarantine_failsafe_${Date.now()}.db`;
-    await FileSystem.copyAsync({ from: DB_PATH, to: quarantinePath }).catch(() => {});
-    await FileSystem.deleteAsync(DB_PATH, { idempotent: true }).catch(() => {});
+    const srcInfo: any = await FileSystem.getInfoAsync(DB_PATH);
+    if (!srcInfo.exists) {
+      // 既にDBが存在しない場合は削除不要
+      return 'failed';
+    }
+    await FileSystem.copyAsync({ from: DB_PATH, to: quarantinePath });
+    for (const suffix of ['-wal', '-shm']) {
+      const info = await FileSystem.getInfoAsync(`${DB_PATH}${suffix}`);
+      if (info.exists) {
+        await FileSystem.copyAsync({ from: `${DB_PATH}${suffix}`, to: `${quarantinePath}${suffix}` }).catch(() => {});
+      }
+    }
+    const dstInfo: any = await FileSystem.getInfoAsync(quarantinePath);
+    quarantineVerified = !!dstInfo.exists && dstInfo.size === srcInfo.size;
+  } catch (copyErr) {
+    console.warn('[DB_INTEGRITY] Failed to quarantine corrupted DB:', copyErr);
+  }
+
+  if (!quarantineVerified) {
+    // 退避コピーを検証できない場合は、ユーザーデータ保護のため削除せずエラーとして停止する
+    throw new Error('DB_QUARANTINE_FAILED: 破損DBの退避を確認できないため、初期化を中止しました。');
+  }
+
+  try {
+    await FileSystem.deleteAsync(DB_PATH, { idempotent: true });
     await FileSystem.deleteAsync(`${DB_PATH}-wal`, { idempotent: true }).catch(() => {});
     await FileSystem.deleteAsync(`${DB_PATH}-shm`, { idempotent: true }).catch(() => {});
   } catch (cleanErr) {
