@@ -11,19 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.72',
+  version: '2.3.73',
   title: {
-    ja: '📊 24時間管理：サークル・集計のデザイン統一＆2タブ化',
-    en: '📊 24h Management: Unified Circle Summary Design & 2-Tab Layout',
+    ja: '⚡ 24時間管理：ピース重複時の同時進行自動計上（50%）＆表示改善',
+    en: '⚡ 24h Management: Auto 50% Simultaneous Overlap Counting & UI Fix',
   },
   notes: {
     ja: [
-      '画面上部を「🧩 タイムライン」と「📊 サークル・集計」の2タブにシンプル化し、タイムラインから未反映の予定を一括反映できるようにしました。',
-      '24時間サークルおよび予実比較リストの配色・アイコン・ポートフォリオ表示をタイムラインのデザインと統一しました。',
+      'タイムライン上でピースの時間が重なった際、重なった区間を自動的に同時進行（標準50%）として集計・並列表示するようにしました（予定で50%でも実績で重なっていなければ自動で100%として計上されます）。',
+      'デフォルトスケジュール編集画面のヘッダー文字が見切れる問題を修正しました。',
     ],
     en: [
-      'Simplified the top navigation into two tabs (Timeline and Circle Summary) and added a batch plan-to-actual reflection button on the timeline.',
-      'Unified the 24-hour dual-ring circle chart and comparison cards with the timeline\'s category colors, piece icons, and portfolio layout.',
+      'Overlapping timeline pieces are now displayed side-by-side and automatically counted as simultaneous activities (50% by default for 2 overlapping pieces, and 100% in actual logs if no longer overlapping).',
+      'Fixed header text truncation in the default schedule timeline editor.',
     ],
   },
 };
