@@ -1166,7 +1166,7 @@ header {
   top: 0;
   left: 54px;
   right: 6px;
-  bottom: 0;
+  height: 1440px;
   pointer-events: none;
 }
 
@@ -1181,7 +1181,10 @@ header {
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
-  touch-action: pan-y;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   pointer-events: auto;
   cursor: pointer;
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -1644,6 +1647,9 @@ input:checked + .holiday-switch-slider:before {
                     <button type="button" id="puzzle-toggle-ghost-btn" class="btn btn-secondary puzzle-ghost-toggle-btn active" style="width: auto; padding: 6px 10px; font-size: 0.76rem; margin-bottom: 0; white-space: nowrap;" title="実績タイムライン上に予定ガイドを表示/非表示">
                         📅 予定ガイド
                     </button>
+                    <button type="button" id="puzzle-prev-week-btn" class="btn btn-secondary" style="width: auto; padding: 6px 10px; font-size: 0.78rem; margin-bottom: 0; color: #93c5fd; border-color: #3b82f6; white-space: nowrap;" onclick="openPrevWeekCopyModal()" title="前週の同じ曜日の予定・実績から予定に追加">
+                        📅 前週コピー
+                    </button>
                     <button type="button" id="puzzle-default-schedule-btn" class="btn btn-secondary" style="width: auto; padding: 6px 10px; font-size: 0.78rem; margin-bottom: 0; color: #93c5fd; border-color: #3b82f6; white-space: nowrap;" title="デフォルトスケジュール設定">
                         📅 デフォルト
                     </button>
@@ -1667,7 +1673,7 @@ input:checked + .holiday-switch-slider:before {
                     </div>
                 </div>
                 <div style="font-size: 0.72rem; color: #dbeafe; display: flex; justify-content: space-between; align-items: center;">
-                    <span>ピースを選んでタップ、または長押しドラッグで予定を配置してください</span>
+                    <span>ピースを選んでタップ、またはドラッグで予定を配置・移動してください</span>
                     <span id="def-sched-editor-count" style="font-weight: 600; flex-shrink: 0; margin-left: 6px;">0件の予定</span>
                 </div>
             </div>
@@ -1727,7 +1733,7 @@ input:checked + .holiday-switch-slider:before {
 
             <!-- 操作説明ガイド -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.72rem; color: var(--text-secondary);">
-                <span>本体長押し: 位置移動 ｜ タップ: 編集 ｜ 下端ドラッグ: 長さ変更</span>
+                <span>本体ドラッグ: 位置移動 ｜ タップ: 編集 ｜ 下端ドラッグ: 長さ変更</span>
                 <span id="puzzle-drag-tooltip" class="drag-feedback-tooltip" style="display: none;">00:00 - 00:00</span>
             </div>
 
@@ -1827,12 +1833,19 @@ input:checked + .holiday-switch-slider:before {
 
         <!-- Plans Section (今日の予定) -->
         <section class="card" id="plan-section">
-            <div class="flex-row justify-between" style="align-items: center;">
+            <div class="flex-row justify-between" style="align-items: center; flex-wrap: wrap; gap: 6px;">
                 <h3>今日の予定 (Plan)</h3>
-                <button type="button" id="copy-all-plans-btn" class="btn btn-secondary"
-                    style="width: auto; font-size: 0.8rem; padding: 4px 10px; border-color: #2563EB; color: #93c5fd;">
-                    一括で実績に反映
-                </button>
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <button type="button" id="classic-prev-week-btn" class="btn btn-secondary"
+                        style="width: auto; font-size: 0.78rem; padding: 4px 10px; border-color: #3b82f6; color: #93c5fd; margin-bottom: 0;"
+                        onclick="openPrevWeekCopyModal()">
+                        📅 前週から追加
+                    </button>
+                    <button type="button" id="copy-all-plans-btn" class="btn btn-secondary"
+                        style="width: auto; font-size: 0.8rem; padding: 4px 10px; border-color: #2563EB; color: #93c5fd; margin-bottom: 0;">
+                        一括で実績に反映
+                    </button>
+                </div>
             </div>
             <div id="plan-list" style="margin-top: 10px;">
                 <!-- Javascript will populate this -->
@@ -1931,7 +1944,7 @@ input:checked + .holiday-switch-slider:before {
     </div>
 
     <!-- Timeline Edit/Create Bottom Sheet -->
-    <div id="timeline-bottom-sheet-overlay" class="bottom-sheet-overlay" onclick="closeTimelineBottomSheet()"></div>
+    <div id="timeline-bottom-sheet-overlay" class="bottom-sheet-overlay" onclick="closeTimelineBottomSheetFromOverlay()"></div>
     <div id="timeline-bottom-sheet" class="bottom-sheet-container">
         <div class="bottom-sheet-handle-bar" onclick="closeTimelineBottomSheet()">
             <div class="bottom-sheet-drag-pill"></div>
@@ -2290,6 +2303,56 @@ input:checked + .holiday-switch-slider:before {
         </div>
     </div>
 
+    <!-- Previous Week Copy Modal -->
+    <div id="prev-week-copy-modal" class="modal-overlay" onclick="closePrevWeekCopyModalOnOverlay(event)">
+        <div class="modal-content" style="max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.15rem;">📅</span>
+                    <h3 style="margin-bottom: 0; font-size: 1.02rem;">前週の同じ曜日から予定に追加</h3>
+                </div>
+                <span id="close-prev-week-modal-btn" onclick="closePrevWeekCopyModal()" style="cursor: pointer; font-size: 1.5rem; font-weight: bold; color: var(--text-secondary);">&times;</span>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 14px 16px;">
+                <div id="prev-week-date-subtitle" style="font-size: 0.78rem; color: #93c5fd; background: rgba(37, 99, 235, 0.12); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; text-align: center; font-weight: 600;">
+                </div>
+
+                <!-- 取得元切替（前週の予定 / 前週の実績） -->
+                <div class="mode-tab-group" style="margin-bottom: 12px;">
+                    <button type="button" id="prev-week-tab-plans" class="mode-tab active-plan" onclick="switchPrevWeekSourceTab('plans')">
+                        📅 前週の予定 (0件)
+                    </button>
+                    <button type="button" id="prev-week-tab-logs" class="mode-tab" onclick="switchPrevWeekSourceTab('logs')">
+                        ⏱ 前週の実績 (0件)
+                    </button>
+                </div>
+
+                <!-- 一括操作ボタン -->
+                <div id="prev-week-bulk-actions" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
+                    <button type="button" id="prev-week-add-all-btn" class="btn btn-plan" style="padding: 10px 12px; font-size: 0.85rem; margin-bottom: 0;" onclick="applyAllPrevWeekItems('merge')">
+                        ⚡ すべて今日の予定に追加（重複を除く）
+                    </button>
+                    <button type="button" id="prev-week-replace-all-btn" class="btn btn-secondary" style="padding: 8px 12px; font-size: 0.78rem; margin-bottom: 0; border-color: rgba(59, 130, 246, 0.45); color: #93c5fd;" onclick="applyAllPrevWeekItems('replace')">
+                        🔄 今日の予定を前週の内容で置き換え
+                    </button>
+                </div>
+
+                <!-- 個別アイテム一覧 -->
+                <div style="font-size: 0.76rem; color: var(--text-secondary); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>項目ごとに選んで追加:</span>
+                    <span id="prev-week-today-count" style="color: #93c5fd;">今日の予定: 0件</span>
+                </div>
+                <div id="prev-week-items-list" style="display: flex; flex-direction: column; gap: 8px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closePrevWeekCopyModal()" style="width: auto; padding: 6px 16px; font-size: 0.85rem; margin-bottom: 0;">
+                    閉じる
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
 
 // DOM Elements
@@ -2445,6 +2508,8 @@ window.updateHolidaysData = function(newHolidays, newTreatAsSunday) {
 // Puzzle State
 var puzzleInitialized = false;
 var selectedPuzzlePiece = null;
+var selectedTimelineBlockId = null;
+var lastBottomSheetOpenedAt = 0;
 var currentMainViewMode = (function() {
     try {
         return storage.getItem('zikankanri_main_view_mode') || 'puzzle';
@@ -2603,6 +2668,17 @@ function getPrevDateString(dateStr) {
     const parts = dateStr.replace(/-/g, '/').split('/').map(Number);
     const dt = new Date(parts[0], parts[1] - 1, parts[2]);
     dt.setDate(dt.getDate() - 1);
+    const py = dt.getFullYear();
+    const pm = String(dt.getMonth() + 1).padStart(2, '0');
+    const pd = String(dt.getDate()).padStart(2, '0');
+    return py + '/' + pm + '/' + pd;
+}
+
+function getPrevWeekDateString(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.replace(/-/g, '/').split('/').map(Number);
+    const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+    dt.setDate(dt.getDate() - 7);
     const py = dt.getFullYear();
     const pm = String(dt.getMonth() + 1).padStart(2, '0');
     const pd = String(dt.getDate()).padStart(2, '0');
@@ -5581,7 +5657,8 @@ function handlePuzzleSlotClick(e, hour) {
         // パレット未選択時は、タップした時間帯をセットして新規記録ボトムシートを開く
         const snappedStart = Math.max(0, Math.min(1380, Math.round(rawMinute / 5) * 5));
         const snappedEnd = Math.min(1440, snappedStart + 60);
-        openTimelineBottomSheetForNew(minsToTime(snappedStart), minsToTime(snappedEnd), isPlan);
+        const endStrNew = (snappedEnd >= 1440) ? '24:00' : minsToTime(snappedEnd);
+        openTimelineBottomSheetForNew(minsToTime(snappedStart), endStrNew, isPlan);
         return;
     }
 
@@ -5593,7 +5670,8 @@ function handlePuzzleSlotClick(e, hour) {
     }
 
     const startStr = minsToTime(targetStartMinute);
-    const endStr = minsToTime(targetStartMinute + selectedPuzzlePiece.duration);
+    const endMins = targetStartMinute + selectedPuzzlePiece.duration;
+    const endStr = (endMins >= 1440) ? '24:00' : minsToTime(endMins);
 
     const newEntry = {
         id: Date.now() + Math.floor(Math.random() * 1000),
@@ -5616,6 +5694,7 @@ function handlePuzzleSlotClick(e, hour) {
         renderLogs();
     }
 
+    selectedTimelineBlockId = newEntry.id;
     clearSelectedPuzzlePiece();
 
     if (!isEditingDefaultSchedule) renderSummary();
@@ -5723,9 +5802,11 @@ function applyPlanToActual(plan) {
 window.applyPlanToActual = applyPlanToActual;
 
 function openTimelineBottomSheetForPlanToActual(plan, element) {
+    lastBottomSheetOpenedAt = Date.now();
     currentEditingTimelineItem = null;
     isBottomSheetNewRecord = true;
     bsCurrentMode = 'actual';
+    selectedTimelineBlockId = plan ? plan.id : null;
 
     document.querySelectorAll('.timeline-block').forEach(function(b) {
         b.classList.remove('is-selected');
@@ -5788,43 +5869,34 @@ function attachPuzzleDragAndResizeForGhost(element, plan, pieceType, currentList
     const tooltip = document.getElementById('puzzle-drag-tooltip');
     const planName = (plan.items && plan.items.length > 0) ? plan.items[0].name : (plan.activity_name || "活動");
 
-    // 1. 長押しドラッグ移動 / タップ判定
+    // 1. 即時ドラッグ移動 / タップ判定
     element.addEventListener('pointerdown', function(e) {
         if (e.target.closest('.timeline-ghost-apply-btn') || e.target.closest('.timeline-resize-handle')) return;
 
+        e.preventDefault();
+        e.stopPropagation();
+
+        selectedTimelineBlockId = plan.id;
+        document.querySelectorAll('.timeline-block').forEach(function(b) {
+            b.classList.remove('is-selected');
+        });
+        element.classList.add('is-selected');
+
         const initialY = e.clientY;
-        const initialX = e.clientX;
         const pointerId = e.pointerId;
         const initialStart = timeToMins(plan.start);
         let initialEnd = timeToMins(plan.end);
         if (initialEnd < initialStart) initialEnd += 1440;
         const duration = initialEnd - initialStart;
 
-        let isLongPressed = false;
         let hasMoved = false;
-        let longPressTimer = null;
+        let currentTop = initialStart;
 
-        // 長押しタイマー（350ms）
-        longPressTimer = setTimeout(function() {
-            isLongPressed = true;
-            element.classList.add('is-dragging');
-            if (tooltip) {
-                tooltip.style.display = 'block';
-                tooltip.textContent = '⏱ 実績化: ' + plan.start + ' - ' + plan.end;
-            }
-            if (navigator.vibrate) {
-                try { navigator.vibrate(35); } catch (vErr) {}
-            }
-            try {
-                element.setPointerCapture(pointerId);
-            } catch (capErr) {}
-        }, 350);
+        try {
+            element.setPointerCapture(pointerId);
+        } catch (capErr) {}
 
         function cleanupListeners() {
-            if (longPressTimer) {
-                clearTimeout(longPressTimer);
-                longPressTimer = null;
-            }
             element.removeEventListener('pointermove', onPointerMove);
             element.removeEventListener('pointerup', onPointerUp);
             element.removeEventListener('pointercancel', onPointerCancel);
@@ -5832,22 +5904,22 @@ function attachPuzzleDragAndResizeForGhost(element, plan, pieceType, currentList
 
         function onPointerMove(moveEvent) {
             const deltaY = moveEvent.clientY - initialY;
-            const deltaX = moveEvent.clientX - initialX;
-
-            if (!isLongPressed) {
-                // 長押し前に指が動いた場合はスクロール操作とみなし、長押しタイマーを解除
-                if (Math.abs(deltaY) > 8 || Math.abs(deltaX) > 8) {
-                    if (longPressTimer) {
-                        clearTimeout(longPressTimer);
-                        longPressTimer = null;
-                    }
-                }
+            if (!hasMoved && Math.abs(deltaY) < 6) {
                 return;
             }
 
-            // 長押し成立後はドラッグ移動処理
             moveEvent.preventDefault();
-            hasMoved = true;
+            if (!hasMoved) {
+                hasMoved = true;
+                element.classList.add('is-dragging');
+                if (tooltip) {
+                    tooltip.style.display = 'block';
+                    tooltip.textContent = '⏱ 実績化: ' + plan.start + ' - ' + plan.end;
+                }
+                if (navigator.vibrate) {
+                    try { navigator.vibrate(20); } catch (vErr) {}
+                }
+            }
 
             let newStart = initialStart + deltaY;
             newStart = calculateSnap(newStart, pieceType, duration, null, currentList);
@@ -5855,19 +5927,20 @@ function attachPuzzleDragAndResizeForGhost(element, plan, pieceType, currentList
             if (newStart < 0) newStart = 0;
             if (newStart + duration > 1440) newStart = 1440 - duration;
 
+            currentTop = newStart;
             element.style.top = newStart + 'px';
 
             const newStartStr = minsToTime(newStart);
-            const newEndStr = minsToTime(newStart + duration);
+            const newEndStr = (newStart + duration >= 1440) ? '24:00' : minsToTime(newStart + duration);
             if (tooltip) {
                 tooltip.textContent = '⏱ 実績化: ' + newStartStr + ' - ' + newEndStr;
             }
         }
 
         function onPointerCancel() {
-            // スクロール等でブラウザに横取りされた場合はキャンセル
             cleanupListeners();
             element.classList.remove('is-dragging');
+            element.style.top = initialStart + 'px';
             if (tooltip) tooltip.style.display = 'none';
         }
 
@@ -5878,27 +5951,14 @@ function attachPuzzleDragAndResizeForGhost(element, plan, pieceType, currentList
 
             element.classList.remove('is-dragging');
             if (tooltip) tooltip.style.display = 'none';
-
-            const wasLongPressed = isLongPressed;
             cleanupListeners();
 
-            if (!wasLongPressed) {
-                // 長押しされずに離された ➔ 移動距離が小さければタップと判定して詳細ボトムシートを開く
-                const deltaY = Math.abs(upEvent.clientY - initialY);
-                const deltaX = Math.abs(upEvent.clientX - initialX);
-                if (deltaY <= 8 && deltaX <= 8) {
-                    openTimelineBottomSheetForPlanToActual(plan, element);
-                }
-                return;
-            }
-
-            // 長押しされたが移動させなかった場合
             if (!hasMoved) {
-                element.style.top = initialStart + 'px';
+                openTimelineBottomSheetForPlanToActual(plan, element);
                 return;
             }
 
-            const finalTop = parseInt(element.style.top, 10) || 0;
+            const finalTop = currentTop;
             const finalStartStr = minsToTime(finalTop);
             const finalEndMins = finalTop + duration;
             const finalEndStr = (finalEndMins >= 1440) ? '24:00' : minsToTime(finalEndMins);
@@ -5913,6 +5973,7 @@ function attachPuzzleDragAndResizeForGhost(element, plan, pieceType, currentList
                 memo: plan.memo || ''
             };
 
+            selectedTimelineBlockId = newEntry.id;
             logs.push(newEntry);
             saveLogs();
             renderLogs();
@@ -5927,29 +5988,53 @@ function attachPuzzleDragAndResizeForGhost(element, plan, pieceType, currentList
         element.addEventListener('pointercancel', onPointerCancel);
     });
 
-    // 2. リサイズ（下端ドラッグで長さを伸縮して実績化）
+    // 2. リサイズ（下端ドラッグで長さを伸縮して実績化 / タップ時は編集シートを開く）
     if (resizeHandle) {
         resizeHandle.addEventListener('pointerdown', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            resizeHandle.setPointerCapture(e.pointerId);
-            element.classList.add('is-resizing');
+
+            selectedTimelineBlockId = plan.id;
+            document.querySelectorAll('.timeline-block').forEach(function(b) {
+                b.classList.remove('is-selected');
+            });
+            element.classList.add('is-selected');
+
+            try {
+                resizeHandle.setPointerCapture(e.pointerId);
+            } catch (capErr) {}
 
             const initialY = e.clientY;
             const startMins = timeToMins(plan.start);
             let initialEnd = timeToMins(plan.end);
             if (initialEnd < startMins) initialEnd += 1440;
             const initialDuration = initialEnd - startMins;
+            let hasResized = false;
+            let currentDuration = initialDuration;
 
-            if (tooltip) tooltip.style.display = 'block';
+            function cleanupResizeListeners() {
+                resizeHandle.removeEventListener('pointermove', onResizeMove);
+                resizeHandle.removeEventListener('pointerup', onResizeUp);
+                resizeHandle.removeEventListener('pointercancel', onResizeCancel);
+            }
 
             function onResizeMove(moveEvent) {
                 const deltaY = moveEvent.clientY - initialY;
+                if (!hasResized && Math.abs(deltaY) < 5) {
+                    return;
+                }
+                moveEvent.preventDefault();
+                if (!hasResized) {
+                    hasResized = true;
+                    element.classList.add('is-resizing');
+                    if (tooltip) tooltip.style.display = 'block';
+                }
+
                 let newDuration = initialDuration + deltaY;
                 newDuration = calculateDurationSnap(newDuration, pieceType);
-
                 if (startMins + newDuration > 1440) newDuration = 1440 - startMins;
 
+                currentDuration = newDuration;
                 element.style.height = Math.max(newDuration, 24) + 'px';
 
                 const endStr = (startMins + newDuration >= 1440) ? '24:00' : minsToTime(startMins + newDuration);
@@ -5958,16 +6043,27 @@ function attachPuzzleDragAndResizeForGhost(element, plan, pieceType, currentList
                 }
             }
 
+            function onResizeCancel() {
+                cleanupResizeListeners();
+                element.classList.remove('is-resizing');
+                element.style.height = Math.max(initialDuration, 24) + 'px';
+                if (tooltip) tooltip.style.display = 'none';
+            }
+
             function onResizeUp(upEvent) {
-                resizeHandle.releasePointerCapture(upEvent.pointerId);
+                try {
+                    resizeHandle.releasePointerCapture(upEvent.pointerId);
+                } catch (rErr) {}
                 element.classList.remove('is-resizing');
                 if (tooltip) tooltip.style.display = 'none';
+                cleanupResizeListeners();
 
-                resizeHandle.removeEventListener('pointermove', onResizeMove);
-                resizeHandle.removeEventListener('pointerup', onResizeUp);
+                if (!hasResized) {
+                    openTimelineBottomSheetForPlanToActual(plan, element);
+                    return;
+                }
 
-                const finalHeight = parseInt(element.style.height, 10) || 24;
-                const finalEndStr = (startMins + finalHeight >= 1440) ? '24:00' : minsToTime(startMins + finalHeight);
+                const finalEndStr = (startMins + currentDuration >= 1440) ? '24:00' : minsToTime(startMins + currentDuration);
                 const selectedDate = currentDateInput.value.replace(/-/g, '/');
 
                 const newEntry = {
@@ -5979,6 +6075,7 @@ function attachPuzzleDragAndResizeForGhost(element, plan, pieceType, currentList
                     memo: plan.memo || ''
                 };
 
+                selectedTimelineBlockId = newEntry.id;
                 logs.push(newEntry);
                 saveLogs();
                 renderLogs();
@@ -5990,6 +6087,7 @@ function attachPuzzleDragAndResizeForGhost(element, plan, pieceType, currentList
 
             resizeHandle.addEventListener('pointermove', onResizeMove);
             resizeHandle.addEventListener('pointerup', onResizeUp);
+            resizeHandle.addEventListener('pointercancel', onResizeCancel);
         });
     }
 }
@@ -6046,7 +6144,8 @@ function renderPuzzle() {
 
         const blockEl = document.createElement('div');
         const themeClass = getColorThemeByActivityName(primaryName, category);
-        blockEl.className = 'timeline-block ' + themeClass;
+        const isBlockSelected = selectedTimelineBlockId !== null && String(item.id) === String(selectedTimelineBlockId);
+        blockEl.className = 'timeline-block ' + themeClass + (isBlockSelected ? ' is-selected' : '');
         blockEl.style.top = startMins + 'px';
         blockEl.style.height = Math.max(duration, 20) + 'px';
 
@@ -6083,6 +6182,9 @@ function renderPuzzle() {
 
         const delBtn = blockEl.querySelector('.puzzle-del-btn');
         if (delBtn) {
+            delBtn.addEventListener('pointerdown', function(e) {
+                e.stopPropagation();
+            });
             delBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 if (isEditingDefaultSchedule && currentEditingDefaultSchedule) {
@@ -6143,7 +6245,8 @@ function renderPuzzle() {
 
             const ghostEl = document.createElement('div');
             const themeClass = getColorThemeByActivityName(primaryName, category);
-            ghostEl.className = 'timeline-block timeline-block-ghost ' + themeClass;
+            const isGhostSelected = selectedTimelineBlockId !== null && String(plan.id) === String(selectedTimelineBlockId);
+            ghostEl.className = 'timeline-block timeline-block-ghost ' + themeClass + (isGhostSelected ? ' is-selected' : '');
             ghostEl.style.top = pStartMins + 'px';
             ghostEl.style.height = Math.max(pDuration, 24) + 'px';
 
@@ -6185,6 +6288,9 @@ function renderPuzzle() {
 
             const applyBtn = ghostEl.querySelector('.timeline-ghost-apply-btn');
             if (applyBtn) {
+                applyBtn.addEventListener('pointerdown', function(e) {
+                    e.stopPropagation();
+                });
                 applyBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     applyPlanToActual(plan);
@@ -6238,9 +6344,11 @@ function updateBottomSheetCrossDayBadge() {
 }
 
 function openTimelineBottomSheetForEdit(item, isPlan, element) {
+    lastBottomSheetOpenedAt = Date.now();
     currentEditingTimelineItem = item;
     isBottomSheetNewRecord = false;
     bsCurrentMode = isPlan ? 'plan' : 'actual';
+    selectedTimelineBlockId = item ? item.id : null;
 
     document.querySelectorAll('.timeline-block').forEach(function(b) {
         b.classList.remove('is-selected');
@@ -6315,9 +6423,11 @@ function openTimelineBottomSheetForEdit(item, isPlan, element) {
 }
 
 function openTimelineBottomSheetForNew(startStr, endStr, isPlan) {
+    lastBottomSheetOpenedAt = Date.now();
     currentEditingTimelineItem = null;
     isBottomSheetNewRecord = true;
     bsCurrentMode = isPlan ? 'plan' : (currentInputMode === 'plan' ? 'plan' : 'actual');
+    selectedTimelineBlockId = null;
 
     document.querySelectorAll('.timeline-block').forEach(function(b) {
         b.classList.remove('is-selected');
@@ -6384,10 +6494,17 @@ function closeTimelineBottomSheet() {
         b.classList.remove('is-selected');
     });
 
+    selectedTimelineBlockId = null;
     currentEditingTimelineItem = null;
     notifyModalState(false);
 }
 window.closeTimelineBottomSheet = closeTimelineBottomSheet;
+
+function closeTimelineBottomSheetFromOverlay() {
+    if (Date.now() - lastBottomSheetOpenedAt < 350) return;
+    closeTimelineBottomSheet();
+}
+window.closeTimelineBottomSheetFromOverlay = closeTimelineBottomSheetFromOverlay;
 
 function setBottomSheetMode(mode) {
     bsCurrentMode = mode;
@@ -6771,43 +6888,34 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
     const resizeHandle = element.querySelector('.timeline-resize-handle');
     const tooltip = document.getElementById('puzzle-drag-tooltip');
 
-    // 1. 長押しドラッグ移動 / タップ判定
+    // 1. 即時ドラッグ移動 / タップ判定
     element.addEventListener('pointerdown', function(e) {
         if (e.target.closest('.puzzle-del-btn') || e.target.closest('.timeline-resize-handle')) return;
 
+        e.preventDefault();
+        e.stopPropagation();
+
+        selectedTimelineBlockId = item.id;
+        document.querySelectorAll('.timeline-block').forEach(function(b) {
+            b.classList.remove('is-selected');
+        });
+        element.classList.add('is-selected');
+
         const initialY = e.clientY;
-        const initialX = e.clientX;
         const pointerId = e.pointerId;
         const initialStart = timeToMins(item.start);
         let initialEnd = timeToMins(item.end);
         if (initialEnd < initialStart) initialEnd += 1440;
         const duration = initialEnd - initialStart;
 
-        let isLongPressed = false;
         let hasMoved = false;
-        let longPressTimer = null;
+        let currentTop = initialStart;
 
-        // 長押しタイマー（350ms）
-        longPressTimer = setTimeout(function() {
-            isLongPressed = true;
-            element.classList.add('is-dragging');
-            if (tooltip) {
-                tooltip.style.display = 'block';
-                tooltip.textContent = '📍 ' + item.start + ' - ' + item.end;
-            }
-            if (navigator.vibrate) {
-                try { navigator.vibrate(35); } catch (vErr) {}
-            }
-            try {
-                element.setPointerCapture(pointerId);
-            } catch (capErr) {}
-        }, 350);
+        try {
+            element.setPointerCapture(pointerId);
+        } catch (capErr) {}
 
         function cleanupListeners() {
-            if (longPressTimer) {
-                clearTimeout(longPressTimer);
-                longPressTimer = null;
-            }
             element.removeEventListener('pointermove', onPointerMove);
             element.removeEventListener('pointerup', onPointerUp);
             element.removeEventListener('pointercancel', onPointerCancel);
@@ -6815,22 +6923,22 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
 
         function onPointerMove(moveEvent) {
             const deltaY = moveEvent.clientY - initialY;
-            const deltaX = moveEvent.clientX - initialX;
-
-            if (!isLongPressed) {
-                // 長押し前に指が動いた場合はスクロール操作とみなし、長押しタイマーを解除
-                if (Math.abs(deltaY) > 8 || Math.abs(deltaX) > 8) {
-                    if (longPressTimer) {
-                        clearTimeout(longPressTimer);
-                        longPressTimer = null;
-                    }
-                }
+            if (!hasMoved && Math.abs(deltaY) < 6) {
                 return;
             }
 
-            // 長押し成立後はドラッグ移動処理
             moveEvent.preventDefault();
-            hasMoved = true;
+            if (!hasMoved) {
+                hasMoved = true;
+                element.classList.add('is-dragging');
+                if (tooltip) {
+                    tooltip.style.display = 'block';
+                    tooltip.textContent = '📍 ' + item.start + ' - ' + item.end;
+                }
+                if (navigator.vibrate) {
+                    try { navigator.vibrate(20); } catch (vErr) {}
+                }
+            }
 
             let newStart = initialStart + deltaY;
             newStart = calculateSnap(newStart, pieceType, duration, item.id, currentList);
@@ -6838,19 +6946,20 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
             if (newStart < 0) newStart = 0;
             if (newStart + duration > 1440) newStart = 1440 - duration;
 
+            currentTop = newStart;
             element.style.top = newStart + 'px';
 
             const newStartStr = minsToTime(newStart);
-            const newEndStr = minsToTime(newStart + duration);
+            const newEndStr = (newStart + duration >= 1440) ? '24:00' : minsToTime(newStart + duration);
             if (tooltip) {
                 tooltip.textContent = '📍 ' + newStartStr + ' - ' + newEndStr;
             }
         }
 
         function onPointerCancel() {
-            // スクロール等でブラウザに横取りされた場合はキャンセル
             cleanupListeners();
             element.classList.remove('is-dragging');
+            element.style.top = initialStart + 'px';
             if (tooltip) tooltip.style.display = 'none';
         }
 
@@ -6861,30 +6970,26 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
 
             element.classList.remove('is-dragging');
             if (tooltip) tooltip.style.display = 'none';
-
-            const wasLongPressed = isLongPressed;
             cleanupListeners();
 
-            if (!wasLongPressed) {
-                // 長押しされずに離された ➔ 移動距離が小さければタップと判定して編集ボトムシートを開く
-                const deltaY = Math.abs(upEvent.clientY - initialY);
-                const deltaX = Math.abs(upEvent.clientX - initialX);
-                if (deltaY <= 8 && deltaX <= 8) {
-                    openTimelineBottomSheetForEdit(item, isPlan, element);
-                }
-                return;
-            }
-
-            // 長押しされたが移動させなかった場合
             if (!hasMoved) {
-                element.style.top = initialStart + 'px';
+                openTimelineBottomSheetForEdit(item, isPlan, element);
                 return;
             }
 
-            const finalTop = parseInt(element.style.top, 10) || 0;
+            const finalTop = currentTop;
             item.start = minsToTime(finalTop);
             const finalEndMins = finalTop + duration;
             item.end = (finalEndMins >= 1440) ? '24:00' : minsToTime(finalEndMins);
+            if (item.crossDayGroupId) {
+                if ((item.crossRole === 'head' && item.end !== '24:00') || (item.crossRole === 'tail' && item.start !== '00:00')) {
+                    delete item.crossDayGroupId;
+                    delete item.crossRole;
+                    delete item.crossFullSpan;
+                }
+            }
+
+            selectedTimelineBlockId = item.id;
 
             if (isEditingDefaultSchedule) {
                 renderPuzzle();
@@ -6907,30 +7012,53 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
         element.addEventListener('pointercancel', onPointerCancel);
     });
 
-    // 2. リサイズ（下端ドラッグ）
+    // 2. リサイズ（下端ドラッグで長さ変更 / タップ時は編集シートを開く）
     if (resizeHandle) {
         resizeHandle.addEventListener('pointerdown', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            resizeHandle.setPointerCapture(e.pointerId);
-            element.classList.add('is-resizing');
+
+            selectedTimelineBlockId = item.id;
+            document.querySelectorAll('.timeline-block').forEach(function(b) {
+                b.classList.remove('is-selected');
+            });
+            element.classList.add('is-selected');
+
+            try {
+                resizeHandle.setPointerCapture(e.pointerId);
+            } catch (capErr) {}
 
             const initialY = e.clientY;
             const startMins = timeToMins(item.start);
             let initialEnd = timeToMins(item.end);
             if (initialEnd < startMins) initialEnd += 1440;
             const initialDuration = initialEnd - startMins;
+            let hasResized = false;
+            let currentDuration = initialDuration;
 
-            if (tooltip) tooltip.style.display = 'block';
+            function cleanupResizeListeners() {
+                resizeHandle.removeEventListener('pointermove', onResizeMove);
+                resizeHandle.removeEventListener('pointerup', onResizeUp);
+                resizeHandle.removeEventListener('pointercancel', onResizeCancel);
+            }
 
             function onResizeMove(moveEvent) {
                 const deltaY = moveEvent.clientY - initialY;
+                if (!hasResized && Math.abs(deltaY) < 5) {
+                    return;
+                }
+                moveEvent.preventDefault();
+                if (!hasResized) {
+                    hasResized = true;
+                    element.classList.add('is-resizing');
+                    if (tooltip) tooltip.style.display = 'block';
+                }
+
                 let newDuration = initialDuration + deltaY;
-
                 newDuration = calculateDurationSnap(newDuration, pieceType);
-
                 if (startMins + newDuration > 1440) newDuration = 1440 - startMins;
 
+                currentDuration = newDuration;
                 element.style.height = Math.max(newDuration, 20) + 'px';
 
                 const endStr = (startMins + newDuration >= 1440) ? '24:00' : minsToTime(startMins + newDuration);
@@ -6939,16 +7067,34 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
                 }
             }
 
+            function onResizeCancel() {
+                cleanupResizeListeners();
+                element.classList.remove('is-resizing');
+                element.style.height = Math.max(initialDuration, 20) + 'px';
+                if (tooltip) tooltip.style.display = 'none';
+            }
+
             function onResizeUp(upEvent) {
-                resizeHandle.releasePointerCapture(upEvent.pointerId);
+                try {
+                    resizeHandle.releasePointerCapture(upEvent.pointerId);
+                } catch (rErr) {}
                 element.classList.remove('is-resizing');
                 if (tooltip) tooltip.style.display = 'none';
+                cleanupResizeListeners();
 
-                resizeHandle.removeEventListener('pointermove', onResizeMove);
-                resizeHandle.removeEventListener('pointerup', onResizeUp);
+                if (!hasResized) {
+                    openTimelineBottomSheetForEdit(item, isPlan, element);
+                    return;
+                }
 
-                const finalHeight = parseInt(element.style.height, 10) || 20;
-                item.end = (startMins + finalHeight >= 1440) ? '24:00' : minsToTime(startMins + finalHeight);
+                item.end = (startMins + currentDuration >= 1440) ? '24:00' : minsToTime(startMins + currentDuration);
+                if (item.crossDayGroupId && item.crossRole === 'head' && item.end !== '24:00') {
+                    delete item.crossDayGroupId;
+                    delete item.crossRole;
+                    delete item.crossFullSpan;
+                }
+
+                selectedTimelineBlockId = item.id;
 
                 if (isEditingDefaultSchedule) {
                     renderPuzzle();
@@ -6968,6 +7114,7 @@ function attachPuzzleDragAndResize(element, item, pieceType, currentList, isPlan
 
             resizeHandle.addEventListener('pointermove', onResizeMove);
             resizeHandle.addEventListener('pointerup', onResizeUp);
+            resizeHandle.addEventListener('pointercancel', onResizeCancel);
         });
     }
 }
@@ -6997,6 +7144,339 @@ function handlePuzzleResetDay() {
     renderPuzzle();
     if (typeof updateDefaultSchedBanner === 'function') updateDefaultSchedBanner();
 }
+
+/* ==========================================================================
+   Previous Week Same-Day Copy to Plans
+   ========================================================================== */
+var prevWeekCopySourceType = 'plans';
+
+function getPrimaryActivityName(entry) {
+    if (!entry) return '活動';
+    if (entry.items && entry.items.length > 0 && entry.items[0].name) {
+        return entry.items[0].name;
+    }
+    return entry.activity_name || '活動';
+}
+
+function isPrevWeekItemInTodayPlans(srcItem, todayPlans) {
+    const srcStart = (srcItem.crossRole === 'tail') ? '00:00' : (srcItem.start || '');
+    const srcEnd = (srcItem.crossRole === 'head') ? '24:00' : (srcItem.end || '');
+    const srcName = getPrimaryActivityName(srcItem);
+    return todayPlans.some(function(p) {
+        return p.start === srcStart && p.end === srcEnd && getPrimaryActivityName(p) === srcName;
+    });
+}
+
+function buildClonedPlansFromPrevWeekItem(srcItem, targetDate, sourcePool) {
+    const clonedItems = (Array.isArray(srcItem.items) && srcItem.items.length > 0)
+        ? JSON.parse(JSON.stringify(srcItem.items))
+        : [{ name: getPrimaryActivityName(srcItem), percent: 100 }];
+    const memo = srcItem.memo || '';
+
+    if (srcItem.crossDayGroupId && srcItem.crossRole === 'head') {
+        const pair = sourcePool.find(function(x) {
+            return x.crossDayGroupId === srcItem.crossDayGroupId && String(x.id) !== String(srcItem.id);
+        });
+        if (pair) {
+            const newGroupId = 'cross_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+            const nextDate = getNextDateString(targetDate);
+            return [
+                {
+                    id: Date.now() + Math.random(),
+                    date: targetDate,
+                    start: srcItem.start,
+                    end: '24:00',
+                    items: clonedItems,
+                    memo: memo,
+                    crossDayGroupId: newGroupId,
+                    crossRole: 'head',
+                    crossFullSpan: srcItem.crossFullSpan || (srcItem.start + ' - ' + pair.end)
+                },
+                {
+                    id: Date.now() + 1 + Math.random(),
+                    date: nextDate,
+                    start: '00:00',
+                    end: pair.end,
+                    items: JSON.parse(JSON.stringify(clonedItems)),
+                    memo: memo,
+                    crossDayGroupId: newGroupId,
+                    crossRole: 'tail',
+                    crossFullSpan: srcItem.crossFullSpan || (srcItem.start + ' - ' + pair.end)
+                }
+            ];
+        }
+        return [{
+            id: Date.now() + Math.random(),
+            date: targetDate,
+            start: srcItem.start,
+            end: '24:00',
+            items: clonedItems,
+            memo: memo
+        }];
+    }
+
+    if (srcItem.crossDayGroupId && srcItem.crossRole === 'tail') {
+        return [{
+            id: Date.now() + Math.random(),
+            date: targetDate,
+            start: '00:00',
+            end: srcItem.end,
+            items: clonedItems,
+            memo: memo
+        }];
+    }
+
+    return [{
+        id: Date.now() + Math.random(),
+        date: targetDate,
+        start: srcItem.start || '',
+        end: srcItem.end || '',
+        items: clonedItems,
+        memo: memo
+    }];
+}
+
+function openPrevWeekCopyModal() {
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const prevWeekDate = getPrevWeekDateString(selectedDate);
+    const prevPlans = plans.filter(function(p) { return p.date === prevWeekDate; });
+    const prevLogs = logs.filter(function(l) { return l.date === prevWeekDate; });
+
+    prevWeekCopySourceType = (prevPlans.length === 0 && prevLogs.length > 0) ? 'logs' : 'plans';
+    renderPrevWeekCopyModal();
+
+    const modal = document.getElementById('prev-week-copy-modal');
+    if (modal) {
+        modal.classList.add('active');
+        notifyModalState(true);
+    }
+}
+window.openPrevWeekCopyModal = openPrevWeekCopyModal;
+
+function closePrevWeekCopyModal() {
+    const modal = document.getElementById('prev-week-copy-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        notifyModalState(false);
+    }
+}
+window.closePrevWeekCopyModal = closePrevWeekCopyModal;
+
+function closePrevWeekCopyModalOnOverlay(e) {
+    if (e.target && e.target.id === 'prev-week-copy-modal') {
+        closePrevWeekCopyModal();
+    }
+}
+window.closePrevWeekCopyModalOnOverlay = closePrevWeekCopyModalOnOverlay;
+
+function switchPrevWeekSourceTab(sourceType) {
+    prevWeekCopySourceType = sourceType === 'logs' ? 'logs' : 'plans';
+    renderPrevWeekCopyModal();
+}
+window.switchPrevWeekSourceTab = switchPrevWeekSourceTab;
+
+function renderPrevWeekCopyModal() {
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const prevWeekDate = getPrevWeekDateString(selectedDate);
+    const dayLabel = DAY_NAMES[getDayOfWeek(selectedDate)] || '';
+
+    const subtitleEl = document.getElementById('prev-week-date-subtitle');
+    if (subtitleEl) {
+        subtitleEl.textContent = '前週 ' + prevWeekDate + ' (' + dayLabel + ') ➔ ' + selectedDate + ' (' + dayLabel + ') の予定へ追加';
+    }
+
+    const prevPlans = plans.filter(function(p) { return p.date === prevWeekDate; });
+    const prevLogs = logs.filter(function(l) { return l.date === prevWeekDate; });
+    const todayPlans = plans.filter(function(p) { return p.date === selectedDate; });
+
+    const tabPlansBtn = document.getElementById('prev-week-tab-plans');
+    const tabLogsBtn = document.getElementById('prev-week-tab-logs');
+    if (tabPlansBtn) {
+        tabPlansBtn.textContent = '📅 前週の予定 (' + prevPlans.length + '件)';
+        tabPlansBtn.className = prevWeekCopySourceType === 'plans' ? 'mode-tab active-plan' : 'mode-tab';
+    }
+    if (tabLogsBtn) {
+        tabLogsBtn.textContent = '⏱ 前週の実績 (' + prevLogs.length + '件)';
+        tabLogsBtn.className = prevWeekCopySourceType === 'logs' ? 'mode-tab active-actual' : 'mode-tab';
+    }
+
+    const todayCountEl = document.getElementById('prev-week-today-count');
+    if (todayCountEl) {
+        todayCountEl.textContent = '今日の予定: ' + todayPlans.length + '件';
+    }
+
+    const sourceItems = (prevWeekCopySourceType === 'logs' ? prevLogs : prevPlans).slice().sort(function(a, b) {
+        return (a.start || '').localeCompare(b.start || '');
+    });
+
+    const bulkActionsEl = document.getElementById('prev-week-bulk-actions');
+    const listEl = document.getElementById('prev-week-items-list');
+    if (!listEl) return;
+
+    listEl.innerHTML = '';
+
+    if (sourceItems.length === 0) {
+        if (bulkActionsEl) bulkActionsEl.style.display = 'none';
+        const emptyLabel = prevWeekCopySourceType === 'logs' ? '実績' : '予定';
+        listEl.innerHTML =
+            '<div style="text-align: center; padding: 20px 12px; color: var(--text-secondary); font-size: 0.85rem; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px dashed #333;">' +
+                '前週の同じ曜日（' + prevWeekDate + '）の' + emptyLabel + 'データはありません。' +
+            '</div>';
+        return;
+    }
+
+    if (bulkActionsEl) bulkActionsEl.style.display = 'flex';
+
+    sourceItems.forEach(function(item) {
+        const card = document.createElement('div');
+        card.className = 'def-sched-card';
+        card.style.flexDirection = 'row';
+        card.style.alignItems = 'center';
+        card.style.justifyContent = 'space-between';
+        card.style.gap = '10px';
+        card.style.marginBottom = '0';
+
+        const primaryName = getPrimaryActivityName(item);
+        const duration = calculateDuration(item.start, item.end);
+        const durStr = duration > 0 ? (' (' + duration + '分)') : '';
+        let timeStr = (item.start || '?') + ' - ' + (item.end || '?') + durStr;
+        if (item.crossRole === 'head') {
+            const nextPart = item.crossFullSpan ? item.crossFullSpan.split('-')[1].trim() : '朝';
+            timeStr = '🌙 ' + item.start + ' - 翌' + nextPart + durStr;
+        } else if (item.crossRole === 'tail') {
+            timeStr = '🌅 00:00 - ' + item.end + durStr;
+        }
+
+        const itemDisplayTitle = (item.items && item.items.length > 1)
+            ? item.items.map(function(i) { return escapeHtml((i.name || '').trim() || '(未設定)'); }).join(' / ')
+            : escapeHtml(primaryName);
+        const memoHtml = (item.memo && item.memo.trim())
+            ? '<div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 2px; word-break: break-word;">📝 ' + escapeHtml(item.memo.trim()) + '</div>'
+            : '';
+
+        const infoDiv = document.createElement('div');
+        infoDiv.style.flex = '1';
+        infoDiv.style.minWidth = '0';
+        infoDiv.innerHTML =
+            '<div style="font-family: monospace; font-size: 0.78rem; color: #93c5fd; font-weight: 700;">' + escapeHtml(timeStr) + '</div>' +
+            '<div style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-top: 2px; word-break: break-word;">' + itemDisplayTitle + '</div>' +
+            memoHtml;
+
+        const alreadyAdded = isPrevWeekItemInTodayPlans(item, todayPlans);
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = alreadyAdded ? 'btn btn-secondary' : 'btn btn-plan';
+        addBtn.style.width = 'auto';
+        addBtn.style.padding = '6px 10px';
+        addBtn.style.fontSize = '0.76rem';
+        addBtn.style.marginBottom = '0';
+        addBtn.style.whiteSpace = 'nowrap';
+        addBtn.style.flexShrink = '0';
+        if (alreadyAdded) {
+            addBtn.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+            addBtn.style.color = '#34d399';
+            addBtn.textContent = '✓ 追加済';
+        } else {
+            addBtn.textContent = '＋ 予定に追加';
+        }
+
+        addBtn.addEventListener('click', function() {
+            applySinglePrevWeekItem(item);
+        });
+
+        card.appendChild(infoDiv);
+        card.appendChild(addBtn);
+        listEl.appendChild(card);
+    });
+}
+
+function applySinglePrevWeekItem(srcItem) {
+    if (!srcItem) return;
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const prevWeekDate = getPrevWeekDateString(selectedDate);
+    const sourcePool = (prevWeekCopySourceType === 'logs')
+        ? logs
+        : plans;
+
+    const cloned = buildClonedPlansFromPrevWeekItem(srcItem, selectedDate, sourcePool);
+    delete userClearedDates[selectedDate];
+    plans = plans.concat(cloned);
+
+    savePlans();
+    renderPlans();
+    renderSummary();
+    if (typeof updateDefaultSchedBanner === 'function') updateDefaultSchedBanner();
+    renderPuzzle();
+    renderPrevWeekCopyModal();
+
+    showGhostActionToast('📅 「' + getPrimaryActivityName(srcItem) + '」を予定に追加しました (' + prevWeekDate + ' から)');
+}
+
+function applyAllPrevWeekItems(mode) {
+    const selectedDate = currentDateInput.value.replace(/-/g, '/');
+    const prevWeekDate = getPrevWeekDateString(selectedDate);
+    const sourcePool = (prevWeekCopySourceType === 'logs') ? logs : plans;
+    const sourceItems = sourcePool.filter(function(x) { return x.date === prevWeekDate; }).slice().sort(function(a, b) {
+        return (a.start || '').localeCompare(b.start || '');
+    });
+
+    if (sourceItems.length === 0) {
+        alert('コピーできる前週のデータがありません。');
+        return;
+    }
+
+    const todayPlans = plans.filter(function(p) { return p.date === selectedDate; });
+
+    if (mode === 'replace') {
+        if (todayPlans.length > 0) {
+            if (!confirm('今日の予定（' + todayPlans.length + '件）を前週のデータ（' + sourceItems.length + '件）で置き換えますか？')) {
+                return;
+            }
+        }
+        plans = plans.filter(function(p) { return p.date !== selectedDate; });
+        let createdEntries = [];
+        sourceItems.forEach(function(item) {
+            createdEntries = createdEntries.concat(buildClonedPlansFromPrevWeekItem(item, selectedDate, sourcePool));
+        });
+        plans = plans.concat(createdEntries);
+        delete userClearedDates[selectedDate];
+
+        savePlans();
+        renderPlans();
+        renderSummary();
+        if (typeof updateDefaultSchedBanner === 'function') updateDefaultSchedBanner();
+        renderPuzzle();
+        closePrevWeekCopyModal();
+        showGhostActionToast('🔄 前週（' + prevWeekDate + '）から ' + sourceItems.length + '件の予定を反映しました');
+        return;
+    }
+
+    // merge mode (skip duplicates)
+    const itemsToAdd = sourceItems.filter(function(item) {
+        return !isPrevWeekItemInTodayPlans(item, todayPlans);
+    });
+
+    if (itemsToAdd.length === 0) {
+        showGhostActionToast('✓ 前週の項目はすべてすでに今日の予定に入っています');
+        return;
+    }
+
+    let addedEntries = [];
+    itemsToAdd.forEach(function(item) {
+        addedEntries = addedEntries.concat(buildClonedPlansFromPrevWeekItem(item, selectedDate, sourcePool));
+    });
+    plans = plans.concat(addedEntries);
+    delete userClearedDates[selectedDate];
+
+    savePlans();
+    renderPlans();
+    renderSummary();
+    if (typeof updateDefaultSchedBanner === 'function') updateDefaultSchedBanner();
+    renderPuzzle();
+    closePrevWeekCopyModal();
+    showGhostActionToast('📅 前週（' + prevWeekDate + '）から ' + itemsToAdd.length + '件を予定に追加しました');
+}
+window.applyAllPrevWeekItems = applyAllPrevWeekItems;
 
 function initPuzzle() {
     if (puzzleInitialized) return;

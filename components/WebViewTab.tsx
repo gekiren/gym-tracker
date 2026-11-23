@@ -31,6 +31,7 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
   const [loading, setLoading] = useState(true);
   const [webViewLoaded, setWebViewLoaded] = useState(false);
   const pendingWaterOpsRef = useRef(0);
+  const skipNextTimeLogsSyncRef = useRef(false);
   const waterLogs = useLifelogStore((state) => state.waterLogs);
   const waterLogsDate = useLifelogStore((state) => state.waterLogsDate);
   const timeLogs = useLifelogStore((state) => state.timeLogs);
@@ -179,8 +180,15 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
         const { key, value } = message;
         console.log(`[WebViewTab] LOCAL_STORAGE_SET key=${key}, value length=${value ? value.length : 0}`);
         addSyncDiagnosticLog(`[WebViewTab] LOCAL_STORAGE_SET key=${key}, len=${value ? value.length : 0}`);
+        const prevTimeLogs = key === 'zikankanri_logs' ? useLifelogStore.getState().timeLogs : null;
+        if (key === 'zikankanri_logs') {
+          skipNextTimeLogsSyncRef.current = true;
+        }
         // Update database and store
         const responseValue = await handleWebViewMessage(key, value, currentDate);
+        if (key === 'zikankanri_logs' && useLifelogStore.getState().timeLogs === prevTimeLogs) {
+          skipNextTimeLogsSyncRef.current = false;
+        }
 
         // If the service returns an updated value (e.g. for specific keys), inject it back
         if (responseValue) {
@@ -314,70 +322,93 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
 
   // Sync database updates from React Native to WebView when timeLogs change
   useEffect(() => {
-    if (webViewRef.current && !loading) {
-      const timeLogsMap: Record<string, any> = {};
-      timeLogs.forEach((row) => {
-        const key = `${row.date}_${row.start_time}_${row.end_time}`;
-        if (!timeLogsMap[key]) {
-          timeLogsMap[key] = {
-            id: row.id,
-            date: row.date,
-            start: row.start_time,
-            end: row.end_time,
-            rows: [],
-          };
-        }
-        timeLogsMap[key].rows.push(row);
-      });
+    if (skipNextTimeLogsSyncRef.current) {
+      skipNextTimeLogsSyncRef.current = false;
+      return;
+    }
+    if (!webViewRef.current || loading || !webViewLoaded) return;
 
-      const formattedLogs = Object.values(timeLogsMap).map((group: any) => {
-        const totalDuration = group.rows.reduce((sum: number, r: any) => sum + r.duration_minutes, 0);
-        const items = group.rows.map((r: any) => {
-          const percent = totalDuration > 0 ? Math.round((r.duration_minutes / totalDuration) * 100) : 100;
-          return {
-            name: r.activity_name,
-            percent,
-          };
-        });
+    const storeCurrentDate = useLifelogStore.getState().currentDate;
+    if (!storeCurrentDate && timeLogs.length === 0) return;
+
+    const timeLogsMap: Record<string, any> = {};
+    timeLogs.forEach((row) => {
+      const key = `${row.date}_${row.start_time}_${row.end_time}`;
+      if (!timeLogsMap[key]) {
+        timeLogsMap[key] = {
+          id: row.id,
+          date: row.date,
+          start: row.start_time,
+          end: row.end_time,
+          rows: [],
+        };
+      }
+      timeLogsMap[key].rows.push(row);
+    });
+
+    const formattedLogs = Object.values(timeLogsMap).map((group: any) => {
+      const totalDuration = group.rows.reduce((sum: number, r: any) => sum + r.duration_minutes, 0);
+      const items = group.rows.map((r: any) => {
+        const percent = totalDuration > 0 ? Math.round((r.duration_minutes / totalDuration) * 100) : 100;
         return {
-          id: group.id,
-          date: group.date,
-          start: group.start,
-          end: group.end,
-          items,
+          name: r.activity_name,
+          percent,
         };
       });
+      return {
+        id: group.id,
+        date: group.date,
+        start: group.start,
+        end: group.end,
+        items,
+      };
+    });
 
-      const injectScript = `
-        (function() {
-          var storage = window.appStorage || (typeof localStorage !== 'undefined' ? localStorage : null);
-          if (storage && typeof storage.setItem === 'function') {
-            window.isInitialSync = true;
-            storage.setItem('zikankanri_logs', JSON.stringify(${JSON.stringify(formattedLogs)}));
-            if (typeof logs !== 'undefined') {
-              try {
-                var savedLogs = storage.getItem('zikankanri_logs');
-                var parsedLogs = JSON.parse(savedLogs);
-                if (typeof parsedLogs === 'string') parsedLogs = JSON.parse(parsedLogs);
-                logs = Array.isArray(parsedLogs) ? parsedLogs : [];
-              } catch (e) {}
+    const targetSyncDate = (formattedLogs.length > 0 && formattedLogs[0].date)
+      ? formattedLogs[0].date
+      : (storeCurrentDate || currentDate);
+
+    const injectScript = `
+      (function() {
+        var storage = window.appStorage || (typeof localStorage !== 'undefined' ? localStorage : null);
+        if (storage && typeof storage.setItem === 'function') {
+          window.isInitialSync = true;
+          var existing = [];
+          try {
+            var saved = storage.getItem('zikankanri_logs');
+            if (saved) {
+              existing = JSON.parse(saved);
+              if (typeof existing === 'string') existing = JSON.parse(existing);
+              if (!Array.isArray(existing)) existing = [];
             }
-            if (typeof renderLogs === 'function') {
-              renderLogs();
-            }
-            if (typeof renderSummary === 'function') {
-              renderSummary();
-            }
-            if (typeof updateDefaultStartTime === 'function') {
-              updateDefaultStartTime();
-            }
-            window.isInitialSync = false;
+          } catch (e) {
+            existing = [];
           }
-        })();
-      `;
-      webViewRef.current.injectJavaScript(injectScript);
-    }
-  }, [timeLogs, loading]);
+          var targetDate = ${JSON.stringify(targetSyncDate)};
+          var newLogs = ${JSON.stringify(formattedLogs)};
+          var filtered = existing.filter(function(item) {
+            return item && item.date !== targetDate;
+          });
+          var merged = filtered.concat(newLogs);
+          storage.setItem('zikankanri_logs', JSON.stringify(merged));
+          if (typeof logs !== 'undefined') {
+            logs = merged;
+          }
+          if (typeof renderLogs === 'function') {
+            renderLogs();
+          }
+          if (typeof renderSummary === 'function') {
+            renderSummary();
+          }
+          if (typeof updateDefaultStartTime === 'function') {
+            updateDefaultStartTime();
+          }
+          window.isInitialSync = false;
+        }
+      })();
+    `;
+    webViewRef.current.injectJavaScript(injectScript);
+  }, [timeLogs, loading, webViewLoaded]);
 
   // Sync database updates from React Native to WebView when habitItems change (habitLogs removed to prevent log corruption & flickering)
   useEffect(() => {
