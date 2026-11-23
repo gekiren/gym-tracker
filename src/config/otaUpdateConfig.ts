@@ -11,17 +11,17 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.67',
+  version: '2.3.68',
   title: {
-    ja: '🏷️ 体組成グラフの指標表示名を修正',
-    en: '🏷️ Fixed body composition metric labels',
+    ja: '📅 Googleカレンダー連携の2重表示防止オプションを追加',
+    en: '📅 Added Duplicate Prevention Option for Google Calendar Sync',
   },
   notes: {
     ja: [
-      '体組成グラフの指標選択画面およびグラフタイトルで「筋肉・脂肪比 (MF比)」「マッチョスコア (MS)」が正しく表示されるように修正しました。',
+      'Googleカレンダーから取り込んだ予定と同じ内容・時間帯の実績を書き出さないようにする設定（2重表示防止）を、Googleカレンダー連携設定に追加しました。',
     ],
     en: [
-      'Fixed the metric selector and chart titles in Body Composition History to display "Muscle-Fat Ratio (MF)" and "Macho Score (MS)" properly.',
+      'Added an option in Google Calendar Sync settings to skip exporting activity logs that duplicate existing Google Calendar plans.',
     ],
   },
 };
