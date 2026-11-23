@@ -66,8 +66,7 @@ export default function DashboardScreen() {
       try {
         const res = await rescueSeptember13Data();
         if (res.rescued) {
-          const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
-          const targetDate = currentDate || today;
+          const targetDate = useLifelogStore.getState().resolveActiveDate();
           setCurrentDate(targetDate);
           loadMealLogs(targetDate);
           loadGoals();
@@ -81,8 +80,7 @@ export default function DashboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
-      const targetDate = currentDate || today;
+      const targetDate = useLifelogStore.getState().resolveActiveDate();
       setCurrentDate(targetDate);
       loadMealLogs(targetDate);
       loadGoals();

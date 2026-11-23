@@ -2,6 +2,7 @@ import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { getDB } from './connection';
+import { getLocalTodayISO } from '../utils/dateUtils';
 
 const DB_NAME = 'gymtracker.db';
 const BACKUP_DIR = `${FileSystem.documentDirectory}backups/`;
@@ -94,7 +95,7 @@ export const createDailyBackup = async (): Promise<boolean> => {
       return true;
     }
 
-    const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const todayStr = getLocalTodayISO().replace(/-/g, '');
     const datedBackupPath = `${BACKUP_DIR}gymtracker_backup_${todayStr}.db`;
 
     // 1. 最新バックアップファイルへの上書きコピー

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, TouchableOpacity, AppState, AppStateStatus } from 'react-native';
 import { Stack, useNavigation } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
@@ -6,6 +6,7 @@ import { useAppTheme } from '../../src/theme';
 import { WebViewTab, WebViewTabRef } from '../../components/WebViewTab';
 import WaterHTML from '../../src/web-apps/Water';
 import { useLifelogStore } from '../../src/store/lifelogStore';
+import { getLocalTodaySlash } from '../../src/utils/dateUtils';
 import { LifelogDateHeader } from '../../components/LifelogDateHeader';
 import { LifelogHistoryTab } from '../../components/history/LifelogHistoryTab';
 import { FeatureClassBar } from '../../components/FeatureClassBar';
@@ -18,6 +19,7 @@ export default function WaterScreen() {
   const { colors } = useAppTheme();
   const currentDate = useLifelogStore((state) => state.currentDate);
   const loadWaterData = useLifelogStore((state) => state.loadWaterData);
+  const syncTodayIfDateRolledOver = useLifelogStore((state) => state.syncTodayIfDateRolledOver);
   const [showHistory, setShowHistory] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const webViewTabRef = useRef<WebViewTabRef>(null);
@@ -26,15 +28,7 @@ export default function WaterScreen() {
   const isFocused = useIsFocused();
   const { panHandlerProps } = useFeatureSwipe('/lifelog/water');
 
-  const getTodayStr = () => {
-    const date = new Date();
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}/${m}/${d}`;
-  };
-
-  const targetDate = currentDate || getTodayStr();
+  const targetDate = currentDate || getLocalTodaySlash();
 
   // フォーカス外脱時にモーダルフラグをリセット
   useEffect(() => {
@@ -49,29 +43,35 @@ export default function WaterScreen() {
     );
   };
 
-  // 1. 画面フォーカス時にDBから最新データを読み直す (isFocusedガード)
+  const syncWaterForActiveScreen = useCallback(async () => {
+    const { date, reloaded } = await syncTodayIfDateRolledOver();
+    if (!reloaded && date) {
+      await loadWaterData(date);
+    }
+  }, [syncTodayIfDateRolledOver, loadWaterData]);
+
+  // 1. 画面フォーカス時にDBから最新データを読み直す (isFocusedガード + 初回マウント即時実行)
   useEffect(() => {
     if (!isFocused) return;
+    syncWaterForActiveScreen();
     const unsubscribe = navigation.addListener('focus', () => {
-      if (targetDate) {
-        loadWaterData(targetDate);
-      }
+      syncWaterForActiveScreen();
     });
     return unsubscribe;
-  }, [navigation, targetDate, isFocused]);
+  }, [navigation, isFocused, syncWaterForActiveScreen]);
 
   // 2. アプリがバックグラウンドから復帰した（Activeになった）時に同期 (isFocusedガード)
   useEffect(() => {
     if (!isFocused) return;
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'active' && targetDate) {
-        loadWaterData(targetDate);
+      if (nextAppState === 'active') {
+        syncWaterForActiveScreen();
       }
     };
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     return () => subscription.remove();
-  }, [targetDate, isFocused]);
+  }, [isFocused, syncWaterForActiveScreen]);
 
   return (
     <PanGestureHandler {...panHandlerProps}>

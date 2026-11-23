@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getLocalTodaySlash } from '../utils/dateUtils';
 import {
   WaterLog,
   TimeLog,
@@ -69,7 +70,9 @@ export interface DaySummary {
 
 interface LifelogState {
   currentDate: string;
+  lastTodayDate: string;
   waterLogs: WaterLog[];
+  waterLogsDate: string | null;
   waterGoal: number;
   caffeineLimit: number;
   waterPresets: Array<{ amount: number; caffeine: number }>;
@@ -82,6 +85,8 @@ interface LifelogState {
 
   // Actions
   setCurrentDate: (date: string) => Promise<void>;
+  resolveActiveDate: () => string;
+  syncTodayIfDateRolledOver: () => Promise<{ date: string; reloaded: boolean }>;
   
   // Water actions
   loadWaterData: (date: string) => Promise<void>;
@@ -243,7 +248,9 @@ export const calculateSummary = (
 
 export const useLifelogStore = create<LifelogState>((set, get) => ({
   currentDate: '',
+  lastTodayDate: getLocalTodaySlash(),
   waterLogs: [],
+  waterLogsDate: null,
   waterGoal: 2000,
   caffeineLimit: 400,
   waterPresets: [
@@ -262,6 +269,34 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
   isLoading: false,
   activeRoutineState: null,
 
+  resolveActiveDate: () => {
+    const realToday = getLocalTodaySlash();
+    const { currentDate, lastTodayDate } = get();
+    if (!currentDate) {
+      if (lastTodayDate !== realToday) {
+        set({ lastTodayDate: realToday });
+      }
+      return realToday;
+    }
+    if (lastTodayDate !== realToday) {
+      set({ lastTodayDate: realToday });
+      if (currentDate === lastTodayDate) {
+        return realToday;
+      }
+    }
+    return currentDate;
+  },
+
+  syncTodayIfDateRolledOver: async () => {
+    const prevDate = get().currentDate;
+    const nextDate = get().resolveActiveDate();
+    if (!prevDate || nextDate !== prevDate) {
+      await get().setCurrentDate(nextDate);
+      return { date: nextDate, reloaded: true };
+    }
+    return { date: nextDate, reloaded: false };
+  },
+
   setCurrentDate: async (date: string) => {
     set({ currentDate: date, isLoading: true });
     try {
@@ -275,6 +310,8 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
         getSettingValue('routine_tracker_data'),
         getSettingValue('hydration_settings_v1'),
       ]);
+
+      if (get().currentDate !== date) return;
 
       const routineData = routineVal ? JSON.parse(routineVal) : [];
 
@@ -317,6 +354,7 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
 
       set({
         waterLogs,
+        waterLogsDate: date,
         waterGoal,
         caffeineLimit,
         waterPresets,
@@ -329,7 +367,9 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
     } catch (e) {
       console.warn('Failed to load lifelog data for date:', date, e);
     } finally {
-      set({ isLoading: false });
+      if (get().currentDate === date) {
+        set({ isLoading: false });
+      }
     }
   },
 
@@ -360,8 +400,11 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
         }
       }
 
-      set({ waterLogs, waterGoal, caffeineLimit, waterPresets });
-      if (get().currentDate === date) {
+      const activeCurrentDate = get().currentDate;
+      if (activeCurrentDate && activeCurrentDate !== date) return;
+
+      set({ waterLogs, waterLogsDate: date, waterGoal, caffeineLimit, waterPresets });
+      if (activeCurrentDate === date) {
         get().refreshSummary(date);
       }
     } catch (e) {
@@ -606,6 +649,8 @@ export const useLifelogStore = create<LifelogState>((set, get) => ({
   resetAll: () => {
     set({
       waterLogs: [],
+      waterLogsDate: null,
+      lastTodayDate: getLocalTodaySlash(),
       waterGoal: 2000,
       caffeineLimit: 400,
       waterPresets: [],
