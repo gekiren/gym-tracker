@@ -11,17 +11,19 @@ export interface OTAUpdateConfig {
 }
 
 export const CURRENT_OTA_CONFIG: OTAUpdateConfig = {
-  version: '2.3.71',
+  version: '2.3.72',
   title: {
-    ja: '📅 24時間管理：デフォルトスケジュールの名称変更に対応',
-    en: '📅 24h Management: Rename Default Schedules',
+    ja: '📊 24時間管理：サークル・集計のデザイン統一＆2タブ化',
+    en: '📊 24h Management: Unified Circle Summary Design & 2-Tab Layout',
   },
   notes: {
     ja: [
-      '登録済みのデフォルトスケジュールの名称を後から変更できるようになりました（デフォルトスケジュール設定一覧および専用タイムライン編集画面から変更可能です）。',
+      '画面上部を「🧩 タイムライン」と「📊 サークル・集計」の2タブにシンプル化し、タイムラインから未反映の予定を一括反映できるようにしました。',
+      '24時間サークルおよび予実比較リストの配色・アイコン・ポートフォリオ表示をタイムラインのデザインと統一しました。',
     ],
     en: [
-      'Added the ability to rename saved default schedules from both the default schedule list and the dedicated timeline editor.',
+      'Simplified the top navigation into two tabs (Timeline and Circle Summary) and added a batch plan-to-actual reflection button on the timeline.',
+      'Unified the 24-hour dual-ring circle chart and comparison cards with the timeline\'s category colors, piece icons, and portfolio layout.',
     ],
   },
 };
