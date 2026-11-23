@@ -1801,15 +1801,18 @@ input:checked + .holiday-switch-slider:before {
                     <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1;">
                         <span style="font-size: 1rem; flex-shrink: 0;">🎨</span>
                         <span id="def-sched-editor-title" style="font-weight: 700; font-size: 0.92rem; color: #eff6ff; word-break: break-word; cursor: pointer;" title="タップしてスケジュール名を変更">編集中: スケジュール名</span>
-                        <span id="def-sched-editor-badge" style="background: rgba(37, 99, 235, 0.55); color: #dbeafe; padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; font-weight: 600; flex-shrink: 0; border: 1px solid rgba(147, 197, 253, 0.35);">全日共通</span>
+                        <span id="def-sched-editor-badge" style="background: rgba(37, 99, 235, 0.55); color: #dbeafe; padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; font-weight: 600; flex-shrink: 0; border: 1px solid rgba(147, 197, 253, 0.35); cursor: pointer;" title="タップして適用曜日を変更">全日共通</span>
                     </div>
                     <span id="def-sched-editor-count" style="font-weight: 700; font-size: 0.75rem; color: #93c5fd; background: rgba(0, 0, 0, 0.3); padding: 2px 8px; border-radius: 12px; flex-shrink: 0;">0件の予定</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; padding-top: 6px; border-top: 1px solid rgba(147, 197, 253, 0.2);">
-                    <button type="button" id="def-sched-editor-rename-btn" class="btn btn-secondary" style="width: auto; padding: 5px 10px; font-size: 0.75rem; margin-bottom: 0; border-color: rgba(147, 197, 253, 0.5); color: #dbeafe; flex-shrink: 0; white-space: nowrap;" title="スケジュール名を変更">✏️ 名称変更</button>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button type="button" id="def-sched-editor-rename-btn" class="btn btn-secondary" style="width: auto; padding: 5px 10px; font-size: 0.75rem; margin-bottom: 0; border-color: rgba(147, 197, 253, 0.5); color: #dbeafe; flex-shrink: 0; white-space: nowrap;" title="スケジュール名を変更">✏️ 名称変更</button>
+                        <button type="button" id="def-sched-editor-days-btn" class="btn btn-secondary" style="width: auto; padding: 5px 10px; font-size: 0.75rem; margin-bottom: 0; border-color: rgba(147, 197, 253, 0.5); color: #dbeafe; flex-shrink: 0; white-space: nowrap;" title="適用曜日を変更">📅 曜日変更</button>
+                    </div>
                     <div style="display: flex; gap: 6px; flex-shrink: 0; margin-left: auto;">
                         <button type="button" id="def-sched-editor-save-btn" class="btn btn-primary" style="width: auto; padding: 5px 12px; font-size: 0.78rem; margin-bottom: 0; background: #2563eb; border-color: #60a5fa; white-space: nowrap;">💾 保存して完了</button>
-                        <button type="button" id="def-sched-editor-cancel-btn" class="btn btn-secondary" style="width: auto; padding: 5px 10px; font-size: 0.78rem; margin-bottom: 0; white-space: nowrap;">✕ 中止</button>
+                        <button type="button" id="def-sched-editor-cancel-btn" class="btn btn-secondary" style="width: auto; padding: 5px 10px; font-size: 0.78rem; margin-bottom: 0; white-space: nowrap;">← 戻る</button>
                     </div>
                 </div>
                 <div style="font-size: 0.7rem; color: #bfdbfe; margin-top: 6px; opacity: 0.9;">
@@ -2475,6 +2478,89 @@ input:checked + .holiday-switch-slider:before {
         </div>
     </div>
 
+    <!-- Default Schedule Rename Modal -->
+    <div id="def-sched-rename-modal" class="modal-overlay" style="z-index: 1100;">
+        <div class="modal-content" style="max-width: 360px; border: 1px solid #333;">
+            <div class="modal-header">
+                <h3 style="font-size: 1.05rem;">✏️ スケジュール名の変更</h3>
+                <span id="def-sched-rename-close-btn" style="cursor: pointer; font-size: 1.4rem; font-weight: bold; color: var(--text-secondary); line-height: 1; padding: 4px;">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 16px;">
+                <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 0 0 10px 0; line-height: 1.4;">
+                    デフォルトスケジュールの新しい名称を入力してください。
+                </p>
+                <input type="text" id="def-sched-rename-input" placeholder="例: 平日ルーティン、休日" maxlength="50" style="width: 100%; box-sizing: border-box; font-size: 0.92rem; padding: 10px 12px; border-radius: 8px;">
+                <div id="def-sched-rename-error" style="display: none; color: #f87171; font-size: 0.78rem; margin-top: 6px;"></div>
+            </div>
+            <div class="modal-footer" style="padding: 12px 16px; gap: 8px;">
+                <button type="button" id="def-sched-rename-cancel-btn" class="btn btn-secondary" style="width: auto; min-width: 90px; padding: 8px 14px; margin-bottom: 0; font-size: 0.85rem;">キャンセル</button>
+                <button type="button" id="def-sched-rename-save-btn" class="btn btn-primary" style="width: auto; min-width: 90px; padding: 8px 16px; margin-bottom: 0; font-size: 0.85rem; background: #2563eb; border-color: #60a5fa;">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Default Schedule Days Modal -->
+    <div id="def-sched-days-modal" class="modal-overlay" style="z-index: 1100;">
+        <div class="modal-content" style="max-width: 380px; border: 1px solid #333;">
+            <div class="modal-header">
+                <h3 style="font-size: 1.05rem;">📅 適用曜日の変更</h3>
+                <span id="def-sched-days-close-btn" style="cursor: pointer; font-size: 1.4rem; font-weight: bold; color: var(--text-secondary); line-height: 1; padding: 4px;">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 16px;">
+                <div id="def-sched-days-target-name" style="font-size: 0.85rem; font-weight: 700; color: #93c5fd; margin-bottom: 12px; word-break: break-word;"></div>
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.84rem; cursor: pointer; color: var(--text-primary); user-select: none; margin-bottom: 12px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <input type="checkbox" id="def-sched-days-modal-no-day" style="cursor: pointer;">
+                    <span>曜日指定なし（全日共通・デフォルト）</span>
+                </label>
+                <div id="def-sched-days-modal-picker-box">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 6px; flex-wrap: wrap;">
+                        <span style="font-size: 0.78rem; color: var(--text-secondary);">適用する曜日を選択:</span>
+                        <div style="display: flex; gap: 4px;">
+                            <button type="button" class="quick-day-btn" id="def-sched-days-quick-weekday">平日(月〜金)</button>
+                            <button type="button" class="quick-day-btn" id="def-sched-days-quick-weekend">休日(土日)</button>
+                            <button type="button" class="quick-day-btn" id="def-sched-days-quick-clear">クリア</button>
+                        </div>
+                    </div>
+                    <div class="day-selector-grid" id="def-sched-days-modal-buttons">
+                        <button type="button" class="day-toggle-btn sunday" data-day="0">日</button>
+                        <button type="button" class="day-toggle-btn" data-day="1">月</button>
+                        <button type="button" class="day-toggle-btn" data-day="2">火</button>
+                        <button type="button" class="day-toggle-btn" data-day="3">水</button>
+                        <button type="button" class="day-toggle-btn" data-day="4">木</button>
+                        <button type="button" class="day-toggle-btn" data-day="5">金</button>
+                        <button type="button" class="day-toggle-btn saturday" data-day="6">土</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 12px 16px; gap: 8px;">
+                <button type="button" id="def-sched-days-cancel-btn" class="btn btn-secondary" style="width: auto; min-width: 90px; padding: 8px 14px; margin-bottom: 0; font-size: 0.85rem;">キャンセル</button>
+                <button type="button" id="def-sched-days-save-btn" class="btn btn-primary" style="width: auto; min-width: 90px; padding: 8px 16px; margin-bottom: 0; font-size: 0.85rem; background: #2563eb; border-color: #60a5fa;">反映</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Default Schedule Exit Confirm Modal -->
+    <div id="def-sched-exit-confirm-modal" class="modal-overlay" style="z-index: 1100;">
+        <div class="modal-content" style="max-width: 360px; border: 1px solid #333;">
+            <div class="modal-header">
+                <h3 style="font-size: 1.05rem;">変更を保存しますか？</h3>
+                <span id="def-sched-exit-close-btn" style="cursor: pointer; font-size: 1.4rem; font-weight: bold; color: var(--text-secondary); line-height: 1; padding: 4px;">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 16px;">
+                <p style="font-size: 0.84rem; color: var(--text-secondary); margin: 0; line-height: 1.5;">
+                    編集中のデフォルトスケジュールを保存して戻りますか？<br>
+                    保存せずに戻ると、編集中の変更内容は破棄されます。
+                </p>
+                <div id="def-sched-exit-error" style="display: none; color: #f87171; font-size: 0.78rem; margin-top: 10px; line-height: 1.4;"></div>
+            </div>
+            <div class="modal-footer" style="padding: 12px 16px; flex-direction: column; align-items: stretch; gap: 8px;">
+                <button type="button" id="def-sched-exit-save-btn" class="btn btn-primary" style="width: 100%; padding: 10px 14px; margin-bottom: 0; font-size: 0.88rem; background: #2563eb; border-color: #60a5fa;">💾 保存して戻る</button>
+                <button type="button" id="def-sched-exit-discard-btn" class="btn btn-secondary" style="width: 100%; padding: 10px 14px; margin-bottom: 0; font-size: 0.86rem; color: #fca5a5; border-color: rgba(239, 68, 68, 0.45);">🗑 保存せずに戻る</button>
+                <button type="button" id="def-sched-exit-keep-btn" class="btn btn-secondary" style="width: 100%; padding: 9px 14px; margin-bottom: 0; font-size: 0.84rem;">編集を続ける</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Previous Week Copy Modal -->
     <div id="prev-week-copy-modal" class="modal-overlay" onclick="closePrevWeekCopyModalOnOverlay(event)">
         <div class="modal-content" style="max-height: 85vh; display: flex; flex-direction: column;">
@@ -2601,14 +2687,41 @@ const startDefSchedEditorBtn = document.getElementById('start-def-sched-editor-b
 const defSchedEditorBar = document.getElementById('def-sched-editor-bar');
 const defSchedEditorTitle = document.getElementById('def-sched-editor-title');
 const defSchedEditorRenameBtn = document.getElementById('def-sched-editor-rename-btn');
+const defSchedEditorDaysBtn = document.getElementById('def-sched-editor-days-btn');
 const defSchedEditorBadge = document.getElementById('def-sched-editor-badge');
 const defSchedEditorCount = document.getElementById('def-sched-editor-count');
 const defSchedEditorSaveBtn = document.getElementById('def-sched-editor-save-btn');
 const defSchedEditorCancelBtn = document.getElementById('def-sched-editor-cancel-btn');
 
+// Default Schedule Sub-Modals DOM Elements
+const defSchedRenameModal = document.getElementById('def-sched-rename-modal');
+const defSchedRenameCloseBtn = document.getElementById('def-sched-rename-close-btn');
+const defSchedRenameInput = document.getElementById('def-sched-rename-input');
+const defSchedRenameError = document.getElementById('def-sched-rename-error');
+const defSchedRenameCancelBtn = document.getElementById('def-sched-rename-cancel-btn');
+const defSchedRenameSaveBtn = document.getElementById('def-sched-rename-save-btn');
+
+const defSchedDaysModal = document.getElementById('def-sched-days-modal');
+const defSchedDaysCloseBtn = document.getElementById('def-sched-days-close-btn');
+const defSchedDaysTargetName = document.getElementById('def-sched-days-target-name');
+const defSchedDaysModalNoDay = document.getElementById('def-sched-days-modal-no-day');
+const defSchedDaysModalPickerBox = document.getElementById('def-sched-days-modal-picker-box');
+const defSchedDaysCancelBtn = document.getElementById('def-sched-days-cancel-btn');
+const defSchedDaysSaveBtn = document.getElementById('def-sched-days-save-btn');
+
+const defSchedExitConfirmModal = document.getElementById('def-sched-exit-confirm-modal');
+const defSchedExitCloseBtn = document.getElementById('def-sched-exit-close-btn');
+const defSchedExitError = document.getElementById('def-sched-exit-error');
+const defSchedExitSaveBtn = document.getElementById('def-sched-exit-save-btn');
+const defSchedExitDiscardBtn = document.getElementById('def-sched-exit-discard-btn');
+const defSchedExitKeepBtn = document.getElementById('def-sched-exit-keep-btn');
+
 // Dedicated Default Schedule Editor State
 let isEditingDefaultSchedule = false;
 let currentEditingDefaultSchedule = null; // { id, name, days, items: [] }
+let defaultScheduleEditorInitialSnapshot = null;
+let defSchedRenameContext = null; // { mode: 'list' | 'editor', schedId?: number }
+let defSchedDaysContext = null;   // { mode: 'list' | 'editor', schedId?: number }
 
 // State
 const storage = window.appStorage || { getItem: function() { return null; }, setItem: function() {} };
@@ -2785,6 +2898,16 @@ function notifyModalState(show) {
             window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MODAL_STATE_CHANGE', visible: show }));
         } catch (e) {
             console.warn('Failed to post MODAL_STATE_CHANGE:', e);
+        }
+    }
+}
+
+function notifyDefaultEditorState(editing) {
+    if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+        try {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'DEFAULT_EDITOR_STATE_CHANGE', editing: !!editing }));
+        } catch (e) {
+            console.warn('Failed to post DEFAULT_EDITOR_STATE_CHANGE:', e);
         }
     }
 }
@@ -3149,6 +3272,45 @@ function initDayButtonEvents() {
 // ==========================================
 // デフォルトスケジュール専用エディター制御ロジック
 // ==========================================
+function updateDefSchedEditorBadgeUI(days) {
+    if (!defSchedEditorBadge) return;
+    if (Array.isArray(days) && days.length > 0) {
+        const dayLabels = days.slice().sort(function(a, b) { return a - b; }).map(function(d) { return DAY_NAMES[d]; }).join('・');
+        defSchedEditorBadge.textContent = dayLabels;
+    } else {
+        defSchedEditorBadge.textContent = '全日共通';
+    }
+}
+
+function getDefaultScheduleEditorSnapshot() {
+    if (!currentEditingDefaultSchedule) return '';
+    return JSON.stringify({
+        name: currentEditingDefaultSchedule.name || '',
+        days: (currentEditingDefaultSchedule.days || []).slice().sort(function(a, b) { return a - b; }),
+        items: (currentEditingDefaultSchedule.items || []).map(function(p) {
+            return {
+                start: p.start,
+                end: p.end,
+                category: p.category || '',
+                items: (p.items || []).map(function(i) {
+                    return {
+                        name: i.name || '',
+                        percent: (i.percent !== undefined) ? i.percent : 100,
+                        weight: i.weight
+                    };
+                }),
+                memo: p.memo || ''
+            };
+        })
+    });
+}
+
+function hasDefaultScheduleEditorChanges() {
+    if (!isEditingDefaultSchedule || !currentEditingDefaultSchedule) return false;
+    if (defaultScheduleEditorInitialSnapshot === null) return false;
+    return defaultScheduleEditorInitialSnapshot !== getDefaultScheduleEditorSnapshot();
+}
+
 function startDefaultScheduleEditor(schedToEdit) {
     if (!schedToEdit) {
         // 新規作成
@@ -3181,6 +3343,7 @@ function startDefaultScheduleEditor(schedToEdit) {
     }
 
     isEditingDefaultSchedule = true;
+    defaultScheduleEditorInitialSnapshot = getDefaultScheduleEditorSnapshot();
     closeDefaultScheduleModal();
 
     switchMainViewMode('puzzle');
@@ -3192,38 +3355,69 @@ function startDefaultScheduleEditor(schedToEdit) {
     if (defSchedEditorBar) {
         defSchedEditorBar.style.display = 'block';
         if (defSchedEditorTitle) defSchedEditorTitle.textContent = '編集中: ' + currentEditingDefaultSchedule.name;
-        if (defSchedEditorBadge) {
-            if (currentEditingDefaultSchedule.days && currentEditingDefaultSchedule.days.length > 0) {
-                const dayLabels = currentEditingDefaultSchedule.days.slice().sort(function(a, b) { return a - b; }).map(function(d) { return DAY_NAMES[d]; }).join('・');
-                defSchedEditorBadge.textContent = dayLabels;
-            } else {
-                defSchedEditorBadge.textContent = '全日共通';
-            }
-        }
+        updateDefSchedEditorBadgeUI(currentEditingDefaultSchedule.days);
         if (defSchedEditorCount) {
             defSchedEditorCount.textContent = (currentEditingDefaultSchedule.items.length) + '件の予定';
         }
     }
 
     notifyModalState(true);
+    notifyDefaultEditorState(true);
     renderPuzzle();
 }
 
-function cancelDefaultScheduleEditor() {
-    if (!isEditingDefaultSchedule) return;
-    if (currentEditingDefaultSchedule && currentEditingDefaultSchedule.items.length > 0) {
-        if (!confirm('編集中の内容を破棄して終了しますか？')) {
-            return;
-        }
+function openDefSchedExitConfirmModal() {
+    if (!defSchedExitConfirmModal) return;
+    if (defSchedExitError) {
+        defSchedExitError.style.display = 'none';
+        defSchedExitError.textContent = '';
     }
-    exitDefaultScheduleEditor();
+    defSchedExitConfirmModal.classList.add('active');
+}
+
+function closeDefSchedExitConfirmModal() {
+    if (defSchedExitConfirmModal) {
+        defSchedExitConfirmModal.classList.remove('active');
+    }
+    if (defSchedExitError) {
+        defSchedExitError.style.display = 'none';
+        defSchedExitError.textContent = '';
+    }
+}
+
+window.requestExitDefaultScheduleEditor = function() {
+    if (!isEditingDefaultSchedule) return false;
+    if (defSchedRenameModal && defSchedRenameModal.classList.contains('active')) {
+        closeDefSchedRenameModal();
+        return true;
+    }
+    if (defSchedDaysModal && defSchedDaysModal.classList.contains('active')) {
+        closeDefSchedDaysModal();
+        return true;
+    }
+    if (defSchedExitConfirmModal && defSchedExitConfirmModal.classList.contains('active')) {
+        closeDefSchedExitConfirmModal();
+        return true;
+    }
+
+    if (!hasDefaultScheduleEditorChanges()) {
+        exitDefaultScheduleEditor();
+        return true;
+    }
+
+    openDefSchedExitConfirmModal();
+    return true;
+};
+
+function cancelDefaultScheduleEditor() {
+    window.requestExitDefaultScheduleEditor();
 }
 
 function saveDefaultScheduleEditor() {
-    if (!isEditingDefaultSchedule || !currentEditingDefaultSchedule) return;
+    if (!isEditingDefaultSchedule || !currentEditingDefaultSchedule) return false;
     if (!currentEditingDefaultSchedule.items || currentEditingDefaultSchedule.items.length === 0) {
         alert('予定が1件もありません。ピースを選んでタイムラインをタップするか、空き時間をタップして予定を作成してください。');
-        return;
+        return false;
     }
 
     const cleanData = currentEditingDefaultSchedule.items.map(function(p) {
@@ -3266,16 +3460,22 @@ function saveDefaultScheduleEditor() {
     alert('デフォルトスケジュール「' + currentEditingDefaultSchedule.name + '」を保存しました！');
 
     exitDefaultScheduleEditor();
+    return true;
 }
 
 function exitDefaultScheduleEditor() {
+    closeDefSchedExitConfirmModal();
+    closeDefSchedRenameModal();
+    closeDefSchedDaysModal();
     isEditingDefaultSchedule = false;
     currentEditingDefaultSchedule = null;
+    defaultScheduleEditorInitialSnapshot = null;
 
     const puzzleHeader = document.querySelector('.puzzle-header');
     if (puzzleHeader) puzzleHeader.style.display = 'flex';
     if (defSchedEditorBar) defSchedEditorBar.style.display = 'none';
 
+    notifyDefaultEditorState(false);
     notifyModalState(false);
     updateDefaultSchedBanner();
     renderPuzzle();
@@ -3410,93 +3610,174 @@ function applySpecificSchedule(schedId) {
     alert('「' + sched.name + '」を適用しました。');
 }
 
-function promptRenameSchedule(schedId) {
-    const sched = defaultSchedules.find(function(s) { return s.id === schedId; });
-    if (!sched) return;
+function openDefSchedRenameModal(context) {
+    if (!defSchedRenameModal || !defSchedRenameInput) return;
+    defSchedRenameContext = context;
+    let initialName = '';
+    if (context.mode === 'editor' && currentEditingDefaultSchedule) {
+        initialName = currentEditingDefaultSchedule.name || '';
+    } else if (context.mode === 'list') {
+        const sched = defaultSchedules.find(function(s) { return s.id === context.schedId; });
+        if (!sched) return;
+        initialName = sched.name || '';
+    }
+    defSchedRenameInput.value = initialName;
+    if (defSchedRenameError) {
+        defSchedRenameError.style.display = 'none';
+        defSchedRenameError.textContent = '';
+    }
+    defSchedRenameModal.classList.add('active');
+    setTimeout(function() {
+        try {
+            defSchedRenameInput.focus();
+            defSchedRenameInput.select();
+        } catch (e) {}
+    }, 80);
+}
 
-    const input = prompt('デフォルトスケジュールの新しい名称を入力してください:', sched.name || '');
-    if (input === null) return;
+function closeDefSchedRenameModal() {
+    if (defSchedRenameModal) {
+        defSchedRenameModal.classList.remove('active');
+    }
+    defSchedRenameContext = null;
+}
 
-    const newName = input.trim();
+function confirmDefSchedRenameModal() {
+    if (!defSchedRenameContext || !defSchedRenameInput) return;
+    const newName = defSchedRenameInput.value.trim();
     if (!newName) {
-        alert('スケジュール名を入力してください。');
+        if (defSchedRenameError) {
+            defSchedRenameError.textContent = 'スケジュール名を入力してください。';
+            defSchedRenameError.style.display = 'block';
+        }
         return;
     }
 
-    if (newName === sched.name) return;
-
-    sched.name = newName;
-    sched.updatedAt = Date.now();
-    saveDefaultSchedules();
-    renderDefaultScheduleList();
-    updateDefaultSchedBanner();
-
-    if (isEditingDefaultSchedule && currentEditingDefaultSchedule && currentEditingDefaultSchedule.id === schedId) {
-        currentEditingDefaultSchedule.name = newName;
-        if (defSchedEditorTitle) {
-            defSchedEditorTitle.textContent = '編集中: ' + newName;
+    if (defSchedRenameContext.mode === 'editor') {
+        if (isEditingDefaultSchedule && currentEditingDefaultSchedule) {
+            currentEditingDefaultSchedule.name = newName;
+            if (defSchedEditorTitle) {
+                defSchedEditorTitle.textContent = '編集中: ' + newName;
+            }
+        }
+    } else if (defSchedRenameContext.mode === 'list') {
+        const sched = defaultSchedules.find(function(s) { return s.id === defSchedRenameContext.schedId; });
+        if (sched && newName !== sched.name) {
+            sched.name = newName;
+            sched.updatedAt = Date.now();
+            saveDefaultSchedules();
+            renderDefaultScheduleList();
+            updateDefaultSchedBanner();
+            if (isEditingDefaultSchedule && currentEditingDefaultSchedule && currentEditingDefaultSchedule.id === sched.id) {
+                currentEditingDefaultSchedule.name = newName;
+                if (defSchedEditorTitle) {
+                    defSchedEditorTitle.textContent = '編集中: ' + newName;
+                }
+            }
         }
     }
+    closeDefSchedRenameModal();
+}
+
+function promptRenameSchedule(schedId) {
+    openDefSchedRenameModal({ mode: 'list', schedId: schedId });
 }
 
 function promptRenameCurrentEditingSchedule() {
     if (!isEditingDefaultSchedule || !currentEditingDefaultSchedule) return;
+    openDefSchedRenameModal({ mode: 'editor' });
+}
 
-    const input = prompt('デフォルトスケジュールの新しい名称を入力してください:', currentEditingDefaultSchedule.name || '');
-    if (input === null) return;
-
-    const newName = input.trim();
-    if (!newName) {
-        alert('スケジュール名を入力してください。');
-        return;
+function setDefSchedDaysModalSelection(daysArray) {
+    const btns = document.querySelectorAll('#def-sched-days-modal-buttons .day-toggle-btn');
+    btns.forEach(function(b) { b.classList.remove('active'); });
+    const hasDays = Array.isArray(daysArray) && daysArray.length > 0;
+    if (defSchedDaysModalNoDay) {
+        defSchedDaysModalNoDay.checked = !hasDays;
     }
-
-    currentEditingDefaultSchedule.name = newName;
-    if (defSchedEditorTitle) {
-        defSchedEditorTitle.textContent = '編集中: ' + newName;
+    if (defSchedDaysModalPickerBox) {
+        defSchedDaysModalPickerBox.style.opacity = hasDays ? '1' : '0.35';
     }
-
-    if (currentEditingDefaultSchedule.id) {
-        const target = defaultSchedules.find(function(s) { return s.id === currentEditingDefaultSchedule.id; });
-        if (target) {
-            target.name = newName;
-            target.updatedAt = Date.now();
-            saveDefaultSchedules();
-            updateDefaultSchedBanner();
-        }
+    if (hasDays) {
+        daysArray.forEach(function(d) {
+            const btn = document.querySelector('#def-sched-days-modal-buttons .day-toggle-btn[data-day="' + d + '"]');
+            if (btn) btn.classList.add('active');
+        });
     }
 }
 
-function promptEditScheduleDays(schedId) {
-    const sched = defaultSchedules.find(function(s) { return s.id === schedId; });
-    if (!sched) return;
+function getDefSchedDaysModalSelection() {
+    if (defSchedDaysModalNoDay && defSchedDaysModalNoDay.checked) return [];
+    const activeBtns = document.querySelectorAll('#def-sched-days-modal-buttons .day-toggle-btn.active');
+    const days = [];
+    activeBtns.forEach(function(b) {
+        days.push(parseInt(b.getAttribute('data-day'), 10));
+    });
+    return days.sort(function(a, b) { return a - b; });
+}
 
-    const curDaysStr = (Array.isArray(sched.days) && sched.days.length > 0)
-        ? sched.days.join(',')
-        : 'none';
-
-    const input = prompt(
-        '「' + sched.name + '」の適用曜日を設定してください:\\n' +
-        '0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土\\n' +
-        '（カンマ区切りで入力。例: 1,2,3,4,5 / 曜日指定なしは none と入力）',
-        curDaysStr
-    );
-
-    if (input !== null) {
-        const trimmed = input.trim().toLowerCase();
-        if (trimmed === 'none' || trimmed === '' || trimmed === '空') {
-            sched.days = [];
-        } else {
-            const parsedDays = trimmed.split(',')
-                .map(function(x) { return parseInt(x.trim(), 10); })
-                .filter(function(x) { return !isNaN(x) && x >= 0 && x <= 6; });
-            sched.days = Array.from(new Set(parsedDays)).sort(function(a, b) { return a - b; });
-        }
-        sched.updatedAt = Date.now();
-        saveDefaultSchedules();
-        renderDefaultScheduleList();
-        updateDefaultSchedBanner();
+function openDefSchedDaysModal(context) {
+    if (!defSchedDaysModal) return;
+    defSchedDaysContext = context;
+    let targetName = '';
+    let currentDays = [];
+    if (context.mode === 'editor') {
+        if (!isEditingDefaultSchedule || !currentEditingDefaultSchedule) return;
+        targetName = currentEditingDefaultSchedule.name || '新規スケジュール';
+        currentDays = currentEditingDefaultSchedule.days || [];
+    } else if (context.mode === 'list') {
+        const sched = defaultSchedules.find(function(s) { return s.id === context.schedId; });
+        if (!sched) return;
+        targetName = sched.name || '';
+        currentDays = sched.days || [];
     }
+    if (defSchedDaysTargetName) {
+        defSchedDaysTargetName.textContent = '対象: ' + targetName;
+    }
+    setDefSchedDaysModalSelection(currentDays);
+    defSchedDaysModal.classList.add('active');
+}
+
+function closeDefSchedDaysModal() {
+    if (defSchedDaysModal) {
+        defSchedDaysModal.classList.remove('active');
+    }
+    defSchedDaysContext = null;
+}
+
+function confirmDefSchedDaysModal() {
+    if (!defSchedDaysContext) return;
+    const newDays = getDefSchedDaysModalSelection();
+
+    if (defSchedDaysContext.mode === 'editor') {
+        if (isEditingDefaultSchedule && currentEditingDefaultSchedule) {
+            currentEditingDefaultSchedule.days = newDays;
+            updateDefSchedEditorBadgeUI(newDays);
+        }
+    } else if (defSchedDaysContext.mode === 'list') {
+        const sched = defaultSchedules.find(function(s) { return s.id === defSchedDaysContext.schedId; });
+        if (sched) {
+            sched.days = newDays;
+            sched.updatedAt = Date.now();
+            saveDefaultSchedules();
+            renderDefaultScheduleList();
+            updateDefaultSchedBanner();
+            if (isEditingDefaultSchedule && currentEditingDefaultSchedule && currentEditingDefaultSchedule.id === sched.id) {
+                currentEditingDefaultSchedule.days = newDays.slice();
+                updateDefSchedEditorBadgeUI(newDays);
+            }
+        }
+    }
+    closeDefSchedDaysModal();
+}
+
+function promptEditScheduleDays(schedId) {
+    openDefSchedDaysModal({ mode: 'list', schedId: schedId });
+}
+
+function promptEditCurrentEditingScheduleDays() {
+    if (!isEditingDefaultSchedule || !currentEditingDefaultSchedule) return;
+    openDefSchedDaysModal({ mode: 'editor' });
 }
 
 function saveNewDefaultScheduleFromPlans(sourcePlans, defaultName, days) {
@@ -3609,6 +3890,102 @@ function initDefaultScheduleUI() {
     }
     if (defSchedEditorTitle) {
         defSchedEditorTitle.onclick = promptRenameCurrentEditingSchedule;
+    }
+    if (defSchedEditorDaysBtn) {
+        defSchedEditorDaysBtn.onclick = promptEditCurrentEditingScheduleDays;
+    }
+    if (defSchedEditorBadge) {
+        defSchedEditorBadge.onclick = promptEditCurrentEditingScheduleDays;
+    }
+
+    // Rename Modal Events
+    if (defSchedRenameCloseBtn) defSchedRenameCloseBtn.onclick = closeDefSchedRenameModal;
+    if (defSchedRenameCancelBtn) defSchedRenameCancelBtn.onclick = closeDefSchedRenameModal;
+    if (defSchedRenameSaveBtn) defSchedRenameSaveBtn.onclick = confirmDefSchedRenameModal;
+    if (defSchedRenameModal) {
+        defSchedRenameModal.addEventListener('click', function(e) {
+            if (e.target === defSchedRenameModal) closeDefSchedRenameModal();
+        });
+    }
+    if (defSchedRenameInput) {
+        defSchedRenameInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                confirmDefSchedRenameModal();
+            }
+        });
+    }
+
+    // Days Modal Events
+    if (defSchedDaysCloseBtn) defSchedDaysCloseBtn.onclick = closeDefSchedDaysModal;
+    if (defSchedDaysCancelBtn) defSchedDaysCancelBtn.onclick = closeDefSchedDaysModal;
+    if (defSchedDaysSaveBtn) defSchedDaysSaveBtn.onclick = confirmDefSchedDaysModal;
+    if (defSchedDaysModal) {
+        defSchedDaysModal.addEventListener('click', function(e) {
+            if (e.target === defSchedDaysModal) closeDefSchedDaysModal();
+        });
+    }
+    const modalDayBtns = document.querySelectorAll('#def-sched-days-modal-buttons .day-toggle-btn');
+    modalDayBtns.forEach(function(b) {
+        b.onclick = function() {
+            if (defSchedDaysModalNoDay && defSchedDaysModalNoDay.checked) {
+                defSchedDaysModalNoDay.checked = false;
+                if (defSchedDaysModalPickerBox) defSchedDaysModalPickerBox.style.opacity = '1';
+            }
+            b.classList.toggle('active');
+        };
+    });
+    if (defSchedDaysModalNoDay) {
+        defSchedDaysModalNoDay.onchange = function() {
+            if (defSchedDaysModalNoDay.checked) {
+                modalDayBtns.forEach(function(b) { b.classList.remove('active'); });
+                if (defSchedDaysModalPickerBox) defSchedDaysModalPickerBox.style.opacity = '0.35';
+            } else {
+                if (defSchedDaysModalPickerBox) defSchedDaysModalPickerBox.style.opacity = '1';
+            }
+        };
+    }
+    const modalQuickWeekday = document.getElementById('def-sched-days-quick-weekday');
+    if (modalQuickWeekday) {
+        modalQuickWeekday.onclick = function() { setDefSchedDaysModalSelection([1, 2, 3, 4, 5]); };
+    }
+    const modalQuickWeekend = document.getElementById('def-sched-days-quick-weekend');
+    if (modalQuickWeekend) {
+        modalQuickWeekend.onclick = function() { setDefSchedDaysModalSelection([0, 6]); };
+    }
+    const modalQuickClear = document.getElementById('def-sched-days-quick-clear');
+    if (modalQuickClear) {
+        modalQuickClear.onclick = function() {
+            if (defSchedDaysModalNoDay) defSchedDaysModalNoDay.checked = false;
+            if (defSchedDaysModalPickerBox) defSchedDaysModalPickerBox.style.opacity = '1';
+            modalDayBtns.forEach(function(b) { b.classList.remove('active'); });
+        };
+    }
+
+    // Exit Confirm Modal Events
+    if (defSchedExitCloseBtn) defSchedExitCloseBtn.onclick = closeDefSchedExitConfirmModal;
+    if (defSchedExitKeepBtn) defSchedExitKeepBtn.onclick = closeDefSchedExitConfirmModal;
+    if (defSchedExitDiscardBtn) {
+        defSchedExitDiscardBtn.onclick = function() {
+            exitDefaultScheduleEditor();
+        };
+    }
+    if (defSchedExitSaveBtn) {
+        defSchedExitSaveBtn.onclick = function() {
+            if (!currentEditingDefaultSchedule || !currentEditingDefaultSchedule.items || currentEditingDefaultSchedule.items.length === 0) {
+                if (defSchedExitError) {
+                    defSchedExitError.textContent = '予定が1件もありません。保存する場合は「編集を続ける」から予定を追加してください。';
+                    defSchedExitError.style.display = 'block';
+                }
+                return;
+            }
+            saveDefaultScheduleEditor();
+        };
+    }
+    if (defSchedExitConfirmModal) {
+        defSchedExitConfirmModal.addEventListener('click', function(e) {
+            if (e.target === defSchedExitConfirmModal) closeDefSchedExitConfirmModal();
+        });
     }
     if (tmplSaveAsDefaultBtn) {
         tmplSaveAsDefaultBtn.addEventListener('click', function() {
