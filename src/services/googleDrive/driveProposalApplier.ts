@@ -1,15 +1,19 @@
 import {
   addCustomExercise,
   addRoutine,
+  getAllHabitLogs,
+  getAllTimeLogs,
   getBodyLogByDate,
   getExercises,
+  getHabitItems,
   getRoutines,
   getSettings,
   saveSetting,
   updateRoutine,
   upsertBodyLog,
+  withDBQueue,
 } from '../../db/database';
-import { Exercise, RoutineExercise, RoutineSet } from '../../db/types';
+import { Exercise, HabitItem, HabitLog, RoutineExercise, RoutineSet } from '../../db/types';
 import { useLifelogStore } from '../../store/lifelogStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { normalizeToDateISO } from '../obsidian/obsidianFormatter';
@@ -20,6 +24,7 @@ import {
   GoogleDriveSyncSettings,
   ProposalSummaryCounts,
   ProposedBodyCompositionLog,
+  ProposedHabitManagement,
   TrainerAdviceEntry,
 } from './types';
 
@@ -61,6 +66,45 @@ function safeParseArray(raw?: string): any[] {
 
 function generateCompactId(prefix = 'ai'): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function toSlashDate(d?: string | null): string {
+  if (!d) return '';
+  const iso = normalizeToDateISO(d);
+  return iso ? iso.replace(/-/g, '/') : '';
+}
+
+function timeToMinutes(hhmm?: string): number {
+  if (!hhmm || typeof hhmm !== 'string') return 0;
+  const [hStr, mStr] = hhmm.split(':');
+  const h = Number(hStr);
+  const m = Number(mStr);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return 0;
+  return h * 60 + m;
+}
+
+const HABIT_COLOR_MAP: Record<string, string> = {
+  red: 'linear-gradient(135deg, #FF6B6B, #EE5253)',
+  blue: 'linear-gradient(135deg, #48DBFB, #0ABDE3)',
+  green: 'linear-gradient(135deg, #1DD1A1, #10AC84)',
+  yellow: 'linear-gradient(135deg, #FECA57, #FF9F43)',
+  purple: 'linear-gradient(135deg, #A29BFE, #6C5CE7)',
+};
+
+function resolveHabitColor(color?: string): string {
+  if (!color || typeof color !== 'string') return HABIT_COLOR_MAP.blue;
+  const trimmed = color.trim();
+  if (!trimmed) return HABIT_COLOR_MAP.blue;
+  const preset = HABIT_COLOR_MAP[trimmed.toLowerCase()];
+  return preset || trimmed;
+}
+
+function buildHabitTimestampForSlashDate(dateSlash: string, offsetMs: number): number {
+  const parts = dateSlash.split('/').map(Number);
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) {
+    return Date.now() + offsetMs;
+  }
+  return new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0).getTime() + offsetMs;
 }
 
 function parseOptionalBodyMetric(
@@ -110,6 +154,11 @@ export function parseProposalsJson(rawText: string): AiAgentProposalsPayload | n
     bodyComposition = [parsed.bodyComposition as ProposedBodyCompositionLog];
   }
 
+  let habits: ProposedHabitManagement | undefined;
+  if (parsed.habits && typeof parsed.habits === 'object' && !Array.isArray(parsed.habits)) {
+    habits = parsed.habits as ProposedHabitManagement;
+  }
+
   return {
     schemaVersion: typeof parsed.schemaVersion === 'number' ? parsed.schemaVersion : 1,
     proposalId,
@@ -124,6 +173,7 @@ export function parseProposalsJson(rawText: string): AiAgentProposalsPayload | n
       parsed.timeManagement && typeof parsed.timeManagement === 'object'
         ? parsed.timeManagement
         : undefined,
+    habits,
     bodyComposition,
     memoryUpdates: Array.isArray(parsed.memoryUpdates) ? parsed.memoryUpdates : undefined,
   };
@@ -181,9 +231,12 @@ export function summarizeProposal(payload: AiAgentProposalsPayload): {
   const workoutMenusCount = payload.workoutMenus?.length ?? 0;
   const dailyRoutinesCount = payload.dailyRoutines?.length ?? 0;
   const timePlansCount = payload.timeManagement?.plans?.length ?? 0;
+  const timeActualLogsCount = payload.timeManagement?.actualLogs?.length ?? 0;
   const defaultSchedulesCount = payload.timeManagement?.defaultSchedules?.length ?? 0;
   const templatesCount = payload.timeManagement?.templates?.length ?? 0;
   const piecesCount = payload.timeManagement?.pieces?.length ?? 0;
+  const habitItemsCount = payload.habits?.items?.length ?? 0;
+  const habitLogsCount = payload.habits?.logs?.length ?? 0;
   const bodyCompositionCount = payload.bodyComposition?.length ?? 0;
   const memoryUpdatesCount = payload.memoryUpdates?.length ?? 0;
 
@@ -192,9 +245,12 @@ export function summarizeProposal(payload: AiAgentProposalsPayload): {
     workoutMenusCount,
     dailyRoutinesCount,
     timePlansCount,
+    timeActualLogsCount,
     defaultSchedulesCount,
     templatesCount,
     piecesCount,
+    habitItemsCount,
+    habitLogsCount,
     bodyCompositionCount,
     memoryUpdatesCount,
   };
@@ -205,11 +261,16 @@ export function summarizeProposal(payload: AiAgentProposalsPayload): {
   if (counts.dailyRoutinesCount > 0) parts.push(`デイリールーティン ${counts.dailyRoutinesCount}件`);
   const timeTotal =
     counts.timePlansCount +
+    counts.timeActualLogsCount +
     counts.defaultSchedulesCount +
     counts.templatesCount +
     counts.piecesCount;
   if (timeTotal > 0) {
     parts.push(`24時間管理提案 ${timeTotal}件`);
+  }
+  const habitTotal = counts.habitItemsCount + counts.habitLogsCount;
+  if (habitTotal > 0) {
+    parts.push(`習慣カウンター ${habitTotal}件`);
   }
   if (counts.bodyCompositionCount > 0) parts.push(`体組成記録 ${counts.bodyCompositionCount}件`);
   if (counts.memoryUpdatesCount > 0) parts.push(`AI記憶更新 ${counts.memoryUpdatesCount}件`);
@@ -237,9 +298,12 @@ export function isNewPendingProposal(
       counts.workoutMenusCount +
       counts.dailyRoutinesCount +
       counts.timePlansCount +
+      counts.timeActualLogsCount +
       counts.defaultSchedulesCount +
       counts.templatesCount +
       counts.piecesCount +
+      counts.habitItemsCount +
+      counts.habitLogsCount +
       counts.bodyCompositionCount +
       counts.memoryUpdatesCount >
     0;
@@ -279,6 +343,7 @@ export async function applyAiAgentProposalToApp(
   workoutMenuTouched: boolean;
   dailyRoutineTouched: boolean;
   timeManagementTouched: boolean;
+  habitsTouched: boolean;
   bodyCompositionTouched: boolean;
 }> {
   const { counts, previewSummary } = summarizeProposal(payload);
@@ -288,6 +353,7 @@ export async function applyAiAgentProposalToApp(
     let workoutMenuTouched = false;
     let dailyRoutineTouched = false;
     let timeManagementTouched = false;
+    let habitsTouched = false;
     let bodyCompositionTouched = false;
 
     // 1. トレーナーアドバイスの保存
@@ -484,6 +550,7 @@ export async function applyAiAgentProposalToApp(
       const tm = payload.timeManagement;
 
       // 4-a. 予定 (zikankanri_plans)
+      // ※ ZikanKanri.js と calendarService.ts は date を YYYY/MM/DD 形式で扱うため、保存時は YYYY/MM/DD に統一する
       const safeDateISO = (d?: string | null): string => {
         if (!d) return '';
         return normalizeToDateISO(d) || '';
@@ -514,7 +581,8 @@ export async function applyAiAgentProposalToApp(
         for (const p of tm.plans || []) {
           if (!p?.date || !p?.start || !p?.end) continue;
           const dateISO = safeDateISO(p.date);
-          if (!dateISO) continue;
+          const dateSlash = toSlashDate(p.date);
+          if (!dateISO || !dateSlash) continue;
           const primaryName =
             p.items && p.items.length > 0
               ? p.items[0].name
@@ -530,7 +598,7 @@ export async function applyAiAgentProposalToApp(
 
           const planObj = {
             id: p.id || generateCompactId('ai_plan'),
-            date: dateISO,
+            date: dateSlash,
             start: p.start,
             end: p.end,
             category: p.category || 'invest',
@@ -683,10 +751,312 @@ export async function applyAiAgentProposalToApp(
         );
       }
 
+      // 4-e. 実績タイムログ (time_logs) の追加・更新・日単位置換
+      if (
+        (tm.actualLogs && tm.actualLogs.length > 0) ||
+        (tm.replaceActualDates && tm.replaceActualDates.length > 0)
+      ) {
+        const replaceActualDateSet = new Set<string>(
+          (tm.replaceActualDates || []).map((d) => toSlashDate(d)).filter(Boolean)
+        );
+        for (const l of tm.actualLogs || []) {
+          if (l?.replaceDateLogs && l.date) {
+            const dSlash = toSlashDate(l.date);
+            if (dSlash) replaceActualDateSet.add(dSlash);
+          }
+        }
+
+        // SQLiteデッドロック防止：トランザクション開始前に既存 time_logs を一括取得
+        const existingTimeLogs = await getAllTimeLogs();
+        const deleteIds = new Set<number>();
+
+        if (replaceActualDateSet.size > 0) {
+          for (const ex of existingTimeLogs) {
+            if (replaceActualDateSet.has(toSlashDate(ex.date))) {
+              deleteIds.add(ex.id);
+            }
+          }
+        }
+
+        const inserts: Array<{
+          activity_name: string;
+          start_time: string;
+          end_time: string;
+          date: string;
+          duration_minutes: number;
+        }> = [];
+
+        for (const l of tm.actualLogs || []) {
+          if (!l?.date || !l?.start || !l?.end) continue;
+          const dateSlash = toSlashDate(l.date);
+          if (!dateSlash) continue;
+
+          const startTime = l.start.trim();
+          const endTime = l.end.trim();
+          let totalDuration =
+            typeof l.duration_minutes === 'number' && Number.isFinite(l.duration_minutes) && l.duration_minutes > 0
+              ? Math.round(l.duration_minutes)
+              : 0;
+          if (totalDuration === 0) {
+            const sMins = timeToMinutes(startTime);
+            let eMins = timeToMinutes(endTime);
+            if (eMins < sMins) eMins += 1440;
+            totalDuration = Math.max(0, eMins - sMins);
+          }
+
+          const items =
+            Array.isArray(l.items) && l.items.length > 0
+              ? l.items.filter((it) => it && typeof it.name === 'string' && it.name.trim().length > 0)
+              : [{ name: (l.activity_name || '活動').trim() || '活動', percent: 100 }];
+
+          if (items.length === 0) continue;
+
+          // 日単位置換でない場合も、同一日付・同一時間帯の既存ログを置き換えて冪等に upsert する
+          if (!replaceActualDateSet.has(dateSlash)) {
+            for (const ex of existingTimeLogs) {
+              if (
+                toSlashDate(ex.date) === dateSlash &&
+                ex.start_time === startTime &&
+                ex.end_time === endTime
+              ) {
+                deleteIds.add(ex.id);
+              }
+            }
+          }
+
+          for (const it of items) {
+            const pct = Number.isFinite(Number(it.percent)) ? Number(it.percent) : 100;
+            const dur = totalDuration > 0 ? Math.max(1, Math.round(totalDuration * (pct / 100))) : 0;
+            inserts.push({
+              activity_name: it.name.trim(),
+              start_time: startTime,
+              end_time: endTime,
+              date: dateSlash,
+              duration_minutes: dur,
+            });
+          }
+        }
+
+        if (deleteIds.size > 0 || inserts.length > 0) {
+          await withDBQueue(async (queuedDb) => {
+            await queuedDb.withTransactionAsync(async () => {
+              for (const id of deleteIds) {
+                await queuedDb.runAsync('DELETE FROM time_logs WHERE id = ?', [id]);
+              }
+              for (const row of inserts) {
+                await queuedDb.runAsync(
+                  'INSERT INTO time_logs (activity_name, start_time, end_time, date, duration_minutes) VALUES (?, ?, ?, ?, ?)',
+                  [row.activity_name, row.start_time, row.end_time, row.date, row.duration_minutes]
+                );
+              }
+            });
+          });
+          timeManagementTouched = true;
+        }
+      }
+
       if (timeManagementTouched) {
-        const nowD = new Date();
-        const todayISO = `${nowD.getFullYear()}-${String(nowD.getMonth() + 1).padStart(2, '0')}-${String(nowD.getDate()).padStart(2, '0')}`;
-        await useLifelogStore.getState().loadTimeData(todayISO);
+        const activeDate = useLifelogStore.getState().resolveActiveDate();
+        await useLifelogStore.getState().loadTimeData(activeDate);
+      }
+    }
+
+    // 4.3 習慣カウンター (habit_items / habit_logs) の追加・更新・削除・記録
+    if (payload.habits && ((payload.habits.items && payload.habits.items.length > 0) || (payload.habits.logs && payload.habits.logs.length > 0))) {
+      // SQLiteデッドロック防止：トランザクション開始前にマスタとログを一括取得
+      const existingHabitItems = await getHabitItems();
+      const existingHabitLogs = await getAllHabitLogs();
+
+      const workingItems: HabitItem[] = existingHabitItems.map((it) => ({ ...it }));
+      const workingLogs: HabitLog[] = existingHabitLogs.map((l) => ({ ...l }));
+
+      const findHabitItem = (id?: number, name?: string): HabitItem | undefined => {
+        if (typeof id === 'number' && Number.isFinite(id)) {
+          const byId = workingItems.find((it) => it.id === id);
+          if (byId) return byId;
+        }
+        if (typeof name === 'string' && name.trim()) {
+          const lower = name.trim().toLowerCase();
+          return workingItems.find((it) => it.name.trim().toLowerCase() === lower);
+        }
+        return undefined;
+      };
+
+      await withDBQueue(async (queuedDb) => {
+        await queuedDb.withTransactionAsync(async () => {
+          // 1) 習慣アイテムの作成・更新・削除
+          for (const item of payload.habits?.items || []) {
+            const cleanName = typeof item?.name === 'string' ? item.name.trim() : '';
+            if (!cleanName && typeof item?.id !== 'number') continue;
+
+            const action = item.action || 'upsert';
+            const matched = findHabitItem(item.id, cleanName);
+
+            if (action === 'delete') {
+              if (matched) {
+                await queuedDb.runAsync('DELETE FROM habit_logs WHERE habit_item_id = ?', [matched.id]);
+                await queuedDb.runAsync('DELETE FROM habit_items WHERE id = ?', [matched.id]);
+                const idx = workingItems.findIndex((w) => w.id === matched.id);
+                if (idx !== -1) workingItems.splice(idx, 1);
+                for (let i = workingLogs.length - 1; i >= 0; i--) {
+                  if (workingLogs[i].habit_item_id === matched.id) {
+                    workingLogs.splice(i, 1);
+                  }
+                }
+                habitsTouched = true;
+              }
+              continue;
+            }
+
+            if (matched && action !== 'create') {
+              const nextName = cleanName || matched.name;
+              const nextColor = item.color ? resolveHabitColor(item.color) : matched.color;
+              const nextTarget =
+                item.target_count !== undefined
+                  ? Math.max(0, Math.floor(Number(item.target_count) || 0))
+                  : matched.target_count ?? 0;
+              const nextHidden =
+                item.hidden !== undefined ? (item.hidden ? 1 : 0) : matched.is_hidden ?? 0;
+              const nextSort =
+                item.sort_order !== undefined ? Math.floor(Number(item.sort_order) || 0) : matched.sort_order ?? 0;
+
+              await queuedDb.runAsync(
+                'UPDATE habit_items SET name = ?, color = ?, sort_order = ?, target_count = ?, is_hidden = ? WHERE id = ?',
+                [nextName, nextColor, nextSort, nextTarget, nextHidden, matched.id]
+              );
+              matched.name = nextName;
+              matched.color = nextColor;
+              matched.sort_order = nextSort;
+              matched.target_count = nextTarget;
+              matched.is_hidden = nextHidden;
+              habitsTouched = true;
+            } else if (cleanName) {
+              const nextColor = resolveHabitColor(item.color);
+              const nextTarget = Math.max(0, Math.floor(Number(item.target_count) || 0));
+              const nextHidden = item.hidden ? 1 : 0;
+              const nextSort =
+                item.sort_order !== undefined
+                  ? Math.floor(Number(item.sort_order) || 0)
+                  : workingItems.length;
+              const nowTs = Date.now();
+              const res = await queuedDb.runAsync(
+                'INSERT INTO habit_items (name, color, created_at, sort_order, target_count, is_hidden) VALUES (?, ?, ?, ?, ?, ?)',
+                [cleanName, nextColor, nowTs, nextSort, nextTarget, nextHidden]
+              );
+              workingItems.push({
+                id: res.lastInsertRowId,
+                name: cleanName,
+                color: nextColor,
+                created_at: nowTs,
+                sort_order: nextSort,
+                target_count: nextTarget,
+                is_hidden: nextHidden,
+              });
+              habitsTouched = true;
+            }
+          }
+
+          // 2) 習慣ログの追加・回数セット・クリア
+          for (const logEntry of payload.habits?.logs || []) {
+            if (!logEntry?.date) continue;
+            const dateSlash = toSlashDate(logEntry.date);
+            if (!dateSlash) continue;
+
+            let targetItem = findHabitItem(logEntry.habit_item_id, logEntry.habit_name);
+            if (!targetItem && logEntry.habit_name && logEntry.habit_name.trim()) {
+              // 未登録の習慣名が指定された場合は自動作成して記録する
+              const newName = logEntry.habit_name.trim();
+              const newColor = resolveHabitColor(logEntry.color);
+              const newTarget = Math.max(0, Math.floor(Number(logEntry.target_count) || 0));
+              const nowTs = Date.now();
+              const res = await queuedDb.runAsync(
+                'INSERT INTO habit_items (name, color, created_at, sort_order, target_count, is_hidden) VALUES (?, ?, ?, ?, ?, 0)',
+                [newName, newColor, nowTs, workingItems.length, newTarget]
+              );
+              targetItem = {
+                id: res.lastInsertRowId,
+                name: newName,
+                color: newColor,
+                created_at: nowTs,
+                sort_order: workingItems.length,
+                target_count: newTarget,
+                is_hidden: 0,
+              };
+              workingItems.push(targetItem);
+              habitsTouched = true;
+            }
+
+            if (!targetItem) continue;
+
+            const dayLogs = workingLogs
+              .filter(
+                (l) => l.habit_item_id === targetItem!.id && toSlashDate(l.date) === dateSlash
+              )
+              .sort((a, b) => a.timestamp - b.timestamp);
+
+            const rawCount =
+              logEntry.count !== undefined ? Math.max(0, Math.floor(Number(logEntry.count) || 0)) : 1;
+            const mode = logEntry.mode || (rawCount === 0 ? 'clear' : 'set');
+
+            if (mode === 'clear' || (mode === 'set' && rawCount === 0)) {
+              for (const dl of dayLogs) {
+                await queuedDb.runAsync('DELETE FROM habit_logs WHERE id = ?', [dl.id]);
+                const wIdx = workingLogs.findIndex((w) => w.id === dl.id);
+                if (wIdx !== -1) workingLogs.splice(wIdx, 1);
+                habitsTouched = true;
+              }
+            } else if (mode === 'increment') {
+              for (let i = 0; i < rawCount; i++) {
+                const ts = buildHabitTimestampForSlashDate(dateSlash, (dayLogs.length + i) * 1000);
+                const ins = await queuedDb.runAsync(
+                  'INSERT INTO habit_logs (habit_item_id, timestamp, date) VALUES (?, ?, ?)',
+                  [targetItem.id, ts, dateSlash]
+                );
+                workingLogs.push({
+                  id: ins.lastInsertRowId,
+                  habit_item_id: targetItem.id,
+                  timestamp: ts,
+                  date: dateSlash,
+                });
+                habitsTouched = true;
+              }
+            } else {
+              // mode === 'set'
+              if (rawCount > dayLogs.length) {
+                const diff = rawCount - dayLogs.length;
+                for (let i = 0; i < diff; i++) {
+                  const ts = buildHabitTimestampForSlashDate(dateSlash, (dayLogs.length + i) * 1000);
+                  const ins = await queuedDb.runAsync(
+                    'INSERT INTO habit_logs (habit_item_id, timestamp, date) VALUES (?, ?, ?)',
+                    [targetItem.id, ts, dateSlash]
+                  );
+                  workingLogs.push({
+                    id: ins.lastInsertRowId,
+                    habit_item_id: targetItem.id,
+                    timestamp: ts,
+                    date: dateSlash,
+                  });
+                  habitsTouched = true;
+                }
+              } else if (rawCount < dayLogs.length) {
+                const removeCount = dayLogs.length - rawCount;
+                const toRemove = dayLogs.slice(dayLogs.length - removeCount);
+                for (const dl of toRemove) {
+                  await queuedDb.runAsync('DELETE FROM habit_logs WHERE id = ?', [dl.id]);
+                  const wIdx = workingLogs.findIndex((w) => w.id === dl.id);
+                  if (wIdx !== -1) workingLogs.splice(wIdx, 1);
+                  habitsTouched = true;
+                }
+              }
+            }
+          }
+        });
+      });
+
+      if (habitsTouched) {
+        const activeDate = useLifelogStore.getState().resolveActiveDate();
+        await useLifelogStore.getState().loadHabitItems();
+        await useLifelogStore.getState().loadHabits(activeDate);
       }
     }
 
@@ -893,6 +1263,7 @@ export async function applyAiAgentProposalToApp(
       workoutMenuTouched,
       dailyRoutineTouched,
       timeManagementTouched,
+      habitsTouched,
       bodyCompositionTouched,
     };
   });
