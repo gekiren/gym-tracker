@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, TouchableOpacity, ActivityIndicator, Alert, Modal, Text, Pressable } from 'react-native';
-import { Stack, router } from 'expo-router';
+import { View, TouchableOpacity, ActivityIndicator, Alert, Modal, Text, Pressable, BackHandler } from 'react-native';
+import { Stack, router, useNavigation } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { useAppTheme } from '../../src/theme';
 import { WebViewTab, WebViewTabRef } from '../../components/WebViewTab';
@@ -30,11 +30,13 @@ export default function ZikanScreen() {
   const appliedRevision = useGoogleDriveSyncStore((state) => state.appliedRevision);
   const [showHistory, setShowHistory] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isEditingDefaultSchedule, setIsEditingDefaultSchedule] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [isCalendarSyncing, setIsCalendarSyncing] = useState(false);
   const webViewTabRef = useRef<WebViewTabRef>(null);
   const { t } = useTranslation();
   const isFocused = useIsFocused();
+  const navigation = useNavigation();
   const { panHandlerProps } = useFeatureSwipe('/lifelog/zikan');
 
   const getTodayStr = () => {
@@ -136,9 +138,38 @@ export default function ZikanScreen() {
   useEffect(() => {
     if (!isFocused) {
       setIsModalVisible(false);
+      setIsEditingDefaultSchedule(false);
       setShowSettingsMenu(false);
     }
   }, [isFocused]);
+
+  // デフォルトスケジュール編集中に「戻る」操作があった場合、保存/破棄の確認モーダルを出す
+  const triggerDefaultEditorExitConfirm = useCallback(() => {
+    webViewTabRef.current?.injectJavaScript(
+      `if (typeof window.requestExitDefaultScheduleEditor === 'function') {
+        window.requestExitDefaultScheduleEditor();
+      }`
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!isFocused || !isEditingDefaultSchedule) return;
+
+    const backSub = BackHandler.addEventListener('hardwareBackPress', () => {
+      triggerDefaultEditorExitConfirm();
+      return true;
+    });
+
+    const unsubBeforeRemove = navigation.addListener('beforeRemove', (e: any) => {
+      e.preventDefault();
+      triggerDefaultEditorExitConfirm();
+    });
+
+    return () => {
+      backSub.remove();
+      unsubBeforeRemove();
+    };
+  }, [isFocused, isEditingDefaultSchedule, navigation, triggerDefaultEditorExitConfirm]);
 
   // 手動カレンダー同期
   const handleManualCalendarSync = useCallback(async () => {
@@ -270,6 +301,7 @@ export default function ZikanScreen() {
               html={ZikanKanriHTML}
               currentDate={targetDate}
               onModalStateChange={(visible) => setIsModalVisible(visible)}
+              onDefaultEditorStateChange={(editing) => setIsEditingDefaultSchedule(editing)}
             />
           </>
         ) : null}

@@ -22,9 +22,10 @@ interface WebViewTabProps {
   html: string;
   currentDate: string;
   onModalStateChange?: (visible: boolean) => void;
+  onDefaultEditorStateChange?: (editing: boolean) => void;
 }
 
-export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(({ html, currentDate, onModalStateChange }, ref) => {
+export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(({ html, currentDate, onModalStateChange, onDefaultEditorStateChange }, ref) => {
   const { colors, backgroundTheme } = useAppTheme();
   const webViewRef = useRef<WebView>(null);
   const [initialData, setInitialData] = useState<Record<string, any> | null>(null);
@@ -119,6 +120,13 @@ export const WebViewTab = React.memo(forwardRef<WebViewTabRef, WebViewTabProps>(
         const { visible } = message;
         console.log(`[WebViewTab] MODAL_STATE_CHANGE visible=${visible}`);
         onModalStateChange?.(!!visible);
+        return;
+      }
+
+      if (message.type === 'DEFAULT_EDITOR_STATE_CHANGE') {
+        const { editing } = message;
+        console.log(`[WebViewTab] DEFAULT_EDITOR_STATE_CHANGE editing=${editing}`);
+        onDefaultEditorStateChange?.(!!editing);
         return;
       }
 

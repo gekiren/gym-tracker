@@ -9,7 +9,9 @@ interface Props {
 }
 
 const TRACK_HEIGHT = 110;
-const DATE_LABEL_HEIGHT = 18;
+const DATE_LABEL_HEIGHT = 20;
+const BAR_COL_WIDTH = 36;
+const CHART_WIDTH = 540;
 
 export default function NutritionHistoryChart({ allLogs, goals }: Props) {
   const { colors } = useAppTheme();
@@ -87,7 +89,9 @@ export default function NutritionHistoryChart({ allLogs, goals }: Props) {
 
               return (
                 <View key={item.date} style={styles.barCol}>
-                  <Text style={styles.barVal}>{item.totalCal > 0 ? Math.round(item.totalCal) : ''}</Text>
+                  <Text style={styles.barVal} numberOfLines={1} maxFontSizeMultiplier={1.1}>
+                    {item.totalCal > 0 ? Math.round(item.totalCal) : ''}
+                  </Text>
                   <View style={[styles.barTrack, { height: TRACK_HEIGHT }]}>
                     <View
                       style={[
@@ -99,7 +103,9 @@ export default function NutritionHistoryChart({ allLogs, goals }: Props) {
                       ]}
                     />
                   </View>
-                  <Text style={styles.barDate}>{item.label}</Text>
+                  <Text style={styles.barDate} numberOfLines={1} maxFontSizeMultiplier={1.1}>
+                    {item.label}
+                  </Text>
                 </View>
               );
             })}
@@ -120,7 +126,7 @@ const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => Style
     borderColor: colors.border,
   },
   title: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 12 },
-  chartContainer: { height: 160, width: 440, position: 'relative' },
+  chartContainer: { height: 164, width: CHART_WIDTH, position: 'relative' },
   plotArea: {
     position: 'absolute',
     left: 0,
@@ -146,9 +152,9 @@ const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => Style
     marginBottom: 2,
   },
   barsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: '100%' },
-  barCol: { width: 26, alignItems: 'center', height: '100%', justifyContent: 'flex-end' },
-  barVal: { fontSize: 10, color: colors.textMuted, marginBottom: 2, height: 14 },
+  barCol: { width: BAR_COL_WIDTH, alignItems: 'center', height: '100%', justifyContent: 'flex-end' },
+  barVal: { fontSize: 10, color: colors.textMuted, marginBottom: 2, height: 14, width: '100%', textAlign: 'center' },
   barTrack: { width: 14, backgroundColor: colors.background, borderRadius: 7, overflow: 'hidden', justifyContent: 'flex-end' },
   barFill: { width: '100%', borderRadius: 7 },
-  barDate: { fontSize: 10, color: colors.textMuted, marginTop: 4, height: DATE_LABEL_HEIGHT - 4 },
+  barDate: { fontSize: 10, color: colors.textMuted, marginTop: 4, height: DATE_LABEL_HEIGHT - 4, width: '100%', textAlign: 'center' },
 });
