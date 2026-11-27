@@ -238,6 +238,14 @@ export default function RootLayout() {
       const exerciseChartPreferences = parseExerciseChartPreferences(storedSettings['exercise_chart_preferences']);
       const exercisePrCollapsedStances = parseExercisePrCollapsedStances(storedSettings['exercise_pr_collapsed_stances']);
       const lastHistoryChartMetric = storedSettings['last_history_chart_metric'] as any;
+      const warmupEnabled = storedSettings['warmup_enabled'] === '1';
+      const parsedWarmupThreshold = storedSettings['warmup_threshold_percent'] !== undefined
+        ? Number(storedSettings['warmup_threshold_percent'])
+        : 60;
+      const warmupThresholdPercent = Number.isFinite(parsedWarmupThreshold) && parsedWarmupThreshold >= 0
+        ? parsedWarmupThreshold
+        : 60;
+      const effective1RmEnabled = storedSettings['effective_1rm_enabled'] === '1';
 
       // 5. ストアへの設定ロード
       useSettingsStore.getState().loadSettings({
@@ -269,6 +277,9 @@ export default function RootLayout() {
         exerciseChartPreferences,
         exercisePrCollapsedStances,
         lastHistoryChartMetric,
+        warmupEnabled,
+        warmupThresholdPercent,
+        effective1RmEnabled,
       });
       if (expired) {
         useWorkoutStore.getState().setShouldShowPaywall(true);

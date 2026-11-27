@@ -155,7 +155,9 @@
       "alert_delete_exercise_error_message": "Exercises containing completed sets cannot be deleted. Uncheck the sets first.",
       "manual_start_btn": "▶ Resume Workout",
       "manual_start_success": "Timer started",
-      "start_training_btn": "▶ Start Training Timer"
+      "start_training_btn": "▶ Start Training Timer",
+      "effective_1rm_label": "Eff. 1RM",
+      "effective_1rm_planned_label": "Plan"
     },
     "ads": {
       "promo_ai_title": "Ad-Free & All Features",
@@ -195,6 +197,7 @@
       "calendar_btn": "Calendar",
       "chart_title": "Recent Total Volume ({{unit}})",
       "chart_1rm_title": "Recent Est. 1RM Max ({{unit}})",
+      "chart_effective_1rm_title": "Effective 1RM Progression ({{unit}})",
       "type_volume": "Volume",
       "type_1rm": "Est. 1RM",
       "empty_state": "No records yet.",
@@ -226,6 +229,8 @@
       "metric_avg_volume_per_set_sub": "Total Volume ÷ Sets (Quality & intensity per set)",
       "metric_density_sub": "Total Volume ÷ Duration (Weight moved per minute)",
       "metric_1rm_sub": "Estimated 1RM max over time",
+      "metric_effective_1rm": "Effective 1RM",
+      "metric_effective_1rm_sub": "Multi-set adjusted 1RM with max-weight filtering",
       "chart_title_water": "Recent Water Intake (ml)",
       "chart_title_caffeine": "Recent Caffeine Intake (mg)",
       "chart_title_nutrition_calories": "Recent Calories Intake (kcal)",
@@ -330,7 +335,13 @@
       "show_all_history": "Show all history ({{count}} total)",
       "stance_none": "No Stance",
       "stance_all": "All",
-      "no_stance_chart_data": "No records for selected stance"
+      "no_stance_chart_data": "No records for selected stance",
+      "section_warmup_threshold": "Warm-up Auto-Detect %",
+      "warmup_threshold_desc": "Automatically mark sets at or below this % of all-time max 1RM as warm-up (W).",
+      "warmup_use_global": "Use Global Setting",
+      "warmup_use_global_short": "Global",
+      "effective_1rm_short": "Eff. 1RM",
+      "max_weight_all": "All"
     },
     "active_routine": {
       "alert_pause_title": "Pause Routine",
@@ -424,6 +435,13 @@
       "screen_title_select_exercise": "Select Exercise",
       "body_weight_label": "Body Weight (Optional)",
       "body_weight_desc": "Used for calorie calculation. A default value is used if not set.",
+      "warmup_enabled_label": "Warm-up Sets",
+      "warmup_enabled_desc": "Exclude warm-up sets (W) from volume, PRs, and charts. Long-press an incomplete set number to toggle.",
+      "warmup_threshold_label": "Warm-up Auto-Detect Threshold (% of Max 1RM)",
+      "warmup_threshold_desc": "Sets at or below this % of all-time max 1RM are marked as warm-up automatically (can be overridden per exercise).",
+      "warmup_auto_off": "Auto OFF",
+      "effective_1rm_enabled_label": "Effective 1RM",
+      "effective_1rm_enabled_desc": "Track multi-set performance with Effective 1RM during workouts and in exercise charts.",
       "always_one_set_label": "Always Start with 1 Set",
       "always_one_set_desc": "When adding an exercise, always initialize with only 1 set (or 1 set per side for unilateral exercises) regardless of previous performance.",
       "add_set_stance_mode_label": "Stance on Adding Set",

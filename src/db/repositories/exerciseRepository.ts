@@ -84,6 +84,18 @@ export const updateExerciseRestSeconds = async (exerciseId: number, restSeconds:
   invalidateExerciseDetailCache(exerciseId);
 };
 
+export const updateExerciseWarmupThreshold = async (
+  exerciseId: number,
+  warmupThresholdPercent: number | null
+) => {
+  const conn = getDB();
+  await conn.runAsync('UPDATE exercises SET warmup_threshold_percent = ? WHERE id = ?', [
+    warmupThresholdPercent,
+    exerciseId,
+  ]);
+  invalidateExerciseDetailCache(exerciseId);
+};
+
 export const getMissingPresets = async () => {
   const conn = getDB();
   

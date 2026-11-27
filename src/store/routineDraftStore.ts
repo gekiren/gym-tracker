@@ -9,6 +9,7 @@ export interface DraftExerciseSet {
   speed?: number | null;
   incline?: number | null;
   work_seconds?: number | null;
+  is_warmup?: boolean;
   side?: 'L' | 'R' | null;
   variation?: string | null;
   stance?: string | null;

@@ -10,6 +10,7 @@ import { translateStance } from '../../src/i18n';
 import { TimerButton } from './TimerButton';
 import { CompactSwipeableInput } from './CompactSwipeableInput';
 import { isTreadmillExercise } from '../../src/utils/exerciseUtils';
+import { getDisplaySetLabel } from '../../src/utils/warmupUtils';
 import {
   calculateRemainingSeconds,
   calculateActualWorkSeconds,
@@ -24,6 +25,8 @@ interface SetInputRowProps {
   idx: number;
   updateSet: (exId: string, setId: string, values: any) => void;
   toggleSetComplete: (exId: string, setId: string) => void;
+  toggleSetWarmup?: (exId: string, setId: string) => void;
+  warmupEnabled?: boolean;
   removeSet: (exId: string, setId: string) => void;
   setActiveSetForCalc: (val: { exId: string; setId: string } | null) => void;
   calculateRM: (weight: number | null, reps: number | null) => number | null;
@@ -68,6 +71,8 @@ export function SetInputRow({
   idx,
   updateSet,
   toggleSetComplete,
+  toggleSetWarmup,
+  warmupEnabled = false,
   removeSet,
   setActiveSetForCalc,
   calculateRM,
@@ -299,10 +304,14 @@ export function SetInputRow({
     }
   };
 
+  const isWarmup = Boolean(warmupEnabled && !isTreadmill && !isAerobic && set.is_warmup);
+  const canToggleWarmup = Boolean(warmupEnabled && !isTreadmill && !isAerobic && !set.is_completed && toggleSetWarmup);
+  const displaySetLabel = getDisplaySetLabel(ex.sets, idx, Boolean(warmupEnabled && !isTreadmill && !isAerobic));
+
   const currentRM = calculateRM(set.weight, set.reps);
   const varKey = set.stance || set.variation || 'default';
   const prMapForVar = ex.personalRecords ? ex.personalRecords[varKey] : null;
-  const isPR = !!(set.weight != null && set.reps != null && set.reps > 0 && set.weight >= 0 && 
+  const isPR = !isWarmup && !!(set.weight != null && set.reps != null && set.reps > 0 && set.weight >= 0 && 
                 (!prMapForVar || prMapForVar[set.reps] === undefined || set.weight > prMapForVar[set.reps]));
   
   let timeTakenStr = '';
@@ -368,11 +377,39 @@ export function SetInputRow({
     >
       <View style={{ backgroundColor: colors.card }}>
         <View style={[styles.row, set.is_completed && styles.rowCompleted]}>
-          <View style={{ width: isTreadmill ? 40 : (isAerobic ? 44 : 32), alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            <Text style={[styles.tdSet, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65}>
-              {!isTreadmill && !isAerobic && isPR ? '🏆' : ''}{set.set_number}{set.side ? `(${set.side})` : ''}
+          <Pressable
+            onLongPress={canToggleWarmup ? () => {
+              try { Vibration.vibrate(25); } catch {}
+              toggleSetWarmup?.(ex.id, set.id);
+            } : undefined}
+            delayLongPress={350}
+            style={{
+              width: isTreadmill ? 40 : (isAerobic ? 44 : 32),
+              minHeight: 34,
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              ...(isWarmup ? {
+                backgroundColor: 'rgba(245, 158, 11, 0.16)',
+                borderWidth: 1,
+                borderColor: 'rgba(245, 158, 11, 0.45)',
+                borderRadius: 6,
+              } : {}),
+            }}
+          >
+            <Text
+              style={[
+                styles.tdSet,
+                { color: isWarmup ? '#f59e0b' : colors.text },
+                isWarmup && { fontWeight: '800' },
+              ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.65}
+            >
+              {!isTreadmill && !isAerobic && isPR ? '🏆' : ''}{displaySetLabel}{set.side ? `(${set.side})` : ''}
             </Text>
-          </View>
+          </Pressable>
 
         {isTreadmill ? (
           /* トレッドミルモード: スピード(km/h) + 角度(%) + 時間 */

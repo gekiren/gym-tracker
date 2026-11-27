@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../src/theme';
 import { useWorkoutStore } from '../../src/store/workoutStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
-import { getRoutines, getPreviousWorkoutSets, getPersonalRecords } from '../../src/db/database';
+import { getRoutines, getPreviousWorkoutSets, getPersonalRecords, getExerciseMax1RM } from '../../src/db/database';
 import { translateExercise } from '../../src/i18n';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useFeatureSwipe } from '../../src/hooks/useFeatureSwipe';
@@ -103,8 +103,11 @@ export default function WorkoutHomeScreen() {
         }
         startWorkout(routine.title);
         for (const ex of routine.exercises) {
-          const prevSets = await getPreviousWorkoutSets(ex.id);
-          const personalRecords = await getPersonalRecords(ex.id);
+          const [prevSets, personalRecords, max1RM] = await Promise.all([
+            getPreviousWorkoutSets(ex.id),
+            getPersonalRecords(ex.id),
+            getExerciseMax1RM(ex.id),
+          ]);
           addExercise({
             id: ex.id,
             name: ex.name,
@@ -117,6 +120,8 @@ export default function WorkoutHomeScreen() {
             default_stance: ex.default_stance,
             weight_step: ex.weight_step,
             rest_seconds: ex.rest_seconds,
+            max_1rm: max1RM,
+            warmup_threshold_percent: ex.warmup_threshold_percent ?? null,
             routineSets: ex.sets,
           }, alwaysOneSet);
         }

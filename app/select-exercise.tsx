@@ -5,7 +5,7 @@ import Reanimated, { useAnimatedStyle, SharedValue } from 'react-native-reanimat
 import { useEffect, useState, useCallback } from 'react';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getDB, addCustomExercise, getPreviousWorkoutSets, getPersonalRecords, getFavoriteIds, toggleFavorite, deleteExercise, saveSetting, getCustomExercisesCount } from '../src/db/database';
+import { getDB, addCustomExercise, getPreviousWorkoutSets, getPersonalRecords, getExerciseMax1RM, getFavoriteIds, toggleFavorite, deleteExercise, saveSetting, getCustomExercisesCount } from '../src/db/database';
 import { useAppTheme } from '../src/theme';
 import { useWorkoutStore } from '../src/store/workoutStore';
 import { useSettingsStore } from '../src/store/settingsStore';
@@ -24,6 +24,7 @@ type Exercise = {
   default_variation?: string | null;
   default_stance?: string | null;
   rest_seconds?: number | null;
+  warmup_threshold_percent?: number | null;
 };
 
 interface SwipeDeleteActionProps {
@@ -126,11 +127,14 @@ export default function SelectExerciseScreen() {
       return;
     }
     try {
-      const prevSets = await getPreviousWorkoutSets(ex.id);
-      const personalRecords = await getPersonalRecords(ex.id);
-      addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation, default_stance: ex.default_stance, equipment: ex.equipment, muscle_group: ex.muscle_group, rest_seconds: ex.rest_seconds }, alwaysOneSet);
+      const [prevSets, personalRecords, max1RM] = await Promise.all([
+        getPreviousWorkoutSets(ex.id),
+        getPersonalRecords(ex.id),
+        getExerciseMax1RM(ex.id),
+      ]);
+      addExercise({ id: ex.id, name: ex.name, previousSets: prevSets, personalRecords, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation, default_stance: ex.default_stance, equipment: ex.equipment, muscle_group: ex.muscle_group, rest_seconds: ex.rest_seconds, max_1rm: max1RM, warmup_threshold_percent: ex.warmup_threshold_percent ?? null }, alwaysOneSet);
     } catch (e) {
-      addExercise({ id: ex.id, name: ex.name, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation, default_stance: ex.default_stance, equipment: ex.equipment, muscle_group: ex.muscle_group, rest_seconds: ex.rest_seconds }, alwaysOneSet);
+      addExercise({ id: ex.id, name: ex.name, is_unilateral: ex.is_unilateral, default_variation: ex.default_variation, default_stance: ex.default_stance, equipment: ex.equipment, muscle_group: ex.muscle_group, rest_seconds: ex.rest_seconds, warmup_threshold_percent: ex.warmup_threshold_percent ?? null }, alwaysOneSet);
     }
     router.back();
   };

@@ -1,4 +1,6 @@
 import { SetRecord } from '../store/workoutStore';
+import { isTreadmillExercise } from './exerciseUtils';
+import { isAutoWarmupWeight, resolveWarmupThreshold } from './warmupUtils';
 
 export interface AddExercisePayload {
   id: number;
@@ -12,6 +14,13 @@ export interface AddExercisePayload {
   muscle_group?: string;
   routineSets?: any[];
   weight_step?: number;
+  max_1rm?: number | null;
+  warmup_threshold_percent?: number | null;
+}
+
+export interface WarmupBuildConfig {
+  warmupEnabled: boolean;
+  globalThresholdPercent: number;
 }
 
 const normalizeStance = (val?: string | null): string | null => {
@@ -25,12 +34,26 @@ const normalizeStance = (val?: string | null): string | null => {
  */
 export const buildInitialSetsForExercise = (
   exercise: AddExercisePayload,
-  alwaysOneSet: boolean = false
+  alwaysOneSet: boolean = false,
+  warmupConfig?: WarmupBuildConfig
 ): SetRecord[] => {
   const generateTempId = () => Math.random().toString(36).substring(7);
   const defaultStance =
     normalizeStance(exercise.default_stance) ??
     normalizeStance(exercise.default_variation);
+
+  const isAerobicOrTreadmill =
+    exercise.muscle_group === '有酸素' || isTreadmillExercise(exercise.name);
+  const warmupEnabled = Boolean(warmupConfig?.warmupEnabled) && !isAerobicOrTreadmill;
+  const threshold = resolveWarmupThreshold(
+    exercise.warmup_threshold_percent,
+    warmupConfig?.globalThresholdPercent ?? 60
+  );
+
+  const computeAutoWarmup = (weight: number | null | undefined): boolean => {
+    if (!warmupEnabled) return false;
+    return isAutoWarmupWeight(weight, exercise.max_1rm, threshold);
+  };
 
   // 1. ルーティンからの追加時
   if (exercise.routineSets && exercise.routineSets.length > 0) {
@@ -46,6 +69,10 @@ export const buildInitialSetsForExercise = (
         }
       }
       const routineStance = normalizeStance(rs.stance) ?? normalizeStance(rs.variation);
+      const explicitRoutineWarmup = Boolean(rs.is_warmup);
+      const isWarmup = warmupEnabled
+        ? explicitRoutineWarmup || computeAutoWarmup(rs.weight ?? prev?.weight)
+        : false;
       return {
         id: generateTempId(),
         set_number: rs.set_number || (idx + 1),
@@ -60,6 +87,8 @@ export const buildInitialSetsForExercise = (
         prev_incline: prev ? prev.incline : null,
         prev_work_seconds: prev ? (prev.work_seconds ?? null) : null,
         is_completed: false,
+        is_warmup: isWarmup,
+        is_warmup_manual: explicitRoutineWarmup,
         side: rs.side || null,
         variation: routineStance,
         stance: routineStance,
@@ -88,6 +117,8 @@ export const buildInitialSetsForExercise = (
             prev_work_seconds: prevL ? (prevL.work_seconds ?? null) : null,
             rpe: prevL ? prevL.rpe : null,
             is_completed: false,
+            is_warmup: warmupEnabled ? (Boolean(prevL?.is_warmup) || computeAutoWarmup(prevL?.weight)) : false,
+            is_warmup_manual: false,
             side: 'L',
             variation: defaultStance,
             stance: defaultStance,
@@ -106,6 +137,8 @@ export const buildInitialSetsForExercise = (
             prev_work_seconds: prevR ? (prevR.work_seconds ?? null) : null,
             rpe: prevR ? prevR.rpe : null,
             is_completed: false,
+            is_warmup: warmupEnabled ? (Boolean(prevR?.is_warmup) || computeAutoWarmup(prevR?.weight)) : false,
+            is_warmup_manual: false,
             side: 'R',
             variation: defaultStance,
             stance: defaultStance,
@@ -127,6 +160,8 @@ export const buildInitialSetsForExercise = (
           prev_work_seconds: prev.work_seconds ?? null,
           rpe: prev.rpe,
           is_completed: false,
+          is_warmup: warmupEnabled ? (Boolean(prev.is_warmup) || computeAutoWarmup(prev.weight)) : false,
+          is_warmup_manual: false,
           variation: defaultStance,
           stance: defaultStance,
         }];
@@ -146,6 +181,8 @@ export const buildInitialSetsForExercise = (
         prev_work_seconds: prev.work_seconds ?? null,
         rpe: prev.rpe,
         is_completed: false,
+        is_warmup: warmupEnabled ? (Boolean(prev.is_warmup) || computeAutoWarmup(prev.weight)) : false,
+        is_warmup_manual: false,
         side: prev.side || null,
         variation: defaultStance,
         stance: defaultStance,
@@ -156,8 +193,8 @@ export const buildInitialSetsForExercise = (
   // 3. 完全新規種目の場合
   if (exercise.is_unilateral) {
     return [
-      { id: generateTempId(), set_number: 1, weight: null, reps: null, rpe: null, speed: null, incline: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'L', variation: defaultStance, stance: defaultStance },
-      { id: generateTempId(), set_number: 1, weight: null, reps: null, rpe: null, speed: null, incline: null, is_completed: false, rest_seconds: null, work_seconds: null, side: 'R', variation: defaultStance, stance: defaultStance },
+      { id: generateTempId(), set_number: 1, weight: null, reps: null, rpe: null, speed: null, incline: null, is_completed: false, is_warmup: false, is_warmup_manual: false, rest_seconds: null, work_seconds: null, side: 'L', variation: defaultStance, stance: defaultStance },
+      { id: generateTempId(), set_number: 1, weight: null, reps: null, rpe: null, speed: null, incline: null, is_completed: false, is_warmup: false, is_warmup_manual: false, rest_seconds: null, work_seconds: null, side: 'R', variation: defaultStance, stance: defaultStance },
     ];
   }
 
@@ -170,6 +207,8 @@ export const buildInitialSetsForExercise = (
     speed: null,
     incline: null,
     is_completed: false,
+    is_warmup: false,
+    is_warmup_manual: false,
     rest_seconds: null,
     work_seconds: null,
     variation: defaultStance,

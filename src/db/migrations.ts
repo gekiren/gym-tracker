@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 
-export const DATABASE_VERSION = 15;
+export const DATABASE_VERSION = 16;
 
 export interface Migration {
   version: number;
@@ -321,6 +321,14 @@ export const MIGRATIONS: Migration[] = [
     version: 15,
     up: async (db) => {
       await safeAddColumn(db, 'exercises', 'rest_seconds', 'INTEGER');
+    },
+  },
+  {
+    version: 16,
+    up: async (db) => {
+      await safeAddColumn(db, 'workout_sets', 'is_warmup', 'INTEGER DEFAULT 0');
+      await safeAddColumn(db, 'routine_sets', 'is_warmup', 'INTEGER DEFAULT 0');
+      await safeAddColumn(db, 'exercises', 'warmup_threshold_percent', 'REAL');
     },
   },
 ];

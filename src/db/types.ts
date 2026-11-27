@@ -6,6 +6,7 @@ export interface WorkoutSet {
   weight: number | null;
   rpe: number | null;
   is_completed?: boolean | number;
+  is_warmup?: boolean | number;
   rest_seconds?: number | null;
   work_seconds?: number | null;
   speed?: number | null;
@@ -28,6 +29,7 @@ export interface RoutineSet {
   reps: number | null;
   weight: number | null;
   rpe: number | null;
+  is_warmup?: boolean | number;
   speed?: number | null;
   incline?: number | null;
   side?: string | null;
@@ -46,6 +48,7 @@ export interface RoutineExercise {
   default_stance?: string | null;
   weight_step?: number;
   rest_seconds?: number | null;
+  warmup_threshold_percent?: number | null;
   sets: RoutineSet[];
 }
 
@@ -59,6 +62,7 @@ export interface Exercise {
   default_stance?: string | null;
   weight_step?: number;
   rest_seconds?: number | null;
+  warmup_threshold_percent?: number | null;
 }
 
 // DB レコード（workoutsテーブル）の型定義
@@ -97,6 +101,7 @@ export interface WorkoutSetRow {
   variation: string | null;
   stance: string | null;
   is_completed: number | boolean;
+  is_warmup?: number | boolean;
 }
 
 export interface WaterLog {
@@ -159,6 +164,7 @@ export interface FullWorkoutExerciseSet {
   variation: string | null;
   stance: string | null;
   is_completed: boolean;
+  is_warmup?: boolean;
 }
 
 export interface FullWorkoutExercise {

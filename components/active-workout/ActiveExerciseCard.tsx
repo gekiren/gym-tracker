@@ -10,6 +10,7 @@ import { translateExercise } from '../../src/i18n';
 import { SetInputRow } from './SetInputRow';
 import { StanceModalTarget } from '../../src/hooks/useActiveWorkout';
 import { isTreadmillExercise } from '../../src/utils/exerciseUtils';
+import { calculateEffective1RM } from '../../src/utils/workoutStats';
 
 interface ActiveExerciseCardProps {
   ex: any;
@@ -24,6 +25,7 @@ interface ActiveExerciseCardProps {
   onAddSet: (exId: string) => void;
   onUpdateSet: (exId: string, setId: string, updates: any) => void;
   onToggleSetComplete: (exId: string, setId: string) => void;
+  onToggleSetWarmup?: (exId: string, setId: string) => void;
   onRemoveSet: (exId: string, setId: string) => void;
   onSetActiveSetForCalc: (target: { exId: string; setId: string } | null) => void;
   calculateRM: (weight: number | null, reps: number | null) => number | null;
@@ -72,6 +74,7 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
   onAddSet,
   onUpdateSet,
   onToggleSetComplete,
+  onToggleSetWarmup,
   onRemoveSet,
   onSetActiveSetForCalc,
   calculateRM,
@@ -80,14 +83,36 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
 
   const exerciseNameText = translateExercise(ex.name);
   const isLongName = exerciseNameText.length > 13;
+  const isAerobicOrTreadmill = ex.muscle_group === '有酸素' || isTreadmillExercise(ex.name);
+  const warmupEnabled = !!settings.warmupEnabled;
   const showVolume = ex.muscle_group !== '有酸素' && !!settings.displayFields?.showVolume;
   const totalVolume = showVolume
     ? ex.sets.reduce((sum: number, s: any) => {
         if (!s.is_completed) return sum;
+        if (warmupEnabled && s.is_warmup) return sum;
         const bw = ex.equipment === '自重' && settings.bodyWeight ? settings.bodyWeight : 0;
         return sum + ((s.weight || 0) + bw) * (s.reps || 0);
       }, 0)
     : 0;
+
+  const showEffective1RM = !!settings.effective1RmEnabled && !isAerobicOrTreadmill;
+  const completedEffective1RM = showEffective1RM
+    ? calculateEffective1RM(
+        ex.sets
+          .filter((s: any) => s.is_completed && !(warmupEnabled && s.is_warmup))
+          .map((s: any) => ({ weight: s.weight, reps: s.reps }))
+      )
+    : null;
+  const plannedEffective1RM = showEffective1RM
+    ? calculateEffective1RM(
+        ex.sets
+          .filter((s: any) => !(warmupEnabled && s.is_warmup))
+          .map((s: any) => ({
+            weight: s.weight ?? s.prev_weight ?? null,
+            reps: s.reps ?? s.prev_reps ?? null,
+          }))
+      )
+    : null;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -224,6 +249,8 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
           idx={idx}
           updateSet={onUpdateSet}
           toggleSetComplete={onToggleSetComplete}
+          toggleSetWarmup={onToggleSetWarmup}
+          warmupEnabled={warmupEnabled}
           removeSet={onRemoveSet}
           setActiveSetForCalc={onSetActiveSetForCalc}
           calculateRM={calculateRM}
@@ -235,7 +262,34 @@ export const ActiveExerciseCard: React.FC<ActiveExerciseCardProps> = React.memo(
       ))}
 
       <View style={styles.bottomRowContainer}>
-        <View style={styles.bottomLeftContainer} />
+        <View style={styles.bottomLeftContainer}>
+          {showEffective1RM && (
+            <View style={styles.effective1RmBox}>
+              <Text
+                style={[styles.effective1RmLine, { color: colors.textMuted }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
+                {t('ui.active_workout.effective_1rm_label')}:{' '}
+                <Text style={[styles.effective1RmValue, { color: '#f5a623' }]}>
+                  {completedEffective1RM != null ? `${completedEffective1RM}${settings.weightUnit}` : '-'}
+                </Text>
+              </Text>
+              <Text
+                style={[styles.effective1RmPlannedLine, { color: colors.textMuted }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
+                {t('ui.active_workout.effective_1rm_planned_label')}:{' '}
+                <Text style={[styles.effective1RmPlannedValue, { color: colors.text }]}>
+                  {plannedEffective1RM != null ? `${plannedEffective1RM}${settings.weightUnit}` : '-'}
+                </Text>
+              </Text>
+            </View>
+          )}
+        </View>
 
         <GHTouchableOpacity style={styles.addSetBtn} onPress={() => onAddSet(ex.id)}>
           <Text style={[styles.addSetBtnText, { color: colors.primary }]}>{t('ui.active_workout.add_set_label')}</Text>
@@ -297,6 +351,26 @@ const styles = StyleSheet.create({
     minWidth: 0,
     alignItems: 'flex-start',
     justifyContent: 'center',
+  },
+  effective1RmBox: {
+    maxWidth: '100%',
+    gap: 2,
+  },
+  effective1RmLine: {
+    fontSize: 11,
+    textAlign: 'left',
+  },
+  effective1RmValue: {
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  effective1RmPlannedLine: {
+    fontSize: 11,
+    textAlign: 'left',
+  },
+  effective1RmPlannedValue: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   bottomRightContainer: {
     flex: 1,

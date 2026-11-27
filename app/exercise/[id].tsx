@@ -39,9 +39,10 @@ import { HistoryCalendarModal } from '../../components/active-workout/HistoryCal
 import { StanceManagement } from '../../components/exercise-detail/StanceManagement';
 import { RestTimerManagement } from '../../components/exercise-detail/RestTimerManagement';
 import { WeightStepManagement } from '../../components/exercise-detail/WeightStepManagement';
+import { WarmupThresholdManagement } from '../../components/exercise-detail/WarmupThresholdManagement';
 import { ExerciseCharts } from '../../components/exercise-detail/ExerciseCharts';
 import { isTreadmillExercise } from '../../src/utils/exerciseUtils';
-import { calculateRM } from '../../src/utils/workoutStats';
+import { calculateEffective1RM, calculateRM } from '../../src/utils/workoutStats';
 
 const INITIAL_PAGE_SIZE = 10;
 const LOAD_MORE_PAGE_SIZE = 20;
@@ -58,6 +59,7 @@ interface ExerciseHistoryCardProps {
   isTreadmill: boolean;
   weightUnit: string;
   show1RM: boolean;
+  effective1RmEnabled: boolean;
   formattedDate: string;
   t: (key: string, options?: any) => string;
   styles: ReturnType<typeof createStyles>;
@@ -72,6 +74,7 @@ const ExerciseHistoryCard = memo(({
   isTreadmill,
   weightUnit,
   show1RM,
+  effective1RmEnabled,
   formattedDate,
   t,
   styles,
@@ -87,6 +90,16 @@ const ExerciseHistoryCard = memo(({
     }, 0);
   }, [item.sets]);
 
+  const dailyEffective1RM = useMemo(() => {
+    if (!effective1RmEnabled || isTreadmill) return null;
+    return calculateEffective1RM(
+      item.sets.map((s: any) => ({
+        weight: s.weight != null ? parseFloat(s.weight) : null,
+        reps: s.reps != null ? parseInt(s.reps, 10) : null,
+      }))
+    );
+  }, [effective1RmEnabled, isTreadmill, item.sets]);
+
   return (
     <View
       style={[
@@ -101,14 +114,24 @@ const ExerciseHistoryCard = memo(({
           <Ionicons name="calendar-outline" size={16} color={colors.textMuted} style={{ marginRight: 6 }} />
           <Text style={styles.historyDate}>{formattedDate}</Text>
         </View>
-        {dailyVolume > 0 && (
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ color: colors.textMuted, fontSize: 12 }}>{t('ui.history.volume_label')}: </Text>
-            <Text style={{ color: colors.primary, fontSize: 13, fontWeight: 'bold' }}>
-              {dailyVolume} {weightUnit}
-            </Text>
-          </View>
-        )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {dailyEffective1RM != null && (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>{t('ui.exercise_detail.effective_1rm_short')}: </Text>
+              <Text style={{ color: '#f5a623', fontSize: 13, fontWeight: 'bold' }}>
+                {dailyEffective1RM}{weightUnit}
+              </Text>
+            </View>
+          )}
+          {dailyVolume > 0 && (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>{t('ui.history.volume_label')}: </Text>
+              <Text style={{ color: colors.primary, fontSize: 13, fontWeight: 'bold' }}>
+                {dailyVolume} {weightUnit}
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
 
       <View style={styles.tableHeader}>
@@ -585,6 +608,16 @@ export default function ExerciseDetailScreen() {
           />
         )}
 
+        {/* Warmup Threshold Management Section */}
+        {settings.warmupEnabled && exercise.muscle_group !== '有酸素' && (
+          <WarmupThresholdManagement
+            exercise={exercise}
+            setExercise={setExercise}
+            settings={settings}
+            t={t}
+          />
+        )}
+
         {/* PR Section */}
         <PersonalRecordsList
           exerciseId={parsedId}
@@ -646,6 +679,7 @@ export default function ExerciseDetailScreen() {
                 isTreadmill={isTreadmill}
                 weightUnit={settings.weightUnit}
                 show1RM={show1RM}
+                effective1RmEnabled={!!settings.effective1RmEnabled}
                 formattedDate={formatDate(item.start_time)}
                 t={t}
                 styles={styles}

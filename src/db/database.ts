@@ -100,7 +100,8 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       default_variation TEXT,
       default_stance TEXT,
       weight_step REAL DEFAULT 2.5,
-      rest_seconds INTEGER
+      rest_seconds INTEGER,
+      warmup_threshold_percent REAL
     );
 
     CREATE TABLE IF NOT EXISTS workouts (
@@ -129,6 +130,7 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       weight REAL,
       rpe REAL,
       is_completed INTEGER DEFAULT 0,
+      is_warmup INTEGER DEFAULT 0,
       rest_seconds INTEGER,
       work_seconds INTEGER,
       speed REAL,
@@ -166,6 +168,7 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       reps INTEGER,
       weight REAL,
       rpe REAL,
+      is_warmup INTEGER DEFAULT 0,
       speed REAL,
       incline REAL,
       side TEXT,
@@ -448,6 +451,9 @@ const _initDBInternal = async (): Promise<SQLite.SQLiteDatabase> => {
       ai_chat_mode: 'quick',
       background_theme: 'dark',
       individual_rest_timer: '0',
+      warmup_enabled: '0',
+      warmup_threshold_percent: '60',
+      effective_1rm_enabled: '0',
     };
 
     for (const [key, defaultValue] of Object.entries(preAllocations)) {
