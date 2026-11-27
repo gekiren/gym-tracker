@@ -59,6 +59,7 @@ export default function ActiveWorkoutScreen() {
     addSet,
     removeSet,
     toggleSetComplete,
+    toggleSetWarmup,
     updateSet,
     markWorkStart,
     beginWorkoutTimer,
@@ -173,6 +174,7 @@ export default function ActiveWorkoutScreen() {
               onAddSet={addSet}
               onUpdateSet={updateSet}
               onToggleSetComplete={toggleSetComplete}
+              onToggleSetWarmup={toggleSetWarmup}
               onRemoveSet={removeSet}
               onSetActiveSetForCalc={setActiveSetForCalc}
               calculateRM={calculateRM}

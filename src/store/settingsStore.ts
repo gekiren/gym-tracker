@@ -58,6 +58,9 @@ export interface ApplicationSettings {
   exerciseChartPreferences: ExerciseChartPreferencesMap;
   exercisePrCollapsedStances: ExercisePrCollapsedStancesMap;
   lastHistoryChartMetric: WorkoutHistoryChartMetric;
+  warmupEnabled: boolean;
+  warmupThresholdPercent: number;
+  effective1RmEnabled: boolean;
 }
 
 export interface LoadSettingsPayload {
@@ -89,6 +92,9 @@ export interface LoadSettingsPayload {
   exerciseChartPreferences?: ExerciseChartPreferencesMap;
   exercisePrCollapsedStances?: ExercisePrCollapsedStancesMap;
   lastHistoryChartMetric?: WorkoutHistoryChartMetric;
+  warmupEnabled?: boolean;
+  warmupThresholdPercent?: number;
+  effective1RmEnabled?: boolean;
 }
 
 export interface SettingsState {
@@ -99,6 +105,9 @@ export interface SettingsState {
   setKeepAwake: (keepAwake: boolean) => void;
   setAlwaysOneSet: (alwaysOneSet: boolean) => void;
   setAddSetStanceMode: (mode: AddSetStanceMode) => void;
+  setWarmupEnabled: (enabled: boolean) => void;
+  setWarmupThresholdPercent: (percent: number) => void;
+  setEffective1RmEnabled: (enabled: boolean) => void;
   setBackgroundTheme: (theme: 'dark' | 'pureBlack') => void;
   setPreferredAiModel: (model: 'gemini' | 'gemma-31b' | 'gemma-26b' | 'deepseek') => void;
   setAiChatMode: (mode: 'quick' | 'thinking') => void;
@@ -168,6 +177,9 @@ export const initialSettings: ApplicationSettings = {
   exerciseChartPreferences: {},
   exercisePrCollapsedStances: {},
   lastHistoryChartMetric: 'volume',
+  warmupEnabled: false,
+  warmupThresholdPercent: 60,
+  effective1RmEnabled: false,
 };
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -203,6 +215,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       exerciseChartPreferences,
       exercisePrCollapsedStances,
       lastHistoryChartMetric,
+      warmupEnabled,
+      warmupThresholdPercent,
+      effective1RmEnabled,
     } = payload;
     const finalIndividualRestEnabled = individualRestEnabled !== undefined ? individualRestEnabled : state.settings.individualRestEnabled;
     const finalTimerNotification = timerNotification !== undefined ? timerNotification : state.settings.timerNotification;
@@ -228,6 +243,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const finalExerciseChartPreferences = exerciseChartPreferences !== undefined ? exerciseChartPreferences : state.settings.exerciseChartPreferences;
     const finalExercisePrCollapsedStances = exercisePrCollapsedStances !== undefined ? exercisePrCollapsedStances : state.settings.exercisePrCollapsedStances;
     const finalLastHistoryChartMetric = lastHistoryChartMetric !== undefined ? lastHistoryChartMetric : state.settings.lastHistoryChartMetric;
+    const finalWarmupEnabled = warmupEnabled !== undefined ? warmupEnabled : state.settings.warmupEnabled;
+    const finalWarmupThresholdPercent = warmupThresholdPercent !== undefined ? warmupThresholdPercent : state.settings.warmupThresholdPercent;
+    const finalEffective1RmEnabled = effective1RmEnabled !== undefined ? effective1RmEnabled : state.settings.effective1RmEnabled;
 
     const isPremium = computeIsPremium(finalPremiumUntil, finalIsEarlyAdopter);
     return {
@@ -261,6 +279,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         exerciseChartPreferences: finalExerciseChartPreferences,
         exercisePrCollapsedStances: finalExercisePrCollapsedStances,
         lastHistoryChartMetric: finalLastHistoryChartMetric,
+        warmupEnabled: finalWarmupEnabled,
+        warmupThresholdPercent: finalWarmupThresholdPercent,
+        effective1RmEnabled: finalEffective1RmEnabled,
       }
     };
   }),
@@ -268,6 +289,27 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setIndividualRestEnabled: (individualRestEnabled: boolean) => set((state) => ({
     settings: { ...state.settings, individualRestEnabled }
   })),
+
+  setWarmupEnabled: (warmupEnabled: boolean) => {
+    saveSetting('warmup_enabled', warmupEnabled ? '1' : '0').catch(e => console.warn('Failed to save warmup_enabled', e));
+    set((state) => ({
+      settings: { ...state.settings, warmupEnabled }
+    }));
+  },
+
+  setWarmupThresholdPercent: (warmupThresholdPercent: number) => {
+    saveSetting('warmup_threshold_percent', String(warmupThresholdPercent)).catch(e => console.warn('Failed to save warmup_threshold_percent', e));
+    set((state) => ({
+      settings: { ...state.settings, warmupThresholdPercent }
+    }));
+  },
+
+  setEffective1RmEnabled: (effective1RmEnabled: boolean) => {
+    saveSetting('effective_1rm_enabled', effective1RmEnabled ? '1' : '0').catch(e => console.warn('Failed to save effective_1rm_enabled', e));
+    set((state) => ({
+      settings: { ...state.settings, effective1RmEnabled }
+    }));
+  },
 
   setTimerNotification: (timerNotification: boolean) => set((state) => ({
     settings: { ...state.settings, timerNotification }

@@ -30,6 +30,9 @@ export function WorkoutTimerSettingsContent() {
   const [keepAwake, setKeepAwake] = useState(settings.keepAwake);
   const [alwaysOneSet, setAlwaysOneSet] = useState(settings.alwaysOneSet);
   const [addSetStanceMode, setAddSetStanceMode] = useState<AddSetStanceMode>(settings.addSetStanceMode);
+  const [warmupEnabled, setWarmupEnabled] = useState(!!settings.warmupEnabled);
+  const [warmupThresholdPercent, setWarmupThresholdPercent] = useState(settings.warmupThresholdPercent ?? 60);
+  const [effective1RmEnabled, setEffective1RmEnabled] = useState(!!settings.effective1RmEnabled);
 
   useEffect(() => {
     setDefaultRest(settings.defaultRest);
@@ -47,6 +50,9 @@ export function WorkoutTimerSettingsContent() {
     setKeepAwake(settings.keepAwake);
     setAlwaysOneSet(settings.alwaysOneSet);
     setAddSetStanceMode(settings.addSetStanceMode);
+    setWarmupEnabled(!!settings.warmupEnabled);
+    setWarmupThresholdPercent(settings.warmupThresholdPercent ?? 60);
+    setEffective1RmEnabled(!!settings.effective1RmEnabled);
   }, [settings]);
 
   const handleUpdateRest = async (secs: number) => {
@@ -177,6 +183,21 @@ export function WorkoutTimerSettingsContent() {
         onUpdateUnit={handleUpdateUnit}
         bodyWeight={bodyWeight}
         onUpdateBodyWeight={handleUpdateBodyWeight}
+        warmupEnabled={warmupEnabled}
+        onUpdateWarmupEnabled={(val) => {
+          setWarmupEnabled(val);
+          useSettingsStore.getState().setWarmupEnabled(val);
+        }}
+        warmupThresholdPercent={warmupThresholdPercent}
+        onUpdateWarmupThresholdPercent={(pct) => {
+          setWarmupThresholdPercent(pct);
+          useSettingsStore.getState().setWarmupThresholdPercent(pct);
+        }}
+        effective1RmEnabled={effective1RmEnabled}
+        onUpdateEffective1RmEnabled={(val) => {
+          setEffective1RmEnabled(val);
+          useSettingsStore.getState().setEffective1RmEnabled(val);
+        }}
         t={t}
       />
     </ScrollView>

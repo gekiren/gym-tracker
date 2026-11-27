@@ -4,6 +4,8 @@ export interface ExerciseChartSummaryRow {
   volume: number;
   sets_count: number;
   max_1rm: number;
+  effective_1rm: number;
+  max_weight: number;
   total_secs: number;
 }
 

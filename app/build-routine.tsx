@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Pressable, ScrollView, TextInput, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Pressable, ScrollView, TextInput, Alert, Modal, Vibration } from 'react-native';
 import { useEffect, useState, useCallback } from 'react';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import { translateExercise, translateStance } from '../src/i18n';
 import { useShallow } from 'zustand/react/shallow';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { isTreadmillExercise } from '../src/utils/exerciseUtils';
+import { getDisplaySetLabel } from '../src/utils/warmupUtils';
 import { StanceModal } from '../components/active-workout/StanceModal';
 
 export default function BuildRoutineScreen() {
@@ -36,6 +37,7 @@ export default function BuildRoutineScreen() {
   const isPremium = useSettingsStore(state => state.settings.isPremium);
   const isEarly = useSettingsStore(state => state.settings.isEarlyAdopter);
   const customStances = useSettingsStore(state => state.settings.customStances);
+  const warmupEnabled = useSettingsStore(state => state.settings.warmupEnabled);
   const isBasic = !isPremium && !isEarly;
   const presetStances = customStances || [];
 
@@ -138,6 +140,7 @@ export default function BuildRoutineScreen() {
               speed: s.speed ?? null,
               incline: s.incline ?? null,
               work_seconds: s.work_seconds ?? null,
+              is_warmup: Boolean(s.is_warmup),
               side: s.side || null,
               variation: s.variation || null,
               stance: s.stance || null
@@ -174,6 +177,7 @@ export default function BuildRoutineScreen() {
         speed: s.speed ?? null,
         incline: s.incline ?? null,
         work_seconds: s.work_seconds ?? null,
+        is_warmup: Boolean(s.is_warmup),
         side: s.side || null,
         variation: s.variation || null,
         stance: s.stance || null
@@ -185,7 +189,7 @@ export default function BuildRoutineScreen() {
 
   const handleCopyFromWorkout = async (workoutId: number, workoutTitle: string) => {
     try {
-      const fullData = await loadFullWorkoutData(workoutId);
+      const fullData = await loadFullWorkoutData(workoutId, { includeWarmup: true });
       if (!fullData) return;
 
       const mapped = fullData.exercises.map((ex: any) => {
@@ -201,6 +205,7 @@ export default function BuildRoutineScreen() {
               weight: s.weight,
               reps: s.reps,
               rpe: s.rpe,
+              is_warmup: Boolean(s.is_warmup),
               speed: s.speed ?? null,
               incline: s.incline ?? null,
               work_seconds: s.work_seconds ?? null,
@@ -408,6 +413,8 @@ export default function BuildRoutineScreen() {
                       exIdx={exIdx}
                       setIdx={setIdx}
                       set={set}
+                      sets={ex.sets}
+                      warmupEnabled={!!warmupEnabled}
                       isTreadmill={isTreadmillExercise(ex.name)}
                       updateDraftSet={updateDraftSet}
                       removeDraftSet={removeDraftSet}
@@ -577,10 +584,12 @@ const styles = StyleSheet.create({
   modalListItemSubtext: { fontSize: 12 }
 });
 
-function RoutineSetRow({ exIdx, setIdx, set, isTreadmill, updateDraftSet, removeDraftSet, onOpenStanceModal, setsCount, t }: {
+function RoutineSetRow({ exIdx, setIdx, set, sets, warmupEnabled, isTreadmill, updateDraftSet, removeDraftSet, onOpenStanceModal, setsCount, t }: {
   exIdx: number;
   setIdx: number;
   set: any;
+  sets: any[];
+  warmupEnabled: boolean;
   isTreadmill?: boolean;
   updateDraftSet: (exIdx: number, setIdx: number, changes: any) => void;
   removeDraftSet: (exIdx: number, setIdx: number) => void;
@@ -696,12 +705,35 @@ function RoutineSetRow({ exIdx, setIdx, set, isTreadmill, updateDraftSet, remove
   };
 
   const currentStance = set.stance || set.variation || null;
+  const canToggleWarmup = warmupEnabled && !isTreadmill;
+  const isWarmup = canToggleWarmup && Boolean(set.is_warmup);
+  const displayLabel = getDisplaySetLabel(sets, setIdx, canToggleWarmup);
 
   return (
     <View style={styles.setRow}>
-      <View style={{ width: 28, alignItems: 'center' }}>
-        <Text style={[styles.setNumberText, { color: colors.text }]}>{set.set_number}</Text>
-      </View>
+      <Pressable
+        onLongPress={canToggleWarmup ? () => {
+          try { Vibration.vibrate(25); } catch {}
+          updateDraftSet(exIdx, setIdx, { is_warmup: !set.is_warmup });
+        } : undefined}
+        delayLongPress={350}
+        style={{
+          width: 28,
+          minHeight: 34,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 6,
+          ...(isWarmup ? {
+            backgroundColor: 'rgba(245, 158, 11, 0.16)',
+            borderWidth: 1,
+            borderColor: 'rgba(245, 158, 11, 0.45)',
+          } : {}),
+        }}
+      >
+        <Text style={[styles.setNumberText, { color: isWarmup ? '#f59e0b' : colors.text }, isWarmup && { fontWeight: '800' }]}>
+          {displayLabel}
+        </Text>
+      </Pressable>
 
       <TouchableOpacity
         style={[

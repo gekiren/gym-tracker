@@ -155,7 +155,9 @@
       "alert_delete_exercise_error_message": "完了したセットが含まれる種目は削除できません。まずセットのチェックを外してください。",
       "manual_start_btn": "▶ ワークアウト再開",
       "manual_start_success": "計測を開始しました",
-      "start_training_btn": "▶ トレーニングタイマー開始"
+      "start_training_btn": "▶ トレーニングタイマー開始",
+      "effective_1rm_label": "実効1RM",
+      "effective_1rm_planned_label": "予定"
     },
     "ads": {
       "promo_ai_title": "広告非表示 ＆ 全機能フル解放",
@@ -195,6 +197,7 @@
       "calendar_btn": "カレンダー",
       "chart_title": "最近の総ボリューム ({{unit}})",
       "chart_1rm_title": "最近の推定1RM最大値 ({{unit}})",
+      "chart_effective_1rm_title": "実効1RM推移 ({{unit}})",
       "type_volume": "ボリューム",
       "type_1rm": "推定1RM",
       "empty_state": "まだ記録がありません。",
@@ -226,6 +229,8 @@
       "metric_avg_volume_per_set_sub": "総ボリューム ÷ 総セット数（1セットの質・強度）",
       "metric_density_sub": "総ボリューム ÷ 運動時間（1分間の効率・密度）",
       "metric_1rm_sub": "算出された推定最高1RMの推移",
+      "metric_effective_1rm": "実効1RM",
+      "metric_effective_1rm_sub": "セット数・回数維持を加味した実効1RM（最大重量別で定点観測）",
       "chart_title_water": "最近の水分摂取量 (ml)",
       "chart_title_caffeine": "最近のカフェイン摂取量 (mg)",
       "chart_title_nutrition_calories": "最近の摂取カロリー (kcal)",
@@ -327,7 +332,13 @@
       "show_all_history": "すべての履歴を表示 ({{count}}件)",
       "stance_none": "スタンスなし",
       "stance_all": "すべて",
-      "no_stance_chart_data": "選択したスタンスの記録がありません"
+      "no_stance_chart_data": "選択したスタンスの記録がありません",
+      "section_warmup_threshold": "ウォームアップ自動判定％",
+      "warmup_threshold_desc": "過去最大1RMの指定％以下の重量を自動でウォームアップ（W）扱いとします。",
+      "warmup_use_global": "一括設定を使用",
+      "warmup_use_global_short": "一括設定",
+      "effective_1rm_short": "実効1RM",
+      "max_weight_all": "すべて"
     },
     "active_routine": {
       "alert_pause_title": "ルーティンの中断",
@@ -421,6 +432,13 @@
       "screen_title_select_exercise": "種目を選択",
       "body_weight_label": "体重 (任意)",
       "body_weight_desc": "カロリー計算に使用します。未設定の場合は簡易的な値が表示されます。",
+      "warmup_enabled_label": "ウォームアップセット機能",
+      "warmup_enabled_desc": "アップセット（W）をボリューム・PR・グラフから除外します。未完了セット番号の長押しで切替可能です。",
+      "warmup_threshold_label": "ウォームアップ自動判定の基準（最大1RM比）",
+      "warmup_threshold_desc": "過去最大1RMの指定％以下の重量を自動でアップ扱いします（種目詳細で個別設定も可能）。",
+      "warmup_auto_off": "自動判定OFF",
+      "effective_1rm_enabled_label": "実効1RM機能",
+      "effective_1rm_enabled_desc": "複数セットの回数維持・増加を評価する実効1RMをワークアウト中・種目詳細グラフに表示します。",
       "always_one_set_label": "常に1セットのみ追加",
       "always_one_set_desc": "手動で種目を追加した際、前回の実績にかかわらず初期状態で1セット（片側種目の場合は左右1セットずつ）のみ追加します。",
       "add_set_stance_mode_label": "セット追加時のスタンス",

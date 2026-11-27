@@ -18,6 +18,7 @@ export interface WorkoutExercise {
     stance?: string | null;
     variation?: string | null;
     rpe?: number | null;
+    is_warmup?: boolean | number;
   }[];
 }
 
@@ -38,6 +39,7 @@ export interface RawWorkoutSetRow {
   exercise_id: number;
   weight: number | null;
   reps: number | null;
+  is_warmup?: number | boolean;
 }
 
 export interface WorkoutPRStat {
@@ -61,12 +63,66 @@ export interface AchievementItem {
 }
 
 /**
- * 1RMの計算
+ * 1RMの計算（丸めあり）
  */
 export const calculateRM = (weight: number | null, reps: number | null): number | null => {
   if (weight === null || reps === null || reps < 1) return null;
   if (reps === 1) return weight;
   return Math.round(weight * (1 + (reps / 30)));
+};
+
+/**
+ * 推定1RMの計算（丸めなし・実効1RM算出用）
+ */
+export const calculateRawRM = (weight: number | null, reps: number | null): number | null => {
+  if (weight === null || reps === null || weight <= 0 || reps < 1) return null;
+  if (reps === 1) return weight;
+  return weight * (1 + reps / 30);
+};
+
+export interface Effective1RMSetInput {
+  weight: number | null | undefined;
+  reps: number | null | undefined;
+  is_warmup?: boolean | number;
+}
+
+export const EFFECTIVE_1RM_K = 0.10;
+
+/**
+ * 実効1RM（モデルB・k=0.10固定）の計算
+ * max(e1RM_i) * (1 + 0.10 * ln(max(1, sum(w_i * r_i) / max(w_i * r_i))))
+ * - ウォームアップセット（is_warmup）および weight <= 0 / reps <= 0 のセットは除外
+ * - 1セットのみの場合は ln(1) = 0 となり通常の推定1RMと一致
+ * - 小数第1位で四捨五入
+ */
+export const calculateEffective1RM = (
+  sets: ReadonlyArray<Effective1RMSetInput>
+): number | null => {
+  let maxE1RM = 0;
+  let totalVolume = 0;
+  let maxSetVolume = 0;
+  let validCount = 0;
+
+  for (const s of sets) {
+    if (s.is_warmup) continue;
+    const w = s.weight ?? 0;
+    const r = s.reps ?? 0;
+    if (!Number.isFinite(w) || !Number.isFinite(r) || w <= 0 || r <= 0) continue;
+
+    const e1rm = r === 1 ? w : w * (1 + r / 30);
+    const setVol = w * r;
+
+    if (e1rm > maxE1RM) maxE1RM = e1rm;
+    if (setVol > maxSetVolume) maxSetVolume = setVol;
+    totalVolume += setVol;
+    validCount++;
+  }
+
+  if (validCount === 0 || maxE1RM <= 0 || maxSetVolume <= 0) return null;
+
+  const effectiveSets = Math.max(1, totalVolume / maxSetVolume);
+  const effective1RM = maxE1RM * (1 + EFFECTIVE_1RM_K * Math.log(effectiveSets));
+  return Math.round(effective1RM * 10) / 10;
 };
 
 /**
@@ -81,7 +137,7 @@ export const computeCalories = (
   let totalRestSecs = 0;
   exercises.forEach(ex => {
     ex.sets.forEach(s => {
-      if (s.is_completed) {
+      if (s.is_completed && !s.is_warmup) {
         totalWorkSecs += s.work_seconds || 0;
         totalRestSecs += s.rest_seconds || 0;
       }
@@ -106,7 +162,7 @@ export const computeAchievements = (
   const updatedVolumes: AchievementItem[] = [];
 
   exercises.forEach(ex => {
-    const completedSets = ex.sets.filter(s => s.is_completed);
+    const completedSets = ex.sets.filter(s => s.is_completed && !s.is_warmup);
     if (completedSets.length === 0) return;
 
     // 現在の最大1RM
@@ -335,10 +391,13 @@ export const calculateWorkoutPRStats = (
 ): Record<number, WorkoutPRStat> => {
   if (!rows || rows.length === 0) return {};
 
+  const workingRows = rows.filter(r => !r.is_warmup);
+  if (workingRows.length === 0) return {};
+
   // 1. 各種目のセット群を整理し、種目ごとの全期間最大値（ウェイト: 1RM, 自重: レップ数）を算出
   // まず種目がウェイト種目（一度でも weight > 0 のセットがあるか）を判定
   const exerciseHasWeight: Record<number, boolean> = {};
-  rows.forEach(r => {
+  workingRows.forEach(r => {
     if (r.weight !== null && r.weight > 0) {
       exerciseHasWeight[r.exercise_id] = true;
     }
@@ -346,7 +405,7 @@ export const calculateWorkoutPRStats = (
 
   // 種目ごとの全期間最大値
   const allTimeMaxMap: Record<number, number> = {};
-  rows.forEach(r => {
+  workingRows.forEach(r => {
     const exId = r.exercise_id;
     const isWeight = !!exerciseHasWeight[exId];
     const w = r.weight !== null && r.weight > 0 ? r.weight : 0;
@@ -372,7 +431,7 @@ export const calculateWorkoutPRStats = (
   const workoutExMap: Record<number, Record<number, { maxVal: number; volume: number }>> = {};
   const workoutTotalVol: Record<number, number> = {};
 
-  rows.forEach(r => {
+  workingRows.forEach(r => {
     const wId = r.workout_id;
     const exId = r.exercise_id;
     const isWeight = !!exerciseHasWeight[exId];

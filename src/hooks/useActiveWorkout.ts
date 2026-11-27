@@ -32,6 +32,7 @@ export function useActiveWorkout() {
   const removeSet = useWorkoutStore(state => state.removeSet);
   const removeExercise = useWorkoutStore(state => state.removeExercise);
   const _toggleSetComplete = useWorkoutStore(state => state.toggleSetComplete);
+  const toggleSetWarmup = useWorkoutStore(state => state.toggleSetWarmup);
   const updateSet = useWorkoutStore(state => state.updateSet);
   const restTimerActive = useWorkoutStore(state => state.restTimer.isActive);
   const tickRestTimer = useWorkoutStore(state => state.tickRestTimer);
@@ -392,6 +393,7 @@ export function useActiveWorkout() {
     addSet,
     removeSet,
     toggleSetComplete,
+    toggleSetWarmup,
     updateSet,
     markWorkStart,
     beginWorkoutTimer,

@@ -66,6 +66,7 @@ export const METRIC_OPTIONS: {
 }[] = [
   { id: 'volume', titleKey: 'ui.history.metric_volume', subKey: 'ui.history.metric_volume_sub', icon: 'bar-chart-outline', badge: 'デフォルト' },
   { id: '1rm', titleKey: 'ui.history.type_1rm', subKey: 'ui.history.metric_1rm_sub', icon: 'trophy-outline' },
+  { id: 'effective_1rm', titleKey: 'ui.history.metric_effective_1rm', subKey: 'ui.history.metric_effective_1rm_sub', icon: 'trending-up-outline' },
   { id: 'sets', titleKey: 'ui.history.metric_sets', subKey: 'ui.history.metric_sets_sub', icon: 'layers-outline' },
   { id: 'avg_volume_per_set', titleKey: 'ui.history.metric_avg_volume_per_set', subKey: 'ui.history.metric_avg_volume_per_set_sub', icon: 'fitness-outline' },
   { id: 'density', titleKey: 'ui.history.metric_density', subKey: 'ui.history.metric_density_sub', icon: 'speedometer-outline' },
@@ -99,7 +100,14 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
   );
   const globalMetric = useSettingsStore(state => state.settings.lastExerciseChartMetric);
   const setExerciseChartPreference = useSettingsStore(state => state.setExerciseChartPreference);
-  const chartMetric: ExerciseChartMetric = exercisePref?.metric ?? globalMetric ?? 'volume';
+  const effective1RmEnabled = !!settings.effective1RmEnabled;
+  const rawMetric: ExerciseChartMetric = exercisePref?.metric ?? globalMetric ?? 'volume';
+  const chartMetric: ExerciseChartMetric =
+    rawMetric === 'effective_1rm' && !effective1RmEnabled ? '1rm' : rawMetric;
+  const visibleMetricOptions = useMemo(
+    () => (effective1RmEnabled ? METRIC_OPTIONS : METRIC_OPTIONS.filter(o => o.id !== 'effective_1rm')),
+    [effective1RmEnabled]
+  );
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isMetricModalVisible, setMetricModalVisible] = useState(false);
   const [stanceSummaryMap, setStanceSummaryMap] = useState<Record<string, ExerciseChartSummaryRow[]>>({});
@@ -213,20 +221,44 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
     };
   }, [exerciseId, showChartModal, selectedChartReps, selectedChartVariation]);
 
-  // chartScale、chartMetric、selectedStanceが変更されたら選択位置をリセット
-  useEffect(() => {
-    setSelectedIndex(null);
-  }, [chartScale, chartMetric, selectedStance]);
-
   const activeSummary = useMemo(() => {
     if (selectedStance === 'all') return chartSummary || [];
     return resolvedStanceRows || [];
   }, [selectedStance, chartSummary, resolvedStanceRows]);
 
+  const availableMaxWeights = useMemo<number[]>(() => {
+    if (chartMetric !== 'effective_1rm' || !activeSummary || activeSummary.length === 0) return [];
+    const set = new Set<number>();
+    for (const row of activeSummary) {
+      if (row.max_weight && row.max_weight > 0 && row.effective_1rm && row.effective_1rm > 0) {
+        set.add(row.max_weight);
+      }
+    }
+    return Array.from(set).sort((a, b) => b - a);
+  }, [chartMetric, activeSummary]);
+
+  const savedMaxWeight = exercisePref?.maxWeight ?? 'all';
+  const selectedMaxWeight: number | 'all' =
+    chartMetric !== 'effective_1rm'
+      ? 'all'
+      : savedMaxWeight === 'all' || availableMaxWeights.includes(savedMaxWeight)
+      ? savedMaxWeight
+      : 'all';
+
+  // chartScale、chartMetric、selectedStance、selectedMaxWeightが変更されたら選択位置をリセット
+  useEffect(() => {
+    setSelectedIndex(null);
+  }, [chartScale, chartMetric, selectedStance, selectedMaxWeight]);
+
   const chartPoints = useMemo<ChartPoint[]>(() => {
     if (!activeSummary || activeSummary.length === 0) return [];
 
-    const processedHistory = activeSummary.map(row => {
+    const filteredSummary =
+      chartMetric === 'effective_1rm' && selectedMaxWeight !== 'all'
+        ? activeSummary.filter(row => row.max_weight === selectedMaxWeight)
+        : activeSummary;
+
+    const processedHistory = filteredSummary.map(row => {
       const setsCount = row.sets_count || 0;
       const totalSecs = row.total_secs || 0;
       const durationMin = totalSecs > 0 ? totalSecs / 60 : (setsCount > 0 ? setsCount * 2 : 0);
@@ -236,12 +268,14 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
         volume: row.volume || 0,
         setsCount,
         max1Rm: row.max_1rm || 0,
+        effective1Rm: row.effective_1rm || 0,
         durationMin,
       };
     });
 
     const hValid = processedHistory.filter(h => {
       if (chartMetric === '1rm') return h.max1Rm > 0;
+      if (chartMetric === 'effective_1rm') return h.effective1Rm > 0;
       if (chartMetric === 'sets') return h.setsCount > 0;
       return h.volume > 0;
     });
@@ -259,6 +293,9 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
             break;
           case '1rm':
             val = Math.round(h.max1Rm * 10) / 10;
+            break;
+          case 'effective_1rm':
+            val = Math.round(h.effective1Rm * 10) / 10;
             break;
           case 'sets':
             val = h.setsCount;
@@ -281,17 +318,18 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
     }
 
     if (chartScale === 'week') {
-      const weeklyData: { [key: string]: { date: Date; volume: number; setsCount: number; max1Rm: number; durationMin: number } } = {};
+      const weeklyData: { [key: string]: { date: Date; volume: number; setsCount: number; max1Rm: number; effective1Rm: number; durationMin: number } } = {};
       hValid.forEach(h => {
         const date = new Date(h.start_time);
         const weekStart = startOfWeek(date, { weekStartsOn: 1 });
         const key = weekStart.toISOString();
         if (!weeklyData[key]) {
-          weeklyData[key] = { date: weekStart, volume: 0, setsCount: 0, max1Rm: 0, durationMin: 0 };
+          weeklyData[key] = { date: weekStart, volume: 0, setsCount: 0, max1Rm: 0, effective1Rm: 0, durationMin: 0 };
         }
         weeklyData[key].volume += h.volume;
         weeklyData[key].setsCount += h.setsCount;
         weeklyData[key].max1Rm = Math.max(weeklyData[key].max1Rm, h.max1Rm);
+        weeklyData[key].effective1Rm = Math.max(weeklyData[key].effective1Rm, h.effective1Rm);
         weeklyData[key].durationMin += h.durationMin;
       });
 
@@ -304,6 +342,9 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
             break;
           case '1rm':
             val = Math.round(w.max1Rm * 10) / 10;
+            break;
+          case 'effective_1rm':
+            val = Math.round(w.effective1Rm * 10) / 10;
             break;
           case 'sets':
             val = w.setsCount;
@@ -326,17 +367,18 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
     }
 
     if (chartScale === 'month') {
-      const monthlyData: { [key: string]: { date: Date; volume: number; setsCount: number; max1Rm: number; durationMin: number } } = {};
+      const monthlyData: { [key: string]: { date: Date; volume: number; setsCount: number; max1Rm: number; effective1Rm: number; durationMin: number } } = {};
       hValid.forEach(h => {
         const date = new Date(h.start_time);
         const monthStart = startOfMonth(date);
         const key = monthStart.toISOString();
         if (!monthlyData[key]) {
-          monthlyData[key] = { date: monthStart, volume: 0, setsCount: 0, max1Rm: 0, durationMin: 0 };
+          monthlyData[key] = { date: monthStart, volume: 0, setsCount: 0, max1Rm: 0, effective1Rm: 0, durationMin: 0 };
         }
         monthlyData[key].volume += h.volume;
         monthlyData[key].setsCount += h.setsCount;
         monthlyData[key].max1Rm = Math.max(monthlyData[key].max1Rm, h.max1Rm);
+        monthlyData[key].effective1Rm = Math.max(monthlyData[key].effective1Rm, h.effective1Rm);
         monthlyData[key].durationMin += h.durationMin;
       });
 
@@ -349,6 +391,9 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
             break;
           case '1rm':
             val = Math.round(m.max1Rm * 10) / 10;
+            break;
+          case 'effective_1rm':
+            val = Math.round(m.effective1Rm * 10) / 10;
             break;
           case 'sets':
             val = m.setsCount;
@@ -371,7 +416,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
     }
 
     return [];
-  }, [activeSummary, chartScale, chartMetric]);
+  }, [activeSummary, chartScale, chartMetric, selectedMaxWeight]);
 
   const repChartData = useMemo(() => {
     if (!prTimeline || prTimeline.length === 0) return null;
@@ -437,6 +482,8 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
         return t('ui.history.chart_title', { unit: settings.weightUnit }) || `最近の総挙上重量 (${settings.weightUnit})`;
       case '1rm':
         return t('ui.history.chart_1rm_title', { unit: settings.weightUnit }) || `最近の推定1RM最大値 (${settings.weightUnit})`;
+      case 'effective_1rm':
+        return t('ui.history.chart_effective_1rm_title', { unit: settings.weightUnit }) || `実効1RM推移 (${settings.weightUnit})`;
       case 'sets':
         return t('ui.history.chart_title_sets') || '最近の総セット数 (セット)';
       case 'avg_volume_per_set':
@@ -452,6 +499,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
     switch (metric) {
       case 'volume':
       case '1rm':
+      case 'effective_1rm':
         return settings.weightUnit;
       case 'sets':
         return 'セット';
@@ -464,7 +512,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
     }
   }, [settings.weightUnit]);
 
-  const shouldShowChartContainer = !isLoadingChart && chartSummary && chartSummary.length > 0 && (chartPoints.length > 0 || selectedStance !== 'all');
+  const shouldShowChartContainer = !isLoadingChart && chartSummary && chartSummary.length > 0 && (chartPoints.length > 0 || selectedStance !== 'all' || (chartMetric === 'effective_1rm' && selectedMaxWeight !== 'all'));
 
   return (
     <>
@@ -559,6 +607,42 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
             </ScrollView>
           )}
 
+          {/* Max Weight Filter Chips (Effective 1RM mode) */}
+          {chartMetric === 'effective_1rm' && availableMaxWeights.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.stanceChipsScroll}
+              contentContainerStyle={styles.stanceChipsContainer}
+            >
+              <TouchableOpacity
+                style={[styles.stanceChip, selectedMaxWeight === 'all' && styles.stanceChipActive]}
+                onPress={() => setExerciseChartPreference(exerciseId, { maxWeight: 'all' })}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.stanceChipText, selectedMaxWeight === 'all' && styles.stanceChipTextActive]}>
+                  {t('ui.exercise_detail.max_weight_all')}
+                </Text>
+              </TouchableOpacity>
+
+              {availableMaxWeights.map(weightVal => {
+                const isSelected = selectedMaxWeight === weightVal;
+                return (
+                  <TouchableOpacity
+                    key={weightVal}
+                    style={[styles.stanceChip, isSelected && styles.stanceChipActive]}
+                    onPress={() => setExerciseChartPreference(exerciseId, { maxWeight: weightVal })}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.stanceChipText, isSelected && styles.stanceChipTextActive]}>
+                      {weightVal}{settings.weightUnit}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
+
           {/* Selected Point Summary Card */}
           {activePoint && (
             <View style={styles.summaryCard}>
@@ -585,7 +669,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
               </View>
             ) : (
             <ScrollView
-              key={`${chartMetric}_${chartScale}_${selectedStance}`}
+              key={`${chartMetric}_${chartScale}_${selectedStance}_${selectedMaxWeight}`}
               ref={chartScrollRef}
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -729,7 +813,7 @@ export const ExerciseCharts: React.FC<ExerciseChartsProps> = ({
               </TouchableOpacity>
             </View>
 
-            {METRIC_OPTIONS.map(option => {
+            {visibleMetricOptions.map(option => {
               const isSelected = chartMetric === option.id;
               return (
                 <TouchableOpacity

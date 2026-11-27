@@ -10,6 +10,7 @@ import { translateExercise } from '../../src/i18n';
 import { KeyboardAvoidingWrapper } from '../../components/active-workout/KeyboardAvoidingWrapper';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { isTreadmillExercise } from '../../src/utils/exerciseUtils';
+import { getDisplaySetLabel } from '../../src/utils/warmupUtils';
 
 export default function EditWorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -35,13 +36,29 @@ export default function EditWorkoutScreen() {
 
   const loadData = async (workoutId: number) => {
     try {
-      const res = await loadFullWorkoutData(workoutId);
+      const res = await loadFullWorkoutData(workoutId, { includeWarmup: true });
       setData(res);
     } catch (e) {
       console.error(e);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleToggleSetWarmup = (exIndex: number, setIndex: number) => {
+    setData((prev: any) => {
+      const copy = { ...prev };
+      copy.exercises = prev.exercises.map((ex: any, i: number) => {
+        if (i !== exIndex) return ex;
+        return {
+          ...ex,
+          sets: ex.sets.map((s: any, j: number) =>
+            j === setIndex ? { ...s, is_warmup: !s.is_warmup } : s
+          ),
+        };
+      });
+      return copy;
+    });
   };
 
   const handleUpdateTitle = (text: string) => {
@@ -67,7 +84,7 @@ export default function EditWorkoutScreen() {
           if (s._deleted) {
             await deleteWorkoutSet(s.id);
           } else {
-            await updateWorkoutSet(s.id, s.weight, s.reps, s.rpe, s.variation, s.stance, s.speed, s.incline, s.work_seconds);
+            await updateWorkoutSet(s.id, s.weight, s.reps, s.rpe, s.variation, s.stance, s.speed, s.incline, s.work_seconds, !!s.is_warmup);
           }
         }
       }
@@ -170,6 +187,11 @@ export default function EditWorkoutScreen() {
 
             {ex.sets.map((s: any, sIdx: number) => {
               if (s._deleted) return null; // Hide deleted sets
+              const activeSets = ex.sets.filter((item: any) => !item._deleted);
+              const activeIdx = activeSets.findIndex((item: any) => item.id === s.id);
+              const isTreadmill = isTreadmillExercise(ex.exercise_name);
+              const warmupFeatureActive = (!!settings.warmupEnabled || ex.sets.some((item: any) => !item._deleted && item.is_warmup)) && !isTreadmill;
+              const setLabel = getDisplaySetLabel(activeSets, activeIdx >= 0 ? activeIdx : sIdx, warmupFeatureActive);
               
               return (
                 <EditWorkoutSetRow
@@ -177,8 +199,11 @@ export default function EditWorkoutScreen() {
                   exIdx={exIdx}
                   sIdx={sIdx}
                   s={s}
-                  isTreadmill={isTreadmillExercise(ex.exercise_name)}
+                  setLabel={setLabel}
+                  canToggleWarmup={warmupFeatureActive}
+                  isTreadmill={isTreadmill}
                   handleChangeSet={handleChangeSet}
+                  handleToggleWarmup={handleToggleSetWarmup}
                   handleRemoveSet={handleRemoveSet}
                 />
               );
@@ -248,12 +273,15 @@ const createStyles = (
   }
 });
 
-function EditWorkoutSetRow({ exIdx, sIdx, s, isTreadmill, handleChangeSet, handleRemoveSet }: {
+function EditWorkoutSetRow({ exIdx, sIdx, s, setLabel, canToggleWarmup, isTreadmill, handleChangeSet, handleToggleWarmup, handleRemoveSet }: {
   exIdx: number;
   sIdx: number;
   s: any;
+  setLabel: string;
+  canToggleWarmup: boolean;
   isTreadmill?: boolean;
   handleChangeSet: (exIdx: number, sIdx: number, field: 'weight' | 'reps' | 'rpe' | 'speed' | 'incline' | 'work_seconds', value: string) => void;
+  handleToggleWarmup: (exIdx: number, sIdx: number) => void;
   handleRemoveSet: (exIdx: number, sIdx: number) => void;
 }) {
   const { colors, spacing } = useAppTheme();
@@ -421,7 +449,38 @@ function EditWorkoutSetRow({ exIdx, sIdx, s, isTreadmill, handleChangeSet, handl
 
   return (
     <View style={styles.row}>
-      <Text style={styles.tdSet}>{s.set_number}</Text>
+      {canToggleWarmup ? (
+        <TouchableOpacity
+          onPress={() => handleToggleWarmup(exIdx, sIdx)}
+          onLongPress={() => handleToggleWarmup(exIdx, sIdx)}
+          style={{
+            width: 40,
+            minHeight: 36,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 6,
+            ...(s.is_warmup
+              ? {
+                  backgroundColor: 'rgba(245, 158, 11, 0.16)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(245, 158, 11, 0.45)',
+                }
+              : {}),
+          }}
+        >
+          <Text
+            style={[
+              styles.tdSet,
+              { width: undefined },
+              s.is_warmup && { color: '#f59e0b', fontWeight: '800' },
+            ]}
+          >
+            {setLabel}
+          </Text>
+        </TouchableOpacity>
+      ) : (
+        <Text style={styles.tdSet}>{s.set_number}</Text>
+      )}
       <TextInput 
         style={styles.input} 
         keyboardType="decimal-pad" 

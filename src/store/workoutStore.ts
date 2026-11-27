@@ -4,8 +4,9 @@ import { scheduleRestTimer, cancelRestTimer } from '../utils/timer';
 import { buildInitialSetsForExercise } from '../utils/workoutSetBuilder';
 import { generateUUID } from '../utils/uuid';
 import { isTreadmillExercise } from '../utils/exerciseUtils';
+import { isAutoWarmupWeight, resolveWarmupThreshold } from '../utils/warmupUtils';
 import { WorkoutSet } from '../db/types';
-import type { AddSetStanceMode } from './settingsStore';
+import { useSettingsStore, type AddSetStanceMode } from './settingsStore';
 
 const normalizeStance = (val?: string | null): string | null => {
   if (!val) return null;
@@ -28,6 +29,8 @@ export type SetRecord = {
   prev_work_seconds?: number | null;
   completedAt?: number;
   is_completed: boolean;
+  is_warmup?: boolean;
+  is_warmup_manual?: boolean;
   rest_seconds?: number | null;
   work_seconds?: number | null;
   side?: 'L' | 'R' | null;
@@ -49,6 +52,8 @@ export type ActiveExercise = {
   default_stance?: string | null;
   weight_step?: number;
   rest_seconds?: number | null;
+  max_1rm?: number | null;
+  warmup_threshold_percent?: number | null;
 };
 
 export interface WorkoutCompletionAchievement {
@@ -88,12 +93,14 @@ interface WorkoutState {
   updateExerciseWeightStep: (exerciseId: string | number, weightStep: number) => void;
   updateExerciseRestSeconds: (exerciseId: string | number, restSeconds: number | null) => void;
   updateExerciseDefaultStance: (exerciseId: string | number, stance: string | null) => void;
+  updateExerciseWarmupThreshold: (exerciseId: string | number, warmupThresholdPercent: number | null) => void;
   endWorkout: () => void;
-  addExercise: (exercise: { id: number; name: string; previousSets?: Omit<WorkoutSet, 'id' | 'is_completed'>[]; personalRecords?: Record<string, Record<number, number>>; is_unilateral?: number; default_variation?: string | null; default_stance?: string | null; equipment?: string; muscle_group?: string; routineSets?: Omit<WorkoutSet, 'id' | 'is_completed'>[]; weight_step?: number; rest_seconds?: number | null; }, alwaysOneSet?: boolean) => void;
+  addExercise: (exercise: { id: number; name: string; previousSets?: Omit<WorkoutSet, 'id' | 'is_completed'>[]; personalRecords?: Record<string, Record<number, number>>; is_unilateral?: number; default_variation?: string | null; default_stance?: string | null; equipment?: string; muscle_group?: string; routineSets?: Omit<WorkoutSet, 'id' | 'is_completed'>[]; weight_step?: number; rest_seconds?: number | null; max_1rm?: number | null; warmup_threshold_percent?: number | null; }, alwaysOneSet?: boolean) => void;
   removeExercise: (exerciseId: string) => void;
   addSet: (exerciseId: string, stanceMode?: AddSetStanceMode) => void;
   removeSet: (exerciseId: string, setId: string) => void;
   updateSet: (exerciseId: string, setId: string, changes: Partial<SetRecord>) => void;
+  toggleSetWarmup: (exerciseId: string, setId: string) => void;
   toggleSetComplete: (exerciseId: string, setId: string, settings?: { autoRest: boolean, defaultRest: number, timerNotification: boolean, timerVibrate: boolean, individualRestEnabled?: boolean }) => void;
 
   // Rest Timer
@@ -187,6 +194,14 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     };
   }),
 
+  updateExerciseWarmupThreshold: (exerciseId, warmupThresholdPercent) => set((state) => ({
+    exercises: state.exercises.map(ex =>
+      (ex.id === exerciseId || ex.exercise_id === exerciseId)
+        ? { ...ex, warmup_threshold_percent: warmupThresholdPercent }
+        : ex
+    )
+  })),
+
   endWorkout: () => {
     cancelRestTimer();
     set({
@@ -201,7 +216,11 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   },
 
   addExercise: (exercise, alwaysOneSet = false) => set((state) => {
-    const initialSets = buildInitialSetsForExercise(exercise, alwaysOneSet);
+    const appSettings = useSettingsStore.getState().settings;
+    const initialSets = buildInitialSetsForExercise(exercise, alwaysOneSet, {
+      warmupEnabled: !!appSettings.warmupEnabled,
+      globalThresholdPercent: appSettings.warmupThresholdPercent ?? 60,
+    });
     const normalizedDefault =
       normalizeStance(exercise.default_stance) ??
       normalizeStance(exercise.default_variation);
@@ -222,7 +241,9 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           default_variation: normalizedDefault,
           default_stance: normalizedDefault,
           weight_step: exercise.weight_step ?? 2.5,
-          rest_seconds: exercise.rest_seconds ?? null
+          rest_seconds: exercise.rest_seconds ?? null,
+          max_1rm: exercise.max_1rm ?? null,
+          warmup_threshold_percent: exercise.warmup_threshold_percent ?? null,
         }
       ]
     };
@@ -232,7 +253,9 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     exercises: state.exercises.filter(ex => ex.id !== exerciseId)
   })),
 
-  addSet: (exerciseId, stanceMode = 'default') => set((state) => ({
+  addSet: (exerciseId, stanceMode = 'default') => set((state) => {
+    const appSettings = useSettingsStore.getState().settings;
+    return {
     exercises: state.exercises.map(ex => {
       if (ex.id === exerciseId) {
         const lastSet = ex.sets[ex.sets.length - 1];
@@ -242,6 +265,11 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           normalizeStance(ex.default_variation);
         const getSetStance = (s: SetRecord): string | null =>
           normalizeStance(s.stance) ?? normalizeStance(s.variation);
+        const isAerobicOrTreadmill = ex.muscle_group === '有酸素' || isTreadmillExercise(ex.name);
+        const canAutoWarmup = !!appSettings.warmupEnabled && !isAerobicOrTreadmill;
+        const threshold = resolveWarmupThreshold(ex.warmup_threshold_percent, appSettings.warmupThresholdPercent ?? 60);
+        const autoWarmupFor = (w: number | null | undefined) =>
+          canAutoWarmup ? isAutoWarmupWeight(w, ex.max_1rm, threshold) : false;
         
         if (ex.is_unilateral) {
           const lastL = [...ex.sets].reverse().find(s => s.side === 'L');
@@ -252,6 +280,10 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           const stanceR = stanceMode === 'previous'
             ? (lastR ? getSetStance(lastR) : (lastSet ? getSetStance(lastSet) : defaultStance))
             : defaultStance;
+          const nextWeightL = lastL ? lastL.weight : (lastSet ? lastSet.weight : null);
+          const nextPrevWeightL = lastL ? (lastL.weight ?? lastL.prev_weight ?? null) : (lastSet ? (lastSet.weight ?? lastSet.prev_weight ?? null) : null);
+          const nextWeightR = lastR ? lastR.weight : (lastSet ? lastSet.weight : null);
+          const nextPrevWeightR = lastR ? (lastR.weight ?? lastR.prev_weight ?? null) : (lastSet ? (lastSet.weight ?? lastSet.prev_weight ?? null) : null);
           return {
             ...ex,
             sets: [
@@ -259,17 +291,19 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
               {
                 id: generateUUID(),
                 set_number: newSetNum,
-                weight: lastL ? lastL.weight : (lastSet ? lastSet.weight : null),
+                weight: nextWeightL,
                 reps: lastL ? lastL.reps : (lastSet ? lastSet.reps : null),
                 rpe: lastL ? lastL.rpe : (lastSet ? lastSet.rpe : null),
                 speed: lastL ? lastL.speed : (lastSet ? lastSet.speed : null),
                 incline: lastL ? lastL.incline : (lastSet ? lastSet.incline : null),
-                prev_weight: lastL ? (lastL.weight ?? lastL.prev_weight ?? null) : (lastSet ? (lastSet.weight ?? lastSet.prev_weight ?? null) : null),
+                prev_weight: nextPrevWeightL,
                 prev_reps: lastL ? (lastL.reps ?? lastL.prev_reps ?? null) : (lastSet ? (lastSet.reps ?? lastSet.prev_reps ?? null) : null),
                 prev_speed: lastL ? (lastL.speed ?? lastL.prev_speed ?? null) : (lastSet ? (lastSet.speed ?? lastSet.prev_speed ?? null) : null),
                 prev_incline: lastL ? (lastL.incline ?? lastL.prev_incline ?? null) : (lastSet ? (lastSet.incline ?? lastSet.prev_incline ?? null) : null),
                 prev_work_seconds: lastL ? (lastL.work_seconds ?? lastL.prev_work_seconds ?? null) : (lastSet ? (lastSet.work_seconds ?? lastSet.prev_work_seconds ?? null) : null),
                 is_completed: false,
+                is_warmup: autoWarmupFor(nextWeightL ?? nextPrevWeightL),
+                is_warmup_manual: false,
                 rest_seconds: null,
                 work_seconds: null,
                 side: 'L',
@@ -279,17 +313,19 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
               {
                 id: generateUUID(),
                 set_number: newSetNum,
-                weight: lastR ? lastR.weight : (lastSet ? lastSet.weight : null),
+                weight: nextWeightR,
                 reps: lastR ? lastR.reps : (lastSet ? lastSet.reps : null),
                 rpe: lastR ? lastR.rpe : (lastSet ? lastSet.rpe : null),
                 speed: lastR ? lastR.speed : (lastSet ? lastSet.speed : null),
                 incline: lastR ? lastR.incline : (lastSet ? lastSet.incline : null),
-                prev_weight: lastR ? (lastR.weight ?? lastR.prev_weight ?? null) : (lastSet ? (lastSet.weight ?? lastSet.prev_weight ?? null) : null),
+                prev_weight: nextPrevWeightR,
                 prev_reps: lastR ? (lastR.reps ?? lastR.prev_reps ?? null) : (lastSet ? (lastSet.reps ?? lastSet.prev_reps ?? null) : null),
                 prev_speed: lastR ? (lastR.speed ?? lastR.prev_speed ?? null) : (lastSet ? (lastSet.speed ?? lastSet.prev_speed ?? null) : null),
                 prev_incline: lastR ? (lastR.incline ?? lastR.prev_incline ?? null) : (lastSet ? (lastSet.incline ?? lastSet.prev_incline ?? null) : null),
                 prev_work_seconds: lastR ? (lastR.work_seconds ?? lastR.prev_work_seconds ?? null) : (lastSet ? (lastSet.work_seconds ?? lastSet.prev_work_seconds ?? null) : null),
                 is_completed: false,
+                is_warmup: autoWarmupFor(nextWeightR ?? nextPrevWeightR),
+                is_warmup_manual: false,
                 rest_seconds: null,
                 work_seconds: null,
                 side: 'R',
@@ -302,22 +338,26 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           const nextStance = stanceMode === 'previous'
             ? (lastSet ? getSetStance(lastSet) : defaultStance)
             : defaultStance;
+          const nextWeight = lastSet ? lastSet.weight : null;
+          const nextPrevWeight = lastSet ? (lastSet.weight ?? lastSet.prev_weight ?? null) : null;
           return {
             ...ex,
             sets: [...ex.sets, {
               id: generateUUID(),
               set_number: newSetNum,
-              weight: lastSet ? lastSet.weight : null,
+              weight: nextWeight,
               reps: lastSet ? lastSet.reps : null,
               rpe: lastSet ? lastSet.rpe : null,
               speed: lastSet ? lastSet.speed : null,
               incline: lastSet ? lastSet.incline : null,
-              prev_weight: lastSet ? (lastSet.weight ?? lastSet.prev_weight ?? null) : null,
+              prev_weight: nextPrevWeight,
               prev_reps: lastSet ? (lastSet.reps ?? lastSet.prev_reps ?? null) : null,
               prev_speed: lastSet ? (lastSet.speed ?? lastSet.prev_speed ?? null) : null,
               prev_incline: lastSet ? (lastSet.incline ?? lastSet.prev_incline ?? null) : null,
               prev_work_seconds: lastSet ? (lastSet.work_seconds ?? lastSet.prev_work_seconds ?? null) : null,
               is_completed: false,
+              is_warmup: autoWarmupFor(nextWeight ?? nextPrevWeight),
+              is_warmup_manual: false,
               rest_seconds: null,
               work_seconds: null,
               variation: nextStance,
@@ -328,7 +368,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       }
       return ex;
     })
-  })),
+  };
+  }),
 
   removeSet: (exerciseId, setId) => set((state) => ({
     exercises: state.exercises.map(ex => {
@@ -357,15 +398,52 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     })
   })),
 
-  updateSet: (exerciseId, setId, changes) => set((state) => ({
+  updateSet: (exerciseId, setId, changes) => set((state) => {
+    const appSettings = useSettingsStore.getState().settings;
+    return {
+      exercises: state.exercises.map(ex => {
+        if (ex.id === exerciseId) {
+          const isAerobicOrTreadmill = ex.muscle_group === '有酸素' || isTreadmillExercise(ex.name);
+          const canAutoWarmup = !!appSettings.warmupEnabled && !isAerobicOrTreadmill;
+          const threshold = resolveWarmupThreshold(ex.warmup_threshold_percent, appSettings.warmupThresholdPercent ?? 60);
+
+          return {
+            ...ex,
+            sets: ex.sets.map(s => {
+              if (s.id !== setId) return s;
+              const next: SetRecord = { ...s, ...changes };
+              if (
+                canAutoWarmup &&
+                changes.weight !== undefined &&
+                changes.is_warmup === undefined &&
+                !s.is_completed &&
+                !s.is_warmup_manual
+              ) {
+                next.is_warmup = isAutoWarmupWeight(changes.weight, ex.max_1rm, threshold);
+              }
+              return next;
+            })
+          };
+        }
+        return ex;
+      })
+    };
+  }),
+
+  toggleSetWarmup: (exerciseId, setId) => set((state) => ({
     exercises: state.exercises.map(ex => {
-      if (ex.id === exerciseId) {
-        return {
-          ...ex,
-          sets: ex.sets.map(s => s.id === setId ? { ...s, ...changes } : s)
-        };
-      }
-      return ex;
+      if (ex.id !== exerciseId) return ex;
+      return {
+        ...ex,
+        sets: ex.sets.map(s => {
+          if (s.id !== setId || s.is_completed) return s;
+          return {
+            ...s,
+            is_warmup: !s.is_warmup,
+            is_warmup_manual: true,
+          };
+        })
+      };
     })
   })),
 

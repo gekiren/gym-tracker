@@ -22,9 +22,10 @@ export const getRoutines = async () => {
     default_stance: string | null;
     weight_step: number;
     rest_seconds: number | null;
+    warmup_threshold_percent: number | null;
   }>(`
     SELECT re.routine_id, re.id as routine_exercise_id, re.exercise_id, e.name as exercise_name,
-           e.is_unilateral, e.equipment, e.muscle_group, e.default_variation, e.default_stance, e.weight_step, e.rest_seconds
+           e.is_unilateral, e.equipment, e.muscle_group, e.default_variation, e.default_stance, e.weight_step, e.rest_seconds, e.warmup_threshold_percent
     FROM routine_exercises re
     JOIN exercises e ON re.exercise_id = e.id
     ORDER BY re.sort_order ASC, re.id ASC
@@ -37,6 +38,7 @@ export const getRoutines = async () => {
     reps: number | null;
     weight: number | null;
     rpe: number | null;
+    is_warmup: number | null;
     speed: number | null;
     incline: number | null;
     side: string | null;
@@ -47,7 +49,7 @@ export const getRoutines = async () => {
   if (rxIds.length > 0) {
     const placeholders = rxIds.map(() => '?').join(',');
     setRows = await conn.getAllAsync<typeof setRows[0]>(`
-      SELECT routine_exercise_id, set_number, reps, weight, rpe, speed, incline, side, variation, stance
+      SELECT routine_exercise_id, set_number, reps, weight, rpe, is_warmup, speed, incline, side, variation, stance
       FROM routine_sets
       WHERE routine_exercise_id IN (${placeholders})
       ORDER BY set_number ASC
@@ -74,6 +76,7 @@ export const getRoutines = async () => {
       reps: s.reps,
       weight: s.weight,
       rpe: s.rpe,
+      is_warmup: Boolean(s.is_warmup),
       speed: s.speed ?? null,
       incline: s.incline ?? null,
       side: s.side || null,
@@ -90,6 +93,7 @@ export const getRoutines = async () => {
       default_stance: rx.default_stance,
       weight_step: rx.weight_step,
       rest_seconds: rx.rest_seconds,
+      warmup_threshold_percent: rx.warmup_threshold_percent,
       sets
     });
   }
@@ -117,8 +121,8 @@ export const addRoutine = async (title: string, description: string, exercises: 
       
       for (const s of ex.sets) {
         await conn.runAsync(
-          'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe, speed, incline, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [routineExerciseId, s.set_number, s.reps, s.weight, s.rpe, s.speed || null, s.incline || null, s.side || null, s.variation || null, s.stance || null]
+          'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe, is_warmup, speed, incline, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [routineExerciseId, s.set_number, s.reps, s.weight, s.rpe, s.is_warmup ? 1 : 0, s.speed || null, s.incline || null, s.side || null, s.variation || null, s.stance || null]
         );
       }
     }
@@ -143,8 +147,8 @@ export const updateRoutine = async (id: number, title: string, description: stri
       
       for (const s of ex.sets) {
         await conn.runAsync(
-          'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe, speed, incline, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [routineExerciseId, s.set_number, s.reps, s.weight, s.rpe, s.speed || null, s.incline || null, s.side || null, s.variation || null, s.stance || null]
+          'INSERT INTO routine_sets (routine_exercise_id, set_number, reps, weight, rpe, is_warmup, speed, incline, side, variation, stance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [routineExerciseId, s.set_number, s.reps, s.weight, s.rpe, s.is_warmup ? 1 : 0, s.speed || null, s.incline || null, s.side || null, s.variation || null, s.stance || null]
         );
       }
     }

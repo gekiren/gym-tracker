@@ -1,10 +1,11 @@
-export type ExerciseChartMetric = 'volume' | '1rm' | 'sets' | 'avg_volume_per_set' | 'density';
+export type ExerciseChartMetric = 'volume' | '1rm' | 'effective_1rm' | 'sets' | 'avg_volume_per_set' | 'density';
 export type ExerciseChartScale = 'day' | 'week' | 'month';
 
 export interface ExerciseChartPreference {
   metric?: ExerciseChartMetric;
   scale?: ExerciseChartScale;
   stance?: string;
+  maxWeight?: number | 'all';
 }
 
 export type ExerciseChartPreferencesMap = Record<string, ExerciseChartPreference>;
@@ -13,6 +14,7 @@ export type ExercisePrCollapsedStancesMap = Record<string, Record<string, boolea
 export const VALID_EXERCISE_CHART_METRICS: readonly ExerciseChartMetric[] = [
   'volume',
   '1rm',
+  'effective_1rm',
   'sets',
   'avg_volume_per_set',
   'density',
@@ -54,6 +56,9 @@ export const parseExerciseChartPreferences = (raw?: string): ExerciseChartPrefer
       }
       if (typeof entry.stance === 'string' && entry.stance.length > 0) {
         pref.stance = entry.stance;
+      }
+      if (entry.maxWeight === 'all' || (typeof entry.maxWeight === 'number' && Number.isFinite(entry.maxWeight) && entry.maxWeight > 0)) {
+        pref.maxWeight = entry.maxWeight;
       }
 
       if (Object.keys(pref).length > 0) {
